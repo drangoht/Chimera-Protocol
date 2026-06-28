@@ -401,7 +401,7 @@ recommandé.
   (`BodyEntered`, `AreaEntered`) lève `Can't change state while flushing queries`. Utiliser
   `parent.CallDeferred(Node.MethodName.AddChild, node)` + `node.SetDeferred("global_position", pos)`.
   Appliqué dans `EnemyBase.SpawnXpOrb()`.
-- **Clamp position joueur après `MoveAndSlide()`** : les ennemis (`CollisionMask = 0`) poussent
+- **Clamp position joueur après `MoveAndSlide()`** : les ennemis (`CollisionMask = 2`) poussent
   physiquement le joueur via leur propre `MoveAndSlide()`. La pression cumulée de plusieurs ennemis
   fait sortir le joueur des murs `StaticBody2D`. Solution : `GlobalPosition` clampé à
   `±(ArenaWidth/2 - WallThickness)` après chaque `MoveAndSlide()` dans `Player._PhysicsProcess()`.
@@ -409,9 +409,11 @@ recommandé.
 
 ## Décisions d'implémentation (Phase 1 — 2026-06-19)
 
-- **CollisionMask ennemis = 0** : les ennemis traversent physiquement les murs (seul le joueur
-  est contenu). Cohérent avec le genre survivor ; les dégâts de contact restent gérés par
-  distance en code.
+- **CollisionMask ennemis = 2** (était 0 jusqu'au 2026-06-28) : les ennemis **traversent les murs**
+  (layer 1) mais sont **bloqués par les obstacles infranchissables** (piliers/épaves/caisses/arches),
+  qui sont sur le **layer 3 (bits 1+2)** — le joueur les voit via `mask=1`, les ennemis via `mask=2`.
+  Cohérent avec le genre survivor (les ennemis convergent de partout mais contournent les obstacles) ;
+  les dégâts de contact restent gérés par distance en code.
 - **Spawn intérieur des murs** : les ennemis spawnent à ±48 px des bords intérieurs de l'arène,
   pas à l'extérieur des murs StaticBody2D.
 - **Placeholders visuels** : `Polygon2D` colorés (cyan joueur, rouge-rouille ennemi, jaune balle)

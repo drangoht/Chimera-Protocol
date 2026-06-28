@@ -299,7 +299,7 @@ public partial class GroundRenderer : Node2D
         var body = new StaticBody2D
         {
             Position       = pos,
-            CollisionLayer = 1u,
+            CollisionLayer = 3u, // bit 1 (joueur via mask=1) + bit 2 (bloque aussi les ennemis)
             CollisionMask  = 1u,
             Name           = "Column",
         };
@@ -446,7 +446,7 @@ public partial class GroundRenderer : Node2D
         var body = new StaticBody2D
         {
             Position       = pos,
-            CollisionLayer = 1u,
+            CollisionLayer = 3u, // bit 1 (joueur via mask=1) + bit 2 (bloque aussi les ennemis)
             CollisionMask  = 1u,
             ZIndex         = 1,
             Name           = $"Pillar_{index}",
@@ -467,7 +467,7 @@ public partial class GroundRenderer : Node2D
         var body = new StaticBody2D
         {
             Position       = pos,
-            CollisionLayer = 1u,
+            CollisionLayer = 3u, // bit 1 (joueur via mask=1) + bit 2 (bloque aussi les ennemis)
             CollisionMask  = 1u,
             ZIndex         = 1,
             Name           = $"Wreck_{index}",
@@ -487,7 +487,7 @@ public partial class GroundRenderer : Node2D
         var body = new StaticBody2D
         {
             Position       = pos,
-            CollisionLayer = 1u,
+            CollisionLayer = 3u, // bit 1 (joueur via mask=1) + bit 2 (bloque aussi les ennemis)
             CollisionMask  = 1u,
             ZIndex         = 1,
             Name           = $"Crate_{index}",
@@ -515,7 +515,7 @@ public partial class GroundRenderer : Node2D
         var body = new StaticBody2D
         {
             Position        = pos,
-            CollisionLayer  = 1u,
+            CollisionLayer  = 3u, // bit 1 (joueur) + bit 2 (bloque aussi les ennemis)
             CollisionMask   = 1u,
             ZIndex          = 1,
             RotationDegrees = rotated ? 90f : 0f,

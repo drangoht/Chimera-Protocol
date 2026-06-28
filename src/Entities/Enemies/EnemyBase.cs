@@ -26,8 +26,9 @@ public partial class EnemyBase : CharacterBody2D
     {
         AddToGroup(Constants.GroupEnemies);
         _currentHp = MaxHp;
-        // Les ennemis ignorent les murs physiquement — le joueur seul est contenu par les murs
-        CollisionMask = 0;
+        // Les ennemis traversent les murs (layer 1) mais sont BLOQUÉS par les obstacles
+        // infranchissables (sur le bit 2). mask = 2 → collision avec les obstacles uniquement.
+        CollisionMask = 2;
 
         _xpOrbScene ??= GD.Load<PackedScene>("res://scenes/entities/XpOrb.tscn");
         _hpOrbScene ??= GD.Load<PackedScene>("res://scenes/entities/HpOrb.tscn");
