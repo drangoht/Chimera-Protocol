@@ -24,10 +24,12 @@ data_*/
 # OS
 .DS_Store
 Thumbs.db
+
 # Test screenshots
 docs/test_screenshots/
 docs/balance_screenshots/
 docs/balance_v2_screenshots/
+docs/boss_ttk/
 docs/hud_review.png
 docs/menu_review.png
 docs/swarm_review.png
@@ -35,3 +37,13 @@ docs/bestiary_review.png
 docs/arsenal_review.png
 docs/scene_review.png
 docs/*.png.import
+
+# Captures jetables (frames de debug / variantes one-off)
+docs/*_test.png
+docs/biome_label.png
+docs/hud_anim.png
+docs/hud_new.png
+docs/hud_new_zoom.png
+docs/hud_style_zoom.png
+docs/levelselect_badge.png
+docs/options2.png
