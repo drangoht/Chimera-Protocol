@@ -229,6 +229,8 @@ public partial class LevelUpScreen : CanvasLayer
 
         _rerollButton = MakeActionButton("Renouveler", new Color(0.27f, 0.67f, 1f));
         _skipButton   = MakeActionButton("Passer",     new Color(1f, 0.55f, 0.2f));
+        _rerollButton.Name = "RerollButton";
+        _skipButton.Name   = "SkipButton";
         _rerollButton.Pressed += OnRerollPressed;
         _skipButton.Pressed   += OnSkipPressed;
 

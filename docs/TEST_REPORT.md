@@ -2352,3 +2352,27 @@ Pour une vérif empirique complète du combat de boss **sans bidouiller les donn
 - Aucun fichier source modifié.
 - `settings.cfg` : contient désormais `aether:1` (complétion légitime issue du test) — données utilisateur, non réversibles, sans impact.
 - Artefacts : `docs/boss_combat.png`, `docs/levelselect_vaincu.png`, `docs/death_test.png`.
+
+---
+
+# Session de test — Run complet avec Reroll & Skip (2026-06-28)
+
+**Verdict : PASS.** Mécaniques reroll/skip validées via les vrais handlers de boutons + run fenêtré sain.
+
+Contexte : save de test (build méta maxé + `reroll:3`/`skip:3`), restauré à l'identique après le test.
+
+## Mécaniques (headless, émission du signal `pressed` des vrais boutons — déterministe)
+| Vérification | Résultat |
+|---|---|
+| `RerollsLeft`/`SkipsLeft` initialisés au niveau acheté | **PASS** — 3 / 3 chargés depuis le save par `LevelUpSystem.Reset()` |
+| Boutons « Renouveler »/« Passer » visibles sur le LevelUpScreen (amélioration possédée) | **PASS** |
+| **Reroll** régénère les cartes + décrémente | **PASS** — carte0 « Volée Multiple » → « Canon à Impulsions », `RerollsLeft 3→2` |
+| **Skip** vide la file de level-ups + décrémente + reprend le jeu | **PASS** — `AddXp(20)` = 2 level-ups ; SKIP #1 (`SkipsLeft=2`, écran visible = avance au 2ᵉ), SKIP #2 (`SkipsLeft=1`, écran caché, `pause=False`) |
+
+## Run complet (fenêtré, bot kite + choix de cartes)
+- À ~107 s écoulés (timer 13:13) : joueur **vivant niveau 18**, ~18 level-ups enchaînés, plusieurs armes équipées, arène dense gérée, **0 crash**. Run sain en route vers le boss / la mort.
+
+## Notes
+- Approche de vérif : émission de `Button.Pressed` (pas de clic pixel, fragile avec le stretch `canvas_items`) → passe par `OnRerollPressed`/`OnSkipPressed` réels, lecture synchrone du texte des cartes.
+- Le retrait de l'XP de départ (`starting_xp`) a supprimé la pause parasite du LevelUpScreen au lancement → les tests gameplay headless fonctionnent désormais sans contournement.
+- Boutons nommés `RerollButton`/`SkipButton` (chemins `LevelUpScreen/Actions/*`) pour faciliter les futurs tests.
