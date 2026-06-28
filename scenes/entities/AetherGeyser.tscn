@@ -1,0 +1,29 @@
+[gd_scene load_steps=4 format=3 uid="uid://aethergeyser001"]
+
+[ext_resource type="Script" path="res://src/Entities/Environment/AetherGeyser.cs" id="1"]
+[ext_resource type="SpriteFrames" path="res://assets/sprites/environment/geyser_frames.tres" id="2"]
+
+[sub_resource type="CircleShape2D" id="GeyserShape"]
+radius = 24.0
+
+[node name="AetherGeyser" type="Node2D"]
+script = ExtResource("1")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+sprite_frames = ExtResource("2")
+animation = &"idle"
+autoplay = "idle"
+
+[node name="Area2D" type="Area2D" parent="."]
+collision_layer = 0
+collision_mask = 1
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D"]
+shape = SubResource("GeyserShape")
+
+[node name="Light" type="PointLight2D" parent="."]
+enabled = true
+color = Color(0, 0.9, 1, 1)
+energy = 0.4
+texture_scale = 1.2
+z_index = 0

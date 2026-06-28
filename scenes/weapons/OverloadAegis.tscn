@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://d0aeg1s0verl0"]
+
+[ext_resource type="Script" path="res://src/Weapons/OverloadAegis.cs" id="1"]
+
+[node name="OverloadAegis" type="Node2D"]
+script = ExtResource("1")

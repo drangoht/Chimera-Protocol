@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://aethernova0001"]
+
+[ext_resource type="Script" path="res://src/Weapons/AetherNova.cs" id="1"]
+
+[node name="AetherNova" type="Node2D"]
+script = ExtResource("1")

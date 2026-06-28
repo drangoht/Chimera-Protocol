@@ -1,0 +1,45 @@
+[gd_resource type="SpriteFrames" load_steps=12 format=3]
+
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/drone/enemy_drone_idle_01.png" id="idle_01"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/drone/enemy_drone_idle_02.png" id="idle_02"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/drone/enemy_drone_idle_03.png" id="idle_03"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/drone/enemy_drone_move_01.png" id="move_01"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/drone/enemy_drone_move_02.png" id="move_02"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/drone/enemy_drone_move_03.png" id="move_03"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/drone/enemy_drone_move_04.png" id="move_04"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/drone/enemy_drone_death_01.png" id="death_01"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/drone/enemy_drone_death_02.png" id="death_02"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/drone/enemy_drone_death_03.png" id="death_03"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/drone/enemy_drone_death_04.png" id="death_04"]
+
+[resource]
+animations = [{
+"frames": [
+{"duration": 1.0, "texture": ExtResource("idle_01")},
+{"duration": 1.0, "texture": ExtResource("idle_02")},
+{"duration": 1.0, "texture": ExtResource("idle_03")}
+],
+"loop": true,
+"name": &"idle",
+"speed": 5.5
+}, {
+"frames": [
+{"duration": 1.0, "texture": ExtResource("move_01")},
+{"duration": 1.0, "texture": ExtResource("move_02")},
+{"duration": 1.0, "texture": ExtResource("move_03")},
+{"duration": 1.0, "texture": ExtResource("move_04")}
+],
+"loop": true,
+"name": &"move",
+"speed": 11.0
+}, {
+"frames": [
+{"duration": 1.0, "texture": ExtResource("death_01")},
+{"duration": 1.0, "texture": ExtResource("death_02")},
+{"duration": 1.0, "texture": ExtResource("death_03")},
+{"duration": 1.0, "texture": ExtResource("death_04")}
+],
+"loop": false,
+"name": &"death",
+"speed": 10.0
+}]

@@ -1,0 +1,261 @@
+{
+  "weapons": [
+    {
+      "id": "impulse_cannon",
+      "name": "Canon à Impulsions",
+      "type": "active",
+      "rarity": "common",
+      "description": "Projectile unique qui cible l'ennemi le plus proche. Perfore à partir du niveau 3.",
+      "maxLevel": 20,
+      "levels": [
+        { "level": 1, "damage": 10, "cooldown": 0.80, "projectileCount": 1, "piercing": false, "projectileSpeed": 400 },
+        { "level": 2, "damage": 14, "cooldown": 0.75, "projectileCount": 1, "piercing": false, "projectileSpeed": 420 },
+        { "level": 3, "damage": 18, "cooldown": 0.70, "projectileCount": 1, "piercing": true,  "projectileSpeed": 440 },
+        { "level": 4, "damage": 22, "cooldown": 0.65, "projectileCount": 2, "piercing": true,  "projectileSpeed": 460, "note": "2 projectiles vers les 2 ennemis les plus proches" },
+        { "level": 5, "damage": 28, "cooldown": 0.55, "projectileCount": 2, "piercing": true,  "projectileSpeed": 480 }
+      ],
+      "fusionRequires": { "passive": "capacitor" },
+      "fusionResult": "rail_overcharged"
+    },
+    {
+      "id": "plasma_blade",
+      "name": "Lame Plasma",
+      "type": "active",
+      "rarity": "common",
+      "description": "Arc de mêlée tranchant dans un cône devant le joueur.",
+      "maxLevel": 20,
+      "levels": [
+        { "level": 1, "damage": 18, "cooldown": 1.20, "arcAngleDegrees": 180, "arcRadius": 80  },
+        { "level": 2, "damage": 24, "cooldown": 1.10, "arcAngleDegrees": 200, "arcRadius": 90  },
+        { "level": 3, "damage": 30, "cooldown": 1.00, "arcAngleDegrees": 220, "arcRadius": 100 },
+        { "level": 4, "damage": 38, "cooldown": 0.90, "arcAngleDegrees": 260, "arcRadius": 110 },
+        { "level": 5, "damage": 48, "cooldown": 0.80, "arcAngleDegrees": 320, "arcRadius": 120 }
+      ],
+      "fusionRequires": { "passive": "thermal_core" },
+      "fusionResult": "fusion_blade"
+    },
+    {
+      "id": "drone_swarm",
+      "name": "Essaim de Drones",
+      "type": "active",
+      "rarity": "rare",
+      "description": "Drones en orbite autour du joueur. Dégâts de contact à chaque ennemi touché.",
+      "maxLevel": 20,
+      "orbitRadius": 70,
+      "levels": [
+        { "level": 1, "damage": 12, "droneCount": 2, "orbitSpeedDegPerSec": 120, "damageInterval": 0.50 },
+        { "level": 2, "damage": 15, "droneCount": 2, "orbitSpeedDegPerSec": 140, "damageInterval": 0.45 },
+        { "level": 3, "damage": 18, "droneCount": 3, "orbitSpeedDegPerSec": 160, "damageInterval": 0.40 },
+        { "level": 4, "damage": 22, "droneCount": 3, "orbitSpeedDegPerSec": 180, "damageInterval": 0.35 },
+        { "level": 5, "damage": 28, "droneCount": 4, "orbitSpeedDegPerSec": 200, "damageInterval": 0.30 }
+      ],
+      "fusionRequires": null,
+      "fusionResult": null
+    },
+    {
+      "id": "overload_field",
+      "name": "Champ de Surcharge",
+      "type": "active",
+      "rarity": "rare",
+      "description": "Pulse de zone centrée sur le joueur. Repousse les ennemis (knockback) en plus des dégâts.",
+      "maxLevel": 20,
+      "levels": [
+        { "level": 1, "damage": 8,  "cooldown": 2.5, "radius": 100, "knockbackPx": 40 },
+        { "level": 2, "damage": 12, "cooldown": 2.2, "radius": 120, "knockbackPx": 45 },
+        { "level": 3, "damage": 16, "cooldown": 2.0, "radius": 145, "knockbackPx": 50 },
+        { "level": 4, "damage": 22, "cooldown": 1.8, "radius": 170, "knockbackPx": 55 },
+        { "level": 5, "damage": 30, "cooldown": 1.5, "radius": 200, "knockbackPx": 60 }
+      ],
+      "fusionRequires": null,
+      "fusionResult": null
+    },
+    {
+      "id": "tesla_coil",
+      "name": "Bobine Tesla",
+      "type": "active",
+      "rarity": "rare",
+      "description": "Éclair en chaîne qui rebondit d'ennemi en ennemi. Foudre cyan éblouissante.",
+      "maxLevel": 20,
+      "levels": [
+        { "level": 1, "damage": 14, "cooldown": 1.20, "chainCount": 2, "chainRange": 160 },
+        { "level": 2, "damage": 18, "cooldown": 1.10, "chainCount": 3, "chainRange": 170 },
+        { "level": 3, "damage": 23, "cooldown": 1.00, "chainCount": 4, "chainRange": 185 },
+        { "level": 4, "damage": 29, "cooldown": 0.90, "chainCount": 5, "chainRange": 200 },
+        { "level": 5, "damage": 38, "cooldown": 0.80, "chainCount": 7, "chainRange": 230 }
+      ],
+      "fusionRequires": null,
+      "fusionResult": null
+    },
+    {
+      "id": "scatter_volley",
+      "name": "Volée Multiple",
+      "type": "active",
+      "rarity": "rare",
+      "description": "Tir multi-cible : un projectile vers chacun des ennemis les plus proches. 2 projectiles, +1 par niveau.",
+      "maxLevel": 20,
+      "levels": [
+        { "level": 1, "damage": 8,  "cooldown": 0.90, "projectileCount": 2, "piercing": false, "projectileSpeed": 420 },
+        { "level": 2, "damage": 10, "cooldown": 0.85, "projectileCount": 3, "piercing": false, "projectileSpeed": 440 },
+        { "level": 3, "damage": 13, "cooldown": 0.80, "projectileCount": 4, "piercing": false, "projectileSpeed": 460 },
+        { "level": 4, "damage": 16, "cooldown": 0.75, "projectileCount": 5, "piercing": true,  "projectileSpeed": 480 },
+        { "level": 5, "damage": 20, "cooldown": 0.70, "projectileCount": 6, "piercing": true,  "projectileSpeed": 500 }
+      ],
+      "fusionRequires": null,
+      "fusionResult": null
+    },
+    {
+      "id": "aether_nova",
+      "name": "Nova d'Aether",
+      "type": "active",
+      "rarity": "epic",
+      "description": "Détonation circulaire qui se dilate autour du joueur. Onde de choc lumineuse violette.",
+      "maxLevel": 20,
+      "levels": [
+        { "level": 1, "damage": 16, "cooldown": 2.20, "radius": 140 },
+        { "level": 2, "damage": 22, "cooldown": 2.00, "radius": 160 },
+        { "level": 3, "damage": 30, "cooldown": 1.80, "radius": 185 },
+        { "level": 4, "damage": 40, "cooldown": 1.60, "radius": 210 },
+        { "level": 5, "damage": 54, "cooldown": 1.40, "radius": 245 }
+      ],
+      "fusionRequires": null,
+      "fusionResult": null
+    }
+  ],
+  "passives": [
+    {
+      "id": "thermal_core",
+      "name": "Noyau Thermique",
+      "type": "passive",
+      "rarity": "common",
+      "description": "Augmente les dégâts de toutes les armes actives.",
+      "maxLevel": 20,
+      "levels": [
+        { "level": 1, "damageMultiplierBonus": 0.15 },
+        { "level": 2, "damageMultiplierBonus": 0.15 },
+        { "level": 3, "damageMultiplierBonus": 0.15 }
+      ],
+      "applicationNote": "Multiplie le damage de chaque arme active par (1 + somme des bonus). Prérequis fusion Lame à Fusion."
+    },
+    {
+      "id": "reinforced_plating",
+      "name": "Plaque Renforcée",
+      "type": "passive",
+      "rarity": "common",
+      "description": "Augmente les PV max et réduit les dégâts reçus.",
+      "maxLevel": 20,
+      "levels": [
+        { "level": 1, "maxHpBonus": 25, "damageReduction": 0.00 },
+        { "level": 2, "maxHpBonus": 25, "damageReduction": 0.10 },
+        { "level": 3, "maxHpBonus": 25, "damageReduction": 0.10 }
+      ],
+      "applicationNote": "damageReduction est cumulatif et plafonne a 0.40 (hardcap tous passifs confondus)."
+    },
+    {
+      "id": "servo_motors",
+      "name": "Servo-Moteurs",
+      "type": "passive",
+      "rarity": "common",
+      "description": "Augmente la vitesse de déplacement du joueur.",
+      "maxLevel": 20,
+      "levels": [
+        { "level": 1, "speedBonus": 30 },
+        { "level": 2, "speedBonus": 30 },
+        { "level": 3, "speedBonus": 40 }
+      ],
+      "applicationNote": "Plafond soft : 380 px/s."
+    },
+    {
+      "id": "capacitor",
+      "name": "Capaciteur",
+      "type": "passive",
+      "rarity": "rare",
+      "description": "Réduit le cooldown de toutes les armes actives.",
+      "maxLevel": 20,
+      "levels": [
+        { "level": 1, "cooldownReduction": 0.12 },
+        { "level": 2, "cooldownReduction": 0.12 },
+        { "level": 3, "cooldownReduction": 0.14 }
+      ],
+      "applicationNote": "Multiplie le cooldown de chaque arme par (1 - somme). Cooldown minimum par arme : 0.15 s (hardcap). Prérequis fusion Rail Surchargé."
+    }
+  ],
+  "fusions": [
+    {
+      "id": "fusion_blade",
+      "name": "Lame à Fusion",
+      "rarity": "epic",
+      "description": "L'arc devient un anneau de flammes d'Aether actif en continu autour du joueur. Plus de cooldown.",
+      "requires": {
+        "weapon": "plasma_blade",
+        "weaponLevel": 5,
+        "passive": "thermal_core"
+      },
+      "stats": {
+        "damagePerSecond": 55,
+        "radius": 130,
+        "type": "continuous_ring",
+        "damageInterval": 0.15
+      },
+      "replaces": "plasma_blade"
+    },
+    {
+      "id": "rail_overcharged",
+      "name": "Rail Surchargé",
+      "rarity": "epic",
+      "description": "Tire en rafale automatique de 3 projectiles perforants qui traversent toute la ligne d'ennemis.",
+      "requires": {
+        "weapon": "impulse_cannon",
+        "weaponLevel": 5,
+        "passive": "capacitor"
+      },
+      "stats": {
+        "damage": 22,
+        "burstCount": 3,
+        "burstInterval": 0.12,
+        "cooldownBetweenBursts": 0.6,
+        "projectileSpeed": 600,
+        "piercing": true,
+        "piercingLimit": 0
+      },
+      "replaces": "impulse_cannon"
+    },
+    {
+      "id": "orbital_swarm",
+      "name": "Essaim Orbital",
+      "rarity": "epic",
+      "description": "L'essaim devient un tourbillon de 6 drones ultra-rapides en orbite large. Bouclier offensif permanent.",
+      "requires": {
+        "weapon": "drone_swarm",
+        "weaponLevel": 5,
+        "passive": "servo_motors"
+      },
+      "stats": {
+        "droneCount": 6,
+        "orbitSpeedDegPerSec": 280,
+        "orbitRadius": 95,
+        "damage": 24,
+        "damageInterval": 0.22
+      },
+      "replaces": "drone_swarm"
+    },
+    {
+      "id": "overload_aegis",
+      "name": "Égide de Surcharge",
+      "rarity": "epic",
+      "description": "Le champ devient une forteresse : rayon massif, knockback brutal, et chaque pulse régénère des PV.",
+      "requires": {
+        "weapon": "overload_field",
+        "weaponLevel": 5,
+        "passive": "reinforced_plating"
+      },
+      "stats": {
+        "damage": 18,
+        "radius": 200,
+        "knockbackPx": 80,
+        "cooldown": 1.0,
+        "healPercentPerPulse": 0.02
+      },
+      "replaces": "overload_field"
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+[gd_scene format=3 uid="uid://dqfaox8xvwra3"]
+
+[ext_resource type="Script" path="res://src/Weapons/DroneEntity.cs" id="1"]
+
+[sub_resource type="CircleShape2D" id="DroneHitbox"]
+radius = 8.0
+
+[node name="DroneEntity" type="Area2D"]
+script = ExtResource("1")
+collision_layer = 8
+collision_mask = 1
+
+[node name="Visual" type="Polygon2D" parent="."]
+color = Color(0.0, 0.8, 1.0, 1)
+polygon = PackedVector2Array(-5, 0, 0, -5, 5, 0, 0, 5)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("DroneHitbox")

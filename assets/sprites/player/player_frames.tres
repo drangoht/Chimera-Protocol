@@ -1,0 +1,77 @@
+[gd_resource type="SpriteFrames" load_steps=26 format=3]
+
+[ext_resource type="Texture2D" path="res://assets/sprites/player/player_idle_01.png" id="idle_01"]
+[ext_resource type="Texture2D" path="res://assets/sprites/player/player_idle_02.png" id="idle_02"]
+[ext_resource type="Texture2D" path="res://assets/sprites/player/player_idle_03.png" id="idle_03"]
+[ext_resource type="Texture2D" path="res://assets/sprites/player/player_idle_04.png" id="idle_04"]
+[ext_resource type="Texture2D" path="res://assets/sprites/player/player_run_right_01.png" id="run_r_01"]
+[ext_resource type="Texture2D" path="res://assets/sprites/player/player_run_right_02.png" id="run_r_02"]
+[ext_resource type="Texture2D" path="res://assets/sprites/player/player_run_right_03.png" id="run_r_03"]
+[ext_resource type="Texture2D" path="res://assets/sprites/player/player_run_right_04.png" id="run_r_04"]
+[ext_resource type="Texture2D" path="res://assets/sprites/player/player_run_right_05.png" id="run_r_05"]
+[ext_resource type="Texture2D" path="res://assets/sprites/player/player_run_right_06.png" id="run_r_06"]
+[ext_resource type="Texture2D" path="res://assets/sprites/player/player_run_down_01.png" id="run_d_01"]
+[ext_resource type="Texture2D" path="res://assets/sprites/player/player_run_down_02.png" id="run_d_02"]
+[ext_resource type="Texture2D" path="res://assets/sprites/player/player_run_down_03.png" id="run_d_03"]
+[ext_resource type="Texture2D" path="res://assets/sprites/player/player_run_down_04.png" id="run_d_04"]
+[ext_resource type="Texture2D" path="res://assets/sprites/player/player_run_down_05.png" id="run_d_05"]
+[ext_resource type="Texture2D" path="res://assets/sprites/player/player_run_down_06.png" id="run_d_06"]
+[ext_resource type="Texture2D" path="res://assets/sprites/player/player_death_01.png" id="death_01"]
+[ext_resource type="Texture2D" path="res://assets/sprites/player/player_death_02.png" id="death_02"]
+[ext_resource type="Texture2D" path="res://assets/sprites/player/player_death_03.png" id="death_03"]
+[ext_resource type="Texture2D" path="res://assets/sprites/player/player_death_04.png" id="death_04"]
+[ext_resource type="Texture2D" path="res://assets/sprites/player/player_death_05.png" id="death_05"]
+[ext_resource type="Texture2D" path="res://assets/sprites/player/player_death_06.png" id="death_06"]
+[ext_resource type="Texture2D" path="res://assets/sprites/player/player_death_07.png" id="death_07"]
+[ext_resource type="Texture2D" path="res://assets/sprites/player/player_death_08.png" id="death_08"]
+
+[resource]
+animations = [{
+"frames": [
+{"duration": 1.0, "texture": ExtResource("idle_01")},
+{"duration": 1.0, "texture": ExtResource("idle_02")},
+{"duration": 1.0, "texture": ExtResource("idle_03")},
+{"duration": 1.0, "texture": ExtResource("idle_04")}
+],
+"loop": true,
+"name": &"idle",
+"speed": 6.0
+}, {
+"frames": [
+{"duration": 1.0, "texture": ExtResource("run_r_01")},
+{"duration": 1.0, "texture": ExtResource("run_r_02")},
+{"duration": 1.0, "texture": ExtResource("run_r_03")},
+{"duration": 1.0, "texture": ExtResource("run_r_04")},
+{"duration": 1.0, "texture": ExtResource("run_r_05")},
+{"duration": 1.0, "texture": ExtResource("run_r_06")}
+],
+"loop": true,
+"name": &"run_right",
+"speed": 12.0
+}, {
+"frames": [
+{"duration": 1.0, "texture": ExtResource("run_d_01")},
+{"duration": 1.0, "texture": ExtResource("run_d_02")},
+{"duration": 1.0, "texture": ExtResource("run_d_03")},
+{"duration": 1.0, "texture": ExtResource("run_d_04")},
+{"duration": 1.0, "texture": ExtResource("run_d_05")},
+{"duration": 1.0, "texture": ExtResource("run_d_06")}
+],
+"loop": true,
+"name": &"run_down",
+"speed": 12.0
+}, {
+"frames": [
+{"duration": 1.0, "texture": ExtResource("death_01")},
+{"duration": 1.0, "texture": ExtResource("death_02")},
+{"duration": 1.0, "texture": ExtResource("death_03")},
+{"duration": 1.0, "texture": ExtResource("death_04")},
+{"duration": 1.0, "texture": ExtResource("death_05")},
+{"duration": 1.0, "texture": ExtResource("death_06")},
+{"duration": 1.0, "texture": ExtResource("death_07")},
+{"duration": 1.0, "texture": ExtResource("death_08")}
+],
+"loop": false,
+"name": &"death",
+"speed": 10.0
+}]

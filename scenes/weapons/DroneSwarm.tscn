@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://droneswarm001"]
+
+[ext_resource type="Script" path="res://src/Weapons/DroneSwarm.cs" id="1"]
+
+[node name="DroneSwarm" type="Node2D"]
+script = ExtResource("1")

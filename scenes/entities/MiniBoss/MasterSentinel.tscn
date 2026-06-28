@@ -1,0 +1,19 @@
+[gd_scene load_steps=4 format=3 uid="uid://miniboss_mastersentinel001"]
+
+[ext_resource type="Script" path="res://src/Entities/MiniBoss/MasterSentinel.cs" id="1"]
+[ext_resource type="SpriteFrames" path="res://assets/sprites/enemies/master_sentinel/master_sentinel_frames.tres" id="2"]
+
+[sub_resource type="CapsuleShape2D" id="MasterSentinelShape"]
+radius = 22.0
+height = 32.0
+
+[node name="MasterSentinel" type="CharacterBody2D"]
+script = ExtResource("1")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+sprite_frames = ExtResource("2")
+animation = &"idle"
+autoplay = "idle"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("MasterSentinelShape")

@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://teslacoil0001"]
+
+[ext_resource type="Script" path="res://src/Weapons/TeslaCoil.cs" id="1"]
+
+[node name="TeslaCoil" type="Node2D"]
+script = ExtResource("1")

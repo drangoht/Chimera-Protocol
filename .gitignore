@@ -1,0 +1,37 @@
+# Godot
+.godot/
+*.translation
+
+# Build
+build/
+*.exe
+*.pck
+*.zip
+
+# C# / .NET
+bin/
+obj/
+*.user
+.vs/
+.idea/
+*.suo
+*.userprefs
+
+# Mono / Rider
+.mono/
+data_*/
+
+# OS
+.DS_Store
+Thumbs.db
+# Test screenshots
+docs/test_screenshots/
+docs/balance_screenshots/
+docs/balance_v2_screenshots/
+docs/hud_review.png
+docs/menu_review.png
+docs/swarm_review.png
+docs/bestiary_review.png
+docs/arsenal_review.png
+docs/scene_review.png
+docs/*.png.import

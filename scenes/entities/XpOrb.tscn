@@ -1,0 +1,62 @@
+[gd_scene load_steps=7 format=3 uid="uid://xporb001"]
+
+[ext_resource type="Script" path="res://src/Entities/XpOrb.cs" id="1"]
+[ext_resource type="Texture2D" path="res://assets/sprites/vfx/vfx_particle_xp.png" id="2"]
+
+[sub_resource type="CircleShape2D" id="OrbShape"]
+radius = 8.0
+
+[sub_resource type="ParticleProcessMaterial" id="TrailMaterial"]
+direction = Vector3(0, 0, 0)
+spread = 0.0
+initial_velocity_min = 0.0
+initial_velocity_max = 0.0
+gravity = Vector3(0, 0, 0)
+color = Color(0.67, 1.0, 0.27, 0.8)
+
+[sub_resource type="Animation" id="PulseAnim"]
+resource_name = "pulse"
+length = 0.6
+loop_mode = 1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Visual:modulate")
+tracks/0/interp = 2
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.3, 0.6),
+"transitions": PackedFloat32Array(2, 2, 2),
+"update": 0,
+"values": [Color(0.4, 1.0, 0.2, 0.7), Color(0.4, 1.0, 0.2, 1.0), Color(0.4, 1.0, 0.2, 0.7)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimLib"]
+_data = {
+"pulse": SubResource("PulseAnim")
+}
+
+[node name="XpOrb" type="Area2D"]
+script = ExtResource("1")
+collision_layer = 4
+collision_mask = 1
+
+[node name="Visual" type="Polygon2D" parent="."]
+color = Color(0.4, 1.0, 0.2, 1)
+polygon = PackedVector2Array(-6, 0, 0, -6, 6, 0, 0, 6)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("OrbShape")
+
+[node name="Trail" type="GPUParticles2D" parent="."]
+amount = 4
+lifetime = 0.15
+one_shot = false
+emitting = false
+process_material = SubResource("TrailMaterial")
+texture = ExtResource("2")
+
+[node name="Anim" type="AnimationPlayer" parent="."]
+libraries = {
+"": SubResource("AnimLib")
+}

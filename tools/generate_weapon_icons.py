@@ -1,0 +1,178 @@
+"""Genere les icones 32x32 manquantes (style maison) pour les 2 nouvelles armes :
+- tesla_coil  : eclair cyan/blanc
+- aether_nova : detonation violette (anneau + rayons)
+Sortie : assets/sprites/ui/ui_icon_tesla.png et ui_icon_nova.png
+"""
+import os, math
+from PIL import Image
+
+S = 32
+ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), ".."))
+OUT = os.path.join(ROOT, "assets", "sprites", "ui")
+
+def canvas():
+    return Image.new("RGBA", (S, S), (0, 0, 0, 0))
+
+def put(img, x, y, c):
+    x, y = int(round(x)), int(round(y))
+    if 0 <= x < S and 0 <= y < S:
+        if len(c) == 3:
+            c = (c[0], c[1], c[2], 255)
+        base = img.getpixel((x, y))
+        a = c[3] / 255.0
+        img.putpixel((x, y), (
+            int(c[0]*a + base[0]*(1-a)),
+            int(c[1]*a + base[1]*(1-a)),
+            int(c[2]*a + base[2]*(1-a)),
+            max(base[3], c[3]),
+        ))
+
+def disc(img, cx, cy, r, c):
+    for y in range(int(cy-r-1), int(cy+r+2)):
+        for x in range(int(cx-r-1), int(cx+r+2)):
+            if (x-cx)**2 + (y-cy)**2 <= r*r:
+                put(img, x, y, c)
+
+def ring(img, cx, cy, r, w, c):
+    for y in range(int(cy-r-1), int(cy+r+2)):
+        for x in range(int(cx-r-1), int(cx+r+2)):
+            d2 = (x-cx)**2 + (y-cy)**2
+            if (r-w)**2 <= d2 <= r*r:
+                put(img, x, y, c)
+
+def line(img, x0, y0, x1, y1, c, w=1):
+    n = int(max(abs(x1-x0), abs(y1-y0))) + 1
+    for i in range(n+1):
+        t = i/n
+        x = x0 + (x1-x0)*t
+        y = y0 + (y1-y0)*t
+        for dx in range(-w, w+1):
+            for dy in range(-w, w+1):
+                if dx*dx+dy*dy <= w*w:
+                    put(img, x+dx, y+dy, c)
+
+# ---------------- Tesla : eclair cyan
+def gen_tesla():
+    img = canvas()
+    CY  = (70, 200, 255)
+    CY_G= (70, 200, 255, 70)
+    WH  = (235, 250, 255)
+    # zigzag de l'eclair
+    pts = [(20,3),(13,13),(18,15),(10,29)]
+    # halo
+    for i in range(len(pts)-1):
+        line(img, pts[i][0], pts[i][1], pts[i+1][0], pts[i+1][1], CY_G, w=2)
+    # coeur
+    for i in range(len(pts)-1):
+        line(img, pts[i][0], pts[i][1], pts[i+1][0], pts[i+1][1], CY, w=1)
+        line(img, pts[i][0], pts[i][1], pts[i+1][0], pts[i+1][1], WH, w=0)
+    # etincelles
+    for (x,y) in [(24,8),(7,18),(22,20),(5,25)]:
+        put(img, x, y, (CY[0],CY[1],CY[2],200))
+    img.save(os.path.join(OUT, "ui_icon_tesla.png"))
+    print("ui_icon_tesla.png")
+
+# ---------------- Nova : detonation violette
+def gen_nova():
+    img = canvas()
+    V   = (170, 68, 255)
+    VB  = (210, 150, 255)
+    VG  = (170, 68, 255, 60)
+    cx, cy = 16, 16
+    # halo
+    disc(img, cx, cy, 11, VG)
+    # anneau de choc
+    ring(img, cx, cy, 11, 2, (V[0],V[1],V[2],230))
+    ring(img, cx, cy, 7, 1, (VB[0],VB[1],VB[2],180))
+    # coeur lumineux
+    disc(img, cx, cy, 3, VB)
+    disc(img, cx, cy, 1, (255,255,255))
+    # rayons (8 directions)
+    for k in range(8):
+        a = math.pi*2*k/8
+        x0 = cx + math.cos(a)*5; y0 = cy + math.sin(a)*5
+        x1 = cx + math.cos(a)*14; y1 = cy + math.sin(a)*14
+        line(img, x0, y0, x1, y1, (VB[0],VB[1],VB[2],200), w=0)
+    img.save(os.path.join(OUT, "ui_icon_nova.png"))
+    print("ui_icon_nova.png")
+
+# ---------------- Volee Multiple : eventail de projectiles
+def gen_scatter():
+    img = canvas()
+    CY  = (70, 200, 255)
+    WH  = (235, 250, 255)
+    GLD = (255, 210, 90)
+    # emetteur en bas-centre
+    ex, ey = 16, 27
+    disc(img, ex, ey, 2, GLD)
+    # 3 projectiles en eventail vers le haut (-28, 0, +28 deg)
+    for ang in (-28, 0, 28):
+        a = math.radians(-90 + ang)  # -90 = vers le haut
+        # trainee
+        x1 = ex + math.cos(a)*16; y1 = ey + math.sin(a)*16
+        line(img, ex, ey, x1, y1, (CY[0],CY[1],CY[2],90), w=1)
+        # tete du projectile (petit losange)
+        hx = ex + math.cos(a)*16; hy = ey + math.sin(a)*16
+        for (dx,dy) in [(0,0),(1,0),(-1,0),(0,1),(0,-1)]:
+            put(img, hx+dx, hy+dy, CY)
+        put(img, hx, hy, WH)
+    img.save(os.path.join(OUT, "ui_icon_scatter.png"))
+    print("ui_icon_scatter.png")
+
+# ---------------- Essaim Orbital : drones en orbite (fusion epique, or)
+def gen_orbital():
+    img = canvas()
+    GLD  = (255, 210, 90)
+    GLD_G= (255, 210, 90, 60)
+    CY   = (90, 210, 255)
+    WH   = (235, 250, 255)
+    cx, cy = 16, 16
+    # halo + orbite doree
+    disc(img, cx, cy, 12, GLD_G)
+    ring(img, cx, cy, 11, 1, (GLD[0],GLD[1],GLD[2],180))
+    # coeur (joueur)
+    disc(img, cx, cy, 3, GLD)
+    disc(img, cx, cy, 1, WH)
+    # 6 drones cyan repartis sur l'orbite
+    for k in range(6):
+        a = math.pi*2*k/6
+        dx = cx + math.cos(a)*11; dy = cy + math.sin(a)*11
+        disc(img, dx, dy, 1.6, CY)
+        put(img, dx, dy, WH)
+    img.save(os.path.join(OUT, "ui_icon_orbital.png"))
+    print("ui_icon_orbital.png")
+
+# ---------------- Egide de Surcharge : bouclier-forteresse (fusion epique, or)
+def gen_aegis():
+    img = canvas()
+    GLD  = (255, 210, 90)
+    GLD_G= (255, 210, 90, 70)
+    V    = (170, 68, 255)
+    GRN  = (90, 255, 150)
+    WH   = (235, 250, 255)
+    cx, cy = 16, 15
+    GLD_D = (200, 150, 40)  # contour dore plus fonce
+    # champ exterieur = simple anneau violet (ne noie pas l'ecu)
+    ring(img, cx, 14, 14, 1, (V[0],V[1],V[2],120))
+    ring(img, cx, 14, 13, 1, (V[0],V[1],V[2],55))
+    # corps du bouclier (ecu dore PLEIN)
+    for y in range(3, 28):
+        if y < 7:
+            half = 9
+        else:
+            t = (y-7)/(27-7)
+            half = int(round(9*(1-t)))
+        for x in range(cx-half, cx+half+1):
+            edge = (x <= cx-half+0.5 or x >= cx+half-0.5 or y <= 4)
+            put(img, x, y, GLD_D if edge else GLD)
+    # croix de soin verte au centre
+    line(img, cx, 9, cx, 19, GRN, w=0)
+    line(img, cx-3, 14, cx+3, 14, GRN, w=0)
+    put(img, cx, 14, WH)
+    img.save(os.path.join(OUT, "ui_icon_aegis.png"))
+    print("ui_icon_aegis.png")
+
+if __name__ == "__main__":
+    gen_orbital()
+    gen_aegis()
+    print("Termine.")

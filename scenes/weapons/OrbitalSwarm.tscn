@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://c8orb1tsw4rm0"]
+
+[ext_resource type="Script" path="res://src/Weapons/OrbitalSwarm.cs" id="1"]
+
+[node name="OrbitalSwarm" type="Node2D"]
+script = ExtResource("1")

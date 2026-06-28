@@ -1,0 +1,140 @@
+{
+  "_comment": "meta_upgrades.json — Chimera Protocol. Source de vérité pour le système meta (Échos d'Aether). Chargé par MetaProgressionSystem au runtime. Toute modification ici est effective sans recompiler.",
+
+  "echoesFormula": {
+    "_comment": "Échos = floor(timeSurvived / timeDiv) + floor(killCount / killDiv) + (coresCollected * coreMult) + baseBonus",
+    "timeDiv": 20,
+    "killDiv": 10,
+    "coreMult": 5,
+    "baseBonus": 10,
+    "_calibration": {
+      "run_30s_0kills_0cores": 11,
+      "run_3min_120kills_4cores": 51,
+      "run_5min_250kills_8cores": 90,
+      "run_15min_600kills_25cores": 240
+    }
+  },
+
+  "runDurationSeconds": 900,
+
+  "aetherCores": {
+    "_comment": "Les Noyaux d'Aether sont distincts des orbes XP. Ramassage MANUEL par contact (rayon 20 px). Couleur placeholder violet #AA44FF.",
+    "periodicSpawnIntervalSeconds": 45,
+    "periodicSpawnPositionRule": "random_inside_arena_min_150px_from_walls",
+    "enemyDropRules": [
+      { "enemyId": "grafted_colossus", "dropCount": 1, "dropChance": 1.0 }
+    ],
+    "collectionRadiusPx": 20,
+    "autoMagnet": false,
+    "placeholderColor": "#AA44FF",
+    "_note_xp_orb_color": "#AAFF44 (jaune-vert) — bien distinct du violet Noyau"
+  },
+
+  "runEndConditions": {
+    "timerDisplay": "countdown",
+    "_comment_timer": "Affiché en compte à rebours 15:00 → 0:00 pour créer la tension.",
+    "onTimerReached0": {
+      "outcome": "extraction_success",
+      "label": "EXTRACTION REUSSIE",
+      "_comment": "Extraction forcée = victoire. Plus valorisante que la mort. Mêmes Échos calculés."
+    },
+    "onPlayerDeath": {
+      "outcome": "death",
+      "label": "MORT EN SERVICE"
+    },
+    "endScreen": {
+      "_comment": "L'écran de fin affiche les composantes animées une par une avant d'afficher le total.",
+      "components": [
+        { "id": "time_component",  "label": "Temps survécu",   "formula": "floor(timeSurvivedSeconds / 20)",  "displayUnit": "Échos" },
+        { "id": "kill_component",  "label": "Ennemis éliminés","formula": "floor(killCount / 10)",            "displayUnit": "Échos" },
+        { "id": "core_component",  "label": "Noyaux récupérés","formula": "coresCollected * 5",              "displayUnit": "Échos" },
+        { "id": "base_bonus",      "label": "Bonus de run",    "formula": "10",                              "displayUnit": "Échos" }
+      ],
+      "animationStyle": "sequential_countup",
+      "_comment_anim": "Chaque composante compte de 0 jusqu'à sa valeur en ~0.8 s, puis la suivante démarre. Total affiché après la dernière.",
+      "buttons": ["Retour au Hub", "Rejouer"]
+    }
+  },
+
+  "upgrades": [
+    {
+      "id": "hp_boost",
+      "name": "Corps Renforcé",
+      "description": "+20 HP maximum par niveau. Vous partez avec plus de marge de survie.",
+      "maxLevel": 4,
+      "costPerLevel": [80, 150, 250, 400],
+      "effectPerLevel": [20, 20, 20, 20],
+      "statTarget": "MaxHp",
+      "_designNote": "Niveau 1 atteignable en ~1 run moyenne (100-120 Échos). +80 HP total max = plafond confortable sans trivialiser."
+    },
+    {
+      "id": "damage_boost",
+      "name": "Calibration Offensive",
+      "description": "+1 dégât de base par niveau (s'applique à toutes les armes via DamageMultiplier additionnel de +10%).",
+      "maxLevel": 5,
+      "costPerLevel": [100, 180, 300, 450, 650],
+      "effectPerLevel": [0.10, 0.10, 0.10, 0.10, 0.10],
+      "statTarget": "DamageMultiplier",
+      "_designNote": "Exprimé en DamageMultiplier additif (+0.10 par niveau = +10%). Max +50% dégâts. Fort mais le scaling des ennemis compense sur les longues runs."
+    },
+    {
+      "id": "speed_boost",
+      "name": "Servos Améliorés",
+      "description": "+15 px/s à la vitesse de départ par niveau.",
+      "maxLevel": 3,
+      "costPerLevel": [90, 200, 350],
+      "effectPerLevel": [15, 15, 15],
+      "statTarget": "Speed",
+      "_designNote": "Vitesse de départ 200 px/s. Max avec 3 niveaux : 245 px/s. Plafond Servo-Moteurs en run reste 380 px/s — cet upgrade donne un avantage de manœuvrabilité dès le début sans exploser la courbe."
+    },
+    {
+      "id": "cooldown_reduction",
+      "name": "Synchronisation Aether",
+      "description": "-5% de cooldown sur toutes les armes par niveau dès le début de run.",
+      "maxLevel": 3,
+      "costPerLevel": [120, 250, 400],
+      "effectPerLevel": [0.05, 0.05, 0.05],
+      "statTarget": "CooldownReduction",
+      "_designNote": "CooldownReduction additif. Max permanent : -15%. En cumulant avec le passif Capaciteur (-38%), on reste dans le hardcap 0.15 s. Rend la montée en puissance plus fluide mais ne remplace pas le gameplay."
+    },
+    {
+      "id": "damage_reduction",
+      "name": "Blindage Composite",
+      "description": "-5% de dégâts reçus par niveau (cumulable avec la Plaque Renforcée, hardcap global 40%).",
+      "maxLevel": 3,
+      "costPerLevel": [150, 300, 500],
+      "effectPerLevel": [0.05, 0.05, 0.05],
+      "statTarget": "DamageReduction",
+      "_designNote": "DamageReduction additif. Max permanent : -15%. Hardcap global 40% inclut Plaque Renforcée (-20%). Coût élevé niveau 1 car effet défensif très puissant pour les joueurs agressifs."
+    },
+    {
+      "id": "starting_xp",
+      "name": "Mémoire Résiduelle",
+      "description": "Vous commencez chaque run avec 60 XP cumulés (niveau 2 immédiat, premier choix d'arme après ~10 s).",
+      "maxLevel": 1,
+      "costPerLevel": [200],
+      "effectPerLevel": [60],
+      "statTarget": "StartingXp",
+      "_designNote": "Accélérateur de fun : réduit la phase d'amorçage en début de run et compense les mauvaises runs courtes. 60 XP = seuil de niveau 2 (XP_TOTAL(1) = 60). MaxLevel 1 — n'a pas besoin de niveaux supplémentaires, l'effet est binaire."
+    },
+    {
+      "id": "starting_weapon_alt",
+      "name": "Prototype de Terrain",
+      "description": "Déverrouille l'Essaim de Drones comme arme de départ sélectionnable au Hub (en plus du Canon à Impulsions).",
+      "maxLevel": 1,
+      "costPerLevel": [300],
+      "effectPerLevel": [1],
+      "statTarget": "UnlockStartingWeapon",
+      "_designNote": "Valeur : drone_swarm. Débloque une variante de build qui ne serait autrement accessible qu'au niveau ~5-6 (rareté Rare). Coût élevé (300) = atteignable en ~2-3 runs, objectif de moyen terme. Renforce la rejouabilité par la variété de départ."
+    }
+  ],
+
+  "_implementationNotes": {
+    "statTarget_StartingXp": "Pas un champ de PlayerStats existant. MetaProgressionSystem doit injecter la valeur dans XpSystem.AddXp(startingXp) au début de la run, AVANT le premier _PhysicsProcess.",
+    "statTarget_UnlockStartingWeapon": "Pas un champ de PlayerStats. MetaProgressionSystem expose List<string> UnlockedStartingWeapons. HubScreen lit cette liste pour peupler le sélecteur d'arme de départ.",
+    "statTarget_DamageMultiplier": "DamageMultiplier est déjà dans PlayerStats. MetaProgressionSystem additionne les effets achetés à la valeur de base (1.0) avant le début de run.",
+    "statTarget_DamageReduction": "DamageReduction est déjà dans PlayerStats. Même logique additive. Respecter le hardcap 0.40 dans PlayerStats.ApplyDamageReduction().",
+    "statTarget_CooldownReduction": "CooldownReduction est déjà dans PlayerStats. Même logique additive. Hardcap 0.15 s par arme appliqué dans WeaponBase.GetEffectiveCooldown().",
+    "persistenceKey": "meta_upgrades dans user://save.json — structure : { 'upgrades': { 'hp_boost': 2, 'damage_boost': 1, ... }, 'totalEchoesEarned': 0, 'totalEchoesSpent': 0, 'currentEchoes': 0 }"
+  }
+}

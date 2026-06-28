@@ -1,0 +1,131 @@
+using Godot;
+using System.Collections.Generic;
+
+/// <summary>
+/// Réglages du jeu (audio, affichage, accessibilité), persistés dans
+/// <c>user://settings.cfg</c>. Autoload : charge et applique au démarrage.
+/// L'écran Options lit/écrit via les setters (qui appliquent + sauvegardent).
+/// </summary>
+public partial class GameSettings : Node
+{
+    public static GameSettings Instance { get; private set; } = null!;
+
+    private const string Path = "user://settings.cfg";
+
+    public enum GameDifficulty { Facile, Normal, Difficile }
+
+    public float          Master       { get; private set; } = 1.0f;
+    public float          Music        { get; private set; } = 0.8f;
+    public float          Sfx          { get; private set; } = 0.9f;
+    public bool           Fullscreen   { get; private set; } = false;
+    public bool           ShakeEnabled { get; private set; } = true;
+    public GameDifficulty Difficulty   { get; private set; } = GameDifficulty.Normal;
+
+    // Multiplicateurs de difficulté lus par EnemySpawner (ennemis) — Normal = 1.0.
+    public float EnemyDamageMult => Difficulty switch
+        { GameDifficulty.Facile => 0.6f, GameDifficulty.Difficile => 1.35f, _ => 1f };
+    public float EnemyHpMult => Difficulty switch
+        { GameDifficulty.Facile => 0.8f, GameDifficulty.Difficile => 1.30f, _ => 1f };
+    public float SpawnMult => Difficulty switch
+        { GameDifficulty.Facile => 0.7f, GameDifficulty.Difficile => 1.25f, _ => 1f };
+
+    // Biomes vaincus (boss final battu), clés "biomeId:difficulté". Sert au badge de l'écran de sélection.
+    private readonly HashSet<string> _completions = new();
+
+    public override void _Ready()
+    {
+        Instance = this;
+        Load();
+        Apply();
+    }
+
+    // ── Complétion des biomes (badge sélection de niveau) ──────────────────────
+    private static string CompletionKey(string biomeId, GameDifficulty d) => $"{biomeId}:{(int)d}";
+
+    /// <summary>Marque un biome comme vaincu à la difficulté donnée (boss final battu) et persiste.</summary>
+    public void RecordCompletion(string biomeId, GameDifficulty d)
+    {
+        if (biomeId.Length == 0) return;
+        if (_completions.Add(CompletionKey(biomeId, d))) Save();
+    }
+
+    /// <summary>Le biome a-t-il été vaincu à cette difficulté précise ?</summary>
+    public bool HasCompleted(string biomeId, GameDifficulty d) => _completions.Contains(CompletionKey(biomeId, d));
+
+    /// <summary>Le biome a-t-il été vaincu à n'importe quelle difficulté ?</summary>
+    public bool HasCompletedAny(string biomeId)
+    {
+        foreach (GameDifficulty d in System.Enum.GetValues<GameDifficulty>())
+            if (HasCompleted(biomeId, d)) return true;
+        return false;
+    }
+
+    // ── Setters (appliquent + sauvegardent) ───────────────────────────────────
+    public void SetMaster(float v)     { Master = Mathf.Clamp(v, 0f, 1f); ApplyAudio(); Save(); }
+    public void SetMusic(float v)      { Music  = Mathf.Clamp(v, 0f, 1f); ApplyAudio(); Save(); }
+    public void SetSfx(float v)        { Sfx    = Mathf.Clamp(v, 0f, 1f); ApplyAudio(); Save(); }
+    public void SetFullscreen(bool v)  { Fullscreen = v;   ApplyDisplay(); Save(); }
+    public void SetShake(bool v)       { ShakeEnabled = v; ScreenShake.Enabled = v; Save(); }
+    public void SetDifficulty(GameDifficulty d) { Difficulty = d; Save(); }
+
+    // ── Application ────────────────────────────────────────────────────────────
+    public void Apply()
+    {
+        ApplyAudio();
+        ApplyDisplay();
+        ScreenShake.Enabled = ShakeEnabled;
+    }
+
+    private void ApplyAudio()
+    {
+        int master = AudioServer.GetBusIndex("Master");
+        if (master >= 0) AudioServer.SetBusVolumeDb(master, Db(Master));
+        if (AudioSystem.Instance != null)
+        {
+            AudioSystem.Instance.MusicVolume = Music;
+            AudioSystem.Instance.SfxVolume   = Sfx;
+        }
+    }
+
+    private void ApplyDisplay()
+    {
+        DisplayServer.WindowSetMode(Fullscreen
+            ? DisplayServer.WindowMode.Fullscreen
+            : DisplayServer.WindowMode.Windowed);
+    }
+
+    private static float Db(float linear) => linear <= 0.001f ? -80f : Mathf.LinearToDb(linear);
+
+    // ── Persistance ────────────────────────────────────────────────────────────
+    private void Load()
+    {
+        var cfg = new ConfigFile();
+        if (cfg.Load(Path) != Error.Ok) return; // pas de fichier → défauts
+        Master       = (float)cfg.GetValue("audio",   "master",     Master).AsSingle();
+        Music        = (float)cfg.GetValue("audio",   "music",      Music).AsSingle();
+        Sfx          = (float)cfg.GetValue("audio",   "sfx",        Sfx).AsSingle();
+        Fullscreen   = cfg.GetValue("display", "fullscreen", Fullscreen).AsBool();
+        ShakeEnabled = cfg.GetValue("gameplay","shake",      ShakeEnabled).AsBool();
+        Difficulty   = (GameDifficulty)cfg.GetValue("gameplay", "difficulty", (int)Difficulty).AsInt32();
+
+        _completions.Clear();
+        foreach (string key in cfg.GetValue("progress", "completions", new string[0]).AsStringArray())
+            _completions.Add(key);
+    }
+
+    private void Save()
+    {
+        var cfg = new ConfigFile();
+        cfg.SetValue("audio",    "master",     Master);
+        cfg.SetValue("audio",    "music",      Music);
+        cfg.SetValue("audio",    "sfx",        Sfx);
+        cfg.SetValue("display",  "fullscreen", Fullscreen);
+        cfg.SetValue("gameplay", "shake",      ShakeEnabled);
+        cfg.SetValue("gameplay", "difficulty", (int)Difficulty);
+
+        var keys = new string[_completions.Count];
+        _completions.CopyTo(keys);
+        cfg.SetValue("progress", "completions", keys);
+        cfg.Save(Path);
+    }
+}

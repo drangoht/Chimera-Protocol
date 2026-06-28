@@ -1,0 +1,122 @@
+[gd_scene format=3 uid="uid://bill22xev3plw"]
+
+[ext_resource type="Script" path="res://src/UI/LevelUpScreen.cs" id="1"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hover0"]
+bg_color = Color(0.12, 0.12, 0.25, 0.9)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.267, 1, 0.933, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hover1"]
+bg_color = Color(0.12, 0.12, 0.25, 0.9)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.267, 1, 0.933, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hover2"]
+bg_color = Color(0.12, 0.12, 0.25, 0.9)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.267, 1, 0.933, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[node name="LevelUpScreen" type="CanvasLayer"]
+script = ExtResource("1")
+layer = 10
+
+[node name="Background" type="ColorRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.02, 0.02, 0.06, 0.88)
+
+[node name="LevelLabel" type="Label" parent="."]
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -200.0
+offset_top = 80.0
+offset_right = 200.0
+offset_bottom = 125.0
+text = "Niveau !"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 32
+theme_override_colors/font_color = Color(0.267, 1, 0.933, 1)
+
+[node name="Divider" type="ColorRect" parent="."]
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -200.0
+offset_top = 125.0
+offset_right = 200.0
+offset_bottom = 127.0
+color = Color(0.267, 1, 0.933, 0.5)
+
+[node name="Cards" type="HBoxContainer" parent="."]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -480.0
+offset_top = -150.0
+offset_right = 480.0
+offset_bottom = 170.0
+grow_horizontal = 2
+grow_vertical = 2
+alignment = 1
+
+[node name="Card0" type="Button" parent="Cards"]
+custom_minimum_size = Vector2(280, 320)
+text = "[Commun]\nNom\n\nDescription"
+autowrap_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.85, 0.95, 1)
+theme_override_styles/hover = SubResource("StyleBoxFlat_hover0")
+
+[node name="Card1" type="Button" parent="Cards"]
+custom_minimum_size = Vector2(280, 320)
+text = "[Commun]\nNom\n\nDescription"
+autowrap_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.85, 0.95, 1)
+theme_override_styles/hover = SubResource("StyleBoxFlat_hover1")
+
+[node name="Card2" type="Button" parent="Cards"]
+custom_minimum_size = Vector2(280, 320)
+text = "[Commun]\nNom\n\nDescription"
+autowrap_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.85, 0.95, 1)
+theme_override_styles/hover = SubResource("StyleBoxFlat_hover2")
+
+[node name="HintLabel" type="Label" parent="."]
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -200.0
+offset_top = 185.0
+offset_right = 200.0
+offset_bottom = 210.0
+text = "Clic pour choisir"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 14
+theme_override_colors/font_color = Color(0.5, 0.5, 0.7, 0.8)

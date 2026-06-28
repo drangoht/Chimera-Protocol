@@ -1,0 +1,229 @@
+[gd_scene load_steps=14 format=3 uid="uid://mainmenu001"]
+
+[ext_resource type="Script" path="res://src/UI/MainMenu.cs" id="1"]
+[ext_resource type="Texture2D" path="res://assets/sprites/ui/splash_art.png" id="2"]
+
+[sub_resource type="StyleBoxFlat" id="StyleNormal_Play"]
+bg_color = Color(0.05, 0.05, 0.12, 0.85)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.267, 1.0, 0.933, 0.8)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleHover_Play"]
+bg_color = Color(0.1, 0.1, 0.25, 0.95)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.667, 0.267, 1.0, 1.0)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StylePressed_Play"]
+bg_color = Color(0.03, 0.03, 0.08, 1.0)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.667, 0.267, 1.0, 1.0)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleNormal_Hub"]
+bg_color = Color(0.05, 0.05, 0.12, 0.85)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.267, 1.0, 0.933, 0.8)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleHover_Hub"]
+bg_color = Color(0.1, 0.1, 0.25, 0.95)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.667, 0.267, 1.0, 1.0)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StylePressed_Hub"]
+bg_color = Color(0.03, 0.03, 0.08, 1.0)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.667, 0.267, 1.0, 1.0)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleNormal_Quit"]
+bg_color = Color(0.05, 0.05, 0.12, 0.85)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.267, 1.0, 0.933, 0.8)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleHover_Quit"]
+bg_color = Color(0.1, 0.1, 0.25, 0.95)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.667, 0.267, 1.0, 1.0)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StylePressed_Quit"]
+bg_color = Color(0.03, 0.03, 0.08, 1.0)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.667, 0.267, 1.0, 1.0)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="Shader" id="VignetteShader"]
+code = "shader_type canvas_item;
+void fragment() {
+    vec2 uv = UV - vec2(0.5);
+    float vignette = smoothstep(0.35, 0.75, length(uv));
+    COLOR = vec4(0.0, 0.0, 0.0, vignette * 0.65);
+}
+"
+
+[sub_resource type="ShaderMaterial" id="VignetteMaterial"]
+shader = SubResource("VignetteShader")
+
+[node name="MainMenu" type="Control"]
+script = ExtResource("1")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Background" type="ColorRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.102, 0.102, 0.18, 1)
+
+[node name="SplashArt" type="TextureRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+texture = ExtResource("2")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="Vignette" type="ColorRect" parent="."]
+z_index = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+material = SubResource("VignetteMaterial")
+
+[node name="VBox" type="VBoxContainer" parent="."]
+z_index = 2
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -130.0
+offset_top = 222.0
+offset_right = 130.0
+offset_bottom = 655.0
+alignment = 1
+theme_override_constants/separation = 10
+
+[node name="PlayButton" type="Button" parent="VBox"]
+custom_minimum_size = Vector2(260, 60)
+text = "Jouer"
+theme_override_font_sizes/font_size = 20
+theme_override_colors/font_color = Color(0.8, 0.8, 1.0, 1)
+theme_override_styles/normal = SubResource("StyleNormal_Play")
+theme_override_styles/hover = SubResource("StyleHover_Play")
+theme_override_styles/pressed = SubResource("StylePressed_Play")
+theme_override_styles/focus = SubResource("StyleNormal_Play")
+
+[node name="HubButton" type="Button" parent="VBox"]
+custom_minimum_size = Vector2(260, 60)
+text = "Hub — Améliorations"
+theme_override_font_sizes/font_size = 20
+theme_override_colors/font_color = Color(0.8, 0.8, 1.0, 1)
+theme_override_styles/normal = SubResource("StyleNormal_Hub")
+theme_override_styles/hover = SubResource("StyleHover_Hub")
+theme_override_styles/pressed = SubResource("StylePressed_Hub")
+theme_override_styles/focus = SubResource("StyleNormal_Hub")
+
+[node name="BestiaryButton" type="Button" parent="VBox"]
+custom_minimum_size = Vector2(260, 56)
+text = "Bestiaire"
+theme_override_font_sizes/font_size = 20
+theme_override_colors/font_color = Color(0.8, 0.8, 1.0, 1)
+
+[node name="ArsenalButton" type="Button" parent="VBox"]
+custom_minimum_size = Vector2(260, 56)
+text = "Arsenal"
+theme_override_font_sizes/font_size = 20
+theme_override_colors/font_color = Color(0.8, 0.8, 1.0, 1)
+
+[node name="OptionsButton" type="Button" parent="VBox"]
+custom_minimum_size = Vector2(260, 56)
+text = "Options"
+theme_override_font_sizes/font_size = 20
+theme_override_colors/font_color = Color(0.8, 0.8, 1.0, 1)
+
+[node name="QuitButton" type="Button" parent="VBox"]
+custom_minimum_size = Vector2(260, 60)
+text = "Quitter"
+theme_override_font_sizes/font_size = 20
+theme_override_colors/font_color = Color(0.8, 0.8, 1.0, 1)
+theme_override_styles/normal = SubResource("StyleNormal_Quit")
+theme_override_styles/hover = SubResource("StyleHover_Quit")
+theme_override_styles/pressed = SubResource("StylePressed_Quit")
+theme_override_styles/focus = SubResource("StyleNormal_Quit")
+
+[node name="FadeOverlay" type="ColorRect" parent="."]
+z_index = 100
+process_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 1)

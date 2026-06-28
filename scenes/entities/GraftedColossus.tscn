@@ -1,0 +1,19 @@
+[gd_scene load_steps=4 format=3 uid="uid://blckx05vx0lgq"]
+
+[ext_resource type="Script" path="res://src/Entities/Enemies/GraftedColossus.cs" id="1"]
+[ext_resource type="SpriteFrames" path="res://assets/sprites/enemies/colossus/colossus_frames.tres" id="2"]
+
+[sub_resource type="RectangleShape2D" id="ColossusShape"]
+size = Vector2(24, 32)
+
+[node name="GraftedColossus" type="CharacterBody2D"]
+script = ExtResource("1")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+sprite_frames = ExtResource("2")
+animation = &"move"
+autoplay = "move"
+scale = Vector2(1, 1)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("ColossusShape")

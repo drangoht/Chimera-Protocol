@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://ct314nx873b8c"]
+
+[ext_resource type="Script" path="res://src/Weapons/RailOvercharged.cs" id="1"]
+
+[node name="RailOvercharged" type="Node2D"]
+script = ExtResource("1")

@@ -1,0 +1,69 @@
+[gd_resource type="SpriteFrames" load_steps=21 format=3]
+
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/sentinel/enemy_sentinel_idle_01.png" id="idle_01"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/sentinel/enemy_sentinel_idle_02.png" id="idle_02"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/sentinel/enemy_sentinel_idle_03.png" id="idle_03"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/sentinel/enemy_sentinel_idle_04.png" id="idle_04"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/sentinel/enemy_sentinel_move_01.png" id="move_01"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/sentinel/enemy_sentinel_move_02.png" id="move_02"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/sentinel/enemy_sentinel_move_03.png" id="move_03"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/sentinel/enemy_sentinel_move_04.png" id="move_04"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/sentinel/enemy_sentinel_move_05.png" id="move_05"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/sentinel/enemy_sentinel_move_06.png" id="move_06"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/sentinel/enemy_sentinel_attack_01.png" id="atk_01"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/sentinel/enemy_sentinel_attack_02.png" id="atk_02"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/sentinel/enemy_sentinel_attack_03.png" id="atk_03"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/sentinel/enemy_sentinel_attack_04.png" id="atk_04"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/sentinel/enemy_sentinel_death_01.png" id="death_01"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/sentinel/enemy_sentinel_death_02.png" id="death_02"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/sentinel/enemy_sentinel_death_03.png" id="death_03"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/sentinel/enemy_sentinel_death_04.png" id="death_04"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/sentinel/enemy_sentinel_death_05.png" id="death_05"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/sentinel/enemy_sentinel_death_06.png" id="death_06"]
+
+[resource]
+animations = [{
+"frames": [
+{"duration": 1.0, "texture": ExtResource("idle_01")},
+{"duration": 1.0, "texture": ExtResource("idle_02")},
+{"duration": 1.0, "texture": ExtResource("idle_03")},
+{"duration": 1.0, "texture": ExtResource("idle_04")}
+],
+"loop": true,
+"name": &"idle",
+"speed": 5.0
+}, {
+"frames": [
+{"duration": 1.0, "texture": ExtResource("move_01")},
+{"duration": 1.0, "texture": ExtResource("move_02")},
+{"duration": 1.0, "texture": ExtResource("move_03")},
+{"duration": 1.0, "texture": ExtResource("move_04")},
+{"duration": 1.0, "texture": ExtResource("move_05")},
+{"duration": 1.0, "texture": ExtResource("move_06")}
+],
+"loop": true,
+"name": &"move",
+"speed": 8.0
+}, {
+"frames": [
+{"duration": 1.0, "texture": ExtResource("atk_01")},
+{"duration": 1.0, "texture": ExtResource("atk_02")},
+{"duration": 1.0, "texture": ExtResource("atk_03")},
+{"duration": 1.0, "texture": ExtResource("atk_04")}
+],
+"loop": false,
+"name": &"attack",
+"speed": 12.0
+}, {
+"frames": [
+{"duration": 1.0, "texture": ExtResource("death_01")},
+{"duration": 1.0, "texture": ExtResource("death_02")},
+{"duration": 1.0, "texture": ExtResource("death_03")},
+{"duration": 1.0, "texture": ExtResource("death_04")},
+{"duration": 1.0, "texture": ExtResource("death_05")},
+{"duration": 1.0, "texture": ExtResource("death_06")}
+],
+"loop": false,
+"name": &"death",
+"speed": 10.0
+}]

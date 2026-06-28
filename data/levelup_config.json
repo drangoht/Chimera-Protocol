@@ -1,0 +1,89 @@
+{
+  "xpThresholds": {
+    "formula": "L<20: 5+(L-1)*10 | L=20: 390 (mur) | L>20: 208+(L-21)*13",
+    "description": "Inspire de Vampire Survivors (wiki datamine). Lineaire +10/niveau L1-L19 (identique VS), mur x2 a L20 (VS fait x4 mais run plus courte), +13/niveau endgame. L1=5 XP = 2 kills swarm.",
+    "source": "Module:Experience - vampire.survivors.wiki/w/Module:Experience",
+    "maxPlayerLevel": 30,
+    "precomputed": [
+      { "level": 1,  "xpToNext": 5,   "xpCumulative": 0    },
+      { "level": 2,  "xpToNext": 15,  "xpCumulative": 5    },
+      { "level": 3,  "xpToNext": 25,  "xpCumulative": 20   },
+      { "level": 4,  "xpToNext": 35,  "xpCumulative": 45   },
+      { "level": 5,  "xpToNext": 45,  "xpCumulative": 80   },
+      { "level": 6,  "xpToNext": 55,  "xpCumulative": 125  },
+      { "level": 7,  "xpToNext": 65,  "xpCumulative": 180  },
+      { "level": 8,  "xpToNext": 75,  "xpCumulative": 245  },
+      { "level": 9,  "xpToNext": 85,  "xpCumulative": 320  },
+      { "level": 10, "xpToNext": 95,  "xpCumulative": 405  },
+      { "level": 11, "xpToNext": 105, "xpCumulative": 500  },
+      { "level": 12, "xpToNext": 115, "xpCumulative": 605  },
+      { "level": 13, "xpToNext": 125, "xpCumulative": 720  },
+      { "level": 14, "xpToNext": 135, "xpCumulative": 845  },
+      { "level": 15, "xpToNext": 145, "xpCumulative": 980  },
+      { "level": 16, "xpToNext": 155, "xpCumulative": 1125 },
+      { "level": 17, "xpToNext": 165, "xpCumulative": 1280 },
+      { "level": 18, "xpToNext": 175, "xpCumulative": 1445 },
+      { "level": 19, "xpToNext": 185, "xpCumulative": 1620 },
+      { "level": 20, "xpToNext": 390, "xpCumulative": 1805 },
+      { "level": 21, "xpToNext": 208, "xpCumulative": 2195 },
+      { "level": 22, "xpToNext": 221, "xpCumulative": 2403 },
+      { "level": 23, "xpToNext": 234, "xpCumulative": 2624 },
+      { "level": 24, "xpToNext": 247, "xpCumulative": 2858 },
+      { "level": 25, "xpToNext": 260, "xpCumulative": 3105 }
+    ],
+    "designNote": "VS L1-L20 identiques (cumul L20 = 1805 XP dans les deux jeux). Mur L20 reduit (390 vs 795 dans VS) car run cible 15-20 min vs 30+ min dans VS. Valeurs L21+ propres au jeu."
+  },
+  "xpOrbValues": {
+    "byEnemyId": {
+      "rust_swarm":          3,
+      "corrupted_drone":     7,
+      "corrupted_sentinel":  20,
+      "grafted_colossus":    60
+    },
+    "magnetRadiusPx": 80,
+    "magnetSpeedPxPerSec": 300,
+    "magnetNote": "Orbes dans un rayon de 80 px aspirees automatiquement. Au-dela, le joueur doit les toucher physiquement."
+  },
+  "rarityWeights": {
+    "common": { "weight": 60, "colorHex": "#AAAAAA" },
+    "rare":   { "weight": 30, "colorHex": "#44AAFF" },
+    "epic":   { "weight": 10, "colorHex": "#CC44FF" }
+  },
+  "rarityByCard": {
+    "impulse_cannon":      "common",
+    "plasma_blade":        "common",
+    "drone_swarm":         "rare",
+    "overload_field":      "rare",
+    "tesla_coil":          "rare",
+    "aether_nova":         "epic",
+    "scatter_volley":      "rare",
+    "thermal_core":        "common",
+    "reinforced_plating":  "common",
+    "servo_motors":        "common",
+    "capacitor":           "rare",
+    "fusion_blade":        "epic",
+    "rail_overcharged":    "epic"
+  },
+  "cardSelectionRules": {
+    "cardCount": 3,
+    "rules": [
+      "Tirer 3 cartes distinctes depuis le pool disponible.",
+      "Pool disponible = armes non possedees + armes non au niveau max + passifs non possedes + passifs non au niveau max.",
+      "Jamais 2 cartes du meme id dans les 3 propositions.",
+      "Une fusion est forcee si conditions remplies depuis >= 1 niveau sans avoir ete proposee.",
+      "Si pool < 3 cartes uniques, completer avec un bonus de 50 XP a la place de la carte manquante."
+    ],
+    "fusionForceAfterLevels": 1
+  },
+  "levelUpScreenTiming": {
+    "pauseGame": true,
+    "cardScaleInDurationSec": 0.08,
+    "totalPerceivedDurationSec": 0.2,
+    "backgroundInstant": true
+  },
+  "spawnerScaling": {
+    "maxEnemiesFormula": "min(200, 8 + t_minutes * 12)",
+    "spawnIntervalFormula": "max(0.7, 2.0 - t_minutes * 0.087)",
+    "note": "t_minutes = temps ecoule depuis le debut du run en minutes. Demarre a 8 ennemis (corrige 2026-06-23, BUG-202)."
+  }
+}

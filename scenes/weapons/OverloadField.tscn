@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://dt7s7dnd76c45"]
+
+[ext_resource type="Script" path="res://src/Weapons/OverloadField.cs" id="1"]
+
+[node name="OverloadField" type="Node2D"]
+script = ExtResource("1")

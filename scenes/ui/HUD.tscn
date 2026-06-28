@@ -1,0 +1,7 @@
+[gd_scene format=3 uid="uid://hud001"]
+
+[ext_resource type="Script" uid="uid://c1k5g74itg5y5" path="res://src/UI/HUD.cs" id="1"]
+
+[node name="HUD" type="CanvasLayer" unique_id=1741098362]
+layer = 95
+script = ExtResource("1")

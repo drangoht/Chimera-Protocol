@@ -1,0 +1,191 @@
+[gd_scene load_steps=16 format=3 uid="uid://hubscreen001"]
+
+[ext_resource type="Script" path="res://src/UI/HubScreen.cs" id="1"]
+
+[sub_resource type="StyleBoxFlat" id="StyleNormal_Back"]
+bg_color = Color(0.05, 0.05, 0.12, 0.85)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.267, 1.0, 0.933, 0.8)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleHover_Back"]
+bg_color = Color(0.1, 0.1, 0.25, 0.95)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.667, 0.267, 1.0, 1.0)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StylePressed_Back"]
+bg_color = Color(0.03, 0.03, 0.08, 1.0)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.667, 0.267, 1.0, 1.0)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleNormal_Play"]
+bg_color = Color(0.05, 0.05, 0.12, 0.85)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.267, 1.0, 0.933, 0.8)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleHover_Play"]
+bg_color = Color(0.1, 0.1, 0.25, 0.95)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.667, 0.267, 1.0, 1.0)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StylePressed_Play"]
+bg_color = Color(0.03, 0.03, 0.08, 1.0)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.667, 0.267, 1.0, 1.0)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="Shader" id="VignetteShader"]
+code = "shader_type canvas_item;
+void fragment() {
+    vec2 uv = UV - vec2(0.5);
+    float vignette = smoothstep(0.35, 0.75, length(uv));
+    COLOR = vec4(0.0, 0.0, 0.0, vignette * 0.55);
+}
+"
+
+[sub_resource type="ShaderMaterial" id="VignetteMaterial"]
+shader = SubResource("VignetteShader")
+
+[node name="HubScreen" type="Control"]
+script = ExtResource("1")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Background" type="ColorRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.102, 0.102, 0.18, 1)
+
+[node name="Vignette" type="ColorRect" parent="."]
+z_index = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+material = SubResource("VignetteMaterial")
+
+[node name="VBox" type="VBoxContainer" parent="."]
+z_index = 2
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+offset_left = 60.0
+offset_top = 40.0
+offset_right = -60.0
+offset_bottom = -40.0
+
+[node name="TitleLabel" type="Label" parent="VBox"]
+text = "HUB — Améliorations Permanentes"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 30
+theme_override_colors/font_color = Color(0.267, 1.0, 0.933, 1.0)
+
+[node name="EchoesLabel" type="Label" parent="VBox"]
+text = "Échos disponibles : 0"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 24
+theme_override_colors/font_color = Color(1.0, 0.8, 0.267, 1.0)
+
+[node name="Separator" type="HSeparator" parent="VBox"]
+theme_override_colors/color = Color(0.267, 1.0, 0.933, 0.3)
+
+[node name="UpgradesList" type="VBoxContainer" parent="VBox"]
+size_flags_vertical = 3
+
+[node name="Separator2" type="HSeparator" parent="VBox"]
+theme_override_colors/color = Color(0.267, 1.0, 0.933, 0.3)
+
+[node name="WeaponSelector" type="HBoxContainer" parent="VBox"]
+visible = false
+
+[node name="WeaponLabel" type="Label" parent="VBox/WeaponSelector"]
+text = "Arme de départ : "
+theme_override_font_sizes/font_size = 18
+
+[node name="WeaponOptionButton" type="OptionButton" parent="VBox/WeaponSelector"]
+custom_minimum_size = Vector2(200, 0)
+theme_override_font_sizes/font_size = 18
+
+[node name="ButtonsRow" type="HBoxContainer" parent="VBox"]
+alignment = 1
+
+[node name="BackButton" type="Button" parent="VBox/ButtonsRow"]
+custom_minimum_size = Vector2(180, 52)
+text = "Retour"
+theme_override_font_sizes/font_size = 22
+theme_override_colors/font_color = Color(0.85, 0.85, 0.95, 1.0)
+theme_override_styles/normal = SubResource("StyleNormal_Back")
+theme_override_styles/hover = SubResource("StyleHover_Back")
+theme_override_styles/pressed = SubResource("StylePressed_Back")
+theme_override_styles/focus = SubResource("StyleNormal_Back")
+
+[node name="PlayButton" type="Button" parent="VBox/ButtonsRow"]
+custom_minimum_size = Vector2(220, 52)
+text = "Jouer"
+theme_override_font_sizes/font_size = 22
+theme_override_colors/font_color = Color(0.85, 0.85, 0.95, 1.0)
+theme_override_styles/normal = SubResource("StyleNormal_Play")
+theme_override_styles/hover = SubResource("StyleHover_Play")
+theme_override_styles/pressed = SubResource("StylePressed_Play")
+theme_override_styles/focus = SubResource("StyleNormal_Play")
+
+[node name="FadeOverlay" type="ColorRect" parent="."]
+z_index = 100
+process_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 1)

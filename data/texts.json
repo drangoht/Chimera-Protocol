@@ -1,0 +1,122 @@
+{
+  "weapons": {
+    "impulse_cannon": {
+      "name": "Canon à Impulsions",
+      "description": "Une relique de l'avant-Convergence, reconditionnée avec des circuits Aether soudés à l'arraché. Chaque impulsion porte encore la mémoire de ce qu'elle a autrefois protégé."
+    },
+    "plasma_blade": {
+      "name": "Lame Plasma",
+      "description": "Une lame de chaleur pure, condensée par une bobine greffée à même l'avant-bras de l'Arpenteur. Elle tranche dans la chair rouillée et dans le métal corrompu avec la même indifférence."
+    },
+    "drone_swarm": {
+      "name": "Essaim de Drones",
+      "description": "Des fragments d'automates récupérés sur les cadavres du Sanctuaire, reprogrammés pour tournoyer en orbite autour de l'Arpenteur. Leur loyauté durera jusqu'à la prochaine rupture de signal."
+    },
+    "overload_field": {
+      "name": "Champ de Surcharge",
+      "description": "Un condensateur Aether logé dans le sternum cyborg libère une onde de choc concentrique. L'onde repousse, brûle et désorganise — mais chaque décharge coûte un fragment d'intégrité cellulaire."
+    },
+    "fusion_blade": {
+      "name": "Lame à Fusion",
+      "description": "Quand la chaleur plasma rencontre un Noyau Thermique saturé, la distinction entre l'arme et le bras disparaît. L'anneau continu qui en résulte n'est plus tout à fait une arme : c'est une frontière entre l'Arpenteur et le monde."
+    },
+    "rail_overcharged": {
+      "name": "Rail Surchargé",
+      "description": "Le Canon à Impulsions, recâblé par un Capaciteur en surrégime, cesse de tirer des projectiles isolés pour cracher des rafales de lumière comprimée. La perforation est infinie — la Rouille Vivante, elle, ne l'est pas."
+    }
+  },
+  "passives": {
+    "thermal_core": {
+      "name": "Noyau Thermique",
+      "description": "Une cellule énergétique greffée dans la cavité thoracique, qui canalise la chaleur résiduelle de chaque attaque pour amplifier la suivante. Prérequis à la Lame à Fusion."
+    },
+    "reinforced_plating": {
+      "name": "Plaque Renforcée",
+      "description": "Des segments de blindage récupérés sur une Sentinelle détruite, rivetés sur les points vitaux de l'Arpenteur. La douleur est absente. La résistance, elle, est réelle."
+    },
+    "servo_motors": {
+      "name": "Servo-Moteurs",
+      "description": "Des actionneurs hydrauliques récupérés dans les profondeurs du Sanctuaire, implantés dans les membres inférieurs. L'Arpenteur court plus vite qu'un humain. Il n'est plus tout à fait humain."
+    },
+    "capacitor": {
+      "name": "Capaciteur",
+      "description": "Un accumulateur d'énergie Aether miniaturisé, interfacé au système de tir. Il réduit le temps de recharge en stockant le surplus d'énergie entre chaque décharge. Prérequis au Rail Surchargé."
+    }
+  },
+  "meta_upgrades": {
+    "hp_boost": {
+      "name": "Corps Renforcé",
+      "description": "Les Échos d'Aether financent une série de greffes structurelles entre les runs. Chaque couche de tissu synthétique ajoutée éloigne un peu plus l'Arpenteur de ce qu'il était."
+    },
+    "damage_boost": {
+      "name": "Calibration Offensive",
+      "description": "Une recalibration des circuits de ciblage et des émetteurs d'énergie, réalisée dans le calme relatif de l'enclave. Les ennemis tombent plus vite. Le Sanctuaire résiste quand même."
+    },
+    "speed_boost": {
+      "name": "Servos Améliorés",
+      "description": "Des composants de remplacement de meilleure facture pour les servo-moteurs implantés. La différence est subtile jusqu'au moment où elle ne l'est plus — et où l'Arpenteur survit grâce à elle."
+    },
+    "cooldown_reduction": {
+      "name": "Synchronisation Aether",
+      "description": "Un algorithme de résonance entre le flux Aether interne et les systèmes d'armes, affiné run après run. Moins d'attente entre les décharges. Plus de temps pour survivre."
+    },
+    "damage_reduction": {
+      "name": "Blindage Composite",
+      "description": "Des plaques supplémentaires, des polymères de récupération, des écrans énergétiques de fortune. Chaque amélioration achetée avec les Échos gagnés sur les morts précédentes."
+    },
+    "starting_xp": {
+      "name": "Mémoire Résiduelle",
+      "description": "L'Aether retient quelque chose des runs précédentes — pas des souvenirs, mais des réflexes, des trajectoires, la mémoire du corps. L'Arpenteur entre dans le Sanctuaire déjà plus fort qu'à sa première mission."
+    },
+    "starting_weapon_alt": {
+      "name": "Prototype de Terrain",
+      "description": "Les ingénieurs de l'enclave ont réussi à stabiliser un Essaim de Drones comme arme de départ. Fragile, imprévisible — mais disponible dès la première seconde d'une run."
+    }
+  },
+  "enemies": {
+    "rust_swarm": {
+      "name": "Essaim de Rouille",
+      "lore": "Fragments de machines brisées, réanimés par la Rouille Vivante en une colonie instinctive. Individuellement insignifiants, ils cherchent à recouvrir, étouffer et absorber. La Convergence les a créés sans le vouloir — des déchets technologiques auxquels l'Aether corrompu a donné une faim."
+    },
+    "corrupted_drone": {
+      "name": "Drone Corrompu",
+      "lore": "Autrefois des outils de surveillance ou de livraison, ces drones ont été colonisés par la Rouille Vivante depuis leurs circuits de navigation. Leur vol erratique n'est pas de la maladresse : c'est le conflit permanent entre leur programmation d'origine et la volonté parasite qui les habite désormais."
+    },
+    "corrupted_sentinel": {
+      "name": "Sentinelle Corrompue",
+      "lore": "Une unité de sécurité militaire d'avant la Convergence, figée dans son protocole de défense par deux siècles de Rouille. Elle ne reconnaît plus d'allié. Tout ce qui entre dans son périmètre devient une cible à neutraliser. Le projectile qu'elle tire porte encore le sceau de fabrication de l'armée humaine qui l'a construite."
+    },
+    "grafted_colossus": {
+      "name": "Colosse Greffé",
+      "lore": "Ce qui reste d'un humain après que la Rouille Vivante a eu le temps de travailler. La Rouille ne détruit pas — elle intègre. Chair, métal, circuit et os fusionnent en une masse qui avance, frappe et ne s'arrête pas. Les Noyaux d'Aether qui pulsent dans sa carcasse sont la seule raison pour laquelle l'Arpenteur prend le risque de l'affronter."
+    }
+  },
+  "ui": {
+    "run_end_death": "MORT EN SERVICE",
+    "run_end_death_subtitle": "L'Aether absorbe ta mémoire. Elle servira à la prochaine mission.",
+    "run_end_victory": "EXTRACTION REUSSIE",
+    "run_end_victory_subtitle": "Le Sanctuaire se referme derrière toi. Pour combien de temps encore ?",
+    "hub_title": "Enclave — Quartier des Arpenteurs",
+    "hub_echoes_label": "Echos d'Aether disponibles",
+    "hub_intro": "Les Echos que tu rapportes deviennent des greffes, des calibrations, des memoires. Depense-les bien — le prochain Sanctuaire ne sera pas plus clement.",
+    "main_menu_play": "Entrer dans le Sanctuaire",
+    "main_menu_hub": "Enclave (Ameliorations)",
+    "main_menu_quit": "Abandonner",
+    "hud_cores_label": "Noyaux",
+    "hud_echoes_run_label": "Echos collectes",
+    "levelup_bonus_xp": "+50 XP de reserve",
+    "run_timer_label": "Temps restant",
+    "run_stat_time": "Temps survécu",
+    "run_stat_kills": "Ennemis eliminés",
+    "run_stat_cores": "Noyaux recuperés",
+    "run_stat_bonus": "Bonus de run",
+    "run_stat_total": "TOTAL"
+  },
+  "splash": {
+    "title": "CHIMERA PROTOCOL",
+    "tagline": "Survive. Evolue. Ne reviens jamais le meme.",
+    "subtitle": "Un Sanctuaire en ruines. Une mission sans retour garanti. L'Aether comme seule arme contre la Rouille qui consume le monde.",
+    "tagline_alt_1": "La Rouille ne dort pas. Toi non plus.",
+    "tagline_alt_2": "Chaque greffe te rapproche de la victoire — ou de ce que tu combats."
+  }
+}

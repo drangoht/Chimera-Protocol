@@ -1,0 +1,310 @@
+using Godot;
+
+public partial class Player : CharacterBody2D
+{
+    [Export] public PlayerStats Stats { get; set; } = new PlayerStats();
+
+    [Signal] public delegate void HpChangedEventHandler(float current, float max);
+
+    private bool _isDead = false;
+    private AnimatedSprite2D? _sprite;
+    private PointLight2D?     _playerLight;
+    private Camera2D?         _camera;
+    private GpuParticles2D?   _trailParticles;
+
+    // Clignotement implants sous 25% HP
+    private float _blinkTimer = 0f;
+    private bool  _blinkOn    = true;
+
+    // Fenêtre d'invulnérabilité après un coup (façon Vampire Survivors) : empêche
+    // qu'une nuée superposée vide la barre de vie en une frame. Cap le DPS reçu.
+    private float       _invulnTimer = 0f;
+    private const float InvulnWindow = 0.45f;
+
+    private Tween? _hitTween;
+
+    private static Texture2D? _playerLightTex;
+
+    public override void _Ready()
+    {
+        _sprite = GetNodeOrNull<AnimatedSprite2D>("AnimatedSprite2D");
+        _sprite?.Play("idle");
+
+        _camera         = GetNodeOrNull<Camera2D>("Camera2D");
+        _trailParticles = GetNodeOrNull<GpuParticles2D>("Trail");
+
+        AddToGroup(Constants.GroupPlayer);
+        GameManager.Instance.RegisterPlayer(this);
+        AddPlayerLight();
+
+        // Enregistre la caméra dans ScreenShake
+        if (_camera != null)
+            ScreenShake.Instance?.SetCamera(_camera);
+
+        // Feedback level-up : shake + flash or
+        if (XpSystem.Instance != null)
+            XpSystem.Instance.LevelUp += OnLevelUp;
+    }
+
+    public override void _ExitTree()
+    {
+        if (XpSystem.Instance != null)
+            XpSystem.Instance.LevelUp -= OnLevelUp;
+    }
+
+    private void OnLevelUp(int newLevel)
+    {
+        ScreenShake.Instance?.Shake(6f, 0.20f);
+        HitFlash(0.15f, new Color(1f, 0.8f, 0.267f, 1f));
+        Heal(0.25f);
+    }
+
+    /// <summary>Restaure un pourcentage des HP max. Flash vert si HP < max avant soin.</summary>
+    public void Heal(float percent)
+    {
+        float amount = Stats.MaxHp * percent;
+        float before = Stats.CurrentHp;
+        Stats.CurrentHp = Mathf.Min(Stats.MaxHp, Stats.CurrentHp + amount);
+        EmitSignal(SignalName.HpChanged, Stats.CurrentHp, Stats.MaxHp);
+        if (Stats.CurrentHp > before)
+            HitFlash(0.2f, new Color(0.2f, 1f, 0.4f, 1f));
+    }
+
+    // Teinte d'identité du personnage sélectionné (posée par GameManager via ApplyCharacterVisual).
+    private Color _characterTint = new(0.267f, 1f, 0.933f); // aura cyan par défaut
+
+    /// <summary>
+    /// Applique la teinte d'identité du personnage : aura colorée + léger SelfModulate du sprite
+    /// (atténué vers le blanc pour préserver l'art). Appelée par GameManager.RegisterPlayer()
+    /// avant AddPlayerLight() — d'où le stockage dans un champ relu par AddPlayerLight().
+    /// </summary>
+    public void ApplyCharacterVisual(Color tint)
+    {
+        _characterTint = tint;
+        // Les sprites de perso sont dédiés (couleurs propres) → pas de teinte du sprite,
+        // seule l'aura prend la couleur d'identité.
+        if (_playerLight != null)
+            _playerLight.Color = tint;
+    }
+
+    /// <summary>Échange le SpriteFrames du joueur pour celui du personnage sélectionné.</summary>
+    public void SetCharacterFrames(string framesPath)
+    {
+        if (_sprite == null || string.IsNullOrEmpty(framesPath)) return;
+        var frames = GD.Load<SpriteFrames>(framesPath);
+        if (frames == null) return;
+        _sprite.SpriteFrames = frames;
+        _sprite.Play("idle");
+    }
+
+    private void AddPlayerLight()
+    {
+        _playerLightTex ??= MakeRadialLightTexture(128);
+        _playerLight = new PointLight2D
+        {
+            Name         = "PlayerLight",
+            Color        = _characterTint,
+            Energy       = 0.45f,
+            Texture      = _playerLightTex,
+            TextureScale = 4.0f,
+            BlendMode    = PointLight2D.BlendModeEnum.Add,
+        };
+        AddChild(_playerLight);
+    }
+
+    internal static Texture2D MakeRadialLightTexture(int size)
+    {
+        var gradient = new Gradient();
+        gradient.SetColor(0, Colors.White);
+        gradient.SetColor(1, new Color(1f, 1f, 1f, 0f));
+        return new GradientTexture2D
+        {
+            Gradient = gradient,
+            Width    = size,
+            Height   = size,
+            Fill     = GradientTexture2D.FillEnum.Radial,
+            FillFrom = new Vector2(0.5f, 0.5f),
+            FillTo   = new Vector2(1.0f, 0.5f),
+        };
+    }
+
+    public override void _PhysicsProcess(double delta)
+    {
+        if (_isDead) return;
+
+        if (_invulnTimer > 0f) _invulnTimer -= (float)delta;
+
+        var direction = Input.GetVector("ui_left", "ui_right", "ui_up", "ui_down");
+        Velocity = direction.Normalized() * Stats.Speed;
+        MoveAndSlide();
+        ClampToArena();
+
+        UpdateAnimation(direction);
+        UpdateHpBlink(delta);
+        UpdateTrail();
+        UpdateAura();
+    }
+
+    private void UpdateTrail()
+    {
+        if (_trailParticles == null) return;
+        bool isMoving = Velocity.LengthSquared() > 100f;
+        if (_trailParticles.Emitting != isMoving)
+            _trailParticles.Emitting = isMoving;
+    }
+
+    // Aura du joueur qui s'intensifie avec la puissance du build (« ça brille »).
+    private void UpdateAura()
+    {
+        if (_playerLight == null) return;
+        int power = InventorySystem.Instance?.TotalWeaponPower ?? 1;
+        float target = Mathf.Min(0.45f + power * 0.07f, 1.6f);
+        _playerLight.Energy        = Mathf.Lerp(_playerLight.Energy, target, 0.05f);
+        _playerLight.TextureScale  = Mathf.Min(4.0f + power * 0.18f, 7.5f);
+    }
+
+    // ─── Logique d'animation ─────────────────────────────────────────────────
+
+    private void UpdateAnimation(Vector2 direction)
+    {
+        if (_sprite == null) return;
+
+        if (direction == Vector2.Zero)
+        {
+            if (_sprite.Animation != "idle")
+                _sprite.Play("idle");
+            return;
+        }
+
+        // Deplacement : choisir run_right ou run_down selon direction dominante
+        // flip_h gere les directions miroir (gauche = droite inversee)
+        float absX = Mathf.Abs(direction.X);
+        float absY = Mathf.Abs(direction.Y);
+
+        if (absX >= absY)
+        {
+            // Horizontal dominant → run_right (flip_h si gauche)
+            if (_sprite.Animation != "run_right")
+                _sprite.Play("run_right");
+            _sprite.FlipH = direction.X < 0f;
+        }
+        else
+        {
+            // Vertical dominant
+            if (direction.Y > 0f)
+            {
+                // Vers le bas → run_down (pas de flip)
+                if (_sprite.Animation != "run_down")
+                    _sprite.Play("run_down");
+                _sprite.FlipH = false;
+            }
+            else
+            {
+                // Vers le haut → run_down flippe verticalement
+                // On reutilise run_down avec FlipV pour eviter un sprite supplementaire
+                if (_sprite.Animation != "run_down")
+                    _sprite.Play("run_down");
+                _sprite.FlipH = false;
+                // Note : flip vertical non supporte directement ici, approximation :
+                // on utilise run_right en le faisant pivoter via la rotation si besoin.
+                // Pour le MVP, run_down vers le haut est acceptable.
+            }
+        }
+    }
+
+    private void UpdateHpBlink(double delta)
+    {
+        if (_sprite == null) return;
+        if (Stats.CurrentHp > Stats.MaxHp * 0.25f)
+        {
+            // HP > 25% : implants toujours allumes
+            _sprite.Modulate = Colors.White;
+            _blinkTimer = 0f;
+            _blinkOn = true;
+            return;
+        }
+
+        // Clignotement : 0,4 s ON / 0,2 s OFF
+        _blinkTimer += (float)delta;
+        float period = _blinkOn ? 0.4f : 0.2f;
+        if (_blinkTimer >= period)
+        {
+            _blinkOn = !_blinkOn;
+            _blinkTimer = 0f;
+        }
+        // Modulate : pleine couleur quand ON, desature quand OFF
+        _sprite.Modulate = _blinkOn
+            ? Colors.White
+            : new Color(0.6f, 0.6f, 0.6f, 1f);
+    }
+
+    // ─── Arena clamp ─────────────────────────────────────────────────────────
+
+    private void ClampToArena()
+    {
+        float halfW = Constants.ArenaWidth  / 2f - Constants.WallThickness;
+        float halfH = Constants.ArenaHeight / 2f - Constants.WallThickness;
+        GlobalPosition = new Vector2(
+            Mathf.Clamp(GlobalPosition.X, -halfW, halfW),
+            Mathf.Clamp(GlobalPosition.Y, -halfH, halfH)
+        );
+    }
+
+    // ─── Degats et mort ──────────────────────────────────────────────────────
+
+    public void TakeDamage(float amount)
+    {
+        if (_isDead) return;
+        // Invulnérabilité : un seul coup encaissé par fenêtre, peu importe le nombre
+        // d'ennemis collés. C'est le levier qui rend les grosses nuées jouables.
+        if (_invulnTimer > 0f) return;
+        _invulnTimer = InvulnWindow;
+
+        Stats.CurrentHp = Mathf.Max(0f, Stats.CurrentHp - amount);
+        EmitSignal(SignalName.HpChanged, Stats.CurrentHp, Stats.MaxHp);
+
+        if (Stats.CurrentHp > 0f)
+        {
+            AudioSystem.Instance?.PlaySfx("sfx_player_hit");
+            HitFlash(0.1f);
+        }
+
+        if (Stats.CurrentHp <= 0f)
+            HandleDeath();
+    }
+
+    /// <summary>
+    /// Flash de dégâts blanc sur-exposé (défaut) ou couleur personnalisée (ex. or pour level-up).
+    /// </summary>
+    public void HitFlash(float duration, Color? flashColor = null)
+    {
+        var color = flashColor ?? new Color(5f, 5f, 5f, 1f);
+        _hitTween?.Kill();
+        _hitTween = CreateTween();
+        _hitTween.TweenProperty(this, "modulate", Colors.White, duration)
+                 .From(color);
+    }
+
+    private void HandleDeath()
+    {
+        if (_isDead) return;
+        _isDead = true;
+        GD.Print("Player died.");
+
+        // Screen shake mort joueur
+        ScreenShake.Instance?.Shake(20f, 0.50f);
+
+        // Animation death
+        if (_sprite != null)
+        {
+            _sprite.Play("death");
+            _sprite.Modulate = Colors.White;
+        }
+
+        // SFX et arret musique a la mort
+        AudioSystem.Instance?.PlaySfx("sfx_player_die");
+        AudioSystem.Instance?.StopMusic(fadeOutSec: 1.0f);
+
+        RunStatsTracker.Instance?.EndRun("death");
+    }
+}

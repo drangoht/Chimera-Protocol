@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://bfi1qjjwoh4vk"]
+
+[ext_resource type="Script" path="res://src/Weapons/FusionBlade.cs" id="1"]
+
+[node name="FusionBlade" type="Node2D"]
+script = ExtResource("1")

@@ -1,0 +1,231 @@
+{
+  "enemies": [
+    {
+      "id": "rust_swarm",
+      "name": "Essaim de Rouille",
+      "role": "fourrage",
+      "maxHp": 20,
+      "speed": 120,
+      "damagePerSecond": 5,
+      "xpValue": 3,
+      "contactRadius": 24,
+      "detectionRange": 9999,
+      "spawnStartMinute": 0,
+      "spawnWeight": 10,
+      "hpScalingPerMinute": 0.08,
+      "damageScalingPerMinute": 0.05,
+      "ai": {
+        "type": "straight_chase",
+        "description": "Fonce en ligne droite vers le joueur sans anticipation ni esquive. Degats de contact si distance < 24 px, toutes les secondes."
+      },
+      "colorPlaceholder": "rust_red"
+    },
+    {
+      "id": "corrupted_drone",
+      "name": "Drone Corrompu",
+      "role": "harceleur",
+      "maxHp": 15,
+      "speed": 220,
+      "damagePerSecond": 8,
+      "xpValue": 7,
+      "contactRadius": 20,
+      "detectionRange": 9999,
+      "spawnStartMinute": 2,
+      "spawnWeight": 7,
+      "hpScalingPerMinute": 0.07,
+      "damageScalingPerMinute": 0.06,
+      "ai": {
+        "type": "erratic_chase",
+        "description": "Se dirige vers le joueur mais devie aleatoirement de +/-45 degres toutes les 0.4-0.8 secondes. Tres rapide, tres fragile.",
+        "directionChangeIntervalMin": 0.4,
+        "directionChangeIntervalMax": 0.8,
+        "deviationAngleDegrees": 45
+      },
+      "colorPlaceholder": "purple"
+    },
+    {
+      "id": "corrupted_sentinel",
+      "name": "Sentinelle Corrompue",
+      "role": "pression_distance",
+      "maxHp": 45,
+      "speed": 70,
+      "damagePerProjectile": 12,
+      "xpValue": 20,
+      "contactRadius": 24,
+      "detectionRange": 500,
+      "preferredRange": 280,
+      "spawnStartMinute": 5,
+      "spawnWeight": 4,
+      "hpScalingPerMinute": 0.10,
+      "damageScalingPerMinute": 0.07,
+      "ai": {
+        "type": "ranged_kiter",
+        "description": "Se maintient a 200-350 px du joueur. Recule si le joueur s'approche a moins de 200 px. Tire un projectile toutes les 2.5 secondes.",
+        "shootCooldown": 2.5,
+        "projectileSpeed": 180,
+        "projectileLifetime": 3.0,
+        "retreatRange": 200,
+        "advanceRange": 350
+      },
+      "colorPlaceholder": "orange"
+    },
+    {
+      "id": "grafted_colossus",
+      "name": "Colosse Greffe",
+      "role": "bruiser",
+      "maxHp": 200,
+      "speed": 55,
+      "damagePerSecond": 20,
+      "xpValue": 60,
+      "contactRadius": 36,
+      "detectionRange": 9999,
+      "spawnStartMinute": 9,
+      "spawnWeight": 2,
+      "hpScalingPerMinute": 0.12,
+      "damageScalingPerMinute": 0.08,
+      "ai": {
+        "type": "slow_hunter",
+        "description": "Avance inexorablement vers le joueur. Frappe toutes les 1.5 secondes a portee de contact (36 px). Lent mais tres resistant.",
+        "shockwaveCooldown": 1.5
+      },
+      "colorPlaceholder": "dark_red"
+    },
+    {
+      "id": "rust_stalker",
+      "name": "Rodeur de Rouille",
+      "role": "mini_boss",
+      "isMinisBoss": true,
+      "maxHp": 300,
+      "speed": 85,
+      "damagePerSecond": 15,
+      "xpValue": 80,
+      "contactRadius": 32,
+      "detectionRange": 9999,
+      "spawnStartMinute": 12,
+      "spawnWeight": 1,
+      "maxSimultaneous": 1,
+      "minRespawnDelaySec": 180,
+      "hpScalingPerMinute": 0.10,
+      "damageScalingPerMinute": 0.07,
+      "ai": {
+        "type": "straight_chase",
+        "description": "Fonce en ligne droite vers le joueur. Araignee mecanique corrodee, 64x64 px. Lente mais tres resistante — necessite un build oriente DPS. Recompense : orbe XP or 80 XP + ecran choix d'arme 3 cartes."
+      },
+      "scaling": {
+        "hpPerMinute": 0.10,
+        "damagePerMinute": 0.07
+      },
+      "colorPlaceholder": "rust_intense",
+      "spriteSize": 64,
+      "animations": {
+        "idle": { "frames": 4, "loop": true },
+        "move": { "frames": 6, "loop": true },
+        "attack": { "frames": 5, "loop": false, "impactFrame": 3 },
+        "death": { "frames": 12, "loop": false }
+      },
+      "onDeath": {
+        "xpOrbColor": "#FFD700",
+        "xpOrbSize": 14,
+        "triggerWeaponChoiceScreen": true
+      }
+    },
+    {
+      "id": "master_sentinel",
+      "name": "Sentinelle Maitresse",
+      "role": "mini_boss",
+      "isMinisBoss": true,
+      "maxHp": 450,
+      "speed": 50,
+      "damagePerProjectile": 18,
+      "xpValue": 120,
+      "contactRadius": 36,
+      "detectionRange": 9999,
+      "spawnStartMinute": 16,
+      "spawnWeight": 1,
+      "maxSimultaneous": 1,
+      "minRespawnDelaySec": 180,
+      "hpScalingPerMinute": 0.12,
+      "damageScalingPerMinute": 0.08,
+      "ai": {
+        "type": "ranged_kiter",
+        "description": "Se maintient a 250-400 px du joueur. Tire 2 projectiles simultanement en eventail +/-12 degres toutes les 1.5 secondes. Recompense : orbe XP or 120 XP + ecran choix d'arme 3 cartes.",
+        "shootCooldown": 1.5,
+        "projectilesPerShot": 2,
+        "spreadAngleDegrees": 12,
+        "projectileSpeed": 200,
+        "projectileLifetime": 3.5,
+        "retreatRange": 250,
+        "advanceRange": 400
+      },
+      "scaling": {
+        "hpPerMinute": 0.12,
+        "damagePerMinute": 0.08
+      },
+      "colorPlaceholder": "metal_cold",
+      "spriteSize": 64,
+      "animations": {
+        "idle": { "frames": 4, "loop": true },
+        "move": { "frames": 6, "loop": true },
+        "attack": { "frames": 6, "loop": false, "flashFrames": [2, 4] },
+        "death": { "frames": 14, "loop": false }
+      },
+      "onDeath": {
+        "xpOrbColor": "#FFD700",
+        "xpOrbSize": 14,
+        "triggerWeaponChoiceScreen": true
+      }
+    },
+    {
+      "id": "aether_revenant",
+      "name": "Revenant d'Aether",
+      "role": "mini_boss",
+      "isMinisBoss": true,
+      "maxHp": 550,
+      "speed": 130,
+      "damagePerSecond": 18,
+      "xpValue": 180,
+      "contactRadius": 34,
+      "detectionRange": 9999,
+      "spawnStartMinute": 7,
+      "spawnWeight": 1,
+      "maxSimultaneous": 1,
+      "hpScalingPerMinute": 0.10,
+      "damageScalingPerMinute": 0.07,
+      "ai": {
+        "type": "lunging_chaser",
+        "description": "Mini-boss de mi-temps. Pourchasse vite le joueur avec des ruades periodiques (dash). Aura violette intense. A la mort : gros orbe XP (180) + ecran choix d'arme."
+      },
+      "onDeath": {
+        "xpOrbColor": "#AA44FF",
+        "triggerWeaponChoiceScreen": true
+      }
+    },
+    {
+      "id": "rusted_core",
+      "name": "Le Noyau Rouille",
+      "role": "boss",
+      "isBoss": true,
+      "maxHp": 1600,
+      "speed": 46,
+      "damagePerProjectile": 28,
+      "xpValue": 500,
+      "contactRadius": 44,
+      "detectionRange": 9999,
+      "spawnStartMinute": 13,
+      "spawnWeight": 1,
+      "maxSimultaneous": 1,
+      "hpScalingPerMinute": 0.12,
+      "damageScalingPerMinute": 0.08,
+      "ai": {
+        "type": "boss_core",
+        "description": "Boss de fin. Avance lentement et inexorablement, tire des salves radiales de projectiles toutes les 2.5 s et emet des ondes de choc. Tres resistant. Le vaincre termine la run en VICTOIRE : a la mort, 3 Noyaux d'Aether + explosion massive, puis ecran de fin extraction reussie (~1.4 s plus tard). Pas d'orbe XP ni de choix d'arme (la run se termine)."
+      },
+      "onDeath": {
+        "aetherCores": 3,
+        "endsRunVictory": true
+      }
+    }
+  ],
+  "scalingNote": "stat_finale = stat_base * (1 + t_minutes * hpScalingPerMinute). Multiplicateur applique par l'EnemySpawner avant instanciation.",
+  "spawnWeightNote": "spawnWeight est relatif aux ennemis deja dans le pool au moment du tirage. Normaliser la somme des poids actifs a chaque spawn."
+}
