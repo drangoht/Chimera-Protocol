@@ -94,7 +94,6 @@ public partial class RustStalker : EnemyBase
         PlayDeathSfx();
         SpawnXpOrb();
         TrySpawnHpOrb();
-        TrySpawnMagnet();
         SpawnDeathBurst();
         ScreenShake.Instance?.Shake(5f, 0.25f);
 
