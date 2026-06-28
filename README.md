@@ -8,7 +8,7 @@ Dans un monde ravagé par **la Rouille Vivante** (corruption mi-organique, mi-m�
 
 ## État du projet
 
-**Victoire par boss final + badge de complétion par biome** *(2026-06-28)*
+**Rééquilibrage boss + aimant aspirateur d'XP + nettoyage** *(2026-06-28)*
 
 | Phase | Statut | Contenu |
 |---|---|---|
@@ -26,7 +26,7 @@ Dans un monde ravagé par **la Rouille Vivante** (corruption mi-organique, mi-m�
 | HUD — assets concept cyberpunk | ✅ Livré | Extraction/retouche depuis concept `idea/idee_hud_chimera_core.png` (masquage HSV numpy) : barre XP 20 segments, hexagone LV 44×26, icône Chimera Core violet, cadre panneau stats tech (generated from scratch), cadre timer avec crochets, titres de panneau "CHIMERA PROTOCOL" / "NOYAUX AETHER" / "RUNTIME ENCRYPTED" |
 | Typographie pixel | ✅ Livré | Police **VT323** (pixel/terminal CRT, OFL) en rendu net (anti-aliasing désactivé) appliquée globalement via Theme — fin du texte "baveux" ; tailles HUD ré-accordées, glyphes spéciaux → ASCII |
 | Juice & densité VS | ✅ Livré | VFX scalés par niveau d'arme (brillance balles, impact bursts, flash), explosions de mort calibrées par tier + onde de choc, aura joueur croissante, screen shake d'impact ; arène éclaircie ; spawn façon Vampire Survivors (cap 300, courbe raide, lots + vagues) ; i-frames joueur (0.45 s) |
-| Boss & nouvelles armes | ✅ Livré | 2 armes 100% VFX (Bobine Tesla = éclair en chaîne, Nova d'Aether = détonation dilatante) ; mini-boss de mi-temps **Revenant d'Aether** (7 min, ruades) ; **boss de fin Le Noyau Rouillé** (13 min, HP base 1600 → ~4096 effectif après scaling temporel, salves radiales, 500 XP + 3 Noyaux + choix d'arme) |
+| Boss & nouvelles armes | ✅ Livré | 2 armes 100% VFX (Bobine Tesla = éclair en chaîne, Nova d'Aether = détonation dilatante) ; mini-boss de mi-temps **Revenant d'Aether** (7 min, ruades) ; **boss de fin Le Noyau Rouillé** (13 min, HP base 1600 — rééquilibré depuis, voir plus bas, salves radiales, 500 XP + 3 Noyaux + choix d'arme) |
 | Sprites dédiés boss | ✅ Livré | Sprites pixel art 64×64 dédiés générés (`tools/generate_boss_sprites.py`) : Revenant (spectre cyborg violet, bras-lames, dissolution) + Noyau Rouillé (titan rouille-or, noyau en fusion, surcharge) — fin de la réutilisation teintée |
 | Bestiaire & Arsenal | ✅ Livré | 2 rubriques au menu : **Bestiaire** (8 ennemis — sprite **animé** + tag + description) et **Arsenal** (8 armes + 4 passifs — icône + description). Icônes Tesla/Volée créées ; icônes sur les cartes de choix d'arme et dans les notifs HUD |
 | Lisibilité UI | ✅ Livré | Police principale **Share Tech Mono** (mono techno lisible, anti-aliasée) en remplacement de VT323 — texte et HUD nettement moins pixelisés ; tailles ré-accordées |
@@ -37,6 +37,10 @@ Dans un monde ravagé par **la Rouille Vivante** (corruption mi-organique, mi-m�
 | Intro narrative | ✅ Livré | Scène de boot jouant le lore en 5 temps, fondu enchaîné, **skippable** (toute touche → menu) |
 | HUD thématisé par biome | ✅ Livré | HUD reconstruit 100% en code, look minimal Cyberpunk 2077 ; coloré par l'accent du biome ; **scanlines CRT**, bandeau de loadout, chip de biome, animations discrètes (liseré qui respire, XP lerp, pop des Noyaux) |
 | **Victoire par boss final** | ✅ Livré | La run se gagne en **vainquant Le Noyau Rouillé** (plus d'auto-victoire au timer) ; **badge « VAINCU »** par biome/difficulté persisté dans `settings.cfg` — validé game-tester 5/5 |
+| **Rééquilibrage boss final** | ✅ Livré | Le Noyau Rouillé fondait en 3-9 s (anticlimax). PV de base **1600 → 12000** (≈**19 800 effectif** à 13 min en Normal), scaling abaissé — combat climactique ~25-30 s pour un build moyen. Hook debug `--debug-boss` (loadout de test + spawn boss isolé) pour mesurer le TTK. Décision documentée GDD §20 |
+| **Aimant aspirateur d'XP** | ✅ Livré | Nouvel item **`MagnetPickup`** qui, au contact, attire **toutes les orbes d'XP de l'arène** vers le joueur (façon Vampire Survivors). Apparition **programmée** (`MagnetSpawner`) : **max 3 fois/run**, à des moments aléatoires, dont **une proche de la fin** (~12-13 min). Fer à cheval gris+rouge, halo cyan |
+| **Suppression Nova d'Aether** | ✅ Livré | L'arme `aether_nova` retirée partout (données, code, scène, icône) — arsenal actif ramené à **6 armes** |
+| **Polish & fixes** | ✅ Livré | **Hitstops de mort retirés** sur mobs/mini-boss (le ralenti cassait le flow ; conservé sur le boss final = ponctuation de victoire) ; **musiques qui rebouclent** (menu/hub/run — `loop_mode=0` à l'import contourné par rebouclage code) ; page de store **itch.io** (`docs/ITCH_STORE_PAGE.md`) |
 
 ---
 
@@ -47,6 +51,7 @@ Dans un monde ravagé par **la Rouille Vivante** (corruption mi-organique, mi-m�
 - **3 personnages** : Chimera (cyborg), Titan-Gardien (robot), Vagabond (humain) — chacun avec stats, arme de signature et aura propres
 - **Montée de niveau** : choix entre 3 cartes (armes, passifs, fusions) à chaque level-up + restauration de 25% des HP max
 - **Drops HP** : les ennemis droppent aléatoirement un orbe rouge (losange) qui restaure 15% des HP max au contact
+- **Aimant** : un item (fer à cheval, halo cyan) apparaît jusqu'à 3 fois par run (dont une vers la fin) ; au contact, il aspire **toutes les orbes d'XP de l'arène** vers le joueur
 - **Fusions** : atteindre le niveau max d'une arme + posséder le passif prérequis débloque une forme évoluée qui transforme visuellement et mécaniquement l'arme
 - **Meta progression** : les Échos d'Aether gagnés en run s'investissent en améliorations permanentes (Hub)
 
@@ -60,10 +65,10 @@ Dans un monde ravagé par **la Rouille Vivante** (corruption mi-organique, mi-m�
 | **Revenant d'Aether** *(mini-boss mi-temps)* | Poursuite rapide + ruades, aura violette — drop arme | 550 | 180 🟣 | dès 7:00 |
 | Colosse Greffé | Bruiser lent, dégâts lourds + drop Noyau | 200 | 60 🟡 | dès 9:00 |
 | **Rôdeur de Rouille** *(mini-boss)* | Araignée 64×64, très résistant — drop arme | 300 | 80 🟡 | dès 12:00 |
-| **Le Noyau Rouillé** *(BOSS DE FIN)* | Salves radiales + ondes de choc — 3 Noyaux + drop arme | 1600¹ | 500 🟡 | dès 13:00 |
+| **Le Noyau Rouillé** *(BOSS DE FIN)* | Salves radiales + ondes de choc — 3 Noyaux + drop arme | 12000¹ | 500 🟡 | dès 13:00 |
 | **Sentinelle Maîtresse** *(mini-boss)* | Double tir ±12°, kiter — drop arme | 450 | 120 🟡 | dès 16:00 |
 
-> ¹ **PV de base.** L'`EnemySpawner` applique un scaling temporel `PV = base × (1 + t_min × hpScaling) × difficulté`. Le Noyau Rouillé arrivant à 13 min, son PV effectif est **≈4096 en Normal** (≈3277 Facile / ≈5325 Difficile). Idem pour les autres ennemis selon leur heure d'apparition.
+> ¹ **PV de base.** L'`EnemySpawner` applique un scaling temporel `PV = base × (1 + t_min × hpScaling) × difficulté` (boss `hpScaling = 0,05`). Le Noyau Rouillé arrivant à 13 min, son PV effectif est **≈19 800 en Normal** (≈15 840 Facile / ≈25 740 Difficile). Idem pour les autres ennemis selon leur heure d'apparition.
 
 ### Armes & passifs (10 cartes + fusions)
 
@@ -93,9 +98,9 @@ Dans un monde ravagé par **la Rouille Vivante** (corruption mi-organique, mi-m�
 chimera-protocol/
 ├── src/
 │   ├── Core/          GameManager, Constants
-│   ├── Entities/      Player, EnemyBase + 4 ennemis, XpOrb, AetherGeyser
-│   ├── Weapons/       4 armes actives + 2 fusions + Bullet
-│   ├── Systems/       XpSystem, InventorySystem, LevelUpSystem, EnemySpawner, GroundRenderer
+│   ├── Entities/      Player, EnemyBase + 4 ennemis + 3 mini-boss + boss, XpOrb, HpOrb, MagnetPickup, AetherGeyser
+│   ├── Weapons/       6 armes actives + 4 fusions + Bullet
+│   ├── Systems/       XpSystem, InventorySystem, LevelUpSystem, EnemySpawner, AetherCoreSpawner, MagnetSpawner, GroundRenderer
 │   ├── UI/            HUD, LevelUpScreen, RunEndScreen, HubScreen, MainMenu
 │   ├── VFX/           EnemyDeathBurst, ImpactBurst, FusionFlash, PlasmaArcFlash, MuzzleFlash, ShockwaveRing
 │   └── Systems/       ScreenShake (AutoLoad)

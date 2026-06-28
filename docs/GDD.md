@@ -108,6 +108,14 @@ Trois archétypes prévus à terme (un seul requis pour le MVP, cf. §13) :
   - Non magnétisé : le joueur doit marcher sur l'orbe (prise de risque intentionnelle)
   - PointLight2D rouge pulsant pour la lisibilité en combat dense
 
+### Item Aimant (aspiration d'XP) — ajouté 2026-06-28
+
+- **Aimant** (fer à cheval gris + pointes rouges, halo cyan pulsant) : **item à apparition programmée**, pas un drop d'ennemi.
+  - Apparition via `MagnetSpawner` (Node dans `Game.tscn`) : **au maximum 3 fois par run**, à des positions aléatoires dans l'arène (≥ 150 px des murs).
+  - Fenêtres temporelles : ~2-5 min, ~6-10 min, et **une « proche de la fin »** (~12-13 min, autour de l'arrivée du boss final). Aucune apparition après la fin de run.
+  - Effet au contact du joueur : attire **toutes les orbes d'XP présentes dans l'arène** vers lui (`XpOrb.ForceMagnet` → attraction à toute distance, ~2,5× la vitesse de magnétisation normale). Aspiration globale façon Vampire Survivors.
+  - Non magnétisé : le joueur doit marcher dessus (comme l'orbe HP).
+
 ### Choix de montée de niveau
 
 3 propositions aléatoires pondérées par rareté :
