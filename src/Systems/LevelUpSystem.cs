@@ -296,13 +296,7 @@ public partial class LevelUpSystem : Node
         return "";
     }
 
-    private static float RarityWeight(string rarity) => rarity switch
-    {
-        "common" => 60f,
-        "rare"   => 30f,
-        "epic"   => 10f,
-        _        => 60f,
-    };
+    private static float RarityWeight(string rarity) => RarityWeights.Weight(rarity);
 
     private bool IsReplacedByFusion(string weaponId, InventorySystem inv)
     {
@@ -407,35 +401,4 @@ public partial class LevelUpSystem : Node
             XpSystem.Instance.LevelUp -= OnLevelUp;
     }
 }
-
-// ---------------------------------------------------------------------------
-// DTO carte de level-up
-// ---------------------------------------------------------------------------
-public sealed class LevelUpCardData
-{
-    public string Id          { get; }
-    public string DisplayName { get; }
-    public string Description { get; }
-    public string Rarity      { get; }
-    public string CardType    { get; }   // "weapon" | "passive" | "fusion" | "xp_bonus"
-
-    public LevelUpCardData(string id, string displayName, string description, string rarity, string cardType)
-    {
-        Id          = id;
-        DisplayName = displayName;
-        Description = description;
-        Rarity      = rarity;
-        CardType    = cardType;
-    }
-
-    public Godot.Collections.Dictionary ToGodotDict()
-    {
-        var d = new Godot.Collections.Dictionary();
-        d["id"]           = Id;
-        d["display_name"] = DisplayName;
-        d["description"]  = Description;
-        d["rarity"]       = Rarity;
-        d["card_type"]    = CardType;
-        return d;
-    }
-}
+// Le DTO LevelUpCardData est dans src/Systems/LevelUpCardData.cs.

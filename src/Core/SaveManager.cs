@@ -69,19 +69,4 @@ public partial class SaveManager : Node
     }
 }
 
-// ---------------------------------------------------------------------------
-// DTOs de sauvegarde
-// ---------------------------------------------------------------------------
-
-public class SaveData
-{
-    public MetaSaveData Meta { get; set; } = new();
-}
-
-public class MetaSaveData
-{
-    public int CurrentEchoes     { get; set; } = 0;
-    public int TotalEchoesEarned { get; set; } = 0;
-    public int TotalEchoesSpent  { get; set; } = 0;
-    public System.Collections.Generic.Dictionary<string, int> Upgrades { get; set; } = new();
-}
+// Les DTOs SaveData / MetaSaveData sont dans src/Core/SaveData.cs (SRP : un type par fichier).

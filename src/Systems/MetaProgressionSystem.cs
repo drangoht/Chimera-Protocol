@@ -235,17 +235,4 @@ public partial class MetaProgressionSystem : Node
     }
 }
 
-// ---------------------------------------------------------------------------
-// DTO définition d'upgrade (interne au projet)
-// ---------------------------------------------------------------------------
-
-public sealed class MetaUpgradeDefinition
-{
-    public string Id          { get; set; } = "";
-    public string Name        { get; set; } = "";
-    public string Description { get; set; } = "";
-    public int    MaxLevel    { get; set; } = 1;
-    public string StatTarget  { get; set; } = "";
-    public List<int>    CostPerLevel   { get; set; } = new();
-    public List<double> EffectPerLevel { get; set; } = new();
-}
+// Le DTO MetaUpgradeDefinition est dans src/Systems/MetaUpgradeDefinition.cs.

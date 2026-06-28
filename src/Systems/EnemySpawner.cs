@@ -176,8 +176,8 @@ public partial class EnemySpawner : Node
         // On utilise ApplyScaling pour synchroniser _currentHp avec le MaxHp scalé.
         float hpMult  = GameSettings.Instance?.EnemyHpMult ?? 1f;
         float dmgMult = GameSettings.Instance?.EnemyDamageMult ?? 1f;
-        float scaledHp     = data.MaxHp  * (1f + tMinutes * data.HpScalingPerMinute) * hpMult;
-        float scaledDamage = data.Damage * (1f + tMinutes * data.DamageScalingPerMinute) * dmgMult;
+        float scaledHp     = EnemyScaling.Scaled(data.MaxHp,  tMinutes, data.HpScalingPerMinute,     hpMult);
+        float scaledDamage = EnemyScaling.Scaled(data.Damage, tMinutes, data.DamageScalingPerMinute, dmgMult);
         node.ApplyScaling(scaledHp, scaledDamage);
     }
 
@@ -253,19 +253,4 @@ public partial class EnemySpawner : Node
     }
 }
 
-// ---------------------------------------------------------------------------
-// DTO interne
-// ---------------------------------------------------------------------------
-internal sealed class EnemySpawnData
-{
-    public string Id                     { get; set; } = "";
-    public float  MaxHp                  { get; set; }
-    public float  Speed                  { get; set; }
-    public float  Damage                 { get; set; }
-    public int    XpValue                { get; set; }
-    public float  SpawnStartMinute       { get; set; }
-    public float  SpawnWeight            { get; set; }
-    public float  HpScalingPerMinute     { get; set; }
-    public float  DamageScalingPerMinute { get; set; }
-    public int    MaxSimultaneous        { get; set; } = 0; // 0 = illimité
-}
+// Le DTO EnemySpawnData est dans src/Systems/EnemySpawnData.cs.

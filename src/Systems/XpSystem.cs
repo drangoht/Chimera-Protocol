@@ -63,12 +63,5 @@ public partial class XpSystem : Node
     /// Mur à L20 (×2) pour marquer la mi-run, puis +13/niveau pour l'endgame.
     /// Source : Module:Experience dataminé sur le wiki VS officiel.
     /// </summary>
-    public static int XpThreshold(int level)
-    {
-        if (level < 20)
-            return 5 + (level - 1) * 10;   // identique VS : L1=5, L10=95, L19=185
-        if (level == 20)
-            return 390;                     // mur mi-run : 195 base ×2 (VS fait ×4, trop long pour nous)
-        return 208 + (level - 21) * 13;    // VS phase 2 : +13/niveau  L21=208, L30=325
-    }
+    public static int XpThreshold(int level) => XpCurve.Threshold(level);
 }

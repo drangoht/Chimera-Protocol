@@ -141,10 +141,8 @@ public partial class RunStatsTracker : Node
         var meta = MetaProgressionSystem.Instance;
         if (meta == null) return 10;
 
-        return (timeSecs / meta.EchoTimeDiv)
-             + (kills    / meta.EchoKillDiv)
-             + (cores    * meta.EchoCoreMult)
-             + meta.EchoBaseBonus;
+        return EchoFormula.Calculate(timeSecs, kills, cores,
+            meta.EchoTimeDiv, meta.EchoKillDiv, meta.EchoCoreMult, meta.EchoBaseBonus);
     }
 
     // ---------------------------------------------------------------------------

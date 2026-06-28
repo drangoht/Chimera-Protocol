@@ -84,6 +84,8 @@ recommandé.
 - L'export produit `build/ChimeraProtocol.exe` (PCK embarqué) + `build/data_ChimeraProtocol_windows_x86_64/` (runtime .NET 8, GodotSharp, assemblées). Les deux sont nécessaires pour distribuer le jeu. Le dossier `data_*/` est ignoré par git (`.gitignore`) — il est régénéré à chaque export.
 - Style de code : PascalCase classes/méthodes, `_camelCase` champs privés, `readonly` par défaut
 - Architecture : `src/` (logique C#) / `scenes/` (.tscn) / `assets/` (raw) / `data/` (JSON tuning)
+- **Logique pure testable** : `src/Core/Rules/` (`XpCurve`, `EchoFormula`, `EnemyScaling`, `DifficultyTuning`, `RarityWeights`) — classes statiques **sans dépendance Godot** ; les nœuds (XpSystem, RunStatsTracker, EnemySpawner, GameSettings, LevelUpSystem) y **délèguent** (SRP). DTOs séparés un par fichier (`SaveData`, `LevelUpCardData`, `MetaUpgradeDefinition`, `EnemySpawnData`).
+- **Tests unitaires** : `tests/ChimeraProtocol.Tests.csproj` (xUnit, projet séparé compilant `src/Core/Rules/*.cs` en standalone). Lancer : `dotnet test tests/ChimeraProtocol.Tests.csproj`. Le jeu **exclut `tests/`** de son build (`<Compile Remove="tests/**/*.cs" />`).
 - Singletons (AutoLoad Godot) : `GameManager`, `XpSystem`, `InventorySystem`, `LevelUpSystem`, `SaveManager`, `MetaProgressionSystem`, `AudioSystem`, `FusionFlash`
 - Données de tuning : `data/*.json`, chargées au runtime, modifiables sans recompiler
 - Sauvegarde : `user://save.json` via `FileAccess` Godot

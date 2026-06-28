@@ -25,13 +25,10 @@ public partial class GameSettings : Node
     public string Language { get; private set; } = "en";
     public static readonly string[] Languages = { "en", "fr", "es" };
 
-    // Multiplicateurs de difficulté lus par EnemySpawner (ennemis) — Normal = 1.0.
-    public float EnemyDamageMult => Difficulty switch
-        { GameDifficulty.Facile => 0.6f, GameDifficulty.Difficile => 1.35f, _ => 1f };
-    public float EnemyHpMult => Difficulty switch
-        { GameDifficulty.Facile => 0.8f, GameDifficulty.Difficile => 1.30f, _ => 1f };
-    public float SpawnMult => Difficulty switch
-        { GameDifficulty.Facile => 0.7f, GameDifficulty.Difficile => 1.25f, _ => 1f };
+    // Multiplicateurs de difficulté lus par EnemySpawner (ennemis) — délégués à DifficultyTuning.
+    public float EnemyDamageMult => DifficultyTuning.EnemyDamage((int)Difficulty);
+    public float EnemyHpMult     => DifficultyTuning.EnemyHp((int)Difficulty);
+    public float SpawnMult       => DifficultyTuning.Spawn((int)Difficulty);
 
     // Biomes vaincus (boss final battu), clés "biomeId:difficulté". Sert au badge de l'écran de sélection.
     private readonly HashSet<string> _completions = new();
