@@ -58,9 +58,9 @@ public partial class GraftedColossus : EnemyBase
                 burst.SetDeferred("global_position", _cachedDeathPos);
             }
 
-            // Screen shake + freeze frame + shockwave ring
+            // Screen shake + shockwave ring (pas de hitstop : le ralenti à la mort
+            // d'un mob récurrent nuit au flow de jeu)
             ScreenShake.Instance?.Shake(12f, 0.35f);
-            ScreenShake.Instance?.HitStop(0.05f);
             SpawnShockwaveRing();
 
             // Animation terminée : spawn de l'Aether Core puis destruction du nœud

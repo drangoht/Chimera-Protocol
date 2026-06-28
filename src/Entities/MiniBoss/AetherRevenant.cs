@@ -116,7 +116,7 @@ public partial class AetherRevenant : EnemyBase
         TrySpawnHpOrb();
         SpawnDeathBurst();
         ScreenShake.Instance?.Shake(7f, 0.3f);
-        ScreenShake.Instance?.HitStop(0.06f);
+        // Pas de hitstop à la mort : le ralenti casse le flow de jeu
 
         if (_sprite != null)
             _sprite.Play("death");
