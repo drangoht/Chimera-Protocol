@@ -103,6 +103,51 @@ public partial class GameManager : Node
             if (startXp > 0)
                 Callable.From(() => XpSystem.Instance?.AddXp(startXp)).CallDeferred();
         }
+
+        // Hook de debug --debug-boss : loadout de test + spawn immédiat du boss final.
+        // Différé pour laisser tous les _Ready de la scène passer (EnemySpawner doit avoir
+        // chargé enemies.json, les armes doivent pouvoir s'instancier proprement).
+        // Aucun effet sans le flag.
+        if (DebugHooks.BossDebug)
+            Callable.From(ApplyBossDebugHook).CallDeferred();
+    }
+
+    /// <summary>
+    /// Hook --debug-boss : équipe un loadout de test représentatif (5 armes niv.10 +
+    /// thermal_core ×1.45) et force le spawn immédiat du boss final à son PV réel (scaling t=13 min).
+    /// N'est appelé que si <see cref="DebugHooks.BossDebug"/> est vrai.
+    /// </summary>
+    private void ApplyBossDebugHook()
+    {
+        var player = PlayerInstance;
+        var inv = InventorySystem.Instance;
+        if (player == null || inv == null) return;
+
+        // 1) Loadout de référence du game-designer (cellule TTK ~28 s) : 5 armes au niveau 10.
+        const int DebugWeaponLevel = 10;
+        string[] weapons = { "impulse_cannon", "scatter_volley", "drone_swarm", "tesla_coil", "plasma_blade" };
+        foreach (var w in weapons)
+            for (int lvl = inv.WeaponLevels.GetValueOrDefault(w, 0); lvl < DebugWeaponLevel; lvl++)
+                inv.AddOrUpgradeWeapon(w);
+
+        // Noyau Thermique à ses 3 niveaux DÉFINIS (×1.45) — pas au max extrapolé (L20 = ×4.0,
+        // non représentatif). Aligne le DPS de test sur l'hypothèse d'équilibrage du game-designer.
+        const int DebugThermalLevel = 3;
+        for (int i = 0; i < DebugThermalLevel; i++)
+            inv.AddOrUpgradePassive("thermal_core");
+
+        // 2) Spawn immédiat du boss à son PV réel (même scaling temporel qu'à t=13 min).
+        var spawner = GetTree().GetFirstNodeInGroup(Constants.GroupEnemySpawner) as EnemySpawner;
+        if (spawner != null)
+        {
+            spawner.AmbientEnabled = false; // isole le boss : pas d'ennemis/XP parasites
+            spawner.DebugSpawnById("rusted_core", 13f);
+            GD.Print("[GameManager] --debug-boss : loadout de test équipé + rusted_core spawné isolé (t=13 min).");
+        }
+        else
+        {
+            GD.PrintErr("[GameManager] --debug-boss : EnemySpawner introuvable dans la scène.");
+        }
     }
 
     /// <summary>Appelé par EnemyBase.Die() pour notifier la fin d'un ennemi.</summary>

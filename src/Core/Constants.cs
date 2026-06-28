@@ -3,6 +3,7 @@ public static class Constants
     public const string GroupPlayer  = "player";
     public const string GroupEnemies = "enemies";
     public const string GroupXpOrbs  = "xp_orbs";
+    public const string GroupEnemySpawner = "enemy_spawner";
 
     public const int ArenaWidth    = 1920;
     public const int ArenaHeight   = 1216;

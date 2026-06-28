@@ -41,13 +41,45 @@ public partial class EnemySpawner : Node
 
     public override void _Ready()
     {
+        AddToGroup(Constants.GroupEnemySpawner);
         LoadEnemiesJson();
         PreloadScenes();
         _timer = 2f; // Premier spawn dans 2 s
     }
 
+    // -------------------------------------------------------------------------
+    // Debug (--debug-boss) — voir DebugHooks. Aucun effet sans le flag.
+    // -------------------------------------------------------------------------
+
+    /// <summary>
+    /// Quand false, le spawn ambiant (lots + vagues) est suspendu. Utilisé par le hook
+    /// --debug-boss pour isoler le boss (pas d'ennemis parasites, pas d'XP/level-up qui
+    /// faussent la mesure de TTK). N'a aucun effet hors debug.
+    /// </summary>
+    public bool AmbientEnabled { get; set; } = true;
+
+    /// <summary>
+    /// Force le spawn d'un ennemi par id, en lui appliquant le scaling temporel
+    /// de <paramref name="tMinutes"/> (réutilise <see cref="SpawnEnemy"/> et
+    /// donc <c>ApplyScaling</c>). Permet au hook --debug-boss de faire apparaître
+    /// le boss final à son PV réel sans attendre 13 min ni éditer enemies.json.
+    /// </summary>
+    public void DebugSpawnById(string id, float tMinutes)
+    {
+        foreach (var data in _enemyPool)
+        {
+            if (data.Id != id) continue;
+            SpawnEnemy(data, tMinutes);
+            return;
+        }
+        GD.PrintErr($"[EnemySpawner] DebugSpawnById : id introuvable « {id} ».");
+    }
+
     public override void _Process(double delta)
     {
+        // Mode --debug-boss : aucun spawn ambiant, seul le boss est présent.
+        if (!AmbientEnabled) return;
+
         _elapsed += (float)delta;
         float tMinutes      = _elapsed / 60f;
         float spawnInterval = Mathf.Max(0.3f, 1.0f - tMinutes * 0.06f);

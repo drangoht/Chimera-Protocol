@@ -84,6 +84,10 @@ public partial class AudioSystem : Node
         _musicPlayer.Bus       = "Master";
         _musicPlayer.VolumeDb  = LinearToDb(_musicVolume);
         AddChild(_musicPlayer);
+        // Les WAV importes ont loop_mode=0 (Godot 4.7 reinitialise loop_end=-1) : la piste
+        // s'arrete a la fin. On reboucle manuellement a la fin naturelle. Stop() (fondu sortant)
+        // n'emet pas Finished, donc seul un vrai bout-de-piste declenche le rebouclage.
+        _musicPlayer.Finished += OnMusicFinished;
 
         // Canal musique pour le fondu sortant
         _musicFadeOut          = new AudioStreamPlayer();
@@ -157,6 +161,16 @@ public partial class AudioSystem : Node
 
         // Fondu entrant
         FadeIn(_musicPlayer, fadeInSec, _musicVolume);
+    }
+
+    /// <summary>
+    /// Reboucle la piste courante a sa fin naturelle (les WAV importes ne bouclent pas).
+    /// Ne se declenche pas apres un StopMusic/fondu sortant (Stop() n'emet pas Finished).
+    /// </summary>
+    private void OnMusicFinished()
+    {
+        if (CurrentTrackId != null)
+            _musicPlayer.Play(0f);
     }
 
     /// <summary>Arrete la musique avec un fondu sortant optionnel.</summary>
