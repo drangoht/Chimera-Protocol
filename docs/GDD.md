@@ -1280,3 +1280,74 @@ Comportement attendu de `EnemySpawner` :
 - Barre de vie HUD mini-boss : validation DA requise pour l'intégration dans le HUD existant
   sans surcharger l'écran (placement suggéré : centré en haut, sous le timer).
 - Validation `directeur-artistique` requise avant production des SpriteFrames.
+
+## 20. Boss final — Le Noyau Rouillé (`rusted_core`) — équilibrage TTK
+
+> Spécifié le 2026-06-28 par l'agent `game-designer`. Valeurs runtime : `data/enemies.json`
+> (`rusted_core`). Le Noyau Rouillé est désormais **la condition de victoire** de la run (le vaincre
+> déclenche « EXTRACTION REUSSIE », cf. CLAUDE.md / `RustedCore.FinishDeath`). Il apparaît à 13 min.
+
+### 20.1 Problème constaté (2026-06-28)
+
+Le boss mourait en **3,5 à 8,6 s** = anticlimax. Cause : `maxHp` de base = 1600, mais l'`EnemySpawner`
+applique `PV = maxHp × (1 + t_min × hpScalingPerMinute) × EnemyHpMult`. À 13 min avec l'ancien
+scaling 0,12 : `1600 × (1 + 13×0,12) = 1600 × 2,56 = 4096` PV en Normal — dérisoire face à un build
+réaliste de 5 armes (~474 DPS niv.5, ~711 niv.10, ~1185 niv.20, hors `thermal_core` ×1,45).
+
+### 20.2 Cible de TTK décidée
+
+**Cible : ~25-30 s pour un build moyen (armes niveau ~10) en Normal**, soit **~20 000 PV effectifs**.
+
+Justification design :
+- La victoire ne se joue plus au timer : on peut kiter le boss indéfiniment, donc **la survie est le
+  vrai gate**, pas le DPS brut. Le rôle des PV du boss est de transformer le kill en **événement
+  climactique** : assez long pour ressentir des phases de fuite et la pression des adds (~180 ennemis
+  au cap à 13 min), assez court pour rester lisible dans le chaos.
+- < 10 s = anticlimax ; > ~45 s en combat dense = épuisant et le boss se « perd » visuellement. La
+  fenêtre 20-30 s est le pic d'intensité idéal pour un survivor.
+- On calibre sur le build **sans** `thermal_core` : un build min-maxé (avec ×1,45) tue ~30% plus vite,
+  ce qui est une récompense légitime de l'optimisation, pas un déséquilibre.
+
+### 20.3 Valeurs retenues (`data/enemies.json`)
+
+| Champ | Avant | Après | Raison |
+|---|---|---|---|
+| `maxHp` | 1600 | **12000** | Atteint ~20 000 PV effectifs en Normal à 13 min |
+| `hpScalingPerMinute` | 0,12 | **0,05** | Boss à **spawn fixe** (13 min) → le scaling n'est qu'un multiplicateur constant ; on l'abaisse pour rendre les PV prévisibles et robustes même si le joueur retarde le spawn (kite) |
+| `damagePerProjectile` | 28 | **26** | Léger trim : le combat dure ~5× plus longtemps → l'exposition aux salves radiales est multipliée. On baisse un peu pour que le combat ne devienne pas une pure course aux PV, sans le rendre inoffensif (~46 dmg/projectile reste ~30% d'une barre saine) |
+| `damageScalingPerMinute` | 0,08 | **0,06** | Idem, compense l'exposition prolongée |
+
+PV effectifs = `12000 × (1 + 13×0,05) × EnemyHpMult` = `12000 × 1,65 × mult` :
+- **Facile** (×0,8) : **15 840 PV** · **Normal** (×1,0) : **19 800 PV** · **Difficile** (×1,3) : **25 740 PV**
+
+Dégât projectile effectif = `26 × (1 + 13×0,06) × EnemyDamageMult` = `26 × 1,78 × mult` = 46,3 base :
+- Facile (×0,6) : **27,8** · Normal (×1,0) : **46,3** · Difficile (×1,35) : **62,5**
+
+### 20.4 Vérification TTK (PV effectifs ÷ DPS build, hors `thermal_core`)
+
+| Build | DPS | Facile (15 840) | **Normal (19 800)** | Difficile (25 740) |
+|---|---|---|---|---|
+| niv.5 | 474 | 33 s | 42 s | 54 s |
+| **niv.10** | 711 | 22 s | **28 s** | 36 s |
+| niv.20 | 1185 | 13 s | 17 s | 22 s |
+
+Avec `thermal_core` (×1,45) en Normal : niv.5 → 29 s, **niv.10 → 19 s**, niv.20 → 12 s.
+
+Lecture : la cellule de référence (**niv.10, Normal**) tombe à **28 s** (19 s avec `thermal_core`),
+pile dans la fenêtre 20-30 s visée. Les extrêmes sont cohérents : un build sur-optimisé niv.20 garde
+un vrai combat de 12-17 s en Normal ; un joueur sous-levelé (niv.5) sur Difficile met ~54 s — mais à
+ce stade il mourra probablement aux salves + adds avant de le tuer (le gate de survie fait son office,
+résultat « tu n'étais pas prêt » intentionnel).
+
+### 20.5 Évolution possible — mécanique de PHASES (brief pour `developpeur`, NON implémenté)
+
+Si le playtest juge qu'un long sac à PV manque de relief, on pourra ajouter des phases SANS toucher
+aux PV globaux. À traiter séparément par `developpeur` (hors périmètre data) :
+- **2 seuils de PV** (66% et 33%) déclenchant un changement de pattern : ex. phase 1 salves radiales
+  (actuel), phase 2 salves radiales **+ ondes de choc plus rapprochées**, phase 3 **invocation d'un
+  pack d'adds** + cadence de tir accrue.
+- **Brève invulnérabilité telegraphiée** (~1 s, flash + recharge du noyau) à chaque passage de phase,
+  pour marquer la bascule et créer une fenêtre de fuite/repositionnement.
+- Garder les PV totaux à 12000 base : les phases redistribuent l'intensité, elles n'allongent pas la
+  TTK. À valider lisibilité avec `directeur-artistique` (la bascule de phase doit être lisible dans le
+  chaos) et cohérence narrative avec `story-teller` (le Noyau « se surcharge » en mourant).
