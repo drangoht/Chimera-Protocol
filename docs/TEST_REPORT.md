@@ -2308,3 +2308,47 @@ Aucune régression détectée sur le HUD juicy suite à la régénération du sp
 ## Bugs / observations
 - **[BUG-301] (Mineur)** : `.import` des sprites titan/vagabond absents du commit `da32759` → export depuis clone neuf sans passe d'import = sprites magenta. **Corrigé 2026-06-27** (commit des `.import`).
 - **[OBS-1] (Design — game-designer)** : `HubScreen.OnPlayPressed` — si le sélecteur d'arme méta est visible, il écrase silencieusement l'arme de signature du perso (titan→drone_swarm, vagabond→plasma_blade). Comportement cohérent mais sans retour visuel. À trancher.
+
+---
+
+# Session 2026-06-28 — Vérification victoire boss (build exporté)
+
+**Version testée** : branche `main`, HEAD `0a50177`. Lancé via Godot 4.7 .NET sur `res://scenes/Game.tscn` (rendering-driver d3d12). Smoke-test `.exe` exporté déjà PASS (contexte établi).
+
+**Objet borné** : confirmer empiriquement le FLUX de victoire par boss final (le DPS n'est pas l'objet — analytiquement le boss ≈4096 PV à 13 min est tuable en ~3-9 s par un build correct).
+
+## Méthode
+Le bot auto-kite (`tools/screenshot_swarm.py`) ne concentre pas le feu sur une cible unique et meurt vers ~76 s sans vrai build → incapable de tuer un boss à PV réel. Le DPS n'étant pas l'objet, j'ai **découplé le test du DPS** pour exercer le FLUX :
+- Backup `data/enemies.json` → `/tmp/enemies.json.bak`.
+- Édition temporaire : `rusted_core` `spawnStartMinute` 13→0.5, `spawnWeight` 1→6, **`maxHp` 1600→30**, `speed` 46→120 (pour qu'il rejoigne vite le joueur). `rust_swarm` `spawnStartMinute` 0→99 (désactivé : boss = seule cible du canon + joueur survit sans pression).
+- Lancement `Game.tscn`, kite + clics centre les ~9 premières s (vider la file de level-up de départ « Mémoire Résiduelle »), puis arrêt des clics pour préserver l'écran de fin.
+- **Restauration** `data/enemies.json` depuis backup, vérifiée `git diff --quiet` = identique à HEAD. Aucun code touché.
+
+## Résultats (PASS)
+
+| # | Vérification | Statut | Observé |
+|---|---|---|---|
+| 1 | Boss tué → écran « EXTRACTION REUSSIE » (~1,4 s après) | PASS | Capture `docs/boss_combat.png` : titre cyan « EXTRACTION REUSSIE » + count-up « Temps survécu : +0 Échos », timer ~14:26 (boss spawn 30 s, mort ~33 s, victoire ~34 s). |
+| 2 | Pas de `LevelUpScreen` parasite (boss = 0 orbe XP) | PASS | Aucun overlay de level-up sur l'écran de victoire ; HUD figé LV 4. Cohérent avec `RustedCore.Die()` (pas de `SpawnXpOrb`). |
+| 3 | Badge « VAINCU » sur le biome joué | PASS | Biome tiré = Friche d'Aether. `settings.cfg [progress] completions=PackedStringArray("fournaise:1","aether:1")`. `LevelSelectScreen` (`docs/levelselect_vaincu.png`) affiche « VAINCU » doré sur Friche d'Aether ET Fournaise ; absent sur Sanctuaire/Givre. |
+| 4 | Persistance après redémarrage | PASS | Le badge est rendu par un **processus Godot neuf** (LevelSelectScreen lancé séparément) lisant `settings.cfg` sur disque → persistance cross-restart prouvée par construction. |
+| 5 | Non-régression : mort joueur → « MORT EN SERVICE » | PASS (code + artefact) | Chemin `Player.HandleDeath → RunStatsTracker.EndRun("death") → RunEndScreen` (`isVictory=false` → libellé rouge « MORT EN SERVICE »). Artefact `docs/death_test.png` confirme le rendu. Capture live cette session non obtenue : les runs ont tiré des biomes lents/faciles (Givre -18%, Fournaise) où le bot survit >2 min — non bloquant. |
+
+## Confirmations de code (lecture statique)
+- `RustedCore.Die()` : `EmitSignal(Died)` + `NotifyEnemyKilled` + SFX, **pas de `SpawnXpOrb`** (commentaire OBS-2), puis `_sprite.Play("death")`.
+- `OnAnimationFinished` (anim `death`) → `FinishDeath()` : explosion (3 ondes, flash, 3 Noyaux, shake/hitstop), `QueueFree()`, puis `tree.CreateTimer(1.4f, processAlways:true).Timeout += () => RunStatsTracker.Instance?.EndRun("extraction_success")`.
+- `RunStatsTracker.EndRun("extraction_success")` → `AudioSystem.StopMusic` + `GameSettings.RecordCompletion(CurrentBiomeId, Difficulty)` → `RunEndScreen` libellé cyan.
+- `RunStatsTracker._Process` : plus d'auto-victoire au timer (confirmé par commentaire).
+
+## Ce qui N'A PAS pu être vérifié par ce moyen
+- La tuabilité du boss **à PV réel** par le bot auto-kite (hors de portée du tool ; couvert analytiquement, hors objet ici).
+- La capture live d'un écran de mort cette session (biomes lents tirés au sort) — couvert par code + artefact existant.
+
+## Recommandation (developpeur)
+Pour une vérif empirique complète du combat de boss **sans bidouiller les données**, ajouter un **hook de debug** activable (ex. flag `--debug-boss` ou touche dev en build DEBUG) qui : (a) accorde un loadout 5 armes L5 + thermal_core, (b) spawn immédiatement `rusted_core` à PV réel. Cela permettrait de mesurer le TTK réel à l'écran et de valider l'explosion/transition sans toucher `enemies.json`. Sinon, conserver la procédure « boss rush » documentée ici (backup/restore impératifs).
+
+## État fichiers
+- `data/enemies.json` : **restauré, identique à HEAD** (`git diff --quiet` OK).
+- Aucun fichier source modifié.
+- `settings.cfg` : contient désormais `aether:1` (complétion légitime issue du test) — données utilisateur, non réversibles, sans impact.
+- Artefacts : `docs/boss_combat.png`, `docs/levelselect_vaincu.png`, `docs/death_test.png`.

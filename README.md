@@ -26,7 +26,7 @@ Dans un monde ravagé par **la Rouille Vivante** (corruption mi-organique, mi-m�
 | HUD — assets concept cyberpunk | ✅ Livré | Extraction/retouche depuis concept `idea/idee_hud_chimera_core.png` (masquage HSV numpy) : barre XP 20 segments, hexagone LV 44×26, icône Chimera Core violet, cadre panneau stats tech (generated from scratch), cadre timer avec crochets, titres de panneau "CHIMERA PROTOCOL" / "NOYAUX AETHER" / "RUNTIME ENCRYPTED" |
 | Typographie pixel | ✅ Livré | Police **VT323** (pixel/terminal CRT, OFL) en rendu net (anti-aliasing désactivé) appliquée globalement via Theme — fin du texte "baveux" ; tailles HUD ré-accordées, glyphes spéciaux → ASCII |
 | Juice & densité VS | ✅ Livré | VFX scalés par niveau d'arme (brillance balles, impact bursts, flash), explosions de mort calibrées par tier + onde de choc, aura joueur croissante, screen shake d'impact ; arène éclaircie ; spawn façon Vampire Survivors (cap 300, courbe raide, lots + vagues) ; i-frames joueur (0.45 s) |
-| Boss & nouvelles armes | ✅ Livré | 2 armes 100% VFX (Bobine Tesla = éclair en chaîne, Nova d'Aether = détonation dilatante) ; mini-boss de mi-temps **Revenant d'Aether** (7 min, ruades) ; **boss de fin Le Noyau Rouillé** (13 min, HP 1600, salves radiales, 500 XP + 3 Noyaux + choix d'arme) |
+| Boss & nouvelles armes | ✅ Livré | 2 armes 100% VFX (Bobine Tesla = éclair en chaîne, Nova d'Aether = détonation dilatante) ; mini-boss de mi-temps **Revenant d'Aether** (7 min, ruades) ; **boss de fin Le Noyau Rouillé** (13 min, HP base 1600 → ~4096 effectif après scaling temporel, salves radiales, 500 XP + 3 Noyaux + choix d'arme) |
 | Sprites dédiés boss | ✅ Livré | Sprites pixel art 64×64 dédiés générés (`tools/generate_boss_sprites.py`) : Revenant (spectre cyborg violet, bras-lames, dissolution) + Noyau Rouillé (titan rouille-or, noyau en fusion, surcharge) — fin de la réutilisation teintée |
 | Bestiaire & Arsenal | ✅ Livré | 2 rubriques au menu : **Bestiaire** (8 ennemis — sprite **animé** + tag + description) et **Arsenal** (9 armes + 4 passifs — icône + description). Icônes Tesla/Nova/Volée créées ; icônes sur les cartes de choix d'arme et dans les notifs HUD |
 | Lisibilité UI | ✅ Livré | Police principale **Share Tech Mono** (mono techno lisible, anti-aliasée) en remplacement de VT323 — texte et HUD nettement moins pixelisés ; tailles ré-accordées |
@@ -60,8 +60,10 @@ Dans un monde ravagé par **la Rouille Vivante** (corruption mi-organique, mi-m�
 | **Revenant d'Aether** *(mini-boss mi-temps)* | Poursuite rapide + ruades, aura violette — drop arme | 550 | 180 🟣 | dès 7:00 |
 | Colosse Greffé | Bruiser lent, dégâts lourds + drop Noyau | 200 | 60 🟡 | dès 9:00 |
 | **Rôdeur de Rouille** *(mini-boss)* | Araignée 64×64, très résistant — drop arme | 300 | 80 🟡 | dès 12:00 |
-| **Le Noyau Rouillé** *(BOSS DE FIN)* | Salves radiales + ondes de choc — 3 Noyaux + drop arme | 1600 | 500 🟡 | dès 13:00 |
+| **Le Noyau Rouillé** *(BOSS DE FIN)* | Salves radiales + ondes de choc — 3 Noyaux + drop arme | 1600¹ | 500 🟡 | dès 13:00 |
 | **Sentinelle Maîtresse** *(mini-boss)* | Double tir ±12°, kiter — drop arme | 450 | 120 🟡 | dès 16:00 |
+
+> ¹ **PV de base.** L'`EnemySpawner` applique un scaling temporel `PV = base × (1 + t_min × hpScaling) × difficulté`. Le Noyau Rouillé arrivant à 13 min, son PV effectif est **≈4096 en Normal** (≈3277 Facile / ≈5325 Difficile). Idem pour les autres ennemis selon leur heure d'apparition.
 
 ### Armes & passifs (11 cartes + 2 fusions)
 

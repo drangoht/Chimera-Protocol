@@ -67,13 +67,48 @@ Joue au minimum 3 minutes de run en testant activement :
 - Vérifier que la fusion est forcée si disponible depuis ≥ 1 niveau sans avoir été proposée
 - Vérifier le comportement de la fusion (rafale 3 projectiles, perforation)
 
-### 6. Tests de robustesse
+### 6. Test fin de run — victoire par boss final (CRITIQUE)
+
+⚠️ **La run ne se gagne PLUS au timer.** Le timer (`runDurationSeconds`) n'est qu'un décompte
+avant l'arrivée du boss `rusted_core` (~13 min). La **seule** condition de victoire est de
+**vaincre Le Noyau Rouillé** → `RunStatsTracker.EndRun("extraction_success")` → écran
+« EXTRACTION REUSSIE » + badge « VAINCU » persisté (`settings.cfg` section `progress`).
+Toute instruction parlant d'« extraction forcée à t=0 / t=15 min » est PÉRIMÉE — ne pas la suivre.
+
+**PV réel du boss ≠ valeur JSON.** `enemies.json` donne `maxHp:1600` mais `EnemySpawner`
+applique le scaling temporel : `PV_réel = 1600 × (1 + t_min × 0.12) × EnemyHpMult`.
+À 13 min : **≈4096 PV en Normal** (3277 Facile / 5325 Difficile). Toujours raisonner sur le PV réel.
+
+Deux méthodes, à utiliser ensemble :
+
+**(a) Vérification analytique du DPS (rapide, déterministe — fais-la EN PREMIER) :**
+- Lis `data/weapons.json`. Niveaux 1-5 définis ; 6-20 extrapolés `dmg_L = dmg_L5 × (1 + (L-5)×0.10)`,
+  mécaniques (projectiles/chaînes/drones) plafonnées au niveau 5.
+- Calcule le DPS single-target vs le boss du build (somme des armes équipées), applique le
+  `DamageMultiplier` (thermal_core = +0.15/niveau, ×1.45 maxé).
+- Compare : `TTK = PV_réel / DPS`. Repère : un build modeste 5 armes L5 ≈ 470 DPS → TTK ~9 s ;
+  L20 ≈ 1185 DPS → TTK ~3,5 s. **Si TTK < 3 s → boss trop facile (anticlimax) ; > 60 s → trop grindy.**
+  Remonte au `game-designer` si hors de [4 s, 30 s].
+
+**(b) Vérification empirique (atteindre réellement le boss) :**
+- Le bot auto-kite (`tools/screenshot_swarm.py`) meurt vers ~76 s sans vraies armes → inadapté tel quel.
+- Procédure « boss rush » : **backup** `data/enemies.json`, baisse temporairement `rusted_core`
+  `spawnStartMinute` (ex. 0.5) ET `spawnWeight` (ex. 6), réduis la pression early (Facile via
+  `GameSettings`, ou baisse `maxEnemies`/vagues dans `EnemySpawner`) pour survivre jusqu'au boss,
+  capture via `tools/screenshot_swarm.py` (`CAP_AT`/`NOCLICK`). **RESTAURE le backup ensuite.**
+- Coche : la mort du boss déclenche l'explosion → écran « EXTRACTION REUSSIE » (~1,4 s après),
+  PAS de `LevelUpScreen` parasite (pas d'orbe XP 500), badge « VAINCU » présent sur le biome dans
+  `LevelSelectScreen`, et **persistant après redémarrage** du jeu.
+- Non-régression : une mort joueur affiche toujours « MORT EN SERVICE ».
+
+### 7. Tests de robustesse
 - Mourir très tôt (< 30 s) → vérifier ≥ 10 Échos minimum
-- Atteindre t=15 min (ou modifier `runDurationSeconds` dans `data/meta_upgrades.json` à 30 pour accélérer) → vérifier extraction forcée
 - Acheter toutes les améliorations du Hub jusqu'à épuisement des Échos → vérifier que les boutons sont grisés
 - Vérifier comportement si `user://save.json` est absent (premier lancement)
+- Vérifier le `.exe` exporté (`build/ChimeraProtocol.exe`) : se lance sans crash (piège `.sln`
+  manquant = assembly C# absente → crash immédiat), autoloads OK dans la console.
 
-### 7. Rapport de bugs
+### 8. Rapport de bugs
 
 Pour chaque bug ou incohérence trouvé, documente :
 ```
@@ -87,7 +122,7 @@ Hypothèse : (cause probable si évidente)
 Assigné à : developpeur | game-designer
 ```
 
-### 8. Remontée aux agents
+### 9. Remontée aux agents
 
 - **Bug C# / comportement incorrect d'un système** → rédige un briefing précis pour `developpeur`
   en incluant : fichier concerné, ligne approximative, comportement observé vs attendu.
