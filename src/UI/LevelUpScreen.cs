@@ -52,6 +52,9 @@ public partial class LevelUpScreen : CanvasLayer
 
         BuildActionButtons();
 
+        var hint = GetNodeOrNull<Label>("HintLabel");
+        if (hint != null) hint.Text = Loc.T("LEVELUP_HINT");
+
         // L'écran démarre caché
         Visible = false;
 
@@ -90,12 +93,9 @@ public partial class LevelUpScreen : CanvasLayer
 
         bool isWeaponDrop = LevelUpSystem.Instance?.IsWeaponDrop ?? false;
         if (isWeaponDrop)
-            _labelLevel.Text = "Butin de mini-boss !";
+            _labelLevel.Text = Loc.T("LEVELUP_MINIBOSS");
         else
-        {
-            int level = XpSystem.Instance.CurrentLevel;
-            _labelLevel.Text = $"Niveau {level} !";
-        }
+            _labelLevel.Text = Loc.T("LEVELUP_TITLE", XpSystem.Instance.CurrentLevel);
 
         ApplyCards(cards);
         UpdateActionButtons();
@@ -286,11 +286,11 @@ public partial class LevelUpScreen : CanvasLayer
 
         // Visible uniquement si l'amélioration est possédée (sinon l'écran reste épuré).
         _rerollButton.Visible  = (meta?.GetUpgradeLevel("reroll") ?? 0) > 0;
-        _rerollButton.Text     = $"Renouveler ({rerolls})";
+        _rerollButton.Text     = Loc.T("LEVELUP_REROLL", rerolls);
         _rerollButton.Disabled = rerolls <= 0;
 
         _skipButton.Visible  = (meta?.GetUpgradeLevel("skip") ?? 0) > 0;
-        _skipButton.Text     = $"Passer ({skips})";
+        _skipButton.Text     = Loc.T("LEVELUP_SKIP", skips);
         _skipButton.Disabled = skips <= 0;
 
         SetupActionFocus();
@@ -340,9 +340,9 @@ public partial class LevelUpScreen : CanvasLayer
 
     private static string RarityLabel(string rarity) => rarity switch
     {
-        "common" => "Commun",
-        "rare"   => "Rare",
-        "epic"   => "Épique",
+        "common" => Loc.T("RARITY_COMMON"),
+        "rare"   => Loc.T("RARITY_RARE"),
+        "epic"   => Loc.T("RARITY_EPIC"),
         _        => rarity,
     };
 

@@ -80,7 +80,7 @@ public partial class PauseScreen : CanvasLayer
         margin.AddChild(root);
 
         // Titre
-        root.AddChild(Lbl("⏸  PAUSE", 26, _cyan, center: true));
+        root.AddChild(Lbl("⏸  " + Loc.T("PAUSE_TITLE"), 26, _cyan, center: true));
         root.AddChild(Sep(_violet));
 
         // Corps 2 colonnes
@@ -100,11 +100,11 @@ public partial class PauseScreen : CanvasLayer
 
         // Boutons : reprendre + quitter la partie
         root.AddChild(Sep(_violet));
-        var btn = MakeButton("▶  REPRENDRE  [Échap]");
+        var btn = MakeButton("▶  " + Loc.T("PAUSE_RESUME"));
         btn.Pressed += Close;
         root.AddChild(btn);
 
-        var quitBtn = MakeButton("QUITTER LA PARTIE");
+        var quitBtn = MakeButton(Loc.T("PAUSE_QUIT"));
         quitBtn.Pressed += QuitToMenu;
         root.AddChild(quitBtn);
 
@@ -120,7 +120,7 @@ public partial class PauseScreen : CanvasLayer
 
     private static void BuildMissionSection(VBoxContainer col)
     {
-        col.AddChild(SectionLbl("MISSION"));
+        col.AddChild(SectionLbl(Loc.T("PAUSE_MISSION")));
         var grid = AddGrid(col);
 
         var tracker = RunStatsTracker.Instance;
@@ -134,12 +134,12 @@ public partial class PauseScreen : CanvasLayer
             remaining = Mathf.Max(0, tracker.RunDurationSeconds - elapsed);
         int rm = remaining / 60, rs = remaining % 60;
 
-        StatRow(grid, "Temps survécu",  $"{mm:D2}:{ss:D2}");
-        StatRow(grid, "Temps restant",  $"{rm:D2}:{rs:D2}");
-        StatRow(grid, "Niveau",         $"{xp?.CurrentLevel ?? 1} / 30");
-        StatRow(grid, "XP",             $"{xp?.CurrentXp ?? 0} / {xp?.XpToNextLevel ?? 0}");
-        StatRow(grid, "Ennemis tués",   $"{tracker?.KillCount ?? 0}");
-        StatRow(grid, "Noyaux Aether",  $"{tracker?.CoresCollected ?? 0}");
+        StatRow(grid, Loc.T("PAUSE_TIME_SURVIVED"), $"{mm:D2}:{ss:D2}");
+        StatRow(grid, Loc.T("PAUSE_TIME_LEFT"),     $"{rm:D2}:{rs:D2}");
+        StatRow(grid, Loc.T("PAUSE_LEVEL"),         $"{xp?.CurrentLevel ?? 1}");
+        StatRow(grid, Loc.T("PAUSE_XP"),            $"{xp?.CurrentXp ?? 0} / {xp?.XpToNextLevel ?? 0}");
+        StatRow(grid, Loc.T("PAUSE_KILLS"),         $"{tracker?.KillCount ?? 0}");
+        StatRow(grid, Loc.T("PAUSE_CORES"),         $"{tracker?.CoresCollected ?? 0}");
     }
 
     // ── Section JOUEUR ────────────────────────────────────────────────────────
@@ -147,24 +147,24 @@ public partial class PauseScreen : CanvasLayer
     private static void BuildPlayerSection(VBoxContainer col)
     {
         col.AddChild(ThinSep());
-        col.AddChild(SectionLbl("JOUEUR"));
+        col.AddChild(SectionLbl(Loc.T("PAUSE_PLAYER")));
         var grid = AddGrid(col);
 
         var s = GameManager.Instance?.PlayerInstance?.Stats;
-        if (s == null) { StatRow(grid, "—", "indisponible"); return; }
+        if (s == null) { StatRow(grid, "—", Loc.T("PAUSE_UNAVAILABLE")); return; }
 
         float hpRatio = s.MaxHp > 0f ? s.CurrentHp / s.MaxHp : 0f;
         Color hpColor = hpRatio > 0.5f ? new Color(0.267f, 1f, 0.933f)
                       : hpRatio > 0.25f ? new Color(1f, 0.6f, 0.1f)
                       : new Color(0.8f, 0.2f, 0.067f);
 
-        StatRow(grid, "Points de vie",       $"{(int)s.CurrentHp} / {(int)s.MaxHp}", hpColor);
-        StatRow(grid, "Vitesse",             $"{(int)s.Speed} px/s");
-        StatRow(grid, "Mult. dégâts",        $"×{s.DamageMultiplier:F2}",
+        StatRow(grid, Loc.T("PAUSE_HP"),         $"{(int)s.CurrentHp} / {(int)s.MaxHp}", hpColor);
+        StatRow(grid, Loc.T("PAUSE_SPEED"),      $"{(int)s.Speed} px/s");
+        StatRow(grid, Loc.T("PAUSE_DMG_MULT"),   $"×{s.DamageMultiplier:F2}",
                       s.DamageMultiplier > 1f ? _gold : _offWhite);
-        StatRow(grid, "Réduc. dégâts reçus", $"{(int)(s.DamageReduction * 100)} %",
+        StatRow(grid, Loc.T("PAUSE_DMG_REDUC"),  $"{(int)(s.DamageReduction * 100)} %",
                       s.DamageReduction > 0f ? _green : _offWhite);
-        StatRow(grid, "Réduc. cooldown",     $"{(int)(s.CooldownReduction * 100)} %",
+        StatRow(grid, Loc.T("PAUSE_CD_REDUC"),   $"{(int)(s.CooldownReduction * 100)} %",
                       s.CooldownReduction > 0f ? _gold : _offWhite);
     }
 
@@ -177,11 +177,11 @@ public partial class PauseScreen : CanvasLayer
         if (inv == null || player == null) return;
 
         // ── Armes ──────────────────────────────────────────────────────────────
-        col.AddChild(SectionLbl("ARMES"));
+        col.AddChild(SectionLbl(Loc.T("PAUSE_WEAPONS")));
 
         if (inv.WeaponLevels.Count == 0)
         {
-            col.AddChild(Lbl("— aucune —", 13, _grey));
+            col.AddChild(Lbl(Loc.T("PAUSE_NONE"), 13, _grey));
         }
         else
         {
@@ -213,7 +213,7 @@ public partial class PauseScreen : CanvasLayer
         if (inv.PassiveLevels.Count > 0)
         {
             col.AddChild(ThinSep());
-            col.AddChild(SectionLbl("PASSIFS"));
+            col.AddChild(SectionLbl(Loc.T("PAUSE_PASSIVES")));
             var grid = AddGrid(col);
             foreach (var (id, lvl) in inv.PassiveLevels)
             {

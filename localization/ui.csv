@@ -1,0 +1,94 @@
+keys,en,fr,es
+COMMON_BACK,Back,Retour,Volver
+MENU_PLAY,Play,Jouer,Jugar
+MENU_HUB,Hub,Hub,Hub
+MENU_BESTIARY,Bestiary,Bestiaire,Bestiario
+MENU_ARSENAL,Arsenal,Arsenal,Arsenal
+MENU_OPTIONS,Options,Options,Opciones
+MENU_QUIT,Quit,Quitter,Salir
+MENU_LANGUAGE,Language,Langue,Idioma
+HUB_TITLE,HUB — Permanent Upgrades,HUB — Améliorations Permanentes,HUB — Mejoras Permanentes
+HUB_ECHOES,Echoes available: {0},Échos disponibles : {0},Ecos disponibles: {0}
+HUB_BUY,Buy,Acheter,Comprar
+HUB_MAX,MAX,MAX,MAX
+HUB_COST,Cost: {0},Coût : {0},Coste: {0}
+HUB_LEVEL,Lv {0}/{1},Niv {0}/{1},Niv {0}/{1}
+HUB_RESET,Reset upgrades,Réinitialiser les améliorations,Reiniciar mejoras
+HUB_RESET_CONFIRM,Confirm? (Echoes refunded),Confirmer ? (Échos remboursés),¿Confirmar? (Ecos reembolsados)
+CHARSEL_TITLE,CHOOSE YOUR CHARACTER,CHOISIR LE PERSONNAGE,ELIGE TU PERSONAJE
+CHARSEL_CHOOSE,Choose,Choisir,Elegir
+CHARSEL_STATS,HP {0}  ·  Speed {1}  ·  Weapon: {2},PV {0}  ·  Vitesse {1}  ·  Arme : {2},PV {0}  ·  Velocidad {1}  ·  Arma: {2}
+LEVELSEL_TITLE,CHOOSE THE LEVEL,CHOISIR LE NIVEAU,ELIGE EL NIVEL
+LEVELSEL_PLAY_HERE,Play here,Jouer ici,Jugar aquí
+LEVELSEL_RANDOM,Random,Aléatoire,Aleatorio
+LEVELSEL_DEFEATED,DEFEATED,VAINCU,DERROTADO
+LEVELUP_TITLE,Level {0}!,Niveau {0} !,¡Nivel {0}!
+LEVELUP_MINIBOSS,Mini-boss loot!,Butin de mini-boss !,¡Botín de mini-jefe!
+LEVELUP_HINT,Click to choose,Clic pour choisir,Clic para elegir
+LEVELUP_REROLL,Reroll ({0}),Renouveler ({0}),Recargar ({0})
+LEVELUP_SKIP,Skip ({0}),Passer ({0}),Saltar ({0})
+RARITY_COMMON,Common,Commun,Común
+RARITY_RARE,Rare,Rare,Raro
+RARITY_EPIC,Epic,Épique,Épico
+RUNEND_VICTORY,EXTRACTION SUCCESSFUL,EXTRACTION REUSSIE,EXTRACCIÓN EXITOSA
+RUNEND_DEATH,KILLED IN ACTION,MORT EN SERVICE,CAÍDO EN COMBATE
+RUNEND_TIME,Time survived,Temps survécu,Tiempo sobrevivido
+RUNEND_KILLS,Enemies eliminated,Ennemis éliminés,Enemigos eliminados
+RUNEND_CORES,Cores collected,Noyaux récupérés,Núcleos recogidos
+RUNEND_BONUS,Run bonus,Bonus de run,Bonus de partida
+RUNEND_TOTAL,TOTAL: {0} Echoes,TOTAL : {0} Échos,TOTAL: {0} Ecos
+RUNEND_HUB,Back to Hub,Retour au Hub,Volver al Hub
+RUNEND_REPLAY,Replay,Rejouer,Reintentar
+PAUSE_TITLE,PAUSE,PAUSE,PAUSA
+PAUSE_MISSION,MISSION,MISSION,MISIÓN
+PAUSE_PLAYER,PLAYER,JOUEUR,JUGADOR
+PAUSE_WEAPONS,WEAPONS,ARMES,ARMAS
+PAUSE_PASSIVES,PASSIVES,PASSIFS,PASIVOS
+PAUSE_RESUME,RESUME  [Esc],REPRENDRE  [Échap],REANUDAR  [Esc]
+PAUSE_QUIT,QUIT GAME,QUITTER LA PARTIE,SALIR DE LA PARTIDA
+PAUSE_TIME_SURVIVED,Time survived,Temps survécu,Tiempo sobrevivido
+PAUSE_TIME_LEFT,Time left,Temps restant,Tiempo restante
+PAUSE_LEVEL,Level,Niveau,Nivel
+PAUSE_XP,XP,XP,XP
+PAUSE_KILLS,Enemies killed,Ennemis tués,Enemigos abatidos
+PAUSE_CORES,Aether Cores,Noyaux Aether,Núcleos de Aether
+PAUSE_HP,Health,Points de vie,Salud
+PAUSE_SPEED,Speed,Vitesse,Velocidad
+PAUSE_DMG_MULT,Damage mult.,Mult. dégâts,Mult. daño
+PAUSE_DMG_REDUC,Damage taken reduc.,Réduc. dégâts reçus,Reduc. daño recibido
+PAUSE_CD_REDUC,Cooldown reduc.,Réduc. cooldown,Reduc. enfriamiento
+PAUSE_NONE,— none —,— aucune —,— ninguna —
+PAUSE_UNAVAILABLE,unavailable,indisponible,no disponible
+OPTIONS_TITLE,OPTIONS,OPTIONS,OPCIONES
+OPTIONS_MASTER,Master volume,Volume général,Volumen general
+OPTIONS_MUSIC,Music,Musique,Música
+OPTIONS_SFX,SFX,Effets sonores,Efectos
+OPTIONS_FULLSCREEN,Fullscreen,Plein écran,Pantalla completa
+OPTIONS_SHAKE,Screen shake,Secousses écran,Vibración de pantalla
+OPTIONS_DIFFICULTY,Difficulty,Difficulté,Dificultad
+OPTIONS_LANGUAGE,Language,Langue,Idioma
+DIFF_EASY,Easy,Facile,Fácil
+DIFF_NORMAL,Normal,Normal,Normal
+DIFF_HARD,Hard,Difficile,Difícil
+INTRO_SKIP,Press any key to skip,Appuyez sur une touche pour passer,Pulsa cualquier tecla para saltar
+CHAR_CHIMERA_NAME,Chimera,Chimera,Chimera
+CHAR_CHIMERA_TAG,Cyborg — balanced,Cyborg — équilibré,Cyborg — equilibrado
+CHAR_CHIMERA_DESC,"The versatile prototype. Balanced stats and the reliable Impulse Cannon. The best starting point to learn the loop.","Le prototype polyvalent. Stats équilibrées et le fiable Canon à Impulsions. Le bon point de départ pour apprendre la boucle.","El prototipo versátil. Estadísticas equilibradas y el fiable Cañón de Impulsos. El mejor punto de partida para aprender el bucle."
+CHAR_TITAN_NAME,Titan-Guardian,Titan-Gardien,Titán-Guardián
+CHAR_TITAN_TAG,Heavy robot — tank,Robot lourd — tank,Robot pesado — tanque
+CHAR_TITAN_DESC,"Armored combat chassis: far more HP but slower. Starts with the Drone Swarm to soak hits and grind at melee. For playing with brute force.","Châssis de combat blindé : beaucoup plus de PV mais plus lent. Démarre avec l'Essaim de Drones pour encaisser et broyer au contact. Pour jouer en force.","Chasis de combate blindado: mucha más vida pero más lento. Empieza con el Enjambre de Drones para aguantar y triturar al contacto. Para jugar a lo bruto."
+CHAR_VAGABOND_NAME,Vagabond,Vagabond,Vagabundo
+CHAR_VAGABOND_TAG,Human — mobility,Humain — mobilité,Humano — movilidad
+CHAR_VAGABOND_DESC,"Survivor of flesh and blood: little HP but very fast. Starts with the Plasma Blade to strike and break away. Rewards aggressive kiting and dodging.","Survivant de chair et d'os : peu de PV mais très rapide. Démarre avec la Lame Plasma pour frapper et se dégager. Récompense le kite agressif et l'esquive.","Superviviente de carne y hueso: poca vida pero muy rápido. Empieza con la Hoja de Plasma para golpear y escapar. Recompensa el kiteo agresivo y la esquiva."
+BIOME_SANCTUAIRE_NAME,Rusted Sanctuary,Sanctuaire Rouillé,Santuario Oxidado
+BIOME_SANCTUAIRE_EFFECT,Neutral terrain,Terrain neutre,Terreno neutral
+BIOME_SANCTUAIRE_DESC,"The original arena, steel-blue. No bonus or penalty — the right place to learn the loop.","L'arène d'origine, bleu-acier. Aucun bonus ni malus — le bon endroit pour apprendre la boucle.","La arena original, azul acero. Sin bonus ni penalización: el lugar ideal para aprender el bucle."
+BIOME_AETHER_NAME,Aether Wastes,Friche d'Aether,Páramo de Aether
+BIOME_AETHER_EFFECT,+20% XP,+20% d'XP,+20% de XP
+BIOME_AETHER_DESC,"Ruins saturated with corrupted Aether. XP gained is increased by 20%: faster power spike.","Ruines saturées d'Aether corrompu. L'XP gagnée est augmentée de 20% : montée en puissance accélérée.","Ruinas saturadas de Aether corrupto. La XP ganada aumenta un 20%: subida de poder acelerada."
+BIOME_FOURNAISE_NAME,Furnace,Fournaise,Horno
+BIOME_FOURNAISE_EFFECT,Enemies +18% faster,Ennemis +18% rapides,Enemigos +18% rápidos
+BIOME_FOURNAISE_DESC,"Infernal heat that overexcites the Rust. Enemies move 18% faster — for the daring.","Chaleur infernale qui surexcite la Rouille. Les ennemis se déplacent 18% plus vite — pour les téméraires.","Calor infernal que sobreexcita la Herrumbre. Los enemigos se mueven un 18% más rápido: para los temerarios."
+BIOME_GIVRE_NAME,Cryogenic Frost,Givre Cryogénique,Escarcha Criogénica
+BIOME_GIVRE_EFFECT,Enemies -18% slower,Ennemis -18% lents,Enemigos -18% lentos
+BIOME_GIVRE_DESC,"The frost numbs everything. Enemies are 18% slower: room to breathe, kite and aim.","Le gel engourdit tout. Les ennemis sont 18% plus lents : du répit pour respirer, kiter et viser.","La escarcha lo entumece todo. Los enemigos son un 18% más lentos: un respiro para moverte, kitear y apuntar."

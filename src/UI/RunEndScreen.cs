@@ -48,6 +48,9 @@ public partial class RunEndScreen : CanvasLayer
         _replayButton = GetNode<Button>("ReplayButton");
         _fadeOverlay  = GetNode<ColorRect>("FadeOverlay");
 
+        _hubButton.Text    = Loc.T("RUNEND_HUB");
+        _replayButton.Text = Loc.T("RUNEND_REPLAY");
+
         _hubButton.Pressed    += OnHubPressed;
         _replayButton.Pressed += OnReplayPressed;
 
@@ -71,7 +74,7 @@ public partial class RunEndScreen : CanvasLayer
         Visible = true;
 
         bool isVictory = outcome == "extraction_success";
-        _outcomeLabel.Text = isVictory ? "EXTRACTION REUSSIE" : "MORT EN SERVICE";
+        _outcomeLabel.Text = isVictory ? Loc.T("RUNEND_VICTORY") : Loc.T("RUNEND_DEATH");
         _outcomeLabel.AddThemeColorOverride("font_color", isVictory ? ColorVictory : ColorDeath);
 
         // Stinger sonore selon le resultat (la musique de run a deja ete arretee par Player.HandleDeath ou RunStatsTracker)
@@ -112,24 +115,24 @@ public partial class RunEndScreen : CanvasLayer
 
         // Composante 1 — Temps
         tween.TweenCallback(Callable.From(() => _timeLabel.Visible = true));
-        AnimateCountup(tween, _timeLabel, "Temps survécu", timeEchoes, CountupDuration);
+        AnimateCountup(tween, _timeLabel, Loc.T("RUNEND_TIME"), timeEchoes, CountupDuration);
 
         // Composante 2 — Kills
         tween.TweenCallback(Callable.From(() => _killLabel.Visible = true));
-        AnimateCountup(tween, _killLabel, "Ennemis éliminés", killEchoes, CountupDuration);
+        AnimateCountup(tween, _killLabel, Loc.T("RUNEND_KILLS"), killEchoes, CountupDuration);
 
         // Composante 3 — Noyaux
         tween.TweenCallback(Callable.From(() => _coreLabel.Visible = true));
-        AnimateCountup(tween, _coreLabel, "Noyaux récupérés", coreEchoes, CountupDuration);
+        AnimateCountup(tween, _coreLabel, Loc.T("RUNEND_CORES"), coreEchoes, CountupDuration);
 
         // Composante 4 — Bonus de base
         tween.TweenCallback(Callable.From(() => _bonusLabel.Visible = true));
-        AnimateCountup(tween, _bonusLabel, "Bonus de run", baseBonus, CountupDuration);
+        AnimateCountup(tween, _bonusLabel, Loc.T("RUNEND_BONUS"), baseBonus, CountupDuration);
 
         // Total + boutons
         tween.TweenCallback(Callable.From(() =>
         {
-            _totalLabel.Text      = $"TOTAL : {echoesEarned} ÉCHOS";
+            _totalLabel.Text      = Loc.T("RUNEND_TOTAL", echoesEarned);
             _totalLabel.Visible   = true;
             _hubButton.Visible    = true;
             _replayButton.Visible = true;

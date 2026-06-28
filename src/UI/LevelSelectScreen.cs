@@ -31,7 +31,7 @@ public partial class LevelSelectScreen : Control
         root.OffsetLeft = 80; root.OffsetRight = -80; root.OffsetTop = 30; root.OffsetBottom = -24;
         AddChild(root);
 
-        var title = new Label { Text = "CHOISIR LE NIVEAU", HorizontalAlignment = HorizontalAlignment.Center };
+        var title = new Label { Text = Loc.T("LEVELSEL_TITLE"), HorizontalAlignment = HorizontalAlignment.Center };
         title.AddThemeFontSizeOverride("font_size", 32);
         title.AddThemeColorOverride("font_color", Cyan);
         root.AddChild(title);
@@ -43,15 +43,19 @@ public partial class LevelSelectScreen : Control
         scroll.AddChild(list);
 
         foreach (var b in BiomeCatalog.All)
-            list.AddChild(BuildCard(b.Id, b.Name, b.Effect, b.Description, b.Accent, b.PreviewPath));
+        {
+            string k = b.Id.ToUpperInvariant();
+            list.AddChild(BuildCard(b.Id, Loc.T($"BIOME_{k}_NAME"), Loc.T($"BIOME_{k}_EFFECT"),
+                                    Loc.T($"BIOME_{k}_DESC"), b.Accent, b.PreviewPath));
+        }
 
         // Boutons bas : Aléatoire + Retour
         var row = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
         row.AddThemeConstantOverride("separation", 20);
-        var rand = new Button { Text = "Aléatoire", CustomMinimumSize = new Vector2(200, 46) };
+        var rand = new Button { Text = Loc.T("LEVELSEL_RANDOM"), CustomMinimumSize = new Vector2(200, 46) };
         StyleButton(rand, Cyan);
         rand.Pressed += () => StartRun(null);
-        var back = new Button { Text = "Retour", CustomMinimumSize = new Vector2(200, 46) };
+        var back = new Button { Text = Loc.T("COMMON_BACK"), CustomMinimumSize = new Vector2(200, 46) };
         StyleButton(back, Violet);
         back.Pressed += GoBack;
         row.AddChild(rand);
@@ -105,7 +109,7 @@ public partial class LevelSelectScreen : Control
         // Badge de complétion : affiché si le biome a déjà été vaincu (boss final battu).
         if (GameSettings.Instance?.HasCompletedAny(id) == true)
         {
-            var badge = new Label { Text = "VAINCU", SizeFlagsVertical = SizeFlags.ShrinkCenter };
+            var badge = new Label { Text = Loc.T("LEVELSEL_DEFEATED"), SizeFlagsVertical = SizeFlags.ShrinkCenter };
             badge.AddThemeFontSizeOverride("font_size", 13);
             badge.AddThemeColorOverride("font_color", new Color(1f, 0.8f, 0.27f));
             nameRow.AddChild(badge);
@@ -119,7 +123,7 @@ public partial class LevelSelectScreen : Control
         vb.AddChild(nameRow); vb.AddChild(lblEffect); vb.AddChild(lblDesc);
         hb.AddChild(vb);
 
-        var play = new Button { Text = "Jouer ici", CustomMinimumSize = new Vector2(130, 44),
+        var play = new Button { Text = Loc.T("LEVELSEL_PLAY_HERE"), CustomMinimumSize = new Vector2(130, 44),
                                 SizeFlagsVertical = SizeFlags.ShrinkCenter };
         StyleButton(play, accent);
         play.Pressed += () => StartRun(id);

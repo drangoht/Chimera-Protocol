@@ -81,7 +81,7 @@ public partial class IntroScreen : Control
         // Indice « passer » (hors fondu de beat)
         var hint = new Label
         {
-            Text                = "— appuie sur une touche pour passer —",
+            Text                = "— " + Loc.T("INTRO_SKIP") + " —",
             HorizontalAlignment = HorizontalAlignment.Center,
             MouseFilter         = MouseFilterEnum.Ignore,
             Modulate            = new Color(1, 1, 1, 0.55f),

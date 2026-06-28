@@ -32,6 +32,9 @@ public partial class HubScreen : Control
         _backButton.Pressed += OnBackPressed;
         ConnectHoverEffects(_backButton, 1.04f);
 
+        GetNode<Label>("VBox/TitleLabel").Text = Loc.T("HUB_TITLE");
+        _backButton.Text = Loc.T("COMMON_BACK");
+
         BuildUpgradesList();
         BuildResetButton();
         RefreshDisplay();
@@ -95,7 +98,7 @@ public partial class HubScreen : Control
 
             var buyButton = new Button
             {
-                Text              = "Acheter",
+                Text              = Loc.T("HUB_BUY"),
                 CustomMinimumSize = new Vector2(100, 0),
             };
 
@@ -157,7 +160,7 @@ public partial class HubScreen : Control
     {
         _resetButton = new Button
         {
-            Text              = "Réinitialiser les améliorations",
+            Text              = Loc.T("HUB_RESET"),
             CustomMinimumSize = new Vector2(0, 40),
         };
 
@@ -193,7 +196,7 @@ public partial class HubScreen : Control
         if (!_resetArmed)
         {
             _resetArmed       = true;
-            _resetButton.Text = "Confirmer ? (Échos remboursés)";
+            _resetButton.Text = Loc.T("HUB_RESET_CONFIRM");
             AudioSystem.Instance?.PlaySfx("sfx_ui_button");
             var t = GetTree().CreateTimer(3.0);
             t.Timeout += DisarmReset;
@@ -211,7 +214,7 @@ public partial class HubScreen : Control
     {
         if (!GodotObject.IsInstanceValid(_resetButton)) return;
         _resetArmed       = false;
-        _resetButton.Text = "Réinitialiser les améliorations";
+        _resetButton.Text = Loc.T("HUB_RESET");
     }
 
     // ---------------------------------------------------------------------------
@@ -222,7 +225,7 @@ public partial class HubScreen : Control
     {
         var meta = MetaProgressionSystem.Instance;
 
-        _echoesLabel.Text = $"Échos disponibles : {meta.CurrentEchoes}";
+        _echoesLabel.Text = Loc.T("HUB_ECHOES", meta.CurrentEchoes);
 
         var upgrades = meta.GetAllUpgrades();
         foreach (var row in _rows)
@@ -236,17 +239,17 @@ public partial class HubScreen : Control
             int currentLevel = meta.GetUpgradeLevel(row.Id);
             bool isMaxed     = currentLevel >= def.MaxLevel;
 
-            row.LevelLabel.Text = $"Niv {currentLevel}/{def.MaxLevel}";
+            row.LevelLabel.Text = Loc.T("HUB_LEVEL", currentLevel, def.MaxLevel);
 
             if (isMaxed)
             {
-                row.CostLabel.Text     = "MAX";
+                row.CostLabel.Text     = Loc.T("HUB_MAX");
                 row.BuyButton.Disabled = true;
             }
             else
             {
                 int cost               = def.CostPerLevel[currentLevel];
-                row.CostLabel.Text     = $"Coût : {cost}";
+                row.CostLabel.Text     = Loc.T("HUB_COST", cost);
                 row.BuyButton.Disabled = meta.CurrentEchoes < cost;
             }
         }

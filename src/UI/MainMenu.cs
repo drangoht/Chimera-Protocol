@@ -13,6 +13,8 @@ public partial class MainMenu : Control
     private Button    _quitButton     = null!;
     private ColorRect _fadeOverlay    = null!;
 
+    private readonly System.Collections.Generic.List<Button> _langButtons = new();
+
     public override void _Ready()
     {
         _playButton     = GetNode<Button>("VBox/PlayButton");
@@ -44,6 +46,9 @@ public partial class MainMenu : Control
         ConnectHoverEffects(_optionsButton);
         ConnectHoverEffects(_quitButton);
 
+        ApplyTexts();
+        BuildLanguageSelector();
+
         // --- Musique ---
         AudioSystem.Instance?.PlayMusic("music_menu");
 
@@ -54,6 +59,58 @@ public partial class MainMenu : Control
              .SetTrans(Tween.TransitionType.Quad);
 
         _playButton.GrabFocus();
+    }
+
+    /// <summary>Applique les libellés traduits aux boutons du menu.</summary>
+    private void ApplyTexts()
+    {
+        _playButton.Text     = Loc.T("MENU_PLAY");
+        _hubButton.Text      = Loc.T("MENU_HUB");
+        _bestiaryButton.Text = Loc.T("MENU_BESTIARY");
+        _arsenalButton.Text  = Loc.T("MENU_ARSENAL");
+        _optionsButton.Text  = Loc.T("MENU_OPTIONS");
+        _quitButton.Text     = Loc.T("MENU_QUIT");
+    }
+
+    /// <summary>Rangée EN/FR/ES en bas de l'écran ; change la langue et ré-applique les textes.</summary>
+    private void BuildLanguageSelector()
+    {
+        var row = new HBoxContainer
+        {
+            Alignment      = BoxContainer.AlignmentMode.Center,
+            AnchorLeft     = 0.5f, AnchorRight = 0.5f, AnchorTop = 1f, AnchorBottom = 1f,
+            OffsetLeft     = -160f, OffsetRight = 160f, OffsetTop = -52f, OffsetBottom = -14f,
+            GrowHorizontal = GrowDirection.Both, GrowVertical = GrowDirection.Begin,
+        };
+        row.AddThemeConstantOverride("separation", 10);
+        AddChild(row);
+
+        foreach (var lang in GameSettings.Languages)
+        {
+            var b = new Button { Text = lang.ToUpper(), CustomMinimumSize = new Vector2(64, 34) };
+            string code = lang;
+            b.Pressed += () => OnLanguageChosen(code);
+            ConnectHoverEffects(b);
+            row.AddChild(b);
+            _langButtons.Add(b);
+        }
+        RefreshLanguageButtons();
+    }
+
+    private void OnLanguageChosen(string lang)
+    {
+        AudioSystem.Instance?.PlaySfx("sfx_ui_button");
+        GameSettings.Instance?.SetLanguage(lang);
+        ApplyTexts();              // ré-applique les libellés des boutons du menu
+        RefreshLanguageButtons();
+    }
+
+    /// <summary>Le bouton de la langue active est désactivé (= sélectionné).</summary>
+    private void RefreshLanguageButtons()
+    {
+        string current = GameSettings.Instance?.Language ?? "en";
+        foreach (var b in _langButtons)
+            b.Disabled = string.Equals(b.Text, current, System.StringComparison.OrdinalIgnoreCase);
     }
 
     // -------------------------------------------------------------------------

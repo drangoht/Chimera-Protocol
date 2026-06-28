@@ -42,6 +42,11 @@ project/assembly_name="ChimeraProtocol"
 
 theme/custom="res://assets/themes/ui_theme.tres"
 
+[internationalization]
+
+locale/translations=PackedStringArray("res://localization/ui.en.translation", "res://localization/ui.fr.translation", "res://localization/ui.es.translation")
+locale/fallback="en"
+
 [rendering]
 
 textures/canvas_textures/default_texture_filter=0

@@ -21,6 +21,10 @@ public partial class GameSettings : Node
     public bool           ShakeEnabled { get; private set; } = true;
     public GameDifficulty Difficulty   { get; private set; } = GameDifficulty.Normal;
 
+    /// <summary>Code de langue de l'UI : "en" (défaut), "fr", "es". Persisté.</summary>
+    public string Language { get; private set; } = "en";
+    public static readonly string[] Languages = { "en", "fr", "es" };
+
     // Multiplicateurs de difficulté lus par EnemySpawner (ennemis) — Normal = 1.0.
     public float EnemyDamageMult => Difficulty switch
         { GameDifficulty.Facile => 0.6f, GameDifficulty.Difficile => 1.35f, _ => 1f };
@@ -68,12 +72,22 @@ public partial class GameSettings : Node
     public void SetShake(bool v)       { ShakeEnabled = v; ScreenShake.Enabled = v; Save(); }
     public void SetDifficulty(GameDifficulty d) { Difficulty = d; Save(); }
 
+    /// <summary>Change la langue de l'UI, l'applique au TranslationServer et persiste.</summary>
+    public void SetLanguage(string lang)
+    {
+        if (System.Array.IndexOf(Languages, lang) < 0) lang = "en";
+        Language = lang;
+        TranslationServer.SetLocale(lang);
+        Save();
+    }
+
     // ── Application ────────────────────────────────────────────────────────────
     public void Apply()
     {
         ApplyAudio();
         ApplyDisplay();
         ScreenShake.Enabled = ShakeEnabled;
+        TranslationServer.SetLocale(Language);
     }
 
     private void ApplyAudio()
@@ -107,6 +121,8 @@ public partial class GameSettings : Node
         Fullscreen   = cfg.GetValue("display", "fullscreen", Fullscreen).AsBool();
         ShakeEnabled = cfg.GetValue("gameplay","shake",      ShakeEnabled).AsBool();
         Difficulty   = (GameDifficulty)cfg.GetValue("gameplay", "difficulty", (int)Difficulty).AsInt32();
+        Language     = cfg.GetValue("display", "language", Language).AsString();
+        if (System.Array.IndexOf(Languages, Language) < 0) Language = "en";
 
         _completions.Clear();
         foreach (string key in cfg.GetValue("progress", "completions", new string[0]).AsStringArray())
@@ -120,6 +136,7 @@ public partial class GameSettings : Node
         cfg.SetValue("audio",    "music",      Music);
         cfg.SetValue("audio",    "sfx",        Sfx);
         cfg.SetValue("display",  "fullscreen", Fullscreen);
+        cfg.SetValue("display",  "language",   Language);
         cfg.SetValue("gameplay", "shake",      ShakeEnabled);
         cfg.SetValue("gameplay", "difficulty", (int)Difficulty);
 

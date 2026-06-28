@@ -35,7 +35,7 @@ public partial class OptionsScreen : Control
 
         var title = new Label
         {
-            Text                = "OPTIONS",
+            Text                = Loc.T("OPTIONS_TITLE"),
             HorizontalAlignment = HorizontalAlignment.Center,
         };
         title.AddThemeFontSizeOverride("font_size", 34);
@@ -44,16 +44,17 @@ public partial class OptionsScreen : Control
         vbox.AddChild(new HSeparator());
 
         var s = GameSettings.Instance;
-        AddSlider(vbox, "Volume général", s?.Master ?? 1f, v => GameSettings.Instance?.SetMaster(v));
-        AddSlider(vbox, "Musique",        s?.Music  ?? 0.8f, v => GameSettings.Instance?.SetMusic(v));
-        AddSlider(vbox, "Effets (SFX)",   s?.Sfx    ?? 0.9f, v => GameSettings.Instance?.SetSfx(v));
-        AddToggle(vbox, "Plein écran",    s?.Fullscreen ?? false, v => GameSettings.Instance?.SetFullscreen(v));
-        AddToggle(vbox, "Secousses écran", s?.ShakeEnabled ?? true, v => GameSettings.Instance?.SetShake(v));
+        AddSlider(vbox, Loc.T("OPTIONS_MASTER"), s?.Master ?? 1f, v => GameSettings.Instance?.SetMaster(v));
+        AddSlider(vbox, Loc.T("OPTIONS_MUSIC"),  s?.Music  ?? 0.8f, v => GameSettings.Instance?.SetMusic(v));
+        AddSlider(vbox, Loc.T("OPTIONS_SFX"),    s?.Sfx    ?? 0.9f, v => GameSettings.Instance?.SetSfx(v));
+        AddToggle(vbox, Loc.T("OPTIONS_FULLSCREEN"), s?.Fullscreen ?? false, v => GameSettings.Instance?.SetFullscreen(v));
+        AddToggle(vbox, Loc.T("OPTIONS_SHAKE"), s?.ShakeEnabled ?? true, v => GameSettings.Instance?.SetShake(v));
         AddDifficulty(vbox, s?.Difficulty ?? GameSettings.GameDifficulty.Normal);
+        AddLanguage(vbox, s?.Language ?? "en");
 
         vbox.AddChild(new HSeparator());
 
-        var back = new Button { Text = "Retour", CustomMinimumSize = new Vector2(200, 48) };
+        var back = new Button { Text = Loc.T("COMMON_BACK"), CustomMinimumSize = new Vector2(200, 48) };
         StyleButton(back);
         back.Pressed += GoBack;
         var backWrap = new CenterContainer();
@@ -106,17 +107,38 @@ public partial class OptionsScreen : Control
         var row = new HBoxContainer();
         row.AddThemeConstantOverride("separation", 16);
 
-        var lbl = new Label { Text = "Difficulté", CustomMinimumSize = new Vector2(220, 0) };
+        var lbl = new Label { Text = Loc.T("OPTIONS_DIFFICULTY"), CustomMinimumSize = new Vector2(220, 0) };
         lbl.AddThemeColorOverride("font_color", Text);
         row.AddChild(lbl);
 
         var opt = new OptionButton { CustomMinimumSize = new Vector2(180, 0) };
-        opt.AddItem("Facile");
-        opt.AddItem("Normal");
-        opt.AddItem("Difficile");
+        opt.AddItem(Loc.T("DIFF_EASY"));
+        opt.AddItem(Loc.T("DIFF_NORMAL"));
+        opt.AddItem(Loc.T("DIFF_HARD"));
         opt.Selected = (int)value;
         opt.ItemSelected += idx =>
             GameSettings.Instance?.SetDifficulty((GameSettings.GameDifficulty)idx);
+        row.AddChild(opt);
+        parent.AddChild(row);
+    }
+
+    private void AddLanguage(VBoxContainer parent, string current)
+    {
+        var row = new HBoxContainer();
+        row.AddThemeConstantOverride("separation", 16);
+
+        var lbl = new Label { Text = Loc.T("OPTIONS_LANGUAGE"), CustomMinimumSize = new Vector2(220, 0) };
+        lbl.AddThemeColorOverride("font_color", Text);
+        row.AddChild(lbl);
+
+        var opt = new OptionButton { CustomMinimumSize = new Vector2(180, 0) };
+        foreach (var l in GameSettings.Languages) opt.AddItem(l.ToUpper());
+        opt.Selected = System.Math.Max(0, System.Array.IndexOf(GameSettings.Languages, current));
+        opt.ItemSelected += idx =>
+        {
+            GameSettings.Instance?.SetLanguage(GameSettings.Languages[idx]);
+            GetTree().ReloadCurrentScene(); // recharge l'écran pour appliquer la langue
+        };
         row.AddChild(opt);
         parent.AddChild(row);
     }

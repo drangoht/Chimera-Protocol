@@ -32,7 +32,7 @@ public partial class CharacterSelectScreen : Control
         root.OffsetLeft = 80; root.OffsetRight = -80; root.OffsetTop = 30; root.OffsetBottom = -24;
         AddChild(root);
 
-        var title = new Label { Text = "CHOISIR LE PERSONNAGE", HorizontalAlignment = HorizontalAlignment.Center };
+        var title = new Label { Text = Loc.T("CHARSEL_TITLE"), HorizontalAlignment = HorizontalAlignment.Center };
         title.AddThemeFontSizeOverride("font_size", 32);
         title.AddThemeColorOverride("font_color", Cyan);
         root.AddChild(title);
@@ -54,7 +54,7 @@ public partial class CharacterSelectScreen : Control
         // Bouton bas : Retour (vers le menu principal)
         var row = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
         row.AddThemeConstantOverride("separation", 20);
-        var back = new Button { Text = "Retour", CustomMinimumSize = new Vector2(200, 46) };
+        var back = new Button { Text = Loc.T("COMMON_BACK"), CustomMinimumSize = new Vector2(200, 46) };
         StyleButton(back, Violet);
         back.Pressed += GoBack;
         row.AddChild(back);
@@ -97,24 +97,25 @@ public partial class CharacterSelectScreen : Control
         imgWrap.AddChild(img);
         hb.AddChild(imgWrap);
 
+        string key = c.Id.ToUpperInvariant();
         var vb = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
         vb.AddThemeConstantOverride("separation", 2);
-        var lblName = new Label { Text = $"{c.Name} — {c.Tag}" };
+        var lblName = new Label { Text = $"{Loc.T($"CHAR_{key}_NAME")} — {Loc.T($"CHAR_{key}_TAG")}" };
         lblName.AddThemeFontSizeOverride("font_size", 22);
         lblName.AddThemeColorOverride("font_color", c.Tint);
         var lblStats = new Label
         {
-            Text = $"PV {c.MaxHp:0}  ·  Vitesse {c.Speed:0}  ·  Arme : {Codex.DisplayName(c.StartingWeaponId)}",
+            Text = Loc.T("CHARSEL_STATS", $"{c.MaxHp:0}", $"{c.Speed:0}", Codex.DisplayName(c.StartingWeaponId)),
         };
         lblStats.AddThemeFontSizeOverride("font_size", 14);
         lblStats.AddThemeColorOverride("font_color", Cyan);
-        var lblDesc = new Label { Text = c.Description, AutowrapMode = TextServer.AutowrapMode.WordSmart };
+        var lblDesc = new Label { Text = Loc.T($"CHAR_{key}_DESC"), AutowrapMode = TextServer.AutowrapMode.WordSmart };
         lblDesc.AddThemeFontSizeOverride("font_size", 14);
         lblDesc.AddThemeColorOverride("font_color", Dim);
         vb.AddChild(lblName); vb.AddChild(lblStats); vb.AddChild(lblDesc);
         hb.AddChild(vb);
 
-        var choose = new Button { Text = "Choisir", CustomMinimumSize = new Vector2(130, 44),
+        var choose = new Button { Text = Loc.T("CHARSEL_CHOOSE"), CustomMinimumSize = new Vector2(130, 44),
                                   SizeFlagsVertical = SizeFlags.ShrinkCenter };
         StyleButton(choose, c.Tint);
         string id = c.Id;
