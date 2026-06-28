@@ -292,6 +292,45 @@ public partial class LevelUpScreen : CanvasLayer
         _skipButton.Visible  = (meta?.GetUpgradeLevel("skip") ?? 0) > 0;
         _skipButton.Text     = $"Passer ({skips})";
         _skipButton.Disabled = skips <= 0;
+
+        SetupActionFocus();
+    }
+
+    /// <summary>
+    /// Câble la navigation clavier/manette entre les 3 cartes et les boutons Renouveler/Passer.
+    /// La navigation spatiale par défaut de Godot ne franchit pas le conteneur d'actions séparé :
+    /// on relie donc explicitement (en ne ciblant que les boutons visibles ET activés).
+    /// </summary>
+    private void SetupActionFocus()
+    {
+        bool rerollOk = _rerollButton.Visible && !_rerollButton.Disabled;
+        bool skipOk   = _skipButton.Visible   && !_skipButton.Disabled;
+
+        Button? left  = rerollOk ? _rerollButton : (skipOk ? _skipButton : null);
+        Button? right = skipOk   ? _skipButton   : (rerollOk ? _rerollButton : null);
+
+        // Bas des cartes → bouton d'action (gauche pour Card0/1, droite pour Card2).
+        Button[] cards = { _card0, _card1, _card2 };
+        foreach (var c in cards)
+            c.FocusNeighborBottom = new NodePath();
+        if (left != null)
+        {
+            _card0.FocusNeighborBottom = _card0.GetPathTo(left);
+            _card1.FocusNeighborBottom = _card1.GetPathTo(left);
+            _card2.FocusNeighborBottom = _card2.GetPathTo(right!);
+        }
+
+        // Haut des boutons → cartes ; et entre eux (gauche/droite).
+        if (rerollOk)
+        {
+            _rerollButton.FocusNeighborTop   = _rerollButton.GetPathTo(_card0);
+            _rerollButton.FocusNeighborRight = skipOk ? _rerollButton.GetPathTo(_skipButton) : new NodePath();
+        }
+        if (skipOk)
+        {
+            _skipButton.FocusNeighborTop  = _skipButton.GetPathTo(_card2);
+            _skipButton.FocusNeighborLeft = rerollOk ? _skipButton.GetPathTo(_rerollButton) : new NodePath();
+        }
     }
 
     private new void Hide()
