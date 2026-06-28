@@ -88,7 +88,7 @@ public abstract partial class CodexScreenBase : Control
             list.AddChild(BuildRow(entry));
 
         // Bouton retour
-        _backButton = MakeButton("◄  Retour au menu");
+        _backButton = MakeButton("◄  " + Loc.T("COMMON_BACK"));
         _backButton.Pressed += OnBackPressed;
         ConnectHover(_backButton);
         var backWrap = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
@@ -146,12 +146,12 @@ public abstract partial class CodexScreenBase : Control
 
         var header = new HBoxContainer();
         header.AddThemeConstantOverride("separation", 10);
-        var name = new Label { Text = e.Name };
+        var name = new Label { Text = Loc.T(e.Name) };
         name.AddThemeFontSizeOverride("font_size", 20);
         name.AddThemeColorOverride("font_color", e.Accent);
         header.AddChild(name);
 
-        var tag = new Label { Text = e.Tag, VerticalAlignment = VerticalAlignment.Center };
+        var tag = new Label { Text = Loc.T(e.Tag), VerticalAlignment = VerticalAlignment.Center };
         tag.AddThemeFontSizeOverride("font_size", 13);
         tag.AddThemeColorOverride("font_color", new Color(e.Accent.R, e.Accent.G, e.Accent.B, 0.7f));
         header.AddChild(tag);
@@ -159,7 +159,7 @@ public abstract partial class CodexScreenBase : Control
 
         var desc = new Label
         {
-            Text         = e.Description,
+            Text         = Loc.T(e.Description),
             AutowrapMode = TextServer.AutowrapMode.WordSmart,
         };
         desc.AddThemeFontSizeOverride("font_size", 15);

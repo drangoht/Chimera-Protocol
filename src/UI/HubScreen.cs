@@ -69,9 +69,10 @@ public partial class HubScreen : Control
             var row = new HBoxContainer();
             row.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
 
+            string ukey = def.Id.ToUpperInvariant();
             var nameLabel = new Label
             {
-                Text                = $"{def.Name}\n{def.Description}",
+                Text                = $"{Loc.T($"UPGRADE_{ukey}_NAME")}\n{Loc.T($"UPGRADE_{ukey}_DESC")}",
                 SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
                 AutowrapMode        = TextServer.AutowrapMode.WordSmart,
             };

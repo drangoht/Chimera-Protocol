@@ -247,25 +247,24 @@ public partial class LevelUpSystem : Node
     private LevelUpCardData MakeWeaponCard(string id, int nextLevel)
     {
         string rarity = GetRarity(id);
-        string desc   = GetDescription(id, "weapons");
-        return new LevelUpCardData(id, Codex.DisplayName(id), $"{desc} (Niv. {nextLevel})", rarity, "weapon");
+        return new LevelUpCardData(id, Codex.DisplayName(id),
+            Codex.Description(id) + Loc.T("CARD_LEVEL", nextLevel), rarity, "weapon");
     }
 
     private LevelUpCardData MakePassiveCard(string id, int nextLevel)
     {
         string rarity = GetRarity(id);
-        string desc   = GetDescription(id, "passives");
-        return new LevelUpCardData(id, Codex.DisplayName(id), $"{desc} (Niv. {nextLevel})", rarity, "passive");
+        return new LevelUpCardData(id, Codex.DisplayName(id),
+            Codex.Description(id) + Loc.T("CARD_LEVEL", nextLevel), rarity, "passive");
     }
 
     private LevelUpCardData MakeFusionCard(string id)
     {
-        string desc = GetFusionDesc(id);
-        return new LevelUpCardData(id, Codex.DisplayName(id), desc, "epic", "fusion");
+        return new LevelUpCardData(id, Codex.DisplayName(id), Codex.Description(id), "epic", "fusion");
     }
 
     private static LevelUpCardData XpBonusCard() =>
-        new("xp_bonus", "Écho d'Aether", "+50 XP", "common", "xp_bonus");
+        new("xp_bonus", Codex.DisplayName("xp_bonus"), Loc.T("CARD_XP_BONUS"), "common", "xp_bonus");
 
     // -------------------------------------------------------------------------
     // Helpers JSON

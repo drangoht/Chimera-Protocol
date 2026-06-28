@@ -4,7 +4,7 @@ using System.Collections.Generic;
 /// <summary>Arsenal — liste toutes les armes avec icône et description.</summary>
 public partial class ArsenalScreen : CodexScreenBase
 {
-    protected override string ScreenTitle => "ARSENAL";
+    protected override string ScreenTitle => Loc.T("MENU_ARSENAL");
     protected override Color  TitleAccent => new(0.267f, 1f, 0.933f);  // cyan
 
     // Armes (actives + fusions) puis passifs

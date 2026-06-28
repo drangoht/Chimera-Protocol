@@ -8,19 +8,14 @@ using Godot;
 /// </summary>
 public partial class IntroScreen : Control
 {
-    // (texte, chemin d'image illustrant le temps)
-    private static readonly (string Text, string Img)[] Beats =
+    // (clé de traduction, chemin d'image illustrant le temps)
+    private static readonly (string Key, string Img)[] Beats =
     {
-        ("Il y a deux siècles, on a relié les réseaux du monde à l'Aether —\nl'énergie magique enfouie dans les profondeurs.",
-            "res://assets/sprites/ui/ui_icon_noyau.png"),
-        ("La Convergence ne fut ni guerre ni explosion, mais une fusion.\nLes machines cessèrent d'être des outils.",
-            "res://assets/sprites/enemies/drone/enemy_drone_idle_01.png"),
-        ("De cette corruption naquit la Rouille Vivante.\nElle ne détruit pas : elle intègre. Elle transforme.",
-            "res://assets/sprites/enemies/colossus/enemy_colossus_idle_01.png"),
-        ("Les Sanctuaires, ruines saturées d'Aether,\ngardent les Noyaux — le dernier espoir des enclaves.",
-            "res://assets/sprites/enemies/rusted_core/rusted_core_idle_01.png"),
-        ("Quelqu'un doit y descendre.\nCe sera toi.",
-            "res://assets/sprites/player/player_idle_01.png"),
+        ("INTRO_BEAT_1", "res://assets/sprites/ui/ui_icon_noyau.png"),
+        ("INTRO_BEAT_2", "res://assets/sprites/enemies/drone/enemy_drone_idle_01.png"),
+        ("INTRO_BEAT_3", "res://assets/sprites/enemies/colossus/enemy_colossus_idle_01.png"),
+        ("INTRO_BEAT_4", "res://assets/sprites/enemies/rusted_core/rusted_core_idle_01.png"),
+        ("INTRO_BEAT_5", "res://assets/sprites/player/player_idle_01.png"),
     };
 
     private static readonly Color Cyan = new(0.267f, 1f, 0.933f);
@@ -109,13 +104,13 @@ public partial class IntroScreen : Control
         _seq = CreateTween();
         _seq.TweenProperty(_fade, "color:a", 0f, 0.8);   // fondu d'ouverture
 
-        foreach (var (text, img) in Beats)
+        foreach (var (key, img) in Beats)
         {
             string imgPath = img;
-            string txt     = text;
+            string txtKey  = key;
             _seq.TweenCallback(Callable.From(() =>
             {
-                _line.Text     = txt;
+                _line.Text     = Loc.T(txtKey);
                 _image.Texture = GD.Load<Texture2D>(imgPath);
             }));
             _seq.TweenProperty(_beat, "modulate:a", 1f, 0.6);

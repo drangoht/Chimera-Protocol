@@ -37,54 +37,41 @@ public static class Codex
     private static readonly Color Orange = new(1f,     0.55f,  0.2f);
     private static readonly Color RustR  = new(0.85f,  0.35f,  0.25f);
 
+    // Les champs Name/Tag/Description contiennent des CLÉS de traduction (voir localization/ui.csv) ;
+    // les consommateurs (DisplayName, CodexScreenBase) les passent par Loc.T.
+
     // ── Bestiaire ────────────────────────────────────────────────────────────
     public static readonly IReadOnlyList<CodexEntry> Enemies = new List<CodexEntry>
     {
-        new("rust_swarm", "Essaim de Rouille", "Fourrage — dès 0:00",
-            "Carcasse mécanique rongée par la Rouille Vivante. Fonce en ligne droite, sans ruse. "
-            + "Faible isolément, mortelle en nombre : c'est la marée du Sanctuaire.",
+        new("rust_swarm", "ENEMY_RUST_SWARM_NAME", "ENEMY_RUST_SWARM_TAG", "ENEMY_RUST_SWARM_DESC",
             EnemyDir + "rustswarm/enemy_rustswarm_idle_01.png", RustR,
             EnemyDir + "rustswarm/rustswarm_frames.tres"),
 
-        new("corrupted_drone", "Drone Corrompu", "Harceleur — dès 2:00",
-            "Drone d'observation devenu fou. Trajectoire erratique (±45°), très rapide et fragile. "
-            + "Difficile à toucher, négligeable si on l'ignore… jusqu'à ce qu'ils soient dix.",
+        new("corrupted_drone", "ENEMY_CORRUPTED_DRONE_NAME", "ENEMY_CORRUPTED_DRONE_TAG", "ENEMY_CORRUPTED_DRONE_DESC",
             EnemyDir + "drone/enemy_drone_idle_01.png", Violet,
             EnemyDir + "drone/drone_frames.tres"),
 
-        new("corrupted_sentinel", "Sentinelle Corrompue", "Tireur — dès 5:00",
-            "Tourelle ambulante qui maintient ses distances et te canarde. Recule si tu approches. "
-            + "Force à bouger en permanence et à gérer les projectiles.",
+        new("corrupted_sentinel", "ENEMY_CORRUPTED_SENTINEL_NAME", "ENEMY_CORRUPTED_SENTINEL_TAG", "ENEMY_CORRUPTED_SENTINEL_DESC",
             EnemyDir + "sentinel/enemy_sentinel_idle_01.png", Orange,
             EnemyDir + "sentinel/sentinel_frames.tres"),
 
-        new("aether_revenant", "Revenant d'Aether", "MINI-BOSS — mi-temps 7:00",
-            "Spectre cyborg réanimé par un Noyau d'Aether instable. Te pourchasse vite et fond sur toi "
-            + "par ruades fulgurantes. À sa mort, libère un butin d'arme.",
+        new("aether_revenant", "ENEMY_AETHER_REVENANT_NAME", "ENEMY_AETHER_REVENANT_TAG", "ENEMY_AETHER_REVENANT_DESC",
             EnemyDir + "aether_revenant/aether_revenant_idle_01.png", Violet,
             EnemyDir + "aether_revenant/aether_revenant_frames.tres"),
 
-        new("grafted_colossus", "Colosse Greffé", "Bruiser — dès 9:00",
-            "Titan d'acier et de chair greffée. Lent mais effroyablement résistant et dévastateur au contact. "
-            + "À sa mort, relâche un Noyau d'Aether pur.",
+        new("grafted_colossus", "ENEMY_GRAFTED_COLOSSUS_NAME", "ENEMY_GRAFTED_COLOSSUS_TAG", "ENEMY_GRAFTED_COLOSSUS_DESC",
             EnemyDir + "colossus/enemy_colossus_idle_01.png", RustR,
             EnemyDir + "colossus/colossus_frames.tres"),
 
-        new("rust_stalker", "Rôdeur de Rouille", "MINI-BOSS — dès 12:00",
-            "Araignée mécanique corrodée, blindée et tenace. Nécessite un vrai build offensif pour tomber. "
-            + "Récompense : orbe d'XP or et choix d'arme.",
+        new("rust_stalker", "ENEMY_RUST_STALKER_NAME", "ENEMY_RUST_STALKER_TAG", "ENEMY_RUST_STALKER_DESC",
             EnemyDir + "rust_stalker/rust_stalker_idle_01.png", Gold,
             EnemyDir + "rust_stalker/rust_stalker_frames.tres"),
 
-        new("rusted_core", "Le Noyau Rouillé", "BOSS DE FIN — dès 13:00",
-            "Le cœur corrompu du Sanctuaire. Colosse-gardien au noyau en fusion : salves radiales, ondes de choc, "
-            + "1600 PV. Le vaincre relâche 500 d'XP, 3 Noyaux d'Aether et un choix d'arme dans une explosion finale.",
+        new("rusted_core", "ENEMY_RUSTED_CORE_NAME", "ENEMY_RUSTED_CORE_TAG", "ENEMY_RUSTED_CORE_DESC",
             EnemyDir + "rusted_core/rusted_core_idle_01.png", Gold,
             EnemyDir + "rusted_core/rusted_core_frames.tres"),
 
-        new("master_sentinel", "Sentinelle Maîtresse", "MINI-BOSS — dès 16:00",
-            "Version d'élite de la Sentinelle. Tire en éventail et kite sans répit. "
-            + "Récompense : gros orbe d'XP et choix d'arme.",
+        new("master_sentinel", "ENEMY_MASTER_SENTINEL_NAME", "ENEMY_MASTER_SENTINEL_TAG", "ENEMY_MASTER_SENTINEL_DESC",
             EnemyDir + "master_sentinel/master_sentinel_idle_01.png", Cyan,
             EnemyDir + "master_sentinel/master_sentinel_frames.tres"),
     };
@@ -92,74 +79,50 @@ public static class Codex
     // ── Passifs (affichés dans l'Arsenal sous les armes) ──────────────────────
     public static readonly IReadOnlyList<CodexEntry> Passives = new List<CodexEntry>
     {
-        new("thermal_core", "Noyau Thermique", "Passif",
-            "Augmente les dégâts de toutes les armes actives. Prérequis de la fusion Lame à Fusion.",
+        new("thermal_core", "PAS_THERMAL_CORE_NAME", "TAG_PASSIVE", "PAS_THERMAL_CORE_DESC",
             IconDir + "ui_icon_thermal_core.png", Orange),
 
-        new("reinforced_plating", "Plaque Renforcée", "Passif",
-            "Augmente les PV max et réduit les dégâts reçus (jusqu'à -40%). Le pilier d'un build défensif.",
+        new("reinforced_plating", "PAS_REINFORCED_PLATING_NAME", "TAG_PASSIVE", "PAS_REINFORCED_PLATING_DESC",
             IconDir + "ui_icon_reinforced_plate.png", Cyan),
 
-        new("servo_motors", "Servo-Moteurs", "Passif",
-            "Augmente la vitesse de déplacement (plafond 380). Plus de mobilité pour kiter les nuées.",
+        new("servo_motors", "PAS_SERVO_MOTORS_NAME", "TAG_PASSIVE", "PAS_SERVO_MOTORS_DESC",
             IconDir + "ui_icon_servomotors.png", Cyan),
 
-        new("capacitor", "Capaciteur", "Passif",
-            "Réduit le cooldown de toutes les armes actives. Prérequis de la fusion Rail Surchargé.",
+        new("capacitor", "PAS_CAPACITOR_NAME", "TAG_PASSIVE", "PAS_CAPACITOR_DESC",
             IconDir + "ui_icon_capacitor.png", Violet),
     };
 
     // ── Arsenal (armes actives + fusions) ─────────────────────────────────────
     public static readonly IReadOnlyList<CodexEntry> Weapons = new List<CodexEntry>
     {
-        new("impulse_cannon", "Canon à Impulsions", "Arme active",
-            "Tir automatique sur l'ennemi le plus proche. Perfore dès le niveau 3, puis double projectile. "
-            + "L'arme de départ fiable et polyvalente.",
+        new("impulse_cannon", "WPN_IMPULSE_CANNON_NAME", "TAG_ACTIVE", "WPN_IMPULSE_CANNON_DESC",
             IconDir + "ui_icon_impulse_cannon.png", Cyan),
 
-        new("plasma_blade", "Lame Plasma", "Arme active",
-            "Arc de mêlée tranchant dans un cône devant le joueur. L'angle et la portée s'élargissent à chaque niveau. "
-            + "Excellente contre les nuées au corps-à-corps.",
+        new("plasma_blade", "WPN_PLASMA_BLADE_NAME", "TAG_ACTIVE", "WPN_PLASMA_BLADE_DESC",
             IconDir + "ui_icon_plasmablade.png", Cyan),
 
-        new("drone_swarm", "Essaim de Drones", "Arme active",
-            "Drones en orbite qui infligent des dégâts de contact en continu. Jusqu'à 4 drones tournoyants. "
-            + "Protection passive permanente autour de toi.",
+        new("drone_swarm", "WPN_DRONE_SWARM_NAME", "TAG_ACTIVE", "WPN_DRONE_SWARM_DESC",
             IconDir + "ui_icon_droneswarm.png", Cyan),
 
-        new("overload_field", "Champ de Surcharge", "Arme active",
-            "Pulse de zone centré sur le joueur : dégâts + repoussée (knockback). Le rayon grandit avec le niveau. "
-            + "Crée de l'espace quand tu es submergé.",
+        new("overload_field", "WPN_OVERLOAD_FIELD_NAME", "TAG_ACTIVE", "WPN_OVERLOAD_FIELD_DESC",
             IconDir + "ui_icon_overloadfield.png", Violet),
 
-        new("tesla_coil", "Bobine Tesla", "Arme active",
-            "Éclair en chaîne qui rebondit d'ennemi en ennemi (jusqu'à 7 sauts). Foudre cyan éblouissante. "
-            + "Ravage les groupes denses en un éclair.",
+        new("tesla_coil", "WPN_TESLA_COIL_NAME", "TAG_ACTIVE", "WPN_TESLA_COIL_DESC",
             IconDir + "ui_icon_tesla.png", Cyan),
 
-        new("scatter_volley", "Volée Multiple", "Arme active",
-            "Tir multi-cible : envoie plusieurs projectiles vers les ennemis les plus proches, un par cible. "
-            + "2 projectiles au niveau 1, +1 à chaque niveau (jusqu'à 6). Idéale contre les groupes éparpillés.",
+        new("scatter_volley", "WPN_SCATTER_VOLLEY_NAME", "TAG_ACTIVE", "WPN_SCATTER_VOLLEY_DESC",
             IconDir + "ui_icon_scatter.png", Cyan),
 
-        new("fusion_blade", "Lame à Fusion", "FUSION (épique)",
-            "Évolution de la Lame Plasma + Noyau Thermique : l'arc devient un anneau de flammes d'Aether actif "
-            + "en continu autour du joueur. Plus aucun cooldown.",
+        new("fusion_blade", "WPN_FUSION_BLADE_NAME", "TAG_FUSION", "WPN_FUSION_BLADE_DESC",
             IconDir + "ui_icon_fusionblade.png", Gold),
 
-        new("rail_overcharged", "Rail Surchargé", "FUSION (épique)",
-            "Évolution du Canon + Capaciteur : rafale automatique de 3 projectiles perforants qui traversent "
-            + "toute la ligne d'ennemis.",
+        new("rail_overcharged", "WPN_RAIL_OVERCHARGED_NAME", "TAG_FUSION", "WPN_RAIL_OVERCHARGED_DESC",
             IconDir + "ui_icon_rail.png", Gold),
 
-        new("orbital_swarm", "Essaim Orbital", "FUSION (épique)",
-            "Évolution de l'Essaim de Drones + Servo-Moteurs : 6 drones ultra-rapides en orbite large. "
-            + "Un bouclier offensif qui broie tout au contact.",
+        new("orbital_swarm", "WPN_ORBITAL_SWARM_NAME", "TAG_FUSION", "WPN_ORBITAL_SWARM_DESC",
             IconDir + "ui_icon_orbital.png", Gold),
 
-        new("overload_aegis", "Égide de Surcharge", "FUSION (épique)",
-            "Évolution du Champ de Surcharge + Plaque Renforcée : pulse massif à knockback brutal qui "
-            + "régénère tes PV à chaque onde. La forteresse mobile.",
+        new("overload_aegis", "WPN_OVERLOAD_AEGIS_NAME", "TAG_FUSION", "WPN_OVERLOAD_AEGIS_DESC",
             IconDir + "ui_icon_aegis.png", Gold),
     };
 
@@ -192,14 +155,28 @@ public static class Codex
     private static Dictionary<string, string> BuildNameTable()
     {
         var d = new Dictionary<string, string>();
-        foreach (var e in Weapons)  d[e.Id] = e.Name;
+        foreach (var e in Weapons)  d[e.Id] = e.Name;   // valeurs = clés de traduction
         foreach (var e in Passives) d[e.Id] = e.Name;
-        d["xp_bonus"] = "Écho d'Aether";
+        d["xp_bonus"] = "MISC_XP_BONUS_NAME";
         return d;
     }
 
-    /// <summary>Nom canonique accentué d'une arme/passif/fusion, ou l'id si inconnu.</summary>
-    public static string DisplayName(string id) => NameById.TryGetValue(id, out var n) ? n : id;
+    /// <summary>Nom traduit d'une arme/passif/fusion dans la langue courante, ou l'id si inconnu.</summary>
+    public static string DisplayName(string id) => NameById.TryGetValue(id, out var key) ? Loc.T(key) : id;
+
+    // Table id → clé de description (armes + passifs), pour les cartes de level-up.
+    private static readonly Dictionary<string, string> DescById = BuildDescTable();
+
+    private static Dictionary<string, string> BuildDescTable()
+    {
+        var d = new Dictionary<string, string>();
+        foreach (var e in Weapons)  d[e.Id] = e.Description;
+        foreach (var e in Passives) d[e.Id] = e.Description;
+        return d;
+    }
+
+    /// <summary>Description traduite d'une arme/passif/fusion, ou chaîne vide si inconnu.</summary>
+    public static string Description(string id) => DescById.TryGetValue(id, out var key) ? Loc.T(key) : "";
 
     /// <summary>Chemin de l'icône d'une arme/passif, ou null si inconnu.</summary>
     public static string? IconPath(string id) => IconById.TryGetValue(id, out var p) ? p : null;
