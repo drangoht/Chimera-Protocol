@@ -148,6 +148,7 @@ public partial class MasterSentinel : EnemyBase
         PlayDeathSfx();
         SpawnXpOrb();
         TrySpawnHpOrb();
+        TrySpawnMagnet();
         SpawnDeathBurst();
         // Pas de hitstop à la mort : le ralenti casse le flow de jeu
         ScreenShake.Instance?.Shake(6f, 0.3f);

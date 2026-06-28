@@ -15,6 +15,9 @@ public partial class XpOrb : Area2D
     private const float MagnetRadius = 80f;
     private const float MagnetSpeed  = 300f;
 
+    /// <summary>Forcé par le pickup Aimant : l'orbe est attirée vers le joueur à toute distance.</summary>
+    public bool ForceMagnet { get; set; } = false;
+
     private bool _isMagneted = false;
 
     private GpuParticles2D? _trail;
@@ -81,12 +84,14 @@ public partial class XpOrb : Area2D
 
         float dist = GlobalPosition.DistanceTo(player.GlobalPosition);
         bool wasMagneted = _isMagneted;
-        _isMagneted = dist < MagnetRadius;
+        _isMagneted = ForceMagnet || dist < MagnetRadius;
 
         if (_isMagneted && dist > 1f)
         {
+            // Aspiration globale (Aimant) plus rapide pour traverser l'arène façon « vacuum »
+            float speed = ForceMagnet ? MagnetSpeed * 2.5f : MagnetSpeed;
             var dir = (player.GlobalPosition - GlobalPosition).Normalized();
-            GlobalPosition += dir * MagnetSpeed * (float)delta;
+            GlobalPosition += dir * speed * (float)delta;
         }
 
         // Transition entre pulse et trail

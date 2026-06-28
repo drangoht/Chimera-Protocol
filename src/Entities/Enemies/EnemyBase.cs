@@ -16,11 +16,15 @@ public partial class EnemyBase : CharacterBody2D
     private Tween? _hitTween;
     private static PackedScene? _xpOrbScene;
     private static PackedScene? _hpOrbScene;
+    private static PackedScene? _magnetScene;
 
     [Signal] public delegate void DiedEventHandler(int xpValue);
 
     /// <summary>Probabilité de dropper un orbe HP à la mort. Surchargeable (mini-boss : 0.25f).</summary>
     protected virtual float HpDropChance => 0.08f;
+
+    /// <summary>Probabilité de dropper un Aimant à la mort (aspire toutes les orbes d'XP). Drop rare.</summary>
+    protected virtual float MagnetDropChance => 0.0025f;
 
     public override void _Ready()
     {
@@ -31,6 +35,7 @@ public partial class EnemyBase : CharacterBody2D
 
         _xpOrbScene ??= GD.Load<PackedScene>("res://scenes/entities/XpOrb.tscn");
         _hpOrbScene ??= GD.Load<PackedScene>("res://scenes/entities/HpOrb.tscn");
+        _magnetScene ??= GD.Load<PackedScene>("res://scenes/entities/Magnet.tscn");
     }
 
     public override void _PhysicsProcess(double delta)
@@ -112,6 +117,7 @@ public partial class EnemyBase : CharacterBody2D
         PlayDeathSfx();
         SpawnXpOrb();
         TrySpawnHpOrb();
+        TrySpawnMagnet();
         SpawnDeathBurst();
         QueueFree();
     }
@@ -164,6 +170,20 @@ public partial class EnemyBase : CharacterBody2D
         var spawnPos = GlobalPosition + new Vector2(GD.Randf() * 16f - 8f, GD.Randf() * 16f - 8f);
         parent.CallDeferred(Node.MethodName.AddChild, orb);
         orb.SetDeferred("global_position", spawnPos);
+    }
+
+    protected void TrySpawnMagnet()
+    {
+        if (_magnetScene == null) return;
+        if (GD.Randf() > MagnetDropChance) return;
+
+        var parent = GetParent();
+        if (parent == null) return;
+
+        var magnet = _magnetScene.Instantiate<MagnetPickup>();
+        var spawnPos = GlobalPosition + new Vector2(GD.Randf() * 16f - 8f, GD.Randf() * 16f - 8f);
+        parent.CallDeferred(Node.MethodName.AddChild, magnet);
+        magnet.SetDeferred("global_position", spawnPos);
     }
 
     protected void SpawnXpOrb()
