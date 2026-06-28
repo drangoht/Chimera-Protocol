@@ -178,11 +178,7 @@ public partial class InventorySystem : Node
                 if (node is WeaponBase wb)
                 {
                     if (lvlData.TryGetProperty("damage", out var d))
-                    {
-                        float dmg = d.GetSingle();
-                        if (level > definedMax) dmg *= 1f + (level - definedMax) * 0.10f;
-                        wb.Damage = dmg;
-                    }
+                        wb.Damage = WeaponLeveling.ExtrapolatedDamage(d.GetSingle(), level, definedMax);
                     if (lvlData.TryGetProperty("cooldown", out var c)) wb.Cooldown = ApplyCooldownReduction(c.GetSingle());
                 }
 

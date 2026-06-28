@@ -87,3 +87,58 @@ public class RarityWeightsTests
     public void Weight_ParRarete(string rarity, float expected)
         => Assert.Equal(expected, RarityWeights.Weight(rarity));
 }
+
+public class SpawnCurveTests
+{
+    [Fact]
+    public void SpawnInterval_DecroitPuisPlafonneA03()
+    {
+        Assert.Equal(1.0f, SpawnCurve.SpawnInterval(0f), 3);       // début
+        Assert.True(SpawnCurve.SpawnInterval(5f) < 1.0f);          // décroît
+        Assert.Equal(0.3f, SpawnCurve.SpawnInterval(20f), 3);      // plancher
+    }
+
+    [Fact]
+    public void BatchCount_EstBorneEntre1Et10()
+    {
+        Assert.Equal(2, SpawnCurve.BatchCount(0f));
+        Assert.Equal(10, SpawnCurve.BatchCount(60f));   // clamp haut
+        Assert.True(SpawnCurve.BatchCount(3f) is >= 1 and <= 10);
+    }
+
+    [Fact]
+    public void MaxEnemies_CroitPuisPlafonneAuCap()
+    {
+        Assert.Equal(12, SpawnCurve.MaxEnemies(0f, 1f));
+        Assert.Equal(SpawnCurve.MaxAlive, SpawnCurve.MaxEnemies(60f, 1f)); // plafonné à 300
+    }
+
+    [Fact]
+    public void MaxEnemies_AppliqueLeMultiplicateurDeSpawn()
+        => Assert.Equal(6, SpawnCurve.MaxEnemies(0f, 0.5f)); // (12)*0.5 = 6
+
+    [Fact]
+    public void WaveSize_CroitAvecLeTempsEtLeMult()
+    {
+        Assert.Equal(12, SpawnCurve.WaveSize(0f, 1f));
+        Assert.Equal(8,  SpawnCurve.WaveSize(0f, 0.7f)); // (12)*0.7 = 8.4 -> 8
+    }
+}
+
+public class WeaponLevelingTests
+{
+    [Fact]
+    public void ExtrapolatedDamage_SousLeNiveauDefini_RendLaBase()
+        => Assert.Equal(50f, WeaponLeveling.ExtrapolatedDamage(50f, 4, 5), 3);
+
+    [Fact]
+    public void ExtrapolatedDamage_AuNiveauDefini_RendLaBase()
+        => Assert.Equal(50f, WeaponLeveling.ExtrapolatedDamage(50f, 5, 5), 3);
+
+    [Theory]
+    [InlineData(6, 55f)]   // +10% au-delà du niveau 5
+    [InlineData(10, 75f)]  // +50%
+    [InlineData(20, 125f)] // +150%
+    public void ExtrapolatedDamage_AuDela_Applique10PctParNiveau(int level, float expected)
+        => Assert.Equal(expected, WeaponLeveling.ExtrapolatedDamage(50f, level, 5), 3);
+}

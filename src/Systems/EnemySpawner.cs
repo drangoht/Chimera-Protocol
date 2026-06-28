@@ -17,8 +17,6 @@ public partial class EnemySpawner : Node
     private float _waveTimer = 30f;  // première vague à t=30 s
     private float _elapsed   = 0f;   // secondes depuis le début du run
 
-    private const int MaxAlive = 300; // cap simultané (perf cible 200-300)
-
     private readonly RandomNumberGenerator _rng = new();
 
     // Données de spawn chargées depuis enemies.json
@@ -82,13 +80,12 @@ public partial class EnemySpawner : Node
 
         _elapsed += (float)delta;
         float tMinutes      = _elapsed / 60f;
-        float spawnInterval = Mathf.Max(0.3f, 1.0f - tMinutes * 0.06f);
+        float spawnInterval = SpawnCurve.SpawnInterval(tMinutes);
 
         _timer -= (float)delta;
         if (_timer <= 0f)
         {
-            int batch = Mathf.Clamp(2 + (int)(tMinutes * 2f), 1, 10);
-            TrySpawnBatch(tMinutes, batch);
+            TrySpawnBatch(tMinutes, SpawnCurve.BatchCount(tMinutes));
             _timer = spawnInterval;
         }
 
@@ -97,8 +94,7 @@ public partial class EnemySpawner : Node
         if (_waveTimer <= 0f)
         {
             float spawnMult = GameSettings.Instance?.SpawnMult ?? 1f;
-            int waveSize = (int)((12 + tMinutes * 4f) * spawnMult);
-            TrySpawnBatch(tMinutes, waveSize);
+            TrySpawnBatch(tMinutes, SpawnCurve.WaveSize(tMinutes, spawnMult));
             _waveTimer = 25f;
         }
     }
@@ -108,11 +104,7 @@ public partial class EnemySpawner : Node
     // -------------------------------------------------------------------------
 
     private int CurrentMaxEnemies(float tMinutes)
-    {
-        // Base assouplie (Normal) + multiplicateur de difficulté.
-        float mult = GameSettings.Instance?.SpawnMult ?? 1f;
-        return Mathf.Min(MaxAlive, (int)((12 + tMinutes * 30f) * mult));
-    }
+        => SpawnCurve.MaxEnemies(tMinutes, GameSettings.Instance?.SpawnMult ?? 1f);
 
     private void TrySpawnBatch(float tMinutes, int count)
     {
