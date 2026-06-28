@@ -27,6 +27,12 @@ public partial class LevelUpSystem : Node
     // true = drop déclenché par un mini-boss, pas un level-up XP normal
     private bool _isWeaponDrop = false;
 
+    // Consommables par run, initialisés depuis les améliorations méta dans Reset().
+    /// <summary>Nombre de renouvellements de cartes restants pour la run.</summary>
+    public int RerollsLeft { get; private set; }
+    /// <summary>Nombre de sélections « passées » restantes pour la run.</summary>
+    public int SkipsLeft   { get; private set; }
+
     // Tous les ids connus (pour le pool complet)
     private static readonly string[] AllWeaponIds  = { "impulse_cannon", "plasma_blade", "drone_swarm", "overload_field", "tesla_coil", "scatter_volley" };
     private static readonly string[] AllPassiveIds = { "thermal_core", "reinforced_plating", "servo_motors", "capacitor" };
@@ -45,6 +51,47 @@ public partial class LevelUpSystem : Node
         _pendingFusionId          = null;
         _lastFusionAvailableLevel = -1;
         _isWeaponDrop             = false;
+
+        // Consommables de la run = niveau des améliorations méta achetées (max 3 chacun).
+        var meta    = MetaProgressionSystem.Instance;
+        RerollsLeft = meta?.GetUpgradeLevel("reroll") ?? 0;
+        SkipsLeft   = meta?.GetUpgradeLevel("skip")   ?? 0;
+    }
+
+    /// <summary>Consomme un renouvellement si disponible. Retourne true si réussi.</summary>
+    public bool TryConsumeReroll()
+    {
+        if (RerollsLeft <= 0) return false;
+        RerollsLeft--;
+        return true;
+    }
+
+    /// <summary>Consomme un « passer » si disponible. Retourne true si réussi.</summary>
+    public bool TryConsumeSkip()
+    {
+        if (SkipsLeft <= 0) return false;
+        SkipsLeft--;
+        return true;
+    }
+
+    /// <summary>
+    /// Régénère un nouveau jeu de 3 cartes pour la sélection EN COURS (sans changer de niveau).
+    /// Tient compte du contexte : drop de mini-boss ou montée de niveau normale.
+    /// </summary>
+    public Godot.Collections.Array RerollCurrentCards()
+    {
+        if (_isWeaponDrop)
+            return BuildWeaponCards(3);
+
+        var inv    = InventorySystem.Instance;
+        int level  = XpSystem.Instance.CurrentLevel;
+        var pool   = BuildPool(inv);
+        var chosen = PickCards(pool, level, inv);
+
+        var arr = new Godot.Collections.Array();
+        foreach (var card in chosen)
+            arr.Add(card.ToGodotDict());
+        return arr;
     }
 
     private void LoadJson()

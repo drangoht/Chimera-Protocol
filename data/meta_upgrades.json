@@ -116,6 +116,26 @@
       "effectPerLevel": [1],
       "statTarget": "UnlockStartingWeapon",
       "_designNote": "Valeur : drone_swarm. Débloque une variante de build qui ne serait autrement accessible qu'au niveau ~5-6 (rareté Rare). Coût élevé (300) = atteignable en ~2-3 runs, objectif de moyen terme. Renforce la rejouabilité par la variété de départ."
+    },
+    {
+      "id": "reroll",
+      "name": "Recalibrage Tactique",
+      "description": "Renouvelle les cartes proposées à la montée de niveau. +1 utilisation par run et par niveau (max 3).",
+      "maxLevel": 3,
+      "costPerLevel": [150, 300, 500],
+      "effectPerLevel": [1, 1, 1],
+      "statTarget": "Reroll",
+      "_designNote": "Consommable par run (non un stat PlayerStats). LevelUpSystem.Reset() initialise RerollsLeft au niveau acheté. Bouton « Renouveler » sur le LevelUpScreen."
+    },
+    {
+      "id": "skip",
+      "name": "Esquive de Sélection",
+      "description": "Permet de passer une sélection de cartes (vous gardez le niveau, sans choisir d'amélioration). +1 utilisation par run et par niveau (max 3).",
+      "maxLevel": 3,
+      "costPerLevel": [120, 250, 420],
+      "effectPerLevel": [1, 1, 1],
+      "statTarget": "Skip",
+      "_designNote": "Consommable par run. LevelUpSystem.Reset() initialise SkipsLeft. Bouton « Passer » sur le LevelUpScreen. Utile pour éviter d'équiper une 5e arme non désirée ou garder un build focalisé."
     }
   ],
 

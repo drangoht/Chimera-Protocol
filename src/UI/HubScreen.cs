@@ -3,7 +3,8 @@ using System.Collections.Generic;
 
 /// <summary>
 /// Écran Hub — dépense des Échos d'Aether en améliorations permanentes.
-/// Liste les 7 upgrades depuis MetaProgressionSystem (données provenant de meta_upgrades.json).
+/// Liste les améliorations depuis MetaProgressionSystem (données provenant de meta_upgrades.json),
+/// + un bouton de réinitialisation (remboursement) et le sélecteur de personnage.
 /// </summary>
 public partial class HubScreen : Control
 {

@@ -15,6 +15,10 @@ public partial class LevelUpScreen : CanvasLayer
     private Button    _card2      = null!;
     private Label     _labelLevel = null!;
 
+    // Boutons d'action (renouveler / passer), construits en code, débloqués par les améliorations méta.
+    private Button    _rerollButton = null!;
+    private Button    _skipButton   = null!;
+
     // Données des 3 cartes actuelles
     private Godot.Collections.Array _currentCards = new();
 
@@ -45,6 +49,8 @@ public partial class LevelUpScreen : CanvasLayer
         ConnectCardHover(_card0);
         ConnectCardHover(_card1);
         ConnectCardHover(_card2);
+
+        BuildActionButtons();
 
         // L'écran démarre caché
         Visible = false;
@@ -79,7 +85,6 @@ public partial class LevelUpScreen : CanvasLayer
 
     private void Display(Godot.Collections.Array cards)
     {
-        _currentCards = cards;
         Visible = true;
         GetTree().Paused = true;
 
@@ -91,6 +96,15 @@ public partial class LevelUpScreen : CanvasLayer
             int level = XpSystem.Instance.CurrentLevel;
             _labelLevel.Text = $"Niveau {level} !";
         }
+
+        ApplyCards(cards);
+        UpdateActionButtons();
+    }
+
+    /// <summary>Remplit les 3 cartes avec le jeu fourni + scale-in. Réutilisé par le renouvellement.</summary>
+    private void ApplyCards(Godot.Collections.Array cards)
+    {
+        _currentCards = cards;
 
         PopulateCard(_card0, 0, cards);
         PopulateCard(_card1, 1, cards);
@@ -195,6 +209,87 @@ public partial class LevelUpScreen : CanvasLayer
 
         // Enchaîne sur le level-up suivant en file, ou reprend le jeu si vide.
         ShowNext();
+    }
+
+    // -------------------------------------------------------------------------
+    // Boutons d'action : Renouveler (reroll) / Passer (skip)
+    // -------------------------------------------------------------------------
+
+    private void BuildActionButtons()
+    {
+        var row = new HBoxContainer
+        {
+            Name           = "Actions",
+            Alignment      = BoxContainer.AlignmentMode.Center,
+            AnchorLeft     = 0.5f, AnchorRight = 0.5f, AnchorTop = 0.5f, AnchorBottom = 0.5f,
+            OffsetLeft     = -260f, OffsetRight = 260f, OffsetTop = 230f, OffsetBottom = 282f,
+            GrowHorizontal = Control.GrowDirection.Both,
+        };
+        row.AddThemeConstantOverride("separation", 24);
+
+        _rerollButton = MakeActionButton("Renouveler", new Color(0.27f, 0.67f, 1f));
+        _skipButton   = MakeActionButton("Passer",     new Color(1f, 0.55f, 0.2f));
+        _rerollButton.Pressed += OnRerollPressed;
+        _skipButton.Pressed   += OnSkipPressed;
+
+        row.AddChild(_rerollButton);
+        row.AddChild(_skipButton);
+        AddChild(row);
+    }
+
+    private static Button MakeActionButton(string text, Color accent)
+    {
+        var btn = new Button { Text = text, CustomMinimumSize = new Vector2(200, 48) };
+
+        var normal = new StyleBoxFlat { BgColor = new Color(0.05f, 0.05f, 0.12f, 0.9f) };
+        normal.SetBorderWidthAll(2); normal.BorderColor = accent * new Color(1, 1, 1, 0.8f); normal.SetCornerRadiusAll(6);
+        btn.AddThemeStyleboxOverride("normal", normal);
+
+        var hover = new StyleBoxFlat { BgColor = new Color(0.1f, 0.1f, 0.22f, 0.95f) };
+        hover.SetBorderWidthAll(3); hover.BorderColor = accent; hover.SetCornerRadiusAll(6);
+        btn.AddThemeStyleboxOverride("hover", hover);
+        btn.AddThemeStyleboxOverride("pressed", hover);
+        btn.AddThemeStyleboxOverride("focus", hover);
+
+        btn.AddThemeFontSizeOverride("font_size", 18);
+        btn.AddThemeColorOverride("font_color", new Color(0.85f, 0.85f, 0.95f));
+        return btn;
+    }
+
+    private void OnRerollPressed()
+    {
+        var sys = LevelUpSystem.Instance;
+        if (sys == null || !sys.TryConsumeReroll()) return;
+        AudioSystem.Instance?.PlaySfx("sfx_ui_button");
+        ApplyCards(sys.RerollCurrentCards());
+        UpdateActionButtons();
+    }
+
+    private void OnSkipPressed()
+    {
+        var sys = LevelUpSystem.Instance;
+        if (sys == null || !sys.TryConsumeSkip()) return;
+        AudioSystem.Instance?.PlaySfx("sfx_ui_button");
+        sys.ResolveWeaponDrop();
+        ShowNext();
+    }
+
+    /// <summary>Met à jour libellés/visibilité/état des boutons selon les consommables restants.</summary>
+    private void UpdateActionButtons()
+    {
+        var sys  = LevelUpSystem.Instance;
+        var meta = MetaProgressionSystem.Instance;
+        int rerolls = sys?.RerollsLeft ?? 0;
+        int skips   = sys?.SkipsLeft   ?? 0;
+
+        // Visible uniquement si l'amélioration est possédée (sinon l'écran reste épuré).
+        _rerollButton.Visible  = (meta?.GetUpgradeLevel("reroll") ?? 0) > 0;
+        _rerollButton.Text     = $"Renouveler ({rerolls})";
+        _rerollButton.Disabled = rerolls <= 0;
+
+        _skipButton.Visible  = (meta?.GetUpgradeLevel("skip") ?? 0) > 0;
+        _skipButton.Text     = $"Passer ({skips})";
+        _skipButton.Disabled = skips <= 0;
     }
 
     private new void Hide()
