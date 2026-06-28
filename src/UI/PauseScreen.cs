@@ -98,13 +98,21 @@ public partial class PauseScreen : CanvasLayer
         BuildPlayerSection(left);
         BuildInventorySection(right);
 
-        // Bouton reprendre
+        // Boutons : reprendre + quitter la partie
         root.AddChild(Sep(_violet));
         var btn = MakeButton("▶  REPRENDRE  [Échap]");
         btn.Pressed += Close;
         root.AddChild(btn);
 
-        // Focus sur le bouton après le layout
+        var quitBtn = MakeButton("QUITTER LA PARTIE");
+        quitBtn.Pressed += QuitToMenu;
+        root.AddChild(quitBtn);
+
+        // Navigation clavier/manette entre les deux boutons
+        btn.FocusNeighborBottom     = btn.GetPathTo(quitBtn);
+        quitBtn.FocusNeighborTop    = quitBtn.GetPathTo(btn);
+
+        // Focus sur le bouton reprendre après le layout
         CreateTween().TweenCallback(Callable.From(() => btn.GrabFocus()));
     }
 
@@ -273,6 +281,17 @@ public partial class PauseScreen : CanvasLayer
     {
         AudioSystem.Instance?.PlaySfx("sfx_ui_button");
         GetTree().Paused = false;
+        QueueFree();
+    }
+
+    /// <summary>Abandonne la run en cours et revient au menu principal.</summary>
+    private void QuitToMenu()
+    {
+        AudioSystem.Instance?.PlaySfx("sfx_ui_button");
+        // Le tree était en pause : impératif de le relancer, sinon le menu reste figé.
+        GetTree().Paused = false;
+        GetTree().ChangeSceneToFile("res://scenes/MainMenu.tscn");
+        // Le PauseScreen est enfant de la racine (pas de la scène déchargée) → on le retire.
         QueueFree();
     }
 
