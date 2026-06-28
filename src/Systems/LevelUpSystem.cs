@@ -28,7 +28,7 @@ public partial class LevelUpSystem : Node
     private bool _isWeaponDrop = false;
 
     // Tous les ids connus (pour le pool complet)
-    private static readonly string[] AllWeaponIds  = { "impulse_cannon", "plasma_blade", "drone_swarm", "overload_field", "tesla_coil", "aether_nova", "scatter_volley" };
+    private static readonly string[] AllWeaponIds  = { "impulse_cannon", "plasma_blade", "drone_swarm", "overload_field", "tesla_coil", "scatter_volley" };
     private static readonly string[] AllPassiveIds = { "thermal_core", "reinforced_plating", "servo_motors", "capacitor" };
     private static readonly string[] AllFusionIds  = { "fusion_blade", "rail_overcharged", "orbital_swarm", "overload_aegis" };
 

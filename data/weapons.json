@@ -102,23 +102,6 @@
       ],
       "fusionRequires": null,
       "fusionResult": null
-    },
-    {
-      "id": "aether_nova",
-      "name": "Nova d'Aether",
-      "type": "active",
-      "rarity": "epic",
-      "description": "Détonation circulaire qui se dilate autour du joueur. Onde de choc lumineuse violette.",
-      "maxLevel": 20,
-      "levels": [
-        { "level": 1, "damage": 16, "cooldown": 2.20, "radius": 140 },
-        { "level": 2, "damage": 22, "cooldown": 2.00, "radius": 160 },
-        { "level": 3, "damage": 30, "cooldown": 1.80, "radius": 185 },
-        { "level": 4, "damage": 40, "cooldown": 1.60, "radius": 210 },
-        { "level": 5, "damage": 54, "cooldown": 1.40, "radius": 245 }
-      ],
-      "fusionRequires": null,
-      "fusionResult": null
     }
   ],
   "passives": [

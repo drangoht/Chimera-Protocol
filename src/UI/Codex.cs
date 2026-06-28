@@ -137,11 +137,6 @@ public static class Codex
             + "Ravage les groupes denses en un éclair.",
             IconDir + "ui_icon_tesla.png", Cyan),
 
-        new("aether_nova", "Nova d'Aether", "Arme active",
-            "Détonation circulaire qui se dilate autour du joueur, frappant tout dans un rayon croissant. "
-            + "Onde de choc lumineuse violette — dégâts de zone massifs.",
-            IconDir + "ui_icon_nova.png", Violet),
-
         new("scatter_volley", "Volée Multiple", "Arme active",
             "Tir multi-cible : envoie plusieurs projectiles vers les ennemis les plus proches, un par cible. "
             + "2 projectiles au niveau 1, +1 à chaque niveau (jusqu'à 6). Idéale contre les groupes éparpillés.",
@@ -176,7 +171,6 @@ public static class Codex
         { "drone_swarm",       IconDir + "ui_icon_droneswarm.png"     },
         { "overload_field",    IconDir + "ui_icon_overloadfield.png"  },
         { "tesla_coil",        IconDir + "ui_icon_tesla.png"          },
-        { "aether_nova",       IconDir + "ui_icon_nova.png"           },
         { "scatter_volley",    IconDir + "ui_icon_scatter.png"        },
         { "fusion_blade",      IconDir + "ui_icon_fusionblade.png"    },
         { "rail_overcharged",  IconDir + "ui_icon_rail.png"           },

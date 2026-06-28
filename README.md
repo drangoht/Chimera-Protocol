@@ -28,7 +28,7 @@ Dans un monde ravagé par **la Rouille Vivante** (corruption mi-organique, mi-m�
 | Juice & densité VS | ✅ Livré | VFX scalés par niveau d'arme (brillance balles, impact bursts, flash), explosions de mort calibrées par tier + onde de choc, aura joueur croissante, screen shake d'impact ; arène éclaircie ; spawn façon Vampire Survivors (cap 300, courbe raide, lots + vagues) ; i-frames joueur (0.45 s) |
 | Boss & nouvelles armes | ✅ Livré | 2 armes 100% VFX (Bobine Tesla = éclair en chaîne, Nova d'Aether = détonation dilatante) ; mini-boss de mi-temps **Revenant d'Aether** (7 min, ruades) ; **boss de fin Le Noyau Rouillé** (13 min, HP base 1600 → ~4096 effectif après scaling temporel, salves radiales, 500 XP + 3 Noyaux + choix d'arme) |
 | Sprites dédiés boss | ✅ Livré | Sprites pixel art 64×64 dédiés générés (`tools/generate_boss_sprites.py`) : Revenant (spectre cyborg violet, bras-lames, dissolution) + Noyau Rouillé (titan rouille-or, noyau en fusion, surcharge) — fin de la réutilisation teintée |
-| Bestiaire & Arsenal | ✅ Livré | 2 rubriques au menu : **Bestiaire** (8 ennemis — sprite **animé** + tag + description) et **Arsenal** (9 armes + 4 passifs — icône + description). Icônes Tesla/Nova/Volée créées ; icônes sur les cartes de choix d'arme et dans les notifs HUD |
+| Bestiaire & Arsenal | ✅ Livré | 2 rubriques au menu : **Bestiaire** (8 ennemis — sprite **animé** + tag + description) et **Arsenal** (8 armes + 4 passifs — icône + description). Icônes Tesla/Volée créées ; icônes sur les cartes de choix d'arme et dans les notifs HUD |
 | Lisibilité UI | ✅ Livré | Police principale **Share Tech Mono** (mono techno lisible, anti-aliasée) en remplacement de VT323 — texte et HUD nettement moins pixelisés ; tailles ré-accordées |
 | Personnages jouables | ✅ Livré | 3 personnages (registre `Characters.cs`) : **Chimera** (cyborg, impulse_cannon), **Titan-Gardien** (robot lourd, drone_swarm), **Vagabond** (humain, plasma_blade) — sprites pixel art dédiés, aura d'identité, sélecteur dans le Hub. Le perso garde toujours son arme de signature |
 | Biomes d'arène | ✅ Livré | 4 biomes (Sanctuaire Rouillé, Friche d'Aether, Fournaise, Givre Cryogénique) — tuiles dédiées, obstacles colorés à l'accent, effets gameplay (XP +20%, vitesse ennemis ±18%), seed de layout randomisé |
@@ -65,9 +65,9 @@ Dans un monde ravagé par **la Rouille Vivante** (corruption mi-organique, mi-m�
 
 > ¹ **PV de base.** L'`EnemySpawner` applique un scaling temporel `PV = base × (1 + t_min × hpScaling) × difficulté`. Le Noyau Rouillé arrivant à 13 min, son PV effectif est **≈4096 en Normal** (≈3277 Facile / ≈5325 Difficile). Idem pour les autres ennemis selon leur heure d'apparition.
 
-### Armes & passifs (11 cartes + 2 fusions)
+### Armes & passifs (10 cartes + fusions)
 
-**Actives** : Canon à Impulsions · Lame Plasma · Essaim de Drones · Champ de Surcharge · **Bobine Tesla** (éclair en chaîne) · **Nova d'Aether** (détonation circulaire) · **Volée Multiple** (tir multi-cible, +1 projectile/niveau)
+**Actives** : Canon à Impulsions · Lame Plasma · Essaim de Drones · Champ de Surcharge · **Bobine Tesla** (éclair en chaîne) · **Volée Multiple** (tir multi-cible, +1 projectile/niveau)
 
 **Passifs** : Noyau Thermique · Plaque Renforcée · Servo-Moteurs · Capaciteur
 

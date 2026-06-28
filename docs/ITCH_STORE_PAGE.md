@@ -70,7 +70,7 @@ il mute.
 - **Difficulté réglable** : Facile / Normal / Difficile (multiplicateurs de dégâts, de PV et de spawn).
 - **Un bestiaire qui monte en intensité** : 4 ennemis de base, **3 mini-boss** (Revenant d'Aether,
   Rôdeur de Rouille, Sentinelle Maîtresse) et **1 boss de fin** (Le Noyau Rouillé).
-- **Un arsenal qui se construit** : **9 armes**, **4 passifs** et **4 fusions** à combiner.
+- **Un arsenal qui se construit** : **8 armes**, **4 passifs** et **4 fusions** à combiner.
 - **Méta-progression** : les Échos d'Aether gagnés en run s'investissent en améliorations permanentes
   au Hub.
 - **Intro narrative skippable** : le lore raconté en 5 temps au lancement — sautable d'une touche.
@@ -80,7 +80,7 @@ il mute.
 
 ### Codex intégré
 
-Un **Bestiaire** (8 ennemis avec sprite animé, rôle et description) et un **Arsenal** (9 armes +
+Un **Bestiaire** (8 ennemis avec sprite animé, rôle et description) et un **Arsenal** (8 armes +
 4 passifs, icônes et descriptions) sont consultables directement depuis le menu principal.
 
 ---

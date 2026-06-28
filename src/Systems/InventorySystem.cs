@@ -35,7 +35,6 @@ public partial class InventorySystem : Node
         { "drone_swarm",     "res://scenes/weapons/DroneSwarm.tscn"     },
         { "overload_field",  "res://scenes/weapons/OverloadField.tscn"  },
         { "tesla_coil",      "res://scenes/weapons/TeslaCoil.tscn"      },
-        { "aether_nova",     "res://scenes/weapons/AetherNova.tscn"     },
         { "scatter_volley",  "res://scenes/weapons/ScatterVolley.tscn"  },
         { "fusion_blade",    "res://scenes/weapons/FusionBlade.tscn"    },
         { "rail_overcharged","res://scenes/weapons/RailOvercharged.tscn"},
@@ -239,11 +238,6 @@ public partial class InventorySystem : Node
                 if (lvlData.TryGetProperty("chainCount", out var cc)) tc.ChainCount = cc.GetInt32();
                 if (lvlData.TryGetProperty("chainRange", out var crg)) tc.ChainRange = crg.GetSingle();
                 tc.Damage *= dmgMult;
-                break;
-
-            case "aether_nova" when node is AetherNova an:
-                if (lvlData.TryGetProperty("radius", out var nr)) an.Radius = nr.GetSingle();
-                an.Damage *= dmgMult;
                 break;
         }
     }
