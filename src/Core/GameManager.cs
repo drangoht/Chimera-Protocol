@@ -90,19 +90,7 @@ public partial class GameManager : Node
         }
 
         // Applique les bonus meta permanents dès que le joueur s'enregistre
-        if (MetaProgressionSystem.Instance != null)
-        {
-            MetaProgressionSystem.Instance.ApplyMetaBonusesToStats(player.Stats);
-
-            // XP de départ (Mémoire Résiduelle) — différé : RegisterPlayer tourne pendant
-            // Player._Ready, AVANT que LevelUpScreen ne s'abonne au signal. Ajouter l'XP ici
-            // émettrait les level-ups sans auditeur (cartes perdues). On défère d'une frame
-            // pour que tous les _Ready soient passés ; la file de LevelUpScreen présente alors
-            // chaque montée de niveau une par une.
-            int startXp = MetaProgressionSystem.Instance.GetStartingXp();
-            if (startXp > 0)
-                Callable.From(() => XpSystem.Instance?.AddXp(startXp)).CallDeferred();
-        }
+        MetaProgressionSystem.Instance?.ApplyMetaBonusesToStats(player.Stats);
 
         // Hook de debug --debug-boss : loadout de test + spawn immédiat du boss final.
         // Différé pour laisser tous les _Ready de la scène passer (EnemySpawner doit avoir

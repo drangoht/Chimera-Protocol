@@ -108,16 +108,6 @@
       "_designNote": "DamageReduction additif. Max permanent : -15%. Hardcap global 40% inclut Plaque Renforcée (-20%). Coût élevé niveau 1 car effet défensif très puissant pour les joueurs agressifs."
     },
     {
-      "id": "starting_xp",
-      "name": "Mémoire Résiduelle",
-      "description": "Vous commencez chaque run avec 60 XP cumulés (niveau 2 immédiat, premier choix d'arme après ~10 s).",
-      "maxLevel": 1,
-      "costPerLevel": [200],
-      "effectPerLevel": [60],
-      "statTarget": "StartingXp",
-      "_designNote": "Accélérateur de fun : réduit la phase d'amorçage en début de run et compense les mauvaises runs courtes. 60 XP = seuil de niveau 2 (XP_TOTAL(1) = 60). MaxLevel 1 — n'a pas besoin de niveaux supplémentaires, l'effet est binaire."
-    },
-    {
       "id": "starting_weapon_alt",
       "name": "Prototype de Terrain",
       "description": "Déverrouille l'Essaim de Drones comme arme de départ sélectionnable au Hub (en plus du Canon à Impulsions).",
@@ -130,7 +120,6 @@
   ],
 
   "_implementationNotes": {
-    "statTarget_StartingXp": "Pas un champ de PlayerStats existant. MetaProgressionSystem doit injecter la valeur dans XpSystem.AddXp(startingXp) au début de la run, AVANT le premier _PhysicsProcess.",
     "statTarget_UnlockStartingWeapon": "Pas un champ de PlayerStats. MetaProgressionSystem expose List<string> UnlockedStartingWeapons. HubScreen lit cette liste pour peupler le sélecteur d'arme de départ.",
     "statTarget_DamageMultiplier": "DamageMultiplier est déjà dans PlayerStats. MetaProgressionSystem additionne les effets achetés à la valeur de base (1.0) avant le début de run.",
     "statTarget_DamageReduction": "DamageReduction est déjà dans PlayerStats. Même logique additive. Respecter le hardcap 0.40 dans PlayerStats.ApplyDamageReduction().",

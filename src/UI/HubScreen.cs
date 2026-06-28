@@ -11,6 +11,8 @@ public partial class HubScreen : Control
     private VBoxContainer _upgradesList      = null!;
     private Button        _playButton        = null!;
     private Button        _backButton        = null!;
+    private Button        _resetButton       = null!;
+    private bool          _resetArmed        = false;
     private ColorRect     _fadeOverlay       = null!;
 
     // Sélecteur d'arme de départ (visible uniquement si starting_weapon_alt est débloqué)
@@ -40,6 +42,7 @@ public partial class HubScreen : Control
 
         BuildCharacterSelector();
         BuildUpgradesList();
+        BuildResetButton();
         RefreshDisplay();
         SetupFocusChain();
 
@@ -209,6 +212,71 @@ public partial class HubScreen : Control
         }
     }
 
+    /// <summary>
+    /// Bouton « Réinitialiser les améliorations » (rembourse l'intégralité des Échos dépensés).
+    /// Confirmation en 2 temps pour éviter les clics accidentels.
+    /// </summary>
+    private void BuildResetButton()
+    {
+        _resetButton = new Button
+        {
+            Text              = "Réinitialiser les améliorations",
+            CustomMinimumSize = new Vector2(0, 40),
+        };
+
+        // Bordure orange « attention » pour distinguer cette action des achats.
+        var normal = new StyleBoxFlat { BgColor = new Color(0.05f, 0.05f, 0.12f, 0.9f) };
+        normal.SetBorderWidthAll(1); normal.BorderColor = new Color(1f, 0.55f, 0.2f, 0.7f); normal.SetCornerRadiusAll(3);
+        _resetButton.AddThemeStyleboxOverride("normal", normal);
+
+        var hover = new StyleBoxFlat { BgColor = new Color(0.12f, 0.08f, 0.05f, 0.95f) };
+        hover.SetBorderWidthAll(2); hover.BorderColor = new Color(1f, 0.55f, 0.2f, 1f); hover.SetCornerRadiusAll(3);
+        _resetButton.AddThemeStyleboxOverride("hover", hover);
+        _resetButton.AddThemeStyleboxOverride("pressed", hover);
+
+        var focus = new StyleBoxFlat { BgColor = new Color(0.12f, 0.08f, 0.05f, 0.95f) };
+        focus.SetBorderWidthAll(3); focus.BorderColor = new Color(1f, 0.55f, 0.2f, 1f); focus.SetCornerRadiusAll(4);
+        _resetButton.AddThemeStyleboxOverride("focus", focus);
+
+        _resetButton.AddThemeFontSizeOverride("font_size", 16);
+        _resetButton.AddThemeColorOverride("font_color", new Color(1f, 0.7f, 0.4f));
+        _resetButton.Pressed += OnResetPressed;
+        ConnectHoverEffects(_resetButton, 1.02f);
+
+        // Insère le bouton juste avant la rangée Retour / Jouer.
+        var vbox       = GetNode<VBoxContainer>("VBox");
+        var buttonsRow = GetNode<Control>("VBox/ButtonsRow");
+        vbox.AddChild(_resetButton);
+        vbox.MoveChild(_resetButton, buttonsRow.GetIndex());
+    }
+
+    private void OnResetPressed()
+    {
+        // 1er clic : armer + demander confirmation (désarmé après 3 s).
+        if (!_resetArmed)
+        {
+            _resetArmed       = true;
+            _resetButton.Text = "Confirmer ? (Échos remboursés)";
+            AudioSystem.Instance?.PlaySfx("sfx_ui_button");
+            var t = GetTree().CreateTimer(3.0);
+            t.Timeout += DisarmReset;
+            return;
+        }
+
+        // 2e clic : exécute le reset.
+        DisarmReset();
+        int refund = MetaProgressionSystem.Instance.ResetUpgrades();
+        AudioSystem.Instance?.PlaySfx(refund > 0 ? "sfx_ui_purchase" : "sfx_ui_button");
+        RefreshDisplay();
+    }
+
+    private void DisarmReset()
+    {
+        if (!GodotObject.IsInstanceValid(_resetButton)) return;
+        _resetArmed       = false;
+        _resetButton.Text = "Réinitialiser les améliorations";
+    }
+
     // ---------------------------------------------------------------------------
     // Mise à jour affichage
     // ---------------------------------------------------------------------------
@@ -355,14 +423,19 @@ public partial class HubScreen : Control
         if (_rows.Count == 0) return;
 
         _backButton.FocusNeighborBottom = _backButton.GetPathTo(_rows[0].BuyButton);
-        _playButton.FocusNeighborTop    = _playButton.GetPathTo(_rows[^1].BuyButton);
 
         for (int i = 0; i < _rows.Count; i++)
         {
             var btn = _rows[i].BuyButton;
             btn.FocusNeighborTop    = btn.GetPathTo(i == 0 ? _backButton : _rows[i - 1].BuyButton);
-            btn.FocusNeighborBottom = btn.GetPathTo(i == _rows.Count - 1 ? _playButton : _rows[i + 1].BuyButton);
+            // La dernière ligne descend vers le bouton Reset (inséré avant Retour/Jouer).
+            btn.FocusNeighborBottom = btn.GetPathTo(i == _rows.Count - 1 ? (Control)_resetButton : _rows[i + 1].BuyButton);
         }
+
+        // Bouton Reset intercalé entre la dernière amélioration et la rangée Retour / Jouer.
+        _resetButton.FocusNeighborTop    = _resetButton.GetPathTo(_rows[^1].BuyButton);
+        _resetButton.FocusNeighborBottom = _resetButton.GetPathTo(_playButton);
+        _playButton.FocusNeighborTop     = _playButton.GetPathTo(_resetButton);
     }
 
     // ---------------------------------------------------------------------------

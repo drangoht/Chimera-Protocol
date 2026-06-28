@@ -190,12 +190,28 @@ public partial class MetaProgressionSystem : Node
         return weapons;
     }
 
-    /// <summary>Retourne 60 si starting_xp est débloqué, sinon 0.</summary>
-    public int GetStartingXp()
+    /// <summary>
+    /// Réinitialise TOUTES les améliorations achetées et rembourse l'intégralité des Échos
+    /// dépensés pour les niveaux possédés. Retourne le montant remboursé (0 si rien à reset).
+    /// </summary>
+    public int ResetUpgrades()
     {
-        var def = FindDef("starting_xp");
-        if (def == null || GetUpgradeLevel("starting_xp") < 1) return 0;
-        return (int)def.EffectPerLevel[0];
+        int refund = 0;
+        foreach (var def in _upgradeDefs)
+        {
+            int level = GetUpgradeLevel(def.Id);
+            for (int i = 0; i < level && i < def.CostPerLevel.Count; i++)
+                refund += def.CostPerLevel[i];
+        }
+
+        if (refund == 0 && _saveData.Meta.Upgrades.Count == 0) return 0;
+
+        _saveData.Meta.Upgrades.Clear();
+        _saveData.Meta.CurrentEchoes    += refund;
+        _saveData.Meta.TotalEchoesSpent  = Mathf.Max(0, _saveData.Meta.TotalEchoesSpent - refund);
+        SaveManager.Instance.Save(_saveData);
+        GD.Print($"[MetaProgressionSystem] Reset des améliorations. Remboursé : {refund} Échos. Total : {CurrentEchoes}");
+        return refund;
     }
 
     // ---------------------------------------------------------------------------
