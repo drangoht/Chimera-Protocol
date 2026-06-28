@@ -107,8 +107,8 @@ public partial class GroundRenderer : Node2D
             GameManager.Instance.BiomeEnemySpeedMult = _biome.EnemySpeedMult;
             GameManager.Instance.BiomeXpMult         = _biome.XpMult;
             GameManager.Instance.BiomeAccent         = _biome.Accent;
-            GameManager.Instance.BiomeName           = _biome.Name;
-            GameManager.Instance.BiomeEffect         = _biome.EffectText;
+            GameManager.Instance.BiomeName           = Loc.T($"BIOME_{_biome.Id.ToUpperInvariant()}_NAME");
+            GameManager.Instance.BiomeEffect         = Loc.T($"BIOME_{_biome.Id.ToUpperInvariant()}_EFFECT");
             GameManager.Instance.CurrentBiomeId      = _biome.Id;
         }
 
@@ -134,7 +134,7 @@ public partial class GroundRenderer : Node2D
 
         var label = new Label
         {
-            Text                = $"{_biome.Name}\n{_biome.EffectText}",
+            Text                = $"{Loc.T($"BIOME_{_biome.Id.ToUpperInvariant()}_NAME")}\n{Loc.T($"BIOME_{_biome.Id.ToUpperInvariant()}_EFFECT")}",
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment   = VerticalAlignment.Center,
             AnchorLeft = 0f, AnchorRight = 1f, AnchorTop = 0.20f, AnchorBottom = 0.32f,

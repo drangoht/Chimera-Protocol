@@ -90,7 +90,7 @@ public partial class HubScreen : Control
 
             var costLabel = new Label
             {
-                Text                = "Coût : —",
+                Text                = "—", // placeholder, écrasé par RefreshDisplay (HUB_COST)
                 CustomMinimumSize   = new Vector2(120, 0),
                 HorizontalAlignment = HorizontalAlignment.Center,
             };
