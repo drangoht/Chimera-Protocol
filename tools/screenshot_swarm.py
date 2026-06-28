@@ -4,7 +4,7 @@ import pyautogui, pygetwindow as gw
 pyautogui.FAILSAFE = False
 
 GODOT = r"C:\CODE\JEUX\Godot_v4.7-stable_mono_win64\Godot_v4.7-stable_mono_win64.exe"
-PROJ  = r"C:\CODE\JEUX\cyborg-survivor"
+PROJ  = r"C:\CODE\JEUX\chimera-protocol"
 OUT   = os.path.join(PROJ, "docs", "swarm_review.png")
 CAP_AT = float(os.environ.get("CAP_AT", "40"))  # secondes de jeu avant capture
 

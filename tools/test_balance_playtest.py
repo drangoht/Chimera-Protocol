@@ -20,8 +20,8 @@ from PIL import Image
 # Config
 # ---------------------------------------------------------------------------
 
-EXE_PATH     = r"C:\CODE\JEUX\cyborg-survivor\build\ChimeraProtocol.exe"
-SCREENS_DIR  = r"C:\CODE\JEUX\cyborg-survivor\docs\balance_screenshots"
+EXE_PATH     = r"C:\CODE\JEUX\chimera-protocol\build\ChimeraProtocol.exe"
+SCREENS_DIR  = r"C:\CODE\JEUX\chimera-protocol\docs\balance_screenshots"
 WINDOW_TITLE = "Chimera Protocol"
 STARTUP_WAIT = 7.0
 SCENE_WAIT   = 2.5

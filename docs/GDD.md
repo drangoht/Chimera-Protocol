@@ -549,7 +549,7 @@ Le MVP doit être **un jeu complet et jouable de bout en bout**, contenant :
 ### Structure de dossiers du projet
 
 ```
-cyborg-survivor/
+chimera-protocol/
 ├── docs/GDD.md
 ├── CLAUDE.md
 ├── project.godot

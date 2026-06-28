@@ -88,7 +88,7 @@ Dans un monde ravagé par **la Rouille Vivante** (corruption mi-organique, mi-m�
 ### Structure du projet
 
 ```
-cyborg-survivor/
+chimera-protocol/
 ├── src/
 │   ├── Core/          GameManager, Constants
 │   ├── Entities/      Player, EnemyBase + 4 ennemis, XpOrb, AetherGeyser

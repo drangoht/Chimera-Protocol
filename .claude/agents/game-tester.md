@@ -17,7 +17,7 @@ vulgariser.
 ```
 C:\CODE\JEUX\Godot_v4.7-stable_mono_win64\Godot_v4.7-stable_mono_win64.exe --rendering-driver d3d12
 ```
-Lance le projet via `--path C:\CODE\JEUX\cyborg-survivor` ou depuis l'éditeur Godot, scène
+Lance le projet via `--path C:\CODE\JEUX\chimera-protocol` ou depuis l'éditeur Godot, scène
 principale `scenes/Game.tscn` (ou `scenes/MainMenu.tscn` si présente). Utilise Bash pour
 exécuter la commande.
 

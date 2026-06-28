@@ -3,8 +3,8 @@ import subprocess, time, os
 import pyautogui, pygetwindow as gw
 pyautogui.FAILSAFE = False
 
-EXE = r"C:\CODE\JEUX\cyborg-survivor\build\ChimeraProtocol.exe"
-OUT = r"C:\CODE\JEUX\cyborg-survivor\docs\exe_smoketest.png"
+EXE = r"C:\CODE\JEUX\chimera-protocol\build\ChimeraProtocol.exe"
+OUT = r"C:\CODE\JEUX\chimera-protocol\docs\exe_smoketest.png"
 
 proc = subprocess.Popen([EXE])
 time.sleep(7)

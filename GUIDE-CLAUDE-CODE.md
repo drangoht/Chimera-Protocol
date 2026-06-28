@@ -3,7 +3,7 @@
 Ce kit contient :
 
 ```
-cyborg-survivor/
+chimera-protocol/
 ├── CLAUDE.md                     # mémoire de projet, chargée automatiquement
 ├── docs/
 │   └── GDD.md                    # game design document complet (la référence)
@@ -20,7 +20,7 @@ cyborg-survivor/
 
 ## 0. Installation
 
-1. Place le dossier `cyborg-survivor/` (ou son contenu) à la racine de ton dépôt de jeu — l'arbo
+1. Place le dossier `chimera-protocol/` (ou son contenu) à la racine de ton dépôt de jeu — l'arbo
    `.claude/agents/` doit être directement sous la racine du projet pour être détectée
    automatiquement par Claude Code (subagents de scope "projet").
 2. Lance `claude` dans ce dossier. `CLAUDE.md` se charge automatiquement.

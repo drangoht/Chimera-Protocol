@@ -11,11 +11,11 @@ import sys
 FFMPEG = r"C:\Users\drang\AppData\Local\Microsoft\WinGet\Packages\Gyan.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe\ffmpeg-8.1.1-full_build\bin\ffmpeg.exe"
 FFPROBE = r"C:\Users\drang\AppData\Local\Microsoft\WinGet\Packages\Gyan.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe\ffmpeg-8.1.1-full_build\bin\ffprobe.exe"
 
-BASE = r"C:\CODE\JEUX\cyborg-survivor"
-SRC = r"C:\CODE\JEUX\cyborg-survivor\tools\kenney_downloads\extracted"
-DST_SFX = r"C:\CODE\JEUX\cyborg-survivor\assets\audio\sfx"
-DST_MUS = r"C:\CODE\JEUX\cyborg-survivor\assets\audio\music"
-JINGLES = r"C:\CODE\JEUX\cyborg-survivor\tools\kenney_downloads\extracted\musicjingles\Audio"
+BASE = r"C:\CODE\JEUX\chimera-protocol"
+SRC = r"C:\CODE\JEUX\chimera-protocol\tools\kenney_downloads\extracted"
+DST_SFX = r"C:\CODE\JEUX\chimera-protocol\assets\audio\sfx"
+DST_MUS = r"C:\CODE\JEUX\chimera-protocol\assets\audio\music"
+JINGLES = r"C:\CODE\JEUX\chimera-protocol\tools\kenney_downloads\extracted\musicjingles\Audio"
 
 errors = []
 converted = []

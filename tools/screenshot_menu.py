@@ -3,7 +3,7 @@ import subprocess, time, sys, os
 import pyautogui, pygetwindow as gw
 
 GODOT = r"C:\CODE\JEUX\Godot_v4.7-stable_mono_win64\Godot_v4.7-stable_mono_win64.exe"
-PROJ  = r"C:\CODE\JEUX\cyborg-survivor"
+PROJ  = r"C:\CODE\JEUX\chimera-protocol"
 OUT   = os.path.join(PROJ, "docs", "menu_review.png")
 
 proc = subprocess.Popen([GODOT, "--path", PROJ, "--rendering-driver", "d3d12",

@@ -19,8 +19,8 @@ import pygetwindow as gw
 pyautogui.PAUSE    = 0.05
 pyautogui.FAILSAFE = False  # désactivé pour éviter l'interruption par la souris
 
-EXE_PATH    = r"C:\CODE\JEUX\cyborg-survivor\build\ChimeraProtocol.exe"
-SCREENS_DIR = r"C:\CODE\JEUX\cyborg-survivor\docs\balance_v2_screenshots"
+EXE_PATH    = r"C:\CODE\JEUX\chimera-protocol\build\ChimeraProtocol.exe"
+SCREENS_DIR = r"C:\CODE\JEUX\chimera-protocol\docs\balance_v2_screenshots"
 TITLE       = "Chimera Protocol"
 os.makedirs(SCREENS_DIR, exist_ok=True)
 

@@ -4,7 +4,7 @@ import pyautogui, pygetwindow as gw
 pyautogui.FAILSAFE = False
 
 GODOT = r"C:\CODE\JEUX\Godot_v4.7-stable_mono_win64\Godot_v4.7-stable_mono_win64.exe"
-PROJ  = r"C:\CODE\JEUX\cyborg-survivor"
+PROJ  = r"C:\CODE\JEUX\chimera-protocol"
 SCENE = os.environ.get("SCENE", "res://scenes/MainMenu.tscn")
 OUT   = os.path.join(PROJ, "docs", os.environ.get("OUT", "scene_review.png"))
 WAIT  = float(os.environ.get("WAIT", "4"))
