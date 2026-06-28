@@ -113,7 +113,8 @@ public partial class MainMenu : Control
     private void OnPlayPressed()
     {
         AudioSystem.Instance?.PlaySfx("sfx_ui_button");
-        TransitionTo("res://scenes/ui/LevelSelectScreen.tscn");
+        // « Jouer » mène d'abord au choix du personnage, puis au choix du niveau.
+        TransitionTo("res://scenes/ui/CharacterSelectScreen.tscn");
     }
 
     private void OnHubPressed()

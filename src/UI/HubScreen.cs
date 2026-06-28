@@ -10,18 +10,13 @@ public partial class HubScreen : Control
 {
     private Label         _echoesLabel       = null!;
     private VBoxContainer _upgradesList      = null!;
-    private Button        _playButton        = null!;
     private Button        _backButton        = null!;
     private Button        _resetButton       = null!;
     private bool          _resetArmed        = false;
     private ColorRect     _fadeOverlay       = null!;
 
-    // Sélecteur d'arme de départ (visible uniquement si starting_weapon_alt est débloqué)
+    // Sélecteur d'arme de départ (obsolète, masqué — chaque perso a son arme de signature)
     private HBoxContainer _weaponSelector     = null!;
-
-    // Sélecteur de personnage (construit en code, toujours visible)
-    private OptionButton  _characterOptionButton = null!;
-    private Label         _characterDescLabel    = null!;
 
     // Lignes de l'UI générées dynamiquement
     private readonly List<UpgradeRow> _rows = new();
@@ -30,18 +25,13 @@ public partial class HubScreen : Control
     {
         _echoesLabel        = GetNode<Label>("VBox/EchoesLabel");
         _upgradesList       = GetNode<VBoxContainer>("VBox/UpgradesList");
-        _playButton         = GetNode<Button>("VBox/ButtonsRow/PlayButton");
         _backButton         = GetNode<Button>("VBox/ButtonsRow/BackButton");
         _weaponSelector     = GetNode<HBoxContainer>("VBox/WeaponSelector");
         _fadeOverlay        = GetNode<ColorRect>("FadeOverlay");
 
-        _playButton.Pressed += OnPlayPressed;
         _backButton.Pressed += OnBackPressed;
-
-        ConnectHoverEffects(_playButton, 1.04f);
         ConnectHoverEffects(_backButton, 1.04f);
 
-        BuildCharacterSelector();
         BuildUpgradesList();
         BuildResetButton();
         RefreshDisplay();
@@ -60,60 +50,6 @@ public partial class HubScreen : Control
              .SetEase(Tween.EaseType.In)
              .SetTrans(Tween.TransitionType.Quad);
         tween.TweenCallback(Callable.From(() => _backButton.GrabFocus()));
-    }
-
-    // ---------------------------------------------------------------------------
-    // Sélecteur de personnage (construit en code, inséré au-dessus du sélecteur d'arme)
-    // ---------------------------------------------------------------------------
-
-    private void BuildCharacterSelector()
-    {
-        var vbox = GetNode<VBoxContainer>("VBox");
-
-        var container = new VBoxContainer { Name = "CharacterSelector" };
-
-        var row = new HBoxContainer();
-        var label = new Label { Text = "Personnage : " };
-        label.AddThemeColorOverride("font_color", new Color(0.85f, 0.85f, 0.95f));
-
-        _characterOptionButton = new OptionButton { Name = "CharacterOptionButton" };
-        foreach (var c in Characters.All)
-            _characterOptionButton.AddItem($"{c.Name} — {c.Tag}");
-        _characterOptionButton.Selected = 0;
-        _characterOptionButton.ItemSelected += OnCharacterSelected;
-
-        row.AddChild(label);
-        row.AddChild(_characterOptionButton);
-        container.AddChild(row);
-
-        _characterDescLabel = new Label
-        {
-            AutowrapMode        = TextServer.AutowrapMode.WordSmart,
-            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-        };
-        _characterDescLabel.AddThemeFontSizeOverride("font_size", 14);
-        _characterDescLabel.AddThemeColorOverride("font_color", new Color(0.6f, 0.75f, 0.85f));
-        container.AddChild(_characterDescLabel);
-
-        vbox.AddChild(container);
-        // Place le sélecteur juste au-dessus du sélecteur d'arme.
-        vbox.MoveChild(container, _weaponSelector.GetIndex());
-
-        UpdateCharacterDesc(0);
-    }
-
-    private void OnCharacterSelected(long index)
-    {
-        AudioSystem.Instance?.PlaySfx("sfx_ui_button");
-        UpdateCharacterDesc((int)index);
-    }
-
-    private void UpdateCharacterDesc(int index)
-    {
-        if (index < 0 || index >= Characters.All.Count) return;
-        var c = Characters.All[index];
-        _characterDescLabel.Text =
-            $"PV {c.MaxHp:0}  ·  Vitesse {c.Speed:0}  ·  Arme : {Codex.DisplayName(c.StartingWeaponId)}\n{c.Description}";
     }
 
     // ---------------------------------------------------------------------------
@@ -344,22 +280,6 @@ public partial class HubScreen : Control
         }
     }
 
-    private void OnPlayPressed()
-    {
-        AudioSystem.Instance?.PlaySfx("sfx_ui_button");
-
-        // 1) Personnage sélectionné → stats + arme de départ par défaut.
-        int charIdx = _characterOptionButton.Selected;
-        var character = (charIdx >= 0 && charIdx < Characters.All.Count)
-            ? Characters.All[charIdx]
-            : Characters.All[0];
-        GameManager.Instance.SelectedCharacterId = character.Id;
-        // Le personnage garde TOUJOURS son arme de signature (décision design 2026-06-27).
-        GameManager.Instance.StartingWeaponId    = character.StartingWeaponId;
-
-        TransitionTo("res://scenes/Game.tscn");
-    }
-
     private void OnBackPressed()
     {
         AudioSystem.Instance?.PlaySfx("sfx_ui_button");
@@ -373,7 +293,6 @@ public partial class HubScreen : Control
     private void TransitionTo(string scenePath)
     {
         _backButton.Disabled = true;
-        _playButton.Disabled = true;
         var tween = CreateTween();
         tween.TweenProperty(_fadeOverlay, "color:a", 1f, 0.3f)
              .SetEase(Tween.EaseType.In)
@@ -429,14 +348,14 @@ public partial class HubScreen : Control
         {
             var btn = _rows[i].BuyButton;
             btn.FocusNeighborTop    = btn.GetPathTo(i == 0 ? _backButton : _rows[i - 1].BuyButton);
-            // La dernière ligne descend vers le bouton Reset (inséré avant Retour/Jouer).
+            // La dernière ligne descend vers le bouton Reset (inséré avant Retour).
             btn.FocusNeighborBottom = btn.GetPathTo(i == _rows.Count - 1 ? (Control)_resetButton : _rows[i + 1].BuyButton);
         }
 
-        // Bouton Reset intercalé entre la dernière amélioration et la rangée Retour / Jouer.
+        // Bouton Reset intercalé entre la dernière amélioration et le bouton Retour.
         _resetButton.FocusNeighborTop    = _resetButton.GetPathTo(_rows[^1].BuyButton);
-        _resetButton.FocusNeighborBottom = _resetButton.GetPathTo(_playButton);
-        _playButton.FocusNeighborTop     = _playButton.GetPathTo(_resetButton);
+        _resetButton.FocusNeighborBottom = _resetButton.GetPathTo(_backButton);
+        _backButton.FocusNeighborTop     = _backButton.GetPathTo(_resetButton);
     }
 
     // ---------------------------------------------------------------------------

@@ -1,11 +1,12 @@
 using Godot;
 
 /// <summary>
-/// Écran de choix du niveau (biome) après « Jouer ». Liste les biomes avec aperçu
-/// (tuile en damier), nom, effet et description. Sélectionner un biome le force pour
-/// la run ; « Aléatoire » laisse le tirage au sort. UI construite en code.
+/// Écran de choix du personnage, affiché après « Jouer » et AVANT le choix du niveau.
+/// Cartes avec image (frame idle du SpriteFrames), nom, stats et description. Choisir un
+/// personnage le fixe (GameManager.SelectedCharacterId + arme de signature) puis mène à
+/// LevelSelectScreen. UI construite en code (modèle : LevelSelectScreen).
 /// </summary>
-public partial class LevelSelectScreen : Control
+public partial class CharacterSelectScreen : Control
 {
     private static readonly Color Bg     = new(0.06f, 0.06f, 0.11f);
     private static readonly Color Cyan   = new(0.267f, 1f, 0.933f);
@@ -31,7 +32,7 @@ public partial class LevelSelectScreen : Control
         root.OffsetLeft = 80; root.OffsetRight = -80; root.OffsetTop = 30; root.OffsetBottom = -24;
         AddChild(root);
 
-        var title = new Label { Text = "CHOISIR LE NIVEAU", HorizontalAlignment = HorizontalAlignment.Center };
+        var title = new Label { Text = "CHOISIR LE PERSONNAGE", HorizontalAlignment = HorizontalAlignment.Center };
         title.AddThemeFontSizeOverride("font_size", 32);
         title.AddThemeColorOverride("font_color", Cyan);
         root.AddChild(title);
@@ -42,19 +43,20 @@ public partial class LevelSelectScreen : Control
         list.AddThemeConstantOverride("separation", 12);
         scroll.AddChild(list);
 
-        foreach (var b in BiomeCatalog.All)
-            list.AddChild(BuildCard(b.Id, b.Name, b.Effect, b.Description, b.Accent, b.PreviewPath));
+        Button? first = null;
+        foreach (var c in Characters.All)
+        {
+            var (card, choose) = BuildCard(c);
+            list.AddChild(card);
+            first ??= choose;
+        }
 
-        // Boutons bas : Aléatoire + Retour
+        // Bouton bas : Retour (vers le menu principal)
         var row = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
         row.AddThemeConstantOverride("separation", 20);
-        var rand = new Button { Text = "Aléatoire", CustomMinimumSize = new Vector2(200, 46) };
-        StyleButton(rand, Cyan);
-        rand.Pressed += () => StartRun(null);
         var back = new Button { Text = "Retour", CustomMinimumSize = new Vector2(200, 46) };
         StyleButton(back, Violet);
         back.Pressed += GoBack;
-        row.AddChild(rand);
         row.AddChild(back);
         root.AddChild(row);
 
@@ -64,14 +66,15 @@ public partial class LevelSelectScreen : Control
         AddChild(_fade);
         var t = CreateTween();
         t.TweenProperty(_fade, "color:a", 0f, 0.4);
-        t.TweenCallback(Callable.From(() => back.GrabFocus()));
+        var firstFocus = first ?? back;
+        t.TweenCallback(Callable.From(() => firstFocus.GrabFocus()));
     }
 
-    private Control BuildCard(string id, string name, string effect, string desc, Color accent, string preview)
+    private (Control, Button) BuildCard(CharacterDef c)
     {
         var panel = new PanelContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
         var style = new StyleBoxFlat { BgColor = new Color(0.09f, 0.09f, 0.16f, 0.95f) };
-        style.SetBorderWidthAll(2); style.BorderColor = accent; style.SetCornerRadiusAll(6);
+        style.SetBorderWidthAll(2); style.BorderColor = c.Tint; style.SetCornerRadiusAll(6);
         style.SetContentMarginAll(10);
         panel.AddThemeStyleboxOverride("panel", style);
 
@@ -79,53 +82,56 @@ public partial class LevelSelectScreen : Control
         hb.AddThemeConstantOverride("separation", 16);
         panel.AddChild(hb);
 
-        var prev = new TextureRect
+        // Image = frame idle du SpriteFrames du personnage
+        var img = new TextureRect
         {
-            Texture           = GD.Load<Texture2D>(preview),
-            StretchMode       = TextureRect.StretchModeEnum.Tile,
+            Texture           = LoadIdle(c.FramesPath),
+            StretchMode       = TextureRect.StretchModeEnum.KeepAspectCentered,
             TextureFilter     = TextureFilterEnum.Nearest,
             CustomMinimumSize = new Vector2(96, 96),
         };
-        // Cadre accent autour de l'aperçu
-        var prevWrap = new PanelContainer();
+        var imgWrap = new PanelContainer();
         var ps = new StyleBoxFlat { BgColor = new Color(0, 0, 0, 0) };
-        ps.SetBorderWidthAll(2); ps.BorderColor = accent;
-        prevWrap.AddThemeStyleboxOverride("panel", ps);
-        prevWrap.AddChild(prev);
-        hb.AddChild(prevWrap);
+        ps.SetBorderWidthAll(2); ps.BorderColor = c.Tint;
+        imgWrap.AddThemeStyleboxOverride("panel", ps);
+        imgWrap.AddChild(img);
+        hb.AddChild(imgWrap);
 
         var vb = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
         vb.AddThemeConstantOverride("separation", 2);
-        var nameRow = new HBoxContainer();
-        nameRow.AddThemeConstantOverride("separation", 10);
-        var lblName = new Label { Text = name };
+        var lblName = new Label { Text = $"{c.Name} — {c.Tag}" };
         lblName.AddThemeFontSizeOverride("font_size", 22);
-        lblName.AddThemeColorOverride("font_color", accent);
-        nameRow.AddChild(lblName);
-        // Badge de complétion : affiché si le biome a déjà été vaincu (boss final battu).
-        if (GameSettings.Instance?.HasCompletedAny(id) == true)
+        lblName.AddThemeColorOverride("font_color", c.Tint);
+        var lblStats = new Label
         {
-            var badge = new Label { Text = "VAINCU", SizeFlagsVertical = SizeFlags.ShrinkCenter };
-            badge.AddThemeFontSizeOverride("font_size", 13);
-            badge.AddThemeColorOverride("font_color", new Color(1f, 0.8f, 0.27f));
-            nameRow.AddChild(badge);
-        }
-        var lblEffect = new Label { Text = effect };
-        lblEffect.AddThemeFontSizeOverride("font_size", 14);
-        lblEffect.AddThemeColorOverride("font_color", Cyan);
-        var lblDesc = new Label { Text = desc, AutowrapMode = TextServer.AutowrapMode.WordSmart };
+            Text = $"PV {c.MaxHp:0}  ·  Vitesse {c.Speed:0}  ·  Arme : {Codex.DisplayName(c.StartingWeaponId)}",
+        };
+        lblStats.AddThemeFontSizeOverride("font_size", 14);
+        lblStats.AddThemeColorOverride("font_color", Cyan);
+        var lblDesc = new Label { Text = c.Description, AutowrapMode = TextServer.AutowrapMode.WordSmart };
         lblDesc.AddThemeFontSizeOverride("font_size", 14);
         lblDesc.AddThemeColorOverride("font_color", Dim);
-        vb.AddChild(nameRow); vb.AddChild(lblEffect); vb.AddChild(lblDesc);
+        vb.AddChild(lblName); vb.AddChild(lblStats); vb.AddChild(lblDesc);
         hb.AddChild(vb);
 
-        var play = new Button { Text = "Jouer ici", CustomMinimumSize = new Vector2(130, 44),
-                                SizeFlagsVertical = SizeFlags.ShrinkCenter };
-        StyleButton(play, accent);
-        play.Pressed += () => StartRun(id);
-        hb.AddChild(play);
+        var choose = new Button { Text = "Choisir", CustomMinimumSize = new Vector2(130, 44),
+                                  SizeFlagsVertical = SizeFlags.ShrinkCenter };
+        StyleButton(choose, c.Tint);
+        string id = c.Id;
+        choose.Pressed += () => Select(id);
+        hb.AddChild(choose);
 
-        return panel;
+        return (panel, choose);
+    }
+
+    private static Texture2D? LoadIdle(string framesPath)
+    {
+        var frames = GD.Load<SpriteFrames>(framesPath);
+        if (frames == null) return null;
+        var names = frames.GetAnimationNames();
+        string anim = frames.HasAnimation("idle") ? "idle" : (names.Length > 0 ? names[0] : "");
+        if (anim == "" || frames.GetFrameCount(anim) == 0) return null;
+        return frames.GetFrameTexture(anim, 0);
     }
 
     private void StyleButton(Button btn, Color accent)
@@ -141,13 +147,19 @@ public partial class LevelSelectScreen : Control
         btn.AddThemeColorOverride("font_color", Text);
     }
 
-    private void StartRun(string? biomeId)
+    private void Select(string charId)
     {
         if (_leaving) return;
         _leaving = true;
         AudioSystem.Instance?.PlaySfx("sfx_ui_button");
-        if (GameManager.Instance != null) GameManager.Instance.SelectedBiomeId = biomeId;
-        Transition("res://scenes/Game.tscn");
+        var gm = GameManager.Instance;
+        if (gm != null)
+        {
+            gm.SelectedCharacterId = charId;
+            // Le personnage garde TOUJOURS son arme de signature (décision design 2026-06-27).
+            gm.StartingWeaponId = Characters.Get(charId).StartingWeaponId;
+        }
+        Transition("res://scenes/ui/LevelSelectScreen.tscn");
     }
 
     private void GoBack()
@@ -155,8 +167,7 @@ public partial class LevelSelectScreen : Control
         if (_leaving) return;
         _leaving = true;
         AudioSystem.Instance?.PlaySfx("sfx_ui_button");
-        // Étape précédente du flux « Jouer » : le choix du personnage.
-        Transition("res://scenes/ui/CharacterSelectScreen.tscn");
+        Transition("res://scenes/MainMenu.tscn");
     }
 
     private void Transition(string path)
