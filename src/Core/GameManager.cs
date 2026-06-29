@@ -49,6 +49,30 @@ public partial class GameManager : Node
     public override void _Ready()
     {
         Instance = this;
+        EnsureGamepadUiBindings();
+    }
+
+    /// <summary>
+    /// La map d'entrées par défaut de Godot 4.7 lie bien les directions UI à la manette
+    /// (d-pad + stick) mais PAS la validation/l'annulation : `ui_accept`/`ui_cancel` n'ont que
+    /// le clavier. Résultat : on navigue dans les menus à la manette mais le bouton A « ne fait
+    /// rien ». On ajoute ici les boutons manette manquants (sans toucher aux bindings clavier).
+    /// </summary>
+    private static void EnsureGamepadUiBindings()
+    {
+        AddJoypadButton("ui_accept",      JoyButton.A);  // valider
+        AddJoypadButton("ui_cancel",      JoyButton.B);  // annuler / retour
+        AddJoypadButton("ui_focus_next",  JoyButton.RightShoulder);
+        AddJoypadButton("ui_focus_prev",  JoyButton.LeftShoulder);
+    }
+
+    private static void AddJoypadButton(string action, JoyButton button)
+    {
+        if (!InputMap.HasAction(action)) return;
+        // Ne pas dupliquer si le binding existe déjà (idempotent).
+        foreach (var e in InputMap.ActionGetEvents(action))
+            if (e is InputEventJoypadButton jb && jb.ButtonIndex == button) return;
+        InputMap.ActionAddEvent(action, new InputEventJoypadButton { ButtonIndex = button });
     }
 
     public void RegisterPlayer(Player player)
