@@ -40,6 +40,7 @@ public partial class InventorySystem : Node
         { "seeker_swarm",    "res://scenes/weapons/SeekerSwarm.tscn"    },
         { "cryo_lance",      "res://scenes/weapons/CryoLance.tscn"      },
         { "pyre_stream",     "res://scenes/weapons/PyreStream.tscn"     },
+        { "singularity",     "res://scenes/weapons/Singularity.tscn"    },
         { "fusion_blade",    "res://scenes/weapons/FusionBlade.tscn"    },
         { "rail_overcharged","res://scenes/weapons/RailOvercharged.tscn"},
         { "orbital_swarm",   "res://scenes/weapons/OrbitalSwarm.tscn"   },
@@ -265,6 +266,14 @@ public partial class InventorySystem : Node
                 if (lvlData.TryGetProperty("burnDps",      out var pbd)) pyr.BurnDps      = pbd.GetSingle();
                 if (lvlData.TryGetProperty("burnDuration", out var pbt)) pyr.BurnDuration = pbt.GetSingle();
                 pyr.Damage *= dmgMult;
+                break;
+
+            case "singularity" when node is Singularity sg:
+                if (lvlData.TryGetProperty("radius",       out var sgr)) sg.Radius       = sgr.GetSingle();
+                if (lvlData.TryGetProperty("pullSpeed",    out var sgp)) sg.PullSpeed    = sgp.GetSingle();
+                if (lvlData.TryGetProperty("duration",     out var sgd)) sg.Duration     = sgd.GetSingle();
+                if (lvlData.TryGetProperty("tickInterval", out var sgt)) sg.TickInterval = sgt.GetSingle();
+                sg.Damage *= dmgMult;
                 break;
         }
     }

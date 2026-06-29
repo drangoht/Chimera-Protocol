@@ -174,7 +174,8 @@
     "glaive": "common",
     "seeker_swarm": "rare",
     "cryo_lance": "rare",
-    "pyre_stream": "rare"
+    "pyre_stream": "rare",
+    "singularity": "epic"
   },
   "cardSelectionRules": {
     "cardCount": 3,

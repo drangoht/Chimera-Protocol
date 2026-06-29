@@ -239,6 +239,29 @@ def gen_pyre():
     img.save(os.path.join(OUT, "ui_icon_pyre.png"))
     print("ui_icon_pyre.png")
 
+# ---------------- Singularite : vortex spirale violet vers un coeur sombre
+def gen_singularity():
+    img = canvas()
+    V = (170, 90, 255); VL = (210, 160, 255); WH = (240, 230, 255); DK = (40, 12, 60)
+    cx, cy = 16, 16
+    disc(img, cx, cy, 13, (V[0], V[1], V[2], 45))   # halo
+    # 3 bras spirales (rayon decroissant, angle croissant)
+    for arm in range(3):
+        base = arm * math.tau / 3 if hasattr(math, "tau") else arm * 2 * math.pi / 3
+        prev = None
+        for i in range(16):
+            t = i / 15.0
+            r = 12 * (1 - t) + 2 * t
+            a = base + t * 3.2
+            x = cx + math.cos(a) * r; y = cy + math.sin(a) * r
+            if prev is not None:
+                line(img, prev[0], prev[1], x, y, VL if t > 0.5 else V, w=0)
+            prev = (x, y)
+    disc(img, cx, cy, 3, DK)        # coeur sombre
+    ring(img, cx, cy, 3, 1, WH)     # liseré du coeur
+    img.save(os.path.join(OUT, "ui_icon_singularity.png"))
+    print("ui_icon_singularity.png")
+
 if __name__ == "__main__":
     gen_orbital()
     gen_aegis()
@@ -246,4 +269,5 @@ if __name__ == "__main__":
     gen_seeker()
     gen_cryo()
     gen_pyre()
+    gen_singularity()
     print("Termine.")

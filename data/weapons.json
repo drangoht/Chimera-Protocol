@@ -500,6 +500,63 @@
       ],
       "fusionRequires": null,
       "fusionResult": null
+    },
+    {
+      "id": "singularity",
+      "name": "Singularité",
+      "type": "active",
+      "rarity": "epic",
+      "description": "Déploie un puits gravitationnel qui aspire les ennemis vers son centre et les blesse par à-coups. Contrôle de zone (épique).",
+      "maxLevel": 20,
+      "levels": [
+        {
+          "level": 1,
+          "damage": 6,
+          "cooldown": 6.0,
+          "radius": 120,
+          "pullSpeed": 90,
+          "duration": 2.2,
+          "tickInterval": 0.4
+        },
+        {
+          "level": 2,
+          "damage": 8,
+          "cooldown": 5.5,
+          "radius": 130,
+          "pullSpeed": 100,
+          "duration": 2.4,
+          "tickInterval": 0.4
+        },
+        {
+          "level": 3,
+          "damage": 10,
+          "cooldown": 5.0,
+          "radius": 140,
+          "pullSpeed": 110,
+          "duration": 2.6,
+          "tickInterval": 0.38
+        },
+        {
+          "level": 4,
+          "damage": 13,
+          "cooldown": 4.5,
+          "radius": 150,
+          "pullSpeed": 120,
+          "duration": 2.8,
+          "tickInterval": 0.36
+        },
+        {
+          "level": 5,
+          "damage": 16,
+          "cooldown": 4.0,
+          "radius": 160,
+          "pullSpeed": 130,
+          "duration": 3.0,
+          "tickInterval": 0.34
+        }
+      ],
+      "fusionRequires": null,
+      "fusionResult": null
     }
   ],
   "passives": [
