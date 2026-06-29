@@ -25,6 +25,12 @@ public partial class Player : CharacterBody2D
 
     private static Texture2D? _playerLightTex;
 
+    // ── Power-ups temporaires (buffs à durée limitée, aucun power-creep permanent) ──
+    public  float SpeedMultiplier { get; private set; } = 1f;   // Célérité
+    public  bool  Shielded        { get; private set; }          // Égide (invulnérabilité)
+    private readonly System.Collections.Generic.Dictionary<PowerUpType, float> _buffTime = new();
+    private BuffBar? _buffBar;
+
     public override void _Ready()
     {
         _sprite = GetNodeOrNull<AnimatedSprite2D>("AnimatedSprite2D");
@@ -44,6 +50,11 @@ public partial class Player : CharacterBody2D
         // Feedback level-up : shake + flash or
         if (XpSystem.Instance != null)
             XpSystem.Instance.LevelUp += OnLevelUp;
+
+        // Power-ups : reset du multiplicateur de cadence (statique) + barre de buffs HUD.
+        WeaponBase.FireRateMultiplier = 1f;
+        _buffBar = new BuffBar();
+        AddChild(_buffBar);
     }
 
     public override void _ExitTree()
@@ -57,6 +68,59 @@ public partial class Player : CharacterBody2D
         ScreenShake.Instance?.Shake(6f, 0.20f);
         HitFlash(0.15f, new Color(1f, 0.8f, 0.267f, 1f));
         Heal(0.25f);
+    }
+
+    // ─── Power-ups temporaires ────────────────────────────────────────────────
+
+    /// <summary>Applique (ou rafraîchit) un power-up temporaire et son effet immédiat.</summary>
+    public void ApplyPowerUp(PowerUpType type, float duration)
+    {
+        bool wasActive = _buffTime.ContainsKey(type);
+        _buffTime[type] = Mathf.Max(_buffTime.GetValueOrDefault(type), duration);
+        if (!wasActive) StartBuff(type);
+
+        var def = PowerUps.Get(type);
+        AudioSystem.Instance?.PlaySfx("sfx_core_collect");
+        HitFlash(0.18f, new Color(def.Color.R + 1f, def.Color.G + 1f, def.Color.B + 1f, 1f));
+        ScreenShake.Instance?.Shake(2f, 0.12f);
+    }
+
+    private void StartBuff(PowerUpType type)
+    {
+        float m = PowerUps.Get(type).Magnitude;
+        switch (type)
+        {
+            case PowerUpType.Overclock: WeaponBase.FireRateMultiplier = m; break;
+            case PowerUpType.Berserk:   Stats.DamageMultiplier += m; InventorySystem.Instance?.RefreshWeaponDamages(); break;
+            case PowerUpType.Celerity:  SpeedMultiplier = m; break;
+            case PowerUpType.Aegis:     Shielded = true; break;
+        }
+    }
+
+    private void EndBuff(PowerUpType type)
+    {
+        float m = PowerUps.Get(type).Magnitude;
+        switch (type)
+        {
+            case PowerUpType.Overclock: WeaponBase.FireRateMultiplier = 1f; break;
+            case PowerUpType.Berserk:   Stats.DamageMultiplier -= m; InventorySystem.Instance?.RefreshWeaponDamages(); break;
+            case PowerUpType.Celerity:  SpeedMultiplier = 1f; break;
+            case PowerUpType.Aegis:     Shielded = false; break;
+        }
+    }
+
+    private void UpdateBuffs(float dt)
+    {
+        if (_buffTime.Count > 0)
+        {
+            foreach (var type in new System.Collections.Generic.List<PowerUpType>(_buffTime.Keys))
+            {
+                float t = _buffTime[type] - dt;
+                if (t <= 0f) { _buffTime.Remove(type); EndBuff(type); }
+                else _buffTime[type] = t;
+            }
+        }
+        _buffBar?.UpdateBuffs(_buffTime);
     }
 
     /// <summary>Restaure un pourcentage des HP max. Flash vert si HP < max avant soin.</summary>
@@ -133,9 +197,10 @@ public partial class Player : CharacterBody2D
         if (_isDead) return;
 
         if (_invulnTimer > 0f) _invulnTimer -= (float)delta;
+        UpdateBuffs((float)delta);
 
         var direction = Input.GetVector("ui_left", "ui_right", "ui_up", "ui_down");
-        Velocity = direction.Normalized() * Stats.Speed;
+        Velocity = direction.Normalized() * Stats.Speed * SpeedMultiplier;
         MoveAndSlide();
         ClampToArena();
 
@@ -255,6 +320,8 @@ public partial class Player : CharacterBody2D
     public void TakeDamage(float amount)
     {
         if (_isDead) return;
+        // Égide (power-up) : invulnérabilité totale le temps du buff — absorbe le coup (flash doré).
+        if (Shielded) { HitFlash(0.1f, new Color(2f, 1.6f, 0.6f, 1f)); return; }
         // Invulnérabilité : un seul coup encaissé par fenêtre, peu importe le nombre
         // d'ennemis collés. C'est le levier qui rend les grosses nuées jouables.
         if (_invulnTimer > 0f) return;

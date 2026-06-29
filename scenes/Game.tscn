@@ -7,6 +7,7 @@
 [ext_resource type="Script" uid="uid://ip8xkl37r8k1" path="res://src/Systems/RunStatsTracker.cs" id="6"]
 [ext_resource type="Script" uid="uid://dp0o8iom5jmxy" path="res://src/Systems/AetherCoreSpawner.cs" id="7"]
 [ext_resource type="Script" uid="uid://brwyeqww7j1kp" path="res://src/Systems/MagnetSpawner.cs" id="13"]
+[ext_resource type="Script" path="res://src/Systems/PowerUpSpawner.cs" id="14"]
 [ext_resource type="Script" uid="uid://bd47pmq6m002h" path="res://src/Systems/GroundRenderer.cs" id="8"]
 [ext_resource type="PackedScene" uid="uid://u2xt47pso0pg" path="res://scenes/entities/AetherGeyser.tscn" id="9"]
 [ext_resource type="Texture2D" uid="uid://duical3x2fe7a" path="res://assets/sprites/vfx/vfx_particle_aether_ambient.png" id="10"]
@@ -125,6 +126,9 @@ script = ExtResource("7")
 
 [node name="MagnetSpawner" type="Node" parent="."]
 script = ExtResource("13")
+
+[node name="PowerUpSpawner" type="Node" parent="."]
+script = ExtResource("14")
 
 [node name="AetherAmbientTop" type="GPUParticles2D" parent="." unique_id=1121732779]
 z_index = -1

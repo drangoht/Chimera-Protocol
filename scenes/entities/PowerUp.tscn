@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://poweruppickup01"]
+
+[ext_resource type="Script" path="res://src/Entities/PowerUpPickup.cs" id="1"]
+
+[node name="PowerUp" type="Area2D"]
+script = ExtResource("1")

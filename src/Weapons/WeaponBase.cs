@@ -7,6 +7,10 @@ public abstract partial class WeaponBase : Node2D
     [Export] public float Cooldown { get; set; } = 0.8f;
     [Export] public float ProjectileSpeed { get; set; } = 400f;
 
+    /// <summary>Multiplicateur global de cadence de tir (power-up Surcadence). 1 = normal.
+    /// Réinitialisé à chaque run par Player._Ready (statique → ne doit pas fuir entre runs).</summary>
+    public static float FireRateMultiplier = 1f;
+
     private float _timer;
 
     public override void _Ready()
@@ -16,7 +20,7 @@ public abstract partial class WeaponBase : Node2D
 
     public override void _Process(double delta)
     {
-        _timer -= (float)delta;
+        _timer -= (float)delta * FireRateMultiplier;
         if (_timer <= 0f)
         {
             Attack();

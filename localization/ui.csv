@@ -184,3 +184,7 @@ WPN_PYRE_STREAM_NAME,Pyre Stream,Jet de Pyre,Chorro de Pira
 WPN_PYRE_STREAM_DESC,A short-range cone of flames: little direct damage but sets enemies on fire (damage over time). Burns build up while you keep them in the cone.,Un cône de flammes courte portée : peu de dégâts directs mais enflamme les ennemis (dégâts dans le temps). La brûlure s'entretient tant qu'ils restent dans le cône.,Un cono de llamas de corto alcance: poco daño directo pero incendia a los enemigos (daño con el tiempo). La quemadura se mantiene mientras sigan en el cono.
 WPN_SINGULARITY_NAME,Singularity,Singularité,Singularidad
 WPN_SINGULARITY_DESC,"Deploys a gravity well that pulls nearby enemies toward its center and damages them in pulses. Powerful zone control on a long cooldown — group the swarm, then unleash your other weapons.","Déploie un puits gravitationnel qui aspire les ennemis proches vers son centre et les blesse par à-coups. Puissant contrôle de zone à long cooldown — regroupe la nuée, puis déchaîne tes autres armes.",Despliega un pozo gravitatorio que atrae a los enemigos cercanos hacia su centro y los daña por pulsos. Potente control de zona con enfriamiento largo: agrupa al enjambre y luego desata tus otras armas.
+POWERUP_OVERCLOCK,Overclock,Surcadence,Overclock
+POWERUP_BERSERK,Berserk,Furie,Furia
+POWERUP_AEGIS,Aegis,Égide,Égida
+POWERUP_CELERITY,Celerity,Célérité,Celeridad
