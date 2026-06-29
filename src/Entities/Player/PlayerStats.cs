@@ -19,7 +19,9 @@ public partial class PlayerStats : Resource
     // Vitesse de base sauvegardée pour les recalculs servo_motors
     [Export] public float BaseSpeed { get; set; } = 200f;
 
-    public const float MaxDamageReduction = 0.40f;
-    public const float MinCooldown = 0.15f;
-    public const float MaxSpeed = 380f;
+    // Source unique des plafonds : StatCaps (logique pure testable). Réexposés ici pour
+    // les appelants existants (PlayerStats.MaxDamageReduction, etc.).
+    public const float MaxDamageReduction = StatCaps.MaxDamageReduction;
+    public const float MinCooldown        = StatCaps.MinCooldown;
+    public const float MaxSpeed           = StatCaps.MaxSpeed;
 }

@@ -297,23 +297,17 @@ public partial class InventorySystem : Node
                             stats.CurrentHp = Mathf.Min(stats.CurrentHp + hpb.GetSingle(), stats.MaxHp);
                         }
                         if (lvlData.TryGetProperty("damageReduction", out var dr))
-                        {
-                            stats.DamageReduction = Mathf.Min(
-                                stats.DamageReduction + dr.GetSingle(),
-                                PlayerStats.MaxDamageReduction);
-                        }
+                            stats.DamageReduction = StatCaps.CapDamageReduction(stats.DamageReduction + dr.GetSingle());
                         break;
 
                     case "servo_motors":
                         if (lvlData.TryGetProperty("speedBonus", out var sb))
-                        {
-                            stats.Speed = Mathf.Min(stats.Speed + sb.GetSingle(), PlayerStats.MaxSpeed);
-                        }
+                            stats.Speed = StatCaps.CapSpeed(stats.Speed + sb.GetSingle());
                         break;
 
                     case "capacitor":
                         if (lvlData.TryGetProperty("cooldownReduction", out var cr))
-                            stats.CooldownReduction = Mathf.Min(1f, stats.CooldownReduction + cr.GetSingle());
+                            stats.CooldownReduction = StatCaps.CapCooldownReduction(stats.CooldownReduction + cr.GetSingle());
                         // Recalcule les cooldowns des armes actives
                         RefreshWeaponCooldowns();
                         break;
@@ -409,7 +403,7 @@ public partial class InventorySystem : Node
     {
         var player = GameManager.Instance.PlayerInstance;
         float cr = player?.Stats.CooldownReduction ?? 0f;
-        return Mathf.Max(PlayerStats.MinCooldown, baseCooldown * (1f - cr));
+        return StatCaps.EffectiveCooldown(baseCooldown, cr);
     }
 
     private void RefreshWeaponCooldowns()

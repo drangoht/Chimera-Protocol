@@ -142,3 +142,32 @@ public class WeaponLevelingTests
     public void ExtrapolatedDamage_AuDela_Applique10PctParNiveau(int level, float expected)
         => Assert.Equal(expected, WeaponLeveling.ExtrapolatedDamage(50f, level, 5), 3);
 }
+
+public class StatCapsTests
+{
+    [Theory]
+    [InlineData(1.0f, 0.0f, 1.0f)]   // sans réduction
+    [InlineData(1.0f, 0.5f, 0.5f)]   // -50%
+    [InlineData(1.0f, 0.9f, 0.15f)]  // plancher MinCooldown
+    [InlineData(0.4f, 0.6f, 0.16f)]
+    public void EffectiveCooldown_PlafonneAuPlancher(float baseCd, float cr, float expected)
+        => Assert.Equal(expected, StatCaps.EffectiveCooldown(baseCd, cr), 3);
+
+    [Theory]
+    [InlineData(0.30f, 0.30f)]
+    [InlineData(0.50f, 0.40f)] // plafonné
+    public void CapDamageReduction(float input, float expected)
+        => Assert.Equal(expected, StatCaps.CapDamageReduction(input), 3);
+
+    [Theory]
+    [InlineData(300f, 300f)]
+    [InlineData(400f, 380f)] // plafonné
+    public void CapSpeed(float input, float expected)
+        => Assert.Equal(expected, StatCaps.CapSpeed(input), 3);
+
+    [Theory]
+    [InlineData(0.5f, 0.5f)]
+    [InlineData(1.5f, 1.0f)] // plafonné à 100%
+    public void CapCooldownReduction(float input, float expected)
+        => Assert.Equal(expected, StatCaps.CapCooldownReduction(input), 3);
+}
