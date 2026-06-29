@@ -171,3 +171,37 @@ public class StatCapsTests
     public void CapCooldownReduction(float input, float expected)
         => Assert.Equal(expected, StatCaps.CapCooldownReduction(input), 3);
 }
+
+public class WeightedPickerTests
+{
+    private static readonly float[] Weights = { 60f, 30f, 10f }; // commun / rare / épique
+
+    [Theory]
+    [InlineData(0f, 0)]      // début du segment commun
+    [InlineData(60f, 0)]     // borne haute commun (inclusive)
+    [InlineData(60.5f, 1)]   // segment rare
+    [InlineData(90f, 1)]     // borne haute rare
+    [InlineData(90.5f, 2)]   // segment épique
+    [InlineData(100f, 2)]    // borne haute totale
+    public void PickIndex_TombeDansLeBonSegment(float roll, int expected)
+        => Assert.Equal(expected, WeightedPicker.PickIndex(Weights, roll));
+
+    [Fact]
+    public void PickIndex_AuDelaDuTotal_ReplieSurLeDernier()
+        => Assert.Equal(2, WeightedPicker.PickIndex(Weights, 999f));
+
+    [Fact]
+    public void PickIndex_PoidsUnique_RendZero()
+        => Assert.Equal(0, WeightedPicker.PickIndex(new[] { 42f }, 10f));
+
+    [Fact]
+    public void PickIndex_RepartitionConformeAuxPoids()
+    {
+        // Balayage déterministe de [0,100) : ~60% commun, ~30% rare, ~10% épique.
+        int[] counts = new int[3];
+        for (int r = 0; r < 100; r++) counts[WeightedPicker.PickIndex(Weights, r + 0.5f)]++;
+        Assert.Equal(60, counts[0]);
+        Assert.Equal(30, counts[1]);
+        Assert.Equal(10, counts[2]);
+    }
+}

@@ -197,24 +197,14 @@ public partial class LevelUpSystem : Node
 
     private LevelUpCardData WeightedPickAndRemove(List<LevelUpCardData> pool)
     {
+        var weights = new float[pool.Count];
         float total = 0f;
-        foreach (var c in pool) total += RarityWeight(c.Rarity);
+        for (int i = 0; i < pool.Count; i++) { weights[i] = RarityWeight(pool[i].Rarity); total += weights[i]; }
 
-        float roll = _rng.RandfRange(0f, total);
-        float acc  = 0f;
-        for (int i = 0; i < pool.Count; i++)
-        {
-            acc += RarityWeight(pool[i].Rarity);
-            if (roll <= acc)
-            {
-                var card = pool[i];
-                pool.RemoveAt(i);
-                return card;
-            }
-        }
-        var last = pool[pool.Count - 1];
-        pool.RemoveAt(pool.Count - 1);
-        return last;
+        int idx = WeightedPicker.PickIndex(weights, _rng.RandfRange(0f, total));
+        var card = pool[idx];
+        pool.RemoveAt(idx);
+        return card;
     }
 
     // -------------------------------------------------------------------------

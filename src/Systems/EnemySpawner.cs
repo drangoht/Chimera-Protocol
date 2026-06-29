@@ -135,17 +135,10 @@ public partial class EnemySpawner : Node
 
     private EnemySpawnData WeightedRandom(List<EnemySpawnData> pool)
     {
-        float totalWeight = 0f;
-        foreach (var e in pool) totalWeight += e.SpawnWeight;
-
-        float roll = _rng.RandfRange(0f, totalWeight);
-        float acc  = 0f;
-        foreach (var e in pool)
-        {
-            acc += e.SpawnWeight;
-            if (roll <= acc) return e;
-        }
-        return pool[pool.Count - 1];
+        var weights = new float[pool.Count];
+        float total = 0f;
+        for (int i = 0; i < pool.Count; i++) { weights[i] = pool[i].SpawnWeight; total += weights[i]; }
+        return pool[WeightedPicker.PickIndex(weights, _rng.RandfRange(0f, total))];
     }
 
     private void SpawnEnemy(EnemySpawnData data, float tMinutes)
