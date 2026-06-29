@@ -63,7 +63,9 @@ public partial class PlasmaBlade : WeaponBase
 
     public override void _Process(double delta)
     {
-        // Met à jour la direction d'attaque selon le déplacement du joueur
+        // Direction par défaut (sans ennemi) : suit le déplacement du joueur — sert surtout au
+        // visuel. La direction de frappe réelle est recalculée vers l'ennemi le plus proche au
+        // moment de l'attaque (cf. Attack).
         var player = GameManager.Instance.PlayerInstance;
         if (player != null && player.Velocity.Length() > 1f)
             _attackDir = player.Velocity.Normalized();
@@ -74,6 +76,22 @@ public partial class PlasmaBlade : WeaponBase
     protected override void Attack()
     {
         var enemies = GetTree().GetNodesInGroup(Constants.GroupEnemies);
+
+        // Oriente l'arc vers l'ennemi le plus proche. Sans ça, l'arme de mêlée suit le
+        // déplacement : en kitant, le joueur fuit ses poursuivants → l'arc leur fait dos et ne
+        // touche jamais rien (« aucun dégât »). Une arme de mêlée survivor vise toujours la
+        // menace la plus proche, peu importe le sens de fuite.
+        EnemyBase? nearest = null;
+        float nearestDistSq = float.MaxValue;
+        foreach (var node in enemies)
+        {
+            if (node is not EnemyBase e) continue;
+            float dsq = (e.GlobalPosition - GlobalPosition).LengthSquared();
+            if (dsq < nearestDistSq) { nearestDistSq = dsq; nearest = e; }
+        }
+        if (nearest != null)
+            _attackDir = (nearest.GlobalPosition - GlobalPosition).Normalized();
+
         float halfArcRad = Mathf.DegToRad(ArcAngleDeg / 2f);
 
         bool hitAny = false;

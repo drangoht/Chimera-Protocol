@@ -418,7 +418,7 @@ public partial class InventorySystem : Node
         }
     }
 
-    private void RefreshWeaponDamages()
+    public void RefreshWeaponDamages()
     {
         // ApplyWeaponStats repart de la valeur brute JSON puis ApplySpecializedStats
         // multiplie par DamageMultiplier courant — pas de double-application.

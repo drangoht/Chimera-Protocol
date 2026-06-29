@@ -92,6 +92,11 @@ public partial class GameManager : Node
         // Applique les bonus meta permanents dès que le joueur s'enregistre
         MetaProgressionSystem.Instance?.ApplyMetaBonusesToStats(player.Stats);
 
+        // L'arme de départ a été instanciée AVANT que le multiplicateur de dégâts méta ne soit
+        // posé sur les stats — on ré-applique les stats des armes équipées pour qu'elles en
+        // bénéficient (sinon Vagabond/Titan/Chimera démarrent sans le bonus de dégâts du Hub).
+        InventorySystem.Instance?.RefreshWeaponDamages();
+
         // Hook de debug --debug-boss : loadout de test + spawn immédiat du boss final.
         // Différé pour laisser tous les _Ready de la scène passer (EnemySpawner doit avoir
         // chargé enemies.json, les armes doivent pouvoir s'instancier proprement).
