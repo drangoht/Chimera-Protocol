@@ -16,6 +16,8 @@ public partial class LevelSelectScreen : Control
     private ColorRect _fade   = null!;
     private bool      _leaving = false;
     private Button?   _firstPlay;   // bouton « Jouer ici » du 1er biome (présélectionné)
+    private ScrollContainer _scroll = null!;
+    private readonly System.Collections.Generic.List<Button> _playButtons = new();
 
     public override void _Ready()
     {
@@ -37,11 +39,11 @@ public partial class LevelSelectScreen : Control
         title.AddThemeColorOverride("font_color", Cyan);
         root.AddChild(title);
 
-        var scroll = new ScrollContainer { SizeFlagsVertical = SizeFlags.ExpandFill };
-        root.AddChild(scroll);
+        _scroll = new ScrollContainer { SizeFlagsVertical = SizeFlags.ExpandFill };
+        root.AddChild(_scroll);
         var list = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
         list.AddThemeConstantOverride("separation", 12);
-        scroll.AddChild(list);
+        _scroll.AddChild(list);
 
         foreach (var b in BiomeCatalog.All)
         {
@@ -62,6 +64,11 @@ public partial class LevelSelectScreen : Control
         row.AddChild(rand);
         row.AddChild(back);
         root.AddChild(row);
+
+        // Chaîne de focus explicite (le focus spatial ne traverse pas fiablement les PanelContainer
+        // des cartes) + auto-scroll : sans ça, en bas le focus sautait directement à Random/Back et
+        // la liste ne défilait pas pour suivre la carte sélectionnée (Néon hors écran).
+        SetupFocusChain(rand, back);
 
         _fade = new ColorRect { Color = new Color(0, 0, 0, 1) };
         _fade.SetAnchorsPreset(LayoutPreset.FullRect);
@@ -129,10 +136,40 @@ public partial class LevelSelectScreen : Control
                                 SizeFlagsVertical = SizeFlags.ShrinkCenter };
         StyleButton(play, accent);
         play.Pressed += () => StartRun(id);
+        // Auto-scroll : quand ce bouton prend le focus (clavier/manette), défile pour le rendre visible.
+        play.FocusEntered += () => _scroll.EnsureControlVisible(play);
         hb.AddChild(play);
+        _playButtons.Add(play);
         _firstPlay ??= play;   // le 1er biome construit fournit le bouton présélectionné
 
         return panel;
+    }
+
+    /// <summary>
+    /// Câble la navigation verticale : carte[0] → … → carte[N] → (Aléatoire / Retour), et l'inverse.
+    /// Indispensable car l'algo de focus spatial de Godot ne traverse pas fiablement les PanelContainer
+    /// des cartes (même piège que HubScreen.SetupFocusChain).
+    /// </summary>
+    private void SetupFocusChain(Button rand, Button back)
+    {
+        for (int i = 0; i < _playButtons.Count; i++)
+        {
+            var cur = _playButtons[i];
+            if (i > 0)
+                cur.FocusNeighborTop = cur.GetPathTo(_playButtons[i - 1]);
+            cur.FocusNeighborBottom = (i < _playButtons.Count - 1)
+                ? cur.GetPathTo(_playButtons[i + 1])
+                : cur.GetPathTo(rand);
+        }
+
+        if (_playButtons.Count > 0)
+        {
+            var last = _playButtons[^1];
+            rand.FocusNeighborTop = rand.GetPathTo(last);
+            back.FocusNeighborTop = back.GetPathTo(last);
+        }
+        rand.FocusNeighborRight = rand.GetPathTo(back);
+        back.FocusNeighborLeft  = back.GetPathTo(rand);
     }
 
     private void StyleButton(Button btn, Color accent)
