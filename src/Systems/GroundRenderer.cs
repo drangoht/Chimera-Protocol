@@ -124,6 +124,7 @@ public partial class GroundRenderer : Node2D
         BuildDecor(rng);
         BuildObstacles(rng);
         AddFloorDarkOverlay();
+        AddAtmosphere();
         AnnounceBiome();
     }
 
@@ -544,6 +545,16 @@ public partial class GroundRenderer : Node2D
             ZIndex       = 2,
         });
         return body;
+    }
+
+    // ─── Atmosphère (brume + rais de lumière + poussière parallaxe) ─────────────
+
+    /// <summary>Ajoute la couche atmosphérique thématisée par le biome (Phase 2).</summary>
+    private void AddAtmosphere()
+    {
+        var atmo = new BiomeAtmosphere();
+        AddChild(atmo);
+        atmo.Configure(_biome.Id, _biome.Accent);
     }
 
     // ─── Overlay sombre ──────────────────────────────────────────────────────
