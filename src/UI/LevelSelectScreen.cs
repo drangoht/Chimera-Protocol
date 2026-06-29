@@ -15,6 +15,7 @@ public partial class LevelSelectScreen : Control
 
     private ColorRect _fade   = null!;
     private bool      _leaving = false;
+    private Button?   _firstPlay;   // bouton « Jouer ici » du 1er biome (présélectionné)
 
     public override void _Ready()
     {
@@ -68,7 +69,8 @@ public partial class LevelSelectScreen : Control
         AddChild(_fade);
         var t = CreateTween();
         t.TweenProperty(_fade, "color:a", 0f, 0.4);
-        t.TweenCallback(Callable.From(() => back.GrabFocus()));
+        // Présélectionne le 1er niveau (fallback « Retour » s'il n'y a aucun biome).
+        t.TweenCallback(Callable.From(() => (_firstPlay ?? back).GrabFocus()));
     }
 
     private Control BuildCard(string id, string name, string effect, string desc, Color accent, string preview)
@@ -128,6 +130,7 @@ public partial class LevelSelectScreen : Control
         StyleButton(play, accent);
         play.Pressed += () => StartRun(id);
         hb.AddChild(play);
+        _firstPlay ??= play;   // le 1er biome construit fournit le bouton présélectionné
 
         return panel;
     }

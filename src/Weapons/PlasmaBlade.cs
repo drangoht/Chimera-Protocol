@@ -126,8 +126,10 @@ public partial class PlasmaBlade : WeaponBase
     {
         if (_arcFlashScene == null) return;
         var flash = _arcFlashScene.Instantiate<PlasmaArcFlash>();
-        // Rotation : angle de _attackDir en radians
-        flash.Rotation = _attackDir.Angle();
+        // Rotation : angle de _attackDir en radians ; le croissant épouse l'arc réel de l'arme.
+        flash.Rotation    = _attackDir.Angle();
+        flash.ArcRadiusPx = ArcRadius;
+        flash.ArcAngleDeg = ArcAngleDeg;
         GetTree().Root.CallDeferred(Node.MethodName.AddChild, flash);
         flash.SetDeferred("global_position", GlobalPosition);
     }

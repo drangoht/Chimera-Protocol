@@ -1,97 +1,79 @@
 using Godot;
 
 /// <summary>
-/// VFX arc plasma instancié à chaque swing de PlasmaBlade.
-/// GPUParticles2D en demi-cercle cyan one-shot + PointLight2D flash bref.
-/// La rotation du Node2D correspond à la direction d'attaque.
-/// Durée totale : 0.2 s (timer), particules lifetime = 0.12 s.
+/// VFX du coup de Lame Plasma : un croissant d'énergie cyan tracé dans l'arc d'attaque,
+/// qui s'illumine, gonfle légèrement, balaie l'arc puis s'efface (~0.22 s).
+/// Remplace l'ancien nuage de particules carrées (perçu comme un « rectangle clignotant »).
+/// La rotation du Node2D = direction d'attaque ; le tracé est centré sur +X en local.
+/// <see cref="ArcRadiusPx"/> / <see cref="ArcAngleDeg"/> sont posés par PlasmaBlade avant l'ajout
+/// à l'arbre (sinon valeurs par défaut).
 /// </summary>
 public partial class PlasmaArcFlash : Node2D
 {
-    private static Texture2D? _particleTex;
+    public float ArcRadiusPx { get; set; } = 80f;
+    public float ArcAngleDeg { get; set; } = 180f;
+
+    private static readonly Color Cyan  = new(0.267f, 1f, 0.933f);
+    private static readonly Color White = new(0.85f, 1f, 1f);
     private static Texture2D? _lightTex;
+
+    private float        _t;            // 0 → 1 sur la durée du flash
+    private PointLight2D? _light;
 
     public override void _Ready()
     {
-        // ── Texture particule ─────────────────────────────────────────────
-        if (_particleTex == null)
-        {
-            // Carré cyan 4×4 px
-            var img = Image.CreateEmpty(4, 4, false, Image.Format.Rgba8);
-            img.Fill(new Color(0.267f, 1f, 0.933f, 1f));
-            _particleTex = ImageTexture.CreateFromImage(img);
-        }
+        ZIndex = 4;
 
-        // ── Texture lumière radiale ────────────────────────────────────────
+        // ── Lueur brève au centre de l'arc (devant le joueur) ──────────────
+        // Flash discret au bord de l'arc — volontairement modéré pour ne pas noyer le tracé du
+        // croissant (sinon on ne voit qu'un gros halo cyan, cf. itération précédente).
         _lightTex ??= Player.MakeRadialLightTexture(64);
-
-        // ── GPUParticles2D arc plasma ──────────────────────────────────────
-        var mat = new ParticleProcessMaterial
+        _light = new PointLight2D
         {
-            Direction         = new Vector3(1, 0, 0), // horizontal, la rotation du Node2D gère l'orientation
-            Spread            = 90f,                   // demi-cercle (±90° autour de la direction)
-            InitialVelocityMin = 60f,
-            InitialVelocityMax = 140f,
-            Gravity           = Vector3.Zero,
-            ScaleMin          = 3.5f,
-            ScaleMax          = 7.0f,
-            // Couleur dégradé : cyan opaque → cyan transparent
-            Color             = new Color(0.267f, 1f, 0.933f, 0.9f),
-        };
-
-        // Gradient couleur : début opaque → fin transparent
-        var colorGrad = new Gradient();
-        colorGrad.SetColor(0, new Color(0.267f, 1f, 0.933f, 0.9f));
-        colorGrad.SetColor(1, new Color(0.267f, 1f, 0.933f, 0f));
-        var colorRamp = new GradientTexture1D { Gradient = colorGrad };
-        mat.ColorRamp = colorRamp;
-
-        var quadMesh = new QuadMesh { Size = new Vector2(5f, 5f) };
-
-        var particles = new GpuParticles2D
-        {
-            Name             = "Particles",
-            Amount           = 24,
-            Lifetime         = 0.12,
-            OneShot          = true,
-            Emitting         = false,
-            Explosiveness    = 1.0f,
-            ProcessMaterial  = mat,
-            Texture          = _particleTex,
-            ZIndex           = 3,
-        };
-        particles.Set("draw_pass_1", quadMesh);
-        AddChild(particles);
-
-        // ── PointLight2D flash bref ────────────────────────────────────────
-        var light = new PointLight2D
-        {
-            Name         = "ArcLight",
-            Color        = new Color(0.267f, 1f, 0.933f, 1f),
-            Energy       = 2.5f,
+            Color        = Cyan,
+            Energy       = 1.3f,
             Texture      = _lightTex,
-            TextureScale = 5.0f,
+            TextureScale = ArcRadiusPx / 26f,
             BlendMode    = PointLight2D.BlendModeEnum.Add,
-            ZIndex       = 4,
+            Position     = new Vector2(ArcRadiusPx * 0.85f, 0f),
         };
-        AddChild(light);
+        AddChild(_light);
 
-        // ── Déclenche les particules ──────────────────────────────────────
-        particles.Emitting = true;
-
-        // ── Tween : énergie lumière 2.5 → 0 en 0.18 s ────────────────────
+        // ── Animation : énergie lumière → 0, progression _t → 1, puis libère ─
         var tween = CreateTween();
-        tween.TweenProperty(light, "energy", 0f, 0.18);
+        tween.SetParallel(true);
+        tween.TweenProperty(_light, "energy", 0f, 0.18);
+        tween.TweenMethod(Callable.From<float>(SetProgress), 0f, 1f, 0.22);
+        tween.Chain().TweenCallback(Callable.From(QueueFree));
+    }
 
-        // ── Timer auto-destruction ─────────────────────────────────────────
-        var timer = new Godot.Timer
-        {
-            WaitTime  = 0.22,
-            OneShot   = true,
-            Autostart = false,
-        };
-        AddChild(timer);
-        timer.Timeout += QueueFree;
-        timer.Start();
+    private void SetProgress(float v)
+    {
+        _t = v;
+        QueueRedraw();
+    }
+
+    public override void _Draw()
+    {
+        float half = Mathf.DegToRad(ArcAngleDeg / 2f);
+        float grow = 1f + 0.18f * _t;            // le croissant gonfle un peu en s'effaçant
+        float r1   = ArcRadiusPx * grow;         // rayon extérieur
+        float r0   = ArcRadiusPx * 0.5f * grow;  // rayon intérieur
+        float rMid = (r0 + r1) * 0.5f;
+        float band = r1 - r0;
+        float a    = 1f - _t;                    // fondu sortant
+        const int N = 24;
+
+        // ── Corps du croissant (band cyan saturé) ──────────────────────────
+        DrawArc(Vector2.Zero, rMid, -half, half, N, new Color(Cyan, 0.45f * a), band, true);
+        // ── Bords lumineux : halo cyan large + cœur blanc franc (le « fil » de la lame) ──
+        DrawArc(Vector2.Zero, r1, -half, half, N, new Color(Cyan,  0.7f * a), 10f, true);
+        DrawArc(Vector2.Zero, r1, -half, half, N, new Color(White, 1.0f * a),  4f, true);
+        DrawArc(Vector2.Zero, r0, -half, half, N, new Color(Cyan,  0.5f * a),  3f, true);
+
+        // ── Tranche lumineuse qui balaie l'arc (effet de coup de lame) ─────
+        float sweep = -half + 2f * half * _t;
+        var sdir = new Vector2(Mathf.Cos(sweep), Mathf.Sin(sweep));
+        DrawLine(sdir * r0, sdir * (r1 + band * 0.3f), new Color(White, 0.9f * a), 4f, true);
     }
 }

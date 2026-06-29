@@ -31,6 +31,10 @@ public partial class IntroScreen : Control
     public override void _Ready()
     {
         SetAnchorsPreset(LayoutPreset.FullRect);
+        // La racine Control est en MouseFilter=Stop par défaut → elle capterait le clic souris
+        // comme un événement GUI et `_UnhandledInput` ne le verrait jamais (seul le clavier
+        // passait). On laisse le clic retomber dans `_UnhandledInput` pour pouvoir skipper.
+        MouseFilter = MouseFilterEnum.Ignore;
 
         // Fond sombre
         var bg = new ColorRect { Color = new Color(0.015f, 0.02f, 0.05f) };
