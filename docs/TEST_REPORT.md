@@ -2376,3 +2376,24 @@ Contexte : save de test (build méta maxé + `reroll:3`/`skip:3`), restauré à 
 - Approche de vérif : émission de `Button.Pressed` (pas de clic pixel, fragile avec le stretch `canvas_items`) → passe par `OnRerollPressed`/`OnSkipPressed` réels, lecture synchrone du texte des cartes.
 - Le retrait de l'XP de départ (`starting_xp`) a supprimé la pause parasite du LevelUpScreen au lancement → les tests gameplay headless fonctionnent désormais sans contournement.
 - Boutons nommés `RerollButton`/`SkipButton` (chemins `LevelUpScreen/Actions/*`) pour faciliter les futurs tests.
+
+---
+
+# Non-régression post-refacto SOLID + features (2026-06-29)
+
+**Verdict : PASS — aucune régression détectée.** Validation faite après l'extraction de la
+logique pure (`src/Core/Rules/`), le découpage des fichiers, et les features de session
+(localisation EN/FR/ES, reroll/skip, choix du personnage, quitter la partie, ennemis bloqués
+par obstacles, aimant). (game-tester indisponible — limite de session ; validation manuelle.)
+
+| Vérification | Résultat |
+|---|---|
+| Tests unitaires `dotnet test` (9 règles pures) | **51/51 PASS** |
+| Build jeu `dotnet build -c Debug` | **0 erreur** |
+| Run gameplay (bot kite ~70 s) : spawns, montées de niveau, armes, HUD | **PASS** — niveau 8 atteint, level-up à 3 cartes valides, 0 crash |
+| Formules refactorées en conditions réelles (XP, spawn, rareté via WeightedPicker, extrapolation) | **PASS** (comportement inchangé, validé aussi par les tests) |
+| Localisation : EN par défaut + bascule ES (menu Jugar/Hub/Bestiario/…) + persistance | **PASS** (restauré en `en` après test) |
+| Cartes de level-up traduites (Codex via Loc) | **PASS** (descriptions EN affichées) |
+
+Notes : la pause headless du LevelUpScreen n'existe plus (`starting_xp` retiré) → tests gameplay
+headless OK. Aucun fichier de gameplay modifié ; `settings.cfg` restauré.

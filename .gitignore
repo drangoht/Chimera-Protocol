@@ -47,3 +47,4 @@ docs/hud_new_zoom.png
 docs/hud_style_zoom.png
 docs/levelselect_badge.png
 docs/options2.png
+tests/*.uid
