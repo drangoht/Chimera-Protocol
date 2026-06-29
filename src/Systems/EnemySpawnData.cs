@@ -11,4 +11,15 @@ internal sealed class EnemySpawnData
     public float  HpScalingPerMinute     { get; set; }
     public float  DamageScalingPerMinute { get; set; }
     public int    MaxSimultaneous        { get; set; } = 0; // 0 = illimité
+
+    /// <summary>Biomes où cet ennemi peut apparaître (ids). Vide = tous les biomes (défaut).</summary>
+    public string[] Biomes               { get; set; } = System.Array.Empty<string>();
+
+    /// <summary>Cet ennemi peut-il apparaître dans le biome courant ? (vide ou biome inconnu = oui).</summary>
+    public bool IsAllowedInBiome(string? biomeId)
+    {
+        if (Biomes.Length == 0 || string.IsNullOrEmpty(biomeId)) return true;
+        foreach (var b in Biomes) if (b == biomeId) return true;
+        return false;
+    }
 }

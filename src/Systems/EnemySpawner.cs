@@ -126,9 +126,12 @@ public partial class EnemySpawner : Node
 
     private List<EnemySpawnData> GetAvailableEnemies(float tMinutes)
     {
+        // Filtre par temps d'apparition ET par biome courant (les ennemis sans champ `biomes`
+        // restent disponibles partout — rétro-compatible).
+        string? biome = GameManager.Instance?.CurrentBiomeId;
         var list = new List<EnemySpawnData>();
         foreach (var e in _enemyPool)
-            if (tMinutes >= e.SpawnStartMinute)
+            if (tMinutes >= e.SpawnStartMinute && e.IsAllowedInBiome(biome))
                 list.Add(e);
         return list;
     }
@@ -207,6 +210,16 @@ public partial class EnemySpawner : Node
             int maxSim = 0;
             if (e.TryGetProperty("maxSimultaneous", out var ms)) maxSim = ms.GetInt32();
 
+            // Biomes autorisés (optionnel) : absent → tous biomes.
+            string[] biomes = System.Array.Empty<string>();
+            if (e.TryGetProperty("biomes", out var bs) && bs.ValueKind == JsonValueKind.Array)
+            {
+                var tmp = new List<string>();
+                foreach (var b in bs.EnumerateArray())
+                    if (b.GetString() is { } s) tmp.Add(s);
+                biomes = tmp.ToArray();
+            }
+
             _enemyPool.Add(new EnemySpawnData
             {
                 Id                    = e.GetProperty("id").GetString()!,
@@ -219,6 +232,7 @@ public partial class EnemySpawner : Node
                 HpScalingPerMinute    = e.GetProperty("hpScalingPerMinute").GetSingle(),
                 DamageScalingPerMinute= e.GetProperty("damageScalingPerMinute").GetSingle(),
                 MaxSimultaneous       = maxSim,
+                Biomes                = biomes,
             });
         }
 

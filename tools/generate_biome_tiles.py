@@ -3,10 +3,11 @@ Genere des TUILES DEDIEES par biome (32x32, style maison cohérent avec
 generate_sprites.py) : couleurs et motifs baked-in dans le PNG, pour remplacer
 le simple tintage runtime.
 
-3 biomes (le Sanctuaire Rouillé garde les tuiles d'origine) :
+4 biomes (le Sanctuaire Rouillé garde les tuiles d'origine) :
   - aether    : Friche d'Aether (violet corrompu, veines magenta)
   - fournaise : Fournaise (rouille-orange, fissures en fusion)
   - givre     : Givre Cryogénique (bleu-glace, givre clair)
+  - neon      : Secteur Néon (base sombre, grilles néon magenta + cyan)
 
 Sortie : assets/sprites/tileset/biomes/<biome>/floor_01..03.png, wall_01..02.png
 Lancer : python tools/generate_biome_tiles.py
@@ -36,6 +37,8 @@ PALETTES = {
     "aether":    ((34, 26, 52),  (54, 42, 80),  (22, 16, 36),  (150, 90, 240), (205, 160, 255)),
     "fournaise": ((44, 26, 18),  (74, 42, 26),  (28, 16, 12),  (255, 120, 40), (255, 195, 120)),
     "givre":     ((30, 44, 52),  (48, 66, 78),  (20, 30, 38),  (150, 220, 235),(225, 248, 255)),
+    # neon : Secteur Néon — base quasi noire bleutée, grilles/néons magenta + cyan électriques
+    "neon":      ((8, 10, 20),   (16, 20, 38),  (5, 6, 14),    (255, 60, 210), (120, 245, 255)),
 }
 
 def gen_biome(name):
@@ -50,12 +53,17 @@ def gen_biome(name):
         px(img, x, y, mid)
     save(img, os.path.join(out, "floor_01.png"))
 
-    # floor_02 : joints en grille
-    img = canvas(); rect(img, 0, 0, 31, 31, mid)
+    # floor_02 : joints en grille (néon = lignes lumineuses sur base sombre)
+    neon = (name == "neon")
+    img = canvas(); rect(img, 0, 0, 31, 31, base if neon else mid)
+    grid_c = acc if neon else dark
     for xi in range(0, 32, 8):
-        for yi in range(32): px(img, xi, yi, dark)
+        for yi in range(32): px(img, xi, yi, grid_c)
     for yi in range(0, 32, 8):
-        for xi in range(32): px(img, xi, yi, dark)
+        for xi in range(32): px(img, xi, yi, grid_c)
+    if neon:  # ponctuation cyan aux intersections pour un look circuit
+        for xi in range(0, 32, 8):
+            for yi in range(0, 32, 8): px(img, xi, yi, accl)
     save(img, os.path.join(out, "floor_02.png"))
 
     # floor_03 : veine/fissure d'accent diagonale + lueur

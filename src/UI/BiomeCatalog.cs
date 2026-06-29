@@ -39,5 +39,9 @@ public static class BiomeCatalog
         new("givre", "Givre Cryogénique", "Ennemis -18% lents",
             "Le gel engourdit tout. Les ennemis sont 18% plus lents : du répit pour respirer, kiter et viser.",
             new(0.62f, 0.88f, 0.95f), Tiles + "biomes/givre/floor_03.png"),
+
+        new("neon", "Secteur Néon", "Overclock : ennemis +10% rapides, +15% XP",
+            "Un secteur de données overclocké, nappé de néons. Les ennemis vont 10% plus vite, mais l'XP est augmentée de 15% : risque contre récompense.",
+            new(0.95f, 0.30f, 0.85f), Tiles + "biomes/neon/floor_02.png"),
     };
 }

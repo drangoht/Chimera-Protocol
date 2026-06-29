@@ -88,6 +88,10 @@ public partial class GroundRenderer : Node2D
         new("givre", "Givre Cryogénique",  new(1.10f, 1.10f, 1.10f), new(1.06f, 1.06f, 1.06f),
             new(0f, 0.06f, 0.09f, 0.06f), 0.82f, 1.00f, "Givre : ennemis -18% lents",
             BiomeFloors("givre"), BiomeWalls("givre"), new(0.62f, 0.88f, 0.95f)),
+        // Secteur Néon — secteur de données overclocké : ennemis +10% rapides MAIS +15% XP (risk/reward)
+        new("neon", "Secteur Néon",        new(1.10f, 1.10f, 1.10f), new(1.06f, 1.06f, 1.06f),
+            new(0.06f, 0f, 0.10f, 0.06f), 1.10f, 1.15f, "Overclock : ennemis +10% rapides, +15% XP",
+            BiomeFloors("neon"), BiomeWalls("neon"), new(0.95f, 0.30f, 0.85f)),
     };
 
     private BiomeDef _biome = Biomes[0];
