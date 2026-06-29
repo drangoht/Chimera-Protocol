@@ -172,7 +172,9 @@
     "fusion_blade": "epic",
     "rail_overcharged": "epic",
     "glaive": "common",
-    "seeker_swarm": "rare"
+    "seeker_swarm": "rare",
+    "cryo_lance": "rare",
+    "pyre_stream": "rare"
   },
   "cardSelectionRules": {
     "cardCount": 3,

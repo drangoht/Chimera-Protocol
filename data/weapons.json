@@ -391,6 +391,115 @@
       ],
       "fusionRequires": null,
       "fusionResult": null
+    },
+    {
+      "id": "cryo_lance",
+      "name": "Lance Cryo",
+      "type": "active",
+      "rarity": "rare",
+      "description": "Rayon perçant glacé qui touche tous les ennemis en ligne et les ralentit (jusqu'à -40%).",
+      "maxLevel": 20,
+      "levels": [
+        {
+          "level": 1,
+          "damage": 9,
+          "cooldown": 1.4,
+          "range": 360,
+          "slowMult": 0.8,
+          "slowDuration": 1.5
+        },
+        {
+          "level": 2,
+          "damage": 12,
+          "cooldown": 1.3,
+          "range": 380,
+          "slowMult": 0.78,
+          "slowDuration": 1.6
+        },
+        {
+          "level": 3,
+          "damage": 15,
+          "cooldown": 1.2,
+          "range": 400,
+          "slowMult": 0.75,
+          "slowDuration": 1.8
+        },
+        {
+          "level": 4,
+          "damage": 19,
+          "cooldown": 1.1,
+          "range": 420,
+          "slowMult": 0.72,
+          "slowDuration": 2.0
+        },
+        {
+          "level": 5,
+          "damage": 24,
+          "cooldown": 1.0,
+          "range": 460,
+          "slowMult": 0.68,
+          "slowDuration": 2.2
+        }
+      ],
+      "fusionRequires": null,
+      "fusionResult": null
+    },
+    {
+      "id": "pyre_stream",
+      "name": "Jet de Pyre",
+      "type": "active",
+      "rarity": "rare",
+      "description": "Cône de flammes courte portée : faibles dégâts directs mais brûlure (DoT) qui s'accumule dans le temps.",
+      "maxLevel": 20,
+      "levels": [
+        {
+          "level": 1,
+          "damage": 3,
+          "cooldown": 0.5,
+          "coneAngle": 50,
+          "range": 130,
+          "burnDps": 6,
+          "burnDuration": 2.0
+        },
+        {
+          "level": 2,
+          "damage": 4,
+          "cooldown": 0.5,
+          "coneAngle": 55,
+          "range": 140,
+          "burnDps": 8,
+          "burnDuration": 2.2
+        },
+        {
+          "level": 3,
+          "damage": 5,
+          "cooldown": 0.45,
+          "coneAngle": 60,
+          "range": 150,
+          "burnDps": 11,
+          "burnDuration": 2.4
+        },
+        {
+          "level": 4,
+          "damage": 6,
+          "cooldown": 0.45,
+          "coneAngle": 65,
+          "range": 160,
+          "burnDps": 14,
+          "burnDuration": 2.6
+        },
+        {
+          "level": 5,
+          "damage": 8,
+          "cooldown": 0.4,
+          "coneAngle": 70,
+          "range": 175,
+          "burnDps": 18,
+          "burnDuration": 3.0
+        }
+      ],
+      "fusionRequires": null,
+      "fusionResult": null
     }
   ],
   "passives": [

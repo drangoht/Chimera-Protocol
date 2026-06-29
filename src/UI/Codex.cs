@@ -119,6 +119,12 @@ public static class Codex
         new("seeker_swarm", "WPN_SEEKER_SWARM_NAME", "TAG_ACTIVE", "WPN_SEEKER_SWARM_DESC",
             IconDir + "ui_icon_seeker.png", Violet),
 
+        new("cryo_lance", "WPN_CRYO_LANCE_NAME", "TAG_ACTIVE", "WPN_CRYO_LANCE_DESC",
+            IconDir + "ui_icon_cryo.png", Cyan),
+
+        new("pyre_stream", "WPN_PYRE_STREAM_NAME", "TAG_ACTIVE", "WPN_PYRE_STREAM_DESC",
+            IconDir + "ui_icon_pyre.png", Gold),
+
         new("fusion_blade", "WPN_FUSION_BLADE_NAME", "TAG_FUSION", "WPN_FUSION_BLADE_DESC",
             IconDir + "ui_icon_fusionblade.png", Gold),
 
@@ -143,6 +149,8 @@ public static class Codex
         { "scatter_volley",    IconDir + "ui_icon_scatter.png"        },
         { "glaive",            IconDir + "ui_icon_glaive.png"         },
         { "seeker_swarm",      IconDir + "ui_icon_seeker.png"         },
+        { "cryo_lance",        IconDir + "ui_icon_cryo.png"           },
+        { "pyre_stream",       IconDir + "ui_icon_pyre.png"           },
         { "fusion_blade",      IconDir + "ui_icon_fusionblade.png"    },
         { "rail_overcharged",  IconDir + "ui_icon_rail.png"           },
         { "orbital_swarm",     IconDir + "ui_icon_orbital.png"        },

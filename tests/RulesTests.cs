@@ -172,6 +172,25 @@ public class StatCapsTests
         => Assert.Equal(expected, StatCaps.CapCooldownReduction(input), 3);
 }
 
+public class CrowdControlCapsTests
+{
+    [Theory]
+    [InlineData(0.80f, 0.80f)]   // slow modéré inchangé
+    [InlineData(0.60f, 0.60f)]   // pile au plancher
+    [InlineData(0.30f, 0.60f)]   // plafonné à -40 %
+    [InlineData(1.50f, 1.00f)]   // borné à 1 (pas d'accélération)
+    public void CapSlowMult_BorneDansLaPlage(float input, float expected)
+        => Assert.Equal(expected, CrowdControlCaps.CapSlowMult(input), 3);
+
+    [Theory]
+    [InlineData(20f, 20f)]
+    [InlineData(60f, 60f)]
+    [InlineData(90f, 60f)]   // plafonné
+    [InlineData(-5f, 0f)]    // jamais négatif
+    public void CapBurnDps_BorneDansLaPlage(float input, float expected)
+        => Assert.Equal(expected, CrowdControlCaps.CapBurnDps(input), 3);
+}
+
 public class WeightedPickerTests
 {
     private static readonly float[] Weights = { 60f, 30f, 10f }; // commun / rare / épique

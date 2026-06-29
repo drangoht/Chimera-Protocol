@@ -208,9 +208,42 @@ def gen_seeker():
     img.save(os.path.join(OUT, "ui_icon_seeker.png"))
     print("ui_icon_seeker.png")
 
+# ---------------- Lance Cryo : rayon glace diagonal cyan/blanc + eclats
+def gen_cryo():
+    img = canvas()
+    CY = (120, 220, 255); WH = (235, 250, 255); ICE = (180, 235, 255)
+    # faisceau diagonal (bas-gauche -> haut-droite)
+    line(img, 5, 27, 27, 5, (CY[0], CY[1], CY[2], 110), w=2)  # halo large
+    line(img, 5, 27, 27, 5, WH, w=0)                          # coeur blanc
+    # eclats de givre perpendiculaires
+    for (mx, my) in [(11, 21), (16, 16), (21, 11)]:
+        line(img, mx-2, my-2, mx+2, my+2, (ICE[0], ICE[1], ICE[2], 160), w=0)
+        line(img, mx-2, my+2, mx+2, my-2, (ICE[0], ICE[1], ICE[2], 160), w=0)
+    disc(img, 27, 5, 2, WH)
+    img.save(os.path.join(OUT, "ui_icon_cryo.png"))
+    print("ui_icon_cryo.png")
+
+# ---------------- Jet de Pyre : cone de flammes (jaune->rouge) depuis une buse
+def gen_pyre():
+    img = canvas()
+    YEL = (255, 220, 110); ORA = (255, 140, 40); RED = (220, 70, 30); WH = (255, 250, 230)
+    nx, ny = 7, 24  # buse bas-gauche
+    disc(img, nx, ny, 2, (150, 150, 160))
+    # cone de flammes vers haut-droite (3 nappes concentriques)
+    for (rad, col, spread) in [(20, RED, 26), (15, ORA, 18), (9, YEL, 10)]:
+        for ang in range(-spread, spread+1, 4):
+            a = math.radians(-45 + ang)
+            tx = nx + math.cos(a) * rad; ty = ny + math.sin(a) * rad
+            line(img, nx, ny, tx, ty, col, w=0)
+    disc(img, nx+2, ny-2, 1, WH)
+    img.save(os.path.join(OUT, "ui_icon_pyre.png"))
+    print("ui_icon_pyre.png")
+
 if __name__ == "__main__":
     gen_orbital()
     gen_aegis()
     gen_glaive()
     gen_seeker()
+    gen_cryo()
+    gen_pyre()
     print("Termine.")

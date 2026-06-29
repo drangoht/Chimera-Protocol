@@ -13,6 +13,15 @@ public partial class EnemyBase : CharacterBody2D
     private float _damageCooldown = 0f;
     private const float DamageInterval = 1f;
 
+    // ── Effets de statut (slow + brûlure DoT), plafonnés par CrowdControlCaps ──
+    private float _baseSpeed = 0f;       // vitesse réelle capturée (post-scaling/biome), 0 = pas encore
+    private float _slowMult  = 1f;       // multiplicateur de vitesse courant (≤ 1)
+    private float _slowTime  = 0f;       // temps restant de ralentissement
+    private float _burnDps   = 0f;       // dégâts/seconde de brûlure courante
+    private float _burnTime  = 0f;       // temps restant de brûlure
+    private float _burnTick  = 0f;       // accumulateur de tick (feedback visuel)
+    private const float BurnTickInterval = 0.33f;
+
     private Tween? _hitTween;
     private static PackedScene? _xpOrbScene;
     private static PackedScene? _hpOrbScene;
@@ -41,8 +50,56 @@ public partial class EnemyBase : CharacterBody2D
         var player = GameManager.Instance.PlayerInstance;
         if (player == null) return;
 
+        UpdateStatusEffects((float)delta);
+        if (_isDead) return;   // la brûlure a pu tuer l'ennemi
+
         UpdateMovement(player, delta);
         HandleContactDamage(player, delta);
+    }
+
+    /// <summary>
+    /// Applique slow (sur la vitesse effective) et brûlure (DoT) chaque frame. Capture la vitesse
+    /// de base à la 1re frame (après que EnemySpawner a posé le scaling + le multiplicateur de biome).
+    /// </summary>
+    private void UpdateStatusEffects(float dt)
+    {
+        if (_baseSpeed <= 0f) _baseSpeed = Speed;
+
+        if (_slowTime > 0f)
+        {
+            _slowTime -= dt;
+            if (_slowTime <= 0f) _slowMult = 1f;
+        }
+        Speed = _baseSpeed * _slowMult;   // les sous-classes lisent Speed → ralenties automatiquement
+
+        if (_burnTime > 0f)
+        {
+            _burnTime -= dt;
+            _burnTick += dt;
+            if (_burnTick >= BurnTickInterval)
+            {
+                _burnTick -= BurnTickInterval;
+                TakeDamage(_burnDps * BurnTickInterval);   // tick → HitFlash = feedback visuel
+            }
+            if (_burnTime <= 0f) { _burnDps = 0f; _burnTick = 0f; }
+        }
+    }
+
+    /// <summary>Ralentit l'ennemi : <paramref name="mult"/> ∈ (0,1]. On garde le slow le plus fort,
+    /// avec la durée la plus longue. Plafonné à -40 % (CrowdControlCaps).</summary>
+    public void ApplySlow(float mult, float duration)
+    {
+        mult = CrowdControlCaps.CapSlowMult(mult);
+        if (mult < _slowMult || _slowTime <= 0f) _slowMult = mult;
+        _slowTime = Mathf.Max(_slowTime, duration);
+    }
+
+    /// <summary>Applique une brûlure (DoT) non-stackable : garde le dps le plus fort et la durée la
+    /// plus longue. dps plafonné par CrowdControlCaps.</summary>
+    public void ApplyBurn(float dps, float duration)
+    {
+        _burnDps  = Mathf.Max(_burnDps, CrowdControlCaps.CapBurnDps(dps));
+        _burnTime = Mathf.Max(_burnTime, duration);
     }
 
     /// <summary>

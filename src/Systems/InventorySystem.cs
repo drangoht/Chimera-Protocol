@@ -38,6 +38,8 @@ public partial class InventorySystem : Node
         { "scatter_volley",  "res://scenes/weapons/ScatterVolley.tscn"  },
         { "glaive",          "res://scenes/weapons/Glaive.tscn"         },
         { "seeker_swarm",    "res://scenes/weapons/SeekerSwarm.tscn"    },
+        { "cryo_lance",      "res://scenes/weapons/CryoLance.tscn"      },
+        { "pyre_stream",     "res://scenes/weapons/PyreStream.tscn"     },
         { "fusion_blade",    "res://scenes/weapons/FusionBlade.tscn"    },
         { "rail_overcharged","res://scenes/weapons/RailOvercharged.tscn"},
         { "orbital_swarm",   "res://scenes/weapons/OrbitalSwarm.tscn"   },
@@ -248,6 +250,21 @@ public partial class InventorySystem : Node
                 if (lvlData.TryGetProperty("missileCount",   out var mc)) ss.MissileCount    = mc.GetInt32();
                 if (lvlData.TryGetProperty("projectileSpeed",out var ms)) ss.ProjectileSpeed = ms.GetSingle();
                 ss.Damage *= dmgMult;
+                break;
+
+            case "cryo_lance" when node is CryoLance cl:
+                if (lvlData.TryGetProperty("range",        out var clr)) cl.Range        = clr.GetSingle();
+                if (lvlData.TryGetProperty("slowMult",     out var clm)) cl.SlowMult     = clm.GetSingle();
+                if (lvlData.TryGetProperty("slowDuration", out var cld)) cl.SlowDuration = cld.GetSingle();
+                cl.Damage *= dmgMult;
+                break;
+
+            case "pyre_stream" when node is PyreStream pyr:
+                if (lvlData.TryGetProperty("coneAngle",    out var pca)) pyr.ConeAngle    = pca.GetSingle();
+                if (lvlData.TryGetProperty("range",        out var prg)) pyr.Range        = prg.GetSingle();
+                if (lvlData.TryGetProperty("burnDps",      out var pbd)) pyr.BurnDps      = pbd.GetSingle();
+                if (lvlData.TryGetProperty("burnDuration", out var pbt)) pyr.BurnDuration = pbt.GetSingle();
+                pyr.Damage *= dmgMult;
                 break;
         }
     }
