@@ -2397,3 +2397,31 @@ par obstacles, aimant). (game-tester indisponible — limite de session ; valida
 
 Notes : la pause headless du LevelUpScreen n'existe plus (`starting_xp` retiré) → tests gameplay
 headless OK. Aucun fichier de gameplay modifié ; `settings.cfg` restauré.
+
+---
+
+## Non-régression — passe game-tester 2026-06-29
+
+**Testeur :** game-tester (agent Claude) — **Hash git :** `5e93ba2`
+**Verdict : PASS — aucune régression, aucun bug détecté.** Confirme et complète la validation
+préliminaire ci-dessus avec une passe indépendante (tests + captures réelles).
+
+| # | Vérification | Méthode | Résultat |
+|---|---|---|---|
+| 1 | Tests unitaires (9 règles pures `src/Core/Rules/`) | `dotnet test tests/ChimeraProtocol.Tests.csproj` | **51/51 PASS** (19 ms) |
+| 2 | Build Debug | `dotnet build -c Debug ChimeraProtocol.csproj` | **0 erreur / 0 warning** |
+| 3 | Smoke / autoloads | boot headless `MainMenu.tscn` | **PASS** — MetaProgression (8 upgrades), SaveManager, 5910 Échos chargés, 0 erreur console |
+| 4 | Enchaînement écrans EN (Menu→CharacterSelect→LevelSelect) | captures `screenshot_scene` | **PASS** — 3 perso (Chimera/Titan/Vagabond, stats+desc), 4 biomes (effets+badge « DEFEATED » traduit), boutons Choose/Play/Random/Back |
+| 5 | Gameplay core (formules refactorées en réel) | bot kite `screenshot_swarm` 75 s puis 130 s | **PASS** — niveau 14 atteint en Difficile, spawns (nuée + orbes XP), armes qui tirent (Impulse/Plasma/Thermal Core…), HUD live (LV/PV/XP/timer décompte/Noyaux), loadout, 0 crash |
+| 6 | Montée de niveau / 3 cartes / rareté | level-up figé (NOCLICK) | **PASS** — « Level 2! », 3 cartes (Rare/Common colorées), file de level-up OK |
+| 7 | Reroll / Skip | save.json (reroll:1, skip:1 accordés puis **restauré**) | **PASS** — boutons « Reroll [1] » / « Skip [1] » affichés sous les cartes, gated par `GetUpgradeLevel>0` |
+| 8 | Localisation ES | `settings.cfg language="es"` puis **restauré** | **PASS** — menu Jugar/Hub/Bestiario/Arsenal/Opciones/Salir |
+| 9 | Localisation EN (défaut) | captures EN | **PASS** — Choose your character / Choose the level / DEFEATED |
+| 10 | Fin de run — libellé mort | chaîne loc + artefact + chemin code | **PASS (vérifié indirectement)** — `localization/ui.csv` `RUNEND_DEATH` = EN « KILLED IN ACTION » / FR « MORT EN SERVICE » / ES « CAÍDO EN COMBATE » ; artefact `docs/death_test.png` présent ; chemin `Player.HandleDeath → RunStatsTracker.EndRun("death") → RunEndScreen` inchangé |
+
+**Limite (non bloquante) :** la mort joueur n'a pas pu être capturée live cette session — le bot
+auto-kite + i-frames (0.45 s) survit jusqu'au niveau 14 même en difficulté Difficile. Fin de run
+validée via la chaîne de localisation, l'artefact existant et le chemin de code inchangé (cf. #10).
+
+**Robustesse fichiers :** `settings.cfg` et `save.json` restaurés à l'identique (diff vide,
+`git status` = aucun fichier suivi modifié). Seuls des PNG de capture untracked ajoutés dans `docs/`.
