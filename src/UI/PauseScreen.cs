@@ -297,7 +297,8 @@ public partial class PauseScreen : CanvasLayer
 
     public override void _UnhandledInput(InputEvent @event)
     {
-        if (@event.IsActionPressed("ui_cancel"))
+        // Ferme la pause via Échap/B (ui_cancel) OU Start manette (pause) → Start fait bascule.
+        if (@event.IsActionPressed("ui_cancel") || @event.IsActionPressed("pause"))
         {
             GetViewport().SetInputAsHandled();
             Close();

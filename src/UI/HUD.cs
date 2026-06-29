@@ -366,7 +366,8 @@ public partial class HUD : CanvasLayer
 	private static PackedScene? _pauseScene;
 	public override void _UnhandledInput(InputEvent @event)
 	{
-		if (!@event.IsActionPressed("ui_cancel")) return;
+		// Ouvre la pause via l'action « pause » (Échap clavier ou Start manette).
+		if (!@event.IsActionPressed("pause")) return;
 		if (GetTree().Paused) return;
 		GetViewport().SetInputAsHandled();
 		_pauseScene ??= GD.Load<PackedScene>("res://scenes/ui/PauseScreen.tscn");

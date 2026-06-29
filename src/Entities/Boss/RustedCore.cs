@@ -1,9 +1,9 @@
 using Godot;
 
 /// <summary>
-/// Le Noyau Rouillé — BOSS DE FIN (~13 min). Réutilise le sprite de la Sentinelle Maîtresse
-/// agrandi ×2 et teinté rouge-or. Avance lentement, tire des salves radiales de 12 projectiles
-/// toutes les 2.5 s et émet des ondes de choc cosmétiques. Très résistant (HP 1600).
+/// Le Noyau Rouillé — BOSS DE FIN (~13 min). Sprite dédié rouge-or, agrandi ×2.4 (imposant).
+/// Avance lentement, tire des salves radiales de 16 projectiles toutes les 2.0 s et émet des
+/// ondes de choc. Très résistant (HP base 18000 → ~32000 effectif à 13 min en Normal).
 /// Le vaincre = VICTOIRE de la run : à la mort, 3 Noyaux d'Aether + explosion massive,
 /// puis écran de fin "extraction réussie" (~1,4 s plus tard). Pas d'orbe XP ni de choix
 /// d'arme — la run se termine, ce serait sans effet et risquerait un LevelUpScreen parasite.
@@ -15,8 +15,8 @@ public partial class RustedCore : EnemyBase
     private static PackedScene? _aetherCoreScene;
     private static PackedScene? _shockwaveScene;
 
-    private const float BurstEvery   = 2.5f;
-    private const int   BulletsRing  = 12;
+    private const float BurstEvery   = 2.0f;   // 2.5→2.0 : salves plus rapprochées (boss plus pressant)
+    private const int   BulletsRing  = 16;     // 12→16 : rideau radial plus dense
     private float _burstTimer = BurstEvery;
 
     private const float ShockEvery = 3.5f;
@@ -42,14 +42,14 @@ public partial class RustedCore : EnemyBase
         if (_sprite != null)
         {
             _sprite.AnimationFinished += OnAnimationFinished;
-            _sprite.Scale = new Vector2(1.8f, 1.8f);  // boss massif ; sprite dédié déjà rouge-or
+            _sprite.Scale = new Vector2(2.4f, 2.4f);  // boss massif et imposant ; sprite dédié déjà rouge-or
             _sprite.Play("idle");
         }
 
         AddBossAura();
 
         // Entrée fracassante
-        ScreenShake.Instance?.Shake(10f, 0.4f);
+        ScreenShake.Instance?.Shake(14f, 0.5f);
         SpawnShockwave();
     }
 
@@ -70,7 +70,7 @@ public partial class RustedCore : EnemyBase
         t.TweenProperty(light, "energy", 1.0f, 0.9f).SetEase(Tween.EaseType.InOut);
     }
 
-    protected override float ContactRadius => 44f;
+    protected override float ContactRadius => 56f;  // boss agrandi (scale 2.4) → portée de contact proportionnée
     protected override int   GetOrbTier()  => 3;
     protected override float HpDropChance  => 1.0f;
 
@@ -118,7 +118,7 @@ public partial class RustedCore : EnemyBase
             var dir = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
             var bullet = _bulletScene.Instantiate<EnemyBullet>();
             bullet.Direction = dir;
-            bullet.Speed     = 170f;
+            bullet.Speed     = 210f;
             bullet.Damage    = Damage;
             parent?.CallDeferred(Node.MethodName.AddChild, bullet);
             bullet.SetDeferred("global_position", GlobalPosition);

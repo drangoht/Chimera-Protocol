@@ -64,6 +64,12 @@ public partial class GameManager : Node
         AddJoypadButton("ui_cancel",      JoyButton.B);  // annuler / retour
         AddJoypadButton("ui_focus_next",  JoyButton.RightShoulder);
         AddJoypadButton("ui_focus_prev",  JoyButton.LeftShoulder);
+
+        // Action « pause » (ouvre/ferme le menu de pause en jeu) : Échap au clavier + Start manette.
+        // Pas de section [input] dans project.godot → on crée l'action au boot.
+        if (!InputMap.HasAction("pause")) InputMap.AddAction("pause");
+        AddKey("pause", Key.Escape);
+        AddJoypadButton("pause", JoyButton.Start);
     }
 
     private static void AddJoypadButton(string action, JoyButton button)
@@ -73,6 +79,14 @@ public partial class GameManager : Node
         foreach (var e in InputMap.ActionGetEvents(action))
             if (e is InputEventJoypadButton jb && jb.ButtonIndex == button) return;
         InputMap.ActionAddEvent(action, new InputEventJoypadButton { ButtonIndex = button });
+    }
+
+    private static void AddKey(string action, Key key)
+    {
+        if (!InputMap.HasAction(action)) return;
+        foreach (var e in InputMap.ActionGetEvents(action))
+            if (e is InputEventKey k && k.Keycode == key) return;
+        InputMap.ActionAddEvent(action, new InputEventKey { Keycode = key });
     }
 
     public void RegisterPlayer(Player player)
