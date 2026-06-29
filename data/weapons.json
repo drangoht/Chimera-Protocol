@@ -8,13 +8,51 @@
       "description": "Projectile unique qui cible l'ennemi le plus proche. Perfore à partir du niveau 3.",
       "maxLevel": 20,
       "levels": [
-        { "level": 1, "damage": 10, "cooldown": 0.80, "projectileCount": 1, "piercing": false, "projectileSpeed": 400 },
-        { "level": 2, "damage": 14, "cooldown": 0.75, "projectileCount": 1, "piercing": false, "projectileSpeed": 420 },
-        { "level": 3, "damage": 18, "cooldown": 0.70, "projectileCount": 1, "piercing": true,  "projectileSpeed": 440 },
-        { "level": 4, "damage": 22, "cooldown": 0.65, "projectileCount": 2, "piercing": true,  "projectileSpeed": 460, "note": "2 projectiles vers les 2 ennemis les plus proches" },
-        { "level": 5, "damage": 28, "cooldown": 0.55, "projectileCount": 2, "piercing": true,  "projectileSpeed": 480 }
+        {
+          "level": 1,
+          "damage": 10,
+          "cooldown": 0.8,
+          "projectileCount": 1,
+          "piercing": false,
+          "projectileSpeed": 400
+        },
+        {
+          "level": 2,
+          "damage": 14,
+          "cooldown": 0.75,
+          "projectileCount": 1,
+          "piercing": false,
+          "projectileSpeed": 420
+        },
+        {
+          "level": 3,
+          "damage": 18,
+          "cooldown": 0.7,
+          "projectileCount": 1,
+          "piercing": true,
+          "projectileSpeed": 440
+        },
+        {
+          "level": 4,
+          "damage": 22,
+          "cooldown": 0.65,
+          "projectileCount": 2,
+          "piercing": true,
+          "projectileSpeed": 460,
+          "note": "2 projectiles vers les 2 ennemis les plus proches"
+        },
+        {
+          "level": 5,
+          "damage": 28,
+          "cooldown": 0.55,
+          "projectileCount": 2,
+          "piercing": true,
+          "projectileSpeed": 480
+        }
       ],
-      "fusionRequires": { "passive": "capacitor" },
+      "fusionRequires": {
+        "passive": "capacitor"
+      },
       "fusionResult": "rail_overcharged"
     },
     {
@@ -25,13 +63,45 @@
       "description": "Arc de mêlée tranchant dans un cône devant le joueur.",
       "maxLevel": 20,
       "levels": [
-        { "level": 1, "damage": 18, "cooldown": 1.20, "arcAngleDegrees": 180, "arcRadius": 80  },
-        { "level": 2, "damage": 24, "cooldown": 1.10, "arcAngleDegrees": 200, "arcRadius": 90  },
-        { "level": 3, "damage": 30, "cooldown": 1.00, "arcAngleDegrees": 220, "arcRadius": 100 },
-        { "level": 4, "damage": 38, "cooldown": 0.90, "arcAngleDegrees": 260, "arcRadius": 110 },
-        { "level": 5, "damage": 48, "cooldown": 0.80, "arcAngleDegrees": 320, "arcRadius": 120 }
+        {
+          "level": 1,
+          "damage": 18,
+          "cooldown": 1.2,
+          "arcAngleDegrees": 180,
+          "arcRadius": 80
+        },
+        {
+          "level": 2,
+          "damage": 24,
+          "cooldown": 1.1,
+          "arcAngleDegrees": 200,
+          "arcRadius": 90
+        },
+        {
+          "level": 3,
+          "damage": 30,
+          "cooldown": 1.0,
+          "arcAngleDegrees": 220,
+          "arcRadius": 100
+        },
+        {
+          "level": 4,
+          "damage": 38,
+          "cooldown": 0.9,
+          "arcAngleDegrees": 260,
+          "arcRadius": 110
+        },
+        {
+          "level": 5,
+          "damage": 48,
+          "cooldown": 0.8,
+          "arcAngleDegrees": 320,
+          "arcRadius": 120
+        }
       ],
-      "fusionRequires": { "passive": "thermal_core" },
+      "fusionRequires": {
+        "passive": "thermal_core"
+      },
       "fusionResult": "fusion_blade"
     },
     {
@@ -43,11 +113,41 @@
       "maxLevel": 20,
       "orbitRadius": 70,
       "levels": [
-        { "level": 1, "damage": 12, "droneCount": 2, "orbitSpeedDegPerSec": 120, "damageInterval": 0.50 },
-        { "level": 2, "damage": 15, "droneCount": 2, "orbitSpeedDegPerSec": 140, "damageInterval": 0.45 },
-        { "level": 3, "damage": 18, "droneCount": 3, "orbitSpeedDegPerSec": 160, "damageInterval": 0.40 },
-        { "level": 4, "damage": 22, "droneCount": 3, "orbitSpeedDegPerSec": 180, "damageInterval": 0.35 },
-        { "level": 5, "damage": 28, "droneCount": 4, "orbitSpeedDegPerSec": 200, "damageInterval": 0.30 }
+        {
+          "level": 1,
+          "damage": 12,
+          "droneCount": 2,
+          "orbitSpeedDegPerSec": 120,
+          "damageInterval": 0.5
+        },
+        {
+          "level": 2,
+          "damage": 15,
+          "droneCount": 2,
+          "orbitSpeedDegPerSec": 140,
+          "damageInterval": 0.45
+        },
+        {
+          "level": 3,
+          "damage": 18,
+          "droneCount": 3,
+          "orbitSpeedDegPerSec": 160,
+          "damageInterval": 0.4
+        },
+        {
+          "level": 4,
+          "damage": 22,
+          "droneCount": 3,
+          "orbitSpeedDegPerSec": 180,
+          "damageInterval": 0.35
+        },
+        {
+          "level": 5,
+          "damage": 28,
+          "droneCount": 4,
+          "orbitSpeedDegPerSec": 200,
+          "damageInterval": 0.3
+        }
       ],
       "fusionRequires": null,
       "fusionResult": null
@@ -60,11 +160,41 @@
       "description": "Pulse de zone centrée sur le joueur. Repousse les ennemis (knockback) en plus des dégâts.",
       "maxLevel": 20,
       "levels": [
-        { "level": 1, "damage": 8,  "cooldown": 2.5, "radius": 100, "knockbackPx": 40 },
-        { "level": 2, "damage": 12, "cooldown": 2.2, "radius": 120, "knockbackPx": 45 },
-        { "level": 3, "damage": 16, "cooldown": 2.0, "radius": 145, "knockbackPx": 50 },
-        { "level": 4, "damage": 22, "cooldown": 1.8, "radius": 170, "knockbackPx": 55 },
-        { "level": 5, "damage": 30, "cooldown": 1.5, "radius": 200, "knockbackPx": 60 }
+        {
+          "level": 1,
+          "damage": 8,
+          "cooldown": 2.5,
+          "radius": 100,
+          "knockbackPx": 40
+        },
+        {
+          "level": 2,
+          "damage": 12,
+          "cooldown": 2.2,
+          "radius": 120,
+          "knockbackPx": 45
+        },
+        {
+          "level": 3,
+          "damage": 16,
+          "cooldown": 2.0,
+          "radius": 145,
+          "knockbackPx": 50
+        },
+        {
+          "level": 4,
+          "damage": 22,
+          "cooldown": 1.8,
+          "radius": 170,
+          "knockbackPx": 55
+        },
+        {
+          "level": 5,
+          "damage": 30,
+          "cooldown": 1.5,
+          "radius": 200,
+          "knockbackPx": 60
+        }
       ],
       "fusionRequires": null,
       "fusionResult": null
@@ -77,11 +207,41 @@
       "description": "Éclair en chaîne qui rebondit d'ennemi en ennemi. Foudre cyan éblouissante.",
       "maxLevel": 20,
       "levels": [
-        { "level": 1, "damage": 14, "cooldown": 1.20, "chainCount": 2, "chainRange": 160 },
-        { "level": 2, "damage": 18, "cooldown": 1.10, "chainCount": 3, "chainRange": 170 },
-        { "level": 3, "damage": 23, "cooldown": 1.00, "chainCount": 4, "chainRange": 185 },
-        { "level": 4, "damage": 29, "cooldown": 0.90, "chainCount": 5, "chainRange": 200 },
-        { "level": 5, "damage": 38, "cooldown": 0.80, "chainCount": 7, "chainRange": 230 }
+        {
+          "level": 1,
+          "damage": 14,
+          "cooldown": 1.2,
+          "chainCount": 2,
+          "chainRange": 160
+        },
+        {
+          "level": 2,
+          "damage": 18,
+          "cooldown": 1.1,
+          "chainCount": 3,
+          "chainRange": 170
+        },
+        {
+          "level": 3,
+          "damage": 23,
+          "cooldown": 1.0,
+          "chainCount": 4,
+          "chainRange": 185
+        },
+        {
+          "level": 4,
+          "damage": 29,
+          "cooldown": 0.9,
+          "chainCount": 5,
+          "chainRange": 200
+        },
+        {
+          "level": 5,
+          "damage": 38,
+          "cooldown": 0.8,
+          "chainCount": 7,
+          "chainRange": 230
+        }
       ],
       "fusionRequires": null,
       "fusionResult": null
@@ -94,11 +254,140 @@
       "description": "Tir multi-cible : un projectile vers chacun des ennemis les plus proches. 2 projectiles, +1 par niveau.",
       "maxLevel": 20,
       "levels": [
-        { "level": 1, "damage": 8,  "cooldown": 0.90, "projectileCount": 2, "piercing": false, "projectileSpeed": 420 },
-        { "level": 2, "damage": 10, "cooldown": 0.85, "projectileCount": 3, "piercing": false, "projectileSpeed": 440 },
-        { "level": 3, "damage": 13, "cooldown": 0.80, "projectileCount": 4, "piercing": false, "projectileSpeed": 460 },
-        { "level": 4, "damage": 16, "cooldown": 0.75, "projectileCount": 5, "piercing": true,  "projectileSpeed": 480 },
-        { "level": 5, "damage": 20, "cooldown": 0.70, "projectileCount": 6, "piercing": true,  "projectileSpeed": 500 }
+        {
+          "level": 1,
+          "damage": 8,
+          "cooldown": 0.9,
+          "projectileCount": 2,
+          "piercing": false,
+          "projectileSpeed": 420
+        },
+        {
+          "level": 2,
+          "damage": 10,
+          "cooldown": 0.85,
+          "projectileCount": 3,
+          "piercing": false,
+          "projectileSpeed": 440
+        },
+        {
+          "level": 3,
+          "damage": 13,
+          "cooldown": 0.8,
+          "projectileCount": 4,
+          "piercing": false,
+          "projectileSpeed": 460
+        },
+        {
+          "level": 4,
+          "damage": 16,
+          "cooldown": 0.75,
+          "projectileCount": 5,
+          "piercing": true,
+          "projectileSpeed": 480
+        },
+        {
+          "level": 5,
+          "damage": 20,
+          "cooldown": 0.7,
+          "projectileCount": 6,
+          "piercing": true,
+          "projectileSpeed": 500
+        }
+      ],
+      "fusionRequires": null,
+      "fusionResult": null
+    },
+    {
+      "id": "glaive",
+      "name": "Lame Boomerang",
+      "type": "active",
+      "rarity": "common",
+      "description": "Lance des glaives qui partent vers les ennemis puis reviennent (2 coups par cible). 1 glaive, +1 aux niveaux supérieurs.",
+      "maxLevel": 20,
+      "levels": [
+        {
+          "level": 1,
+          "damage": 10,
+          "cooldown": 1.3,
+          "glaiveCount": 1,
+          "range": 220
+        },
+        {
+          "level": 2,
+          "damage": 13,
+          "cooldown": 1.2,
+          "glaiveCount": 1,
+          "range": 240
+        },
+        {
+          "level": 3,
+          "damage": 16,
+          "cooldown": 1.1,
+          "glaiveCount": 2,
+          "range": 260
+        },
+        {
+          "level": 4,
+          "damage": 20,
+          "cooldown": 1.0,
+          "glaiveCount": 2,
+          "range": 280
+        },
+        {
+          "level": 5,
+          "damage": 25,
+          "cooldown": 0.9,
+          "glaiveCount": 3,
+          "range": 300
+        }
+      ],
+      "fusionRequires": null,
+      "fusionResult": null
+    },
+    {
+      "id": "seeker_swarm",
+      "name": "Essaim Traqueur",
+      "type": "active",
+      "rarity": "rare",
+      "description": "Lance des missiles à tête chercheuse qui pourchassent les ennemis. 2 missiles, +1 par niveau (jusqu'à 5).",
+      "maxLevel": 20,
+      "levels": [
+        {
+          "level": 1,
+          "damage": 7,
+          "cooldown": 1.1,
+          "missileCount": 2,
+          "projectileSpeed": 300
+        },
+        {
+          "level": 2,
+          "damage": 9,
+          "cooldown": 1.0,
+          "missileCount": 3,
+          "projectileSpeed": 320
+        },
+        {
+          "level": 3,
+          "damage": 12,
+          "cooldown": 0.95,
+          "missileCount": 3,
+          "projectileSpeed": 340
+        },
+        {
+          "level": 4,
+          "damage": 15,
+          "cooldown": 0.9,
+          "missileCount": 4,
+          "projectileSpeed": 360
+        },
+        {
+          "level": 5,
+          "damage": 19,
+          "cooldown": 0.85,
+          "missileCount": 5,
+          "projectileSpeed": 380
+        }
       ],
       "fusionRequires": null,
       "fusionResult": null
@@ -113,9 +402,18 @@
       "description": "Augmente les dégâts de toutes les armes actives.",
       "maxLevel": 20,
       "levels": [
-        { "level": 1, "damageMultiplierBonus": 0.15 },
-        { "level": 2, "damageMultiplierBonus": 0.15 },
-        { "level": 3, "damageMultiplierBonus": 0.15 }
+        {
+          "level": 1,
+          "damageMultiplierBonus": 0.15
+        },
+        {
+          "level": 2,
+          "damageMultiplierBonus": 0.15
+        },
+        {
+          "level": 3,
+          "damageMultiplierBonus": 0.15
+        }
       ],
       "applicationNote": "Multiplie le damage de chaque arme active par (1 + somme des bonus). Prérequis fusion Lame à Fusion."
     },
@@ -127,9 +425,21 @@
       "description": "Augmente les PV max et réduit les dégâts reçus.",
       "maxLevel": 20,
       "levels": [
-        { "level": 1, "maxHpBonus": 25, "damageReduction": 0.00 },
-        { "level": 2, "maxHpBonus": 25, "damageReduction": 0.10 },
-        { "level": 3, "maxHpBonus": 25, "damageReduction": 0.10 }
+        {
+          "level": 1,
+          "maxHpBonus": 25,
+          "damageReduction": 0.0
+        },
+        {
+          "level": 2,
+          "maxHpBonus": 25,
+          "damageReduction": 0.1
+        },
+        {
+          "level": 3,
+          "maxHpBonus": 25,
+          "damageReduction": 0.1
+        }
       ],
       "applicationNote": "damageReduction est cumulatif et plafonne a 0.40 (hardcap tous passifs confondus)."
     },
@@ -141,9 +451,18 @@
       "description": "Augmente la vitesse de déplacement du joueur.",
       "maxLevel": 20,
       "levels": [
-        { "level": 1, "speedBonus": 30 },
-        { "level": 2, "speedBonus": 30 },
-        { "level": 3, "speedBonus": 40 }
+        {
+          "level": 1,
+          "speedBonus": 30
+        },
+        {
+          "level": 2,
+          "speedBonus": 30
+        },
+        {
+          "level": 3,
+          "speedBonus": 40
+        }
       ],
       "applicationNote": "Plafond soft : 380 px/s."
     },
@@ -155,9 +474,18 @@
       "description": "Réduit le cooldown de toutes les armes actives.",
       "maxLevel": 20,
       "levels": [
-        { "level": 1, "cooldownReduction": 0.12 },
-        { "level": 2, "cooldownReduction": 0.12 },
-        { "level": 3, "cooldownReduction": 0.14 }
+        {
+          "level": 1,
+          "cooldownReduction": 0.12
+        },
+        {
+          "level": 2,
+          "cooldownReduction": 0.12
+        },
+        {
+          "level": 3,
+          "cooldownReduction": 0.14
+        }
       ],
       "applicationNote": "Multiplie le cooldown de chaque arme par (1 - somme). Cooldown minimum par arme : 0.15 s (hardcap). Prérequis fusion Rail Surchargé."
     }

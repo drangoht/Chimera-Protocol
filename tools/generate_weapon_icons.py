@@ -172,7 +172,45 @@ def gen_aegis():
     img.save(os.path.join(OUT, "ui_icon_aegis.png"))
     print("ui_icon_aegis.png")
 
+# ---------------- Lame Boomerang : lame tournoyante cyan + arc de retour
+def gen_glaive():
+    img = canvas()
+    CY = (80, 255, 235); WH = (240, 255, 255); GL = (80, 255, 235, 50)
+    cx, cy = 16, 16
+    disc(img, cx, cy, 12, GL)  # halo
+    for ang in (0, 90, 180, 270):
+        a = math.radians(ang)
+        tx = cx + math.cos(a) * 11; ty = cy + math.sin(a) * 11
+        line(img, cx, cy, tx, ty, CY, w=1)
+        disc(img, tx, ty, 1.5, WH)
+    disc(img, cx, cy, 2.5, CY); put(img, cx, cy, WH)
+    for k in range(11):  # arc de mouvement (pointillé)
+        a = math.radians(20 + k * 14)
+        put(img, cx + math.cos(a) * 13, cy + math.sin(a) * 13, (CY[0], CY[1], CY[2], 120))
+    img.save(os.path.join(OUT, "ui_icon_glaive.png"))
+    print("ui_icon_glaive.png")
+
+# ---------------- Essaim Traqueur : missiles violets a trainee incurvee vers une cible
+def gen_seeker():
+    img = canvas()
+    V = (170, 90, 255); WH = (235, 225, 255); RED = (255, 110, 110)
+    tx, ty = 23, 8
+    disc(img, tx, ty, 2, RED)  # cible
+    for (sx, sy, bend) in [(8, 26, 1), (13, 28, -1)]:
+        for t in range(0, 11):
+            f = t / 10.0
+            mx = sx + (tx - sx) * f + bend * math.sin(f * math.pi) * 5
+            my = sy + (ty - sy) * f
+            put(img, mx, my, (V[0], V[1], V[2], int(60 + 120 * f)))
+        hx = sx + (tx - sx) * 0.85 + bend * math.sin(0.85 * math.pi) * 5
+        hy = sy + (ty - sy) * 0.85
+        disc(img, hx, hy, 1.6, V); put(img, hx, hy, WH)
+    img.save(os.path.join(OUT, "ui_icon_seeker.png"))
+    print("ui_icon_seeker.png")
+
 if __name__ == "__main__":
     gen_orbital()
     gen_aegis()
+    gen_glaive()
+    gen_seeker()
     print("Termine.")

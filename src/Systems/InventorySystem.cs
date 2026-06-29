@@ -36,6 +36,8 @@ public partial class InventorySystem : Node
         { "overload_field",  "res://scenes/weapons/OverloadField.tscn"  },
         { "tesla_coil",      "res://scenes/weapons/TeslaCoil.tscn"      },
         { "scatter_volley",  "res://scenes/weapons/ScatterVolley.tscn"  },
+        { "glaive",          "res://scenes/weapons/Glaive.tscn"         },
+        { "seeker_swarm",    "res://scenes/weapons/SeekerSwarm.tscn"    },
         { "fusion_blade",    "res://scenes/weapons/FusionBlade.tscn"    },
         { "rail_overcharged","res://scenes/weapons/RailOvercharged.tscn"},
         { "orbital_swarm",   "res://scenes/weapons/OrbitalSwarm.tscn"   },
@@ -234,6 +236,18 @@ public partial class InventorySystem : Node
                 if (lvlData.TryGetProperty("chainCount", out var cc)) tc.ChainCount = cc.GetInt32();
                 if (lvlData.TryGetProperty("chainRange", out var crg)) tc.ChainRange = crg.GetSingle();
                 tc.Damage *= dmgMult;
+                break;
+
+            case "glaive" when node is Glaive gl:
+                if (lvlData.TryGetProperty("glaiveCount", out var gc)) gl.GlaiveCount = gc.GetInt32();
+                if (lvlData.TryGetProperty("range",       out var gr)) gl.Range       = gr.GetSingle();
+                gl.Damage *= dmgMult;
+                break;
+
+            case "seeker_swarm" when node is SeekerSwarm ss:
+                if (lvlData.TryGetProperty("missileCount",   out var mc)) ss.MissileCount    = mc.GetInt32();
+                if (lvlData.TryGetProperty("projectileSpeed",out var ms)) ss.ProjectileSpeed = ms.GetSingle();
+                ss.Damage *= dmgMult;
                 break;
         }
     }
