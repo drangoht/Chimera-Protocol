@@ -74,20 +74,34 @@ public partial class GameSettings : Node
         return HasCompletedAny(LevelOrder[idx - 1]);
     }
 
-    // ── High scores (temps survécu max par niveau) ───────────────────────────
+    // ── High scores (temps survécu max par niveau + difficulté du record) ─────
     private readonly Dictionary<string, int> _bestTimes = new();
+    private readonly Dictionary<string, int> _bestDiff  = new();   // biome → (int)GameDifficulty du record
 
     /// <summary>Meilleur temps survécu (secondes) sur ce niveau, ou 0 si jamais joué.</summary>
     public int BestTime(string biomeId) => _bestTimes.GetValueOrDefault(biomeId, 0);
 
-    /// <summary>Enregistre un temps survécu ; garde le max. Retourne true si c'est un nouveau record.</summary>
-    public bool RecordTime(string biomeId, int secs)
+    /// <summary>Difficulté à laquelle le meilleur temps a été réalisé (Normal par défaut).</summary>
+    public GameDifficulty BestDifficulty(string biomeId)
+        => (GameDifficulty)_bestDiff.GetValueOrDefault(biomeId, (int)GameDifficulty.Normal);
+
+    /// <summary>Enregistre un temps survécu + la difficulté ; garde le max. True si nouveau record.</summary>
+    public bool RecordTime(string biomeId, int secs, GameDifficulty diff)
     {
         if (biomeId.Length == 0 || secs <= _bestTimes.GetValueOrDefault(biomeId, 0)) return false;
         _bestTimes[biomeId] = secs;
+        _bestDiff[biomeId]  = (int)diff;
         Save();
         return true;
     }
+
+    /// <summary>Clé de localisation du nom court d'une difficulté (DIFF_EASY/NORMAL/HARD).</summary>
+    public static string DifficultyKey(GameDifficulty d) => d switch
+    {
+        GameDifficulty.Facile    => "DIFF_EASY",
+        GameDifficulty.Difficile => "DIFF_HARD",
+        _                        => "DIFF_NORMAL",
+    };
 
     // ── Armes découvertes (arsenal) ──────────────────────────────────────────
     private readonly HashSet<string> _discovered = new();
@@ -175,9 +189,26 @@ public partial class GameSettings : Node
             foreach (string biome in cfg.GetSectionKeys("highscores"))
                 _bestTimes[biome] = cfg.GetValue("highscores", biome, 0).AsInt32();
 
+        _bestDiff.Clear();
+        if (cfg.HasSection("highscores_diff"))
+            foreach (string biome in cfg.GetSectionKeys("highscores_diff"))
+                _bestDiff[biome] = cfg.GetValue("highscores_diff", biome, (int)GameDifficulty.Normal).AsInt32();
+
         _discovered.Clear();
         foreach (string id in cfg.GetValue("discovered", "weapons", new string[0]).AsStringArray())
             _discovered.Add(id);
+    }
+
+    /// <summary>Réinitialise TOUTE la progression (complétions, high scores, armes découvertes) et
+    /// persiste. Les Échos/améliorations méta sont réinitialisés séparément (MetaProgressionSystem).
+    /// Les préférences (audio, langue, difficulté, plein écran) sont conservées.</summary>
+    public void ResetProgress()
+    {
+        _completions.Clear();
+        _bestTimes.Clear();
+        _bestDiff.Clear();
+        _discovered.Clear();
+        Save();
     }
 
     private void Save()
@@ -197,6 +228,8 @@ public partial class GameSettings : Node
 
         foreach (var (biome, secs) in _bestTimes)
             cfg.SetValue("highscores", biome, secs);
+        foreach (var (biome, diff) in _bestDiff)
+            cfg.SetValue("highscores_diff", biome, diff);
 
         var disc = new string[_discovered.Count];
         _discovered.CopyTo(disc);

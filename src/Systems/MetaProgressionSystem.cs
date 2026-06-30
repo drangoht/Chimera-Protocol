@@ -214,6 +214,17 @@ public partial class MetaProgressionSystem : Node
         return refund;
     }
 
+    /// <summary>
+    /// Réinitialisation TOTALE (« état initial ») : remet à zéro les Échos, les améliorations achetées
+    /// et tout l'état méta (save.json écrasé par un SaveData vierge). Irréversible.
+    /// </summary>
+    public void HardReset()
+    {
+        _saveData = new SaveData();
+        SaveManager.Instance.Save(_saveData);
+        GD.Print("[MetaProgressionSystem] HARD RESET — Échos et améliorations remis à zéro.");
+    }
+
     // ---------------------------------------------------------------------------
     // Accesseurs formule (utilisés par RunStatsTracker)
     // ---------------------------------------------------------------------------

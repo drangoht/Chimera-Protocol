@@ -131,13 +131,14 @@ public partial class LevelSelectScreen : Control
             badge.AddThemeColorOverride("font_color", completed ? new Color(1f, 0.8f, 0.27f) : Dim);
             nameRow.AddChild(badge);
         }
-        // Record de temps survécu (high score du niveau).
+        // Record de temps survécu (high score du niveau) + difficulté du record.
         int best = GameSettings.Instance?.BestTime(id) ?? 0;
         if (best > 0)
         {
+            string diff = Loc.T(GameSettings.DifficultyKey(GameSettings.Instance!.BestDifficulty(id)));
             var rec = new Label
             {
-                Text = $"⏱ {best / 60:D2}:{best % 60:D2}",
+                Text = $"⏱ {best / 60:D2}:{best % 60:D2} · {diff}",
                 SizeFlagsVertical = SizeFlags.ShrinkCenter,
             };
             rec.AddThemeFontSizeOverride("font_size", 13);

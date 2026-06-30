@@ -15,6 +15,9 @@ public partial class OptionsScreen : Control
     private ColorRect _fade  = null!;
     private bool      _leaving = false;
 
+    private Button? _resetButton;
+    private bool    _resetArmed = false;
+
     public override void _Ready()
     {
         SetAnchorsPreset(LayoutPreset.FullRect);
@@ -52,6 +55,8 @@ public partial class OptionsScreen : Control
         AddDifficulty(vbox, s?.Difficulty ?? GameSettings.GameDifficulty.Normal);
         AddLanguage(vbox, s?.Language ?? "en");
 
+        vbox.AddChild(new HSeparator());
+        AddResetButton(vbox);
         vbox.AddChild(new HSeparator());
 
         var back = new Button { Text = Loc.T("COMMON_BACK"), CustomMinimumSize = new Vector2(200, 48) };
@@ -156,6 +161,41 @@ public partial class OptionsScreen : Control
         check.Toggled += pressed => onChange(pressed);
         row.AddChild(check);
         parent.AddChild(row);
+    }
+
+    // ── Réinitialisation totale (état initial du jeu, Échos inclus) ───────────
+    private static readonly Color Danger = new(1f, 0.35f, 0.35f);
+
+    private void AddResetButton(VBoxContainer parent)
+    {
+        _resetButton = new Button { Text = Loc.T("OPTIONS_RESET"), CustomMinimumSize = new Vector2(380, 44) };
+        StyleButton(_resetButton);
+        _resetButton.AddThemeColorOverride("font_color", Danger);   // rouge = action destructrice
+        _resetButton.Pressed += OnResetPressed;
+        var wrap = new CenterContainer();
+        wrap.AddChild(_resetButton);
+        parent.AddChild(wrap);
+    }
+
+    private void OnResetPressed()
+    {
+        if (_resetButton == null) return;
+        AudioSystem.Instance?.PlaySfx("sfx_ui_button");
+
+        if (!_resetArmed)
+        {
+            // 1er clic : armement (confirmation requise — action irréversible).
+            _resetArmed = true;
+            _resetButton.Text = Loc.T("OPTIONS_RESET_CONFIRM");
+            return;
+        }
+
+        // 2e clic : réinitialisation TOTALE (Échos + améliorations + progression).
+        MetaProgressionSystem.Instance?.HardReset();
+        GameSettings.Instance?.ResetProgress();
+        _resetArmed = false;
+        _resetButton.Text     = Loc.T("OPTIONS_RESET_DONE");
+        _resetButton.Disabled = true;
     }
 
     private void StyleButton(Button btn)

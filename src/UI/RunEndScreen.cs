@@ -18,6 +18,7 @@ public partial class RunEndScreen : CanvasLayer
     public int    PendingBestTime       { get; set; } = 0;
     public bool   PendingNewRecord      { get; set; } = false;
     public bool   PendingLevelCompleted { get; set; } = false;
+    public string PendingDifficultyKey  { get; set; } = "DIFF_NORMAL";
 
     private Label     _outcomeLabel  = null!;
     private Label     _timeLabel     = null!;
@@ -77,7 +78,7 @@ public partial class RunEndScreen : CanvasLayer
         var line = new Label
         {
             HorizontalAlignment = HorizontalAlignment.Center,
-            Text = $"{Loc.T("RUNEND_SURVIVED")} : {Fmt(timeSecs)}   •   {Loc.T("RUNEND_BEST")} : {Fmt(PendingBestTime)}"
+            Text = $"{Loc.T("RUNEND_SURVIVED")} : {Fmt(timeSecs)} ({Loc.T(PendingDifficultyKey)})   •   {Loc.T("RUNEND_BEST")} : {Fmt(PendingBestTime)}"
                  + (PendingNewRecord ? $"   ★ {Loc.T("RUNEND_NEW_RECORD")}" : ""),
             AnchorLeft = 0.5f, AnchorRight = 0.5f,
             OffsetLeft = -400f, OffsetRight = 400f, OffsetTop = 145f, OffsetBottom = 175f,

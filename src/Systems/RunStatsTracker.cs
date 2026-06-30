@@ -152,9 +152,10 @@ public partial class RunStatsTracker : Node
 
         GD.Print($"[RunStatsTracker] Fin de run — outcome={outcome}, T={timeSecs}s, K={KillCount}, N={CoresCollected}, Échos={echoes}");
 
-        // High score : enregistre le temps survécu du niveau (garde le max) — Étape 4.
+        // High score : enregistre le temps survécu + la difficulté du niveau (garde le max).
         string biome = GameManager.Instance?.CurrentBiomeId ?? "";
-        bool newRecord = GameSettings.Instance?.RecordTime(biome, timeSecs) ?? false;
+        bool newRecord = GameSettings.Instance?.RecordTime(biome, timeSecs,
+            GameSettings.Instance.Difficulty) ?? false;
 
         OpenEndScreen(outcome, timeSecs, echoes, newRecord, GameSettings.Instance?.BestTime(biome) ?? timeSecs);
     }
@@ -194,6 +195,8 @@ public partial class RunStatsTracker : Node
         screen.PendingBestTime       = bestTime;
         screen.PendingNewRecord      = newRecord;
         screen.PendingLevelCompleted = LevelCompleted;
+        screen.PendingDifficultyKey  = GameSettings.DifficultyKey(
+            GameSettings.Instance?.Difficulty ?? GameSettings.GameDifficulty.Normal);
 
         // Ajout différé à la racine pour éviter les conflits avec le scene tree en cours de flush
         GetTree().Root.CallDeferred(Node.MethodName.AddChild, screen);
