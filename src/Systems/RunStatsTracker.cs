@@ -18,6 +18,13 @@ public partial class RunStatsTracker : Node
     public bool  RunEnded          { get; private set; } = false;
     public int   RunDurationSeconds => _runDurationSeconds;
 
+    /// <summary>« Overtime » : le temps imparti est écoulé (décompte à 0 = arrivée du boss).
+    /// Déclenche l'escalade brutale (EnemySpawner) — vagues massives + mini-boss/boss en boucle.</summary>
+    public bool  Overtime          => !RunEnded && ElapsedSeconds >= _runDurationSeconds;
+
+    /// <summary>Secondes écoulées depuis le début de l'overtime (0 avant).</summary>
+    public float OvertimeSeconds   => Mathf.Max(0f, ElapsedSeconds - _runDurationSeconds);
+
     private static PackedScene? _runEndScreenScene;
 
     public override void _Ready()

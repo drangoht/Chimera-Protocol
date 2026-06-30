@@ -16,6 +16,11 @@ public partial class EnemySpawner : Node
     private float _timer     = 0f;
     private float _waveTimer = 30f;  // première vague à t=30 s
     private float _elapsed   = 0f;   // secondes depuis le début du run
+    private float _eliteTimer = 14f; // overtime : prochain spawn de mini-boss d'élite
+
+    // Mini-boss spawnés en boucle pendant l'overtime (le boss final rusted_core est géré à part).
+    private static readonly string[] OvertimeElites =
+        { "grafted_colossus", "rust_stalker", "master_sentinel", "aether_revenant" };
 
     private readonly RandomNumberGenerator _rng = new();
 
@@ -79,13 +84,23 @@ public partial class EnemySpawner : Node
         if (!AmbientEnabled) return;
 
         _elapsed += (float)delta;
-        float tMinutes      = _elapsed / 60f;
-        float spawnInterval = SpawnCurve.SpawnInterval(tMinutes);
+        float tMinutes = _elapsed / 60f;
 
+        // ── Overtime : le temps imparti est écoulé → escalade brutale ──────────────
+        // « tMinutes effectif » fortement boosté (chaque minute d'overtime ≈ +4 min de scaling :
+        // cap, cadence, PV et dégâts grimpent très vite) + vagues plus rapprochées + mini-boss
+        // d'élite en boucle (bypass du cap simultané). Le cap dur 300 reste (perf).
+        var tracker = RunStatsTracker.Instance;
+        bool overtime = tracker?.Overtime ?? false;
+        float otMin   = overtime ? tracker!.OvertimeSeconds / 60f : 0f;
+        float tEff    = tMinutes + otMin * 4f;
+        float waveReset = overtime ? Mathf.Max(8f, 18f - otMin * 2f) : 25f;
+
+        float spawnInterval = SpawnCurve.SpawnInterval(tEff);
         _timer -= (float)delta;
         if (_timer <= 0f)
         {
-            TrySpawnBatch(tMinutes, SpawnCurve.BatchCount(tMinutes));
+            TrySpawnBatch(tEff, SpawnCurve.BatchCount(tEff));
             _timer = spawnInterval;
         }
 
@@ -94,9 +109,34 @@ public partial class EnemySpawner : Node
         if (_waveTimer <= 0f)
         {
             float spawnMult = GameSettings.Instance?.SpawnMult ?? 1f;
-            TrySpawnBatch(tMinutes, SpawnCurve.WaveSize(tMinutes, spawnMult));
-            _waveTimer = 25f;
+            TrySpawnBatch(tEff, SpawnCurve.WaveSize(tEff, spawnMult));
+            _waveTimer = waveReset;
         }
+
+        // Mini-boss d'élite en boucle pendant l'overtime (intervalle qui se resserre).
+        if (overtime)
+        {
+            _eliteTimer -= (float)delta;
+            if (_eliteTimer <= 0f)
+            {
+                SpawnOvertimeElite(tEff);
+                _eliteTimer = Mathf.Max(5f, 14f - otMin * 1.5f);
+            }
+        }
+    }
+
+    /// <summary>Force le spawn d'un mini-boss d'élite (overtime) en ignorant son cap simultané,
+    /// parmi ceux autorisés dans le biome courant.</summary>
+    private void SpawnOvertimeElite(float tEff)
+    {
+        string? biome = GameManager.Instance?.CurrentBiomeId;
+        var eligible = new List<EnemySpawnData>();
+        foreach (var data in _enemyPool)
+            if (System.Array.IndexOf(OvertimeElites, data.Id) >= 0 && data.IsAllowedInBiome(biome))
+                eligible.Add(data);
+        if (eligible.Count == 0) return;
+        var chosen = eligible[(int)(_rng.Randi() % (uint)eligible.Count)];
+        SpawnEnemy(chosen, tEff, ignoreMaxSimultaneous: true);
     }
 
     // -------------------------------------------------------------------------
@@ -144,12 +184,12 @@ public partial class EnemySpawner : Node
         return pool[WeightedPicker.PickIndex(weights, _rng.RandfRange(0f, total))];
     }
 
-    private void SpawnEnemy(EnemySpawnData data, float tMinutes)
+    private void SpawnEnemy(EnemySpawnData data, float tMinutes, bool ignoreMaxSimultaneous = false)
     {
         if (!_scenes.TryGetValue(data.Id, out var scene)) return;
 
-        // Respect du cap simultané (mini-boss)
-        if (data.MaxSimultaneous > 0 &&
+        // Respect du cap simultané (mini-boss) — sauf en overtime (escalade : mini-boss en boucle).
+        if (!ignoreMaxSimultaneous && data.MaxSimultaneous > 0 &&
             GetTree().GetNodesInGroup(data.Id).Count >= data.MaxSimultaneous)
             return;
 

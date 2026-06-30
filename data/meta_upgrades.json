@@ -15,7 +15,7 @@
     }
   },
 
-  "runDurationSeconds": 900,
+  "runDurationSeconds": 780,
 
   "aetherCores": {
     "_comment": "Les Noyaux d'Aether sont distincts des orbes XP. Ramassage MANUEL par contact (rayon 20 px). Couleur placeholder violet #AA44FF.",
