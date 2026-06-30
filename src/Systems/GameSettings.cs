@@ -61,6 +61,19 @@ public partial class GameSettings : Node
         return false;
     }
 
+    // ── Déblocage progressif des niveaux ──────────────────────────────────────
+    /// <summary>Ordre de déblocage des niveaux (biomes). Le 1er est jouable d'office ;
+    /// chacun se débloque quand le précédent est complété (boss de fin de niveau battu).</summary>
+    public static readonly string[] LevelOrder = { "sanctuaire", "aether", "givre", "fournaise", "neon" };
+
+    /// <summary>Le niveau est-il débloqué ? (1er niveau ou id inconnu = oui ; sinon précédent complété)</summary>
+    public bool IsUnlocked(string biomeId)
+    {
+        int idx = System.Array.IndexOf(LevelOrder, biomeId);
+        if (idx <= 0) return true;
+        return HasCompletedAny(LevelOrder[idx - 1]);
+    }
+
     // ── Setters (appliquent + sauvegardent) ───────────────────────────────────
     public void SetMaster(float v)     { Master = Mathf.Clamp(v, 0f, 1f); ApplyAudio(); Save(); }
     public void SetMusic(float v)      { Music  = Mathf.Clamp(v, 0f, 1f); ApplyAudio(); Save(); }

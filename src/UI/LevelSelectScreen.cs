@@ -57,7 +57,7 @@ public partial class LevelSelectScreen : Control
         row.AddThemeConstantOverride("separation", 20);
         var rand = new Button { Text = Loc.T("LEVELSEL_RANDOM"), CustomMinimumSize = new Vector2(200, 46) };
         StyleButton(rand, Cyan);
-        rand.Pressed += () => StartRun(null);
+        rand.Pressed += StartRandomUnlocked;   // ne tire que parmi les niveaux débloqués
         var back = new Button { Text = Loc.T("COMMON_BACK"), CustomMinimumSize = new Vector2(200, 46) };
         StyleButton(back, Violet);
         back.Pressed += GoBack;
@@ -82,11 +82,15 @@ public partial class LevelSelectScreen : Control
 
     private Control BuildCard(string id, string name, string effect, string desc, Color accent, string preview)
     {
+        bool unlocked  = GameSettings.Instance?.IsUnlocked(id) ?? true;
+        bool completed = GameSettings.Instance?.HasCompletedAny(id) == true;
+
         var panel = new PanelContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
         var style = new StyleBoxFlat { BgColor = new Color(0.09f, 0.09f, 0.16f, 0.95f) };
-        style.SetBorderWidthAll(2); style.BorderColor = accent; style.SetCornerRadiusAll(6);
+        style.SetBorderWidthAll(2); style.BorderColor = unlocked ? accent : Dim; style.SetCornerRadiusAll(6);
         style.SetContentMarginAll(10);
         panel.AddThemeStyleboxOverride("panel", style);
+        if (!unlocked) panel.Modulate = new Color(1f, 1f, 1f, 0.45f);   // carte grisée si verrouillée
 
         var hb = new HBoxContainer();
         hb.AddThemeConstantOverride("separation", 16);
@@ -115,12 +119,16 @@ public partial class LevelSelectScreen : Control
         lblName.AddThemeFontSizeOverride("font_size", 22);
         lblName.AddThemeColorOverride("font_color", accent);
         nameRow.AddChild(lblName);
-        // Badge de complétion : affiché si le biome a déjà été vaincu (boss final battu).
-        if (GameSettings.Instance?.HasCompletedAny(id) == true)
+        // Badge : « VAINCU » si complété, sinon « VERROUILLÉ » si non débloqué.
+        if (completed || !unlocked)
         {
-            var badge = new Label { Text = Loc.T("LEVELSEL_DEFEATED"), SizeFlagsVertical = SizeFlags.ShrinkCenter };
+            var badge = new Label
+            {
+                Text = Loc.T(completed ? "LEVELSEL_DEFEATED" : "LEVELSEL_LOCKED"),
+                SizeFlagsVertical = SizeFlags.ShrinkCenter,
+            };
             badge.AddThemeFontSizeOverride("font_size", 13);
-            badge.AddThemeColorOverride("font_color", new Color(1f, 0.8f, 0.27f));
+            badge.AddThemeColorOverride("font_color", completed ? new Color(1f, 0.8f, 0.27f) : Dim);
             nameRow.AddChild(badge);
         }
         var lblEffect = new Label { Text = effect };
@@ -132,15 +140,27 @@ public partial class LevelSelectScreen : Control
         vb.AddChild(nameRow); vb.AddChild(lblEffect); vb.AddChild(lblDesc);
         hb.AddChild(vb);
 
-        var play = new Button { Text = Loc.T("LEVELSEL_PLAY_HERE"), CustomMinimumSize = new Vector2(130, 44),
-                                SizeFlagsVertical = SizeFlags.ShrinkCenter };
+        var play = new Button
+        {
+            Text = unlocked ? Loc.T("LEVELSEL_PLAY_HERE") : "🔒",
+            CustomMinimumSize = new Vector2(130, 44),
+            SizeFlagsVertical = SizeFlags.ShrinkCenter,
+            Disabled = !unlocked,
+        };
         StyleButton(play, accent);
-        play.Pressed += () => StartRun(id);
-        // Auto-scroll : quand ce bouton prend le focus (clavier/manette), défile pour le rendre visible.
-        play.FocusEntered += () => _scroll.EnsureControlVisible(play);
-        hb.AddChild(play);
-        _playButtons.Add(play);
-        _firstPlay ??= play;   // le 1er biome construit fournit le bouton présélectionné
+        if (unlocked)
+        {
+            play.Pressed += () => StartRun(id);
+            // Auto-scroll : quand ce bouton prend le focus (clavier/manette), défile pour le rendre visible.
+            play.FocusEntered += () => _scroll.EnsureControlVisible(play);
+            hb.AddChild(play);
+            _playButtons.Add(play);          // seuls les débloqués entrent dans la chaîne de focus
+            _firstPlay ??= play;             // 1er niveau jouable = présélection
+        }
+        else
+        {
+            hb.AddChild(play);               // visible mais désactivé (pas dans le focus)
+        }
 
         return panel;
     }
@@ -192,6 +212,16 @@ public partial class LevelSelectScreen : Control
         AudioSystem.Instance?.PlaySfx("sfx_ui_button");
         if (GameManager.Instance != null) GameManager.Instance.SelectedBiomeId = biomeId;
         Transition("res://scenes/Game.tscn");
+    }
+
+    /// <summary>« Aléatoire » : tire un biome parmi les niveaux débloqués uniquement.</summary>
+    private void StartRandomUnlocked()
+    {
+        var unlocked = new System.Collections.Generic.List<string>();
+        foreach (var b in BiomeCatalog.All)
+            if (GameSettings.Instance?.IsUnlocked(b.Id) ?? true) unlocked.Add(b.Id);
+        if (unlocked.Count == 0) { StartRun(null); return; }
+        StartRun(unlocked[(int)(GD.Randi() % (uint)unlocked.Count)]);
     }
 
     private void GoBack()
