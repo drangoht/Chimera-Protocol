@@ -16,8 +16,9 @@ public abstract partial class CodexScreenBase : Control
     /// (Bestiaire). L'Arsenal surcharge pour masquer les armes non encore découvertes.</summary>
     protected virtual bool IsEntryLocked(CodexEntry e) => false;
 
-    private ColorRect _fade = null!;
-    private Button    _backButton = null!;
+    private ColorRect      _fade = null!;
+    private Button         _backButton = null!;
+    private ScrollContainer _scroll = null!;
 
     private static readonly Color BgColor   = new(0.06f, 0.06f, 0.11f, 1f);
     private static readonly Color PanelBg   = new(0.10f, 0.10f, 0.18f, 0.92f);
@@ -73,20 +74,20 @@ public abstract partial class CodexScreenBase : Control
         root.AddChild(sep);
 
         // Liste scrollable
-        var scroll = new ScrollContainer
+        _scroll = new ScrollContainer
         {
             SizeFlagsVertical   = SizeFlags.ExpandFill,
             SizeFlagsHorizontal = SizeFlags.ExpandFill,
         };
-        scroll.AddThemeConstantOverride("margin_top", 4);
-        root.AddChild(scroll);
+        _scroll.AddThemeConstantOverride("margin_top", 4);
+        root.AddChild(_scroll);
 
         var list = new VBoxContainer
         {
             SizeFlagsHorizontal = SizeFlags.ExpandFill,
         };
         list.AddThemeConstantOverride("separation", 12);
-        scroll.AddChild(list);
+        _scroll.AddChild(list);
 
         foreach (var entry in Entries)
             list.AddChild(BuildRow(entry));
@@ -240,6 +241,32 @@ public abstract partial class CodexScreenBase : Control
         {
             GetViewport().SetInputAsHandled();
             OnBackPressed();
+            return;
+        }
+
+        // Défilement clavier/manette : les rangées ne sont pas focalisables (le seul
+        // contrôle focalisable est « Retour »), donc on pilote le ScrollContainer à la main.
+        if (_scroll == null) return;
+        const int step = 64;
+        if (@event.IsActionPressed("ui_down", allowEcho: true))
+        {
+            _scroll.ScrollVertical += step;
+            GetViewport().SetInputAsHandled();
+        }
+        else if (@event.IsActionPressed("ui_up", allowEcho: true))
+        {
+            _scroll.ScrollVertical -= step;
+            GetViewport().SetInputAsHandled();
+        }
+        else if (@event.IsActionPressed("ui_page_down", allowEcho: true))
+        {
+            _scroll.ScrollVertical += (int)_scroll.Size.Y;
+            GetViewport().SetInputAsHandled();
+        }
+        else if (@event.IsActionPressed("ui_page_up", allowEcho: true))
+        {
+            _scroll.ScrollVertical -= (int)_scroll.Size.Y;
+            GetViewport().SetInputAsHandled();
         }
     }
 }
