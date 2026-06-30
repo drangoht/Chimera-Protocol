@@ -131,6 +131,19 @@ public partial class LevelSelectScreen : Control
             badge.AddThemeColorOverride("font_color", completed ? new Color(1f, 0.8f, 0.27f) : Dim);
             nameRow.AddChild(badge);
         }
+        // Record de temps survécu (high score du niveau).
+        int best = GameSettings.Instance?.BestTime(id) ?? 0;
+        if (best > 0)
+        {
+            var rec = new Label
+            {
+                Text = $"⏱ {best / 60:D2}:{best % 60:D2}",
+                SizeFlagsVertical = SizeFlags.ShrinkCenter,
+            };
+            rec.AddThemeFontSizeOverride("font_size", 13);
+            rec.AddThemeColorOverride("font_color", new Color(0.6f, 0.85f, 1f));
+            nameRow.AddChild(rec);
+        }
         var lblEffect = new Label { Text = effect };
         lblEffect.AddThemeFontSizeOverride("font_size", 14);
         lblEffect.AddThemeColorOverride("font_color", Cyan);

@@ -74,6 +74,21 @@ public partial class GameSettings : Node
         return HasCompletedAny(LevelOrder[idx - 1]);
     }
 
+    // ── High scores (temps survécu max par niveau) ───────────────────────────
+    private readonly Dictionary<string, int> _bestTimes = new();
+
+    /// <summary>Meilleur temps survécu (secondes) sur ce niveau, ou 0 si jamais joué.</summary>
+    public int BestTime(string biomeId) => _bestTimes.GetValueOrDefault(biomeId, 0);
+
+    /// <summary>Enregistre un temps survécu ; garde le max. Retourne true si c'est un nouveau record.</summary>
+    public bool RecordTime(string biomeId, int secs)
+    {
+        if (biomeId.Length == 0 || secs <= _bestTimes.GetValueOrDefault(biomeId, 0)) return false;
+        _bestTimes[biomeId] = secs;
+        Save();
+        return true;
+    }
+
     // ── Setters (appliquent + sauvegardent) ───────────────────────────────────
     public void SetMaster(float v)     { Master = Mathf.Clamp(v, 0f, 1f); ApplyAudio(); Save(); }
     public void SetMusic(float v)      { Music  = Mathf.Clamp(v, 0f, 1f); ApplyAudio(); Save(); }
@@ -137,6 +152,11 @@ public partial class GameSettings : Node
         _completions.Clear();
         foreach (string key in cfg.GetValue("progress", "completions", new string[0]).AsStringArray())
             _completions.Add(key);
+
+        _bestTimes.Clear();
+        if (cfg.HasSection("highscores"))
+            foreach (string biome in cfg.GetSectionKeys("highscores"))
+                _bestTimes[biome] = cfg.GetValue("highscores", biome, 0).AsInt32();
     }
 
     private void Save()
@@ -153,6 +173,9 @@ public partial class GameSettings : Node
         var keys = new string[_completions.Count];
         _completions.CopyTo(keys);
         cfg.SetValue("progress", "completions", keys);
+
+        foreach (var (biome, secs) in _bestTimes)
+            cfg.SetValue("highscores", biome, secs);
         cfg.Save(Path);
     }
 }

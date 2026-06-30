@@ -152,18 +152,11 @@ public partial class RunStatsTracker : Node
 
         GD.Print($"[RunStatsTracker] Fin de run — outcome={outcome}, T={timeSecs}s, K={KillCount}, N={CoresCollected}, Échos={echoes}");
 
-        // Arret musique de run lors d'une extraction reussie
-        // (en cas de mort, Player.HandleDeath() gere l'arret avec fondu)
-        if (outcome == "extraction_success")
-        {
-            AudioSystem.Instance?.StopMusic(fadeOutSec: 1.0f);
-            // Enregistre la complétion du biome à la difficulté courante (badge sélection niveau).
-            string biome = GameManager.Instance?.CurrentBiomeId ?? "";
-            if (biome.Length > 0 && GameSettings.Instance != null)
-                GameSettings.Instance.RecordCompletion(biome, GameSettings.Instance.Difficulty);
-        }
+        // High score : enregistre le temps survécu du niveau (garde le max) — Étape 4.
+        string biome = GameManager.Instance?.CurrentBiomeId ?? "";
+        bool newRecord = GameSettings.Instance?.RecordTime(biome, timeSecs) ?? false;
 
-        OpenEndScreen(outcome, timeSecs, echoes);
+        OpenEndScreen(outcome, timeSecs, echoes, newRecord, GameSettings.Instance?.BestTime(biome) ?? timeSecs);
     }
 
     // ---------------------------------------------------------------------------
@@ -183,7 +176,7 @@ public partial class RunStatsTracker : Node
     // Écran de fin
     // ---------------------------------------------------------------------------
 
-    private void OpenEndScreen(string outcome, int timeSecs, int echoesEarned)
+    private void OpenEndScreen(string outcome, int timeSecs, int echoesEarned, bool newRecord, int bestTime)
     {
         if (_runEndScreenScene == null)
         {
@@ -198,6 +191,9 @@ public partial class RunStatsTracker : Node
         screen.PendingKills        = KillCount;
         screen.PendingCores        = CoresCollected;
         screen.PendingEchoesEarned = echoesEarned;
+        screen.PendingBestTime       = bestTime;
+        screen.PendingNewRecord      = newRecord;
+        screen.PendingLevelCompleted = LevelCompleted;
 
         // Ajout différé à la racine pour éviter les conflits avec le scene tree en cours de flush
         GetTree().Root.CallDeferred(Node.MethodName.AddChild, screen);

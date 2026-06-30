@@ -15,6 +15,9 @@ public partial class RunEndScreen : CanvasLayer
     public int    PendingKills        { get; set; } = 0;
     public int    PendingCores        { get; set; } = 0;
     public int    PendingEchoesEarned { get; set; } = 0;
+    public int    PendingBestTime       { get; set; } = 0;
+    public bool   PendingNewRecord      { get; set; } = false;
+    public bool   PendingLevelCompleted { get; set; } = false;
 
     private Label     _outcomeLabel  = null!;
     private Label     _timeLabel     = null!;
@@ -66,6 +69,25 @@ public partial class RunEndScreen : CanvasLayer
         ShowEndScreen(PendingOutcome, PendingTimeSecs, PendingKills, PendingCores, PendingEchoesEarned);
     }
 
+    private static string Fmt(int secs) => $"{secs / 60:D2}:{secs % 60:D2}";
+
+    /// <summary>Ligne « temps survécu / record du niveau » sous le titre (or si nouveau record).</summary>
+    private void ShowSurvivalLine(int timeSecs)
+    {
+        var line = new Label
+        {
+            HorizontalAlignment = HorizontalAlignment.Center,
+            Text = $"{Loc.T("RUNEND_SURVIVED")} : {Fmt(timeSecs)}   •   {Loc.T("RUNEND_BEST")} : {Fmt(PendingBestTime)}"
+                 + (PendingNewRecord ? $"   ★ {Loc.T("RUNEND_NEW_RECORD")}" : ""),
+            AnchorLeft = 0.5f, AnchorRight = 0.5f,
+            OffsetLeft = -400f, OffsetRight = 400f, OffsetTop = 145f, OffsetBottom = 175f,
+        };
+        line.AddThemeFontSizeOverride("font_size", 18);
+        line.AddThemeColorOverride("font_color",
+            PendingNewRecord ? new Color(1f, 0.85f, 0.3f) : new Color(0.85f, 0.85f, 0.95f));
+        _outcomeLabel.GetParent().AddChild(line);
+    }
+
     /// <summary>
     /// Affiche l'écran et lance l'animation countup précédée d'un fade-in depuis le noir.
     /// </summary>
@@ -73,9 +95,14 @@ public partial class RunEndScreen : CanvasLayer
     {
         Visible = true;
 
-        bool isVictory = outcome == "extraction_success";
-        _outcomeLabel.Text = isVictory ? Loc.T("RUNEND_VICTORY") : Loc.T("RUNEND_DEATH");
-        _outcomeLabel.AddThemeColorOverride("font_color", isVictory ? ColorVictory : ColorDeath);
+        // Titre : si le boss de fin de niveau a été vaincu → « NIVEAU TERMINÉ » (positif),
+        // sinon « MORT EN SERVICE ». La run se termine toujours à la mort (survie sans fin).
+        bool completed = PendingLevelCompleted || outcome == "extraction_success";
+        _outcomeLabel.Text = completed ? Loc.T("RUNEND_LEVEL_DONE") : Loc.T("RUNEND_DEATH");
+        _outcomeLabel.AddThemeColorOverride("font_color", completed ? ColorVictory : ColorDeath);
+        bool isVictory = completed;
+
+        ShowSurvivalLine(timeSecs);
 
         // Stinger sonore selon le resultat (la musique de run a deja ete arretee par Player.HandleDeath ou RunStatsTracker)
         if (isVictory)
