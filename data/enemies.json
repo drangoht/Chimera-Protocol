@@ -88,7 +88,12 @@
         "description": "Avance inexorablement vers le joueur. Frappe toutes les 1.5 secondes a portee de contact (36 px). Lent mais tres resistant.",
         "shockwaveCooldown": 1.5
       },
-      "colorPlaceholder": "dark_red"
+      "colorPlaceholder": "dark_red",
+      "biomes": [
+        "sanctuaire",
+        "fournaise",
+        "givre"
+      ]
     },
     {
       "id": "rust_stalker",
@@ -227,7 +232,11 @@
       "onDeath": {
         "xpOrbColor": "#AA44FF",
         "triggerWeaponChoiceScreen": true
-      }
+      },
+      "biomes": [
+        "aether",
+        "neon"
+      ]
     },
     {
       "id": "rusted_core",
@@ -257,5 +266,6 @@
     }
   ],
   "scalingNote": "hpScalingPerMinute / damageScalingPerMinute releves le 2026-06-29 pour durcir le mid/end game (les ennemis tardifs fondaient trop vite). stat = base x (1 + minutes x perMinute) x difficulte.",
-  "spawnWeightNote": "spawnWeight est relatif aux ennemis deja dans le pool au moment du tirage. Normaliser la somme des poids actifs a chaque spawn."
+  "spawnWeightNote": "spawnWeight est relatif aux ennemis deja dans le pool au moment du tirage. Normaliser la somme des poids actifs a chaque spawn.",
+  "biomeNote": "Champ 'biomes' (optionnel, depuis Phase 1) : restreint l'apparition aux biomes listés. Phase 5 lot 1 : les mid-boss varient par biome (Revenant en aether/neon, Colosse en sanctuaire/fournaise/givre). Les ennemis de base et rust_stalker/master_sentinel/rusted_core restent globaux."
 }
