@@ -195,3 +195,5 @@ RUNEND_LEVEL_DONE,LEVEL COMPLETE,NIVEAU TERMINÉ,NIVEL COMPLETADO
 RUNEND_SURVIVED,Survived,Survie,Supervivencia
 RUNEND_BEST,Best,Record,Récord
 RUNEND_NEW_RECORD,NEW RECORD!,NOUVEAU RECORD !,¡NUEVO RÉCORD!
+ARSENAL_LOCKED,Undiscovered,Non découverte,No descubierta
+ARSENAL_LOCKED_DESC,Weapon not yet discovered. Find and equip it in a run (via a level-up card) to reveal it here.,Arme non découverte. Trouve-la et équipe-la en partie (carte de montée de niveau) pour la révéler ici.,Arma no descubierta. Encuéntrala y equípala en una partida (carta de subida de nivel) para revelarla aquí.

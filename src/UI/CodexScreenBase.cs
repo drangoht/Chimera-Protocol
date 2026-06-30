@@ -12,6 +12,10 @@ public abstract partial class CodexScreenBase : Control
     protected abstract Color  TitleAccent { get; }
     protected abstract IReadOnlyList<CodexEntry> Entries { get; }
 
+    /// <summary>Une entrée doit-elle être affichée « verrouillée » (non découverte) ? Par défaut non
+    /// (Bestiaire). L'Arsenal surcharge pour masquer les armes non encore découvertes.</summary>
+    protected virtual bool IsEntryLocked(CodexEntry e) => false;
+
     private ColorRect _fade = null!;
     private Button    _backButton = null!;
 
@@ -106,12 +110,17 @@ public abstract partial class CodexScreenBase : Control
         AddChild(_fade);
     }
 
+    private static readonly Color LockGrey = new(0.5f, 0.52f, 0.6f);
+
     private Control BuildRow(CodexEntry e)
     {
+        bool locked = IsEntryLocked(e);
+        Color accent = locked ? LockGrey : e.Accent;
+
         var panel = new PanelContainer();
         var style = new StyleBoxFlat { BgColor = PanelBg };
         style.SetBorderWidthAll(2);
-        style.BorderColor = new Color(e.Accent.R, e.Accent.G, e.Accent.B, 0.6f);
+        style.BorderColor = new Color(accent.R, accent.G, accent.B, 0.6f);
         style.SetCornerRadiusAll(6);
         style.SetContentMarginAll(12);
         panel.AddThemeStyleboxOverride("panel", style);
@@ -120,9 +129,10 @@ public abstract partial class CodexScreenBase : Control
         hbox.AddThemeConstantOverride("separation", 18);
         panel.AddChild(hbox);
 
-        // Image : animée (SpriteFrames "idle") si disponible, sinon figée
+        // Image : animée (SpriteFrames "idle") si disponible, sinon figée. Si verrouillée :
+        // silhouette grisée (icône figée + Modulate très sombre).
         TextureRect img;
-        if (e.FramesPath != null)
+        if (e.FramesPath != null && !locked)
         {
             var anim = new CodexAnimImage();
             anim.Setup(e.FramesPath, e.ImagePath);
@@ -137,6 +147,7 @@ public abstract partial class CodexScreenBase : Control
         img.StretchMode       = TextureRect.StretchModeEnum.KeepAspectCentered;
         img.TextureFilter     = TextureFilterEnum.Nearest;
         img.SizeFlagsVertical = SizeFlags.ShrinkCenter;
+        if (locked) img.Modulate = new Color(0.12f, 0.12f, 0.15f);   // silhouette
         hbox.AddChild(img);
 
         // Texte
@@ -146,24 +157,24 @@ public abstract partial class CodexScreenBase : Control
 
         var header = new HBoxContainer();
         header.AddThemeConstantOverride("separation", 10);
-        var name = new Label { Text = Loc.T(e.Name) };
+        var name = new Label { Text = locked ? "???" : Loc.T(e.Name) };
         name.AddThemeFontSizeOverride("font_size", 20);
-        name.AddThemeColorOverride("font_color", e.Accent);
+        name.AddThemeColorOverride("font_color", accent);
         header.AddChild(name);
 
-        var tag = new Label { Text = Loc.T(e.Tag), VerticalAlignment = VerticalAlignment.Center };
+        var tag = new Label { Text = Loc.T(locked ? "ARSENAL_LOCKED" : e.Tag), VerticalAlignment = VerticalAlignment.Center };
         tag.AddThemeFontSizeOverride("font_size", 13);
-        tag.AddThemeColorOverride("font_color", new Color(e.Accent.R, e.Accent.G, e.Accent.B, 0.7f));
+        tag.AddThemeColorOverride("font_color", new Color(accent.R, accent.G, accent.B, 0.7f));
         header.AddChild(tag);
         vbox.AddChild(header);
 
         var desc = new Label
         {
-            Text         = Loc.T(e.Description),
+            Text         = locked ? Loc.T("ARSENAL_LOCKED_DESC") : Loc.T(e.Description),
             AutowrapMode = TextServer.AutowrapMode.WordSmart,
         };
         desc.AddThemeFontSizeOverride("font_size", 15);
-        desc.AddThemeColorOverride("font_color", TextColor);
+        desc.AddThemeColorOverride("font_color", locked ? LockGrey : TextColor);
         desc.SizeFlagsHorizontal = SizeFlags.ExpandFill;
         vbox.AddChild(desc);
 

@@ -18,4 +18,12 @@ public partial class ArsenalScreen : CodexScreenBase
         list.AddRange(Codex.Passives);
         return list;
     }
+
+    // Une ARME (active ou fusion) non découverte est masquée. Les passifs restent toujours visibles ;
+    // les armes de signature sont toujours considérées découvertes (cf. GameSettings.IsDiscovered).
+    protected override bool IsEntryLocked(CodexEntry e)
+    {
+        bool isWeapon = e.Tag is "TAG_ACTIVE" or "TAG_FUSION";
+        return isWeapon && !(GameSettings.Instance?.IsDiscovered(e.Id) ?? true);
+    }
 }

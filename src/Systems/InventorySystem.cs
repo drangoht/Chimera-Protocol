@@ -121,6 +121,9 @@ public partial class InventorySystem : Node
 
         ApplyWeaponStats(weaponId, level, node);
         TriggerWeaponEquipVfx(player, weaponId);
+
+        // Arsenal à découverte : marque l'arme (active ou fusion) comme découverte à la 1re acquisition.
+        GameSettings.Instance?.Discover(weaponId);
     }
 
     private void UpgradeWeaponNode(string weaponId, int level)

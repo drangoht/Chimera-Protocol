@@ -89,6 +89,23 @@ public partial class GameSettings : Node
         return true;
     }
 
+    // ── Armes découvertes (arsenal) ──────────────────────────────────────────
+    private readonly HashSet<string> _discovered = new();
+
+    /// <summary>Armes de signature des personnages : toujours considérées découvertes.</summary>
+    public static readonly string[] SignatureWeapons = { "impulse_cannon", "drone_swarm", "plasma_blade" };
+
+    /// <summary>L'arme a-t-elle été découverte (équipée au moins une fois) ou est-elle une arme de signature ?</summary>
+    public bool IsDiscovered(string weaponId)
+        => System.Array.IndexOf(SignatureWeapons, weaponId) >= 0 || _discovered.Contains(weaponId);
+
+    /// <summary>Marque une arme comme découverte (1re acquisition) et persiste.</summary>
+    public void Discover(string weaponId)
+    {
+        if (weaponId.Length == 0) return;
+        if (_discovered.Add(weaponId)) Save();
+    }
+
     // ── Setters (appliquent + sauvegardent) ───────────────────────────────────
     public void SetMaster(float v)     { Master = Mathf.Clamp(v, 0f, 1f); ApplyAudio(); Save(); }
     public void SetMusic(float v)      { Music  = Mathf.Clamp(v, 0f, 1f); ApplyAudio(); Save(); }
@@ -157,6 +174,10 @@ public partial class GameSettings : Node
         if (cfg.HasSection("highscores"))
             foreach (string biome in cfg.GetSectionKeys("highscores"))
                 _bestTimes[biome] = cfg.GetValue("highscores", biome, 0).AsInt32();
+
+        _discovered.Clear();
+        foreach (string id in cfg.GetValue("discovered", "weapons", new string[0]).AsStringArray())
+            _discovered.Add(id);
     }
 
     private void Save()
@@ -176,6 +197,10 @@ public partial class GameSettings : Node
 
         foreach (var (biome, secs) in _bestTimes)
             cfg.SetValue("highscores", biome, secs);
+
+        var disc = new string[_discovered.Count];
+        _discovered.CopyTo(disc);
+        cfg.SetValue("discovered", "weapons", disc);
         cfg.Save(Path);
     }
 }
