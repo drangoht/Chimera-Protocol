@@ -23,7 +23,7 @@ In a world where magic and machine merged into a corruption called the **Living 
 - **Dense bullet-heaven swarms** — up to 300 enemies on screen, batch and wave spawning, with i-frames that make the hordes playable instead of punishing.
 - **3-card level-ups** — each level, pick one of 3 cards (new weapon, passive module, or fusion) and heal 25% of your max HP.
 - **Fusions that transform the weapon** — max out a weapon while owning its required passive to unlock its evolved form. The Plasma Blade becomes a continuous fusion ring; the Impulse Cannon becomes a piercing rail; and more.
-- **A real win condition** — the run isn't won on the clock. The timer is a countdown to the arrival of the **final boss, the Rusted Core** (~13 min). Killing it triggers **EXTRACTION SUCCESSFUL** and stamps the biome with a **DEFEATED** badge.
+- **Endless-survival end-game** — the timer counts down to the **end-of-level boss**. When it hits zero, the difficulty escalates **hard**: massive waves, mini-bosses and **bosses on a loop**. Beating the boss **completes the level** (unlocking the next) but the run keeps going — you survive as long as you can. Your **survival time is the level's high score** (with the difficulty it was set on).
 
 ### Highlights
 - **3 playable characters**, each with their own stats, aura and signature weapon: **Chimera** (cyborg, Impulse Cannon), **Titan-Guardian** (heavy robot, Drone Swarm), **Wanderer** (human, Plasma Blade).
@@ -35,7 +35,9 @@ In a world where magic and machine merged into a corruption called the **Living 
   - *Neon Sector* — an overclocked data sector: **enemies +10% faster but +15% XP** (risk vs reward).
 - **A build-craft arsenal — 11 weapons, 4 passives and 4 fusions** to combine. New: a boomerang blade, homing missiles, a slowing cryo beam, a burning flame cone, and an epic gravity-well singularity.
 - **Temporary power-ups** — pick up timed buffs mid-run: Overclock (fire rate), Berserk (damage), Aegis (invulnerability), Celerity (speed). No permanent power-creep.
-- **Final boss = win condition + DEFEATED badge** persisted per biome and per difficulty.
+- **Level progression** — 5 levels unlock one after another (beat a level to open the next). Each tracks its **best survival time + difficulty**. A **DEFEATED** badge marks cleared levels.
+- **Weapon discovery** — undiscovered weapons appear as **???** in the Arsenal until you find and equip them in a run (your character's signature weapon is always known).
+- **Reset everything** — a one-click option to wipe all progress (Echoes, unlocks, records, discoveries) back to a fresh start.
 - **Adjustable difficulty** — Easy / Normal / Hard (damage, HP and spawn multipliers).
 - **An escalating bestiary** — 4 base enemies, 3 mini-bosses (Aether Revenant, Rust Stalker, Master Sentinel) and 1 final boss (the Rusted Core).
 - **Meta-progression** — Aether Echoes earned in runs buy permanent upgrades at the Hub.

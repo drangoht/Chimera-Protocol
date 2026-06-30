@@ -8,7 +8,7 @@ Dans un monde ravagé par **la Rouille Vivante** (corruption mi-organique, mi-m�
 
 ## État du projet
 
-**Expansion : biome Néon + refonte visuelle + 5 nouvelles armes + power-ups** *(2026-06-30)*
+**Refonte fin de niveau : survie sans fin, déblocage progressif, high scores, arsenal à découverte** *(2026-06-30)*
 
 | Phase | Statut | Contenu |
 |---|---|---|
@@ -56,13 +56,16 @@ Dans un monde ravagé par **la Rouille Vivante** (corruption mi-organique, mi-m�
 | **Expansion P2 — refonte visuelle des arènes** | ✅ Livré | `BiomeAtmosphere` : **brume** (shader fbm), **rais de lumière** (god-rays additifs), **poussière en parallaxe** (2 couches décalées par la caméra) — thématisés par biome (Néon dramatique, Sanctuaire discret) |
 | **Expansion P3 — 5 nouvelles armes (6 → 11)** | ✅ Livré | **Lame Boomerang** (revient, 2 hits), **Essaim Traqueur** (missiles homing), **Lance Cryo** (rayon perçant + ralentissement), **Jet de Pyre** (cône + brûlure DoT), **Singularité** (puits gravitationnel epic). Infra statut `EnemyBase` (slow/burn plafonnés, testés) |
 | **Expansion P4 — power-ups temporaires** | ✅ Livré | 4 buffs ramassables à durée limitée : **Surcadence** (cadence ×1.6), **Furie** (+dégâts), **Égide** (invulnérabilité), **Célérité** (vitesse) ; apparition programmée, indicateur HUD de buff actif. Aucun power-creep permanent |
+| **Expansion P5 — ennemis & boss par biome** | ✅ Livré | Socle biome-aware exploité : le **mid-boss varie selon le biome** (Revenant en Aether/Néon, Colosse ailleurs) |
+| **Refonte fin de niveau** | ✅ Livré | **Survie sans fin** : à la fin du temps imparti la difficulté **escalade brutalement** (vagues + mini-boss + **boss en boucle**) ; **battre le boss = niveau TERMINÉ** (débloque le suivant) mais la run **continue** ; la run finit à la **mort**. **Déblocage progressif** des niveaux (Sanctuaire → Aether → Givre → Fournaise → Néon). **High score** = temps survécu max par niveau, **avec la difficulté** du record. **Arsenal à découverte** : armes non trouvées masquées **« ??? »** (sauf armes de signature). Bouton **« Tout réinitialiser »** dans les Options (Échos + progression) |
 
 ---
 
 ## Gameplay
 
-- **Boucle run** : survivre puis **vaincre le boss final (Le Noyau Rouillé, ~13 min) pour gagner** — le timer n'est plus une auto-victoire mais un décompte avant l'arrivée du boss. Nuées denses façon Vampire Survivors (jusqu'à 300 ennemis, spawn par lots + vagues), i-frames qui rendent les hordes jouables, ramassage d'XP
-- **Choix du biome** : 4 arènes (Sanctuaire, Aether, Fournaise, Givre) avec effets gameplay propres ; un badge « VAINCU » marque les biomes déjà battus, par difficulté
+- **Boucle run (survie sans fin)** : le décompte mène au **boss de fin de niveau** (~13 min). À la fin du temps imparti, la difficulté **escalade brutalement** (vagues massives + mini-boss + boss en boucle). **Battre le boss = niveau TERMINÉ** (débloque le suivant) mais la run **continue** ; elle finit à la **mort**. Le **temps survécu** est le **high score** du niveau (avec sa difficulté). Nuées denses façon Vampire Survivors (jusqu'à 300 ennemis), i-frames qui rendent les hordes jouables
+- **Déblocage progressif** : 5 biomes (Sanctuaire → Aether → Givre → Fournaise → Néon) — chacun se débloque en terminant le précédent ; cartes verrouillées + record affiché. Effets gameplay propres par biome
+- **Arsenal à découverte** : les armes non encore équipées sont masquées (« ??? ») dans l'Arsenal jusqu'à leur 1re découverte en partie (les armes de signature des persos restent toujours visibles)
 - **3 personnages** : Chimera (cyborg), Titan-Gardien (robot), Vagabond (humain) — chacun avec stats, arme de signature et aura propres
 - **Montée de niveau** : choix entre 3 cartes (armes, passifs, fusions) à chaque level-up + restauration de 25% des HP max
 - **Drops HP** : les ennemis droppent aléatoirement un orbe rouge (losange) qui restaure 15% des HP max au contact
