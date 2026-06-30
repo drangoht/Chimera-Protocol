@@ -197,19 +197,11 @@ public partial class RustedCore : EnemyBase
             }
         }
 
-        // Vaincre le boss final = VICTOIRE. Court délai pour laisser voir l'explosion,
-        // puis écran de fin "extraction réussie" (enregistre la complétion du biome).
-        var tree = GetTree();
+        // Battre le boss de fin de niveau = NIVEAU TERMINÉ (débloque le suivant + bannière) mais
+        // la run NE s'arrête PAS : l'escalade overtime continue (survie sans fin). La run se
+        // termine à la mort du joueur (high score = temps survécu).
+        RunStatsTracker.Instance?.OnLevelBossDefeated();
         QueueFree();
-        if (tree != null)
-        {
-            var timer = tree.CreateTimer(1.4f, processAlways: true);
-            timer.Timeout += () => RunStatsTracker.Instance?.EndRun("extraction_success");
-        }
-        else
-        {
-            RunStatsTracker.Instance?.EndRun("extraction_success");
-        }
     }
 
     private void SpawnShockwaveAt(Vector2 pos)

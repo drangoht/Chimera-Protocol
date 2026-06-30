@@ -25,6 +25,11 @@ public partial class RunStatsTracker : Node
     /// <summary>Secondes écoulées depuis le début de l'overtime (0 avant).</summary>
     public float OvertimeSeconds   => Mathf.Max(0f, ElapsedSeconds - _runDurationSeconds);
 
+    /// <summary>Le boss de fin de niveau a-t-il été vaincu durant cette run ? (= niveau terminé)</summary>
+    public bool  LevelCompleted    { get; private set; }
+
+    private bool _overtimeAnnounced = false;
+
     private static PackedScene? _runEndScreenScene;
 
     public override void _Ready()
@@ -74,9 +79,31 @@ public partial class RunStatsTracker : Node
         // Progression de l'intensite musicale selon le temps ecoule
         UpdateRunMusicIntensity();
 
-        // Plus d'auto-victoire au timer : la run se gagne en VAINQUANT le boss final
-        // (RustedCore.FinishDeath -> EndRun("extraction_success")). Le timer ne fait
-        // qu'indiquer le compte a rebours avant l'apparition du boss.
+        // Le timer ne termine plus la run : à 0 (fin du temps imparti), on entre en OVERTIME
+        // (escalade brutale gérée par EnemySpawner). La run se termine à la mort du joueur ;
+        // battre le boss de fin de niveau marque la complétion (OnLevelBossDefeated).
+        if (!_overtimeAnnounced && Overtime)
+        {
+            _overtimeAnnounced = true;
+            Banner.Show(GetTree(), Loc.T("OVERTIME"), new Color(1f, 0.3f, 0.3f));
+        }
+    }
+
+    /// <summary>
+    /// Boss de fin de niveau vaincu : marque le NIVEAU TERMINÉ (enregistre la complétion → débloque
+    /// le suivant + bannière), une seule fois. **N'arrête PAS la run** (survie sans fin jusqu'à la mort).
+    /// </summary>
+    public void OnLevelBossDefeated()
+    {
+        if (RunEnded || LevelCompleted) return;
+        LevelCompleted = true;
+
+        string biome = GameManager.Instance?.CurrentBiomeId ?? "";
+        if (biome.Length > 0 && GameSettings.Instance != null)
+            GameSettings.Instance.RecordCompletion(biome, GameSettings.Instance.Difficulty);
+
+        Banner.Show(GetTree(), Loc.T("LEVEL_COMPLETE"), new Color(1f, 0.85f, 0.3f));
+        AudioSystem.Instance?.PlaySfx("sfx_core_collect");
     }
 
     private void UpdateRunMusicIntensity()

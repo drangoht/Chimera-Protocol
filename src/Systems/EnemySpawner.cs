@@ -17,10 +17,14 @@ public partial class EnemySpawner : Node
     private float _waveTimer = 30f;  // première vague à t=30 s
     private float _elapsed   = 0f;   // secondes depuis le début du run
     private float _eliteTimer = 14f; // overtime : prochain spawn de mini-boss d'élite
+    private float _bossTimer  = 4f;  // overtime : 1er boss ~4 s après le début (= fin du temps imparti)
 
-    // Mini-boss spawnés en boucle pendant l'overtime (le boss final rusted_core est géré à part).
+    // Mini-boss spawnés en boucle pendant l'overtime.
     private static readonly string[] OvertimeElites =
         { "grafted_colossus", "rust_stalker", "master_sentinel", "aether_revenant" };
+
+    // Boss de fin de niveau : ne spawn PLUS en ambiant (réservé à la boucle d'overtime).
+    private static readonly System.Collections.Generic.HashSet<string> BossIds = new() { "rusted_core" };
 
     private readonly RandomNumberGenerator _rng = new();
 
@@ -113,7 +117,7 @@ public partial class EnemySpawner : Node
             _waveTimer = waveReset;
         }
 
-        // Mini-boss d'élite en boucle pendant l'overtime (intervalle qui se resserre).
+        // Overtime : mini-boss d'élite + boss de fin de niveau en boucle (intervalles qui se resserrent).
         if (overtime)
         {
             _eliteTimer -= (float)delta;
@@ -121,6 +125,13 @@ public partial class EnemySpawner : Node
             {
                 SpawnOvertimeElite(tEff);
                 _eliteTimer = Mathf.Max(5f, 14f - otMin * 1.5f);
+            }
+
+            _bossTimer -= (float)delta;
+            if (_bossTimer <= 0f)
+            {
+                SpawnOvertimeBoss(tEff);
+                _bossTimer = Mathf.Max(28f, 50f - otMin * 2f);
             }
         }
     }
@@ -137,6 +148,18 @@ public partial class EnemySpawner : Node
         if (eligible.Count == 0) return;
         var chosen = eligible[(int)(_rng.Randi() % (uint)eligible.Count)];
         SpawnEnemy(chosen, tEff, ignoreMaxSimultaneous: true);
+    }
+
+    /// <summary>Force le spawn du boss de fin de niveau (overtime). Le 1er ≈ à l'instant où le timer
+    /// atteint 0 (= « le boss arrive à la fin du temps imparti »), puis en boucle.</summary>
+    private void SpawnOvertimeBoss(float tEff)
+    {
+        foreach (var data in _enemyPool)
+            if (data.Id == "rusted_core")
+            {
+                SpawnEnemy(data, tEff, ignoreMaxSimultaneous: true);
+                return;
+            }
     }
 
     // -------------------------------------------------------------------------
@@ -167,11 +190,12 @@ public partial class EnemySpawner : Node
     private List<EnemySpawnData> GetAvailableEnemies(float tMinutes)
     {
         // Filtre par temps d'apparition ET par biome courant (les ennemis sans champ `biomes`
-        // restent disponibles partout — rétro-compatible).
+        // restent disponibles partout — rétro-compatible). Le boss de fin de niveau est exclu
+        // de l'ambiant : il n'apparaît qu'en overtime (boucle de boss).
         string? biome = GameManager.Instance?.CurrentBiomeId;
         var list = new List<EnemySpawnData>();
         foreach (var e in _enemyPool)
-            if (tMinutes >= e.SpawnStartMinute && e.IsAllowedInBiome(biome))
+            if (tMinutes >= e.SpawnStartMinute && e.IsAllowedInBiome(biome) && !BossIds.Contains(e.Id))
                 list.Add(e);
         return list;
     }
