@@ -8,7 +8,7 @@ Dans un monde ravagé par **la Rouille Vivante** (corruption mi-organique, mi-m�
 
 ## État du projet
 
-**Refonte fin de niveau : survie sans fin, déblocage progressif, high scores, arsenal à découverte** *(2026-06-30)*
+**Refonte fin de niveau : survie sans fin, déblocage progressif, high scores, arsenal à découverte** *(2026-06-30)* — + fix scroll clavier/manette Bestiaire & Arsenal*
 
 | Phase | Statut | Contenu |
 |---|---|---|
@@ -28,7 +28,7 @@ Dans un monde ravagé par **la Rouille Vivante** (corruption mi-organique, mi-m�
 | Juice & densité VS | ✅ Livré | VFX scalés par niveau d'arme (brillance balles, impact bursts, flash), explosions de mort calibrées par tier + onde de choc, aura joueur croissante, screen shake d'impact ; arène éclaircie ; spawn façon Vampire Survivors (cap 300, courbe raide, lots + vagues) ; i-frames joueur (0.45 s) |
 | Boss & nouvelles armes | ✅ Livré | 2 armes 100% VFX (Bobine Tesla = éclair en chaîne, Nova d'Aether = détonation dilatante) ; mini-boss de mi-temps **Revenant d'Aether** (7 min, ruades) ; **boss de fin Le Noyau Rouillé** (13 min, HP base 1600 — rééquilibré depuis, voir plus bas, salves radiales, 500 XP + 3 Noyaux + choix d'arme) |
 | Sprites dédiés boss | ✅ Livré | Sprites pixel art 64×64 dédiés générés (`tools/generate_boss_sprites.py`) : Revenant (spectre cyborg violet, bras-lames, dissolution) + Noyau Rouillé (titan rouille-or, noyau en fusion, surcharge) — fin de la réutilisation teintée |
-| Bestiaire & Arsenal | ✅ Livré | 2 rubriques au menu : **Bestiaire** (8 ennemis — sprite **animé** + tag + description) et **Arsenal** (8 armes + 4 passifs — icône + description). Icônes Tesla/Volée créées ; icônes sur les cartes de choix d'arme et dans les notifs HUD |
+| Bestiaire & Arsenal | ✅ Livré | 2 rubriques au menu : **Bestiaire** (8 ennemis — sprite **animé** + tag + description) et **Arsenal** (11 armes + 4 passifs — icône + description). Icônes Tesla/Volée créées ; icônes sur les cartes de choix d'arme et dans les notifs HUD |
 | Lisibilité UI | ✅ Livré | Police principale **Share Tech Mono** (mono techno lisible, anti-aliasée) en remplacement de VT323 — texte et HUD nettement moins pixelisés ; tailles ré-accordées |
 | Personnages jouables | ✅ Livré | 3 personnages (registre `Characters.cs`) : **Chimera** (cyborg, impulse_cannon), **Titan-Gardien** (robot lourd, drone_swarm), **Vagabond** (humain, plasma_blade) — sprites pixel art dédiés, aura d'identité, sélecteur dans le Hub. Le perso garde toujours son arme de signature |
 | Biomes d'arène | ✅ Livré | 4 biomes (Sanctuaire Rouillé, Friche d'Aether, Fournaise, Givre Cryogénique) — tuiles dédiées, obstacles colorés à l'accent, effets gameplay (XP +20%, vitesse ennemis ±18%), seed de layout randomisé |
@@ -58,6 +58,7 @@ Dans un monde ravagé par **la Rouille Vivante** (corruption mi-organique, mi-m�
 | **Expansion P4 — power-ups temporaires** | ✅ Livré | 4 buffs ramassables à durée limitée : **Surcadence** (cadence ×1.6), **Furie** (+dégâts), **Égide** (invulnérabilité), **Célérité** (vitesse) ; apparition programmée, indicateur HUD de buff actif. Aucun power-creep permanent |
 | **Expansion P5 — ennemis & boss par biome** | ✅ Livré | Socle biome-aware exploité : le **mid-boss varie selon le biome** (Revenant en Aether/Néon, Colosse ailleurs) |
 | **Refonte fin de niveau** | ✅ Livré | **Survie sans fin** : à la fin du temps imparti la difficulté **escalade brutalement** (vagues + mini-boss + **boss en boucle**) ; **battre le boss = niveau TERMINÉ** (débloque le suivant) mais la run **continue** ; la run finit à la **mort**. **Déblocage progressif** des niveaux (Sanctuaire → Aether → Givre → Fournaise → Néon). **High score** = temps survécu max par niveau, **avec la difficulté** du record. **Arsenal à découverte** : armes non trouvées masquées **« ??? »** (sauf armes de signature). Bouton **« Tout réinitialiser »** dans les Options (Échos + progression) |
+| **Fix scroll Codex** | ✅ Livré | Les écrans **Bestiaire** et **Arsenal** ne défilaient pas au clavier/manette (rangées non focalisables → le focus Godot ne scrollait pas) : `CodexScreenBase` pilote désormais le `ScrollContainer` à la main sur `ui_up`/`ui_down` (+ Page Up/Down) dans `_UnhandledInput` |
 
 ---
 
