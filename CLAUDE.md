@@ -5,502 +5,101 @@ dépôt. Il doit rester court et stable ; le détail du design vit dans `docs/GD
 
 ## Le projet
 
-"Chimera Protocol" (titre de travail) — survivor roguelite vue du dessus, univers
-fantaisie-science-fiction (humains, cyborgs, robots), inspiré de Vampire Survivors (boucle de
-run/level-up) et Everything is Crab (évolutions qui transforment le personnage). Le document de
-référence complet est **`docs/GDD.md`** — toujours le consulter avant toute tâche de design ou
-d'implémentation, et le tenir à jour quand une décision est prise.
+"Chimera Protocol" — survivor roguelite vue du dessus, univers fantaisie-science-fiction
+(humains, cyborgs, robots), inspiré de Vampire Survivors et Everything is Crab.
+Référence complète : **`docs/GDD.md`** — toujours le consulter avant toute tâche de design
+ou d'implémentation, et le tenir à jour quand une décision est prise.
 
 ## Équipe d'agents
 
-Ce projet utilise des subagents Claude Code dédiés, définis dans `.claude/agents/` :
-`game-designer`, `directeur-artistique`, `graphiste`, `developpeur`, `musicien`, `story-teller`,
-`marketing`, `game-tester`. Délègue proactivement à l'agent compétent plutôt que de tout traiter
-dans la conversation principale — voir `GUIDE-CLAUDE-CODE.md` à la racine pour l'ordre de lancement
-recommandé.
+Agents définis dans `.claude/agents/` : `game-designer`, `directeur-artistique`, `graphiste`,
+`developpeur`, `musicien`, `story-teller`, `marketing`, `game-tester`. Délègue proactivement
+à l'agent compétent — voir `GUIDE-CLAUDE-CODE.md` pour l'ordre de lancement recommandé.
 
-**`game-tester`** : lance Godot (`C:\CODE\JEUX\Godot_v4.7-stable_mono_win64\Godot_v4.7-stable_mono_win64.exe --rendering-driver d3d12`), joue le jeu, documente les bugs dans `docs/TEST_REPORT.md`, remonte au `developpeur` et au `game-designer`. À invoquer après chaque implémentation majeure.
+**`game-tester`** : lance Godot (`C:\CODE\JEUX\Godot_v4.7-stable_mono_win64\Godot_v4.7-stable_mono_win64.exe --rendering-driver d3d12`), joue le jeu, documente les bugs dans `docs/TEST_REPORT.md`. À invoquer après chaque implémentation majeure.
 
 ## README GitHub
 
-`README.md` à la racine — à mettre à jour à chaque changement de phase ou ajout majeur :
-- Tableau des phases (cocher ✅ / mettre à jour 🔲)
-- Roadmap Phase suivante (cocher les tâches terminées)
-- Captures d'écran à ajouter dès que les sprites sont intégrés
+`README.md` à la racine — mettre à jour à chaque changement de phase ou ajout majeur :
+tableau des phases (✅/🔲), roadmap, captures d'écran.
 
 ## État du projet
 
-- Pile technique : **Godot 4.7 .NET (C# / .NET 8 / GodotSharp)** — décision actée 2026-06-19,
-  validée par `developpeur`, `directeur-artistique` et `game-designer` (cf. GDD §15).
-- Phase actuelle : **Fix scroll clavier/manette Bestiaire & Arsenal + ré-export — 2026-06-30**.
-  - **Symptôme** : dans les écrans **Bestiaire** et **Arsenal** (tous deux via `CodexScreenBase`), impossible de défiler la liste au clavier/manette — ça restait bloqué en haut.
-  - **Cause** : ces écrans n'ont **qu'un seul contrôle focalisable** (le bouton « Retour ») ; les rangées d'entrées sont de simples `PanelContainer` non focalisables → le système de focus Godot n'a aucun voisin vers qui aller et le `ScrollContainer` ne défilait jamais.
-  - **Fix** (`CodexScreenBase`) : le `ScrollContainer` est désormais un **champ `_scroll`** ; comme aucun voisin de focus n'existe, les actions `ui_up`/`ui_down` retombent dans **`_UnhandledInput`**, qui pilote directement **`_scroll.ScrollVertical`** (pas de 64 px, **`allowEcho:true`** pour le défilement continu en maintien) + **Page Up/Down** = saut d'un écran (`_scroll.Size.Y`). `Échap`/B ferme toujours. Build 0 erreur/0 warning, exe + ZIP itch ré-exportés (boot vérifié, 129 Mo). Commit `2385a67`.
-- Phase précédente : **High scores avec difficulté + bouton « Tout réinitialiser » — 2026-06-30**.
-  - **Difficulté dans les high scores** : `GameSettings._bestDiff` (biome → `(int)GameDifficulty`) persisté dans la **section `[highscores_diff]`** de `settings.cfg`. `RecordTime(biome, secs, diff)` stocke la difficulté du record ; `BestDifficulty(biome)` + helper `DifficultyKey(d)` (→ `DIFF_EASY/NORMAL/HARD`). `RunStatsTracker.EndRun` passe `GameSettings.Difficulty`. Affichage : carte `LevelSelectScreen` **« ⏱ mm:ss · Difficile »**, et écran de fin **« Survie : mm:ss (Difficile) »** (clé `RunEndScreen.PendingDifficultyKey`).
-  - **Bouton « Tout réinitialiser »** (Options) : **confirmation 2 temps** (1er clic → « ⚠ Confirmer ? », 2e → reset + bouton désactivé « ✓ Réinitialisé »), rouge (action destructrice). Appelle **`MetaProgressionSystem.HardReset()`** (`_saveData = new SaveData()` → Échos + améliorations à zéro, `save.json` écrasé) **+ `GameSettings.ResetProgress()`** (complétions + high scores + armes découvertes vidés ; préférences audio/langue/difficulté conservées) → « état initial du jeu ». Clés `OPTIONS_RESET[_CONFIRM/_DONE]` (EN/FR/ES). Build 0 erreur/0 warning, 59/59 tests, bouton vérifié par capture.
-- Phase précédente : **Refonte fin de niveau — Étape 5/6 : arsenal à découverte — 2026-06-30**.
-  - **`GameSettings` — découverte d'armes** : `_discovered` (HashSet) persisté dans la section **`[discovered] weapons`** (`PackedStringArray`). `SignatureWeapons = {impulse_cannon, drone_swarm, plasma_blade}` **toujours découvertes**. API **`IsDiscovered(id)`** (signature OU découverte) / **`Discover(id)`**. Rétro-compatible.
-  - **`InventorySystem.InstantiateWeapon`** appelle **`Discover(weaponId)`** à la 1re acquisition → couvre actives **et fusions** (`ApplyFusion` passe par `InstantiateWeapon`).
-  - **`CodexScreenBase`** : nouveau hook **`IsEntryLocked(CodexEntry)`** (virtuel, défaut false = Bestiaire). Si verrouillée : nom **« ??? »**, **icône grisée silhouette** (`Modulate 0.12`, version figée même si frames), tag **« Non découverte »**, description **« Arme non découverte »** (clé `ARSENAL_LOCKED_DESC`), accent gris. **`ArsenalScreen`** surcharge : verrouille les **armes** (`TAG_ACTIVE`/`TAG_FUSION`) non découvertes ; les **passifs** restent toujours visibles. Clés `ARSENAL_LOCKED`/`ARSENAL_LOCKED_DESC` (EN/FR/ES). Build 0 erreur/0 warning, 59/59 tests, vérifié par capture (save vierge → 3 armes de signature visibles, le reste « ??? » grisé ; save utilisateur sauvegardée+restaurée).
-- Phase précédente : **Refonte fin de niveau — Étape 4/6 : high score (temps survécu) par niveau — 2026-06-30**.
-  - **`GameSettings` — high scores** : `_bestTimes` (Dictionary) persisté dans la **section `[highscores]`** de `settings.cfg` (clé = biomeId → secondes max). API **`BestTime(biomeId)`** / **`RecordTime(biomeId, secs)`** (garde le max, retourne true si nouveau record). Rétro-compatible (section absente = défauts). Vérifié : `RecordTime(207)` puis `(100)` → `BestTime=207` + persisté.
-  - **`RunStatsTracker.EndRun`** enregistre le temps survécu (`RecordTime`) à **toute** fin et transmet `bestTime`/`newRecord`/`LevelCompleted` à l'écran de fin (signature `OpenEndScreen` étendue).
-  - **`RunEndScreen`** : titre **« NIVEAU TERMINÉ »** (couleur victoire) si le boss a été battu, sinon **« MORT EN SERVICE »** ; nouvelle **ligne « Survie : mm:ss • Record : mm:ss [★ NOUVEAU RECORD !] »** sous le titre (or si record). Champs `Pending*` ajoutés.
-  - **`LevelSelectScreen`** : chaque carte jouée affiche **« ⏱ mm:ss »** (record) à côté du nom/badge. Clés `RUNEND_LEVEL_DONE/SURVIVED/BEST/NEW_RECORD` (EN/FR/ES). Build 0 erreur/0 warning, 59/59 tests (save utilisateur sauvegardée+restaurée pour les tests).
-- Phase précédente : **Refonte fin de niveau — Étape 3/6 : complétion sans arrêt + fin à la mort + boss en boucle — 2026-06-30**.
-  - **Battre le boss ≠ fin de run** : `RustedCore.FinishDeath` n'appelle plus `EndRun("extraction_success")` mais **`RunStatsTracker.OnLevelBossDefeated()`** → marque **`LevelCompleted`** (une fois) + `RecordCompletion(biome)` (débloque le niveau suivant) + bannière **« NIVEAU TERMINÉ »** + SFX. La run **continue** (survie sans fin). La run se termine **à la mort** (`EndRun("death")`, inchangé). L'ancien chemin `extraction_success` dans `EndRun` est désormais mort (conservé, inoffensif).
-  - **Boss en boucle (overtime)** : `EnemySpawner` exclut **`rusted_core` de l'ambiant** (`BossIds`) ; il n'apparaît plus qu'en overtime via **`SpawnOvertimeBoss`** (1er ≈ 4 s après le décompte 0 = « le boss arrive à la fin du temps imparti », puis intervalle `max(28, 50−otMin×2)`, bypass du cap). S'ajoute aux mini-boss d'élite de l'Étape 2.
-  - **Bannière** : nouveau **`src/UI/Banner.cs`** (CanvasLayer transitoire auto-libéré, fade in/hold/out) — affiche **« OVERTIME »** (rouge, au décompte 0, une fois) et **« NIVEAU TERMINÉ »** (or). Clés `OVERTIME`/`LEVEL_COMPLETE` (EN/FR/ES). Build 0 erreur/0 warning, 59/59 tests, vérifié headless (A : overtime + boss spawn, pas de fin au timer ; B : mort→EndRun("death") ; B2 boss fragile : kill → LEVEL COMPLETE + **RunEnded=False** + aucune fin de run).
-- Phase précédente : **Refonte fin de niveau — Étape 2/6 : escalade « overtime » — 2026-06-30**.
-  - **Alignement timer/boss** : `runDurationSeconds` **900→780** (`meta_upgrades.json`) → le décompte HUD atteint 0 **pile à l'arrivée du boss** (`rusted_core`, 13 min) = « fin du temps imparti ».
-  - **`RunStatsTracker.Overtime`** (`= !RunEnded && ElapsedSeconds ≥ runDurationSeconds`) + **`OvertimeSeconds`**. La run **ne se termine toujours pas** au timer (le `_Process` ne fait qu'incrémenter ; la fin = boss en Étape 3 actuelle, mort sinon).
-  - **`EnemySpawner` escalade overtime** : en overtime, **`tEff = tMinutes + otMin×4`** (chaque minute d'overtime ≈ +4 min de scaling → cap/cadence/PV/dégâts grimpent très vite, cap dur **300** maintenu), **vagues resserrées** (`waveReset = max(8, 18 − otMin×2)` au lieu de 25 s), et **mini-boss d'élite en boucle** (`SpawnOvertimeElite`, intervalle `max(5, 14 − otMin×1.5)`) **bypassant le cap simultané** (nouveau param `SpawnEnemy(..., ignoreMaxSimultaneous)`). Élites = grafted_colossus/rust_stalker/master_sentinel/aether_revenant filtrés par biome (le boss `rusted_core` reste géré à part — boucle de boss en Étape 3). Build 0 erreur/0 warning, 59/59 tests, vérifié headless (élites overtime spawnés, 0 exception ; durée réduite temporairement pour le test puis restaurée).
-- Phase précédente : **Refonte fin de niveau — Étape 1/6 : déblocage progressif des niveaux — 2026-06-30**.
-  - **`GameSettings.LevelOrder`** = `{sanctuaire, aether, givre, fournaise, neon}` + **`IsUnlocked(biomeId)`** : 1er niveau (ou id inconnu) débloqué d'office, sinon débloqué si le **précédent est complété** (`HasCompletedAny`, dérivé des complétions déjà persistées — aucun nouveau stockage). Boss de fin de niveau battu = complétion (déjà enregistré via `RecordCompletion`).
-  - **`LevelSelectScreen`** : cartes **verrouillées grisées** (`panel.Modulate α=0.45`, bordure `Dim`, badge **« VERROUILLÉ »**, bouton « 🔒 » désactivé **exclu de la chaîne de focus**) ; seules les débloquées sont sélectionnables/présélectionnables. **« Aléatoire »** (`StartRandomUnlocked`) ne tire que parmi les biomes débloqués. Clé `LEVELSEL_LOCKED` (EN/FR/ES). Build 0 erreur/0 warning, 59/59 tests, vérifié (save vierge → seul Sanctuaire jouable, 4 autres LOCKED ; save utilisateur sauvegardée+restaurée à l'identique).
-- Phase précédente : **Expansion Phase 5 (lot 1/n) — mid-boss variant par biome — 2026-06-30**. (cf. `docs/EXPANSION_PLAN.md`)
-  - **Mid-boss par biome (data-only, via le socle Phase 1)** : tags `biomes` posés dans `enemies.json` — `aether_revenant` → **["aether","neon"]** (spectre d'énergie), `grafted_colossus` → **["sanctuaire","fournaise","givre"]** (bruiser). `rust_stalker`/`master_sentinel`/`rusted_core` (final) restent **globaux** + ennemis de base globaux. Résultat : Aether/Néon affrontent le Revenant spectral, Sanctuaire/Fournaise/Givre le Colosse — la rencontre de mi-temps **varie selon le biome**, sans nouveau code/sprite (filtre `EnemySpawner` déjà testé Phase 1). Smoke OK. **Lots suivants** : ennemis thématisés dédiés + boss biome avec sprites générés (nécessitent de rendre `MasterSentinel`/sprites tintables ou de générer de nouveaux SpriteFrames).
-- Phase précédente : **Expansion Phase 4 — power-ups temporaires ramassables — 2026-06-30**.
-  - **4 buffs à durée limitée (aucun power-creep permanent)** — registre `src/Systems/PowerUp.cs` (enum `PowerUpType` + table `PowerUps.All` : couleur, durée, magnitude, clé de nom) : **Surcadence** (Overclock, cadence ×1.6), **Furie** (Berserk, +0.6 mult. dégâts), **Égide** (Aegis, invulnérabilité 6 s), **Célérité** (Celerity, vitesse ×1.4).
-  - **Intégration `Player`** : `ApplyPowerUp(type, durée)` (rafraîchit la durée) + `StartBuff`/`EndBuff`/`UpdateBuffs` (tick dans `_PhysicsProcess`). Effets via les points adaptés : Overclock = **`WeaponBase.FireRateMultiplier`** statique lu dans `_Process` (`_timer -= delta × mult`, **reset à 1 dans `Player._Ready`** car statique) ; Berserk = `Stats.DamageMultiplier += m` + **`RefreshWeaponDamages()`** (et inverse à la fin) ; Célérité = `Player.SpeedMultiplier` (mouvement `× SpeedMultiplier`) ; Égide = `Player.Shielded` (court-circuite `TakeDamage`, flash doré).
-  - **`PowerUpPickup`** (`src/Entities/`, Area2D `layer=4`/`mask=1` comme l'aimant) : orbe hexagonal coloré + anneau tournant + halo pulsant ; au contact applique le buff. **`PowerUpSpawner`** (Node `Game.tscn`, modèle `MagnetSpawner`) : **max 4/run**, type aléatoire, fenêtres 90-180 / 240-360 / 420-540 / 600-700 s ; respecte `RunEnded`.
-  - **HUD `BuffBar`** (`src/UI/`, CanvasLayer layer 96) : une puce par buff actif (bordure couleur + nom localisé + **barre de décompte** qui se vide), sous le cluster haut-gauche. Clés `POWERUP_*` (EN/FR/ES). Build 0 erreur/0 warning, 59/59 tests, vérifié en jeu (chips Overclock+Celerity rendus, effets actifs, 0 exception).
-- Phase précédente : **Expansion Phase 3 COMPLÈTE (5/5 armes) — Singularité (puits gravitationnel epic) — 2026-06-30**.
-  - **Singularité (`singularity`, epic)** : `Singularity` déploie un `GravityWell` sur l'ennemi le plus proche (cooldown long 6→4 s). Le puits, pendant sa durée (2,2→3 s) : **aspire** les ennemis du rayon vers son centre (déplace `e.GlobalPosition` vers le centre, en plus de leur IA, sans dépasser `InnerRadius`) et inflige des **dégâts par tick** (`TickInterval`). **Rayon plafonné `MaxRadius=200`** (anti-trivialisation epic). VFX vortex (100% `_Draw`/nœuds, pas de shader écran) : cœur sombre + **3 bras spiralés violets en rotation** (Line2D dégradés, conteneur "Swirl" tourné dans `_Process`) + anneau d'horizon + **particules aspirées** (`GpuParticles2D` émission Ring + `OrbitVelocity` tourbillon + `RadialVelocity` négatif = vers le centre) + lumière pulsante. Apparition scale-up (Back), disparition fondue. Câblage 8 points complet (icône `ui_icon_singularity` vortex spiralé, clés `WPN_SINGULARITY_*` EN/FR/ES). Build 0 erreur/0 warning, 59/59 tests, VFX vérifié en jeu (spirale + ennemis regroupés au centre).
-  - **Bilan Phase 3** : arsenal porté de 6 à **11 armes actives** (+ glaive, seeker_swarm, cryo_lance, pyre_stream, singularity). Infra statut `EnemyBase` (slow/burn, plafonds `Rules/CrowdControlCaps` testés). Helper partagé `WeaponBase.AcquireNearestEnemies`.
-- Phase précédente : **Expansion Phase 3 (lot 2/3) — armes à statut : Lance Cryo (slow) + Jet de Pyre (DoT) — 2026-06-30**.
-  - **Infra effets de statut sur `EnemyBase`** (plafonnée, testée) : `ApplySlow(mult, durée)` (garde le slow le plus fort + durée la plus longue) et `ApplyBurn(dps, durée)` (DoT non-stackable = max dps/durée). Appliqués dans un nouveau `UpdateStatusEffects(dt)` au début de `_PhysicsProcess` : capture la **vitesse de base** à la 1re frame (`_baseSpeed`, après scaling+biome) puis `Speed = _baseSpeed × _slowMult` (les sous-classes lisent `Speed` → ralenties sans modif) ; la brûlure tick toutes les 0,33 s via `TakeDamage` (feedback `HitFlash`). Plafonds purs **`src/Core/Rules/CrowdControlCaps`** : slow min **0,60 (-40 % max)**, DoT **≤ 60 dps** — **+8 tests** (→ 59 verts).
-  - **Lance Cryo (`cryo_lance`, rare)** : `CryoLance` rayon **hitscan** vers l'ennemi le plus proche, touche tous les ennemis dans la bande `[0,Range]×±largeur` (dot/perp), dégâts + `ApplySlow`. VFX `CryoBeam` : faisceau glacé (Line2D halo cyan + cœur blanc) qui s'efface en 0,18 s + éclats de givre GpuParticles + lumière.
-  - **Jet de Pyre (`pyre_stream`, rare)** : `PyreStream` **cône** (angle/portée) vers l'ennemi le plus proche, faibles dégâts directs + `ApplyBurn`, cooldown court (0,5 s). VFX `PyreFlame` : cône de particules de flammes (jaune→rouge) one-shot + lueur ardente, auto-libéré par Timer.
-  - Câblage 8 points complet (weapons.json 5 niv. ×2, levelup_config, InventorySystem paths+specialized, AllWeaponIds, Codex+IconById, icônes `ui_icon_cryo`/`ui_icon_pyre`, clés `WPN_CRYO_LANCE_*`/`WPN_PYRE_STREAM_*` EN/FR/ES). **Piège** : nom de variable `ps` déjà pris dans le switch (case impulse `out var ps`) → renommé `pyr`. Build 0 erreur/0 warning, 59/59 tests, VFX vérifiés en jeu (flammes pyre visibles, cryo sans exception).
-- Phase précédente : **Expansion Phase 3 (lot 1/3) — 2 nouvelles armes : Lame Boomerang + Essaim Traqueur — 2026-06-30**. (cf. `docs/EXPANSION_PLAN.md`)
-  - **Lame Boomerang (`glaive`, common)** : `Glaive : WeaponBase` lance `GlaiveCount` glaives (1 → 3) vers les ennemis proches ; `GlaiveProjectile` (Area2D, collision **mirroir du Bullet** = Area2D défaut + BodyEntered) part en décélérant jusqu'à `Range` puis **revient au joueur**, touchant chaque cible **à l'aller ET au retour** (set `_hitThisPhase` vidé au demi-tour). VFX : losange cyan en rotation + contour clair + halo `PointLight2D`.
-  - **Essaim Traqueur (`seeker_swarm`, rare)** : `SeekerSwarm` lance `MissileCount` missiles (2 → 5) en éventail ; `SeekerMissile` (Area2D) **s'incurve vers l'ennemi le plus proche** (`_dir.Lerp(desired, TurnRate·dt)`, re-cible si la proie meurt), explose au contact (bloom violet via `Timer` enfant auto-libérateur — pas de tween hors-arbre). VFX : ogive violette + traînée `GpuParticles2D` + halo.
-  - Helpers de ciblage partagés ajoutés à `WeaponBase` : **`AcquireNearestEnemies(count)`** (nom distinct des helpers privés historiques d'ImpulseCannon/ScatterVolley/RailOvercharged → évite CS0108, **0 warning**).
-  - **Câblage complet (checklist 8 points)** : `weapons.json` (5 niveaux ×2), `levelup_config.json` rarityByCard, `InventorySystem` WeaponScenePaths + `ApplySpecializedStats` (glaiveCount/range, missileCount/projectileSpeed), **`LevelUpSystem.AllWeaponIds`**, `Codex.Weapons` + `IconById`, icônes `ui_icon_glaive`/`ui_icon_seeker` (générées via `tools/generate_weapon_icons.py`), clés `WPN_GLAIVE_*`/`WPN_SEEKER_SWARM_*` (EN/FR/ES). **Équilibrage** calé sur l'arsenal existant (glaive 2 hits ~= un tir ; seeker homing = DPS un cran sous scatter). Build 0 erreur/0 warning, 51/51 tests, VFX vérifiés en jeu (glaives cyan tournoyants + missiles violets à halo, 0 exception).
-- Phase précédente : **Expansion Phase 2 — refonte visuelle des arènes (brume + rais de lumière + poussière parallaxe) — 2026-06-29**. (cf. `docs/EXPANSION_PLAN.md`)
-  - Nouveau nœud **`src/Systems/BiomeAtmosphere.cs`** (Node2D), construit par `GroundRenderer.AddAtmosphere()` avec l'accent + l'id du biome courant. Trois couches, **thématisées par biome** (table `ConfigFor` : force brume/rais, couleur, angle), rendues **au-dessus du sol (z=-7) mais sous les entités (z=0)** → atmosphère traversée sans nuire à la lisibilité :
-    - **Brume** : `assets/shaders/fog.gdshader` (canvas_item, fbm 4 octaves animé par TIME, teinte par biome), Polygon2D plein arène z=-6.
-    - **Rais de lumière / god-rays** : `assets/shaders/light_shafts.gdshader` (`render_mode blend_add` → additif, bandes diagonales `pow(sin)` animées + pulse), teinté à l'accent, z=-5.
-    - **Poussière en parallaxe** : 2 couches `GpuParticles2D` (lointaine/proche) décalées chaque frame par `Position = cam × (1 - facteur)` (facteur 0.55 lointain / 1.35 proche) → vraie parallaxe multi-couches.
-  - **Parallaxe des shaders** : `_Process` pousse `cam_offset` (= `Camera2D.GetScreenCenterPosition()`, pattern `VignetteFollow`) dans les uniforms ; les shaders échantillonnent à `FRAGCOORD + cam_offset × parallax` (parallax < 1 → brume/rais « derrière » le sol). Réglages par biome : Néon = rais magenta dramatiques (shaft 0.32), Sanctuaire = glow cyan discret (0.09), Fournaise chaude, Givre brumeux. Perf : 2 shaders plein écran (fbm léger) + 42 particules — négligeable. Build 0 erreur, 51/51 tests, vérifié par captures (néon dramatique / sanctuaire subtil, lisibilité OK).
-- Phase précédente : **Expansion Phase 1 — socle biome-aware + biome « Secteur Néon » — 2026-06-29**. (cf. `docs/EXPANSION_PLAN.md`)
-  - **Spawn biome-aware (fondation)** : `EnemySpawnData` gagne un champ **`Biomes`** (string[], vide = tous biomes) + `IsAllowedInBiome(biomeId)`. `EnemySpawner` parse le champ optionnel **`biomes`** d'`enemies.json` et `GetAvailableEnemies` filtre désormais par `GameManager.CurrentBiomeId` (en plus de `spawnStartMinute`). **Rétro-compatible** : les ennemis actuels n'ont pas de `biomes` → spawnent partout (aucun changement de comportement). Prêt pour les ennemis/boss spécifiques au biome (Phase 5).
-  - **5ᵉ biome « Secteur Néon »** (`neon`) : secteur de données overclocké. **Effet risk/reward via leviers existants** (zéro nouvelle plomberie) : `EnemySpeedMult=1.10` + `XpMult=1.15` (ennemis +10 % rapides MAIS +15 % XP). Accent magenta `(0.95,0.30,0.85)`. Tuiles dédiées générées par `tools/generate_biome_tiles.py` (palette `neon` ajoutée : base quasi-noire bleutée + **grille néon magenta/cyan** ; floor_02 a des lignes lumineuses `acc` au lieu de joints sombres pour les biomes néon) dans `assets/sprites/tileset/biomes/neon/` (PNG + `.import` commités, leçon BUG-301). `BiomeDef` ajouté à `GroundRenderer.Biomes` + entrée `BiomeCatalog` (preview = `neon/floor_02.png`) → carte auto-ajoutée au `LevelSelectScreen`. Clés `BIOME_NEON_NAME/EFFECT/DESC` (EN/FR/ES) dans `ui.csv`. Build 0 erreur, 51/51 tests, vérifié par captures (LevelSelect 5 biomes + arène néon magenta).
-  - **Fix nav `LevelSelectScreen`** : avec 5 biomes la liste déborde le `ScrollContainer` ; la nav clavier/manette ne défilait pas et le focus sautait de la dernière carte visible directement à Random/Back (carte Néon inatteignable). Corrigé comme `HubScreen` : **chaîne de focus explicite** (`SetupFocusChain` : carte[i].FocusNeighborTop/Bottom câblés carte→carte→Random/Back, le focus spatial ne traverse pas les `PanelContainer`) + **auto-scroll** (`play.FocusEntered → ScrollContainer.EnsureControlVisible(play)`). Vérifié au clavier (4× Bas → carte Néon focus + visible).
-- Phase précédente : **Pause à la manette (Start) + durcissement mid/end & boss — 2026-06-29**.
-  - **Pause au bouton Start** : nouvelle action d'entrée **`pause`** créée au boot dans `GameManager.EnsureGamepadUiBindings()` = **Échap (clavier) + Joypad Button 6 (Start)** (via `InputMap.AddAction`/`ActionAddEvent`, idempotent, pas de section `[input]`). `HUD._UnhandledInput` ouvre la pause sur `pause` (au lieu de `ui_cancel`) ; `PauseScreen` ferme sur `ui_cancel` **ou** `pause` → Start fait bascule ouvrir/fermer (Échap et B ferment aussi). Vérifié par dump InputMap.
-  - **Durcissement mid/end game** (le jeu manquait de challenge en mid/end) — leviers **temporels** (n'impactent pas l'early où `t×perMinute` est petit) :
-    - `enemies.json` **`hpScalingPerMinute`** relevé sur tous les ennemis (~+60 %) : rust_swarm 0.08→0.14, drone 0.07→0.13, sentinelle 0.10→0.16, colosse 0.12→0.20, rôdeur 0.10→0.18, sentinelle maîtresse 0.12→0.20, revenant 0.10→0.16 → ennemis tardifs bien plus coriaces (l'écran reste menaçant, plus d'instaclear).
-    - **`damageScalingPerMinute`** relevé (~+50 %) : les coups tardifs piquent plus (i-frames 0.45 s gardent le cap de fréquence).
-    - **Densité** (`SpawnCurve`) : pente du cap `12+t·30`→`12+t·36` (écran plein plus tôt) et vague périodique `12+t·4`→`12+t·6`. Valeurs à t=0 inchangées → 51/51 tests OK.
-  - **Boss final plus imposant et coriace** (`rusted_core`) : `maxHp` **12000→18000**, `hpScalingPerMinute` **0.05→0.06** → **PV effectifs ~32 000 à 13 min en Normal** (~41 650 en Difficile), TTK cible ~35-45 s. Dégâts proj. **26→34**, scaling dégâts 0.06→0.08. Visuel : `RustedCore._sprite.Scale` **1.8→2.4** (boss massif), `ContactRadius` 44→56. Attaques : salve **12→16** projectiles, cadence **2.5→2.0 s**, vitesse projectiles 170→210, secousse d'entrée 10→14. Smoke `--debug-boss` 0 exception. **Remplace le tuning « validé » du 2026-06-28** (cf. [[boss-tuning-insights]] : le mid/end était trop facile).
-- Phase précédente : **Support manette : validation/annulation — 2026-06-29**.
-  - **Symptôme** : à la manette on navigue dans les menus mais les boutons « ne font rien ». **Cause** : la map d'entrées par défaut de Godot 4.7 lie les **directions** UI à la manette (`ui_up`/`ui_down`/… = d-pad + stick gauche) mais **PAS** `ui_accept`/`ui_cancel` (uniquement clavier Enter/Espace/Échap) — diagnostiqué via `InputMap.ActionGetEvents`. Le `BaseButton` focalisé n'était donc jamais déclenché au bouton A.
-  - **Fix** : `GameManager.EnsureGamepadUiBindings()` (appelé dans `_Ready` de l'autoload) ajoute en code les boutons manette manquants — `ui_accept`→**A (0)**, `ui_cancel`→**B (1)**, `ui_focus_next`→RB, `ui_focus_prev`→LB — via `InputMap.ActionAddEvent`, **sans toucher aux bindings clavier** et **idempotent** (ne duplique pas si déjà présent). Pas de section `[input]` dans `project.godot` → on garde les défauts et on complète au runtime. Vérifié : `ui_accept` = Enter/KpEnter/Space + Joypad Button 0 ; `ui_cancel` = Escape + Joypad Button 1.
-- Phase précédente : **3 améliorations UX/VFX — 2026-06-29**.
-  - **Intro skippable au clic souris** : `IntroScreen` gérait déjà le clic dans `_UnhandledInput`, mais la **racine `Control` était en `MouseFilter=Stop`** (défaut) → elle captait le clic comme événement GUI, qui n'atteignait jamais `_UnhandledInput` (seul le clavier passait). Fix : `MouseFilter = Ignore` sur la racine → le clic retombe dans `_UnhandledInput`. Leçon : un écran « plein écran qui attend n'importe quelle entrée » doit mettre sa racine en `MouseFilter=Ignore` (ou gérer dans `_Input`).
-  - **Présélection du 1er niveau** : `LevelSelectScreen` faisait `back.GrabFocus()` (focus sur « Retour »). Champ `_firstPlay` capté sur le 1er biome construit (`_firstPlay ??= play` dans `BuildCard`) → `GrabFocus()` sur lui (fallback « Retour » si aucun biome).
-  - **Refonte VFX Lame Plasma** : l'ancien `PlasmaArcFlash` était un nuage de `GpuParticles2D` (QuadMesh carrés scalés ×3.5-7) perçu comme un « rectangle clignotant ». Remplacé par un **croissant d'énergie tracé en `_Draw`** (`DrawArc` band cyan + bord blanc franc « fil de lame » + tranche lumineuse qui balaie l'arc), gonfle+s'efface en 0,22 s, flash `PointLight2D` modéré pour ne pas noyer le tracé. `PlasmaArcFlash.ArcRadiusPx/ArcAngleDeg` posés par `PlasmaBlade.SpawnArcFlash` → le croissant épouse l'arc réel et pointe vers l'ennemi visé (cf. fix visée). Validé par capture isolée (scène de dev jetable).
-- Phase précédente : **Fix Vagabond « arme de base sans dégât » — 2026-06-29**.
-  - **Cause** : la `PlasmaBlade` (arme de signature du Vagabond, mêlée 80 px) orientait son arc 180° vers la **direction de déplacement** (`_attackDir = player.Velocity`). Le Vagabond étant un kiteur rapide (245 vit.), kiter = fuir → l'arc pointe vers le **vide devant** et **fait dos aux poursuivants** → ne touche jamais → « aucun dégât ». Fix : `PlasmaBlade.Attack` calcule désormais l'**ennemi le plus proche** et centre l'arc dessus (comportement d'arme de mêlée survivor) ; tant qu'un ennemi est dans `ArcRadius`, il est touché (vérifié headless : 0 raté quand une cible est en portée, contre des ratés systématiques avant). `_Process` ne sert plus qu'au visuel par défaut.
-  - **Bug secondaire (dégâts)** : l'arme de départ (Vagabond `plasma_blade`, Titan `drone_swarm`, et le canon de Chimera) était instanciée dans `GameManager.RegisterPlayer` **avant** `ApplyMetaBonusesToStats` → le multiplicateur de dégâts méta (×1.5 max) n'était jamais appliqué (Damage restait à la valeur de base). Fix : `InventorySystem.RefreshWeaponDamages()` (passée **public**) ré-appliquée après les bonus méta dans `RegisterPlayer` → l'arme de départ bénéficie du bonus de dégâts du Hub (vérifié : plasma 18 → **27**). Build 0 erreur, 51/51 tests, validé headless en Vagabond.
-- Phase précédente : **Localisation EN/FR/ES + reroll/skip + choix du personnage + rééquilibrage boss — 2026-06-28**.
-  - **Localisation EN / FR / ES** (anglais par défaut, FR conservé, ES ajouté) : via le `TranslationServer` de Godot. `localization/ui.csv` (clés `keys,en,fr,es`) → `.translation`, enregistré dans `project.godot` `[internationalization]` (fallback `en`). Helper **`Loc.T(clé[, args])`** (`src/Systems/Loc.cs`). **`GameSettings.Language`** (défaut `en`) persisté dans `settings.cfg` `[display] language`, appliqué au boot (`TranslationServer.SetLocale`). **Sélecteur de langue** EN/FR/ES en bas du **MainMenu** (ré-applique les libellés sans recharger) + dans **Options** (recharge l'écran). **Tout est traduit** : habillage UI de tous les écrans + contenu data/lore — le `Codex` (ennemis/armes/passifs/fusions), `Characters`, `BiomeCatalog`/`GroundRenderer` (biomes), `meta_upgrades` (améliorations), cartes de level-up et l'intro stockent désormais des **clés** routées par `Loc`. Pour ajouter une chaîne : nouvelle ligne dans `ui.csv` + `Loc.T("CLÉ")`. Pour une langue : nouvelle colonne. **Les `.translation` sont gitignorés** (`*.translation`) et régénérés depuis `ui.csv` + `ui.csv.import` (commités) au build/import.
-  - **Quitter la partie** : bouton « Quitter la partie » dans le `PauseScreen` → `MainMenu` (`GetTree().Paused=false` impératif + `ChangeSceneToFile` + `QueueFree`, le PauseScreen étant enfant de la racine).
-  - **Flux de lancement de run revu** : « Jouer » (MainMenu) mène désormais à un **nouvel écran `CharacterSelectScreen`** (cartes avec **image = frame idle du SpriteFrames**, nom/tag, stats, description, bouton « Choisir »), PUIS au `LevelSelectScreen`, puis à `Game`. Choisir un perso pose `GameManager.SelectedCharacterId` + arme de signature. `LevelSelectScreen` « Retour » revient au choix de perso. **Le Hub n'a plus de bouton « Jouer » ni de sélecteur de personnage** (déplacé) : il se limite aux améliorations + bouton « Réinitialiser » (remboursement total) + « Retour ». Flux : **Menu → Jouer → Perso → Niveau → Game**.
-  - **Améliorations Hub Reroll & Skip** (max 3 chacune) : consommables par run (`LevelUpSystem.RerollsLeft/SkipsLeft`, init dans `Reset()`). Boutons « Renouveler (N) » / « Passer (N) » sur le `LevelUpScreen` (focus clavier câblé via `SetupActionFocus`). Reroll régénère les cartes ; skip vide la file de level-ups.
-  - **Retrait du `starting_xp`** (« +60 XP de départ ») de `meta_upgrades.json`/`texts.json`/code — supprime aussi le LevelUpScreen parasite au lancement (la pause headless).
-  - **Ennemis bloqués par les obstacles** : obstacles sur `collision_layer 3` (bits 1+2), `EnemyBase.CollisionMask` 0→2 (bloqués par obstacles, traversent toujours les murs).
-  - **Rééquilibrage boss final** (`game-designer`, GDD §20) : Le Noyau Rouillé fondait en 3,5-8,6 s (anticlimax — le DPS n'est jamais le gate, la survie l'est, et le kiting effondre le DPS effectif). `enemies.json` `rusted_core` : `maxHp` **1600→12000**, `hpScalingPerMinute` **0,12→0,05**, `damagePerProjectile` 28→26, `damageScalingPerMinute` 0,08→0,06. **PV effectif à 13 min = `12000 × (1 + 13×0,05) × diff` ≈ 19 800 en Normal** (15 840 Facile / 25 740 Difficile) → TTK ~28 s pour un build niveau 10. Validé : on garde ce tuning.
-  - **Hook debug `--debug-boss`** (`src/Core/DebugHooks.cs`, détecté via `OS.GetCmdlineArgs/UserArgs`) : équipe un loadout de référence (5 armes niv.10 + `thermal_core` ×1.45) et spawn le boss **isolé** immédiatement (`EnemySpawner.AmbientEnabled=false` coupe le spawn ambiant ; `DebugSpawnById` réutilise `SpawnEnemy`+scaling). Tout gardé derrière le flag, aucun effet sinon. Lancer : `…Godot… res://scenes/Game.tscn -- --debug-boss`. Outil de mesure TTK : `tools/boss_ttk_test.py`.
-  - **Aimant aspirateur d'XP** : nouvel item `MagnetPickup` (`src/Entities/MagnetPickup.cs` + `scenes/entities/Magnet.tscn`, fer à cheval gris+pointes rouges, halo cyan, `collision_layer=4`/`mask=1` comme XpOrb). Au contact joueur, met `ForceMagnet=true` sur toutes les `XpOrb` du groupe `xp_orbs` → attraction à toute distance (~2,5× la vitesse normale). **Pas un drop** : item à **apparition programmée** via `MagnetSpawner` (Node dans `Game.tscn`, modèle `AetherCoreSpawner`) : **max 3/run** à positions aléatoires (≥150 px des murs), fenêtres 120-300 s / 360-600 s / **700-760 s (proche de la fin, ~arrivée du boss)** ; respecte `RunEnded`.
-  - **Suppression Nova d'Aether** : `aether_nova` retirée partout (`weapons.json`, `levelup_config.json`, `InventorySystem` WeaponScenePaths+case, `LevelUpSystem.AllWeaponIds`, `Codex`), fichiers `AetherNova.cs`/`.tscn`/`ui_icon_nova.png` supprimés. Arsenal actif = **6 armes**.
-  - **Retrait des hitstops de mort** (le ralenti `Engine.TimeScale=0.05` cassait le flow) sur Colosse Greffé + Revenant d'Aether + Sentinelle Maîtresse ; **conservé sur le boss final** (`RustedCore.FinishDeath`, ponctuation de victoire). Screen shake + VFX gardés.
-  - **Fix musique** : les WAV de musique sont importés `loop_mode=0` (Godot 4.7 réinitialise `loop_end=-1`) → la piste s'arrêtait. Rebouclage **en code** via le signal `AudioSystem._musicPlayer.Finished` (`OnMusicFinished`) ; `Stop()`/fondu sortant n'émet pas `Finished` → pas d'interférence. Corrige menu + hub + 3 musiques de run.
-  - **Page de store itch.io** : `docs/ITCH_STORE_PAGE.md` (FR, prête à copier-coller, aucune feature inventée).
-  - **Leçons de test (mémoire `headless-testing-gotchas`)** : (1) le `LevelUpScreen` de l'XP de départ **met l'arbre EN PAUSE** → en headless ça **gèle le serveur physique**, invalidant silencieusement tout test de pickup/gameplay (neutraliser `GetStartingXp` pour tester). (2) Un `Area2D` ne détecte un corps **que via un vrai mouvement physique** (`MoveAndSlide` / `_PhysicsProcess`) — pas un téléport ni un `Tween`. (3) Le bot kite `screenshot_swarm.py` ne valide pas les pickups non-magnétisés (joueur quasi-stationnaire). Build 0 erreur, aimant vérifié en headless (joueur piloté `Input.ActionPress("ui_right")` sur aimant statique → `body_entered`), spawner vérifié (3 apparitions ordonnées).
-- Phase précédente : **Victoire par boss final + badge de complétion par biome — 2026-06-28**. La run ne se gagne plus par auto-victoire au timer mais en **vainquant le boss final `rusted_core`** : `RunStatsTracker._Process` ne termine plus la run au `runDurationSeconds` (le timer = simple décompte avant l'arrivée du boss à ~13 min). `RustedCore.FinishDeath()` déclenche `RunStatsTracker.Instance?.EndRun("extraction_success")` après un délai de 1,4 s (`GetTree().CreateTimer(1.4f, processAlways:true)`, le temps de voir l'explosion). **Retiré du kill du boss** : `ShowWeaponDrop(3)` ET `SpawnXpOrb()` (la run se termine — l'orbe de 500 XP risquait d'ouvrir un `LevelUpScreen` parasite, cf. OBS-2 game-tester). **Badge de complétion** : `GameSettings.RecordCompletion(biomeId, difficulté)` / `HasCompleted` / `HasCompletedAny`, persistés dans `user://settings.cfg` (section `progress`, clé `completions` = `PackedStringArray` de `"biomeId:difficulté"`). `GameManager.CurrentBiomeId` (posé par `GroundRenderer`) identifie le biome joué même tiré au sort ; `EndRun("extraction_success")` enregistre la complétion. `LevelSelectScreen` affiche un badge doré **« VAINCU »** sur les biomes déjà battus (`HasCompletedAny`). `enemies.json` `onDeath` du boss alignée (`endsRunVictory`, plus de `weaponChoiceScreens`). Texte ASCII (« VAINCU », pas de glyphe ✓ — leçon police). Build 0 erreur, **validé game-tester 5/5 PASS** (pas d'auto-victoire, victoire boss → « EXTRACTION REUSSIE », badge présent + persistant après redémarrage, non-régression mort → « MORT EN SERVICE »).
-- Phase précédente : **Refonte HUD thématisé par biome — 2026-06-27**. `HUD.cs` reconstruit **100% en code** (HUD.tscn = root CanvasLayer minimal, plus de nœuds bracket/frame). Look minimal façon Cyberpunk 2077 : cluster haut-gauche (panneau arrondi + liseré d'accent, LV + barre PV arrondie + barre XP fine), timer haut-centre (souligné accent), Noyaux haut-droite (icône + compteur), notifs bas-centre. **Thématisé par biome** : `GameManager.BiomeAccent` (posé par `GroundRenderer`, lu par `HUD.ApplyBiomeTheme` en `CallDeferred`) colore liseré/LV/XP/souligné timer/noyaux. PV gardent leur sémantique fixe (vert/orange/rouge) pour la lisibilité. Barres = `Panel`+`StyleBoxFlat` arrondis (fill `Size.X`=ratio, couleur via stylebox). API publique inchangée (notifs). **Animations discrètes** (2026-06-27) : liseré d'accent qui respire (alpha, boucle 2 s), souligné du timer qui pulse, barre XP qui se remplit en douceur (lerp, snap au reset de niveau), icône Noyau qui « pop » (scale Back) à chaque ramassage ; level-up flash conservé. Build 0 erreur, vérifié (cyan en Givre, orange en Fournaise).
-- Style poussé (2026-06-27) : **overlay scanlines CRT** (`assets/shaders/scanlines.gdshader`, ColorRect plein écran sous les widgets HUD, strength 0.06 + léger vignettage), **bandeau de loadout** (icônes des armes équipées + niveau, `RefreshLoadout`/`MakeChip`, rafraîchi sur changement de nombre d'armes et sur notif), **chip de biome** persistant (nom + effet, sous le timer, `GameManager.BiomeName/BiomeEffect` posés par GroundRenderer). Tout thématisé par accent. Vérifié par captures.
-- Phase précédente : **Écran de sélection de niveau (biome) — 2026-06-27**. « Jouer » (menu principal) mène désormais à `LevelSelectScreen` : 4 cartes biome (aperçu tuile en damier `StretchMode.Tile` + bordure d'accent, nom, effet, description) + boutons **Aléatoire** et **Retour**. Sélectionner force le biome via `GameManager.SelectedBiomeId` (lu par `GroundRenderer` ; null = aléatoire). Registre UI `src/UI/BiomeCatalog.cs` (parallèle aux `BiomeDef` de GroundRenderer, lié par `Id` : sanctuaire/aether/fournaise/givre). UI en code. Build 0 erreur, validé par capture (4 cartes + previews colorés).
-- Phase précédente : **Équilibrage + difficulté — 2026-06-27**. Playtest : le jeu était trop dense tôt. Courbe de spawn assouplie (Normal) : `maxEnemies` `16+t·38`→`12+t·30`, vagues `16+t·5`→`12+t·4` (vérifié : arène bien plus respirable à ~65 s). **Sélecteur de difficulté** (Facile/Normal/Difficile) dans Options, persisté via `GameSettings.Difficulty`. Multiplicateurs lus par `EnemySpawner` : `EnemyDamageMult` (0.6/1/1.35), `EnemyHpMult` (0.8/1/1.3), `SpawnMult` (0.7/1/1.25) appliqués au cap, aux vagues, et au scaling HP/dégâts. Build 0 erreur, validé par captures (avant/après + écran Options).
-- Phase précédente : **Menu Options — 2026-06-27**. Nouvel écran `OptionsScreen` (UI en code) accessible depuis le menu principal (6ᵉ bouton « Options ») : sliders Volume général / Musique / SFX, toggles Plein écran et Secousses écran. Autoload **`GameSettings`** (`src/Systems/GameSettings.cs`) persiste dans `user://settings.cfg` (ConfigFile) et applique au démarrage : volume bus Master (`AudioServer`), `AudioSystem.MusicVolume/SfxVolume`, `DisplayServer` fullscreen, `ScreenShake.Enabled` (nouveau flag static gardant `Shake()`). MainMenu : VBox élargi (offsets 222→655), bouton Options câblé (style/hover/disable). Build 0 erreur, validé par captures (les 2 écrans).
-- Phase précédente : **Limite 5 armes + niveaux 20 + cadre anti-liseré — 2026-06-27**. (1) **5 armes max** : `InventorySystem.EquippedWeaponCount`/`MaxEquippedWeapons=5` ; `LevelUpSystem` ne propose plus de NOUVELLE arme (lvl 0) si l'inventaire est plein (les upgrades restent proposés). (2) **Plus de cap de niveau joueur** (`XpSystem.MaxLevel` 30→9999, la formule `XpThreshold` régule) + **armes/passifs jusqu'au niveau 20** (`weapons.json` maxLevel 5/3→20). Les niveaux au-delà des données définies (5 armes / 3 passifs) sont **extrapolés** : `ApplyWeaponStats` scale les dégâts (+10%/niveau, mécaniques plafonnées), `ApplyPassiveDelta` réapplique le dernier delta défini (plafonds DR 0.40/vitesse 380/cooldown min toujours actifs). (3) **Lignes blanches au bord** (seam de glow/bloom) : cadre noir 3px sur `PostFX` (4 `ColorRect` aux bords) — masque tout liseré de bord et empêche le glow de baver (bord du framebuffer = noir). Build 0 erreur, run 0 exception.
-- Phase précédente : **Bugfixes (scintillement de bord + XP de départ) — 2026-06-27**. (1) **Scintillement de bord** : les 4 émetteurs de particules ambiantes Aether (`Game.tscn`) étaient positionnés PILE sur les limites caméra (±960/±608) → quand la caméra se bloque contre un mur, les particules animées apparaissent au bord de l'écran = ligne qui scintille. `emitting=false` sur les 4 (+ backdrop opaque `AddBackdrop` ajouté avant, et fix shader aberration chromatique `repeat_disable`). (2) **XP de départ sans cartes** : l'XP « Mémoire Résiduelle » était ajoutée pendant `Player._Ready` (avant que `LevelUpScreen` ne s'abonne) ET 60 XP = plusieurs montées émises synchronement (écrans écrasés). Fix : `GameManager` défère l'XP de départ (`Callable.CallDeferred`) + `LevelUpScreen` a une **file** (`_queue`/`ShowNext`) qui présente chaque montée une par une (corrige aussi les gros gains d'XP type boss 500). Build 0 erreur, vérifié (écran de level-up au lancement).
-- Phase précédente : **Obstacles accordés au biome + bien plus visibles — 2026-06-27**. Les obstacles infranchissables (piliers, épaves, caisses, arches) ne sont plus des sprites pierre/métal sombres mais des formes procédurales **colorées à l'accent du biome** (`BiomeDef.Accent`) avec **corps teinté + contour lumineux vif + liseré haut clair + halo `PointLight2D`** → ils ressortent nettement sur n'importe quel sol. Helper `AddObstacleVisual(parent, halfW, halfH, offsetY, accent)`. Collisions inchangées. Sprites/consts d'obstacle + `TryLoadTexture` (devenus orphelins) supprimés. Accents : Sanctuaire cyan-teal, Aether violet, Fournaise orange, Givre bleu-glace. Build 0 erreur/warning, vérifié par captures (obstacles vifs et lisibles par biome).
-- Phase précédente : **Tuiles dédiées par biome — 2026-06-27**. Les 3 biomes non-neutres ont des tuiles 32×32 PROPRES (couleurs+motifs baked-in, plus juste un tint runtime) générées par `tools/generate_biome_tiles.py` : Friche d'Aether (violet, veines magenta), Fournaise (rouille-orange, fissures en fusion), Givre (bleu-glace). 5 tuiles/biome (3 sol + 2 mur) dans `assets/sprites/tileset/biomes/<biome>/`. Sanctuaire garde les tuiles d'origine (navy, boost Modulate >1.0). `BiomeDef.FloorTiles/WallTiles` + helpers `LoadTextures`/`PickTileIndex` (1re tuile dominante, variantes réparties — marche pour n'importe quel nombre). `.import` commités (leçon BUG-301). Build 0 erreur, vérifié par captures (3 biomes distincts).
-- Phase précédente : **Intro narrative skippable — 2026-06-27**. `IntroScreen` (scène de boot, `project.godot run/main_scene`) joue le lore en 5 temps (Convergence → Rouille Vivante → Sanctuaires/Noyaux → « ce sera toi »), fondu enchaîné, musique du menu, puis bascule sur MainMenu. **Skippable** : toute touche/clic/bouton manette → menu direct (indice affiché). UI construite en code (`src/UI/IntroScreen.cs`), scène = root Control. Validée par capture. **Validé aussi par le game-tester** (playtest 2026-06-27, verdict PASS sur les 8 features ; rapport dans `docs/TEST_REPORT.md`) — a remonté BUG-301 (`.import` titan/vagabond manquants, corrigé) et OBS-1 (le sélecteur d'arme méta écrasait l'arme de signature du perso — **tranché : le perso garde toujours son arme de signature**, sélecteur d'arme méta masqué).
-- Phase précédente : **Sprites dédiés par personnage — 2026-06-27**. Titan (robot acier trapu, visière+cœur orange) et Vagabond (humain encapuchonné, cape kaki, écharpe verte) ont chacun un SpriteFrames 32×32 dédié (anims idle/run_right/run_down/death, mêmes noms que le joueur d'origine) généré par `tools/generate_character_sprites.py`. `CharacterDef.FramesPath` + `Player.SetCharacterFrames()` (swap du SpriteFrames dans `RegisterPlayer`). La teinte du sprite est retirée (chaque sprite a ses couleurs) ; seule l'aura garde la couleur d'identité. Build 0 erreur, sprites vérifiés (idle agrandi + en jeu). Chimera garde `player_frames.tres`.
-- Phase précédente : **Effets de biome gameplay — 2026-06-27**. Les 4 biomes ont désormais un effet mécanique (plus juste cosmétique) : Friche d'Aether **+20% XP**, Fournaise **ennemis +18% vitesse**, Givre Cryogénique **ennemis −18% vitesse**, Sanctuaire neutre. `BiomeDef` porte `EnemySpeedMult`/`XpMult`/`EffectText` ; `GroundRenderer` pose `GameManager.BiomeEnemySpeedMult`/`BiomeXpMult` au début de run. Appliqués à point unique : `EnemySpawner` (×Speed après instanciation, couvre tous les types) et `XpSystem.AddXp` (×amount). Effet affiché dans l'annonce de biome. Build 0 erreur.
-- Phase précédente : **3ᵉ personnage (Vagabond) — 2026-06-27**. Complète la trilogie de lore (humain/cyborg/robot) : `vagabond` (Humain, 75 PV / 245 vit. / plasma_blade, aura verte) ajouté à `Characters.All`. Ajout purement données — aucun câblage supplémentaire (sélecteur Hub itère `Characters.All`, `GameManager` applique via `Characters.Get`). Build 0 erreur.
-- Phase précédente : **Biomes d'arène — 2026-06-27**. 4 biomes (`BiomeDef` dans `GroundRenderer`) tirés au sort par run : **Sanctuaire Rouillé** (navy d'origine), **Friche d'Aether** (violet), **Fournaise** (rouge-orange), **Givre Cryogénique** (cyan-vert froid). Chaque biome = teintes Modulate sol + murs + couleur de l'overlay sombre (teinte les PNG existants, 0 nouvel asset). Le **seed de layout est aussi randomisé par run** (`pick.Randomize()` → obstacles différents). Nom du biome annoncé en début de run (Label centré fade-in/out, CanvasLayer interne, sans couplage HUD). Build 0 erreur, variété validée par captures (arènes chaudes/froides distinctes).
-- Phase précédente : **2ᵉ personnage jouable — 2026-06-27**. Registre `src/UI/Characters.cs` (source unique, façon Codex) : **Chimera** (cyborg équilibré, 100 PV / 200 vit. / impulse_cannon, aura cyan) et **Titan-Gardien** (robot lourd, 150 PV / 160 vit. / drone_swarm, aura orange). `GameManager.SelectedCharacterId` applique stats de base + teinte AU DÉBUT de `RegisterPlayer` (avant les bonus méta qui s'ajoutent par-dessus). Teinte via `Player.ApplyCharacterVisual` = `_sprite.SelfModulate` (atténué 60% vers blanc, ne casse pas hit-flash/blink) + couleur d'aura (champ relu par `AddPlayerLight`, appelé APRÈS RegisterPlayer). Sélecteur de perso construit EN CODE dans `HubScreen` (au-dessus du sélecteur d'arme méta) ; le perso fixe l'arme de départ par défaut, le sélecteur d'arme méta peut la surcharger. Build 0 erreur, vérifié in-game (Titan = 190 PV = 150+40 méta, aura orange).
-- Phase précédente : **2 nouvelles fusions — 2026-06-27**. `orbital_swarm` (Essaim Orbital = drone_swarm niv.5 + servo_motors → 6 drones rapides, orbite large, sous-classe `DroneSwarm`) et `overload_aegis` (Égide de Surcharge = overload_field niv.5 + reinforced_plating → pulse massif + soin 2% PV/pulse, sous-classe `OverloadField`). Les 4 passifs débloquent désormais chacun exactement une fusion. Câblage complet (weapons.json fusions, `WeaponScenePaths`, `AllFusionIds`, `Codex.Weapons`+`IconById`, icônes `ui_icon_orbital`/`ui_icon_aegis` générées). Build 0 erreur, vérifié par capture Arsenal.
-- Phase précédente : **Cohérence des textes UI (source unique = Codex) — 2026-06-27**. Les cartes de level-up et les notifs HUD tiraient leurs noms de 3 sources divergentes (Codex accentué / `weapons.json` sans accents / tables `switch` d'`InventorySystem` avec d'AUTRES noms type « Canon Impulseur », « Condensateur »). Désormais `Codex.DisplayName(id)` = source unique de noms, utilisée par `LevelUpSystem` ET `InventorySystem` (tables `switch` supprimées). Accents corrigés dans toutes les descriptions de `weapons.json` + coquille « Surchaege »→« Surchargé ». Build 0 erreur, vérifié par capture d'un level-up (mêlée/cône/dégâts/Renforcée OK).
-- Phase précédente : **Arme Volée Multiple (multi-tir multi-cible) — 2026-06-26**. Nouvelle arme `scatter_volley` : 2 projectiles au niv.1, +1 par niveau (jusqu'à 6), un par ennemi proche. Câblée partout (Arsenal, choix d'arme, notifs HUD, icône dédiée). Build 0 erreur, vérifiée dans l'Arsenal.
-- Phase précédente : **Lisibilité (Share Tech Mono) + passifs Arsenal + bestiaire animé + icône notifs HUD — 2026-06-26**. Police principale passée de VT323 (trop pixelisée) à **Share Tech Mono** (mono techno lisible, AA on) — tailles HUD/UI ré-accordées. Passifs ajoutés à l'Arsenal, entrées du Bestiaire animées (anim idle), icône d'arme dans les notifs HUD. Build 0 erreur, validé par captures.
-- Phase précédente : **Bestiaire + Arsenal + icônes d'armes — 2026-06-26**. 2 rubriques au menu principal : Bestiaire (8 ennemis : image idle + tag + description joueur) et Arsenal (8 armes : icône + description). `Codex.cs` = source unique (données + table id→icône). Icônes Tesla/Nova générées ; icônes affichées sur les cartes de choix d'arme (level-up). Build 0 erreur, validé par captures (menu 5 boutons, les 2 écrans, cartes avec icônes).
-- Phase précédente : **Boss & nouvelles armes + sprites dédiés — 2026-06-26**. 2 nouvelles armes 100% VFX (Bobine Tesla = éclair en chaîne ; Nova d'Aether = détonation circulaire dilatante), 1 mini-boss de mi-temps (`aether_revenant`, 7 min, ruades, spectre violet) et 1 boss de fin (`rusted_core`, 13 min, HP base 1600 — rééquilibré à 12000 le 2026-06-28, salves radiales, XP 500 + 3 Noyaux + choix d'arme). **Sprites pixel art dédiés générés** (`tools/generate_boss_sprites.py`) — plus de réutilisation teintée. Build 0 erreur, validé par captures in-game (les 2 boss rendent avec leurs sprites + auras).
-- Phase précédente : **Juice & densité — VFX scalés + ambiance + nuées VS — 2026-06-26**. VFX qui scalent avec le niveau d'arme (brillance balles, impact bursts, flash lumineux), explosions de mort calibrées par tier d'ennemi (+ onde de choc sur les gros), aura joueur qui croît avec la puissance du build, screen shake d'impact à haut niveau. Arène éclaircie (modulate sol 1.18 / murs 1.12 en sur-brillance, overlay 0.06, vignette 0.38/inner 0.55). Spawn façon Vampire Survivors : cap 300, courbe raide (16 + t·38), spawn par lots + vagues toutes les 25 s. I-frames joueur (0.45 s) pour rendre les grosses nuées jouables. Build 0 erreur, vérifié par captures (run auto-kite 2 min sans mort).
-- Phase précédente : **HUD — typographie pixel + polish lisibilité — 2026-06-26**. Police custom **VT323** (pixel/terminal CRT, OFL) installée dans `assets/fonts/`, import en rendu pixel net (antialiasing=0, hinting=0, subpixel=0, oversampling=1) → supprime le flou ("baveux") de la police vectorielle par défaut. `Theme` global `assets/themes/ui_theme.tres` (default_font VT323, size 18) appliqué via `project.godot [gui] theme/custom`. Tailles HUD ré-accordées aux métriques VT323, glyphes spéciaux (♥/⚡/✦/↑) remplacés par ASCII (VT323 ne les a pas → évite le fallback flou). Build 0 erreur, vérifié par capture (HUD + menu).
-- Phase précédente : **HUD — intégration assets concept cyberpunk — 2026-06-25**. Extraction par masquage HSV (numpy) depuis `idea/idee_hud_chimera_core.png` : barre XP 20 segments, hexagone LV 44×26 (généré), icône Chimera Core violet×1.8, cadre stats généré from scratch (2% opaque), cadre timer (4% opaque crochets seuls), titres "CHIMERA PROTOCOL" / "NOYAUX AETHER" / "RUNTIME ENCRYPTED". Build 0 erreur, testé PASS.
+- Pile technique : **Godot 4.7 .NET (C# / .NET 8 / GodotSharp)**
+- **Phase actuelle : libre — expansion terminée 2026-06-30** (commit `2385a67` = dernier fix).
+- **Ce qui est implémenté** :
+  - 3 personnages (Chimera, Titan, Vagabond), 5 biomes (Sanctuaire, Aether, Fournaise, Givre, Néon)
+  - 11 armes actives + 4 fusions + 4 passifs ; power-ups temporaires (4 types)
+  - Fin de niveau complète : survie sans fin, overtime, boss en boucle, déblocage progressif, high scores (temps+difficulté), arsenal à découverte
+  - Localisation EN/FR/ES (`localization/ui.csv` → clé `Loc.T("CLÉ")`) ; support manette complet
+  - HUD thématisé par biome, atmosphère (brume/rais/parallaxe), scanlines CRT
+  - Voir `docs/EXPANSION_PLAN.md` et `docs/LEVEL_PROGRESSION_PLAN.md` pour le détail
 
 ## Conventions
 
 - Plateforme cible : Windows (.exe)
-- Moteur : **Godot 4.7 .NET** (toujours utiliser la variante `.NET`, pas la version standard)
+- Moteur : **Godot 4.7 .NET** (toujours la variante `.NET`, pas la version standard)
 - Langage : C# (.NET 8), GodotSharp
-- Build Windows : `"C:\CODE\JEUX\Godot_v4.7-stable_mono_win64\Godot_v4.7-stable_mono_win64.exe" --headless --export-release "Windows Desktop" "./build/ChimeraProtocol.exe"` (depuis le dossier du projet)
-- Export templates requis : placés dans `C:\CODE\JEUX\Godot_v4.7-stable_mono_win64\editor_data\export_templates\4.7.stable.mono\` ✓ (déjà installés 2026-06-21)
-- **CRITIQUE export .NET** : le fichier `ChimeraProtocol.sln` DOIT être présent à la racine avant d'exporter. Sans lui, Godot omet l'assemblée C# et le .exe crashe immédiatement. Commande pour (re)créer : `dotnet new sln --name ChimeraProtocol --format sln && dotnet sln ChimeraProtocol.sln add ChimeraProtocol.csproj`. Le `.sln` est versionné dans git.
-- L'export produit `build/ChimeraProtocol.exe` (PCK embarqué) + `build/data_ChimeraProtocol_windows_x86_64/` (runtime .NET 8, GodotSharp, assemblées). Les deux sont nécessaires pour distribuer le jeu. Le dossier `data_*/` est ignoré par git (`.gitignore`) — il est régénéré à chaque export.
+- Build Windows : `"C:\CODE\JEUX\Godot_v4.7-stable_mono_win64\Godot_v4.7-stable_mono_win64.exe" --headless --export-release "Windows Desktop" "./build/ChimeraProtocol.exe"`
+- Export templates : `C:\CODE\JEUX\Godot_v4.7-stable_mono_win64\editor_data\export_templates\4.7.stable.mono\` ✓
+- **CRITIQUE export .NET** : `ChimeraProtocol.sln` DOIT être présent à la racine. Sans lui, le .exe crashe immédiatement. Recréer : `dotnet new sln --name ChimeraProtocol --format sln && dotnet sln ChimeraProtocol.sln add ChimeraProtocol.csproj`
+- L'export produit `build/ChimeraProtocol.exe` + `build/data_ChimeraProtocol_windows_x86_64/` (runtime .NET 8). Les deux sont nécessaires. `data_*/` est ignoré par git — régénéré à chaque export.
 - Style de code : PascalCase classes/méthodes, `_camelCase` champs privés, `readonly` par défaut
 - Architecture : `src/` (logique C#) / `scenes/` (.tscn) / `assets/` (raw) / `data/` (JSON tuning)
-- **Logique pure testable** : `src/Core/Rules/` (`XpCurve`, `EchoFormula`, `EnemyScaling`, `DifficultyTuning`, `RarityWeights`, `SpawnCurve`, `WeaponLeveling`, `StatCaps`, `WeightedPicker`) — classes statiques **sans dépendance Godot** ; les nœuds (XpSystem, RunStatsTracker, EnemySpawner, GameSettings, LevelUpSystem, InventorySystem) et `PlayerStats` (réexpose les plafonds via `StatCaps`) y **délèguent** (SRP). Le tirage pondéré (spawn + cartes) passe par `WeightedPicker`. DTOs/VFX séparés un par fichier (`SaveData`, `LevelUpCardData`, `MetaUpgradeDefinition`, `EnemySpawnData`, `LightningBolt`, `OverloadFlash`).
-- **Tests unitaires** : `tests/ChimeraProtocol.Tests.csproj` (xUnit, projet séparé compilant `src/Core/Rules/*.cs` en standalone) — **51 tests**. Lancer : `dotnet test tests/ChimeraProtocol.Tests.csproj`. Le jeu **exclut `tests/`** de son build (`<Compile Remove="tests/**/*.cs" />`).
-- Singletons (AutoLoad Godot) : `GameManager`, `XpSystem`, `InventorySystem`, `LevelUpSystem`, `SaveManager`, `MetaProgressionSystem`, `AudioSystem`, `FusionFlash`
-- Données de tuning : `data/*.json`, chargées au runtime, modifiables sans recompiler
-- Sauvegarde : `user://save.json` via `FileAccess` Godot
-- Sprites : PNG transparent, grille 32×32 px, nommage `nom_action_NN.png`
-- texture_filter global : `Nearest` (pixel art) — posé au niveau projet Godot
-- Audio : OGG musique, WAV ou OGG SFX
-- Fusions MVP : 2 fusions uniquement (Lame à Fusion + Rail Surchargé)
-- Performance cible essaims : 200–300 entités simultanées (pic < 250 actives)
+- **Logique pure testable** : `src/Core/Rules/` (classes statiques sans dépendance Godot — `XpCurve`, `EnemyScaling`, `SpawnCurve`, `WeaponLeveling`, `StatCaps`, `WeightedPicker`…). Les nœuds y délèguent (SRP).
+- **Tests unitaires** : `tests/ChimeraProtocol.Tests.csproj` (xUnit). Lancer : `dotnet test tests/ChimeraProtocol.Tests.csproj`. **59 tests**.
+- Singletons (AutoLoad) : `GameManager`, `XpSystem`, `InventorySystem`, `LevelUpSystem`, `SaveManager`, `MetaProgressionSystem`, `AudioSystem`, `FusionFlash`, `ScreenShake`
+- Données de tuning : `data/*.json`, modifiables sans recompiler
+- Sauvegarde : `user://save.json` (méta/Échos) + `user://settings.cfg` (préférences, high scores, complétions, armes découvertes)
+- Sprites : PNG transparent, grille 32×32 px (Colosse 48×48 — exception), `texture_filter = Nearest` global
+- Audio : OGG musique (fallback WAV), WAV ou OGG SFX. Sources CC0 dans `assets/audio/CREDITS.md`.
+- Performance cible : 200–300 entités simultanées ; I-frames joueur 0.45 s (CRITIQUE pour les nuées)
+- Palette UI : fond `#1A1A2E`, cyan `#44FFEE`, violet `#AA44FF`, or `#FFCC44`, blanc cassé `#D9D9F2`
+- Police principale : Share Tech Mono (AA on, `ui_theme.tres`, size 16) — VT323 en réserve (AA off)
+- Python : `C:\Users\drang\AppData\Local\Programs\Python\Python313\python.exe` (pas dans le PATH)
 
-## Décisions d'implémentation (Arme Volée Multiple — 2026-06-26)
+## Pièges critiques (non-évidents)
 
-- **Nouvelle arme `scatter_volley` (« Volée Multiple »)** : tir multi-cible. `ScatterVolley.cs` (réutilise `Bullet`) fait `FindNearestEnemies(ProjectileCount)` et envoie 1 projectile par cible ; si moins de cibles que de projectiles, les surplus partent vers la plus proche avec un éventail (±10°/cran). `ProjectileCount = niveau + 1` → 2 au niv.1, 6 au niv.5. Perçant dès niv.4. `bullet.Power` = niveau (scaling VFX). Rareté rare.
-- **Câblage (checklist `[[add-weapons-bosses]]`)** : `weapons.json` (5 niveaux), `levelup_config.json` rarityByCard, `InventorySystem` (WeaponScenePaths + `ApplySpecializedStats` case + `GetWeaponDisplayName`), `LevelUpSystem.AllWeaponIds`, `Codex.Weapons` + `Codex.IconById`. Icône `ui_icon_scatter.png` générée par `tools/generate_weapon_icons.py` (éventail de 3 projectiles cyan). Scène `ScatterVolley.tscn` minimale (BulletScene chargé en `??=` côté code, pas dans le .tscn → pas d'uid à gérer).
-- Vérifié : apparaît dans l'Arsenal avec icône + description (capture, scroll).
+**Godot C# — API manquante**
+- `GpuParticles2D.DrawPass1` n'existe pas en C# Godot 4.7 → `particles.Set("draw_pass_1", mesh)`
+- `Image.Create()` est obsolète Godot 4.7 → `Image.CreateEmpty()`
+- `GetViewport().GetFinalTransform()` ≠ transform caméra 2D → utiliser `Camera2D.GetScreenCenterPosition()`
+- Piège C# 12 : `Instance?.Signal += handler` non supporté → `if (Instance != null) Instance.Signal += handler`
 
-## Décisions d'implémentation (Lisibilité + passifs + bestiaire animé — 2026-06-26)
+**Godot C# — threading / callbacks**
+- `AddChild` interdit dans un callback physique (`BodyEntered`, `AreaEntered`) → `CallDeferred(AddChild)` + `SetDeferred("global_position", pos)`
+- `file sealed class` interdit dans signatures de membres `public partial` → utiliser `internal sealed class`
+- `FileAccess` ambigu si `using System.Text.Json` → toujours qualifier `Godot.FileAccess.Open(...)`
 
-- **Police principale → Share Tech Mono** (OFL, Google Fonts) en remplacement de VT323, jugée trop pixelisée/peu lisible. Import **AA activé** (antialiasing=1, défauts) = net et lisible, tout en gardant l'identité mono techno. `ui_theme.tres` `default_font` → Share Tech Mono, `default_font_size = 16`. VT323 conservée en réserve. **STM rend plus gros que VT323 à taille égale** → toutes les tailles HUD ré-accordées À LA BAISSE (timer 40→30, titres 16→13, HP 18→16, LV 18→14, Noyaux 28→22, sous-labels 14→11) ; boutons menu 24→20 ; titres codex 40→32, noms 24→20, desc 16→15.
-- **Passifs dans l'Arsenal** : `Codex.Passives` (4 entrées). `ArsenalScreen.Entries` = `Codex.Weapons` + `Codex.Passives` (concaténés dans un static `BuildAll()`).
-- **Icône d'arme dans les notifs HUD** : `WeaponNotifLabel` (Label) remplacé par un `HBoxContainer "WeaponNotif"` > `Icon` (TextureRect) + `Label`. `HUD.ShowNotif(id, text, color, hold, fade)` charge `Codex.LoadIcon(id)`, tween l'alpha du HBox (pas du Label). Les 3 méthodes publiques prennent désormais l'`id` en 1er param ; `InventorySystem` passe le weaponId/passiveId. **Ne pas teinter l'icône** (Modulate) — elle a ses couleurs propres ; seul le texte est coloré.
-- **Bestiaire animé** : `CodexEntry.FramesPath` (optionnel, SpriteFrames .tres). `CodexAnimImage : TextureRect` cycle les frames de l'anim "idle" dans `_Process` (reste dans le layout Control, pas de Node2D). Tous les ennemis ont une anim "idle" (vérifié). Fallback image figée si frames absents.
-- **Captures UI** : `tools/screenshot_scene.py` (env `SCENE`/`OUT`/`WAIT`) pour les écrans isolés ; `NOCLICK=1` sur `screenshot_swarm.py` pour figer un level-up.
+**Armes — câblage (checklist 8 points)**
+Ajouter une arme requiert : `weapons.json` (5 niveaux) · `levelup_config.json` rarityByCard · `InventorySystem` (WeaponScenePaths + ApplySpecializedStats) · `LevelUpSystem.AllWeaponIds` · `Codex.Weapons` + `IconById` · icône `ui_icon_*.png` + `.import` · clés `WPN_*` EN/FR/ES dans `localization/ui.csv`
 
-## Décisions d'implémentation (Bestiaire + Arsenal + icônes — 2026-06-26)
+**Navigation clavier/manette**
+- Listes non focalisables (simples `PanelContainer`) : aucun voisin de focus → scroll dans `_UnhandledInput` via `_scroll.ScrollVertical` (`allowEcho:true` pour maintien)
+- Focus spatial de Godot ne traverse pas les `PanelContainer` → `SetupFocusChain` avec `FocusNeighborTop/Bottom` explicites après génération complète de la liste
+- Listes focalisables qui débordent → `FocusEntered → ScrollContainer.EnsureControlVisible()`
+- `GrabFocus()` toujours dans un callback de tween (après fade-in), jamais dans `_Ready()` directement
+- `FocusEntered` = tween scale uniquement (pas de SFX) ; `MouseEntered` = scale + SFX
 
-- **Menu principal — 2 nouvelles rubriques** : boutons `Bestiaire` et `Arsenal` ajoutés dans `MainMenu.tscn` (VBox élargi à 5 boutons, offsets 252→572). Stylés **en code** via `StyleMenuButton()` (évite de dupliquer 6 sub-resources StyleBoxFlat dans le .tscn). Handlers → `BestiaryScreen.tscn` / `ArsenalScreen.tscn`. `TransitionTo` désactive les 5 boutons pendant le fade.
-- **`Codex.cs`** (statique) : source unique de vérité UI. `Codex.Enemies` (8 `CodexEntry`) + `Codex.Weapons` (6 actives + 2 fusions), descriptions **orientées joueur** (pas les desc dev de enemies.json). `Codex.IconPath(id)` / `LoadIcon(id)` = table id→icône réutilisée partout (cartes level-up + arsenal). Images ennemis = frame `idle_01` de chaque sprite.
-- **`CodexScreenBase.cs`** (abstrait, Control) : construit **en code** une liste scrollable (titre + `ScrollContainer`>VBox de `PanelContainer` bordés par couleur d'accent, chaque ligne = image 96×96 `TextureFilter=Nearest` + nom + tag + description autowrap) + bouton retour stylé + fondu. Sous-classes minces `BestiaryScreen` / `ArsenalScreen` fournissent titre/accent/entrées. Scènes `.tscn` = juste root Control + script (UI bâtie au runtime). `ui_cancel` → retour menu.
-- **Icônes armes** : les 10 icônes 32×32 existaient déjà (`ui_icon_*`) sauf les 2 nouvelles → générées par `tools/generate_weapon_icons.py` (`ui_icon_tesla` = éclair cyan, `ui_icon_nova` = nova violette).
-- **Icônes sur les cartes de level-up** : `LevelUpScreen.PopulateCard` ajoute une `TextureRect "Icon"` (64×64, `MouseFilter=Ignore`, top-center) par carte via `Codex.LoadIcon(id)`. Le texte du bouton reçoit 2 lignes vides en tête → reste centré sous l'icône sans chevauchement. Marche pour armes/passifs/fusions/xp_bonus (tous mappés dans `Codex.IconById`).
-- **Capture d'écran d'une scène isolée** : `tools/screenshot_scene.py` (env `SCENE`/`OUT`/`WAIT`) lance n'importe quelle scène et capture la fenêtre — pratique pour les écrans UI. `NOCLICK=1` sur `screenshot_swarm.py` laisse un level-up visible pour le capturer.
+**UI — pièges StyleBox / focus**
+- `theme_override_styles/focus` dans un `.tscn` écrase `AddThemeStyleboxOverride()` runtime → ne jamais poser les deux
+- `StyleBoxFlat` 3 états : chaque bouton doit avoir ses **propres instances** (pas de sub_resource partagée — Godot les lie et casse l'état hover/pressed)
+- `PivotOffset` pour hover scale : calculer dans `MouseEntered` (`btn.Size / 2f`), PAS dans `_Ready()` (size = Vector2.Zero à ce stade)
+- `MouseFilter = Ignore` sur la racine d'un écran "attend n'importe quelle entrée" — sinon le clic est absorbé comme événement GUI avant `_UnhandledInput`
 
-## Décisions d'implémentation (Boss + nouvelles armes — 2026-06-26)
+**Scènes / cycle de vie**
+- `WeaponBase._Ready()` initialise `_timer = Cooldown` — chaque sous-classe DOIT appeler `base._Ready()` EN DERNIER (après avoir assigné `Cooldown`), sinon tir au frame 0
+- `GraftedColossus.Die()` n'appelle PAS `base.Die()` (qui fait `QueueFree()` immédiatement, tuant le nœud avant l'anim death)
+- `RunEndScreen` : ordre de fermeture = `ChangeSceneToFile()` PUIS `RemoveChild(this)` PUIS `QueueFree()` — inverser provoque `data.tree is null`
+- `RunEndScreen._Ready()` force `GetTree().Paused = false` — au cas où la mort survient pendant le LevelUpScreen (qui met `Paused = true`)
+- `FusionFlash` / tout tween pendant une pause arbre : `SetPauseMode(Tween.TweenPauseMode.Process)` impératif
+- `LevelUpSystem.Reset()` avant chaque run (remet `_pendingFusionId = null`) — sinon fusion parasite run suivante
 
-- **2 nouvelles armes 100% VFX (pas de sprite)** dans `src/Weapons/` + scènes minimales `scenes/weapons/` :
-  - **`tesla_coil`** (Bobine Tesla, rare) : éclair en chaîne. `Attack()` frappe le plus proche puis rebondit `ChainCount` fois (portée `ChainRange`). VFX `LightningBolt` (classe dans le même fichier) = 2 `Line2D` dentelés (halo cyan large + cœur blanc fin) + flash `PointLight2D`, fade 0.16 s. Stats spécialisées dans `InventorySystem.ApplySpecializedStats` (chainCount, chainRange).
-  - **`aether_nova`** (Nova d'Aether, epic) : détonation circulaire centrée joueur. Dégâts à tous dans `Radius` + VFX `NovaBlast` = anneau `Line2D` fermé qui se dilate (scale tween) + disque `Polygon2D` + flash + `GpuParticles2D` radial. Stat spécialisée `radius`.
-  - Câblage commun : `weapons.json` (5 niveaux chacun), `levelup_config.json` rarityByCard, `InventorySystem.WeaponScenePaths` + `GetWeaponDisplayName`, **`LevelUpSystem.AllWeaponIds`** (sinon jamais proposées en carte).
-- **Mini-boss de mi-temps `aether_revenant`** (`src/Entities/MiniBoss/`, spawn 7 min) : sprite dédié `aether_revenant_frames.tres` (scale 1.4 dans le .tscn). IA `lunging_chaser` : poursuite + ruade (dash 420 px/s, 0.32 s) toutes les 2.2 s. HP 550, XP 180. Mort → `ShowWeaponDrop(3)` via `OnAnimationFinished` (anim "death").
-- **Boss de fin `rusted_core`** (`src/Entities/Boss/`, spawn 13 min) : sprite dédié `rusted_core_frames.tres`, `_sprite.Scale = 1.8` posé en code (boss massif). HP base **12000** (rééquilibré 2026-06-28 ; → **~19 800 effectif** à 13 min : `EnemySpawner` applique `× (1 + t_min × 0.05) × EnemyHpMult`), XP 500. Salves radiales de 12 `EnemyBullet` /2.5 s + ondes de choc /3.5 s. Mort (`FinishDeath`) → 3 ondes de choc + death burst + **3 `AetherCore`** + gros shake/hitstop, puis **victoire** (cf. Phase actuelle : plus de `ShowWeaponDrop`/`SpawnXpOrb`, la run se termine).
-- **Sprites dédiés des boss (2026-06-26, MAJ)** : `tools/generate_boss_sprites.py` (Pillow, style maison 64×64) génère les 2 jeux de frames + leurs `.tres`. **Revenant** = spectre cyborg violet (capuche, yeux magenta, noyau losange, bras-lames, voile spectral, dissolution à la mort). **Noyau Rouillé** = titan-gardien rouille-or (plaques fissurées, œil unique, énorme noyau en fusion qui se charge, surcharge+effritement à la mort). Les scènes pointent maintenant ces `.tres` ; les hacks de teinte `Modulate` ont été retirés du code (sprites déjà colorés). `write_tres()` dans le script génère le SpriteFrames au bon format (idle/move/attack/death, loop true pour idle/move). Choix : génération en-style plutôt qu'assets CC0 externes (qui trancheraient avec la DA maison).
-- **Spawn boss** : `enemies.json` (champs standard EnemySpawner) + `EnemySpawner.ScenePaths` (`aether_revenant`, `rusted_core`). `maxSimultaneous=1`. Réutilisent les frames existantes plutôt que de nouveaux sprites — choix pragmatique (scale + teinte différencient).
-- **Test boss rapide** : baisser temporairement `spawnStartMinute` (revenant 0.4 / core 0.9) + `spawnWeight` (6) dans `enemies.json`, capturer via `tools/screenshot_swarm.py`, **puis restaurer** (backup `/tmp/`). Les boss sont coriaces : le bot auto-kite meurt vers 76 s (normal, pas de vraies armes montées).
-- **Piège réutilisation SpriteFrames** : ne jouer que des animations présentes dans le frameset emprunté. `rust_stalker` et `master_sentinel` ont idle/move/attack/death — sûrs. Vérifier avant d'emprunter un autre frameset.
+**Assets**
+- `.import` des PNG générés par script DOIT être commité (BUG-301) — sinon Godot ignore les assets au runtime
+- Musique WAV : `loop_mode=0` par défaut dans Godot 4.7 → reboucler via signal `Finished` dans `AudioSystem`
+- `AudioSystem.LoadMusic()` tente `.ogg` en priorité, puis `.wav` fallback
 
-## Décisions d'implémentation (Juice & densité VS — 2026-06-26)
-
-- **VFX scalés par niveau d'arme** : `Bullet.Power` (= niveau via `InventorySystem.GetWeaponLevel(id)`) calibre la brillance du `PointLight2D` de la balle + l'intensité de l'`ImpactBurst` (particules 6+p·4, vélocité, flash lumineux p·0.5). `ImpulseCannon.Attack()` lit le niveau et le passe à chaque balle. À `Power ≥ 4`, chaque impact déclenche `ScreenShake.Shake`.
-- **`ImpactBurst` + `EnemyDeathBurst` paramétrables** : ajout d'un flash `PointLight2D` additif qui fade (tween energy→0). `ImpactBurst.Power` (niveau arme) et `EnemyDeathBurst.Tier` (= `GetOrbTier()`, 0 fourrage → 3 boss) pilotent particules/flash. Tier ≥ 2 → instancie `vfx_shockwave_ring.tscn`. Passer `Tier`/`Power` AVANT le `CallDeferred(AddChild)` (propriété C# posée en synchrone, `_Ready` lue après).
-- **`InventorySystem.TotalWeaponPower`** = somme des niveaux d'armes (min 1). Alimente l'aura joueur. `GetWeaponLevel(id)` = niveau courant (min 1).
-- **Aura joueur croissante** : `Player.UpdateAura()` (par frame) lerp l'énergie du `PlayerLight` vers `0.45 + power·0.07` (cap 1.6) et `TextureScale` vers `4 + power·0.18` (cap 7.5). Plus le build est fort, plus le joueur « brille ».
-- **Ambiance moins sombre** : `GroundRenderer` modulate sol `1.18` / murs `1.12` (sur-brillance >1.0 — indispensable car les tuiles sont des textures navy foncé ; <1.0 reste sombre), overlay dark `alpha 0.06`. `Game.tscn` vignette `max_opacity 0.38`, `inner_radius 0.55`. Bloom conservé (glow_intensity 1.4).
-- **Spawn façon Vampire Survivors** (`EnemySpawner`) : cap `MaxAlive=300`, `maxEnemies = min(300, 16 + t·38)` (courbe raide → écran rempli vers 5-7 min), `spawnInterval = max(0.3, 1.0 - t·0.06)`, **spawn par lots** `clamp(2 + t·2, 1, 10)`, **vagues** toutes les 25 s d'un essaim `16 + t·5`. `TrySpawnBatch()` respecte le cap et le `maxSimultaneous` des mini-boss.
-- **I-frames joueur (CRITIQUE pour la jouabilité des nuées)** : `Player._invulnTimer` = `0.45 s` après chaque coup. Les ennemis ont `CollisionMask=0` (ils se superposent sur le joueur) → sans i-frame, une nuée vide la barre en une frame. L'i-frame cappe le DPS reçu à 1 coup / 0.45 s quel que soit le nombre d'ennemis. `TakeDamage` court-circuite si `_invulnTimer > 0` ou `_isDead`.
-- **Captures de revue gameplay** : `tools/screenshot_swarm.py` (kite le joueur en cercle au clavier + clic central pour valider les level-ups, capture vers `CAP_AT` secondes → `docs/swarm_review.png`). Variable d'env `CAP_AT`.
-
-## Décisions d'implémentation (Typographie pixel HUD — 2026-06-26)
-
-- **Police VT323** (`assets/fonts/VT323.ttf`, OFL, depuis Google Fonts `ofl/vt323/`) : pixel font monospace type terminal CRT. Choisie pour coller au thème cyberpunk "RUNTIME ENCRYPTED" + chiffres monospace (pas de jitter sur compteurs HP/timer). `PressStart2P.ttf` aussi installée en réserve pour titres 8-bit. Crédits dans `assets/fonts/CREDITS.md`.
-- **Cause du "baveux"** : tout le jeu utilisait la police vectorielle par défaut de Godot (Open Sans, anti-aliasée) → flou une fois le canvas mis à l'échelle. Fix = police pixel + désactivation de l'anti-aliasing à l'import.
-- **Import pixel net** : dans `assets/fonts/VT323.ttf.import` `[params]` → `antialiasing=0`, `hinting=0`, `subpixel_positioning=0`, `oversampling=1.0`, `keep_rounding_remainders=false`. Press Start 2P : Godot l'auto-détecte comme pixel font (désactive subpixel/hinting tout seul). **Procédure** : copier le .ttf, `Godot --headless --import` génère le `.import`, puis éditer les `[params]` et relancer `--import`.
-- **Theme global** : `assets/themes/ui_theme.tres` (type Theme, `default_font` = FontFile VT323 via `ext_resource`, `default_font_size = 18`) appliqué à TOUT le jeu via `project.godot` `[gui] theme/custom="res://assets/themes/ui_theme.tres"`. Un seul levier → cohérence HUD + menus. Vérifié : menus (boutons Jouer/Hub/Quitter) rendent sans débordement.
-- **Tailles HUD ré-accordées aux métriques VT323** (police plus petite à taille égale que Open Sans, gros leading) : titres section 9→16, HP/LV 12-14→18, timer 32→40, sous-labels 9→14, compteur Noyaux 20→28, notif arme 22→28. Toujours monter d'un cran vs l'ancienne police vectorielle.
-- **Glyphes spéciaux → ASCII** : VT323 ne couvre pas ♥ ⚡ ✦ ↑ → ils retombaient sur la police système (flou + incohérent). `HUD.tscn` HpIcon ♥→"HP". `HUD.cs` notifs : ⚡→">", ↑→"+", ✦→"*". Règle : n'utiliser que de l'ASCII de base + `:` `/` `.` avec VT323, ou vérifier la couverture du glyphe avant.
-- **Capture de revue HUD** : `tools/screenshot_hud.py` (lance `res://scenes/Game.tscn` direct, attend 9s, recadre sur la fenêtre via pygetwindow, sauve `docs/hud_review.png`). Variante `screenshot_menu.py`. Réutilisable pour toute revue visuelle rapide sans le game-tester complet.
-
-## Décisions d'implémentation (Drops HP + Heal + Courbe XP — 2026-06-24)
-
-- **Courbe XP quadratique** : `XpSystem.XpThreshold(L) = 2*L*L + 9*L + 4`. L1=15 XP (était 27), L5=99, L10=294, L20=984. Progression early ×1.8 plus rapide qu'avant. `levelup_config.json` table pré-calculée mise à jour.
-- **Heal level-up** : `Player.OnLevelUp()` appelle `Heal(0.25f)` — restaure 25% MaxHP. Flash vert `Color(0.2, 1, 0.4)` via `HitFlash()` si HP réellement restauré (guard `before < CurrentHp`). Méthode publique pour être appelée aussi par `HpOrb`.
-- **`HpOrb`** : `Area2D` + `CircleShape2D` r=12. Contact joueur → `player.Heal(0.15f)` (15% MaxHP) + `PlaySfx("sfx_core_collect")` + `QueueFree()`. `PointLight2D` rouge `Color(1, 0.25, 0.25)` pulsant 0.5→1.1 en 0.45s boucle. Scène `scenes/entities/HpOrb.tscn`, script `src/Entities/HpOrb.cs`. Sprite `assets/sprites/vfx/vfx_hp_orb.png` (10×10 losange rouge).
-- **Drop chance** : `EnemyBase.HpDropChance` virtual property = 0.08f (8%). RustStalker + MasterSentinel overrident à 0.25f (25%). `TrySpawnHpOrb()` protected dans EnemyBase, appelé dans `Die()` de chaque type (EnemyBase + sous-classes qui overrident Die sans appeler base.Die).
-- **`_hpOrbScene` statique** : chargé en `??=` dans `EnemyBase._Ready()` — identique au pattern `_xpOrbScene`. Position du drop : +/- 8px aléatoire autour de `GlobalPosition` (évite superposition avec orbe XP).
-- **HpOrb non magnetisé** : contrairement aux orbes XP, le joueur doit marcher dessus. Design intentionnel — incite à prendre un risque pour récupérer le soin.
-
-## Décisions d'implémentation (Polish visuel "next-level" — 2026-06-24)
-
-- **Sessions 1+2+3 complètes** : 11 features du brief DA `docs/VISUAL_POLISH_BRIEF.md` implémentées. Build validé 0 erreur 0 warning.
-- **4 shaders GLSL créés** dans `assets/shaders/` :
-  - `floor_grid.gdshader` : grille holographique sur dark overlay arène. Utilise `FRAGCOORD.xy` (pas `UV`) car le `Polygon2D` n'a pas de texture propre. Opacité 0.06 subliminal, scroll `TIME * 0.5`.
-  - `screen_vignette.gdshader` : vignette noire `#000005` (0.72 opacité) via `CanvasLayer "PostFX"` layer=90 dans `Game.tscn`. `ColorRect` AnchorPreset=FullRect, `mouse_filter=2`. Uniform `center` mis à jour dynamiquement par `VignetteFollow.cs`.
-  - `shockwave_ring.gdshader` : anneau cyan qui se dilate, paramètre `progress` 0→1 animé par `ShockwaveRing.cs`.
-  - `chromatic_aberration.gdshader` : décalage RGB ±4 px via `hint_screen_texture`. Déclenché par `FusionFlash.TriggerFlash()` uniquement si `!GetTree().Paused`.
-- **`ScreenShake` AutoLoad** : `src/Systems/ScreenShake.cs`, enregistré après `AudioSystem` dans `project.godot`. `SetCamera(Camera2D)` appelé dans `Player._Ready()`. `HitStop(float)` méthode async avec `CreateTimer(processAlways: true)`. Amplitudes : mort joueur 20/0.5, Colosse 12/0.35, Sentinelle 3/0.12, LevelUp 6/0.2, Fusion 8/0.25, Geyser 2/0.08.
-- **Bloom renforcé** : `Game.tscn` `WorldEnvironment` — `glow_intensity` 0.8→1.4, `glow_strength` 1.2→1.8, niveau 3 activé. Énergie joueur PointLight2D 0.55→0.45, balles joueur 1.2→0.9.
-- **`Player.HitFlash(float, Color?)` surchargée** : couleur optionnelle, blanc sur-exposé par défaut. Flash or `Color(1,0.8,0.267)` sur LevelUp (0.15s). `TakeDamage` utilise la surcharge sans couleur.
-- **`Player._ExitTree()`** : désinscription du signal `XpSystem.LevelUp` (guard null). Piège C# 12 : `XpSystem.Instance?.LevelUp += handler` non supporté → toujours `if (XpSystem.Instance != null) XpSystem.Instance.LevelUp += handler`.
-- **Trail joueur GPUParticles2D** : `ParticleProcessMaterial` cyan `#44FFEE` 15% opacité, scale 3, dans `Player.tscn` (nœud "Trail", z_index=-1). Activé/désactivé dans `Player._PhysicsProcess()` selon `Velocity.LengthSquared() > 100f`. `GetNodeOrNull<GpuParticles2D>("Trail")` dans `_Ready()`.
-- **`ShockwaveRing.cs` + `vfx_shockwave_ring.tscn`** : sprite 256×256 blanc généré par `Image.CreateEmpty()` (pas `Image.Create` — obsolète dans Godot 4.7). ZIndex=5. Déclenché depuis `GraftedColossus.OnAnimationFinished()` branch death via `CallDeferred` + `SetDeferred`.
-- **`GraftedColossus.OnAnimationFinished()` branch death** : séquence Shake(12/0.35) + HitStop(0.05) + SpawnShockwaveRing() avant QueueFree. `_shockwaveScene` cache statique `??=`.
-- **`FusionFlash` chromatic aberration** : `FusionFlash.tscn` contient `ChromaticFX` CanvasLayer (layer=89, `follow_viewport_enabled=true`) > `ChromaRect` ColorRect plein écran + `ShaderMaterial` chromatic_aberration. `_chromaMat` récupéré dans `_Ready()` via `GetNodeOrNull<ColorRect>("ChromaticFX/ChromaRect")`. Animation `strength` 0→4→0 via deux `TweenMethod` chainés, `SetPauseMode(Process)`.
-- **XP Orbs PointLight2D** : ajouté en code dans `XpOrb._Ready()`. Texture statique `_orbLightTex` partagée. `Color(0.667,1,0.267)` (#AAFF44), énergie 0.3, TextureScale 1.2, BlendMode Add. `Player.MakeRadialLightTexture(32)` réutilisée.
-- **Noyaux Aether PointLight2D pulsant** : ajouté en code dans `AetherCore._Ready()`. `Color(0.667,0.267,1)` (#AA44FF), énergie 0.8→1.4→0.8, tween `SetLoops()` 1 s boucle, Sine InOut. TextureScale 2.0.
-- **Shader `floor_grid.gdshader` dans `GroundRenderer.AddFloorDarkOverlay()`** : `GD.Load<Shader>` + `ShaderMaterial` + `overlay.Material = shaderMat`. Guard null si shader absent.
-- **Geyser shake** : `ScreenShake.Instance?.Shake(2f, 0.08f)` dans `AetherGeyser._Process()` uniquement quand `_isActive && _playerInZone != null`.
-- **`VignetteFollow.cs`** : Node dans `Game.tscn` qui met à jour chaque frame le uniform `center` du shader vignette. Calcul : `camera.GetScreenCenterPosition()` → offset joueur en pixels → normalisé 0-1. Corrige le bug "zone éclairée fixe en bord de carte" causé par le clamp de caméra. **Piège Godot 4** : `GetViewport().GetFinalTransform()` ne retourne PAS le transform caméra 2D — utiliser `Camera2D.GetScreenCenterPosition()` uniquement.
-- **HUD layer=95** : supérieur à la vignette PostFX (layer=90) — HP/XP/Timer non assombris par la vignette.
-- **`GpuParticles2D.DrawPass1` inexistant en C# Godot 4.7** : utiliser `particles.Set("draw_pass_1", mesh)` via `Node.Set()` Variant API.
-
-## Décisions d'implémentation (VFX armes — 2026-06-24)
-
-- **`PlasmaArcFlash.cs` + `vfx_plasma_arc_flash.tscn`** : VFX arc plasma instancié à chaque swing de `PlasmaBlade`. `GpuParticles2D` 24 particules cyan one-shot (spread=90°, lifetime=0.12s, velocité 60–140) + `PointLight2D` énergie 2.5 → 0 en 0.18s. Rotation du `Node2D` = `_attackDir.Angle()`. Instancié via `CallDeferred(AddChild)` + `SetDeferred("global_position")` sur `GetTree().Root`.
-- **`PlasmaBlade` — aura permanente** : `PointLight2D` cyan #44FFEE énergie 0.6, TextureScale 3.0, pulsation douce 0.6→0.9 boucle 1.2s via `CreateTween().SetLoops()`. Texture factory `Player.MakeRadialLightTexture(32)`.
-- **`PlasmaBlade` — screen shake** : `ScreenShake.Instance?.Shake(1.5f, 0.06f)` à chaque swing.
-- **`MuzzleFlash.cs`** : VFX muzzle flash ImpulseCannon. `PointLight2D` énergie 3.0→0 en 0.08s + `GpuParticles2D` 6 particules directionnelles (spread=25°). Instancié inline en C# sans `.tscn` externe, via `CallDeferred` + `SetDeferred`. Rotation = direction de tir.
-- **`Bullet.cs` — trail GPUParticles2D** : 3 particules cyan lifetime=0.08s, velocity=0 (restent sur place = traînée), `Set("draw_pass_1", QuadMesh)`. `PointLight2D` renforcé énergie 1.4 (était 0.9), TextureScale 2.2 (était 1.8).
-- **`OverloadField` — PointLight2D violet pulsant** : énergie 0.3→1.2 boucle 0.3s. `Polygon2D` indicateur de rayon (alpha 0.06). `OverloadFlash` amélioré : `PointLight2D` flash énergie 3.5 + `Polygon2D` fade-out en parallèle via `SetParallel(true)`. Screen shake `Shake(3f, 0.12f)` au pulse.
-- **`DroneEntity` — PointLight2D jaune-orange** : couleur #FFAA22, énergie 0.5→1.0 pulsation boucle 0.4s. Texture `Player.MakeRadialLightTexture(32)` statique.
-- **API `draw_pass_1` en C# Godot 4.7** : ni `DrawPass1` (propriété inexistante) ni `SetDrawPassMesh()` (méthode inexistante). La bonne API est `particles.Set("draw_pass_1", mesh)` via la méthode générique `Node.Set()`.
-
-## Décisions d'implémentation (Polish visuel — 2026-06-23)
-
-- **Fond arène assombri** : tiles sol `Modulate(0.42, 0.42, 0.48)` + tiles murs `Modulate(0.55, 0.55, 0.62)` + `Polygon2D` dark overlay bleu-noir `Color(0, 0.01, 0.06, 0.38)` ZIndex=-7 dans `GroundRenderer`. Améliore la lisibilité des sprites sans masquer les obstacles.
-- **`PointLight2D` sur le joueur** : créé dans `Player._Ready()`, cyan `#44FFEE`, énergie 0.55, TextureScale 4.0. `GradientTexture2D` radiale blanc→transparent, factory `Player.MakeRadialLightTexture(int size)`, texture cachée statiquement.
-- **`PointLight2D` sur les projectiles** : balles joueur plasma bleu (`Bullet.cs`), balles ennemies rouge-orange (`EnemyBullet.cs`). Même factory, textures statiques, BlendMode Add.
-- **Notifications armes équipées** : `HUD.Instance` singleton + `WeaponNotifLabel` (bas écran centré). `ShowWeaponEquipped()` or / `ShowWeaponUpgraded()` cyan / `ShowPassiveAcquired()` violet. Flash joueur coloré dans `InventorySystem` (or = nouvelle arme, cyan-teal = upgrade, violet = passif). Flash distincts du damage flash (blanc sur-exposé) et du FusionFlash (blanc plein écran).
-- **`HUD.Instance` nettoyé dans `_ExitTree()`** : guard `if (Instance == this) Instance = null`.
-
-## Décisions d'implémentation (Playtest équilibrage — 2026-06-23)
-
-- **BUG-202 corrigé — `maxEnemies` initial 20→8** : playtest révèle mort systématique < 60s avant le premier level-up. 20 Essaims dès t=0 génèrent jusqu'à 100 HP/s de dégâts potentiels contre 100 HP total. Fix : démarrer à 8 ennemis — la valeur 20 est atteinte à t=1 min, courbe identique ensuite. Fichier : `src/Systems/EnemySpawner.cs` ligne `TrySpawn()`.
-- **BUG-201 clos — fausse alerte** : "Colosse à t=90s" observé dans les screenshots du game-tester = mauvaise identification visuelle. `EnemySpawner` est un nœud de `Game.tscn` (non AutoLoad) → `_elapsed` repart à 0 à chaque `ChangeSceneToFile`. `spawnStartMinute=9` en JSON est respecté. Aucune correction de code requise.
-- **`EnemySpawner` non-AutoLoad** : le confirmer si un futur agent suspecte un bug de reset — vérifier `project.godot` AutoLoad list (contient `GameManager`, `XpSystem`, `InventorySystem`, `LevelUpSystem`, `SaveManager`, `MetaProgressionSystem`, `AudioSystem`, `FusionFlash` — pas `EnemySpawner`).
-- **gitignore screenshots de test** : `docs/test_screenshots/`, `docs/balance_screenshots/`, `docs/balance_v2_screenshots/` ignorés. Les 12 fichiers précédemment commités ont été retirés avec `git rm --cached`. Les fichiers restent sur le disque local.
-- **`docs/TEST_REPORT.md`** : rapport de playtest versionnés dans git. Contient résultats par run, bugs identifiés, observations d'équilibrage, verdict distribution.
-
-## Décisions d'implémentation (Bande-son définitive — 2026-06-22)
-
-- **ffmpeg installé via winget** : `winget install ffmpeg` → Gyan.FFmpeg 8.1.1, disponible en PATH (redémarrage shell requis). Commande de conversion : `ffmpeg -i input.ogg -ar 44100 -ac 2 -sample_fmt s16 output.wav` (stéréo musiques) / `-ac 1` (mono SFX).
-- **Kenney.nl — SFX uniquement, pas de boucles musicales longues** : les packs Kenney (Sci-Fi Sounds, Impact Sounds, UI Audio, RPG Audio) couvrent parfaitement les 24 SFX + 2 stingers, mais leurs jingles font < 2s — inadaptés aux musiques longues bouclées.
-- **Juhani Junkala "Retro Game Music Pack" (OpenGameArt.org, CC0)** : 5 tracks chiptune action couvrent les 5 slots musiques longues (menu, hub, run ×3). URL : `https://opengameart.org/content/5-chiptunes-action`. ZIP stocké dans `tools/music_downloads/` (non versionné).
-- **Mapping musiques Junkala** : Title Screen → menu (×3 boucles, 33.9s) / Ending → hub (44.6s) / Level 1/2/3 → run_intro/mid/intense (1:14 / 1:12 / 1:21).
-- **`tools/integrate_kenney_audio.py`** : script reproductible pour re-télécharger et re-convertir les packs Kenney si les WAV sont perdus. `tools/generate_audio_v2.py` : fallback synthèse Python si tous les assets devaient être régénérés sans connexion internet.
-- **`AudioSystem.LoadMusic()` fallback OGG→WAV** reste pertinent pour la suite : si des assets OGG Godot-natifs sont ajoutés plus tard (ex. musique commission), les placer avec extension `.ogg` suffit — le code les chargera en priorité sans modification.
-
-## Décisions d'implémentation (Phase 5 — Navigation clavier/manette — 2026-06-22)
-
-- **Pattern navigation clavier/manette** : les input actions Godot `ui_up`/`ui_down`/`ui_left`/`ui_right`/`ui_accept`/`ui_cancel` (flèches + Entrée + Échap / d-pad + A + B manette) sont définies par défaut — rien à configurer dans `project.godot`. Les `Button` ont `FocusMode = All` par défaut dans Godot.
-- **`FocusEntered` ≠ `MouseEntered` pour le SFX** : `FocusEntered` déclenche uniquement le tween de scale (pas de `PlaySfx`) pour éviter un son parasite au `GrabFocus()` programmatique à l'ouverture de l'écran. `MouseEntered` déclenche scale + SFX. Deux handlers distincts dans tous les écrans.
-- **`AddThemeStyleboxOverride("focus", ...)` dans `ConnectHoverEffects`** : posé une seule fois à la construction du bouton, pas dans `FocusEntered`. Godot applique ce StyleBox automatiquement quand le bouton a le focus clavier — style violet `Color(0.667,0.267,1)` border=3px, cohérent avec hover/pressed. Évite toute gestion d'état manuelle.
-- **`GrabFocus()` dans `TweenCallback`** : toujours déclenché en callback de tween (après fade-in ou scale-in), jamais dans `_Ready()` directement — évite de donner le focus pendant que l'écran est encore opaque/invisible.
-- **`SetupFocusChain()` obligatoire dans `HubScreen`** : les boutons "Acheter" générés dans `BuildUpgradesList()` sont dans `PanelContainer > HBoxContainer > Button`. L'algo de focus spatial Godot ne traverse pas fiablement les `PanelContainer`. Solution : assigner `FocusNeighborTop`/`Bottom` via `GetPathTo` sur chaque buyButton après génération complète de la liste. Chaîne : `_backButton → rows[0] → … → rows[N] → _playButton`.
-- **`FocusNeighborLeft`/`Right` dans `RunEndScreen`** : `_hubButton` et `_replayButton` sont enfants directs du `CanvasLayer` (pas dans un container commun). Navigation ←→ non garantie sans NodePath explicite : `_hubButton.FocusNeighborRight = _hubButton.GetPathTo(_replayButton)` et vice-versa.
-- **`ui_cancel` dans `_UnhandledInput`** : `MainMenu` → `GetTree().Quit()` / `HubScreen` → `OnBackPressed()` / `RunEndScreen` → `OnHubPressed()`. `LevelUpScreen` : pas de `ui_cancel` (le choix de carte n'est pas annulable). Guard `if (!Visible) return` sur chaque handler.
-- **`SetPauseMode(Tween.TweenPauseMode.Process)` sur `fadeTween`** dans `RunEndScreen.ShowEndScreen()` : le `tween` du countup l'avait déjà ; `fadeTween` en était exempt → fade absent si mort pendant `LevelUpScreen` (tree pausé).
-- **`SetParallel(true)` + `.Chain()` dans `LevelUpScreen.Show()`** : un seul tween animant les 3 cartes en parallèle, puis `.Chain()` pour `GrabFocus` garanti après la fin de toutes les animations. Remplace le pattern fragile `lastTween` (capture de la dernière itération de boucle).
-- **PyAutoGUI + test automatisé** : `tools/test_ui_keyboard.py` (Python 3.13, `pyautogui` + `pygetwindow`) — lance le `.exe`, navigue au clavier, capture 35 screenshots dans `docs/test_screenshots/`. Le `game-tester` analyse les screenshots via `Read` (multimodal). Commande : `python -X utf8 tools/test_ui_keyboard.py` (encodage UTF-8 obligatoire sur console Windows). Résultat final : **9 PASS / 0 FAIL** (2026-06-22, commit `603a162`).
-
-## Décisions d'implémentation (Phase 5 — Tests PyAutoGUI — 2026-06-22)
-
-- **BUG-101 — `theme_override_styles/focus` dans `.tscn` écrase `AddThemeStyleboxOverride` runtime** : dans `RunEndScreen.tscn`, les deux boutons avaient `theme_override_styles/focus = SubResource("StyleNormal_Hub")` (cyan 2px). Ce réglage `.tscn` prenait la priorité sur le `AddThemeStyleboxOverride("focus", violet_3px)` posé dans `_Ready()`. Fix : supprimer les lignes `theme_override_styles/focus` du `.tscn` — le code `_Ready()` gagne ensuite. **Règle générale : ne jamais poser `theme_override_styles/focus` dans un `.tscn` si le script le surcharge en code.**
-- **BUG-102 — détection glyphes anti-aliasés dans `_label_color_at_top()`** : step=4 rate les pixels de bord des glyphes (g≈133 au lieu de 255 en centre). Colonnes x=[0.25, 0.75] hors du label (`offset_left=-400..+400` = viewport 18–81%, mais la zone de texte dense est 35–65%). Fix : step=2, 9 colonnes x=[0.35..0.65], seuil assoupli `g>120 AND b>100 AND r<120 AND g+b>r×4+80` pour le cyan. Résultat : cyan=9 pixels détectés (était 0).
-- **`detect_interval=2.0` dans `_move_and_detect()`** : était 5.0 s → window de détection trop large pour le LevelUpScreen qui apparaît exactement à ~48 s. Réduit à 2 s : garantit que le LevelUpScreen est détecté dans les 2 s après apparition.
-- **Architecture détection finale** : `_label_color_at_top()` balaye y=9–23% fenêtre, 9 colonnes x=[0.35..0.65], step=2. Retourne `'cyan'` (LevelUpScreen), `'red'` (RunEndScreen mort), `'unknown'` (autre). `_detect_levelup()` et `_detect_runend()` requièrent coverage ≥ 0.35 ET label correct — double garde évitant tout faux positif.
-
-## Décisions d'implémentation (Phase 4 P0 — Arène — 2026-06-21)
-
-- **Arène agrandie : 1920×1216 px** intérieur jouable. `Constants.ArenaWidth = 1920`, `Constants.ArenaHeight = 1216`. `GroundRenderer` : `GridCols = 60`, `GridRows = 38`, murs H = 63 tiles, murs V = 41 tiles. `Game.tscn` : murs StaticBody2D mis à jour (WallTop/Bottom = 1984×32, WallLeft/Right = 32×1280, positions recalculées). `Player.ClampToArena()` et `EnemySpawner.RandomSpawnPosition()` utilisaient déjà `Constants.ArenaWidth/Height` — pas de modification nécessaire.
-- **Distribution tiles de sol Phase 4** : 72% `tile_floor_01` / 18% `tile_floor_02` / 5% `tile_floor_crack` / 4% `tile_floor_rust` / 1% `tile_floor_debris`. Seuils `if (r < 0.72f/0.90f/0.95f/0.99f)`.
-- **Décors réduits** : 2 débris pierre, 2 débris métal, 2 flaques rouille (était 4/3/3). Zone interdite 64 px du centre. Pilier tech conservé.
-- **`BuildObstacles(rng)` dans `GroundRenderer`** : 5 Piliers de Sanctuaire (type A) + 2 Épaves de Machine (type B). Zones interdites : rayon 150 px centre, rayon 48 px autour de chaque geyser (-500,-250) et (480,300), bande 80 px des murs. Fallback `Polygon2D` coloré si sprite absent. Pilier : `CapsuleShape2D` rayon=12, height=0, offset Y=+16. Épave : `RectangleShape2D(56, 24)`.
-- **`PointLight2D "Light"` dans `AetherGeyser.tscn`** : `color = Color(0,0.9,1,1)`, `energy = 0.4` (inactif). Texture `GradientTexture2D` radiale configurée dans `_Ready()` (pas d'éditeur disponible). Animation `energy` 0.4→1.8 en 0.3 s (actif) / 1.8→0.4 en 0.5 s (inactif) via `CreateTween()`. `SetActive(bool)` extrait de `_Process` pour clarté.
-- **Geysers repositionnés** : (-500,-250) et (480,300) dans `Game.tscn`.
-- **Death burst ennemis** : `vfx_enemy_death_burst.tscn` (`Node2D` + `GPUParticles2D` + `Timer 0.6s`), instancié via `GetTree().Root.CallDeferred(AddChild)` depuis `EnemyBase.Die()`. `ParticleProcessMaterial` spread=180° (radial 360° effectif), velocity 60–100, texture `vfx_particle_rustswarm.png`. `EnemyDeathBurst.cs` dans `src/VFX/`. Qualifier `Godot.Timer` (ambiguïté avec `System.Threading.Timer`).
-- **`Camera2D` limites** dans `Player.tscn` : `limit_left=-960`, `limit_right=960`, `limit_top=-608`, `limit_bottom=608`.
-
-## Décisions d'implémentation (Phase 4 P1 — VFX — 2026-06-21)
-
-- **`GraftedColossus.Die()` — death burst inline** : `private static PackedScene? _deathBurstScene` + `??=` (cache statique, cohérent avec `EnemyBase._deathBurstScene`). Burst instancié via `CallDeferred(AddChild)` + `SetDeferred("global_position", _cachedDeathPos)` dans `OnAnimationFinished()` branch `death`, avant `SpawnAetherCore()` et `QueueFree()`. `_cachedDeathPos` capturé en début de `Die()` avant tout `QueueFree`.
-- **`XpOrb` trail + pulse** : `GPUParticles2D "Trail"` (amount=4, lifetime=0.15, velocité=0 — particules restent sur place, texture `vfx_particle_xp.png`) activé sur `_isMagneted = true`. `AnimationPlayer "Anim"` : animation `pulse` sur `Visual:modulate.a` 0.7→1.0 en 0.6s EaseInOut boucle infinie, démarrée dans `_Ready()` et stoppée quand `_isMagneted = true`. Transition trail/pulse sur `wasMagneted != _isMagneted` (pas d'appel redondant par frame).
-- **`vfx_impact_burst.tscn`** : `Node2D` (script `ImpactBurst.cs`) + `GPUParticles2D "Particles"` (amount=6, lifetime=0.25, one_shot, explosiveness=1, spread=180°, velocity 80–160) + `Timer 0.4s one_shot → QueueFree`. `draw_pass_1 = SubResource("ImpactMesh")` (4×4 px) assigné — taille particule maîtrisée. `ImpactBurst.cs` dans `src/VFX/`, `[Export] Texture2D ParticleTexture` assignée avant `AddChild`.
-- **`Bullet.cs` + `EnemyBullet.cs` — impact burst** : cache statique `_impactBurstScene ??=` + `_impactTexture ??=`. Pattern `CallDeferred(AddChild)` + `SetDeferred("global_position")`. Guard `_hasHit` dans `EnemyBullet` (évite double burst sur même frame). Textures : `vfx_particle_impact_plasma.png` (joueur, 2×2 `#FFD700`) / `vfx_particle_impact_sentinel.png` (ennemi, 2×2 `#FF6644`).
-- **4 GPUParticles2D ambiants Aether dans `Game.tscn`** : AetherAmbientTop/Bottom (Box 1920×80, dir vers bord) + AetherAmbientLeft/Right (Box 80×1216). amount=8, lifetime=4, ZIndex=-1. Texture `vfx_particle_aether_ambient.png` (3×3 `#00A0BB`). Émission depuis les bords extérieurs uniquement — jamais dans la zone centrale.
-- **BUG-006 fix** : `draw_pass_1 = SubResource(...)` manquait dans `vfx_enemy_death_burst.tscn` (BurstMesh 6×6) et `vfx_impact_burst.tscn` (ImpactMesh 4×4). Sans cet assignat, Godot utilise un quad par défaut (taille non maîtrisée).
-
-## Décisions d'implémentation (Phase 4 P2 — Fixes — 2026-06-21)
-
-- **`SpawnDeathBurst()` : `private` → `protected`** dans `EnemyBase`. Les sous-classes qui overrident `Die()` sans appeler `base.Die()` (toutes sauf le chemin par défaut) ne pouvaient pas l'appeler. Appelé explicitement dans `Die()` de `RustSwarm`, `CorruptedDrone`, `CorruptedSentinel` — après `SpawnXpOrb()`, avant l'animation death. `GraftedColossus` non concerné (burst reproduit inline dans `OnAnimationFinished`).
-- **4 `ParticleProcessMaterial` distincts pour les ambiants Aether** dans `Game.tscn` : un material partagé ne peut pas avoir des directions différentes par émetteur. Directions par bord : Top `(0,1,0)` + gravity `(0,2,0)` / Bottom `(0,-1,0)` + gravity `(0,-2,0)` / Left `(1,0,0)` + gravity `(2,0,0)` / Right `(-1,0,0)` + gravity `(-2,0,0)`. `load_steps` 20→23.
-- **Obstacles C/D dans `BuildObstacles()`** : type C — 4 caisses `RectangleShape2D(28,28)` offset Y=+6, méthode `IsThirdAligned()` (tolerance 48 px) empêche 3 caisses alignées. Type D — 2 arches, 2 `CollisionShape2D` latéraux `RectangleShape2D(20,28)` à X=±38, passage central libre, rotation 90° à 50% de probabilité.
-
-## Décisions d'implémentation (Phase 4 — Hit Flash VFX — 2026-06-21)
-
-- **`EnemyBase.HitFlash(float duration)`** : `_hitTween?.Kill()` + `CreateTween()` + `TweenProperty(this, "modulate", Colors.White, duration).From(new Color(5f, 5f, 5f, 1f))`. `Modulate` posé sur le **nœud racine** (pas `_sprite.Modulate`) pour que l'effet cascade multiplicativement sur tous les enfants. `Color(5f, 5f, 5f, 1f)` = blanc sur-exposé → transition vers blanc normal donne l'effet "flash lumineux".
-- **`_hitTween?.Kill()`** avant chaque nouveau tween : les dégâts Aether Geyser arrivent chaque frame → sans kill, les tweens s'accumulent et le flash ne se voit plus.
-- **`Player.TakeDamage()` — même pattern, 0.1s** : flash uniquement si `Stats.CurrentHp > 0f` (pas de flash post-mort). `Modulate` root player, `_sprite.Modulate` réservé au clignotement implants <25% HP — les deux axes sont indépendants (multiplication Godot inoffensive).
-- **`EnemyBase.TakeDamage()` : durée 0.05s** (2× plus court que le joueur — ennemis plus nombreux, flash plus discret mais lisible).
-
-## Décisions d'implémentation (Phase 3c — UI Polish — 2026-06-21)
-
-- **Palette UI** : fond `Color(0.102,0.102,0.18)`, cyan `Color(0.267,1,0.933)` (`#44FFEE`), violet
-  `Color(0.667,0.267,1)` (`#AA44FF`), or `Color(1,0.8,0.267)`, blanc cassé `Color(0.85,0.85,0.95)`.
-  Cohérente sur tous les écrans — ne pas dérives sans décision `directeur-artistique`.
-- **`StyleBoxFlat` 3 états** (normal/hover/pressed) : bg sombre + border=2 + `borderColor=cyan` (normal) ;
-  bg moins sombre + border=3 + `borderColor=violet` (hover/pressed). Pattern appliqué à tous les boutons
-  principaux. Chaque bouton doit avoir ses **propres instances** de `StyleBoxFlat` (pas de partage de
-  sub_resource — Godot les lie et casse le 3-state).
-- **`FadeOverlay`** : `ColorRect` z_index=100, `process_mode=3` (Always), `mouse_filter=2` (Ignore),
-  `Color(0,0,0,1)` au départ dans le `.tscn`. Tween `color:a` 1→0 à l'entrée, 0→1 + `ChangeSceneToFile`
-  à la sortie. Obligatoire sur chaque écran de jeu.
-- **Hover scale** : `PivotOffset` doit être calculé dans `MouseEntered` (`btn.Size / 2f`), PAS dans
-  `_Ready()` où `btn.Size = Vector2.Zero` (layout pas encore résolu). En `_Ready()` : `btn.CustomMinimumSize / 2f`.
-- **Barres HP/XP** : `ColorRect` bg + `ColorRect` enfant fill (offset_right=maxWidth, resize via
-  `Size = new Vector2(maxWidth * ratio, Size.Y)`). Ne pas utiliser `ProgressBar` Godot — style non
-  contrôlable sans theme complet.
-- **HP couleur dynamique** : >50% cyan / 25–50% orange / <25% rouge-rouille — mis à jour à chaque
-  `_Process` dans `HUD.cs`.
-- **Timer couleur dynamique** : >120s blanc cassé / 60–120s orange / <60s rouge-rouille.
-- **`FusionFlash` AutoLoad** — `CanvasLayer` layer=99 (sous FadeOverlay layer=100) :
-  `ColorRect` blanc `Color(1,1,1,0)` au repos, animé sur `color:a` uniquement (0→0.85 en 0.1s,
-  0.85→0 en 0.25s). `ProcessMode = Always` sur le nœud + `tween.SetPauseMode(Process)` — impératif
-  car la fusion est choisie pendant que le tree est pausé (LevelUpScreen). Déclenché via
-  `FusionFlash.Instance?.TriggerFlash()` dans `LevelUpScreen.OnCardChosen()` case "fusion".
-
-## Décisions d'implémentation (Phase 3b — 2026-06-21)
-
-- **`GroundRenderer` — Node2D procédural, pas TileMap natif** : le TileMap Godot 4 requiert l'éditeur graphique. Approche : `_Ready()` instancie des `Sprite2D` via seed 42. Sol 40×23 (5 variantes), murs H×42/V×25 tiles, décors (flaques ZIndex=-9, débris ZIndex=-8, colonnes ZIndex=+1).
-- **Colonnes collidables** : `StaticBody2D` CollisionLayer=1/CollisionMask=1, `RectangleShape2D(28, 28)` décalée +16 px Y (moitié basse du sprite 32×64). Ennemis traversent (CollisionMask=0), joueur bloque.
-- **`AetherGeyser`** : `AnimatedSprite2D` (idle=frame1, active=frames2+3 à 4fps), `Area2D` rayon 24px. Cycle inactif 3s → actif 2s. Dégâts : `5f × delta × (1 - DamageReduction)`. ProcessMode par défaut (hérité). Positions : (-300,-150) et (280,180).
-- **`vTiles = 25` hardcodé** : `(784/32)` tronque à 24 (768 px gap). 25 couvrent 800 px, chevauchent les corners H. Impact visuel nul.
-- **Flaques Rouille `ZIndex=-9`** : sous les débris (-8), sur le sol (-10). Placer uniquement sur `tile_floor_01` (contraste ~30 niveaux, risque lisibilité sur tiles chargés).
-- **`splash_art.png` — texte intégré** : `tools/generate_splash.py` (Pillow) bake le titre et tagline dans le PNG. Ne jamais ajouter de `Label` Godot avec le même texte dans `MainMenu.tscn` — doublon assuré. Si texte indépendant souhaité : régénérer sans texte + Labels.
-- **Audio — état final (2026-06-22)** : bande-son 31/31 CC0 définitifs. SFX : 24 fichiers + 2 stingers depuis packs Kenney.nl (Sci-Fi Sounds, Impact Sounds, UI Audio, RPG Audio), convertis OGG→WAV via ffmpeg. Musiques longues : 5 fichiers depuis Juhani Junkala "Retro Game Music Pack" (OpenGameArt.org, CC0). Conversion : `ffmpeg -ar 44100 -ac 2 -sample_fmt s16`. Sources documentées dans `assets/audio/CREDITS.md`. Scripts : `tools/integrate_kenney_audio.py` (SFX) + `tools/generate_audio_v2.py` (fallback synthèse si régénération nécessaire).
-- **Pause à la mort** : `RunStatsTracker.OpenEndScreen()` chaîne deux CallDeferred — `AddChild(screen)` PUIS `PauseTree()`. Ordre garanti : `_Ready()` de RunEndScreen pose `ProcessMode = Always` avant la pause. `Tween.TweenPauseMode.Process` dans `ShowEndScreen()` assure l'animation countup Échos même en pause. `GetTree().Paused = false` avant chaque `ChangeSceneToFile` dans `OnHubPressed()`/`OnReplayPressed()`.
-- **`MainMenu.tscn` — pas de `TitleLabel`/`SubtitleLabel`** : le splash art contient déjà le titre et la tagline. Ajouter des Labels recrée un double affichage superposé.
-
-## Décisions d'implémentation (Phase 3 — 2026-06-20)
-
-- **Colosse Greffé en 48×48 px** : seule exception à la grille 32×32. Justification : à 32×32 sa
-  silhouette devient illisible en combat dense. Ses implants violets `#AA44FF` sont un choix de
-  lore délibéré (il a absorbé des Noyaux d'Aether → drop cohérent à sa mort). Fichier SpriteFrames :
-  `assets/sprites/enemies/colossus/colossus_frames.tres`.
-- **`GraftedColossus.Die()` n'appelle PAS `base.Die()`** : `EnemyBase.Die()` appelle `QueueFree()`
-  immédiatement, ce qui détruirait le nœud avant la fin des 10 frames d'animation death. La logique
-  de `EnemyBase.Die()` (XP, signaux, SFX) est reproduite inline, puis `_sprite.Play("death")` est
-  lancé. Le `QueueFree()` et le spawn d'`AetherCore` sont déclenchés par le signal
-  `AnimationFinished` (frame 7 = flash violet libération Noyau).
-- **`CorruptedSentinel` — `flip_h` suit la direction vers le joueur, pas la vélocité** : la
-  Sentinelle peut reculer vers la droite tout en visant à gauche (comportement kiter). Utiliser
-  `Velocity.X` inverserait le sprite dans ce cas. Calcul : `(Player.GlobalPosition - GlobalPosition).X`.
-- **`CorruptedSentinel` — signal `AnimationFinished` pour retour `idle` après `attack`** :
-  l'animation `attack` ne boucle pas. Connecter `_sprite.AnimationFinished` dans `_Ready()` pour
-  repasser en `idle` à la fin — sinon le sprite reste figé sur la dernière frame attack.
-- **`CorruptedDrone` — animation `idle` quand déviation > 30°** : le drone erratique change de
-  direction de ±45° toutes les 0.4–0.8 s. L'animation `idle` joue pendant ces saccades angulaires
-  (donne un effet de "hésitation"), `move` sinon.
-- **`WorldEnvironment.glow` dans `Game.tscn`** : ajouté en premier enfant de la scène (avant
-  `Ground`). Paramètres : `glow_enabled=true`, niveaux 1+2 actifs, `glow_hdr_threshold=0.6`
-  (seules les teintes Aether saturées brillent), `glow_intensity=0.8`, `glow_strength=1.2`,
-  `glow_blend_mode=Additive`. `load_steps` incrémenté de 15 à 16.
-- **`AudioSystem.LoadMusic()` — fallback WAV** : tente `.ogg` en priorité (format production),
-  puis `.wav` si absent (format placeholder dev). Permet d'utiliser des WAV silencieux pendant le
-  développement sans modifier le code de chargement pour la production.
-- **Placeholders audio — historique** : v1 = WAV silencieux (`generate_audio_placeholders.py`), v2 = synthèse améliorée (`generate_audio_v2.py`, filtrage IIR, reverb Schroeder). Les v2 restent dans git et sont reproductibles — utiles si un asset définitif doit être remplacé temporairement.
-- **Python sur cette machine** : `C:\Users\drang\AppData\Local\Programs\Python\Python313\python.exe`
-  (Python 3.13, installé par l'agent `graphiste`). `python` et `py` ne sont pas dans le PATH —
-  utiliser le chemin absolu ou ajouter `C:\Users\drang\AppData\Local\Programs\Python\Python313\`
-  au PATH utilisateur.
-- **`tools/`** : dossier de scripts de génération d'assets. `generate_sprites.py` (165 PNG pixel
-  art via Pillow) et `generate_audio_placeholders.py` (WAV silencieux via `wave` stdlib).
-  Reproductibles à tout moment.
-
-## Décisions d'implémentation (Bugfixes Phase 2 — 2026-06-20)
-
-- **`RunEndScreen` ne doit JAMAIS appeler `GetTree().Paused`** : supprimé de `ShowEndScreen()` et
-  des handlers. L'overlay couvre tout l'écran, la pause n'est pas nécessaire et bloque les boutons.
-- **`RunEndScreen._Ready()` force `GetTree().Paused = false`** : au cas où la mort survient pendant
-  l'écran de level-up (qui met `Paused = true`). Sans ce reset, les boutons sont inaccessibles.
-- **Ordre de fermeture `RunEndScreen`** : toujours `ChangeSceneToFile()` EN PREMIER (le nœud est
-  encore dans l'arbre), PUIS `GetParent().RemoveChild(this)` (synchrone, disparaît immédiatement),
-  PUIS `QueueFree()`. Inverser l'ordre provoque `data.tree is null` sur `GetTree()`.
-- **`WeaponBase._Ready()` initialise `_timer = Cooldown`** : évite le tir instantané au frame 0.
-  Les sous-classes qui définissent `Cooldown` via JSON le font via `ApplyWeaponStats()` après
-  `AddChild` — la valeur de `Cooldown` au moment du `_Ready()` est la valeur par défaut de l'export.
-  **CRITIQUE : chaque sous-classe d'arme doit appeler `base._Ready()` comme dernière ligne de son
-  `_Ready()`, APRÈS avoir assigné `Cooldown`**. Godot C# n'appelle pas la méthode parente
-  automatiquement (contrairement à GDScript). Sans cet appel, `_timer` reste à `0f` et l'arme tire
-  immédiatement au frame 0. Appliqué à : `ImpulseCannon`, `PlasmaBlade`, `OverloadField`,
-  `FusionBlade`, `RailOvercharged`, `DroneSwarm`.
-- **`LevelUpSystem.Reset()`** : remet `_pendingFusionId = null` et `_lastFusionAvailableLevel = -1`.
-  Appelé depuis `GameManager.RegisterPlayer()`. Sans ce reset, une fusion en attente d'une run
-  précédente peut être forcée dès le niveau 2 de la run suivante sans que ses conditions soient remplies.
-- **`GameManager.RegisterPlayer()` reset complet avant chaque run** : `XpSystem.Reset()`,
-  `InventorySystem.Reset()`, `LevelUpSystem.Reset()` — dans cet ordre — PUIS enregistrement de l'arme
-  de départ.
-- **Arme de départ alternative** : si `StartingWeaponId != "impulse_cannon"`, l'`ImpulseCannon`
-  hardcodé dans `Player.tscn` est `QueueFree()`-é et `InventorySystem.AddOrUpgradeWeapon(StartingWeaponId)`
-  instancie la bonne arme. Si `StartingWeaponId == "impulse_cannon"`, le nœud existant est enregistré
-  via `RegisterExistingWeapon()` (pas de doublon).
-- **`InventorySystem.Reset()` avec guard `IsInstanceValid`** : les nœuds d'armes peuvent être déjà
-  détruits par le déchargement de scène. Le `foreach` vérifie `IsInstanceValid(node)` avant `QueueFree()`.
-- **`Player._isDead`** : flag booléen court-circuitant `_PhysicsProcess()` et guardant `HandleDeath()`
-  contre les doubles appels (ex. mort par plusieurs projectiles dans le même frame).
-- **`Bash(*)` dans `.claude/settings.local.json`** : permission auto-approuvée pour le game-tester.
-- **`RefreshWeaponDamages()` dans `InventorySystem`** : miroir de `RefreshWeaponCooldowns()`,
-  appelé depuis `ApplyPassiveDelta()` après `stats.DamageMultiplier += ...` pour le cas
-  `thermal_core`. Sans cet appel, les armes déjà au niveau max ne reçoivent jamais le bonus
-  dégâts du Noyau Thermique (seul un upgrade ultérieur aurait déclenché `ApplyWeaponStats()`).
-  Pas de double-application du multiplicateur : `ApplyWeaponStats()` repart toujours de la valeur
-  brute JSON avant de multiplier par `DamageMultiplier` courant.
-
-## Décisions d'implémentation (Phase 2 suite — 2026-06-20)
-
-- **`SaveManager` responsabilité unique** : ne connaît que le JSON brut (`user://save.json`). `MetaProgressionSystem` porte toute la logique meta. Ne jamais fusionner les deux.
-- **`RunStatsTracker` — Node ordinaire, pas AutoLoad** : présent dans `Game.tscn`, se connecte au signal `GameManager.EnemyKilled`. Evite le couplage direct `EnemyBase → RunStatsTracker`.
-- **`RunEndScreen` ajouté à `GetTree().Root`** via `CallDeferred` depuis `RunStatsTracker` — pas à `Game.tscn` (la scène de jeu peut être déchargée pendant la transition).
-- **`GameManager.StartingWeaponId` doit valoir `"impulse_cannon"` par défaut** : si le joueur lance une run sans passer par le Hub, aucun id n'est sélectionné. Valeur par défaut obligatoire dans `_Ready()`.
-- **Noyaux d'Aether vs orbes XP** : pas d'aspiration magnétique sur les Noyaux (ramassage manuel, rayon 20 px). Couleur placeholder `#AA44FF` (violet), distinct du jaune-vert `#AAFF44` des orbes XP.
-- **AutoLoad order** : `SaveManager` doit être enregistré **avant** `MetaProgressionSystem` dans `project.godot` — `MetaProgressionSystem._Ready()` appelle `SaveManager.Instance.Load()`.
-
-## Décisions d'implémentation (Phase 2 — 2026-06-20)
-
-- **`file` modifier interdit dans les signatures de membres** : un `file sealed class` ne peut pas
-  apparaître dans les champs/méthodes d'une classe `public partial`. Utiliser `internal sealed class`
-  pour les DTOs privés au projet (ex. `EnemySpawnData`).
-- **`FileAccess` ambigu avec `System.Text.Json`** : `System.Text.Json` importe `System.IO`
-  implicitement, ce qui crée une ambiguïté avec `Godot.FileAccess`. Toujours qualifier :
-  `Godot.FileAccess.Open(...)` et `Godot.FileAccess.ModeFlags.Read` dans tous les fichiers qui
-  utilisent `System.Text.Json`.
-- **`AddChild` interdit dans un callback physique** : appeler `AddChild` depuis un signal physique
-  (`BodyEntered`, `AreaEntered`) lève `Can't change state while flushing queries`. Utiliser
-  `parent.CallDeferred(Node.MethodName.AddChild, node)` + `node.SetDeferred("global_position", pos)`.
-  Appliqué dans `EnemyBase.SpawnXpOrb()`.
-- **Clamp position joueur après `MoveAndSlide()`** : les ennemis (`CollisionMask = 2`) poussent
-  physiquement le joueur via leur propre `MoveAndSlide()`. La pression cumulée de plusieurs ennemis
-  fait sortir le joueur des murs `StaticBody2D`. Solution : `GlobalPosition` clampé à
-  `±(ArenaWidth/2 - WallThickness)` après chaque `MoveAndSlide()` dans `Player._PhysicsProcess()`.
-- **`.gitignore`** : exclut `.godot/`, `build/`, `bin/`, `obj/`, `*.exe`, `*.pck`, `.vs/`, `.idea/`.
-
-## Décisions d'implémentation (Phase 1 — 2026-06-19)
-
-- **CollisionMask ennemis = 2** (était 0 jusqu'au 2026-06-28) : les ennemis **traversent les murs**
-  (layer 1) mais sont **bloqués par les obstacles infranchissables** (piliers/épaves/caisses/arches),
-  qui sont sur le **layer 3 (bits 1+2)** — le joueur les voit via `mask=1`, les ennemis via `mask=2`.
-  Cohérent avec le genre survivor (les ennemis convergent de partout mais contournent les obstacles) ;
-  les dégâts de contact restent gérés par distance en code.
-- **Spawn intérieur des murs** : les ennemis spawnent à ±48 px des bords intérieurs de l'arène,
-  pas à l'extérieur des murs StaticBody2D.
-- **Placeholders visuels** : `Polygon2D` colorés (cyan joueur, rouge-rouille ennemi, jaune balle)
-  tant que les sprites ne sont pas produits — évite Sprite2D et ses dépendances d'assets.
-- **Chargement scènes au runtime** : `BulletScene ??= GD.Load<PackedScene>(path)` dans `_Ready()`
-  — les `[Export]` restent optionnels, pas besoin de les assigner manuellement dans l'éditeur.
-- **Godot.NET.Sdk** : version du csproj à régénérer via *Project → Tools → C# → Create C# Solution*
-  après tout changement de version Godot (la version du SDK doit correspondre exactement).
+**Tests headless**
+- `LevelUpScreen` met l'arbre EN PAUSE → gèle le serveur physique en headless (neutraliser l'XP de départ pour tester le gameplay)
+- `Area2D` ne détecte un corps que via vrai mouvement physique (`MoveAndSlide`) — pas un téléport ni un `Tween`
