@@ -121,6 +121,9 @@ public partial class GroundRenderer : Node2D
         var rng = new RandomNumberGenerator();
         rng.Seed = pick.Randi();
         AddBackdrop();
+        // Features de sol (rivière/lave/chemin/conduits) AVANT le sol : les trous vitrés
+        // et les obstacles doivent connaître les cellules occupées pour les éviter.
+        _featureCells = FloorFeatures.Build(this, _biome.Id, _biome.Accent, rng);
         BuildFloor(rng);
         BuildWalls(rng);
         BuildDecor(rng);
@@ -240,22 +243,38 @@ public partial class GroundRenderer : Node2D
         int clusters = 3 + (int)(rng.Randi() % 2); // 3-4 amas par run (anti-fouillis)
         for (int c = 0; c < clusters; c++)
         {
-            int w = 2 + (int)(rng.Randi() % 2);
-            int h = 2 + (int)(rng.Randi() % 2);
-            int row0 = margin + (int)(rng.Randi() % (uint)(GridRows - 2 * margin - h));
-            int col0 = margin + (int)(rng.Randi() % (uint)(GridCols - 2 * margin - w));
-            for (int r = row0; r < row0 + h; r++)
-                for (int cc = col0; cc < col0 + w; cc++)
-                    cells.Add((r, cc));
+            // Réessaie si l'amas chevauche une feature de sol (rivière, lave, chemin…)
+            for (int attempt = 0; attempt < 20; attempt++)
+            {
+                int w = 2 + (int)(rng.Randi() % 2);
+                int h = 2 + (int)(rng.Randi() % 2);
+                int row0 = margin + (int)(rng.Randi() % (uint)(GridRows - 2 * margin - h));
+                int col0 = margin + (int)(rng.Randi() % (uint)(GridCols - 2 * margin - w));
 
-            float centerCol = col0 + w / 2f;
-            float centerRow = row0 + h / 2f;
-            _glassClusterCenters.Add(new Vector2(startX + centerCol * TileSize, startY + centerRow * TileSize));
+                bool onFeature = false;
+                for (int r = row0; r < row0 + h && !onFeature; r++)
+                    for (int cc = col0; cc < col0 + w && !onFeature; cc++)
+                        if (_featureCells.Contains((r, cc)))
+                            onFeature = true;
+                if (onFeature) continue;
+
+                for (int r = row0; r < row0 + h; r++)
+                    for (int cc = col0; cc < col0 + w; cc++)
+                        cells.Add((r, cc));
+
+                float centerCol = col0 + w / 2f;
+                float centerRow = row0 + h / 2f;
+                _glassClusterCenters.Add(new Vector2(startX + centerCol * TileSize, startY + centerRow * TileSize));
+                break;
+            }
         }
         return cells;
     }
 
     private readonly List<Vector2> _glassClusterCenters = new();
+
+    /// <summary>Cellules occupées par les features de sol (rivière, lave, chemin…).</summary>
+    private HashSet<(int Row, int Col)> _featureCells = new();
 
     // ─── Murs ─────────────────────────────────────────────────────────────────
 
@@ -378,7 +397,28 @@ public partial class GroundRenderer : Node2D
         AddChild(obstacleRoot);
         int i = 0;
         foreach (var raw in LayoutPositions(rng))
-            obstacleRoot.AddChild(BiomeObstacles.Build(_biome.Id, _biome.Accent, i++, NudgeSafe(raw)));
+            obstacleRoot.AddChild(BiomeObstacles.Build(_biome.Id, _biome.Accent, i++, AvoidFeatures(NudgeSafe(raw))));
+    }
+
+    /// <summary>
+    /// Décale verticalement un obstacle qui tomberait sur une feature de sol
+    /// (un pilier au milieu de la lave casse la lecture « rivière »).
+    /// </summary>
+    private Vector2 AvoidFeatures(Vector2 pos)
+    {
+        foreach (float dy in new[] { 0f, 64f, -64f, 128f, -128f, 192f })
+        {
+            var p = NudgeSafe(pos + new Vector2(0f, dy));
+            if (!OnFeature(p)) return p;
+        }
+        return pos;
+    }
+
+    private bool OnFeature(Vector2 p)
+    {
+        int col = (int)MathF.Floor((p.X + ArenaW / 2f) / TileSize);
+        int row = (int)MathF.Floor((p.Y + GridRows * TileSize / 2f) / TileSize);
+        return _featureCells.Contains((row, col));
     }
 
     /// <summary>
