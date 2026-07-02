@@ -33,7 +33,7 @@ tableau des phases (✅/🔲), roadmap, captures d'écran.
   - Fin de niveau complète : survie sans fin, overtime, boss en boucle, déblocage progressif, high scores (temps+difficulté), arsenal à découverte
   - Localisation EN/FR/ES (`localization/ui.csv` → clé `Loc.T("CLÉ")`) ; support manette complet
   - HUD thématisé par biome, atmosphère (brume/rais/parallaxe), scanlines CRT
-  - Arènes : obstacles thématisés par biome (`BiomeObstacles.cs`), gabarits structurés (quadrants/anneau/allées), décor rouillé réservé au Sanctuaire ; flag `--biome=<id>` pour forcer un biome (tests/captures)
+  - Arènes : obstacles thématisés par biome (`BiomeObstacles.cs`), features de sol (`FloorFeatures.cs` — lave/rivières/chemin pavé/conduits), gabarits structurés, décor rouillé réservé au Sanctuaire ; flag `--biome=<id>` pour forcer un biome (tests/captures)
   - Voir `docs/EXPANSION_PLAN.md` et `docs/LEVEL_PROGRESSION_PLAN.md` pour le détail
 
 ## Conventions
