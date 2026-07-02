@@ -10,12 +10,15 @@ Sortie : assets/sprites/enemies/aether_revenant/ et .../rusted_core/
 
 Lancer : python tools/generate_boss_sprites.py
 """
-import os, math, random
+import os, sys, math, random
 
 from PIL import Image
 
 S = 64
 ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), ".."))
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import pseudo3d_lib as _p3d
 
 # ---------------------------------------------------------------- primitives
 def canvas():
@@ -175,7 +178,10 @@ def gen_revenant(out):
     for i in range(12):
         img = canvas()
         d = i / 11.0
-        draw_revenant(img, bob=int(d*4), core=max(0.0,1.0-d), alpha=int(255*(1-d*0.4)), dissolve=d*0.85)
+        # alpha=255 (pleine opacite) pour beneficier du shading pseudo-3D : la
+        # degradation visuelle vient deja de `dissolve` (erosion de pixels) et
+        # des particules ci-dessous, cf. docs/ART_BRIEF_PSEUDO3D.md
+        draw_revenant(img, bob=int(d*4), core=max(0.0,1.0-d), alpha=255, dissolve=d*0.85)
         # eclats violets qui montent
         rnd = random.Random(50+i)
         for _ in range(int(d*22)):
@@ -195,6 +201,14 @@ C_CORE   = (255, 136, 34)
 C_CORE_B = (255, 210, 90)
 C_CRACK  = (255, 90, 30)
 C_EYE    = (255, 180, 60)
+
+# Noyau energetique / accents jamais assombris par l'ombrage (§5/§6 du brief).
+_CORE_COLORS = [
+    R_CORE, R_CORE_B, R_EYE, R_BLADE, R_BLADE_B,
+    C_CORE, C_CORE_B, C_CRACK, C_EYE,
+]
+save = _p3d.wrap_save(save, core_colors=_CORE_COLORS)
+
 
 def draw_rusted_core(img, core=1.0, stomp=0, charge=0.0, alpha=255, blast=0.0, broken=0.0):
     cx = 32
@@ -283,9 +297,11 @@ def gen_rusted_core(out):
     for i in range(14):
         img = canvas()
         d = i / 13.0
+        # alpha=255 pour le shading pseudo-3D : `broken`/`blast` portent deja
+        # la degradation visuelle, cf. docs/ART_BRIEF_PSEUDO3D.md
         draw_rusted_core(img, core=max(0.0,1.0-d*0.5), charge=min(1.0,d*1.5),
                          blast=min(1.0,d), broken=max(0.0,(d-0.4)*1.6),
-                         alpha=int(255*(1-d*0.5)))
+                         alpha=255)
         rnd = random.Random(90+i)
         for _ in range(int(d*30)):
             x = 32 + rnd.randint(-20,20); y = 34 + rnd.randint(-18,18)

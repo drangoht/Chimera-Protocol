@@ -3,15 +3,26 @@
 - aether_nova : detonation violette (anneau + rayons)
 Sortie : assets/sprites/ui/ui_icon_tesla.png et ui_icon_nova.png
 """
-import os, math
+import os, sys, math
 from PIL import Image
 
 S = 32
 ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), ".."))
 OUT = os.path.join(ROOT, "assets", "sprites", "ui")
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import pseudo3d_lib as _p3d
+
+
 def canvas():
     return Image.new("RGBA", (S, S), (0, 0, 0, 0))
+
+
+def save_icon(img, filename):
+    """Ombrage icone UI (2 faces, amplitude reduite, §5 du brief), puis sauvegarde."""
+    img = _p3d.shade_icon(img)
+    img.save(os.path.join(OUT, filename))
+    print(filename)
 
 def put(img, x, y, c):
     x, y = int(round(x)), int(round(y))
@@ -69,8 +80,7 @@ def gen_tesla():
     # etincelles
     for (x,y) in [(24,8),(7,18),(22,20),(5,25)]:
         put(img, x, y, (CY[0],CY[1],CY[2],200))
-    img.save(os.path.join(OUT, "ui_icon_tesla.png"))
-    print("ui_icon_tesla.png")
+    save_icon(img, "ui_icon_tesla.png")
 
 # ---------------- Nova : detonation violette
 def gen_nova():
@@ -93,8 +103,7 @@ def gen_nova():
         x0 = cx + math.cos(a)*5; y0 = cy + math.sin(a)*5
         x1 = cx + math.cos(a)*14; y1 = cy + math.sin(a)*14
         line(img, x0, y0, x1, y1, (VB[0],VB[1],VB[2],200), w=0)
-    img.save(os.path.join(OUT, "ui_icon_nova.png"))
-    print("ui_icon_nova.png")
+    save_icon(img, "ui_icon_nova.png")
 
 # ---------------- Volee Multiple : eventail de projectiles
 def gen_scatter():
@@ -116,8 +125,7 @@ def gen_scatter():
         for (dx,dy) in [(0,0),(1,0),(-1,0),(0,1),(0,-1)]:
             put(img, hx+dx, hy+dy, CY)
         put(img, hx, hy, WH)
-    img.save(os.path.join(OUT, "ui_icon_scatter.png"))
-    print("ui_icon_scatter.png")
+    save_icon(img, "ui_icon_scatter.png")
 
 # ---------------- Essaim Orbital : drones en orbite (fusion epique, or)
 def gen_orbital():
@@ -139,8 +147,7 @@ def gen_orbital():
         dx = cx + math.cos(a)*11; dy = cy + math.sin(a)*11
         disc(img, dx, dy, 1.6, CY)
         put(img, dx, dy, WH)
-    img.save(os.path.join(OUT, "ui_icon_orbital.png"))
-    print("ui_icon_orbital.png")
+    save_icon(img, "ui_icon_orbital.png")
 
 # ---------------- Egide de Surcharge : bouclier-forteresse (fusion epique, or)
 def gen_aegis():
@@ -169,8 +176,7 @@ def gen_aegis():
     line(img, cx, 9, cx, 19, GRN, w=0)
     line(img, cx-3, 14, cx+3, 14, GRN, w=0)
     put(img, cx, 14, WH)
-    img.save(os.path.join(OUT, "ui_icon_aegis.png"))
-    print("ui_icon_aegis.png")
+    save_icon(img, "ui_icon_aegis.png")
 
 # ---------------- Lame Boomerang : lame tournoyante cyan + arc de retour
 def gen_glaive():
@@ -187,8 +193,7 @@ def gen_glaive():
     for k in range(11):  # arc de mouvement (pointillé)
         a = math.radians(20 + k * 14)
         put(img, cx + math.cos(a) * 13, cy + math.sin(a) * 13, (CY[0], CY[1], CY[2], 120))
-    img.save(os.path.join(OUT, "ui_icon_glaive.png"))
-    print("ui_icon_glaive.png")
+    save_icon(img, "ui_icon_glaive.png")
 
 # ---------------- Essaim Traqueur : missiles violets a trainee incurvee vers une cible
 def gen_seeker():
@@ -205,8 +210,7 @@ def gen_seeker():
         hx = sx + (tx - sx) * 0.85 + bend * math.sin(0.85 * math.pi) * 5
         hy = sy + (ty - sy) * 0.85
         disc(img, hx, hy, 1.6, V); put(img, hx, hy, WH)
-    img.save(os.path.join(OUT, "ui_icon_seeker.png"))
-    print("ui_icon_seeker.png")
+    save_icon(img, "ui_icon_seeker.png")
 
 # ---------------- Lance Cryo : rayon glace diagonal cyan/blanc + eclats
 def gen_cryo():
@@ -220,8 +224,7 @@ def gen_cryo():
         line(img, mx-2, my-2, mx+2, my+2, (ICE[0], ICE[1], ICE[2], 160), w=0)
         line(img, mx-2, my+2, mx+2, my-2, (ICE[0], ICE[1], ICE[2], 160), w=0)
     disc(img, 27, 5, 2, WH)
-    img.save(os.path.join(OUT, "ui_icon_cryo.png"))
-    print("ui_icon_cryo.png")
+    save_icon(img, "ui_icon_cryo.png")
 
 # ---------------- Jet de Pyre : cone de flammes (jaune->rouge) depuis une buse
 def gen_pyre():
@@ -236,8 +239,7 @@ def gen_pyre():
             tx = nx + math.cos(a) * rad; ty = ny + math.sin(a) * rad
             line(img, nx, ny, tx, ty, col, w=0)
     disc(img, nx+2, ny-2, 1, WH)
-    img.save(os.path.join(OUT, "ui_icon_pyre.png"))
-    print("ui_icon_pyre.png")
+    save_icon(img, "ui_icon_pyre.png")
 
 # ---------------- Singularite : vortex spirale violet vers un coeur sombre
 def gen_singularity():
@@ -259,10 +261,11 @@ def gen_singularity():
             prev = (x, y)
     disc(img, cx, cy, 3, DK)        # coeur sombre
     ring(img, cx, cy, 3, 1, WH)     # liseré du coeur
-    img.save(os.path.join(OUT, "ui_icon_singularity.png"))
-    print("ui_icon_singularity.png")
+    save_icon(img, "ui_icon_singularity.png")
 
 if __name__ == "__main__":
+    gen_tesla()
+    gen_nova()
     gen_orbital()
     gen_aegis()
     gen_glaive()

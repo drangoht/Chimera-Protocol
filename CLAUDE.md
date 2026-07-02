@@ -26,15 +26,17 @@ tableau des phases (✅/🔲), roadmap, captures d'écran.
 ## État du projet
 
 - Pile technique : **Godot 4.7 .NET (C# / .NET 8 / GodotSharp)**
-- **Phase actuelle : libre — redesign des arènes mergé 2026-07-02** (commit `f16db14`).
+- **Phase actuelle : libre — refonte visuelle pseudo-3D + faune par biome livrée 2026-07-03**.
 - **Ce qui est implémenté** :
-  - 3 personnages (Chimera, Titan, Vagabond), 5 biomes (Sanctuaire, Aether, Fournaise, Givre, Néon)
+  - Direction artistique **pseudo-3D avec ombres** (`docs/ART_BRIEF_PSEUDO3D.md`) appliquée à TOUS les sprites via `tools/pseudo3d_lib.py` (lumière fixe haut-gauche 45°, dérivation shadow/highlight HSV, ombre portée elliptique) : 3 persos joueurs, 8 ennemis/mini-boss/boss existants, 20 nouveaux ennemis, obstacles, tuiles de biome, icônes d'armes/UI (640 PNG régénérés, `.import` à jour). Validé game-tester PASS 2026-07-03 (cohérence lumière, lisibilité joueur en nuée).
+  - 3 personnages (Chimera, Titan, Vagabond) redessinés, 5 biomes (Sanctuaire, Aether, Fournaise, Givre, Néon)
   - 11 armes actives + 4 fusions + 4 passifs ; power-ups temporaires (4 types)
   - Fin de niveau complète : survie sans fin, overtime, boss en boucle, déblocage progressif, high scores (temps+difficulté), arsenal à découverte
   - Hub méta rééquilibré (2026-07-02) : 18 upgrades (8 rééquilibrés + 10 nouveaux), formule d'Échos plafonnée standard/overtime (`EchoFormula.Calculate`, caps + `overtimeDampening`/`overtimeBonusCap`), 5e composante "Bonus de Surcharge" sur `RunEndScreen`, `UpgradesList` scrollable
   - Localisation EN/FR/ES (`localization/ui.csv` → clé `Loc.T("CLÉ")`) ; support manette complet
   - HUD thématisé par biome, atmosphère (brume/rais/parallaxe), scanlines CRT
   - Arènes : obstacles thématisés par biome (`BiomeObstacles.cs`), features de sol (`FloorFeatures.cs` — lave/rivières/chemin pavé/conduits), gabarits structurés, décor rouillé réservé au Sanctuaire ; flag `--biome=<id>` pour forcer un biome (tests/captures)
+  - Faune par biome (2026-07-03) : **28 ennemis basiques au total** (8 d'origine + 20 nouveaux, 4/biome), câblés via sprite data-driven (`EnemyBase.SetSpriteFrames` + `EnemySpawnData.FramesPath`/`AiType`) — aucune nouvelle scène/sous-classe, réutilise les 4 scènes archétype existantes (cf. `docs/GDD.md` §21). Sprites générés (`tools/generate_new_enemies.py`). Densité par biome doublée (spawnWeight dilué mais compensé par les ids globaux toujours actifs) — validé game-tester PASS. Limite connue : les 5 variantes d'un même archétype partagent une silhouette recolorée (pas de nouvelle forme par ennemi) — à arbitrer si plus de variété visuelle est souhaitée
   - Voir `docs/EXPANSION_PLAN.md` et `docs/LEVEL_PROGRESSION_PLAN.md` pour le détail
 
 ## Conventions
@@ -49,11 +51,11 @@ tableau des phases (✅/🔲), roadmap, captures d'écran.
 - Style de code : PascalCase classes/méthodes, `_camelCase` champs privés, `readonly` par défaut
 - Architecture : `src/` (logique C#) / `scenes/` (.tscn) / `assets/` (raw) / `data/` (JSON tuning)
 - **Logique pure testable** : `src/Core/Rules/` (classes statiques sans dépendance Godot — `XpCurve`, `EnemyScaling`, `SpawnCurve`, `WeaponLeveling`, `StatCaps`, `WeightedPicker`…). Les nœuds y délèguent (SRP).
-- **Tests unitaires** : `tests/ChimeraProtocol.Tests.csproj` (xUnit). Lancer : `dotnet test tests/ChimeraProtocol.Tests.csproj`. **59 tests**.
+- **Tests unitaires** : `tests/ChimeraProtocol.Tests.csproj` (xUnit). Lancer : `dotnet test tests/ChimeraProtocol.Tests.csproj`. **62 tests**.
 - Singletons (AutoLoad) : `GameManager`, `XpSystem`, `InventorySystem`, `LevelUpSystem`, `SaveManager`, `MetaProgressionSystem`, `AudioSystem`, `FusionFlash`, `ScreenShake`
 - Données de tuning : `data/*.json`, modifiables sans recompiler
 - Sauvegarde : `user://save.json` (méta/Échos) + `user://settings.cfg` (préférences, high scores, complétions, armes découvertes)
-- Sprites : PNG transparent, grille 32×32 px (Colosse 48×48 — exception), `texture_filter = Nearest` global
+- Sprites : PNG transparent, grille 32×32 px (Colosse 48×48 — exception), `texture_filter = Nearest` global. Style **pseudo-3D avec ombres** (`docs/ART_BRIEF_PSEUDO3D.md`) via `tools/pseudo3d_lib.py` — toujours dériver shadow/highlight avec `shade()`/`shade_sprite()`/`shade_tile()`/`shade_icon()` plutôt que des couleurs plates ad hoc pour tout nouveau sprite
 - Audio : OGG musique (fallback WAV), WAV ou OGG SFX. Sources CC0 dans `assets/audio/CREDITS.md`.
 - Performance cible : 200–300 entités simultanées ; I-frames joueur 0.45 s (CRITIQUE pour les nuées)
 - Palette UI : fond `#1A1A2E`, cyan `#44FFEE`, violet `#AA44FF`, or `#FFCC44`, blanc cassé `#D9D9F2`
@@ -75,6 +77,18 @@ tableau des phases (✅/🔲), roadmap, captures d'écran.
 
 **Armes — câblage (checklist 8 points)**
 Ajouter une arme requiert : `weapons.json` (5 niveaux) · `levelup_config.json` rarityByCard · `InventorySystem` (WeaponScenePaths + ApplySpecializedStats) · `LevelUpSystem.AllWeaponIds` · `Codex.Weapons` + `IconById` · icône `ui_icon_*.png` + `.import` · clés `WPN_*` EN/FR/ES dans `localization/ui.csv`
+
+**Ennemis basiques (variante d'un archétype existant) — câblage data-driven, PAS de nouvelle scène**
+Un nouvel id qui réutilise straight_chase/erratic_chase/ranged_kiter/slow_hunter n'a besoin d'AUCUNE
+nouvelle scène `.tscn` ni sous-classe C#. Requiert : entrée dans `data/enemies.json` (`ai.type` =
+un des 4 archétypes, `framesPath` optionnel vers un `.tres` dédié) · `Codex.Enemies` + accent
+couleur cohérent avec le biome · clés `ENEMY_*_NAME/_TAG/_DESC` EN/FR/ES dans `localization/ui.csv`
+· sprite `.tres`/`.png` produits par `graphiste` au chemin référencé (le jeu tolère leur absence à
+la compilation, pas au runtime). `EnemySpawner.PreloadScenes` résout la scène via `ScenePaths` (id
+dédié) sinon `ArchetypeScenePaths` (fallback par `ai.type`) ; `EnemyBase.SetSpriteFrames` échange le
+`SpriteFrames` de l'`AnimatedSprite2D` après `AddChild` (même principe que
+`Player.SetCharacterFrames`/`CharacterDef.FramesPath`). Un vrai nouveau comportement d'IA continue
+de nécessiter scène + sous-classe dédiées (inchangé).
 
 **Navigation clavier/manette**
 - Listes non focalisables (simples `PanelContainer`) : aucun voisin de focus → scroll dans `_UnhandledInput` via `_scroll.ScrollVertical` (`allowEcho:true` pour maintien)

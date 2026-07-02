@@ -110,6 +110,20 @@ def save(img, path):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     img.save(path, "PNG")
 
+
+# ─── Pseudo-3D (docs/ART_BRIEF_PSEUDO3D.md) : noyau energetique / accents ────
+# jamais assombris par l'ombrage (§5/§6) — exclus de shade_sprite() ci-dessous.
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import pseudo3d_lib as _p3d
+
+_CORE_COLORS = [
+    AETHER[:3], AETHER_DARK[:3], IMPLANT_VIO[:3], IMPLANT_GLOW[:3],
+    DRONE_EYE[:3], DRONE_EYE_DK[:3], SPIDER_EYE[:3], CANON_TIP[:3], VISOR[:3],
+    XP_T1_MAIN[:3], XP_T2_MAIN[:3], XP_T3_MAIN[:3], XP_T4_MAIN[:3],
+]
+save = _p3d.wrap_save(save, core_colors=_CORE_COLORS)
+
+
 def hline(img, y, x0, x1, c):
     for x in range(x0, x1 + 1):
         px(img, x, y, c)

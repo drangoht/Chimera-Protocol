@@ -143,6 +143,37 @@ public partial class EnemyBase : CharacterBody2D
         Damage     = scaledDamage;
     }
 
+    /// <summary>
+    /// Échange dynamiquement le SpriteFrames de l'AnimatedSprite2D enfant (même principe que
+    /// Player.SetCharacterFrames) — permet à plusieurs ids d'ennemis de réutiliser une même scène
+    /// archétype (RustSwarm/CorruptedDrone/CorruptedSentinel/GraftedColossus) avec un sprite dédié
+    /// par id, sans dupliquer la scène ni le script (cf. EnemySpawnData.FramesPath).
+    /// Appelé par EnemySpawner.SpawnEnemy juste après AddChild ; ne fait rien si le chemin est vide,
+    /// si le nœud n'a pas d'AnimatedSprite2D, ou si la ressource est introuvable — dans ces cas le
+    /// SpriteFrames posé en dur dans le .tscn reste actif (rétro-compatible avec les 8 ennemis
+    /// existants qui n'ont pas de FramesPath).
+    /// </summary>
+    public void SetSpriteFrames(string path)
+    {
+        if (string.IsNullOrEmpty(path)) return;
+
+        var sprite = GetNodeOrNull<AnimatedSprite2D>("AnimatedSprite2D");
+        if (sprite == null) return;
+
+        var frames = GD.Load<SpriteFrames>(path);
+        if (frames == null) return;
+
+        string previousAnim = sprite.Animation;
+        sprite.SpriteFrames = frames;
+
+        // Reprend la même animation si elle existe dans le nouveau jeu de frames (convention :
+        // toutes les scènes archétype exposent idle/move/attack/death), sinon repli sur "move".
+        if (!string.IsNullOrEmpty(previousAnim) && frames.HasAnimation(previousAnim))
+            sprite.Play(previousAnim);
+        else if (frames.HasAnimation("move"))
+            sprite.Play("move");
+    }
+
     public void TakeDamage(float amount)
     {
         if (_isDead) return;

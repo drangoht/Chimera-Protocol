@@ -13,11 +13,14 @@ Usage :
 """
 
 import os
+import sys
 import math
 from PIL import Image, ImageDraw
 
 # Racine du projet (ce script est dans tools/, les assets dans assets/)
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, SCRIPT_DIR)
+import pseudo3d_lib as _p3d
 PROJECT_ROOT = os.path.dirname(SCRIPT_DIR)
 OUT_ENV = os.path.join(PROJECT_ROOT, "assets", "sprites", "environment")
 OUT_VFX = os.path.join(PROJECT_ROOT, "assets", "sprites", "vfx")
@@ -109,6 +112,17 @@ def save(img, path):
     print(f"  [OK] {os.path.relpath(path, PROJECT_ROOT)}  ({w}x{h} px)")
 
 
+# Pseudo-3D (docs/ART_BRIEF_PSEUDO3D.md) : ombrage matiere applique aux obstacles
+# (categorie "environment"), noyau energetique / accents Aether jamais assombris.
+_CORE_COLORS = [
+    C_AETHER_FISS[:3], C_AETHER_HOT[:3], C_AETHER_AMBNT[:3], C_XP_GREEN[:3],
+    C_PLASMA_EDGE[:3], C_SURCHARGE_P[:3], C_RUSTSWARM_C[:3], C_RUSTSWARM_E[:3],
+    C_DRONE_C[:3], C_DRONE_E[:3], C_SENTINEL_C[:3], C_COLOSSUS_C[:3], C_COLOSSUS_E[:3],
+    C_TERM_AETHER[:3],
+]
+save = _p3d.wrap_save(save, core_colors=_CORE_COLORS)
+
+
 # ─── P0 — Pilier de Sanctuaire : tile_pillar_stone.png (32x64) ───────────────
 
 def gen_pillar_stone(out_dir):
@@ -169,14 +183,10 @@ def gen_pillar_stone(out_dir):
     for mx, my in moss_positions:
         px(img, mx, my, C_MOSS_RUST)
 
-    # --- Ombre portee (Y=56 a Y=63) — ellipse 28x8 a alpha 50% ---
-    # Ellipse 28x3 centree en bas (cx=15, cy=60)
-    for dy in range(-3, 4):
-        for dx in range(-14, 15):
-            if dx * dx / (14 * 14) + dy * dy / (9) <= 1.0:
-                nx, ny = 15 + dx, 59 + dy
-                if 0 <= nx < 32 and 56 <= ny < 64:
-                    px(img, nx, ny, C_PILLAR_SHAD)
+    # Ombre portee : desormais geree automatiquement par pseudo3d_lib.add_cast_shadow()
+    # (ellipse 2.2:1, alpha=100) via le save() enveloppe plus bas — cf.
+    # docs/ART_BRIEF_PSEUDO3D.md §3/§5. L'ancienne ellipse ad hoc (alpha=128,
+    # ratio ~3.5:1) est retiree pour eviter un double-ombrage.
 
     save(img, os.path.join(out_dir, "tile_pillar_stone.png"))
 

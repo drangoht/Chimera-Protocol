@@ -11,12 +11,15 @@ Memes animations que le joueur d'origine pour que Player.cs marche sans changeme
 Sortie : assets/sprites/player/titan/  et  .../vagabond/  + leurs SpriteFrames .tres.
 Lancer : python tools/generate_character_sprites.py
 """
-import os, math
+import os, math, sys
 
 from PIL import Image
 
 S = 32
 ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), ".."))
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import pseudo3d_lib as _p3d
 
 # ---------------------------------------------------------------- primitives
 def canvas():
@@ -53,7 +56,7 @@ def glow(img, cx, cy, r, c, strength=0.5):
                 if a > 0:
                     put(img, x, y, (c[0], c[1], c[2], a))
 
-def save(img, path):
+def _raw_save(img, path):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     img.save(path, "PNG")
 
@@ -144,6 +147,24 @@ def draw_vagabond(img, leg=0, bob=0, facing="down", dead=0, alpha=255):
         for yy in range(top, top+24, 2):
             rect(img, cx-6, yy, cx+6, yy, (0,0,0, 0))
 
+# Noyau energetique / accents jamais assombris par l'ombrage (§5/§6 du brief).
+_CORE_COLORS = [T_ORN[:3], T_ORNB[:3], (V_SCRF[0], V_SCRF[1], V_SCRF[2])]
+save = _p3d.wrap_save(_raw_save, core_colors=_CORE_COLORS)
+
+
+def save_faded(img, path, fade_factor):
+    """Pour les frames de mort dessinees a alpha reduit (leg=... alpha=<255) :
+    on shade a l'opacite pleine (l'alpha reduit empecherait shade_sprite() de
+    reconnaitre les pixels de matiere), PUIS on applique la reduction d'alpha,
+    PUIS sauvegarde brute (le wrapper `save` re-shaderait sinon a partir d'un
+    alpha deja reduit et sauterait le pixel).
+    """
+    img2 = _p3d.shade_sprite(img, core_colors=_CORE_COLORS)
+    img2 = _p3d.add_cast_shadow(img2, alpha=90)
+    img2 = _p3d.fade_alpha(img2, fade_factor)
+    _raw_save(img2, path)
+
+
 # ================================================================ frames
 def gen_char(folder, draw, speeds):
     base = os.path.join(ROOT, "assets", "sprites", "player", folder)
@@ -170,12 +191,13 @@ def gen_char(folder, draw, speeds):
         draw(img, leg=phase, bob=(1 if i % 2 else 0), facing="down")
         save(img, os.path.join(base, f"{prefix}_run_down_{i+1:02d}.png"))
 
-    # death : s'affaisse + fade alpha
+    # death : s'affaisse + fade alpha (dessine a pleine opacite pour le shading,
+    # la reduction d'alpha est appliquee APRES par save_faded — cf. §pieges)
     for i in range(8):
         img = canvas()
         al = int(255 * (1 - i/8))
-        draw(img, leg=0, bob=min(6, i), facing="down", dead=1, alpha=max(40, al))
-        save(img, os.path.join(base, f"{prefix}_death_{i+1:02d}.png"))
+        draw(img, leg=0, bob=min(6, i), facing="down", dead=1, alpha=255)
+        save_faded(img, os.path.join(base, f"{prefix}_death_{i+1:02d}.png"), max(40, al) / 255.0)
 
     write_tres(folder, prefix, counts, speeds)
     print(f"{folder}: frames + .tres OK")

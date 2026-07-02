@@ -37,6 +37,11 @@ public static class Codex
     private static readonly Color Orange = new(1f,     0.55f,  0.2f);
     private static readonly Color RustR  = new(0.85f,  0.35f,  0.25f);
 
+    // Accents supplémentaires pour la faune par biome (Fournaise/Givre/Néon, cf. docs/GDD.md §21).
+    private static readonly Color Ember  = new(1f,     0.42f,  0.1f);   // Fournaise
+    private static readonly Color IceB   = new(0.6f,   0.85f,  1f);     // Givre
+    private static readonly Color Magenta= new(1f,     0.25f,  0.8f);   // Néon
+
     // Les champs Name/Tag/Description contiennent des CLÉS de traduction (voir localization/ui.csv) ;
     // les consommateurs (DisplayName, CodexScreenBase) les passent par Loc.T.
 
@@ -74,6 +79,96 @@ public static class Codex
         new("master_sentinel", "ENEMY_MASTER_SENTINEL_NAME", "ENEMY_MASTER_SENTINEL_TAG", "ENEMY_MASTER_SENTINEL_DESC",
             EnemyDir + "master_sentinel/master_sentinel_idle_01.png", Cyan,
             EnemyDir + "master_sentinel/master_sentinel_frames.tres"),
+
+        // ── Faune par biome (20 ennemis basiques, cf. docs/GDD.md §21) ────────────
+        // Matrice 5 biomes x 4 archétypes (fourrage/harceleur/pression_distance/bruiser),
+        // réutilisent les scènes archétype existantes (RustSwarm/CorruptedDrone/CorruptedSentinel/
+        // GraftedColossus) avec un sprite dédié chargé au runtime (EnemyBase.SetSpriteFrames).
+
+        // Sanctuaire
+        new("sanctuary_marked_walker", "ENEMY_SANCTUARY_MARKED_WALKER_NAME", "ENEMY_SANCTUARY_MARKED_WALKER_TAG", "ENEMY_SANCTUARY_MARKED_WALKER_DESC",
+            EnemyDir + "sanctuary_marked_walker/sanctuary_marked_walker_idle_01.png", RustR,
+            EnemyDir + "sanctuary_marked_walker/sanctuary_marked_walker_frames.tres"),
+
+        new("sanctuary_scout_drone", "ENEMY_SANCTUARY_SCOUT_DRONE_NAME", "ENEMY_SANCTUARY_SCOUT_DRONE_TAG", "ENEMY_SANCTUARY_SCOUT_DRONE_DESC",
+            EnemyDir + "sanctuary_scout_drone/sanctuary_scout_drone_idle_01.png", Cyan,
+            EnemyDir + "sanctuary_scout_drone/sanctuary_scout_drone_frames.tres"),
+
+        new("sanctuary_walker_turret", "ENEMY_SANCTUARY_WALKER_TURRET_NAME", "ENEMY_SANCTUARY_WALKER_TURRET_TAG", "ENEMY_SANCTUARY_WALKER_TURRET_DESC",
+            EnemyDir + "sanctuary_walker_turret/sanctuary_walker_turret_idle_01.png", Orange,
+            EnemyDir + "sanctuary_walker_turret/sanctuary_walker_turret_frames.tres"),
+
+        new("sanctuary_maintenance_golem", "ENEMY_SANCTUARY_MAINTENANCE_GOLEM_NAME", "ENEMY_SANCTUARY_MAINTENANCE_GOLEM_TAG", "ENEMY_SANCTUARY_MAINTENANCE_GOLEM_DESC",
+            EnemyDir + "sanctuary_maintenance_golem/sanctuary_maintenance_golem_idle_01.png", RustR,
+            EnemyDir + "sanctuary_maintenance_golem/sanctuary_maintenance_golem_frames.tres"),
+
+        // Aether
+        new("aether_shard", "ENEMY_AETHER_SHARD_NAME", "ENEMY_AETHER_SHARD_TAG", "ENEMY_AETHER_SHARD_DESC",
+            EnemyDir + "aether_shard/aether_shard_idle_01.png", Violet,
+            EnemyDir + "aether_shard/aether_shard_frames.tres"),
+
+        new("aether_drifting_wraith", "ENEMY_AETHER_DRIFTING_WRAITH_NAME", "ENEMY_AETHER_DRIFTING_WRAITH_TAG", "ENEMY_AETHER_DRIFTING_WRAITH_DESC",
+            EnemyDir + "aether_drifting_wraith/aether_drifting_wraith_idle_01.png", Cyan,
+            EnemyDir + "aether_drifting_wraith/aether_drifting_wraith_frames.tres"),
+
+        new("aether_spectral_watcher", "ENEMY_AETHER_SPECTRAL_WATCHER_NAME", "ENEMY_AETHER_SPECTRAL_WATCHER_TAG", "ENEMY_AETHER_SPECTRAL_WATCHER_DESC",
+            EnemyDir + "aether_spectral_watcher/aether_spectral_watcher_idle_01.png", Violet,
+            EnemyDir + "aether_spectral_watcher/aether_spectral_watcher_frames.tres"),
+
+        new("aether_golem", "ENEMY_AETHER_GOLEM_NAME", "ENEMY_AETHER_GOLEM_TAG", "ENEMY_AETHER_GOLEM_DESC",
+            EnemyDir + "aether_golem/aether_golem_idle_01.png", Cyan,
+            EnemyDir + "aether_golem/aether_golem_frames.tres"),
+
+        // Fournaise
+        new("cinder_crawler", "ENEMY_CINDER_CRAWLER_NAME", "ENEMY_CINDER_CRAWLER_TAG", "ENEMY_CINDER_CRAWLER_DESC",
+            EnemyDir + "cinder_crawler/cinder_crawler_idle_01.png", Ember,
+            EnemyDir + "cinder_crawler/cinder_crawler_frames.tres"),
+
+        new("volatile_spark", "ENEMY_VOLATILE_SPARK_NAME", "ENEMY_VOLATILE_SPARK_TAG", "ENEMY_VOLATILE_SPARK_DESC",
+            EnemyDir + "volatile_spark/volatile_spark_idle_01.png", Gold,
+            EnemyDir + "volatile_spark/volatile_spark_frames.tres"),
+
+        new("lava_spitter", "ENEMY_LAVA_SPITTER_NAME", "ENEMY_LAVA_SPITTER_TAG", "ENEMY_LAVA_SPITTER_DESC",
+            EnemyDir + "lava_spitter/lava_spitter_idle_01.png", Ember,
+            EnemyDir + "lava_spitter/lava_spitter_frames.tres"),
+
+        new("magma_colossus", "ENEMY_MAGMA_COLOSSUS_NAME", "ENEMY_MAGMA_COLOSSUS_TAG", "ENEMY_MAGMA_COLOSSUS_DESC",
+            EnemyDir + "magma_colossus/magma_colossus_idle_01.png", Ember,
+            EnemyDir + "magma_colossus/magma_colossus_frames.tres"),
+
+        // Givre
+        new("frost_crawler", "ENEMY_FROST_CRAWLER_NAME", "ENEMY_FROST_CRAWLER_TAG", "ENEMY_FROST_CRAWLER_DESC",
+            EnemyDir + "frost_crawler/frost_crawler_idle_01.png", IceB,
+            EnemyDir + "frost_crawler/frost_crawler_frames.tres"),
+
+        new("wandering_ice_shard", "ENEMY_WANDERING_ICE_SHARD_NAME", "ENEMY_WANDERING_ICE_SHARD_TAG", "ENEMY_WANDERING_ICE_SHARD_DESC",
+            EnemyDir + "wandering_ice_shard/wandering_ice_shard_idle_01.png", IceB,
+            EnemyDir + "wandering_ice_shard/wandering_ice_shard_frames.tres"),
+
+        new("cryo_marksman", "ENEMY_CRYO_MARKSMAN_NAME", "ENEMY_CRYO_MARKSMAN_TAG", "ENEMY_CRYO_MARKSMAN_DESC",
+            EnemyDir + "cryo_marksman/cryo_marksman_idle_01.png", Cyan,
+            EnemyDir + "cryo_marksman/cryo_marksman_frames.tres"),
+
+        new("ice_titan", "ENEMY_ICE_TITAN_NAME", "ENEMY_ICE_TITAN_TAG", "ENEMY_ICE_TITAN_DESC",
+            EnemyDir + "ice_titan/ice_titan_idle_01.png", IceB,
+            EnemyDir + "ice_titan/ice_titan_frames.tres"),
+
+        // Néon
+        new("neon_security_drone", "ENEMY_NEON_SECURITY_DRONE_NAME", "ENEMY_NEON_SECURITY_DRONE_TAG", "ENEMY_NEON_SECURITY_DRONE_DESC",
+            EnemyDir + "neon_security_drone/neon_security_drone_idle_01.png", Magenta,
+            EnemyDir + "neon_security_drone/neon_security_drone_frames.tres"),
+
+        new("holographic_glitch", "ENEMY_HOLOGRAPHIC_GLITCH_NAME", "ENEMY_HOLOGRAPHIC_GLITCH_TAG", "ENEMY_HOLOGRAPHIC_GLITCH_DESC",
+            EnemyDir + "holographic_glitch/holographic_glitch_idle_01.png", Magenta,
+            EnemyDir + "holographic_glitch/holographic_glitch_frames.tres"),
+
+        new("neon_laser_turret", "ENEMY_NEON_LASER_TURRET_NAME", "ENEMY_NEON_LASER_TURRET_TAG", "ENEMY_NEON_LASER_TURRET_DESC",
+            EnemyDir + "neon_laser_turret/neon_laser_turret_idle_01.png", Cyan,
+            EnemyDir + "neon_laser_turret/neon_laser_turret_frames.tres"),
+
+        new("synthetic_golem", "ENEMY_SYNTHETIC_GOLEM_NAME", "ENEMY_SYNTHETIC_GOLEM_TAG", "ENEMY_SYNTHETIC_GOLEM_DESC",
+            EnemyDir + "synthetic_golem/synthetic_golem_idle_01.png", Violet,
+            EnemyDir + "synthetic_golem/synthetic_golem_frames.tres"),
     };
 
     // ── Passifs (affichés dans l'Arsenal sous les armes) ──────────────────────

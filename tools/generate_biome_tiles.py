@@ -12,11 +12,14 @@ le simple tintage runtime.
 Sortie : assets/sprites/tileset/biomes/<biome>/floor_01..03.png, wall_01..02.png
 Lancer : python tools/generate_biome_tiles.py
 """
-import os, random
+import os, sys, random
 from PIL import Image, ImageDraw
 
 S = 32
 ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), ".."))
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import pseudo3d_lib as _p3d
 
 def canvas():
     return Image.new("RGBA", (S, S), (0, 0, 0, 255))
@@ -46,12 +49,19 @@ def gen_biome(name):
     out = os.path.join(ROOT, "assets", "sprites", "tileset", "biomes", name)
     rng = random.Random(hash(name) & 0xffff)
 
+    # Accents de biome (energie vivante) jamais concernes par l'ombrage
+    # volumetrique/gradient (docs/ART_BRIEF_PSEUDO3D.md §6).
+    accent_colors = [acc[:3], accl[:3]]
+
+    def _tile_shade(img):
+        return _p3d.shade_tile(img, amplitude=0.13, exclude_colors=accent_colors)
+
     # floor_01 : base + moucheture subtile
     img = canvas(); rect(img, 0, 0, 31, 31, base)
     for _ in range(14):
         x, y = rng.randint(0, 31), rng.randint(0, 31)
         px(img, x, y, mid)
-    save(img, os.path.join(out, "floor_01.png"))
+    save(_tile_shade(img), os.path.join(out, "floor_01.png"))
 
     # floor_02 : joints en grille (néon = lignes lumineuses sur base sombre)
     neon = (name == "neon")
@@ -64,7 +74,7 @@ def gen_biome(name):
     if neon:  # ponctuation cyan aux intersections pour un look circuit
         for xi in range(0, 32, 8):
             for yi in range(0, 32, 8): px(img, xi, yi, accl)
-    save(img, os.path.join(out, "floor_02.png"))
+    save(_tile_shade(img), os.path.join(out, "floor_02.png"))
 
     # floor_03 : veine/fissure d'accent diagonale + lueur
     img = canvas(); rect(img, 0, 0, 31, 31, base)
@@ -73,7 +83,7 @@ def gen_biome(name):
         px(img, i, i - 4 + jit, accl)
         px(img, i, i - 5 + jit, (acc[0], acc[1], acc[2], 150))
         px(img, i, i - 3 + jit, (acc[0], acc[1], acc[2], 110))
-    save(img, os.path.join(out, "floor_03.png"))
+    save(_tile_shade(img), os.path.join(out, "floor_03.png"))
 
     # wall_01 : blocs 8x8 + highlight haut
     img = canvas(); rect(img, 0, 0, 31, 31, mid)
@@ -82,14 +92,14 @@ def gen_biome(name):
         for x in range(0, 32, 8):
             d.rectangle([x, y, x+7, y+7], outline=dark)
     rect(img, 0, 0, 31, 1, accl)
-    save(img, os.path.join(out, "wall_01.png"))
+    save(_tile_shade(img), os.path.join(out, "wall_01.png"))
 
     # wall_02 : plaque d'accent (veine d'énergie verticale)
     img = canvas(); rect(img, 0, 0, 31, 31, mid)
     rect(img, 8, 6, 23, 25, dark)
     for i in range(6, 26):
         px(img, 15, i, acc); px(img, 16, i, accl); px(img, 17, i, acc)
-    save(img, os.path.join(out, "wall_02.png"))
+    save(_tile_shade(img), os.path.join(out, "wall_02.png"))
 
     print(f"{name}: 5 tuiles -> {out}")
 

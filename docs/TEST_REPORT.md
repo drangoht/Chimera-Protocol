@@ -2425,3 +2425,56 @@ validée via la chaîne de localisation, l'artefact existant et le chemin de cod
 
 **Robustesse fichiers :** `settings.cfg` et `save.json` restaurés à l'identique (diff vide,
 `git status` = aucun fichier suivi modifié). Seuls des PNG de capture untracked ajoutés dans `docs/`.
+
+---
+
+## Passage pseudo-3D + 20 nouveaux ennemis biome — 2026-07-03
+
+**Testeur :** game-tester (agent Claude) — **Hash git base :** `e88ccb4` (working tree modifié :
+redesign pseudo-3D de tous les sprites + `data/enemies.json` 28 entrées + `docs/ART_BRIEF_PSEUDO3D.md`
++ `tools/pseudo3d_lib.py` + `tools/generate_new_enemies.py`, non commité au moment du test).
+
+**Contexte :** validation du redesign visuel "pseudo-3D avec ombres" (tous sprites) et des 20
+nouveaux ennemis basiques data-driven (4/biome × 5 biomes, réutilisant les 4 archétypes d'IA
+existants via `EnemyBase.SetSpriteFrames`), conformément au brief du game-designer/développeur.
+
+### Méthode
+- Lecture statique : `data/enemies.json` (28 entrées), `src/Systems/EnemySpawner.cs`,
+  `EnemySpawnData.cs`, `EnemyBase.cs`, `src/UI/Codex.cs`, `localization/ui.csv`,
+  `tools/generate_new_enemies.py`, `docs/ART_BRIEF_PSEUDO3D.md`.
+- Build + tests : `dotnet build ChimeraProtocol.csproj`, `dotnet test tests/ChimeraProtocol.Tests.csproj`.
+- Captures réelles via un harnais de capture de fenêtre par `PrintWindow` (contourne le problème
+  de fenêtre occultée par une autre application au premier plan — cf. Notes) : `BestiaryScreen.tscn`
+  scrollé intégralement (28 entrées animées), `MainMenu`/`CharacterSelectScreen`/`LevelSelectScreen`/
+  `ArsenalScreen`, et un run réel `Game.tscn --biome=fournaise`.
+- Test empirique ciblé de l'anim "attack" 1-frame : backup de `data/enemies.json` → `lava_spitter`
+  (ranged_kiter, Fournaise) `spawnStartMinute: 6→0` + `spawnWeight: 3.3→50` → run réel 25 s →
+  **restauration immédiate du fichier, diff confirmé identique à l'original**.
+
+### Verdict par point demandé
+
+| # | Point | Verdict | Détail |
+|---|---|---|---|
+| 1 | Sprites des 20 nouveaux ennemis chargés et distincts | **PASS** | Les 28 entrées du Bestiaire s'affichent avec leur `SpriteFrames` propre animé (idle), aucune image cassée/manquante, aucun repli visible vers un sprite générique. Chaque dossier `assets/sprites/enemies/<id>/` a son propre jeu de PNG + `.import` + `.tres` (12-13 fichiers PNG selon archétype). `[EnemySpawner] 28 types d'ennemis chargés.` en console, 0 erreur `PrintErr` (ni « Aucune scène pour l'id », ni « Scène introuvable »). **Observation non bloquante** : les 5 variantes d'un même archétype (ex. les 5 « harceleurs ») partagent une silhouette générique unique, seule la palette change (confirmé dans `tools/generate_new_enemies.py`, fonctions `draw_forager/draw_harasser/draw_turret/draw_bruiser` communes) — cohérent avec la contrainte « aucune nouvelle mécanique », mais à signaler au `game-designer`/`directeur-artistique` si plus de variété de silhouette est souhaitée à l'avenir. |
+| 2 | Anim "attack" 1 frame (5 ranged_kiter) ne crashe pas | **PASS** | `.tres` généré avec `"frames": [{...}], "loop": false` pour les 5 ids (`sanctuary_walker_turret`, `aether_spectral_watcher`, `lava_spitter`, `cryo_marksman`, `neon_laser_turret`) — confirmé par lecture directe de `sanctuary_walker_turret_frames.tres`. Test empirique sur `lava_spitter` (spawn forcé dès t=0, poids 50) : run 25 s, 0 erreur/warning en console, aucun crash. `CorruptedSentinel.cs` appelle `sprite.Play("attack")` avant de spawner le projectile — chemin identique à l'archétype de base, donc pas de risque spécifique aux nouveaux ids. |
+| 3 | Dilution du spawnWeight par biome (4→8 ennemis) | **PASS avec observation** | Analyse du pool : les ids globaux (`rust_swarm`, `corrupted_drone`, `corrupted_sentinel`, `grafted_colossus`, sans champ `biomes`) restent actifs partout ET s'ajoutent aux 4 variantes du biome — le poids total par rôle (fourrage/harceleur/tireur/bruiser) **augmente** plutôt que de se diluer à somme constante (ex. Fournaise, rôle tireur à 6 min : `corrupted_sentinel` poids 4 + `lava_spitter` poids 3.3 = 7.3 de poids total contre 4 avant l'expansion). Le rythme de spawn **global** par rôle n'est donc pas appauvri ; c'est la fréquence d'apparition d'un *type précis* qui baisse d'environ moitié (effet recherché : plus de variété visuelle par run). Aucun signal de rythme "clairsemé" observé en test réel (Fournaise, poids gonflé artificiellement pour le test attack-anim : nuée dense et continue, aucun ralenti perceptible). |
+| 4 | Cohérence pseudo-3D (joueur/ennemis/obstacles/tuiles) | **PASS** | Inspection pixel (zoom ×10, nearest-neighbor) de `player_idle_01.png`, `sanctuary_marked_walker_idle_01.png`, `lava_spitter_idle_01.png`, `tile_pillar_stone.png`, `tileset/biomes/fournaise/floor_01.png` : highlight haut/gauche cohérent, ombre bas/droite cohérente, ombre portée elliptique présente sur joueur/ennemis/obstacle (absente sur la tuile, conforme au brief §3/§5), amplitude de gradient réduite sur la tuile de sol (conforme §5 "±10-15%"). Aucune direction de lumière divergente relevée. `generate_new_enemies.py` importe `pseudo3d_lib` et applique `shade_sprite` + `add_cast_shadow` de façon identique aux autres générateurs. |
+| 5 | Lisibilité joueur en combat dense | **PASS** | Capture réelle en jeu (Fournaise, nuée dense de `lava_spitter` + décor lave orange/rouge saturé) : le joueur (Chimera, silhouette cyan lumineuse) reste immédiatement identifiable par contraste chromatique fort face à la palette chaude du biome — cf. `docs/attack_test_05.png`. Pas de confusion observée avec les ennemis/décor à l'écran. |
+| 6 | Non-régression standard | **PASS** | `dotnet build` : 0 erreur/0 warning. `dotnet test` : **62/62 PASS**. `MainMenu.tscn`, `CharacterSelectScreen.tscn` (3 persos, portraits ombrés), `LevelSelectScreen.tscn` (5 biomes, aucun badge « VAINCU » — cohérent, aucune victoire enregistrée), `ArsenalScreen.tscn` (icônes armes ombrées 2-faces, conforme §5 icônes UI) s'affichent sans erreur. Run réel `Game.tscn` : HUD complet (LV/XP/PV/timer/compteur Noyaux/nom biome), level-up 3 cartes rareté colorée, pause/reprise OK. |
+
+### Vérifications complémentaires
+- **Câblage complet des 20 ids** : `src/UI/Codex.cs` (accent couleur cohérent par biome — Ember/IceB/Magenta ajoutés), `localization/ui.csv` (60/60 clés `ENEMY_*_NAME/_TAG/_DESC` EN/FR/ES présentes, vérifié par script), `data/enemies.json` (`framesPath` + `biomes` sur les 20 entrées) — **PASS**, aucune clé manquante.
+- **`.import` commités** : les 20 dossiers `assets/sprites/enemies/<id>/` ont bien un `.import` par `.png` (piège BUG-301 déjà documenté) — **PASS**, comptage systématique effectué (12 ou 13 selon archétype, correspondance exacte png/import).
+
+### Notes techniques (harnais de test)
+- Le filtrage de fenêtre par simple substring de titre + `pyautogui.screenshot(region=...)` a capturé
+  par erreur le contenu d'une **autre application** (jeu Steam plein écran ouvert en arrière-plan)
+  faute de mise au premier plan fiable. Remplacé par une capture directe du HWND via
+  `user32.PrintWindow` (`PW_RENDERFULLCONTENT`), fiable même si la fenêtre est occultée — **à
+  réutiliser pour les prochaines sessions** (scripts ad hoc, non committés dans `tools/`).
+- Édition temporaire de `data/enemies.json` pour le test empirique de l'anim attack : sauvegarde
+  avant modification, diff vérifié identique après restauration — aucun impact laissé sur le dépôt.
+
+**Verdict global : PASS.** Aucun bug bloquant/majeur trouvé sur le redesign pseudo-3D ni sur les 20
+nouveaux ennemis. Une observation (silhouette générique partagée par archétype) transmise pour
+arbitrage design, non bloquante.

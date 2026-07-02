@@ -107,6 +107,20 @@ def save(img, path):
     img.save(path, "PNG")
 
 
+# ─── Pseudo-3D (docs/ART_BRIEF_PSEUDO3D.md) ──────────────────────────────────
+# Le noyau energetique / accents ne sont jamais assombris par l'ombrage (§5/§6).
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import pseudo3d_lib as _p3d
+
+_CORE_COLORS = [
+    C_AETHER_PRI[:3], C_AETHER_SEC[:3], C_AETHER_DARK[:3], C_AETHER_HOT[:3],
+    C_XP_GREEN[:3], C_XP_GLOW[:3], C_NOYAU_VIOL[:3], C_NOYAU_GLOW[:3],
+    C_PLASMA_HOT[:3], C_PLASMA_EDGE[:3], C_SURCHARGE[:3], C_SURCH_PALE[:3],
+    C_IMPLANT[:3], C_AETHER_FISS[:3],
+]
+save = _p3d.wrap_save(save, core_colors=_CORE_COLORS)
+
+
 def alpha_blend(color, alpha_factor):
     """Applique un facteur alpha a une couleur RGBA."""
     r, g, b, a = color

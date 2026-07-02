@@ -38,6 +38,8 @@ public partial class EnemySpawner : Node
     // Scènes pré-chargées
     private readonly Dictionary<string, PackedScene> _scenes = new();
 
+    // Scènes dédiées (id → .tscn) pour les ennemis qui ont une scène/script propre : les 4
+    // archétypes de base + les mini-boss/boss (comportements ou VFX de mort spécifiques).
     private static readonly Dictionary<string, string> ScenePaths = new()
     {
         { "rust_swarm",          "res://scenes/entities/RustSwarm.tscn"                   },
@@ -48,6 +50,19 @@ public partial class EnemySpawner : Node
         { "master_sentinel",     "res://scenes/entities/MiniBoss/MasterSentinel.tscn"     },
         { "aether_revenant",     "res://scenes/entities/MiniBoss/AetherRevenant.tscn"     },
         { "rusted_core",         "res://scenes/entities/Boss/RustedCore.tscn"             },
+    };
+
+    // Résolution de secours par archétype d'IA (« ai.type » du JSON) pour tout id SANS entrée dans
+    // ScenePaths — c'est le mécanisme qui évite de créer une scène .tscn + une sous-classe C# par
+    // nouvel ennemi « basique » (faune par biome, cf. docs/GDD.md §21) : plusieurs ids partagent la
+    // même PackedScene/même comportement, seul leur SpriteFrames (EnemySpawnData.FramesPath) et
+    // leurs stats (enemies.json) diffèrent.
+    private static readonly Dictionary<string, string> ArchetypeScenePaths = new()
+    {
+        { "straight_chase", "res://scenes/entities/RustSwarm.tscn"        },
+        { "erratic_chase",  "res://scenes/entities/CorruptedDrone.tscn"   },
+        { "ranged_kiter",   "res://scenes/entities/CorruptedSentinel.tscn"},
+        { "slow_hunter",    "res://scenes/entities/GraftedColossus.tscn"  },
     };
 
     public override void _Ready()
@@ -228,6 +243,8 @@ public partial class EnemySpawner : Node
 
         var node = scene.Instantiate<EnemyBase>();
         GetParent().AddChild(node);
+        if (!string.IsNullOrEmpty(data.FramesPath))
+            node.SetSpriteFrames(data.FramesPath);
         node.GlobalPosition = RandomSpawnPosition();
 
         // Effet de biome : modifie la vitesse de base de tous les ennemis.
@@ -293,6 +310,17 @@ public partial class EnemySpawner : Node
                 biomes = tmp.ToArray();
             }
 
+            // Archétype d'IA (optionnel) : sert à résoudre la scène de secours (ArchetypeScenePaths)
+            // pour les ids sans entrée dans ScenePaths — cf. docs/GDD.md §21.
+            string aiType = "";
+            if (e.TryGetProperty("ai", out var aiObj) && aiObj.TryGetProperty("type", out var atProp))
+                aiType = atProp.GetString() ?? "";
+
+            // SpriteFrames dédié (optionnel) : vide = garder celui posé dans la scène.
+            string framesPath = "";
+            if (e.TryGetProperty("framesPath", out var fpProp))
+                framesPath = fpProp.GetString() ?? "";
+
             _enemyPool.Add(new EnemySpawnData
             {
                 Id                    = e.GetProperty("id").GetString()!,
@@ -306,21 +334,47 @@ public partial class EnemySpawner : Node
                 DamageScalingPerMinute= e.GetProperty("damageScalingPerMinute").GetSingle(),
                 MaxSimultaneous       = maxSim,
                 Biomes                = biomes,
+                AiType                = aiType,
+                FramesPath            = framesPath,
             });
         }
 
         GD.Print($"[EnemySpawner] {_enemyPool.Count} types d'ennemis chargés.");
     }
 
+    /// <summary>
+    /// Résout une PackedScene par id : priorité à ScenePaths (scène dédiée), sinon repli sur
+    /// ArchetypeScenePaths via EnemySpawnData.AiType (ennemis « basiques » qui réutilisent une
+    /// scène archétype avec un sprite dédié posé au runtime, cf. EnemyBase.SetSpriteFrames).
+    /// Une même PackedScene chargée n'est chargée qu'une fois (GD.Load la met déjà en cache, mais
+    /// on évite les lookups répétés).
+    /// </summary>
     private void PreloadScenes()
     {
-        foreach (var (id, path) in ScenePaths)
+        var loaded = new Dictionary<string, PackedScene>();
+
+        foreach (var data in _enemyPool)
         {
-            var scene = GD.Load<PackedScene>(path);
-            if (scene != null)
-                _scenes[id] = scene;
-            else
-                GD.PrintErr($"[EnemySpawner] Scène introuvable : {path}");
+            if (!ScenePaths.TryGetValue(data.Id, out var path) &&
+                !ArchetypeScenePaths.TryGetValue(data.AiType, out path))
+            {
+                GD.PrintErr($"[EnemySpawner] Aucune scène pour l'id « {data.Id} » "
+                           + $"(ni ScenePaths, ni ArchetypeScenePaths pour ai.type=« {data.AiType} »).");
+                continue;
+            }
+
+            if (!loaded.TryGetValue(path, out var scene))
+            {
+                scene = GD.Load<PackedScene>(path);
+                if (scene == null)
+                {
+                    GD.PrintErr($"[EnemySpawner] Scène introuvable : {path}");
+                    continue;
+                }
+                loaded[path] = scene;
+            }
+
+            _scenes[data.Id] = scene;
         }
     }
 }

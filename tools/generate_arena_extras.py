@@ -1,5 +1,8 @@
-import os, math, random
+import os, sys, math, random
 from PIL import Image, ImageDraw
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import pseudo3d_lib as _p3d
 
 def aether_bright(alpha): return (0x00, 0xE5, 0xFF, alpha)
 def aether_abys(alpha): return (0x00, 0xA0, 0xBB, alpha)
@@ -107,8 +110,12 @@ def draw_rust_pool(bubbles):
     return img
 
 def generate_rust_pools(od):
-    save_png(draw_rust_pool([(14,16),(18,14),(12,18)]), os.path.join(od,"tile_rust_pool_01.png"))
-    save_png(draw_rust_pool([(15,15),(19,15),(11,17)]), os.path.join(od,"tile_rust_pool_02.png"))
+    # Flaques au sol : traitees comme les tuiles (gradient leger, pas de volume
+    # ni d'ombre portee), cf. docs/ART_BRIEF_PSEUDO3D.md §5 "Tuiles de sol".
+    p1 = _p3d.shade_tile(draw_rust_pool([(14,16),(18,14),(12,18)]), amplitude=0.12)
+    save_png(p1, os.path.join(od,"tile_rust_pool_01.png"))
+    p2 = _p3d.shade_tile(draw_rust_pool([(15,15),(19,15),(11,17)]), amplitude=0.12)
+    save_png(p2, os.path.join(od,"tile_rust_pool_02.png"))
 
 def generate_tech_pillar(od):
     img = new_canvas(32, 64)
@@ -144,6 +151,11 @@ def generate_tech_pillar(od):
         e = img.getpixel((x,32))
         if e[3] > 0:
             px(img, x, 32, (max(0,e[0]-8),max(0,e[1]-8),max(0,e[2]-8),e[3]))
+    # Pilier technologique = obstacle/volume, pas une tuile plate (le nom du
+    # fichier "tile_*" est un heritage historique) : ombrage volumetrique +
+    # ombre portee, cf. docs/ART_BRIEF_PSEUDO3D.md §5 "Obstacles".
+    img = _p3d.shade_sprite(img, core_colors=[])
+    img = _p3d.add_cast_shadow(img, alpha=100)
     save_png(img, os.path.join(od,"tile_tech_pillar.png"))
 
 def main():

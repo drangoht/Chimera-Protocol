@@ -493,6 +493,13 @@ toutes les décisions visuelles (cf. brief détaillé dans l'agent `directeur-ar
 > nommage, priorité de livraison). C'est la source de vérité opérationnelle pour `graphiste`.
 > Le §12 ci-dessous reste le résumé décisionnel ; `docs/STYLE_GUIDE.md` contient les hex codes,
 > dimensions et nombres de frames exacts.
+>
+> **Refonte "pseudo-3D avec ombres" (2026-07-02) : `docs/ART_BRIEF_PSEUDO3D.md`** — passage de
+> TOUS les sprites (personnages, ennemis, obstacles, tuiles de sol, icônes) à un ombrage
+> volumétrique cohérent (lumière fixe haut-gauche 45°, dérivation HSV highlight/shadow/contact,
+> ombre portée elliptique au sol), via une bibliothèque PIL partagée `tools/pseudo3d_lib.py`.
+> Ne change ni la résolution (32×32, 48×48 Colosse), ni la palette, ni le nombre de frames :
+> c'est une couche de rendu, pas une nouvelle politique de production.
 
 **Décisions actées par `directeur-artistique` (2026-06-19) :**
 
@@ -1559,3 +1566,81 @@ aux PV globaux. À traiter séparément par `developpeur` (hors périmètre data
 - Garder les PV totaux à 12000 base : les phases redistribuent l'intensité, elles n'allongent pas la
   TTK. À valider lisibilité avec `directeur-artistique` (la bascule de phase doit être lisible dans le
   chaos) et cohérence narrative avec `story-teller` (le Noyau « se surcharge » en mourant).
+
+## 21. Faune par biome — 20 nouveaux ennemis basiques (conçu 2026-07-02)
+
+> Conçu par l'agent `game-designer`, en réponse à `docs/EXPANSION_PLAN.md` §B.2 (« nouveaux ennemis
+> thématisés par biome »), avec une contrainte resserrée : **réutiliser exclusivement les 4
+> archétypes d'IA existants** (`straight_chase`, `erratic_chase`, `ranged_kiter`, `slow_hunter`),
+> sans nouveau type d'IA ni nouvelle mécanique de gimmick (téléportation, flaque au sol, slow au
+> contact, laser téléguidé...) — ces idées plus ambitieuses de l'EXPANSION_PLAN restent en
+> **hors-scope MVP** (§14) tant qu'un nouvel archétype d'IA n'est pas explicitement priorisé et
+> câblé côté `developpeur`. Livrable brut (JSON prêt à relire/fusionner) :
+> **`data/enemies_biome_expansion.json`** — volontairement **séparé** de `data/enemies.json`, la
+> fusion (et la création des scènes/sprites dédiés) étant gérée par une tâche `developpeur` en
+> parallèle.
+
+### 21.1 Principe : matrice 5 biomes × 4 archétypes
+
+Chaque biome (sanctuaire, aether, fournaise, givre, néon) reçoit exactement **une variante par
+archétype**, pour préserver dans chaque biome la même composition de vagues à 4 rôles que
+l'existant (fourrage / harceleur / pression à distance / bruiser), tout en changeant l'identité de
+faune :
+
+| Biome | Fourrage (`straight_chase`) | Harceleur (`erratic_chase`) | Pression distance (`ranged_kiter`) | Bruiser (`slow_hunter`) |
+|---|---|---|---|---|
+| Sanctuaire (rouillé/mécanique) | Marcheur Marqué | Drone Éclaireur | Tourelle Ambulante | Golem de Maintenance |
+| Aether (spectral/énergétique) | Éclat d'Aether | Spectre Dérivant | Vigile Spectral | Golem d'Aether |
+| Fournaise (igné/fondu) | Rampant de Braise | Étincelle Volatile | Cracheur de Lave | Colosse de Magma |
+| Givre (gelé/cristallin) | Rampant de Givre | Éclat de Glace Errant | Tireur Cryogénique | Titan de Glace |
+| Néon (synthétique/holographique) | Drone de Sécurité | Glitch Holographique | Tourelle Laser | Golem Synthétique |
+
+Chaque variante s'écarte d'au plus ~20% des stats de son archétype ancre (`rust_swarm` HP20/vit120/
+dps5, `corrupted_drone` HP15/vit220/dps8, `corrupted_sentinel` HP45/vit70/dpp12,
+`grafted_colossus` HP200/vit55/dps20), avec des écarts **dirigés par le thème du biome** plutôt
+qu'aléatoires :
+
+- **Sanctuaire** : le plus proche des valeurs ancre (biome neutre de référence).
+- **Aether** : plus rapide/fragile et plus erratique (angle de déviation 60°, le plus haut du jeu)
+  — incarne l'énergie pure, volatile.
+- **Fournaise** : dégâts et scaling de dégâts relevés sur les 4 rôles, cooldowns de frappe/tir les
+  plus courts — cohérent avec le malus de biome existant (ennemis +18% vitesse).
+- **Givre** : PV et scaling PV relevés, vitesses et cadences les plus lentes (le Titan de Glace est
+  le bruiser le plus tanky du jeu) — cohérent avec le bonus de biome existant (ennemis -18%
+  vitesse) : le biome le plus « défensif » à jouer, mais avec des ennemis qui encaissent plus.
+- **Néon** : profil « glass cannon » (PV parmi les plus bas, dégâts/vitesse de projectile parmi les
+  plus hauts — la Tourelle Laser tire le projectile le plus rapide et le plus mordant du jeu) —
+  cohérent avec le double bonus/malus de biome existant (ennemis +10% vitesse, +15% XP,
+  risque contre récompense).
+
+### 21.2 Câblage côté `developpeur` — FAIT (2026-07-02)
+
+Les 20 entrées suivent exactement le format de `data/enemies.json` (mêmes champs, mêmes
+conventions `ai.type`). Câblage réalisé :
+- **Mécanisme sprite data-driven par id** (même principe que `Player.SetCharacterFrames` /
+  `CharacterDef.FramesPath`) : `EnemySpawnData.FramesPath` (optionnel, JSON `framesPath`) est
+  chargé au runtime par `EnemyBase.SetSpriteFrames(path)` et appliqué à l'`AnimatedSprite2D` de la
+  scène instanciée, juste après `AddChild` dans `EnemySpawner.SpawnEnemy`. Aucune nouvelle scène
+  `.tscn` ni sous-classe C# créée : les 20 ids réutilisent les 4 scènes archétype existantes
+  (`RustSwarm.tscn`/`CorruptedDrone.tscn`/`CorruptedSentinel.tscn`/`GraftedColossus.tscn`),
+  résolues via `EnemySpawnData.AiType` (JSON `ai.type`) et `EnemySpawner.ArchetypeScenePaths` quand
+  l'id n'a pas d'entrée dédiée dans `ScenePaths`. Les 8 ennemis existants ne sont pas affectés
+  (`FramesPath` vide → SpriteFrames posé dans le `.tscn` inchangé).
+- Fusionné dans `data/enemies.json` (28 entrées au total ; `data/enemies_biome_expansion.json`
+  reste en place comme trace du livrable design d'origine, non lu par le jeu).
+- Ajouté au bestiaire (`Codex.Enemies`), avec accents Fournaise/Givre/Néon dédiés (`Ember`/`IceB`/
+  `Magenta` dans `src/UI/Codex.cs`) et clés `ENEMY_*` EN/FR/ES dans `localization/ui.csv`.
+- Chemins de sprite référencés (`res://assets/sprites/enemies/<id>/<id>_frames.tres` et
+  `..._idle_01.png`) mais **pas encore générés** — à produire par `graphiste` en tâche séparée.
+- **À valider par `game-tester`** : la dilution de `spawnWeight` documentée dans
+  `enemies.json.faunaExpansionNote` (le pool actif double dans chaque biome ; ajuster les poids si
+  la densité par type baisse trop après premier playtest).
+
+### 21.3 Cohérence narrative et visuelle (à valider)
+
+- Noms provisoires, cohérents avec le lore existant (Rouille Vivante pour Sanctuaire, Aether
+  corrompu pour Aether/Néon) mais **non validés par `story-teller`** — à faire avant production
+  sprite définitive, notamment pour les noms Aether/Néon qui touchent au lore de la Convergence.
+- Palette suggérée par `colorPlaceholder` dans le JSON (ex. `rust_amber`, `violet_glow`,
+  `ember_orange`, `frost_blue`, `neon_magenta`...) — à valider par `directeur-artistique` avant
+  toute production de sprite, en cohérence avec `docs/STYLE_GUIDE.md`.
