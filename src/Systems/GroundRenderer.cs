@@ -1,4 +1,5 @@
 using Godot;
+using System.Collections.Generic;
 
 public partial class GroundRenderer : Node2D
 {
@@ -15,6 +16,7 @@ public partial class GroundRenderer : Node2D
     private const string PathFloorCrack  = "res://assets/sprites/tileset/tile_floor_crack.png";
     private const string PathFloorRust   = "res://assets/sprites/tileset/tile_floor_rust.png";
     private const string PathFloorDebris = "res://assets/sprites/tileset/tile_floor_debris.png";
+    private const string PathFloorGlass  = "res://assets/sprites/tileset/tile_floor_glass.png";
     // Murs
     private const string PathWall01    = "res://assets/sprites/tileset/tile_wall_01.png";
     private const string PathWallRust  = "res://assets/sprites/tileset/tile_wall_rust.png";
@@ -169,8 +171,11 @@ public partial class GroundRenderer : Node2D
     /// </summary>
     private void AddBackdrop()
     {
-        const float hw = ArenaW / 2f + 256f;
-        const float hh = ArenaH / 2f + 256f;
+        // Marge alignée sur BiomeAtmosphere.BackdropMargin : doit couvrir la caméra à son
+        // excursion max (clamp joueur ~928×576) + demi-viewport (640×360 à zoom 1), pour qu'aucun
+        // vide brut (clear color) n'apparaisse derrière la tuile parallax transparente.
+        const float hw = ArenaW / 2f + 650f;
+        const float hh = ArenaH / 2f + 650f;
         AddChild(new Polygon2D
         {
             Polygon = new Vector2[] { new(-hw, -hh), new(hw, -hh), new(hw, hh), new(-hw, hh) },
@@ -184,19 +189,32 @@ public partial class GroundRenderer : Node2D
     private void BuildFloor(RandomNumberGenerator rng)
     {
         var textures = LoadTextures(_biome.FloorTiles);
-        var floorRoot = new Node2D { Name = "Floor" };
-        AddChild(floorRoot);
+        var glassTex = GD.Load<Texture2D>(PathFloorGlass);
         int startX = -ArenaW / 2;
         int startY = -(GridRows * TileSize / 2);
+        var glassCells = PickGlassCells(rng, startX, startY);
+        var floorRoot = new Node2D { Name = "Floor" };
+        AddChild(floorRoot);
         for (int row = 0; row < GridRows; row++)
         {
             for (int col = 0; col < GridCols; col++)
             {
-                // 1re tuile dominante (~72%), variantes réparties sur le reste.
-                int ti = PickTileIndex(rng.Randf(), textures.Length, 0.72f);
+                Texture2D tex;
+                if (glassTex != null && glassCells.Contains((row, col)))
+                {
+                    // Trou vitré : laisse voir le fond parallax (BiomeAtmosphere.BuildBackdropVoid)
+                    // à travers le sol, pas seulement au-delà des murs.
+                    tex = glassTex;
+                }
+                else
+                {
+                    // 1re tuile dominante (~72%), variantes réparties sur le reste.
+                    int ti = PickTileIndex(rng.Randf(), textures.Length, 0.72f);
+                    tex = textures[ti];
+                }
                 var sprite = new Sprite2D
                 {
-                    Texture   = textures[ti],
+                    Texture   = tex,
                     Position  = new Vector2(startX + col * TileSize + TileSize / 2f, startY + row * TileSize + TileSize / 2f),
                     ZIndex    = -10,
                     Modulate  = _biome.FloorTint,
@@ -205,6 +223,38 @@ public partial class GroundRenderer : Node2D
             }
         }
     }
+
+    /// <summary>
+    /// Sélectionne quelques amas de tuiles « vitre » (2-3 × 2-3), dispersés et loin des bords,
+    /// pour accentuer visuellement la profondeur du fond parallax pendant le run (pas seulement
+    /// en collant les murs). Remplit au passage <see cref="_glassClusterCenters"/> (position monde
+    /// du centre de chaque amas) : BiomeAtmosphere s'en sert pour garantir un motif profond derrière
+    /// CHAQUE amas plutôt que de compter sur un tirage aléatoire indépendant qui en rate certains.
+    /// </summary>
+    private HashSet<(int Row, int Col)> PickGlassCells(RandomNumberGenerator rng, int startX, int startY)
+    {
+        var cells = new HashSet<(int, int)>();
+        _glassClusterCenters.Clear();
+        const int margin = 5;
+        int clusters = 4 + (int)(rng.Randi() % 3); // 4-6 amas par run
+        for (int c = 0; c < clusters; c++)
+        {
+            int w = 2 + (int)(rng.Randi() % 2);
+            int h = 2 + (int)(rng.Randi() % 2);
+            int row0 = margin + (int)(rng.Randi() % (uint)(GridRows - 2 * margin - h));
+            int col0 = margin + (int)(rng.Randi() % (uint)(GridCols - 2 * margin - w));
+            for (int r = row0; r < row0 + h; r++)
+                for (int cc = col0; cc < col0 + w; cc++)
+                    cells.Add((r, cc));
+
+            float centerCol = col0 + w / 2f;
+            float centerRow = row0 + h / 2f;
+            _glassClusterCenters.Add(new Vector2(startX + centerCol * TileSize, startY + centerRow * TileSize));
+        }
+        return cells;
+    }
+
+    private readonly List<Vector2> _glassClusterCenters = new();
 
     // ─── Murs ─────────────────────────────────────────────────────────────────
 
@@ -554,7 +604,7 @@ public partial class GroundRenderer : Node2D
     {
         var atmo = new BiomeAtmosphere();
         AddChild(atmo);
-        atmo.Configure(_biome.Id, _biome.Accent);
+        atmo.Configure(_biome.Id, _biome.Accent, _glassClusterCenters);
     }
 
     // ─── Overlay sombre ──────────────────────────────────────────────────────
