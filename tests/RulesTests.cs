@@ -28,18 +28,23 @@ public class XpCurveTests
 
 public class EchoFormulaTests
 {
-    // floor(t/20) + floor(k/10) + cores*5 + base
+    // standard = floor(min(t,capTimeSecs)/20) + floor(min(k,capKills)/10) + min(c,capCores)*5 + base
+    // overtime = min( floor(max(0,t-capTimeSecs)/20*0.15) + floor(max(0,k-capKills)/10*0.15)
+    //               + floor(max(0,c-capCores)*5*0.15), overtimeBonusCap )
     [Theory]
-    [InlineData(30, 0, 0, 11)]     // run_30s_0kills_0cores : 1 + 0 + 0 + 10
-    [InlineData(180, 120, 4, 51)]  // 9 + 12 + 20 + 10
-    [InlineData(300, 250, 8, 90)]  // 15 + 25 + 40 + 10
-    [InlineData(900, 600, 25, 240)]// 45 + 60 + 125 + 10
+    [InlineData(30, 0, 0, 11)]        // run_30s_0kills_0cores : 1 + 0 + 0 + 10 (sous les caps)
+    [InlineData(180, 120, 4, 51)]     // run_3min_120kills_4cores : 9 + 12 + 20 + 10 (sous les caps)
+    [InlineData(300, 250, 8, 90)]     // run_5min_250kills_8cores : 15 + 25 + 40 + 10 (sous les caps)
+    [InlineData(780, 520, 22, 211)]   // run_complete_780s_520kills_22cores : pile aux caps, overtime=0
+    [InlineData(1080, 920, 29, 224)]  // run_overtime_modeste_18min : standard 211 + overtime 13
+    [InlineData(2400, 3000, 60, 288)] // run_overtime_excellente_40min : standard 211 + overtime 77
+    [InlineData(3600, 8000, 100, 311)]// run_overtime_extreme_60min : standard 211 + overtime plafonné à 100
     public void Calculate_RespecteLaCalibration(int t, int k, int c, int expected)
-        => Assert.Equal(expected, EchoFormula.Calculate(t, k, c, 20, 10, 5, 10));
+        => Assert.Equal(expected, EchoFormula.Calculate(t, k, c, 20, 10, 5, 10, 780, 520, 22, 0.15, 100));
 
     [Fact]
     public void Calculate_DiviseurNulNeFaitPasCrasher()
-        => Assert.Equal(10, EchoFormula.Calculate(0, 0, 0, 0, 0, 5, 10));
+        => Assert.Equal(10, EchoFormula.Calculate(0, 0, 0, 0, 0, 5, 10, 780, 520, 22, 0.15, 100));
 }
 
 public class EnemyScalingTests

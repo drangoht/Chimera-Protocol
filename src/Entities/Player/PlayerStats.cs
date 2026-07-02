@@ -15,6 +15,8 @@ public partial class PlayerStats : Resource
     [Export] public float DamageReduction { get; set; } = 0.0f;
     /// <summary>Réduction de cooldown cumulée (capacitor). Hardcap : cooldown_final >= 0.15 s.</summary>
     [Export] public float CooldownReduction { get; set; } = 0.0f;
+    /// <summary>Régénération HP/s continue (upgrade meta hp_regen). Défaut 0, max 1.2 HP/s (3 niveaux).</summary>
+    [Export] public float HpRegenPerSecond { get; set; } = 0.0f;
 
     // Vitesse de base sauvegardée pour les recalculs servo_motors
     [Export] public float BaseSpeed { get; set; } = 200f;

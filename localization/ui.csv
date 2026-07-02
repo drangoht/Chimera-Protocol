@@ -35,6 +35,7 @@ RUNEND_DEATH,KILLED IN ACTION,MORT EN SERVICE,CAÍDO EN COMBATE
 RUNEND_TIME,Time survived,Temps survécu,Tiempo sobrevivido
 RUNEND_KILLS,Enemies eliminated,Ennemis éliminés,Enemigos eliminados
 RUNEND_CORES,Cores collected,Noyaux récupérés,Núcleos recogidos
+RUNEND_OVERTIME_BONUS,Overload bonus,Bonus de Surcharge,Bonus de sobrecarga
 RUNEND_BONUS,Run bonus,Bonus de run,Bonus de partida
 RUNEND_TOTAL,TOTAL: {0} Echoes,TOTAL : {0} Échos,TOTAL: {0} Ecos
 RUNEND_HUB,Back to Hub,Retour au Hub,Volver al Hub
@@ -166,6 +167,26 @@ UPGRADE_REROLL_NAME,Tactical Recalibration,Recalibrage Tactique,Recalibración T
 UPGRADE_REROLL_DESC,Rerolls the cards offered at level-up. +1 use per run and per level (max 3).,Renouvelle les cartes proposées à la montée de niveau. +1 utilisation par run et par niveau (max 3).,Recarga las cartas ofrecidas al subir de nivel. +1 uso por partida y por nivel (máx. 3).
 UPGRADE_SKIP_NAME,Selection Dodge,Esquive de Sélection,Esquiva de Selección
 UPGRADE_SKIP_DESC,Lets you skip a card selection (you keep the level). +1 use per run and per level (max 3).,Permet de passer une sélection de cartes (vous gardez le niveau). +1 utilisation par run et par niveau (max 3).,Permite saltar una selección de cartas (conservas el nivel). +1 uso por partida y por nivel (máx. 3).
+UPGRADE_HP_BOOST_2_NAME,Armored Plating,Plaque Blindée,Blindaje Reforzado
+UPGRADE_HP_BOOST_2_DESC,"+35 additional max HP per level (2 levels). Extension of Reinforced Body for tank builds.","+35 HP maximum supplémentaires par niveau (2 niveaux). Extension du Corps Renforcé pour les builds tank.","+35 de vida máxima adicional por nivel (2 niveles). Extensión del Cuerpo Reforzado para builds de tanque."
+UPGRADE_DAMAGE_BOOST_2_NAME,Advanced Calibration,Calibration Avancée,Calibración Avanzada
+UPGRADE_DAMAGE_BOOST_2_DESC,"+8% additional damage per level (3 levels). Extension of Offensive Calibration for long runs.","+8% dégâts supplémentaires par niveau (3 niveaux). Extension de la Calibration Offensive pour les runs longues.","+8% de daño adicional por nivel (3 niveles). Extensión de la Calibración Ofensiva para partidas largas."
+UPGRADE_COOLDOWN_REDUCTION_2_NAME,Aether Sync II,Synchronisation Aether II,Sincronización de Aether II
+UPGRADE_COOLDOWN_REDUCTION_2_DESC,"-4% additional cooldown per level (2 levels). Extension of Aether Sync.","-4% de cooldown supplémentaire par niveau (2 niveaux). Extension de la Synchronisation Aether.","-4% de enfriamiento adicional por nivel (2 niveles). Extensión de la Sincronización de Aether."
+UPGRADE_DAMAGE_REDUCTION_2_NAME,Composite Armor II,Blindage Composite II,Blindaje Compuesto II
+UPGRADE_DAMAGE_REDUCTION_2_DESC,"-4% additional damage taken per level (2 levels). Approaches the global 40% hardcap if stacked with the in-run Reinforced Plating.","-4% de dégâts reçus supplémentaire par niveau (2 niveaux). Approche le hardcap global de 40% si cumulé avec la Plaque Renforcée in-run.","-4% de daño recibido adicional por nivel (2 niveles). Se acerca al tope global del 40% si se acumula con la Placa Reforzada de la partida."
+UPGRADE_EXTRA_LIFE_NAME,Emergency Core,Noyau de Secours,Núcleo de Emergencia
+UPGRADE_EXTRA_LIFE_DESC,"An emergency core brings you back to 30% HP instead of dying. +1 charge per level, recharged every run (2 levels max).","Un noyau d'urgence vous ramène à 30% HP au lieu de mourir. +1 charge par niveau, rechargée à chaque run (2 niveaux max).","Un núcleo de emergencia te devuelve al 30% de vida en lugar de morir. +1 carga por nivel, recargada en cada partida (máx. 2 niveles)."
+UPGRADE_DAMAGE_ABSORB_NAME,Adaptive Plating,Plaque Adaptative,Placa Adaptativa
+UPGRADE_DAMAGE_ABSORB_DESC,"The first hits taken during the run are fully absorbed (0 damage). +1 charge per level, recharged every run (3 levels max).","Les premiers coups reçus dans la run sont totalement absorbés (0 dégât). +1 charge par niveau, rechargée à chaque run (3 niveaux max).","Los primeros golpes recibidos en la partida se absorben por completo (0 de daño). +1 carga por nivel, recargada en cada partida (máx. 3 niveles)."
+UPGRADE_HP_REGEN_NAME,Self-Repair,Auto-Réparation,Autorreparación
+UPGRADE_HP_REGEN_DESC,"Continuously regenerates HP during the run. +0.4 HP/s per level (3 levels, max 1.2 HP/s).","Régénère des HP en continu pendant la run. +0.4 HP/s par niveau (3 niveaux, max 1.2 HP/s).","Regenera vida de forma continua durante la partida. +0.4 de vida/s por nivel (3 niveles, máx. 1.2 de vida/s)."
+UPGRADE_CORE_MAGNETISM_NAME,Core Resonance,Résonance de Noyau,Resonancia de Núcleo
+UPGRADE_CORE_MAGNETISM_DESC,"Increases the pickup radius of Aether Cores. +15/+15/+20 px per level (base 20 px → 70 px max).","Augmente le rayon de ramassage des Noyaux d'Aether. +15/+15/+20 px par niveau (base 20 px → 70 px max).","Aumenta el radio de recogida de los Núcleos de Aether. +15/+15/+20 px por nivel (base 20 px → 70 px máx.)."
+UPGRADE_OVERTIME_STABILIZER_NAME,Overload Stabilizer,Stabilisateur de Surcharge,Estabilizador de Sobrecarga
+UPGRADE_OVERTIME_STABILIZER_DESC,"Reduces the aggressiveness of the Overtime escalation (spawn and enemy scaling). -5% per level (3 levels, max -15%).","Réduit l'agressivité de l'escalade en Overtime (spawn et scaling ennemis). -5% par niveau (3 niveaux, max -15%).","Reduce la agresividad de la escalada en Sobretiempo (aparición y escalado de enemigos). -5% por nivel (3 niveles, máx. -15%)."
+UPGRADE_BONUS_MAGNET_NAME,Auxiliary Magnet,Aimant Auxiliaire,Imán Auxiliar
+UPGRADE_BONUS_MAGNET_DESC,"+1 Magnet spawn per run and per level (2 levels, base 3 → up to 5 per run).","+1 apparition de l'Aimant par run et par niveau (2 niveaux, base 3 → jusqu'à 5 par run).","+1 aparición del Imán por partida y por nivel (2 niveles, base 3 → hasta 5 por partida)."
 INTRO_BEAT_1,"Two centuries ago, the world's networks were linked to the Aether —\nthe magical energy buried in the depths.","Il y a deux siècles, on a relié les réseaux du monde à l'Aether —\nl'énergie magique enfouie dans les profondeurs.","Hace dos siglos, se conectaron las redes del mundo al Aether —\nla energía mágica enterrada en las profundidades."
 INTRO_BEAT_2,"The Convergence was neither war nor explosion, but a fusion.\nMachines ceased to be tools.","La Convergence ne fut ni guerre ni explosion, mais une fusion.\nLes machines cessèrent d'être des outils.","La Convergencia no fue guerra ni explosión, sino una fusión.\nLas máquinas dejaron de ser herramientas."
 INTRO_BEAT_3,"From that corruption was born the Living Rust.\nIt does not destroy: it integrates. It transforms.","De cette corruption naquit la Rouille Vivante.\nElle ne détruit pas : elle intègre. Elle transforme.","De esa corrupción nació la Herrumbre Viviente.\nNo destruye: integra. Transforma."

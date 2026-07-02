@@ -146,38 +146,44 @@ public partial class RunStatsTracker : Node
         RunEnded = true;
 
         int timeSecs = (int)ElapsedSeconds;
-        int echoes   = CalculateEchoes(timeSecs, KillCount, CoresCollected);
+        var (echoes, overtimeBonus) = CalculateEchoesDetailed(timeSecs, KillCount, CoresCollected);
 
         MetaProgressionSystem.Instance?.AddEchoes(echoes);
 
-        GD.Print($"[RunStatsTracker] Fin de run — outcome={outcome}, T={timeSecs}s, K={KillCount}, N={CoresCollected}, Échos={echoes}");
+        GD.Print($"[RunStatsTracker] Fin de run — outcome={outcome}, T={timeSecs}s, K={KillCount}, N={CoresCollected}, Échos={echoes} (dont overtime={overtimeBonus})");
 
         // High score : enregistre le temps survécu + la difficulté du niveau (garde le max).
         string biome = GameManager.Instance?.CurrentBiomeId ?? "";
         bool newRecord = GameSettings.Instance?.RecordTime(biome, timeSecs,
             GameSettings.Instance.Difficulty) ?? false;
 
-        OpenEndScreen(outcome, timeSecs, echoes, newRecord, GameSettings.Instance?.BestTime(biome) ?? timeSecs);
+        OpenEndScreen(outcome, timeSecs, echoes, overtimeBonus, newRecord, GameSettings.Instance?.BestTime(biome) ?? timeSecs);
     }
 
     // ---------------------------------------------------------------------------
     // Calcul des Échos
     // ---------------------------------------------------------------------------
 
-    private int CalculateEchoes(int timeSecs, int kills, int cores)
+    /// <summary>
+    /// Calcule le total d'Échos ainsi que le détail du bonus de surcharge (overtime) séparément,
+    /// pour l'affichage dédié dans RunEndScreen. capTimeSecs == RunDurationSeconds par construction.
+    /// </summary>
+    private (int Total, int OvertimeBonus) CalculateEchoesDetailed(int timeSecs, int kills, int cores)
     {
         var meta = MetaProgressionSystem.Instance;
-        if (meta == null) return 10;
+        if (meta == null) return (10, 0);
 
-        return EchoFormula.Calculate(timeSecs, kills, cores,
-            meta.EchoTimeDiv, meta.EchoKillDiv, meta.EchoCoreMult, meta.EchoBaseBonus);
+        return EchoFormula.CalculateDetailed(timeSecs, kills, cores,
+            meta.EchoTimeDiv, meta.EchoKillDiv, meta.EchoCoreMult, meta.EchoBaseBonus,
+            RunDurationSeconds, meta.EchoCapKills, meta.EchoCapCores,
+            meta.EchoOvertimeDampening, meta.EchoOvertimeBonusCap);
     }
 
     // ---------------------------------------------------------------------------
     // Écran de fin
     // ---------------------------------------------------------------------------
 
-    private void OpenEndScreen(string outcome, int timeSecs, int echoesEarned, bool newRecord, int bestTime)
+    private void OpenEndScreen(string outcome, int timeSecs, int echoesEarned, int overtimeBonus, bool newRecord, int bestTime)
     {
         if (_runEndScreenScene == null)
         {
@@ -192,6 +198,7 @@ public partial class RunStatsTracker : Node
         screen.PendingKills        = KillCount;
         screen.PendingCores        = CoresCollected;
         screen.PendingEchoesEarned = echoesEarned;
+        screen.PendingOvertimeBonus  = overtimeBonus;
         screen.PendingBestTime       = bestTime;
         screen.PendingNewRecord      = newRecord;
         screen.PendingLevelCompleted = LevelCompleted;

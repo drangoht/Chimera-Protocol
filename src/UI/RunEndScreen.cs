@@ -15,6 +15,7 @@ public partial class RunEndScreen : CanvasLayer
     public int    PendingKills        { get; set; } = 0;
     public int    PendingCores        { get; set; } = 0;
     public int    PendingEchoesEarned { get; set; } = 0;
+    public int    PendingOvertimeBonus { get; set; } = 0;
     public int    PendingBestTime       { get; set; } = 0;
     public bool   PendingNewRecord      { get; set; } = false;
     public bool   PendingLevelCompleted { get; set; } = false;
@@ -24,6 +25,7 @@ public partial class RunEndScreen : CanvasLayer
     private Label     _timeLabel     = null!;
     private Label     _killLabel     = null!;
     private Label     _coreLabel     = null!;
+    private Label     _overtimeBonusLabel = null!;
     private Label     _bonusLabel    = null!;
     private Label     _totalLabel    = null!;
     private Button    _hubButton     = null!;
@@ -46,6 +48,7 @@ public partial class RunEndScreen : CanvasLayer
         _timeLabel    = GetNode<Label>("TimeLabel");
         _killLabel    = GetNode<Label>("KillLabel");
         _coreLabel    = GetNode<Label>("CoreLabel");
+        _overtimeBonusLabel = GetNode<Label>("OvertimeBonusLabel");
         _bonusLabel   = GetNode<Label>("BonusLabel");
         _totalLabel   = GetNode<Label>("TotalLabel");
         _hubButton    = GetNode<Button>("HubButton");
@@ -67,7 +70,7 @@ public partial class RunEndScreen : CanvasLayer
         Visible = false;
 
         // Lance l'affichage avec les données préremplies
-        ShowEndScreen(PendingOutcome, PendingTimeSecs, PendingKills, PendingCores, PendingEchoesEarned);
+        ShowEndScreen(PendingOutcome, PendingTimeSecs, PendingKills, PendingCores, PendingEchoesEarned, PendingOvertimeBonus);
     }
 
     private static string Fmt(int secs) => $"{secs / 60:D2}:{secs % 60:D2}";
@@ -92,7 +95,7 @@ public partial class RunEndScreen : CanvasLayer
     /// <summary>
     /// Affiche l'écran et lance l'animation countup précédée d'un fade-in depuis le noir.
     /// </summary>
-    public void ShowEndScreen(string outcome, int timeSecs, int kills, int cores, int echoesEarned)
+    public void ShowEndScreen(string outcome, int timeSecs, int kills, int cores, int echoesEarned, int overtimeBonus)
     {
         Visible = true;
 
@@ -111,25 +114,30 @@ public partial class RunEndScreen : CanvasLayer
         else
             AudioSystem.Instance?.PlaySfx("sfx_ui_death");
 
-        // Calcul des composantes
+        // Calcul des composantes STANDARD (plafonnées) — le bonus de surcharge (overtime) est
+        // déjà calculé séparément par RunStatsTracker et transmis via overtimeBonus.
         var meta      = MetaProgressionSystem.Instance;
         int timeDiv   = meta?.EchoTimeDiv   ?? 20;
         int killDiv   = meta?.EchoKillDiv   ?? 10;
         int coreMult  = meta?.EchoCoreMult  ?? 5;
         int baseBonus = meta?.EchoBaseBonus ?? 10;
+        int capTimeSecs = RunStatsTracker.Instance?.RunDurationSeconds ?? timeSecs;
+        int capKills    = meta?.EchoCapKills ?? kills;
+        int capCores    = meta?.EchoCapCores ?? cores;
 
-        int timeEchoes = timeSecs / timeDiv;
-        int killEchoes = kills    / killDiv;
-        int coreEchoes = cores    * coreMult;
+        int timeEchoes = Mathf.Min(timeSecs, capTimeSecs) / timeDiv;
+        int killEchoes = Mathf.Min(kills,    capKills)    / killDiv;
+        int coreEchoes = Mathf.Min(cores,    capCores)    * coreMult;
 
         // Cache les labels pendant l'animation
-        _timeLabel.Visible    = false;
-        _killLabel.Visible    = false;
-        _coreLabel.Visible    = false;
-        _bonusLabel.Visible   = false;
-        _totalLabel.Visible   = false;
-        _hubButton.Visible    = false;
-        _replayButton.Visible = false;
+        _timeLabel.Visible          = false;
+        _killLabel.Visible          = false;
+        _coreLabel.Visible          = false;
+        _overtimeBonusLabel.Visible = false;
+        _bonusLabel.Visible         = false;
+        _totalLabel.Visible         = false;
+        _hubButton.Visible          = false;
+        _replayButton.Visible       = false;
 
         // Fade-in depuis le noir — démarre opaque, fade vers transparent en 0.5s
         _fadeOverlay.Color = new Color(0, 0, 0, 1f);
@@ -153,7 +161,15 @@ public partial class RunEndScreen : CanvasLayer
         tween.TweenCallback(Callable.From(() => _coreLabel.Visible = true));
         AnimateCountup(tween, _coreLabel, Loc.T("RUNEND_CORES"), coreEchoes, CountupDuration);
 
-        // Composante 4 — Bonus de base
+        // Composante 4 — Bonus de Surcharge (overtime) : sautée si 0 (run standard sans dépassement
+        // des caps) pour ne pas casser le rythme du countup avec une ligne "+0 Échos".
+        if (overtimeBonus > 0)
+        {
+            tween.TweenCallback(Callable.From(() => _overtimeBonusLabel.Visible = true));
+            AnimateCountup(tween, _overtimeBonusLabel, Loc.T("RUNEND_OVERTIME_BONUS"), overtimeBonus, CountupDuration);
+        }
+
+        // Composante 5 — Bonus de base
         tween.TweenCallback(Callable.From(() => _bonusLabel.Visible = true));
         AnimateCountup(tween, _bonusLabel, Loc.T("RUNEND_BONUS"), baseBonus, CountupDuration);
 

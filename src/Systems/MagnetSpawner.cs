@@ -1,9 +1,12 @@
 using Godot;
+using System.Collections.Generic;
 
 /// <summary>
 /// Node dans Game.tscn — fait apparaître l'item Aimant à des moments aléatoires de la run.
-/// Au maximum 3 apparitions : deux réparties tôt/milieu, et une « proche de la fin » (autour
+/// Par défaut 3 apparitions : deux réparties tôt/milieu, et une « proche de la fin » (autour
 /// de l'arrivée du boss final, ~13 min). Position aléatoire dans l'arène, min 150 px des murs.
+/// Upgrade meta "bonus_magnet" (0-2 niveaux) : ajoute une fenêtre de spawn supplémentaire en
+/// overtime par niveau, espacées d'environ 8 min après le boss.
 /// Le spawner est un nœud de scène (non-AutoLoad) : il est recréé — donc reprogrammé — à chaque run.
 /// </summary>
 public partial class MagnetSpawner : Node
@@ -18,6 +21,10 @@ public partial class MagnetSpawner : Node
         (700, 760),  // 3e  : ~11.7–12.7 min — proche de la fin
     };
 
+    // Espacement des fenêtres bonus (overtime), en secondes, après l'arrivée du boss (~780 s).
+    private const int BonusWindowSpacingSecs = 480; // ~8 min
+    private const int BonusWindowHalfWidth   = 40;
+
     private const float MinMargin = 150f;
 
     private float[] _spawnTimes = System.Array.Empty<float>();
@@ -27,9 +34,19 @@ public partial class MagnetSpawner : Node
     {
         _magnetScene ??= GD.Load<PackedScene>("res://scenes/entities/Magnet.tscn");
 
-        var times = new float[SpawnWindows.Length];
-        for (int i = 0; i < SpawnWindows.Length; i++)
-            times[i] = (float)GD.RandRange(SpawnWindows[i].Min, SpawnWindows[i].Max);
+        var windows = new List<(int Min, int Max)>(SpawnWindows);
+
+        // Upgrade meta "bonus_magnet" : +1 fenêtre par niveau, en overtime.
+        int bonusCharges = MetaProgressionSystem.Instance?.GetUpgradeLevel("bonus_magnet") ?? 0;
+        for (int i = 1; i <= bonusCharges; i++)
+        {
+            int center = 780 + BonusWindowSpacingSecs * i;
+            windows.Add((center - BonusWindowHalfWidth, center + BonusWindowHalfWidth));
+        }
+
+        var times = new float[windows.Count];
+        for (int i = 0; i < windows.Count; i++)
+            times[i] = (float)GD.RandRange(windows[i].Min, windows[i].Max);
         System.Array.Sort(times);
         _spawnTimes = times;
     }

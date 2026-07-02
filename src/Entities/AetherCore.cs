@@ -1,4 +1,5 @@
 using Godot;
+using System;
 
 /// <summary>
 /// Pickup "Noyau d'Aether" — ramassage MANUEL par contact (rayon 20 px, pas d'aspiration).
@@ -15,6 +16,28 @@ public partial class AetherCore : Area2D
     {
         BodyEntered += OnBodyEntered;
         AddCoreLight();
+        ApplyCoreMagnetism();
+    }
+
+    /// <summary>
+    /// Upgrade meta "core_magnetism" (0-3 niveaux) : agrandit le rayon de ramassage.
+    /// Base 20 px → +15/+15/+20 px par niveau (niv1: 35, niv2: 50, niv3: 70).
+    /// Ramassage reste MANUEL (contact requis, pas d'aspiration) — seul le rayon change.
+    /// </summary>
+    private void ApplyCoreMagnetism()
+    {
+        int level = MetaProgressionSystem.Instance?.GetUpgradeLevel("core_magnetism") ?? 0;
+        if (level <= 0) return;
+
+        var collision = GetNodeOrNull<CollisionShape2D>("CollisionShape2D");
+        if (collision?.Shape is not CircleShape2D circle) return;
+
+        Span<float> bonusPerLevel = stackalloc float[] { 15f, 15f, 20f };
+        float bonus = 0f;
+        for (int i = 0; i < level && i < bonusPerLevel.Length; i++)
+            bonus += bonusPerLevel[i];
+
+        circle.Radius = 20f + bonus;
     }
 
     private void AddCoreLight()

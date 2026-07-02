@@ -23,6 +23,12 @@ public partial class MetaProgressionSystem : Node
     private int _echoCoreMult  = 5;
     private int _echoBaseBonus = 10;
 
+    private int _echoCapTimeSecs        = 780;
+    private int _echoCapKills           = 520;
+    private int _echoCapCores           = 22;
+    private double _echoOvertimeDampening = 0.15;
+    private int _echoOvertimeBonusCap   = 100;
+
     // ---------------------------------------------------------------------------
     // État runtime (synchronisé avec SaveManager)
     // ---------------------------------------------------------------------------
@@ -70,6 +76,12 @@ public partial class MetaProgressionSystem : Node
             if (formula.TryGetProperty("killDiv",   out var kd)) _echoKillDiv   = kd.GetInt32();
             if (formula.TryGetProperty("coreMult",  out var cm)) _echoCoreMult  = cm.GetInt32();
             if (formula.TryGetProperty("baseBonus", out var bb)) _echoBaseBonus = bb.GetInt32();
+
+            if (formula.TryGetProperty("capTimeSecs",        out var cts)) _echoCapTimeSecs        = cts.GetInt32();
+            if (formula.TryGetProperty("capKills",           out var ck))  _echoCapKills           = ck.GetInt32();
+            if (formula.TryGetProperty("capCores",           out var cc))  _echoCapCores           = cc.GetInt32();
+            if (formula.TryGetProperty("overtimeDampening",  out var od))  _echoOvertimeDampening  = od.GetDouble();
+            if (formula.TryGetProperty("overtimeBonusCap",   out var obc)) _echoOvertimeBonusCap   = obc.GetInt32();
         }
 
         // Définitions d'upgrades
@@ -164,18 +176,25 @@ public partial class MetaProgressionSystem : Node
     public void ApplyMetaBonusesToStats(PlayerStats stats)
     {
         stats.MaxHp            += GetUpgradeLevel("hp_boost")            * 20f;
+        stats.MaxHp            += GetUpgradeLevel("hp_boost_2")          * 35f;
         stats.CurrentHp         = stats.MaxHp;
 
         stats.DamageMultiplier += GetUpgradeLevel("damage_boost")        * 0.10f;
+        stats.DamageMultiplier += GetUpgradeLevel("damage_boost_2")      * 0.08f;
 
         float speedBonus        = GetUpgradeLevel("speed_boost")         * 15f;
         stats.Speed             = Mathf.Min(stats.Speed + speedBonus, PlayerStats.MaxSpeed);
         stats.BaseSpeed         = stats.Speed;
 
         stats.CooldownReduction += GetUpgradeLevel("cooldown_reduction") * 0.05f;
+        stats.CooldownReduction += GetUpgradeLevel("cooldown_reduction_2") * 0.04f;
 
-        float newDR             = stats.DamageReduction + GetUpgradeLevel("damage_reduction") * 0.05f;
+        float newDR             = stats.DamageReduction
+                                 + GetUpgradeLevel("damage_reduction")   * 0.05f
+                                 + GetUpgradeLevel("damage_reduction_2") * 0.04f;
         stats.DamageReduction   = Mathf.Min(newDR, PlayerStats.MaxDamageReduction);
+
+        stats.HpRegenPerSecond  = GetUpgradeLevel("hp_regen") * 0.4f;
     }
 
     /// <summary>
@@ -233,6 +252,12 @@ public partial class MetaProgressionSystem : Node
     public int EchoKillDiv   => _echoKillDiv;
     public int EchoCoreMult  => _echoCoreMult;
     public int EchoBaseBonus => _echoBaseBonus;
+
+    public int EchoCapTimeSecs          => _echoCapTimeSecs;
+    public int EchoCapKills            => _echoCapKills;
+    public int EchoCapCores            => _echoCapCores;
+    public double EchoOvertimeDampening => _echoOvertimeDampening;
+    public int EchoOvertimeBonusCap    => _echoOvertimeBonusCap;
 
     // ---------------------------------------------------------------------------
     // Helpers privés

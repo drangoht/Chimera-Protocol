@@ -8,9 +8,10 @@ using System.Collections.Generic;
 /// </summary>
 public partial class HubScreen : Control
 {
-    private Label         _echoesLabel       = null!;
-    private VBoxContainer _upgradesList      = null!;
-    private Button        _backButton        = null!;
+    private Label          _echoesLabel       = null!;
+    private ScrollContainer _upgradesScroll   = null!;
+    private VBoxContainer  _upgradesList      = null!;
+    private Button         _backButton        = null!;
     private Button        _resetButton       = null!;
     private bool          _resetArmed        = false;
     private ColorRect     _fadeOverlay       = null!;
@@ -24,7 +25,8 @@ public partial class HubScreen : Control
     public override void _Ready()
     {
         _echoesLabel        = GetNode<Label>("VBox/EchoesLabel");
-        _upgradesList       = GetNode<VBoxContainer>("VBox/UpgradesList");
+        _upgradesScroll     = GetNode<ScrollContainer>("VBox/UpgradesScroll");
+        _upgradesList       = GetNode<VBoxContainer>("VBox/UpgradesScroll/UpgradesList");
         _backButton         = GetNode<Button>("VBox/ButtonsRow/BackButton");
         _weaponSelector     = GetNode<HBoxContainer>("VBox/WeaponSelector");
         _fadeOverlay        = GetNode<ColorRect>("FadeOverlay");
@@ -131,6 +133,10 @@ public partial class HubScreen : Control
             string capturedId = def.Id;
             buyButton.Pressed += () => OnBuyPressed(capturedId);
             ConnectHoverEffects(buyButton, 1.02f);
+
+            // Liste focalisable qui déborde (18 upgrades) : le focus manette/clavier doit
+            // scroller automatiquement la liste pour garder le bouton visible.
+            buyButton.FocusEntered += () => _upgradesScroll.EnsureControlVisible(buyButton);
 
             row.AddChild(nameLabel);
             row.AddChild(levelLabel);

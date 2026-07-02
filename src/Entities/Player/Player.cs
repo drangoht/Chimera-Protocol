@@ -23,6 +23,10 @@ public partial class Player : CharacterBody2D
 
     private Tween? _hitTween;
 
+    // ── Consommables meta (rechargés à chaque run, cf. MetaProgressionSystem) ──
+    private int _extraLivesLeft   = 0;
+    private int _absorbChargesLeft = 0;
+
     private static Texture2D? _playerLightTex;
 
     // ── Power-ups temporaires (buffs à durée limitée, aucun power-creep permanent) ──
@@ -55,6 +59,10 @@ public partial class Player : CharacterBody2D
         WeaponBase.FireRateMultiplier = 1f;
         _buffBar = new BuffBar();
         AddChild(_buffBar);
+
+        // Consommables meta rechargés à chaque run.
+        _extraLivesLeft    = MetaProgressionSystem.Instance?.GetUpgradeLevel("extra_life")    ?? 0;
+        _absorbChargesLeft = MetaProgressionSystem.Instance?.GetUpgradeLevel("damage_absorb")  ?? 0;
     }
 
     public override void _ExitTree()
@@ -198,6 +206,7 @@ public partial class Player : CharacterBody2D
 
         if (_invulnTimer > 0f) _invulnTimer -= (float)delta;
         UpdateBuffs((float)delta);
+        UpdateHpRegen(delta);
 
         var direction = Input.GetVector("ui_left", "ui_right", "ui_up", "ui_down");
         Velocity = direction.Normalized() * Stats.Speed * SpeedMultiplier;
@@ -208,6 +217,16 @@ public partial class Player : CharacterBody2D
         UpdateHpBlink(delta);
         UpdateTrail();
         UpdateAura();
+    }
+
+    /// <summary>Auto-Réparation (upgrade meta hp_regen) : régénération continue clampée à MaxHp.</summary>
+    private void UpdateHpRegen(double delta)
+    {
+        if (Stats.HpRegenPerSecond <= 0f || Stats.CurrentHp <= 0f) return;
+        float before = Stats.CurrentHp;
+        Stats.CurrentHp = Mathf.Min(Stats.MaxHp, Stats.CurrentHp + Stats.HpRegenPerSecond * (float)delta);
+        if (Stats.CurrentHp != before)
+            EmitSignal(SignalName.HpChanged, Stats.CurrentHp, Stats.MaxHp);
     }
 
     private void UpdateTrail()
@@ -320,6 +339,13 @@ public partial class Player : CharacterBody2D
     public void TakeDamage(float amount)
     {
         if (_isDead) return;
+        // Plaque Adaptative (consommable meta damage_absorb) : absorbe totalement les premiers coups.
+        if (_absorbChargesLeft > 0)
+        {
+            _absorbChargesLeft--;
+            HitFlash(0.1f, new Color(1.2f, 1.6f, 2f, 1f));
+            return;
+        }
         // Égide (power-up) : invulnérabilité totale le temps du buff — absorbe le coup (flash doré).
         if (Shielded) { HitFlash(0.1f, new Color(2f, 1.6f, 0.6f, 1f)); return; }
         // Invulnérabilité : un seul coup encaissé par fenêtre, peu importe le nombre
@@ -355,6 +381,20 @@ public partial class Player : CharacterBody2D
     private void HandleDeath()
     {
         if (_isDead) return;
+
+        // Noyau de Secours (consommable meta extra_life) : ramène à 30% HP au lieu de mourir.
+        if (_extraLivesLeft > 0)
+        {
+            _extraLivesLeft--;
+            Stats.CurrentHp = Stats.MaxHp * 0.3f;
+            _invulnTimer = InvulnWindow;
+            EmitSignal(SignalName.HpChanged, Stats.CurrentHp, Stats.MaxHp);
+            HitFlash(0.3f, new Color(1.6f, 2f, 1.2f, 1f));
+            AudioSystem.Instance?.PlaySfx("sfx_core_collect");
+            GD.Print($"[Player] Noyau de Secours consommé. Charges restantes : {_extraLivesLeft}");
+            return;
+        }
+
         _isDead = true;
         GD.Print("Player died.");
 

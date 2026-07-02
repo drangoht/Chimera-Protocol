@@ -31,6 +31,7 @@ tableau des phases (✅/🔲), roadmap, captures d'écran.
   - 3 personnages (Chimera, Titan, Vagabond), 5 biomes (Sanctuaire, Aether, Fournaise, Givre, Néon)
   - 11 armes actives + 4 fusions + 4 passifs ; power-ups temporaires (4 types)
   - Fin de niveau complète : survie sans fin, overtime, boss en boucle, déblocage progressif, high scores (temps+difficulté), arsenal à découverte
+  - Hub méta rééquilibré (2026-07-02) : 18 upgrades (8 rééquilibrés + 10 nouveaux), formule d'Échos plafonnée standard/overtime (`EchoFormula.Calculate`, caps + `overtimeDampening`/`overtimeBonusCap`), 5e composante "Bonus de Surcharge" sur `RunEndScreen`, `UpgradesList` scrollable
   - Localisation EN/FR/ES (`localization/ui.csv` → clé `Loc.T("CLÉ")`) ; support manette complet
   - HUD thématisé par biome, atmosphère (brume/rais/parallaxe), scanlines CRT
   - Arènes : obstacles thématisés par biome (`BiomeObstacles.cs`), features de sol (`FloorFeatures.cs` — lave/rivières/chemin pavé/conduits), gabarits structurés, décor rouillé réservé au Sanctuaire ; flag `--biome=<id>` pour forcer un biome (tests/captures)

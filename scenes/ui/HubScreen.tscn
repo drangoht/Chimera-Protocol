@@ -139,8 +139,12 @@ theme_override_colors/font_color = Color(1.0, 0.8, 0.267, 1.0)
 [node name="Separator" type="HSeparator" parent="VBox"]
 theme_override_colors/color = Color(0.267, 1.0, 0.933, 0.3)
 
-[node name="UpgradesList" type="VBoxContainer" parent="VBox"]
+[node name="UpgradesScroll" type="ScrollContainer" parent="VBox"]
 size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="UpgradesList" type="VBoxContainer" parent="VBox/UpgradesScroll"]
+size_flags_horizontal = 3
 
 [node name="Separator2" type="HSeparator" parent="VBox"]
 theme_override_colors/color = Color(0.267, 1.0, 0.933, 0.3)

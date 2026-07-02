@@ -28,6 +28,10 @@ public partial class EnemySpawner : Node
 
     private readonly RandomNumberGenerator _rng = new();
 
+    // Upgrade meta "overtime_stabilizer" : amortit la pente de scaling en overtime uniquement
+    // (0 à -15%, 3 niveaux de -5%). Lu une fois au _Ready — n'affecte pas la difficulté standard.
+    private float _overtimeStabilizerFactor = 1f;
+
     // Données de spawn chargées depuis enemies.json
     private readonly List<EnemySpawnData> _enemyPool = new();
 
@@ -52,6 +56,9 @@ public partial class EnemySpawner : Node
         LoadEnemiesJson();
         PreloadScenes();
         _timer = 2f; // Premier spawn dans 2 s
+
+        int stabilizerLevel = MetaProgressionSystem.Instance?.GetUpgradeLevel("overtime_stabilizer") ?? 0;
+        _overtimeStabilizerFactor = 1f - 0.05f * stabilizerLevel;
     }
 
     // -------------------------------------------------------------------------
@@ -97,8 +104,10 @@ public partial class EnemySpawner : Node
         var tracker = RunStatsTracker.Instance;
         bool overtime = tracker?.Overtime ?? false;
         float otMin   = overtime ? tracker!.OvertimeSeconds / 60f : 0f;
-        float tEff    = tMinutes + otMin * 4f;
-        float waveReset = overtime ? Mathf.Max(8f, 18f - otMin * 2f) : 25f;
+        // overtime_stabilizer : amortit UNIQUEMENT la composante de temps overtime (pas tMinutes).
+        float otMinEffectif = otMin * _overtimeStabilizerFactor;
+        float tEff    = tMinutes + otMinEffectif * 4f;
+        float waveReset = overtime ? Mathf.Max(8f, 18f - otMinEffectif * 2f) : 25f;
 
         float spawnInterval = SpawnCurve.SpawnInterval(tEff);
         _timer -= (float)delta;
@@ -124,14 +133,14 @@ public partial class EnemySpawner : Node
             if (_eliteTimer <= 0f)
             {
                 SpawnOvertimeElite(tEff);
-                _eliteTimer = Mathf.Max(5f, 14f - otMin * 1.5f);
+                _eliteTimer = Mathf.Max(5f, 14f - otMinEffectif * 1.5f);
             }
 
             _bossTimer -= (float)delta;
             if (_bossTimer <= 0f)
             {
                 SpawnOvertimeBoss(tEff);
-                _bossTimer = Mathf.Max(28f, 50f - otMin * 2f);
+                _bossTimer = Mathf.Max(28f, 50f - otMinEffectif * 2f);
             }
         }
     }

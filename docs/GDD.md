@@ -244,7 +244,15 @@ Toute fusion supplémentaire est hors-scope MVP (cf. §14).
 
 ## 9. Monnaie meta : les **Échos d'Aether**
 
-> Spécifié le 2026-06-20 par l'agent `game-designer`. Valeurs de tuning dans `data/meta_upgrades.json`.
+> Spécifié le 2026-06-20 par l'agent `game-designer`. **Rééquilibré le 2026-07-02** suite au
+> passage au modèle « survie sans fin » (`docs/LEVEL_PROGRESSION_PLAN.md`, verrouillé
+> 2026-06-30) : au-delà de `runDurationSeconds` (arrivée du boss de fin de niveau, 780 s / 13 min),
+> la run entre en **overtime** et ne se termine plus qu'à la mort du joueur — temps survécu, kills
+> et Noyaux ne sont plus bornés par un timer. L'ancienne formule linéaire sans plafond permettait à
+> une excellente run overtime de rapporter plusieurs milliers d'Échos en un seul run (vs ~240 pour
+> une run complète avant ce changement), vidant l'intégralité du Hub en 1 à 3 runs. Le §9.2
+> ci-dessous documente la nouvelle formule à plafond souple qui corrige ce problème. Valeurs de
+> tuning dans `data/meta_upgrades.json`.
 
 ### 9.1 Noyaux d'Aether (pickups en run)
 
@@ -262,90 +270,185 @@ Les Noyaux d'Aether sont des collectables **distincts des orbes XP** :
   risques pour récupérer les Noyaux, créant une tension supplémentaire.
 - **Valeur en Échos** : voir formule §9.2 — chaque Noyau ramassé contribue **5 Échos** au total.
 
-### 9.2 Formule de calcul des Échos en fin de run
+### 9.2 Formule de calcul des Échos en fin de run — v2 (2026-07-02, à plafond souple)
+
+La run n'est plus bornée par un timer (cf. §9.3) : temps survécu, kills et Noyaux peuvent croître
+indéfiniment en overtime. La formule sépare donc une **partie standard** (identique à l'esprit de
+la v1, plafonnée à ce qu'une run « cible » de 13 min rapporte) et un **bonus de surcharge**
+(overtime) fortement amorti et lui-même plafonné, pour qu'une run exceptionnellement longue ne
+rapporte jamais plus qu'une fraction bornée au-dessus d'une run standard complète.
 
 ```
-Échos = floor(tempsSurvécuSecondes / 20)
-      + floor(ennemisKills / 10)
-      + (noyauxRamassés × 5)
-      + 10   ← bonus de base (toujours gagné)
+tStd = min(tempsSurvécuSecondes, capTimeSecs)      // capTimeSecs = 780 (= runDurationSeconds)
+kStd = min(kills, capKills)                        // capKills = 520
+nStd = min(noyauxRamassés, capCores)                // capCores = 22
+
+Échos_standard = floor(tStd / 20) + floor(kStd / 10) + (nStd × 5) + 10
+
+tOver = max(0, tempsSurvécuSecondes - capTimeSecs)
+kOver = max(0, kills - capKills)
+nOver = max(0, noyauxRamassés - capCores)
+
+Bonus_surcharge_brut = floor(tOver/20 × 0,15) + floor(kOver/10 × 0,15) + floor(nOver×5 × 0,15)
+Bonus_surcharge = min(Bonus_surcharge_brut, 100)     // overtimeBonusCap
+
+Échos = Échos_standard + Bonus_surcharge
 ```
+
+Paramètres `data/meta_upgrades.json` → `echoesFormula` : `timeDiv=20`, `killDiv=10`, `coreMult=5`,
+`baseBonus=10` (inchangés depuis la v1), plus 5 nouveaux : `capTimeSecs=780`, `capKills=520`,
+`capCores=22`, `overtimeDampening=0.15`, `overtimeBonusCap=100`.
 
 **Calibration :**
 
-| Scénario | Temps (s) | Kills | Noyaux | floor(T/20) | floor(K/10) | N×5 | +10 | **Total** |
-|---|---|---|---|---|---|---|---|---|
-| Mort en 30 s | 30 | 0 | 0 | 1 | 0 | 0 | 10 | **11** |
-| Run 3 min sans mourir | 180 | 120 | 4 | 9 | 12 | 20 | 10 | **51** |
-| Run 5 min (moyenne) | 300 | 250 | 8 | 15 | 25 | 40 | 10 | **90** |
-| Run 15 min complète | 900 | 600 | 25 | 45 | 60 | 125 | 10 | **240** |
+| Scénario | Temps | Kills | Noyaux | Échos standard | Bonus surcharge | **Total** |
+|---|---|---|---|---|---|---|
+| Mort en 30 s | 30 s | 0 | 0 | 11 | 0 | **11** |
+| Run 3 min sans mourir | 180 s | 120 | 4 | 51 | 0 | **51** |
+| Run 5 min (moyenne) | 300 s | 250 | 8 | 90 | 0 | **90** |
+| Run complète, boss vaincu, sans overtime | 780 s (13 min) | 520 | 22 | 211 | 0 | **211** |
+| Run + overtime modeste (+5 min après boss) | 1080 s (18 min) | 920 | 29 | 211 | 13 | **224** |
+| Run + overtime excellente | 2400 s (40 min) | 3000 | 60 | 211 | 77 | **288** |
+| Run + overtime extrême (plafond atteint) | 3600 s (60 min) | 8000 | 100 | 211 | 100 | **311** |
 
-*(Valeurs kills/noyaux estimées selon le mix d'ennemis et les spawns périodiques de Noyaux.)*
+Comparaison directe avec l'ancienne formule (v1, sans plafond) sur le scénario « extrême » :
+`floor(3600/20) + floor(8000/10) + 100×5 + 10 = 180 + 800 + 500 + 10 = 1490 Échos` — soit près du
+coût total de l'ancien arbre (6960 Échos, §18.2) en **une seule run**. La v2 plafonne cet écart à
+**+100 Échos maximum** au-delà d'une run standard complète, quelle que soit la durée de survie
+ensuite.
 
 Objectifs atteints :
-- Première run 3-5 min : **51-90 Échos** (cible 50-80, la run 5 min donne un peu plus car elle
-  est plus difficile à réaliser — acceptable).
-- Run complète 15 min : **~240 Échos** (cible 150-250). ✓
-- Mort en 30 s : **11 Échos** (min 10 garanti). ✓
-- Lisibilité : les 3 composantes sont affichées séparément sur l'écran de fin (§9.4).
+- Runs courtes (30 s à 5 min) : valeurs **identiques à l'ancienne calibration** (51-90 Échos) —
+  aucune régression pour les joueurs qui découvrent le jeu.
+- Run standard complète (13 min, boss vaincu, sans pousser l'overtime) : **211 Échos** — dans la
+  même fourchette que l'ancien plafond de fait (240 pour 15 min), très légèrement réduit car la
+  cible standard est plus courte (13 min vs 15 min).
+- Overtime : **rendements fortement décroissants** au-delà de la run standard, plafonnés à **+100
+  Échos** cumulés quelle que soit la durée de survie ensuite. Une run de bon niveau (quelques
+  minutes d'overtime) profite encore d'un vrai bonus (+13 à +30 environ) ; au-delà d'environ 5-10
+  minutes d'overtime, le bonus sature.
+- Lisibilité : 5 composantes affichées séparément sur l'écran de fin (§9.4), dont un nouveau
+  « Bonus de Surcharge » qui rend le plafond transparent pour le joueur plutôt que de le cacher.
 
-### 9.3 Timer de run et conditions de fin
+### 9.3 Timer de run et conditions de fin — modèle « survie sans fin » (2026-06-30)
 
-- **Durée** : 900 s (15 min).
-- **Affichage** : compte à **rebours** (15:00 → 0:00) — crée la tension et donne un objectif clair.
-- **À 0:00** : extraction forcée, label "EXTRACTION REUSSIE" — fin de run victorieuse. Mêmes
-  Échos calculés qu'une mort. Le joueur est récompensé différemment (carte de fin distincte) mais
-  pas en Échos supplémentaires (pas de déséquilibre farming timer).
-- **Mort** : label "MORT EN SERVICE".
+> Voir `docs/LEVEL_PROGRESSION_PLAN.md` pour le détail complet des étapes d'implémentation.
+
+- **Durée standard** : `runDurationSeconds` = 780 s (13 min) — c'est le délai avant l'arrivée du
+  **boss de fin de niveau** (Le Noyau Rouillé, §20), pas la fin de la run.
+- **Affichage** : compte à **rebours** (13:00 → 0:00) jusqu'à l'arrivée du boss, puis bascule en
+  affichage du **temps survécu total** (compte croissant) une fois en overtime.
+- **À 0:00 (`RunStatsTracker.Overtime`)** : pas de fin de run. Bannière **« OVERTIME »** ;
+  escalade brutale gérée par `EnemySpawner`/`SpawnCurve` — vagues massives, mini-boss et boss en
+  boucle à cadence croissante (garde-fou perf : cap 300 ennemis simultanés maintenu).
+- **Boss de fin de niveau vaincu** (`RustedCore` → `RunStatsTracker.OnLevelBossDefeated()`) :
+  marque le **niveau TERMINÉ** (bannière + déblocage du biome suivant + persistance de la
+  complétion), mais **ne termine pas la run** — l'overtime continue.
+- **Mort du joueur** : seule condition de fin de run (`EndRun("death")`). Enregistre le **high
+  score** (temps survécu, cf. `docs/LEVEL_PROGRESSION_PLAN.md` étape 4) et calcule les Échos
+  (§9.2). Label "MORT EN SERVICE".
+- **Conséquence directe sur l'économie meta** : puisque temps/kills/Noyaux ne sont plus bornés par
+  un timer de fin, la formule d'Échos (§9.2) doit elle-même porter le plafond — c'est le rôle du
+  `capTimeSecs`/`capKills`/`capCores`/`overtimeBonusCap`.
 
 ### 9.4 Écran de fin de run
 
 L'écran affiche dans l'ordre :
-1. **Cause de fin** : "EXTRACTION REUSSIE" (victoire) ou "MORT EN SERVICE" (défaite), avec
-   palette visuelle distincte (cyan pour victoire, rouge-rouille pour mort).
+1. **Cause de fin** : "NIVEAU TERMINÉ" (si le boss a été vaincu pendant la run, en plus de la
+   cause finale) puis "MORT EN SERVICE" — palette visuelle distincte (or pour la complétion,
+   rouge-rouille pour la mort). Il n'y a plus de "EXTRACTION REUSSIE" isolée : battre le boss ne
+   termine plus la run (§9.3).
 2. **Décompte animé** (style `sequential_countup`, ~0,8 s par composante) :
-   - "Temps survécu" → +X Échos
-   - "Ennemis éliminés" → +X Échos
-   - "Noyaux récupérés" → +X Échos
+   - "Temps survécu" → +X Échos (plafonné à `capTimeSecs`)
+   - "Ennemis éliminés" → +X Échos (plafonné à `capKills`)
+   - "Noyaux récupérés" → +X Échos (plafonné à `capCores`)
+   - **"Bonus de Surcharge"** → +X Échos *(nouveau 2026-07-02 — n'apparaît/n'anime que si > 0,
+     c'est-à-dire si la run a dépassé un des plafonds standard ci-dessus, typiquement en overtime)*
    - "Bonus de run" → +10 Échos
    - → **TOTAL : X ÉCHOS**
-3. **Deux boutons** : "Retour au Hub" / "Rejouer".
+3. **Nouveau record ?** (temps survécu, high score par niveau/difficulté) affiché si battu.
+4. **Deux boutons** : "Retour au Hub" / "Rejouer".
 
 Objectif : rendre la fin de run satisfaisante même après une mort — le joueur voit sa progression
-meta et comprend immédiatement pourquoi rejouer.
+meta et comprend immédiatement pourquoi rejouer, ET comprend visuellement pourquoi une run
+overtime très longue ne rapporte pas des dizaines de fois plus qu'une run standard (le "Bonus de
+Surcharge" rend le plafond explicite plutôt que de le cacher dans un calcul opaque).
 
-### 9.5 Améliorations permanentes du Hub (MVP : 7 améliorations)
+### 9.5 Améliorations permanentes du Hub — v2 (18 améliorations, rééquilibré 2026-07-02)
 
-Dépensées au Hub. Structure complète dans `data/meta_upgrades.json`.
+Dépensées au Hub. Structure complète dans `data/meta_upgrades.json`. **Rééquilibrage complet**
+suite au §9.2/§9.3 : les 8 items MVP+post-MVP existants voient leurs prix augmenter modérément
+(+8% à +29% selon leur puissance relative), et **10 nouveaux items** sont ajoutés pour étaler la
+progression sur beaucoup plus de runs maintenant que l'économie n'explose plus en overtime.
 
-| id | Nom | Stat modifiée | Niveaux | Coût niv. 1 | Bonus par niveau |
+**Les 8 améliorations existantes (prix rééquilibrés, effets inchangés) :**
+
+| id | Nom | Stat modifiée | Niveaux | Coûts par niveau | Bonus par niveau |
 |---|---|---|---|---|---|
-| `hp_boost` | Corps Renforcé | `MaxHp` | 4 | 80 Échos | +20 HP |
-| `damage_boost` | Calibration Offensive | `DamageMultiplier` | 5 | 100 Échos | +10% dégâts |
-| `speed_boost` | Servos Améliorés | `Speed` | 3 | 90 Échos | +15 px/s |
-| `cooldown_reduction` | Synchronisation Aether | `CooldownReduction` | 3 | 120 Échos | -5% cooldown |
-| `damage_reduction` | Blindage Composite | `DamageReduction` | 3 | 150 Échos | -5% dégâts reçus |
-| `starting_xp` | Mémoire Résiduelle | `StartingXp`* | 1 | 200 Échos | Départ niveau 2 (27 XP) |
-| `starting_weapon_alt` | Prototype de Terrain | `UnlockStartingWeapon`* | 1 | 300 Échos | Débloque Essaim de Drones comme arme de départ |
+| `hp_boost` | Corps Renforcé | `MaxHp` | 4 | 90/180/300/480 | +20 HP |
+| `damage_boost` | Calibration Offensive | `DamageMultiplier` | 5 | 130/230/380/580/850 | +10% dégâts |
+| `speed_boost` | Servos Améliorés | `Speed` | 3 | 100/220/380 | +15 px/s |
+| `cooldown_reduction` | Synchronisation Aether | `CooldownReduction` | 3 | 140/290/470 | -5% cooldown |
+| `damage_reduction` | Blindage Composite | `DamageReduction` | 3 | 170/340/560 | -5% dégâts reçus |
+| `starting_weapon_alt` | Prototype de Terrain | `UnlockStartingWeapon`* | 1 | 350 | Débloque Essaim de Drones comme arme de départ |
+| `reroll` | Recalibrage Tactique | consommable* | 3 | 160/320/520 | +1 reroll/run |
+| `skip` | Esquive de Sélection | consommable* | 3 | 130/270/450 | +1 skip/run |
 
-\* Champs non présents dans `PlayerStats` — gérés par `MetaProgressionSystem` (cf. notes
-d'implémentation dans `data/meta_upgrades.json`).
+Sous-total : **8 090 Échos** (était 6 960).
 
-**Principes de design :**
-- Niveau 1 de toute amélioration atteignable en **1-2 runs moyennes** (80-300 Échos, run moyenne
-  ~100-120 Échos).
+**Les 10 nouvelles améliorations (2026-07-02) :**
+
+| id | Nom | Stat modifiée | Niveaux | Coûts par niveau | Bonus par niveau |
+|---|---|---|---|---|---|
+| `hp_boost_2` | Plaque Blindée | `MaxHp` (tier 2) | 2 | 300/450 | +35 HP |
+| `damage_boost_2` | Calibration Avancée | `DamageMultiplier` (tier 2) | 3 | 350/500/700 | +8% dégâts |
+| `cooldown_reduction_2` | Synchronisation Aether II | `CooldownReduction` (tier 2) | 2 | 320/480 | -4% cooldown |
+| `damage_reduction_2` | Blindage Composite II | `DamageReduction` (tier 2) | 2 | 350/550 | -4% dégâts reçus |
+| `extra_life` | Noyau de Secours | `ExtraLifeCharges`* | 2 | 450/800 | +1 revive à 30% HP/run |
+| `damage_absorb` | Plaque Adaptative | `DamageAbsorbCharges`* | 3 | 200/350/550 | +1 coup absorbé (0 dégât)/run |
+| `hp_regen` | Auto-Réparation | `HpRegenPerSecond`** | 3 | 220/380/600 | +0,4 HP/s (max 1,2 HP/s) |
+| `core_magnetism` | Résonance de Noyau | `CoreCollectionRadiusBonus`* | 3 | 160/280/450 | +15/+15/+20 px (20→70 px) |
+| `overtime_stabilizer` | Stabilisateur de Surcharge | `OvertimeRampReduction`* | 3 | 450/750/1150 | -5% pente overtime (max -15%) |
+| `bonus_magnet` | Aimant Auxiliaire | `BonusMagnetCharges`* | 2 | 200/350 | +1 apparition Aimant/run (3→5) |
+
+Sous-total : **11 340 Échos**. **TOTAL ARBRE COMPLET (18 items) : 19 430 Échos.**
+
+\* Consommables par run ou valeurs lues directement par le système consommateur — **PAS** des
+champs `PlayerStats` (même pattern que `reroll`/`skip` déjà existants). \*\* `HpRegenPerSecond`
+est le seul **nouveau champ `PlayerStats`** requis par ce rééquilibrage. Détail complet du câblage
+de chaque id dans `data/meta_upgrades.json` → `_implementationNotes` et champs `_designNote` par
+item.
+
+**Principes de design (v2) :**
+- Les 8 items historiques restent le socle accessible tôt (niveau 1 de chacun toujours atteignable
+  en 1-2 runs standards, ~90-210 Échos).
+- Les 10 nouveaux items sont des objectifs de **moyen à long terme** (jusqu'à 2 350 Échos pour
+  `overtime_stabilizer` au maximum) — variété volontaire au-delà des simples +stats : un
+  mécanisme de rachat de mort (`extra_life`), un amortisseur de chip damage (`damage_absorb`),
+  une régénération passive (`hp_regen`), une réponse directe au point de douleur "overtime trop
+  brutal" (`overtime_stabilizer`), et deux boosts d'économie in-run (`core_magnetism`,
+  `bonus_magnet`).
 - Aucune amélioration ne rend le jeu trivial seule : le scaling des ennemis compense sur les runs
-  longues.
-- `starting_xp` est l'"accélérateur de fun" : sauter la phase d'amorçage ennuyeuse des premières
-  secondes, sans skiper l'apprentissage du jeu.
-- `starting_weapon_alt` est l'objectif de moyen terme (2-3 runs) qui renforce la rejouabilité
-  par la variété de build dès la sélection.
+  longues, et les items les plus puissants (`overtime_stabilizer`, `damage_boost_2`) sont aussi
+  les plus chers.
+- Objectif de durée de vie de l'arbre complet : **plusieurs dizaines de runs** (là où l'ancienne
+  économie avant le passage en overtime sans plafond permettait de tout débloquer en 1-3 runs
+  exceptionnelles — cf. §9 intro).
+- `starting_weapon_alt` reste l'objectif de moyen terme (2-3 runs) qui renforce la rejouabilité
+  par la variété de build dès la sélection ; `bonus_magnet` en est l'équivalent bon marché côté
+  économie XP.
 
-**Hardcaps meta cumulés (meta + passifs en run) :**
-- `DamageReduction` : meta max -15% + Plaque Renforcée -20% = -35% (hardcap global 40% respecté).
-- `CooldownReduction` : meta max -15% + Capaciteur -38% = -53% → hardcap 0,15 s/arme s'applique.
-- `Speed` : meta max +45 px/s (245 px/s départ) + Servo-Moteurs +100 = 345 px/s (sous le plafond
-  soft 380 px/s). ✓
+**Hardcaps meta cumulés (meta + passifs en run), mis à jour avec les tiers 2 :**
+- `DamageReduction` : meta max -15% (`damage_reduction`) -8% (`damage_reduction_2`) = -23% + Plaque
+  Renforcée -20% (in-run) = -43% → **plafonné au hardcap global 40%** (dernier point du tier 2
+  partiellement "gâché" si le passif in-run est aussi maxé — volontaire, chasse aux marges pour
+  joueurs perfectionnistes).
+- `CooldownReduction` : meta max -15% (`cooldown_reduction`) -8% (`cooldown_reduction_2`) = -23% +
+  Capaciteur -38% (in-run) = -61% → hardcap 0,15 s/arme s'applique (inchangé).
+- `Speed` : meta max +45 px/s (245 px/s départ, aucun tier 2 ajouté volontairement — item déjà
+  bien dimensionné) + Servo-Moteurs +100 (in-run) = 345 px/s (sous le plafond soft 380 px/s). ✓
+- `MaxHp` : meta max +80 (`hp_boost`) +70 (`hp_boost_2`) = +150 HP permanents, aucun hardcap
+  (le scaling ennemi absorbe la marge sur les runs longues, cf. §17).
 
 ## 10. Niveau / Arène (MVP = 1 arène complète et soignée)
 
@@ -958,6 +1061,45 @@ Intégration d'éléments visuels depuis l'image concept `idea/idee_hud_chimera_
 **Chemins de nœuds supplémentaires :**
 `XpRow/LvHexBg` / `XpRow/LvHexBg/LevelLabel` / `CoresContainer/CoreIconTex`
 
+### Rééquilibrage Échos & Hub post-overtime (2026-07-02)
+
+**Problème signalé par le joueur** : le Hub se vide en une seule run depuis le passage au modèle
+« survie sans fin » (2026-06-30, `docs/LEVEL_PROGRESSION_PLAN.md`) — l'ancienne formule d'Échos
+linéaire sans plafond récompensait une run overtime exceptionnelle de plusieurs milliers d'Échos
+(vs ~240 pour l'ancien plafond de fait à 15 min), soit quasiment le coût total de l'ancien arbre
+(6 960 Échos) en une seule run.
+
+**Décisions actées par `game-designer` :**
+- [x] **Formule d'Échos v2** (`data/meta_upgrades.json` → `echoesFormula`) : partie standard
+  plafonnée (`capTimeSecs=780`, `capKills=520`, `capCores=22`, identique en valeur à l'ancien
+  plafond) + bonus de surcharge overtime fortement amorti (`overtimeDampening=0.15`) et lui-même
+  plafonné (`overtimeBonusCap=100`). Détail complet et calibration : §9.2.
+- [x] **Rééquilibrage des 8 améliorations existantes** : prix +8% à +29% selon leur puissance
+  (total 6 960 → 8 090 Échos), effets inchangés. Détail : §9.5, §18.2.
+- [x] **10 nouvelles améliorations** (total 11 340 Échos) : 4 extensions tier-2 des stats
+  existantes (`hp_boost_2`, `damage_boost_2`, `cooldown_reduction_2`, `damage_reduction_2`,
+  réutilisant les champs `PlayerStats` déjà câblés) + 6 mécaniques variées (`extra_life` — revive
+  à 30% HP, `damage_absorb` — coups absorbés à 0 dégât, `hp_regen` — régénération passive,
+  `core_magnetism` — rayon de collecte Noyaux, `overtime_stabilizer` — réponse directe au point de
+  douleur overtime (dampening de la pente d'escalade, max -15%), `bonus_magnet` — Aimants
+  supplémentaires en overtime). Détail : §9.5, §18.2.
+- [x] **Écran de fin de run** : nouvelle 5e composante "Bonus de Surcharge" (n'anime que si > 0)
+  rendant le plafond overtime transparent pour le joueur plutôt que de le cacher dans un calcul
+  opaque. Détail : §9.4.
+- [ ] **Câblage développeur** (non fait par `game-designer`, cf. notes `_implementationNotes` dans
+  `data/meta_upgrades.json`) : nouvelle signature `EchoFormula.Calculate()` (5 nouveaux
+  paramètres), nouveau champ `PlayerStats.HpRegenPerSecond`, lectures directes de
+  `MetaProgressionSystem.GetUpgradeLevel()` dans `Player.cs`/`MagnetSpawner.cs`/`AetherCore.cs`/
+  `EnemySpawner.cs` pour les statTargets consommables/non-PlayerStats, 5e composante sur
+  `RunEndScreen`, `ScrollContainer` sur `HubScreen.tscn` (18 items débordent du `VBoxContainer`
+  simple actuel).
+- [ ] Nouvelles clés de localisation EN/FR/ES pour les 10 nouveaux items (`UPGRADE_<ID>_NAME`/
+  `_DESC`) — texte source FR fourni par `game-designer`, traduction/intégration CSV à charge de
+  `developpeur`.
+
+Total de l'arbre complet post-rééquilibrage : **19 430 Échos** (18 items) contre 6 960 avant
+(8 items) — cf. §18.2 pour le détail runs/durée estimée.
+
 ## 17. Tuning Phase 2 — Valeurs de référence
 
 > Ajouté le 2026-06-20 par l'agent `game-designer`. Les fichiers `data/enemies.json`,
@@ -1035,51 +1177,83 @@ Mix ennemis à t=15 min (poids relatifs actifs) : Essaim 43% / Drone 30% / Senti
 
 ## 18. Tuning Meta — Référence complète
 
-> Ajouté le 2026-06-20 par l'agent `game-designer`. Fichier runtime : `data/meta_upgrades.json`.
+> Ajouté le 2026-06-20 par l'agent `game-designer`. **Rééquilibré le 2026-07-02** (cf. §9 pour le
+> rationnel complet du passage à la formule d'Échos v2 et aux 18 améliorations). Fichier runtime :
+> `data/meta_upgrades.json`.
 
-### 18.1 Flux des Échos en chiffres
+### 18.1 Flux des Échos en chiffres (v2)
 
 ```
-Échos = floor(T / 20) + floor(K / 10) + (N × 5) + 10
-  T = secondes survécues
-  K = ennemis tués dans la run
-  N = Noyaux d'Aether ramassés dans la run
+Échos_standard = floor(min(T,780)/20) + floor(min(K,520)/10) + (min(N,22) × 5) + 10
+Bonus_surcharge = min( floor(max(0,T-780)/20×0,15) + floor(max(0,K-520)/10×0,15)
+                       + floor(max(0,N-22)×5×0,15) , 100 )
+Échos = Échos_standard + Bonus_surcharge
+  T = secondes survécues · K = ennemis tués · N = Noyaux d'Aether ramassés
 ```
 
-Vitesse d'accumulation :
+Vitesse d'accumulation (phase standard, 0-13 min, identique à la v1) :
 - ~6 Échos/min en début de run (peu d'ennemis, pas de Noyaux encore).
 - ~12-15 Échos/min en milieu de run (essaims denses, Colosses lâchant des Noyaux).
-- ~16-18 Échos/min en fin de run (spawn maximal, Noyaux périodiques).
+- ~16-18 Échos/min en fin de phase standard (spawn maximal, Noyaux périodiques).
 
-Déblocage de l'arbre :
-- Après run 1 (première mort) : ~20-40 Échos → peut acheter `hp_boost` niv. 1 (80 Échos) en 2 runs.
-- Après 5 runs courtes (~300 Échos cumulés) : `hp_boost` max + `speed_boost` niv. 1.
-- Après 10-15 runs variées (~1 200-1 800 Échos) : arbre complètement débloqué.
+Au-delà de 13 min (overtime) : rendement qui s'effondre à ~15% du taux standard, puis à **zéro**
+une fois le bonus de surcharge plafonné à +100 Échos (atteint après environ 5-10 minutes
+d'overtime selon le skill du joueur, cf. calibration §9.2).
 
-### 18.2 Courbe de coût de l'arbre complet
+Déblocage de l'arbre (18 items, 19 430 Échos au total) :
+- Après run 1 (première mort précoce) : ~11-40 Échos → peut acheter `hp_boost` niv. 1 (90 Échos)
+  en 2-3 runs.
+- Après 5 runs courtes (~350-450 Échos cumulés) : `hp_boost` max + `speed_boost` niv. 1.
+- Après 15-20 runs variées (~2 500-3 500 Échos) : les 8 items historiques débloqués (8 090 Échos).
+- Après plusieurs dizaines de runs supplémentaires, incluant des runs overtime réussies
+  (~11 340 Échos de plus) : les 10 nouveaux items débloqués → arbre complet.
+
+### 18.2 Courbe de coût de l'arbre complet (v2, 18 items)
 
 | Amélioration | Coût total (tous niveaux) |
 |---|---|
-| Corps Renforcé (×4) | 80 + 150 + 250 + 400 = **880 Échos** |
-| Calibration Offensive (×5) | 100 + 180 + 300 + 450 + 650 = **1 680 Échos** |
-| Servos Améliorés (×3) | 90 + 200 + 350 = **640 Échos** |
-| Synchronisation Aether (×3) | 120 + 250 + 400 = **770 Échos** |
-| Blindage Composite (×3) | 150 + 300 + 500 = **950 Échos** |
-| Mémoire Résiduelle (×1) | **200 Échos** |
-| Prototype de Terrain (×1) | **300 Échos** |
-| **TOTAL ARBRE COMPLET** | **5 420 Échos** |
+| Corps Renforcé (×4) | 90+180+300+480 = **1 050 Échos** |
+| Calibration Offensive (×5) | 130+230+380+580+850 = **2 170 Échos** |
+| Servos Améliorés (×3) | 100+220+380 = **700 Échos** |
+| Synchronisation Aether (×3) | 140+290+470 = **900 Échos** |
+| Blindage Composite (×3) | 170+340+560 = **1 070 Échos** |
+| Prototype de Terrain (×1) | **350 Échos** |
+| Recalibrage Tactique (×3, consommable) | 160+320+520 = **1 000 Échos** |
+| Esquive de Sélection (×3, consommable) | 130+270+450 = **850 Échos** |
+| *Sous-total 8 items historiques* | **8 090 Échos** |
+| Plaque Blindée (×2) | 300+450 = **750 Échos** |
+| Calibration Avancée (×3) | 350+500+700 = **1 550 Échos** |
+| Synchronisation Aether II (×2) | 320+480 = **800 Échos** |
+| Blindage Composite II (×2) | 350+550 = **900 Échos** |
+| Noyau de Secours (×2) | 450+800 = **1 250 Échos** |
+| Plaque Adaptative (×3) | 200+350+550 = **1 100 Échos** |
+| Auto-Réparation (×3) | 220+380+600 = **1 200 Échos** |
+| Résonance de Noyau (×3) | 160+280+450 = **890 Échos** |
+| Stabilisateur de Surcharge (×3) | 450+750+1150 = **2 350 Échos** |
+| Aimant Auxiliaire (×2) | 200+350 = **550 Échos** |
+| *Sous-total 10 nouveaux items* | **11 340 Échos** |
+| **TOTAL ARBRE COMPLET (18 items)** | **19 430 Échos** |
 
-Durée estimée pour compléter l'arbre : 25-35 runs longues (ou 40-60 runs courtes). Correct pour
-un roguelite MVP — pas trop court (valeur de rejouabilité) pas trop long (frustrant).
+Durée estimée pour compléter l'arbre : plusieurs dizaines de runs, la majorité des Échos venant de
+runs standards répétées (211 Échos max sans overtime) complétées ponctuellement par des runs
+overtime réussies (+jusqu'à 100 Échos de bonus). Volontairement plus long que l'ancien arbre
+(5 420-6 960 Échos, 25-35 runs) car une progression méta plus longue est désormais nécessaire pour
+éviter qu'une poignée de runs exceptionnelles ne vident le Hub (cf. §9 intro — c'est le problème
+que ce rééquilibrage corrige).
 
 ### 18.3 Noyaux d'Aether — spawn détaillé
 
-- **Spawn périodique** : 1 Noyau toutes les 45 s → 20 Noyaux max sur 15 min si tous ramassés.
-  En pratique : 12-18 ramassés (combat, déplacements).
-- **Drop Colosse** : les Colosses spawnent dès 9:00. Sur les 6 dernières minutes à ~1 Colosse/3 min
-  → ~2-4 drops supplémentaires.
-- **Noyaux totaux accessibles en run de 15 min** : ~22-24. Ramassés réalistes : ~18-22.
-- **Gain Échos uniquement via Noyaux** (15 min, 20 ramassés) : 20 × 5 = **100 Échos**.
+- **Spawn périodique** : 1 Noyau toutes les 45 s → ~17 Noyaux possibles sur les 780 s de la phase
+  standard, et indéfiniment au-delà en overtime (extensible par `bonus_magnet` côté Aimant, et par
+  `core_magnetism` côté facilité de ramassage — cf. §9.5).
+- **Drop Colosse** : les Colosses spawnent dès 9:00. Sur les ~4 dernières minutes de la phase
+  standard (9:00-13:00) à ~1 Colosse/3 min → ~1-2 drops supplémentaires avant le boss.
+  En overtime, les Colosses (et l'escalade de mini-boss/boss) continuent d'en fournir.
+- **Noyaux accessibles en phase standard (0-13 min)** : ~18-20 réalistes ramassés — cohérent avec
+  le `capCores=22` de la formule §9.2 (qui plafonne leur contribution de toute façon).
+- **Gain Échos via Noyaux en phase standard** (22 ramassés, au plafond) : 22 × 5 = **110 Échos**.
+  Au-delà (overtime), chaque Noyau supplémentaire ne rapporte plus que 5×0,15=0,75 Échos avant
+  d'atteindre le plafond global du bonus de surcharge (+100, partagé avec temps et kills).
 
 ### 18.4 Intégration SaveManager — structure de sauvegarde attendue
 
@@ -1095,49 +1269,75 @@ un roguelite MVP — pas trop court (valeur de rejouabilité) pas trop long (fru
       "speed_boost": 0,
       "cooldown_reduction": 0,
       "damage_reduction": 0,
-      "starting_xp": 0,
-      "starting_weapon_alt": 0
+      "starting_weapon_alt": 0,
+      "reroll": 0,
+      "skip": 0,
+      "hp_boost_2": 0,
+      "damage_boost_2": 0,
+      "cooldown_reduction_2": 0,
+      "damage_reduction_2": 0,
+      "extra_life": 0,
+      "damage_absorb": 0,
+      "hp_regen": 0,
+      "core_magnetism": 0,
+      "overtime_stabilizer": 0,
+      "bonus_magnet": 0
     }
   }
 }
 ```
 
-Chemin de sauvegarde : `user://save.json` (cf. §15 — `FileAccess` Godot).
+Chemin de sauvegarde : `user://save.json` (cf. §15 — `FileAccess` Godot). Compatibilité ascendante
+garantie : les 10 nouveaux ids sont simplement absents des saves existantes (`GetUpgradeLevel`
+retourne 0 par défaut) — **aucune migration nécessaire**.
 
 `MetaProgressionSystem` (AutoLoad) est le seul composant qui lit et écrit cette structure. Il
 expose :
 - `int CurrentEchoes` (propriété, lecture seule depuis l'extérieur)
-- `void AddEchoes(int amount)` — appelé par `RunEndScreen` à la fin de run
+- `void AddEchoes(int amount)` — appelé par `RunStatsTracker` à la fin de run
 - `bool TryPurchase(string upgradeId)` — appelé par `HubScreen`
-- `float GetStat(string statTarget)` — lu par `GameManager` au démarrage de chaque run pour
-  initialiser `PlayerStats` avec les bonus permanents
+- `int GetUpgradeLevel(string upgradeId)` — lu directement par les systèmes consommateurs
+  (`Player`, `MagnetSpawner`, `AetherCore`, `EnemySpawner`, `LevelUpSystem`) pour les statTargets
+  qui ne sont pas des champs `PlayerStats` (consommables par run ou valeurs lues au point d'usage,
+  cf. §9.5 et `_implementationNotes` de `data/meta_upgrades.json`).
 
-### 18.5 Application des bonus meta à PlayerStats
+### 18.5 Application des bonus meta à PlayerStats (v2)
 
-À chaque début de run, `GameManager` appelle `MetaProgressionSystem` pour construire les
-`PlayerStats` initiales :
+À chaque début de run, `GameManager`/`MetaProgressionSystem.ApplyMetaBonusesToStats()` construit
+les `PlayerStats` initiales :
 
 ```
-PlayerStats.MaxHp            += meta.hp_boost_level × 20
-PlayerStats.DamageMultiplier += meta.damage_boost_level × 0.10
-PlayerStats.Speed            += meta.speed_boost_level × 15
-PlayerStats.CooldownReduction+= meta.cooldown_reduction_level × 0.05
-PlayerStats.DamageReduction  += meta.damage_reduction_level × 0.05
+PlayerStats.MaxHp             += meta.hp_boost_level × 20 + meta.hp_boost_2_level × 35
+PlayerStats.DamageMultiplier  += meta.damage_boost_level × 0.10 + meta.damage_boost_2_level × 0.08
+PlayerStats.Speed             += meta.speed_boost_level × 15
+PlayerStats.CooldownReduction += meta.cooldown_reduction_level × 0.05 + meta.cooldown_reduction_2_level × 0.04
+PlayerStats.DamageReduction   += meta.damage_reduction_level × 0.05 + meta.damage_reduction_2_level × 0.04   (clampé au hardcap 0.40)
+PlayerStats.HpRegenPerSecond   = meta.hp_regen_level × 0.4     // NOUVEAU champ PlayerStats
 ```
-
-Si `starting_xp_level == 1` : `XpSystem.AddXp(27)` immédiatement au `_Ready()` du joueur
-(avant tout `_PhysicsProcess`). [27 XP = seuil niveau 1→2 depuis la formule rééquilibrée 2026-06-24]
 
 Si `starting_weapon_alt_level == 1` : `HubScreen` affiche un sélecteur avec `["impulse_cannon",
 "drone_swarm"]`. L'arme choisie est passée à `InventorySystem` via `GameManager.StartingWeaponId`.
 
+Les statTargets **consommables par run ou lus au point d'usage** (pattern déjà établi par
+`reroll`/`skip` dans `LevelUpSystem`) ne passent PAS par `ApplyMetaBonusesToStats()` — chaque
+système lit `MetaProgressionSystem.Instance.GetUpgradeLevel(id)` directement :
+- `Player.cs` : `extra_life` (revive à 30% HP), `damage_absorb` (N coups à 0 dégât/run).
+- `MagnetSpawner.cs` : `bonus_magnet` (fenêtres de spawn Aimant supplémentaires en overtime).
+- `AetherCore.cs` : `core_magnetism` (rayon de collecte, base 20 px + bonus cumulé).
+- `EnemySpawner.cs` : `overtime_stabilizer` (dampening de la pente d'escalade overtime, max -15%).
+
 ### 18.6 UX du Hub
 
-L'écran Hub (post-MVP : boutique visuelle) pour le MVP est une liste verticale simple :
+L'écran Hub liste désormais **18 améliorations** (au lieu de 8) :
 - Chaque ligne : nom de l'amélioration | niveau actuel / niveau max | coût niveau suivant | bouton
   "Acheter" (grisé si Échos insuffisants ou niveau max atteint).
 - En haut : compteur d'Échos disponibles, mis à jour en temps réel après chaque achat.
-- Pas d'arbre visuel au MVP — liste suffisante pour valider la mécanique.
+- **Scroll requis** (post-MVP, à charge de `developpeur`) : la liste de 18 items déborde de l'écran
+  dans le `VBoxContainer` simple actuel — nécessite un `ScrollContainer` (hors scope de cette
+  passe de design, cf. brief `developpeur`).
+- Pas d'arbre visuel au MVP — liste suffisante pour valider la mécanique ; un regroupement visuel
+  "8 historiques / 10 nouveaux" ou par catégorie (offensif / défensif / économie / overtime) est
+  une piste d'amélioration UX post-MVP à évaluer avec `directeur-artistique`.
 
 ## 19. Tiers ennemis, orbes XP différenciés et mini-boss
 
