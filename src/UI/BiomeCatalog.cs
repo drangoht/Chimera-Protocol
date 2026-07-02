@@ -32,13 +32,13 @@ public static class BiomeCatalog
             "Ruines saturées d'Aether corrompu. L'XP gagnée est augmentée de 20% : montée en puissance accélérée.",
             new(0.62f, 0.40f, 1.0f), Tiles + "biomes/aether/floor_03.png"),
 
-        new("fournaise", "Fournaise", "Ennemis +18% rapides",
-            "Chaleur infernale qui surexcite la Rouille. Les ennemis se déplacent 18% plus vite — pour les téméraires.",
-            new(1.0f, 0.50f, 0.18f), Tiles + "biomes/fournaise/floor_03.png"),
-
         new("givre", "Givre Cryogénique", "Ennemis -18% lents",
             "Le gel engourdit tout. Les ennemis sont 18% plus lents : du répit pour respirer, kiter et viser.",
             new(0.62f, 0.88f, 0.95f), Tiles + "biomes/givre/floor_03.png"),
+
+        new("fournaise", "Fournaise", "Ennemis +18% rapides",
+            "Chaleur infernale qui surexcite la Rouille. Les ennemis se déplacent 18% plus vite — pour les téméraires.",
+            new(1.0f, 0.50f, 0.18f), Tiles + "biomes/fournaise/floor_03.png"),
 
         new("neon", "Secteur Néon", "Overclock : ennemis +10% rapides, +15% XP",
             "Un secteur de données overclocké, nappé de néons. Les ennemis vont 10% plus vite, mais l'XP est augmentée de 15% : risque contre récompense.",
