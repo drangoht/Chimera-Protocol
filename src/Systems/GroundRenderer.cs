@@ -25,7 +25,6 @@ public partial class GroundRenderer : Node2D
     private const string PathDebris01    = "res://assets/sprites/tileset/tile_debris_01.png";
     private const string PathDebrisMetal = "res://assets/sprites/tileset/tile_debris_metal.png";
     private const string PathRustPool01  = "res://assets/sprites/tileset/tile_rust_pool_01.png";
-    private const string PathRustPool02  = "res://assets/sprites/tileset/tile_rust_pool_02.png";
     private const string PathTechPillar  = "res://assets/sprites/tileset/tile_tech_pillar.png";
     // Geysers — positions Phase 4
     private static readonly Vector2 Geyser1Pos = new(-500f, -250f);
@@ -100,10 +99,11 @@ public partial class GroundRenderer : Node2D
 
     public override void _Ready()
     {
-        // Biome : forcé par l'écran de sélection de niveau, sinon aléatoire.
+        // Biome : forcé par --biome=<id> (debug/captures), sinon par l'écran de
+        // sélection de niveau, sinon aléatoire.
         var pick = new RandomNumberGenerator();
         pick.Randomize();
-        string? forced = GameManager.Instance?.SelectedBiomeId;
+        string? forced = DebugHooks.ForcedBiome ?? GameManager.Instance?.SelectedBiomeId;
         _biome = System.Array.Find(Biomes, b => b.Id == forced)
                  ?? Biomes[(int)(pick.Randi() % (uint)Biomes.Length)];
 
@@ -208,8 +208,9 @@ public partial class GroundRenderer : Node2D
                 }
                 else
                 {
-                    // 1re tuile dominante (~72%), variantes réparties sur le reste.
-                    int ti = PickTileIndex(rng.Randf(), textures.Length, 0.72f);
+                    // 1re tuile dominante (~86%), variantes réparties sur le reste
+                    // (zone de repos visuel — le sol doit rester majoritairement calme).
+                    int ti = PickTileIndex(rng.Randf(), textures.Length, 0.86f);
                     tex = textures[ti];
                 }
                 var sprite = new Sprite2D
@@ -236,7 +237,7 @@ public partial class GroundRenderer : Node2D
         var cells = new HashSet<(int, int)>();
         _glassClusterCenters.Clear();
         const int margin = 5;
-        int clusters = 4 + (int)(rng.Randi() % 3); // 4-6 amas par run
+        int clusters = 3 + (int)(rng.Randi() % 2); // 3-4 amas par run (anti-fouillis)
         for (int c = 0; c < clusters; c++)
         {
             int w = 2 + (int)(rng.Randi() % 2);
@@ -308,12 +309,16 @@ public partial class GroundRenderer : Node2D
 
     private void BuildDecor(RandomNumberGenerator rng)
     {
+        // Le décor rouillé (débris, flaques, pilier tech) appartient au Sanctuaire.
+        // Les autres biomes restent épurés : leur identité passe par les tuiles dédiées,
+        // l'atmosphère et les obstacles thématisés — lisibilité avant tout.
+        if (_biome.Id != "sanctuaire") return;
+
         var decorRoot = new Node2D { Name = "StaticDecor" };
         AddChild(decorRoot);
         var texDebris01    = GD.Load<Texture2D>(PathDebris01);
         var texDebrisMetal = GD.Load<Texture2D>(PathDebrisMetal);
         var texRustPool01  = GD.Load<Texture2D>(PathRustPool01);
-        var texRustPool02  = GD.Load<Texture2D>(PathRustPool02);
         var texTechPillar  = GD.Load<Texture2D>(PathTechPillar);
 
         const int margin   = 80;
@@ -322,17 +327,10 @@ public partial class GroundRenderer : Node2D
         // Zone interdite : rayon 64 px du centre (spawn joueur)
         const int safeZone = 64;
 
-        // 2 débris de pierre (réduit de 4 à 2)
-        for (int i = 0; i < 2; i++)
-            decorRoot.AddChild(DecorSprite(texDebris01, rng, maxHalfX, maxHalfY, safeZone, zIndex: -8));
-
-        // 2 débris métal (réduit de 3 à 2)
-        for (int i = 0; i < 2; i++)
-            decorRoot.AddChild(DecorSprite(texDebrisMetal, rng, maxHalfX, maxHalfY, safeZone, zIndex: -8));
-
-        // 2 flaques de Rouille Vivante (réduit de 3 à 2)
+        // 1 débris de pierre + 1 débris métal + 1 flaque de Rouille (réduit — anti-fouillis)
+        decorRoot.AddChild(DecorSprite(texDebris01, rng, maxHalfX, maxHalfY, safeZone, zIndex: -8));
+        decorRoot.AddChild(DecorSprite(texDebrisMetal, rng, maxHalfX, maxHalfY, safeZone, zIndex: -8));
         decorRoot.AddChild(DecorSprite(texRustPool01, rng, maxHalfX, maxHalfY, safeZone, zIndex: -9));
-        decorRoot.AddChild(DecorSprite(texRustPool02, rng, maxHalfX, maxHalfY, safeZone, zIndex: -9));
 
         // Pilier tech — élément narratif conservé
         PlaceColumn(decorRoot, texTechPillar, rng, maxHalfX, maxHalfY, safeZone);
@@ -364,237 +362,103 @@ public partial class GroundRenderer : Node2D
         parent.AddChild(body);
     }
 
-    // ─── Obstacles Phase 4 ────────────────────────────────────────────────────
+    // ─── Obstacles thématisés par biome ──────────────────────────────────────
 
     /// <summary>
-    /// Place les obstacles solides tactiques dans l'arène.
-    /// Type A : Pilier de Sanctuaire (5 instances, StaticBody2D + CapsuleShape2D).
-    /// Type B : Épave de Machine (2 instances, StaticBody2D + RectangleShape2D 56×24).
-    /// Type C : Caisse Technologique (4 instances, StaticBody2D + RectangleShape2D 28×28).
-    /// Type D : Arche Effondrée (2 instances, 2 CollisionShape2D piliers latéraux, rotation 50%).
-    /// Zones interdites : rayon 150 px du centre, rayon 48 px de chaque geyser, bande 80 px des murs.
-    /// Si un sprite est absent, utilise un Polygon2D placeholder pour ne pas crasher.
+    /// Place les obstacles infranchissables selon un gabarit structuré tiré au sort —
+    /// « quadrants » (un amas par quadrant), « anneau » (ellipse autour du centre) ou
+    /// « allées » (deux rangées créant trois couloirs) — au lieu d'un scatter aléatoire.
+    /// Le visuel et la collision de chaque obstacle sont délégués à <see cref="BiomeObstacles"/> :
+    /// une silhouette propre à chaque biome (pilier, cristal, basalte, glace, pylône).
+    /// Zones interdites : rayon 170 px du centre, 90 px des geysers, bande 96 px des murs.
     /// </summary>
     private void BuildObstacles(RandomNumberGenerator rng)
     {
         var obstacleRoot = new Node2D { Name = "Obstacles" };
         AddChild(obstacleRoot);
+        int i = 0;
+        foreach (var raw in LayoutPositions(rng))
+            obstacleRoot.AddChild(BiomeObstacles.Build(_biome.Id, _biome.Accent, i++, NudgeSafe(raw)));
+    }
 
-        const int wallBand   = 80;
-        const int maxHalfX   = ArenaW / 2 - wallBand;
-        const int maxHalfY   = ArenaH / 2 - wallBand;
-        const int centerSafe = 150;
-        const float geyserSafe = 48f;
-
-        Color accent = _biome.Accent;
-
-        // Positions déjà placées — utilisées pour la contrainte d'alignement caisses
-        var cratePositions = new System.Collections.Generic.List<Vector2>(4);
-
-        // Type A — 5 Piliers de Sanctuaire
-        for (int i = 0; i < 5; i++)
+    /// <summary>
+    /// Positions brutes du gabarit d'obstacles (avant NudgeSafe). 3 gabarits symétriques,
+    /// 6 à 10 obstacles par run — moins nombreux qu'avant mais plus grands et lisibles.
+    /// </summary>
+    private static List<Vector2> LayoutPositions(RandomNumberGenerator rng)
+    {
+        var pts = new List<Vector2>();
+        float J(float amp) => rng.RandfRange(-amp, amp);
+        switch (rng.Randi() % 3u)
         {
-            Vector2 pos = SafeRandPosObstacle(rng, maxHalfX, maxHalfY, centerSafe, geyserSafe);
-            obstacleRoot.AddChild(BuildPillar(pos, accent, i));
-        }
-
-        // Type B — 2 Épaves de Machine
-        for (int i = 0; i < 2; i++)
-        {
-            Vector2 pos = SafeRandPosObstacle(rng, maxHalfX, maxHalfY, centerSafe, geyserSafe);
-            obstacleRoot.AddChild(BuildWreck(pos, accent, i));
-        }
-
-        // Type C — 4 Caisses Technologiques
-        // Contrainte anti-mur : jamais 3 caisses alignées sur le même axe X ou Y (tolérance 48 px)
-        for (int i = 0; i < 4; i++)
-        {
-            Vector2 pos;
-            int attempts = 0;
-            do
+            case 0u: // Quadrants — amas triangle et paires alternés
             {
-                pos = SafeRandPosObstacle(rng, maxHalfX, maxHalfY, centerSafe, geyserSafe);
-                attempts++;
+                int q = 0;
+                foreach (int sx in new[] { -1, 1 })
+                foreach (int sy in new[] { -1, 1 })
+                {
+                    var anchor = new Vector2(sx * 470f + J(48f), sy * 290f + J(36f));
+                    if (q++ % 2 == 0)
+                    {
+                        pts.Add(anchor + new Vector2(0f, -64f));
+                        pts.Add(anchor + new Vector2(-60f, 48f));
+                        pts.Add(anchor + new Vector2(60f, 48f));
+                    }
+                    else
+                    {
+                        var off = rng.Randf() < 0.5f ? new Vector2(0f, 60f) : new Vector2(64f, 0f);
+                        pts.Add(anchor - off);
+                        pts.Add(anchor + off);
+                    }
+                }
+                break;
             }
-            while (attempts < 60 && IsThirdAligned(cratePositions, pos, 48f));
-            cratePositions.Add(pos);
-            obstacleRoot.AddChild(BuildCrate(pos, accent, i));
+            case 1u: // Anneau — 6 sur l'ellipse + 2 sentinelles intérieures
+            {
+                for (int k = 0; k < 6; k++)
+                {
+                    float a = Mathf.DegToRad(60f * k + J(10f));
+                    pts.Add(new Vector2(MathF.Cos(a) * 560f, MathF.Sin(a) * 340f));
+                }
+                pts.Add(new Vector2(-250f + J(24f), J(24f)));
+                pts.Add(new Vector2(250f + J(24f), J(24f)));
+                break;
+            }
+            default: // Allées — deux rangées horizontales → trois couloirs de circulation
+            {
+                foreach (float x in new[] { -560f, 0f, 560f })
+                {
+                    pts.Add(new Vector2(x + J(32f), -270f + J(24f)));
+                    pts.Add(new Vector2(x + J(32f), 270f + J(24f)));
+                }
+                break;
+            }
         }
-
-        // Type D — 2 Arches Effondrées
-        for (int i = 0; i < 2; i++)
-        {
-            Vector2 pos    = SafeRandPosObstacle(rng, maxHalfX, maxHalfY, centerSafe, geyserSafe);
-            bool rotated   = rng.Randf() < 0.5f;
-            obstacleRoot.AddChild(BuildArch(pos, accent, i, rotated));
-        }
-    }
-
-    // ─── Visuel d'obstacle stylisé (corps teinté + contour vif + halo) ──────────
-    private static Texture2D? _obstacleLightTex;
-
-    /// <summary>
-    /// Ajoute à <paramref name="parent"/> une boîte d'obstacle bien lisible : corps sombre teinté
-    /// par l'accent du biome, contour lumineux vif, liseré haut clair, et un halo PointLight2D.
-    /// </summary>
-    private static void AddObstacleVisual(Node2D parent, float halfW, float halfH, float offsetY, Color accent)
-    {
-        var bodyCol = new Color(accent.R * 0.40f + 0.04f, accent.G * 0.40f + 0.04f, accent.B * 0.42f + 0.05f, 1f);
-        var top     = -halfH + offsetY;
-        var bot     =  halfH + offsetY;
-        var pts = new Vector2[] { new(-halfW, top), new(halfW, top), new(halfW, bot), new(-halfW, bot) };
-
-        parent.AddChild(new Polygon2D { Polygon = pts, Color = bodyCol, ZIndex = 0 });
-
-        // Contour vif (boucle fermée)
-        parent.AddChild(new Line2D
-        {
-            Points       = new[] { pts[0], pts[1], pts[2], pts[3], pts[0] },
-            Width        = 2.5f,
-            DefaultColor = accent,
-            JointMode    = Line2D.LineJointMode.Round,
-            ZIndex       = 1,
-        });
-        // Liseré haut clair (relief / lisibilité)
-        parent.AddChild(new Line2D
-        {
-            Points       = new[] { new Vector2(-halfW, top), new Vector2(halfW, top) },
-            Width        = 2f,
-            DefaultColor = accent.Lerp(Colors.White, 0.6f),
-            ZIndex       = 2,
-        });
-
-        // Halo lumineux additif
-        _obstacleLightTex ??= Player.MakeRadialLightTexture(64);
-        parent.AddChild(new PointLight2D
-        {
-            Position     = new Vector2(0f, offsetY),
-            Color        = accent,
-            Energy       = 0.85f,
-            Texture      = _obstacleLightTex,
-            TextureScale = Mathf.Max(halfW, halfH) / 11f,
-            BlendMode    = PointLight2D.BlendModeEnum.Add,
-        });
+        return pts;
     }
 
     /// <summary>
-    /// Retourne true si placer une caisse en <paramref name="candidate"/> crée un 3e alignement
-    /// sur le même axe X ou Y (à ±<paramref name="tolerance"/> px) parmi les positions existantes.
+    /// Écarte une position d'obstacle des zones interdites (centre, geysers, murs)
+    /// en la repoussant radialement, puis l'aligne sur la grille de tuiles.
     /// </summary>
-    private static bool IsThirdAligned(System.Collections.Generic.List<Vector2> placed, Vector2 candidate, float tolerance)
+    private static Vector2 NudgeSafe(Vector2 pos)
     {
-        int sameX = 0, sameY = 0;
-        foreach (var p in placed)
-        {
-            if (MathF.Abs(p.X - candidate.X) < tolerance) sameX++;
-            if (MathF.Abs(p.Y - candidate.Y) < tolerance) sameY++;
-        }
-        return sameX >= 2 || sameY >= 2;
-    }
+        const float centerSafe = 170f;
+        const float geyserSafe = 90f;
+        const float maxX = ArenaW / 2f - 96f;
+        const float maxY = ArenaH / 2f - 96f;
 
-    /// <summary>
-    /// Pilier de Sanctuaire — Type A.
-    /// Sprite 32×64 + ombre 32×8 (ZIndex=-1) + CapsuleShape2D rayon 12 offset Y+16.
-    /// </summary>
-    private static StaticBody2D BuildPillar(Vector2 pos, Color accent, int index)
-    {
-        var body = new StaticBody2D
-        {
-            Position       = pos,
-            CollisionLayer = 3u, // bit 1 (joueur via mask=1) + bit 2 (bloque aussi les ennemis)
-            CollisionMask  = 1u,
-            ZIndex         = 1,
-            Name           = $"Pillar_{index}",
-        };
-        var capsule = new CapsuleShape2D { Radius = 12f, Height = 0f };
-        body.AddChild(new CollisionShape2D { Shape = capsule, Position = new Vector2(0f, 16f) });
-
-        AddObstacleVisual(body, 9f, 20f, 2f, accent);   // pilier haut, vif, halo
-        return body;
-    }
-
-    /// <summary>
-    /// Épave de Machine — Type B.
-    /// Sprite 64×32 + RectangleShape2D(56, 24).
-    /// </summary>
-    private static StaticBody2D BuildWreck(Vector2 pos, Color accent, int index)
-    {
-        var body = new StaticBody2D
-        {
-            Position       = pos,
-            CollisionLayer = 3u, // bit 1 (joueur via mask=1) + bit 2 (bloque aussi les ennemis)
-            CollisionMask  = 1u,
-            ZIndex         = 1,
-            Name           = $"Wreck_{index}",
-        };
-        body.AddChild(new CollisionShape2D { Shape = new RectangleShape2D { Size = new Vector2(56f, 24f) } });
-
-        AddObstacleVisual(body, 28f, 12f, 0f, accent);  // épave large
-        return body;
-    }
-
-    /// <summary>
-    /// Caisse Technologique — Type C.
-    /// Sprite 32×40 + RectangleShape2D(28, 28) offset Y=+6 (fausse perspective, partie basse).
-    /// </summary>
-    private static StaticBody2D BuildCrate(Vector2 pos, Color accent, int index)
-    {
-        var body = new StaticBody2D
-        {
-            Position       = pos,
-            CollisionLayer = 3u, // bit 1 (joueur via mask=1) + bit 2 (bloque aussi les ennemis)
-            CollisionMask  = 1u,
-            ZIndex         = 1,
-            Name           = $"Crate_{index}",
-        };
-        body.AddChild(new CollisionShape2D
-        {
-            Shape    = new RectangleShape2D { Size = new Vector2(28f, 28f) },
-            Position = new Vector2(0f, 6f),
-        });
-
-        AddObstacleVisual(body, 15f, 16f, 4f, accent);  // caisse cubique
-        return body;
-    }
-
-    /// <summary>
-    /// Arche Effondrée — Type D.
-    /// Sprite 96×32 (ou 32×96 si <paramref name="rotated"/>=true).
-    /// Deux CollisionShape2D séparées pour les piliers latéraux uniquement (passage central libre).
-    ///   Pilier gauche : RectangleShape2D(20, 28) offset X=-38
-    ///   Pilier droit  : RectangleShape2D(20, 28) offset X=+38
-    /// En mode rotaté (90°) les offsets X/Y sont transposés.
-    /// </summary>
-    private static StaticBody2D BuildArch(Vector2 pos, Color accent, int index, bool rotated)
-    {
-        var body = new StaticBody2D
-        {
-            Position        = pos,
-            CollisionLayer  = 3u, // bit 1 (joueur) + bit 2 (bloque aussi les ennemis)
-            CollisionMask   = 1u,
-            ZIndex          = 1,
-            RotationDegrees = rotated ? 90f : 0f,
-            Name            = $"Arch_{index}",
-        };
-        body.AddChild(new CollisionShape2D { Shape = new RectangleShape2D { Size = new Vector2(20f, 28f) }, Position = new Vector2(-38f, 0f) });
-        body.AddChild(new CollisionShape2D { Shape = new RectangleShape2D { Size = new Vector2(20f, 28f) }, Position = new Vector2(38f, 0f) });
-
-        // Deux piliers latéraux lumineux (passage central libre)
-        var left  = new Node2D { Position = new Vector2(-38f, 0f) };
-        var right = new Node2D { Position = new Vector2(38f, 0f) };
-        body.AddChild(left); body.AddChild(right);
-        AddObstacleVisual(left,  10f, 15f, 0f, accent);
-        AddObstacleVisual(right, 10f, 15f, 0f, accent);
-
-        // Linteau supérieur (visuel uniquement) reliant les deux piliers
-        body.AddChild(new Line2D
-        {
-            Points       = new[] { new Vector2(-44f, -15f), new Vector2(44f, -15f) },
-            Width        = 3f,
-            DefaultColor = accent,
-            ZIndex       = 2,
-        });
-        return body;
+        if (pos.Length() < centerSafe)
+            pos = (pos.LengthSquared() > 0.01f ? pos.Normalized() : Vector2.Right) * centerSafe;
+        foreach (var g in new[] { Geyser1Pos, Geyser2Pos })
+            if (pos.DistanceTo(g) < geyserSafe)
+            {
+                var dir = pos - g;
+                pos = g + (dir.LengthSquared() > 0.01f ? dir.Normalized() : Vector2.Down) * geyserSafe;
+            }
+        pos.X = Mathf.Clamp(pos.X, -maxX, maxX);
+        pos.Y = Mathf.Clamp(pos.Y, -maxY, maxY);
+        return new Vector2(SnapGrid(pos.X), SnapGrid(pos.Y));
     }
 
     // ─── Atmosphère (brume + rais de lumière + poussière parallaxe) ─────────────
@@ -669,28 +533,6 @@ public partial class GroundRenderer : Node2D
             attempts++;
         }
         while (pos.Length() < safeZoneRadius && attempts < 30);
-        return pos;
-    }
-
-    /// <summary>
-    /// Placement obstacle : évite centre (150 px), chaque geyser (48 px), et bandes murs (déjà soustrait dans maxHalf*).
-    /// </summary>
-    private static Vector2 SafeRandPosObstacle(RandomNumberGenerator rng, int maxHalfX, int maxHalfY,
-        float centerSafe, float geyserSafe)
-    {
-        Vector2 pos;
-        int attempts = 0;
-        do
-        {
-            pos = new Vector2(SnapGrid(rng.RandfRange(-maxHalfX, maxHalfX)), SnapGrid(rng.RandfRange(-maxHalfY, maxHalfY)));
-            attempts++;
-            bool tooCloseToCenter  = pos.Length() < centerSafe;
-            bool tooCloseToGeyser1 = pos.DistanceTo(Geyser1Pos) < geyserSafe;
-            bool tooCloseToGeyser2 = pos.DistanceTo(Geyser2Pos) < geyserSafe;
-            if (!tooCloseToCenter && !tooCloseToGeyser1 && !tooCloseToGeyser2)
-                break;
-        }
-        while (attempts < 50);
         return pos;
     }
 
