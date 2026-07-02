@@ -26,13 +26,14 @@ tableau des phases (✅/🔲), roadmap, captures d'écran.
 ## État du projet
 
 - Pile technique : **Godot 4.7 .NET (C# / .NET 8 / GodotSharp)**
-- **Phase actuelle : libre — expansion terminée 2026-06-30** (commit `2385a67` = dernier fix).
+- **Phase actuelle : libre — redesign des arènes mergé 2026-07-02** (commit `f16db14`).
 - **Ce qui est implémenté** :
   - 3 personnages (Chimera, Titan, Vagabond), 5 biomes (Sanctuaire, Aether, Fournaise, Givre, Néon)
   - 11 armes actives + 4 fusions + 4 passifs ; power-ups temporaires (4 types)
   - Fin de niveau complète : survie sans fin, overtime, boss en boucle, déblocage progressif, high scores (temps+difficulté), arsenal à découverte
   - Localisation EN/FR/ES (`localization/ui.csv` → clé `Loc.T("CLÉ")`) ; support manette complet
   - HUD thématisé par biome, atmosphère (brume/rais/parallaxe), scanlines CRT
+  - Arènes : obstacles thématisés par biome (`BiomeObstacles.cs`), gabarits structurés (quadrants/anneau/allées), décor rouillé réservé au Sanctuaire ; flag `--biome=<id>` pour forcer un biome (tests/captures)
   - Voir `docs/EXPANSION_PLAN.md` et `docs/LEVEL_PROGRESSION_PLAN.md` pour le détail
 
 ## Conventions
