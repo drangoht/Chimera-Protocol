@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Publie Chimera Protocol sur itch.io via Butler (auto-update natif de l'app itch).
 
@@ -38,7 +38,10 @@ param(
     [switch]$SkipExport
 )
 
-$ErrorActionPreference = "Stop"
+# NB : PAS "Stop" — Godot et Butler ecrivent leur progression sur stderr, ce que PS 5.1
+# convertit en erreurs terminantes sous "Stop" (fausse la detection de $LASTEXITCODE).
+# On verifie explicitement les codes de sortie a la place.
+$ErrorActionPreference = "Continue"
 $ProjectRoot = Split-Path -Parent $PSScriptRoot
 $Godot   = "C:\CODE\JEUX\Godot_v4.7-stable_mono_win64\Godot_v4.7-stable_mono_win64.exe"
 $BuildDir = Join-Path $ProjectRoot "build"
