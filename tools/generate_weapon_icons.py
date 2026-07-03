@@ -263,7 +263,75 @@ def gen_singularity():
     ring(img, cx, cy, 3, 1, WH)     # liseré du coeur
     save_icon(img, "ui_icon_singularity.png")
 
+# ---------------- Tempete Ionique : orage d'eclairs dores/cyan (fusion, or)
+def gen_ionic_storm():
+    img = canvas()
+    GLD  = (255, 210, 90)
+    GLD_G= (255, 210, 90, 60)
+    CY   = (120, 225, 255)
+    WH   = (245, 252, 255)
+    cx, cy = 16, 16
+    disc(img, cx, cy, 12, GLD_G)                 # halo dore
+    ring(img, cx, cy, 11, 1, (GLD[0], GLD[1], GLD[2], 150))
+    # 3 eclairs fourchus rayonnant du centre
+    forks = [
+        [(16,6),(14,11),(18,13),(15,16)],
+        [(26,14),(20,15),(21,18),(16,16)],
+        [(9,24),(13,19),(10,17),(16,16)],
+    ]
+    for pts in forks:
+        for i in range(len(pts)-1):
+            line(img, pts[i][0], pts[i][1], pts[i+1][0], pts[i+1][1], (CY[0],CY[1],CY[2],90), w=1)
+            line(img, pts[i][0], pts[i][1], pts[i+1][0], pts[i+1][1], WH, w=0)
+    disc(img, cx, cy, 2.5, CY); put(img, cx, cy, WH)
+    save_icon(img, "ui_icon_ionic_storm.png")
+
+# ---------------- Colonne Solaire : soleil dore + couronne de flammes (fusion, or)
+def gen_solar_column():
+    img = canvas()
+    GLD  = (255, 210, 90)
+    GLD_G= (255, 175, 60, 70)
+    ORA  = (255, 140, 40)
+    YEL  = (255, 230, 130)
+    WH   = (255, 250, 230)
+    cx, cy = 16, 16
+    disc(img, cx, cy, 13, GLD_G)                 # halo chaud
+    # couronne de flammes (8 langues rayonnantes)
+    for k in range(8):
+        a = math.pi*2*k/8
+        x0 = cx + math.cos(a)*6;  y0 = cy + math.sin(a)*6
+        x1 = cx + math.cos(a)*13; y1 = cy + math.sin(a)*13
+        line(img, x0, y0, x1, y1, ORA, w=1)
+        line(img, x0, y0, (x0+x1)/2, (y0+y1)/2, YEL, w=0)
+    # disque solaire
+    disc(img, cx, cy, 5, GLD)
+    disc(img, cx, cy, 3, YEL)
+    disc(img, cx, cy, 1, WH)
+    save_icon(img, "ui_icon_solar_column.png")
+
+# ---------------- Nuee de Frelons : essaim dense de missiles dores rayonnants (fusion, or)
+def gen_hornet_swarm():
+    img = canvas()
+    GLD  = (255, 210, 90)
+    GLD_G= (255, 210, 90, 55)
+    ORA  = (255, 150, 60)
+    WH   = (255, 248, 220)
+    cx, cy = 16, 16
+    disc(img, cx, cy, 12, GLD_G)                 # halo dore
+    # 7 dards (missiles) rayonnant, tete + courte trainee
+    for k in range(7):
+        a = math.pi*2*k/7 - math.pi/2
+        hx = cx + math.cos(a)*11; hy = cy + math.sin(a)*11   # tete
+        bx = cx + math.cos(a)*5;  by = cy + math.sin(a)*5    # base
+        line(img, bx, by, hx, hy, (ORA[0],ORA[1],ORA[2],150), w=0)
+        disc(img, hx, hy, 1.6, GLD); put(img, hx, hy, WH)
+    disc(img, cx, cy, 2.5, ORA); put(img, cx, cy, WH)        # ruche centrale
+    save_icon(img, "ui_icon_hornet_swarm.png")
+
 if __name__ == "__main__":
+    gen_ionic_storm()
+    gen_solar_column()
+    gen_hornet_swarm()
     gen_tesla()
     gen_nova()
     gen_orbital()

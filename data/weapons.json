@@ -733,6 +733,63 @@
         "healPercentPerPulse": 0.02
       },
       "replaces": "overload_field"
+    },
+    {
+      "id": "ionic_storm",
+      "name": "Tempête Ionique",
+      "rarity": "epic",
+      "description": "L'arc de la Bobine ne s'arrête plus : un chapelet d'éclairs frappe et rebondit en continu sur une longue chaîne d'ennemis.",
+      "requires": {
+        "weapon": "tesla_coil",
+        "weaponLevel": 5,
+        "passive": "capacitor"
+      },
+      "stats": {
+        "damage": 20,
+        "chainCount": 5,
+        "chainRange": 220,
+        "cooldown": 0.4,
+        "type": "continuous_chain"
+      },
+      "replaces": "tesla_coil"
+    },
+    {
+      "id": "solar_column",
+      "name": "Colonne Solaire",
+      "rarity": "epic",
+      "description": "Le jet dirigé devient une éruption solaire : dégâts et brûlure massive à tous les ennemis autour, dans une couronne de flammes.",
+      "requires": {
+        "weapon": "pyre_stream",
+        "weaponLevel": 5,
+        "passive": "thermal_core"
+      },
+      "stats": {
+        "damage": 10,
+        "radius": 155,
+        "burnDps": 18,
+        "burnDuration": 3.0,
+        "cooldown": 0.7,
+        "type": "radial_burn"
+      },
+      "replaces": "pyre_stream"
+    },
+    {
+      "id": "hornet_swarm",
+      "name": "Nuée de Frelons",
+      "rarity": "epic",
+      "description": "L'essaim sature l'écran : 7 missiles chercheurs par salve, plus rapides et plus mordants, qui re-ciblent sans relâche.",
+      "requires": {
+        "weapon": "seeker_swarm",
+        "weaponLevel": 5,
+        "passive": "servo_motors"
+      },
+      "stats": {
+        "damage": 12,
+        "missileCount": 7,
+        "projectileSpeed": 420,
+        "cooldown": 0.7
+      },
+      "replaces": "seeker_swarm"
     }
   ]
 }

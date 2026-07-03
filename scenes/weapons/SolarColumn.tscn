@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://chimfussolar01"]
+
+[ext_resource type="Script" path="res://src/Weapons/SolarColumn.cs" id="1"]
+
+[node name="SolarColumn" type="Node2D"]
+script = ExtResource("1")

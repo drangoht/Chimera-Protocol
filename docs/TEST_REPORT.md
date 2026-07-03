@@ -4,6 +4,53 @@ Rapport de sessions de test. Chaque section correspond à une session de test di
 
 ---
 
+## Test ciblé — 3 nouvelles fusions d'armes (ionic_storm / solar_column / hornet_swarm) — 2026-07-03
+
+**Testeur :** game-tester (agent Claude)
+**Branche :** main (câblage 3 fusions ; build C# 0 erreur / 0 warning ; 62 tests OK annoncés)
+**Moteur :** Godot 4.7.stable.mono, D3D12, AMD Radeon RX 9070.
+**Méthode :** hook temporaire `--debug-fusion=<id>` (accorde les prérequis puis applique la fusion,
+nuée ambiante conservée), 1 lancement fenêtré par fusion, biome varié. Kite pour amasser une nuée,
+5 captures échelonnées + log console complet par run. Validation des points A→E demandés.
+Logs : `docs/fusion_<id>_console.log`. Captures : `docs/fusion_<id>_0..4.png`.
+
+### Verdict global : **3/3 PASS**. Aucun crash, aucune exception console sur les 3 runs.
+
+| Fusion | A. Appliquée | B. Tire & tue | C. VFX lisible | D. Console propre | E. Icône |
+|---|---|---|---|---|---|
+| `ionic_storm`  | PASS | PASS | PASS | PASS | PASS |
+| `solar_column` | PASS | PASS | PASS (réserve mineure) | PASS | PASS |
+| `hornet_swarm` | PASS | PASS | PASS | PASS | PASS |
+
+#### 1. `ionic_storm` — Tempête Ionique (biome Aether) — **PASS**
+- **A.** Log : `[InventorySystem] Fusion appliquée : ionic_storm` + `[GameManager] --debug-fusion=ionic_storm appliquée.` L'arme de base tesla_coil (montée niv.5) est remplacée.
+- **B/C.** `fusion_ionic_storm_2.png` : long arc d'éclair cyan partant du joueur et **chaînant** sur un chapelet d'ennemis vers la droite (nœuds visibles aux coudes), avec éclats dorés de mort sur les cibles touchées → chaînage continu opérationnel, dégâts appliqués. Aura cyan intense autour du joueur, LightningBolt bien lisible. **Le joueur (robot bleu) reste parfaitement discernable au centre — aucun blob masquant.**
+- **D.** Log strictement propre (voir `docs/fusion_ionic_storm_console.log`).
+- **E.** Icône présente dans l'arsenal (slot dédié, remplace tesla_coil).
+
+#### 2. `solar_column` — Colonne Solaire (biome Fournaise) — **PASS (réserve de lisibilité mineure)**
+- **A.** Log : `[InventorySystem] Fusion appliquée : solar_column` + confirmation GameManager. Remplace pyre_stream niv.5.
+- **B.** `fusion_solar_column_3.png` : particules de brûlure sur ennemis proches + pluie de gemmes XP → dégâts radiaux + DoT confirmés (kills).
+- **C.** `fusion_solar_column_4.png` : la **couronne de ~6 lobes de flammes (PyreFlame)** est nettement visible en anneau autour du joueur, **joueur clairement discernable au centre** (le cœur de l'anneau est sombre). Aura orange. VFX conforme au design.
+  - **Réserve mineure :** au tout premier instant du pic de pulse (`fusion_solar_column_2.png`), le cœur sature en un blob jaune/blanc intense qui noie brièvement le joueur, aggravé par le biome Fournaise déjà très clair + glow WorldEnvironment. Transitoire (cooldown 0.7 s, le joueur redevient visible dès la phase « couronne »), **nettement moins sévère que l'ancien BUG-701 de la Lame à Fusion**. Non bloquant. Si l'on veut être strict sur la charte « jamais de blob masquant », piste : plafonner l'énergie de flash / réduire un poil `TextureScale 5.0` du `PointLight2D` de `SolarColumn._Ready()` (cf. correctif appliqué à FusionBlade sur BUG-701). À arbitrer par le game-designer/DA — pas d'action dev impérative.
+- **D.** Log strictement propre.
+- **E.** Icône étoile orange présente dans l'arsenal.
+
+#### 3. `hornet_swarm` — Nuée de Frelons (biome Néon) — **PASS**
+- **A.** Log : `[InventorySystem] Fusion appliquée : hornet_swarm` + confirmation GameManager. Remplace seeker_swarm niv.5.
+- **B/C.** `fusion_hornet_swarm_2.png` et `_4.png` : salve dense de missiles chercheurs (SeekerMissile), ~7+ traînées fléchées se déployant en éventail et **chassant** vers les cibles sur tout l'écran ; convergence sur les amas d'ennemis avec éclats d'impact rouges + nombreuses gemmes XP → re-ciblage et kills confirmés. Missiles petits et très lisibles, **joueur toujours parfaitement visible, aucun blob.**
+- **D.** Log strictement propre.
+- **E.** Icône présente dans l'arsenal.
+
+### Conclusion
+Les 3 fusions sont fonctionnelles, câblées correctement (application, remplacement de l'arme de base,
+icône, VFX attendu) et sans erreur console. Aucun bug bloquant/majeur. Seule remarque : la légère
+saturation au pic de `solar_column` sur biome clair (réserve cosmétique mineure, non bloquante,
+même famille que BUG-701 déjà résolu). Le hook `--debug-fusion` est temporaire et à retirer après
+validation (cf. `src/Core/DebugHooks.cs` / `GameManager.ApplyFusionDebugHook`).
+
+---
+
 ## Test ciblé — VFX Lame à Fusion v2 : distorsion de chaleur — 2026-07-03
 
 **Testeur :** game-tester (agent Claude)

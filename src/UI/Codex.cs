@@ -234,6 +234,15 @@ public static class Codex
 
         new("overload_aegis", "WPN_OVERLOAD_AEGIS_NAME", "TAG_FUSION", "WPN_OVERLOAD_AEGIS_DESC",
             IconDir + "ui_icon_aegis.png", Gold),
+
+        new("ionic_storm", "WPN_IONIC_STORM_NAME", "TAG_FUSION", "WPN_IONIC_STORM_DESC",
+            IconDir + "ui_icon_ionic_storm.png", Gold),
+
+        new("solar_column", "WPN_SOLAR_COLUMN_NAME", "TAG_FUSION", "WPN_SOLAR_COLUMN_DESC",
+            IconDir + "ui_icon_solar_column.png", Gold),
+
+        new("hornet_swarm", "WPN_HORNET_SWARM_NAME", "TAG_FUSION", "WPN_HORNET_SWARM_DESC",
+            IconDir + "ui_icon_hornet_swarm.png", Gold),
     };
 
     // ── Correspondance id → icône (armes ET passifs) ──────────────────────────
@@ -254,6 +263,9 @@ public static class Codex
         { "rail_overcharged",  IconDir + "ui_icon_rail.png"           },
         { "orbital_swarm",     IconDir + "ui_icon_orbital.png"        },
         { "overload_aegis",    IconDir + "ui_icon_aegis.png"          },
+        { "ionic_storm",       IconDir + "ui_icon_ionic_storm.png"    },
+        { "solar_column",      IconDir + "ui_icon_solar_column.png"   },
+        { "hornet_swarm",      IconDir + "ui_icon_hornet_swarm.png"   },
         { "thermal_core",      IconDir + "ui_icon_thermal_core.png"   },
         { "reinforced_plating",IconDir + "ui_icon_reinforced_plate.png" },
         { "servo_motors",      IconDir + "ui_icon_servomotors.png"    },

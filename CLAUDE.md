@@ -30,7 +30,9 @@ tableau des phases (✅/🔲), roadmap, captures d'écran.
 - **Ce qui est implémenté** :
   - Direction artistique **pseudo-3D avec ombres** (`docs/ART_BRIEF_PSEUDO3D.md`) appliquée à TOUS les sprites via `tools/pseudo3d_lib.py` (lumière fixe haut-gauche 45°, dérivation shadow/highlight HSV, ombre portée elliptique) : 3 persos joueurs, 8 ennemis/mini-boss/boss existants, 20 nouveaux ennemis, obstacles, tuiles de biome, icônes d'armes/UI (640 PNG régénérés, `.import` à jour). Validé game-tester PASS 2026-07-03 (cohérence lumière, lisibilité joueur en nuée).
   - 3 personnages (Chimera, Titan, Vagabond) redessinés, 5 biomes (Sanctuaire, Aether, Fournaise, Givre, Néon)
-  - 11 armes actives + 4 fusions + 4 passifs ; power-ups temporaires (4 types)
+  - 11 armes actives + 7 fusions + 4 passifs ; power-ups temporaires (4 types)
+    (fusions : fusion_blade, rail_overcharged, orbital_swarm, overload_aegis, ionic_storm,
+    solar_column, hornet_swarm — chaque évolution = arme de base niv.5 + passif requis, remplace l'arme)
   - Fin de niveau complète : survie sans fin, overtime, boss en boucle, déblocage progressif, high scores (temps+difficulté), arsenal à découverte
   - Hub méta rééquilibré (2026-07-02) : 18 upgrades (8 rééquilibrés + 10 nouveaux), formule d'Échos plafonnée standard/overtime (`EchoFormula.Calculate`, caps + `overtimeDampening`/`overtimeBonusCap`), 5e composante "Bonus de Surcharge" sur `RunEndScreen`, `UpgradesList` scrollable
   - Cinématique d'intro (2026-07-03) : `src/UI/IntroScreen.cs` (scène de boot) — cut-scene 2D scriptée en 6 plans (noyau d'Aether, corruption d'un drone, nuée + colosse, sanctuaire, descente de l'Arpenteur, reveal du titre), sprites animés réutilisant les `SpriteFrames` existants + particules `CpuParticles2D` + zoom caméra via `Tween`, synchronisée sur la narration `INTRO_BEAT_1..5` (EN/FR/ES) et la musique dédiée `music_intro` (CC0, "Transmission"/SRG774, cf. `assets/audio/CREDITS.md`). Skippable. Reveal via clés `INTRO_TITLE`/`INTRO_TAGLINE`. Outil de capture : `tools/capture_intro.py`

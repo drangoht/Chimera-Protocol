@@ -45,6 +45,9 @@ public partial class InventorySystem : Node
         { "rail_overcharged","res://scenes/weapons/RailOvercharged.tscn"},
         { "orbital_swarm",   "res://scenes/weapons/OrbitalSwarm.tscn"   },
         { "overload_aegis",  "res://scenes/weapons/OverloadAegis.tscn"  },
+        { "ionic_storm",     "res://scenes/weapons/IonicStorm.tscn"     },
+        { "solar_column",    "res://scenes/weapons/SolarColumn.tscn"    },
+        { "hornet_swarm",    "res://scenes/weapons/HornetSwarm.tscn"    },
     };
 
     public override void _Ready()
