@@ -13,6 +13,13 @@ Concatenation de jingles Kenney Music Jingles (OGG -> WAV 44100 Hz 16-bit stereo
 Source : "Retro Game Music Pack" par Juhani Junkala / SubspaceAudio.
 Licence : CC0 / Domaine public. https://opengameart.org/content/5-chiptunes-action
 
+**Musique d'intro (`music_intro.ogg`) : ASSET CC0 — integre le 2026-07-03**
+Piste "Transmission" (theme cinematique sombre/ominous) du "Dark Sci-Fi Audio Pack" par SRG774.
+Licence : CC0 1.0 Universal / Domaine public — usage commercial libre, aucune attribution requise.
+Source : https://opengameart.org/content/dark-sci-fi-audio-pack
+Conversion MP3 320 kbps -> OGG Vorbis q5 44100 Hz via ffmpeg 8.1.1. Duree ~94 s.
+Utilisee par la cut-scene d'introduction (`IntroScreen`).
+
 ---
 
 ## Packs Kenney utilises

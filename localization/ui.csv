@@ -281,3 +281,5 @@ ARSENAL_LOCKED_DESC,Weapon not yet discovered. Find and equip it in a run (via a
 OPTIONS_RESET,Reset everything,Tout réinitialiser,Reiniciar todo
 OPTIONS_RESET_CONFIRM,⚠ Confirm? (irreversible — deletes Echoes & progress),⚠ Confirmer ? (irréversible — efface Échos & progression),⚠ ¿Confirmar? (irreversible — borra Ecos y progreso)
 OPTIONS_RESET_DONE,✓ Reset done,✓ Réinitialisé,✓ Reiniciado
+INTRO_TITLE,CHIMERA PROTOCOL,CHIMERA PROTOCOL,CHIMERA PROTOCOL
+INTRO_TAGLINE,Survive. Evolve. Never return the same.,Survis. Évolue. Ne reviens jamais le même.,Sobrevive. Evoluciona. Nunca vuelvas igual.
