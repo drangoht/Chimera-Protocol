@@ -49,6 +49,7 @@ tableau des phases (✅/🔲), roadmap, captures d'écran.
 - Export templates : `C:\CODE\JEUX\Godot_v4.7-stable_mono_win64\editor_data\export_templates\4.7.stable.mono\` ✓
 - **CRITIQUE export .NET** : `ChimeraProtocol.sln` DOIT être présent à la racine. Sans lui, le .exe crashe immédiatement. Recréer : `dotnet new sln --name ChimeraProtocol --format sln && dotnet sln ChimeraProtocol.sln add ChimeraProtocol.csproj`
 - L'export produit `build/ChimeraProtocol.exe` + `build/data_ChimeraProtocol_windows_x86_64/` (runtime .NET 8). Les deux sont nécessaires. `data_*/` est ignoré par git — régénéré à chaque export.
+- **Publication & MAJ auto** : itch.io + Butler. Numéro de version dans `project.godot` (`config/version`). Script `tools/release_itch.ps1` (export → dossier `build/dist_windows/` propre → `butler push` versionné → channel `windows`). Un push = auto-update pour les joueurs de l'app itch (patch différentiel wharf, zéro code jeu). Runbook complet : `docs/RELEASE.md`. Butler fourni par l'app itch (dossier `broth`, détecté auto). Incrémenter `config/version` avant chaque release.
 - Style de code : PascalCase classes/méthodes, `_camelCase` champs privés, `readonly` par défaut
 - Architecture : `src/` (logique C#) / `scenes/` (.tscn) / `assets/` (raw) / `data/` (JSON tuning)
 - **Logique pure testable** : `src/Core/Rules/` (classes statiques sans dépendance Godot — `XpCurve`, `EnemyScaling`, `SpawnCurve`, `WeaponLeveling`, `StatCaps`, `WeightedPicker`…). Les nœuds y délèguent (SRP).
