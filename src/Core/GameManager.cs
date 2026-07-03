@@ -141,37 +141,6 @@ public partial class GameManager : Node
         // Aucun effet sans le flag.
         if (DebugHooks.BossDebug)
             Callable.From(ApplyBossDebugHook).CallDeferred();
-
-        // Hook TEMPORAIRE --debug-fusion : équipe plasma_blade L5 + thermal_core et applique
-        // fusion_blade pour valider le VFX de la Lame à Fusion. Ennemis ambiants conservés.
-        if (DebugHooks.FusionDebug)
-            Callable.From(ApplyFusionDebugHook).CallDeferred();
-    }
-
-    /// <summary>
-    /// Hook TEMPORAIRE --debug-fusion : monte plasma_blade au niveau 5, ajoute thermal_core,
-    /// puis applique la fusion fusion_blade. Ne touche pas au spawner (nuée conservée).
-    /// À retirer après validation du VFX.
-    /// </summary>
-    private void ApplyFusionDebugHook()
-    {
-        var player = PlayerInstance;
-        var inv = InventorySystem.Instance;
-        if (player == null || inv == null) return;
-
-        for (int lvl = inv.WeaponLevels.GetValueOrDefault("plasma_blade", 0); lvl < 5; lvl++)
-            inv.AddOrUpgradeWeapon("plasma_blade");
-        inv.AddOrUpgradePassive("thermal_core");
-
-        if (inv.CanFuse("fusion_blade"))
-        {
-            inv.ApplyFusion("fusion_blade");
-            GD.Print("[GameManager] --debug-fusion : fusion_blade appliquée (test visuel Lame à Fusion).");
-        }
-        else
-        {
-            GD.PrintErr("[GameManager] --debug-fusion : conditions de fusion non remplies (plasma_blade/thermal_core).");
-        }
     }
 
     /// <summary>
