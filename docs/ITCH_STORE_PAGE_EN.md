@@ -34,17 +34,18 @@ In a world where magic and machine merged into a corruption called the **Living 
   - *Cryogenic Frost* — **enemies −18% speed**, room to kite and aim.
   - *Neon Sector* — an overclocked data sector: **enemies +10% faster but +15% XP** (risk vs reward).
 - **A build-craft arsenal — 11 weapons, 4 passives and 4 fusions** to combine. New: a boomerang blade, homing missiles, a slowing cryo beam, a burning flame cone, and an epic gravity-well singularity.
+- **A dedicated fauna per biome** — each of the 5 biomes has its own creatures: rusted crawlers in the Sanctuary, spectral wraiths in the Aether Wastes, molten colossi in the Furnace, crystalline titans in the Frost, holographic glitches in the Neon Sector. **24 base enemies** in total, each with its own sprite.
 - **Temporary power-ups** — pick up timed buffs mid-run: Overclock (fire rate), Berserk (damage), Aegis (invulnerability), Celerity (speed). No permanent power-creep.
 - **Level progression** — 5 levels unlock one after another (beat a level to open the next). Each tracks its **best survival time + difficulty**. A **DEFEATED** badge marks cleared levels.
 - **Weapon discovery** — undiscovered weapons appear as **???** in the Arsenal until you find and equip them in a run (your character's signature weapon is always known).
 - **Reset everything** — a one-click option to wipe all progress (Echoes, unlocks, records, discoveries) back to a fresh start.
 - **Adjustable difficulty** — Easy / Normal / Hard (damage, HP and spawn multipliers).
-- **An escalating bestiary** — 4 base enemies, 3 mini-bosses (Aether Revenant, Rust Stalker, Master Sentinel) and 1 final boss (the Rusted Core).
+- **An escalating bestiary** — 24 base enemies spread across the biomes, 3 mini-bosses (Aether Revenant, Rust Stalker, Master Sentinel) and 1 final boss (the Rusted Core).
 - **Meta-progression** — Aether Echoes earned in runs buy permanent upgrades at the Hub.
 - **Skippable narrative intro** — the lore told in 5 beats on launch, skippable with any key/click/button.
 - **Gamepad AND keyboard navigation** on every menu.
-- **Cyberpunk / CRT aesthetic** — pixel art, neon, scanlines, per-biome atmosphere (drifting fog, light shafts, parallax dust), a minimal Cyberpunk-2077-style HUD tinted per biome, screen shake, bloom and chromatic aberration on fusions.
-- **Built-in Codex** — a Bestiary (8 enemies with animated sprite, role and description) and an Arsenal (11 weapons + 4 passives) browsable from the main menu.
+- **Cyberpunk / CRT aesthetic** — pseudo-3D shaded pixel art (fixed directional light + drop shadows for depth), neon, scanlines, per-biome atmosphere (drifting fog, light shafts, parallax dust), a minimal Cyberpunk-2077-style HUD tinted per biome, screen shake, bloom and chromatic aberration on fusions.
+- **Built-in Codex** — a Bestiary (28 enemies with animated sprite, role and description) and an Arsenal (11 weapons + 4 passives) browsable from the main menu.
 - **Localized in English, French and Spanish.**
 
 ### Setting
