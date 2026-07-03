@@ -4,6 +4,61 @@ Rapport de sessions de test. Chaque section correspond à une session de test di
 
 ---
 
+## Test ciblé — VFX Lame à Fusion (`fusion_blade`) — 2026-07-03
+
+**Testeur :** game-tester (agent Claude)
+**Branche :** main (hash de tête `53947d5`, + correctif VFX FusionBlade non commité)
+**Objet :** valider le nouveau visuel de la Lame à Fusion (anneau `Line2D` doré tournant,
+aura `PointLight2D`, flash par pulse) après un bug où l'arme était invisible.
+**Moteur :** Godot 4.7.stable.mono, D3D12, AMD Radeon RX 9070.
+
+### Méthode
+
+`fusion_blade` est une fusion (`plasma_blade` niveau 5 + passif `thermal_core`, remplace
+`plasma_blade` — cf. `data/weapons.json` §fusions). Le hook existant `--debug-boss` fournit les
+prérequis mais isole le boss sans nuée et n'applique pas la fusion → inadapté à un test de VFX
+en jeu. J'ai donc ajouté un hook de debug **temporaire** `--debug-fusion` (miroir de
+`--debug-boss`) :
+
+- `src/Core/DebugHooks.cs` : propriété `FusionDebug` (flag `--debug-fusion`).
+- `src/Core/GameManager.cs` : `ApplyFusionDebugHook()` — monte `plasma_blade` à L5, ajoute
+  `thermal_core`, appelle `InventorySystem.ApplyFusion("fusion_blade")`, **sans** toucher au
+  spawner (nuée ambiante conservée pour tester la lisibilité).
+
+Build `dotnet build` : 0 avertissement / 0 erreur. Lancement
+`Godot ... res://scenes/Game.tscn --debug-fusion`, kite en cercle, captures à t=8/20/35/50 s
+(`docs/fusion_t08.png`, `fusion_t20.png`, `fusion_t35.png`, `fusion_t50.png`).
+
+### Résultat : **PASS** (4/4 critères)
+
+1. **Anneau visible et centré** — PASS. Anneau doré (rayon 130 px) net et parfaitement
+   centré sur le joueur dans toutes les frames ; aura rosée de remplissage à l'intérieur
+   (PointLight2D or en blend Add sur biome Fournaise). Le joueur reste au centre exact.
+2. **Rotation + dégradé qui balaie + flash à l'impact** — PASS. L'arc brillant du dégradé
+   occupe une position différente à chaque frame (bas-gauche en t35, haut-droite en t20, haut
+   en t50) → rotation confirmée. Flash à l'impact bien visible en t50 (burst blanc/doré + width
+   de l'anneau qui gonfle) quand des ennemis entrent dans le rayon.
+3. **Lisibilité en nuée** — PASS. L'anneau délimite clairement la zone de frappe sans masquer
+   les ennemis extérieurs ; au repos (t35) le joueur est parfaitement discernable.
+   *Réserve mineure (cosmétique)* : lors d'un flash d'impact avec plusieurs ennemis empilés sur
+   le joueur (t50), le burst d'aura est assez lumineux et brille brièvement par-dessus le sprite
+   joueur. Reste discernable, mais si le VFX venait à être renforcé, surveiller l'énergie de
+   flash (0.9) pour ne pas noyer le joueur. Non bloquant.
+4. **Aucune erreur console liée à FusionBlade** — PASS. Log propre, seules traces attendues :
+   `[InventorySystem] Fusion appliquée : fusion_blade` puis
+   `[GameManager] --debug-fusion : fusion_blade appliquée`. Aucune exception, aucun SCRIPT ERROR.
+
+### Note pour le développeur
+
+Le hook `--debug-fusion` est **temporaire** et marqué comme tel dans le code (gardé derrière le
+flag, aucun effet en jeu normal, parallèle exact de `--debug-boss`). Recommandation : le
+**conserver** comme outil de test des fusions (utile pour valider `rail_overcharged`,
+`orbital_swarm`, `overload_aegis` de la même façon) — sinon le retirer de `DebugHooks.cs` et
+`GameManager.cs`. Idéalement le généraliser en `--debug-fusion=<id>` pour cibler n'importe
+quelle fusion.
+
+---
+
 ## Test Phase 3 — 2026-06-20
 
 **Testeur :** game-tester (agent Claude)

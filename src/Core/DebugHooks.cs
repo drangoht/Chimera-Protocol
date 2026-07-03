@@ -26,6 +26,23 @@ public static class DebugHooks
         }
     }
 
+    private static bool? _fusionDebug;
+
+    /// <summary>
+    /// TEMPORAIRE (test visuel Lame à Fusion) : vrai si lancé avec <c>--debug-fusion</c>.
+    /// Équipe les prérequis de fusion_blade et applique la fusion, ennemis ambiants actifs.
+    /// À retirer après validation du VFX.
+    /// </summary>
+    public static bool FusionDebug
+    {
+        get
+        {
+            if (_fusionDebug == null)
+                _fusionDebug = HasFlag("--debug-fusion");
+            return _fusionDebug.Value;
+        }
+    }
+
     private static bool _forcedBiomeRead;
     private static string? _forcedBiome;
 
