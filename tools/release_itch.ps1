@@ -77,8 +77,16 @@ if (-not $SkipExport) {
         Fail "ChimeraProtocol.sln absent a la racine — recree-le (cf. CLAUDE.md) avant d'exporter."
     }
     Write-Host "Export release en cours..." -ForegroundColor Yellow
+    $exportStart = Get-Date
     & $Godot --headless --export-release "Windows Desktop" $Exe
-    if ($LASTEXITCODE -ne 0) { Fail "Export Godot echoue (code $LASTEXITCODE)" }
+    # Godot 4.7 .NET laisse souvent $LASTEXITCODE VIDE/null en fin d'export headless
+    # ($null -ne 0 -> faux echec). On ne fail que sur un code non-zero EXPLICITE, puis on
+    # verifie que l'exe a reellement ete (re)ecrit apres le debut de l'export (detecte un
+    # echec silencieux ou l'exe serait absent/perime).
+    if ($LASTEXITCODE -and $LASTEXITCODE -ne 0) { Fail "Export Godot echoue (code $LASTEXITCODE)" }
+    if (-not (Test-Path $Exe) -or (Get-Item $Exe).LastWriteTime -lt $exportStart) {
+        Fail "Export Godot n'a pas (re)genere $Exe — echec silencieux de l'export."
+    }
 }
 if (-not (Test-Path $Exe))     { Fail "Exe manquant : $Exe" }
 if (-not (Test-Path $DataDir)) { Fail "Runtime .NET manquant : $DataDir" }
