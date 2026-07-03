@@ -68,6 +68,14 @@ ICON_FACE_COEFFS = {
 }
 
 
+# §5 contour (ajoute apres coup) : le brief autorise un contour "en cas d'echec
+# du test de lisibilite". Les sprites sombres (biomes neon/fournaise) disparaissent
+# sur les sols sombres sans lui. Teinte bleu-nuit tres foncee, alignee sur le fond
+# UI #1A1A2E, alpha modere pour rester lisible sans effet "sticker" trop marque.
+OUTLINE_COLOR = (12, 11, 20)
+OUTLINE_ALPHA = 190
+
+
 def _clamp(v, lo=0.0, hi=1.0):
     return max(lo, min(hi, v))
 
@@ -190,6 +198,36 @@ def add_cast_shadow(img, alpha=90, ratio=2.2, width_ratio=0.68, offset=(2, 2), m
                 px[x, y] = (0, 0, 0, a)
 
     return Image.alpha_composite(layer, img)
+
+
+def add_outline(img, color=None, alpha=None, diagonal=False):
+    """Contour 1px autour de la silhouette opaque (readability §5).
+
+    A appliquer APRES shade_sprite mais AVANT add_cast_shadow (sinon le contour
+    entoure aussi l'ellipse d'ombre portee). Ne touche que les pixels transparents
+    adjacents a un pixel opaque (alpha == 255) : les halos/glow (alpha partiel) ne
+    declenchent pas de contour.
+    """
+    color = color or OUTLINE_COLOR
+    alpha = OUTLINE_ALPHA if alpha is None else alpha
+    w, h = img.size
+    src = img.load()
+    out = img.copy()
+    dst = out.load()
+    neigh = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+    if diagonal:
+        neigh += [(-1, -1), (1, -1), (-1, 1), (1, 1)]
+    r, g, b = color
+    for y in range(h):
+        for x in range(w):
+            if src[x, y][3] != 0:
+                continue
+            for dx, dy in neigh:
+                nx, ny = x + dx, y + dy
+                if 0 <= nx < w and 0 <= ny < h and src[nx, ny][3] == 255:
+                    dst[x, y] = (r, g, b, alpha)
+                    break
+    return out
 
 
 # --------------------------------------------------------------------------- #
@@ -321,9 +359,11 @@ def apply_by_category(img, path, core_colors=None):
     kind = sprite_category_from_path(path)
     if kind == "character":
         img = shade_sprite(img, core_colors=core_colors)
+        img = add_outline(img)
         img = add_cast_shadow(img, alpha=90)
     elif kind == "obstacle":
         img = shade_sprite(img, core_colors=core_colors)
+        img = add_outline(img)
         img = add_cast_shadow(img, alpha=100)
     elif kind == "tile":
         img = shade_tile(img, exclude_colors=core_colors)
@@ -362,6 +402,27 @@ def put(img, x, y, c):
 def rect(img, x0, y0, x1, y1, c):
     for y in range(int(y0), int(y1) + 1):
         for x in range(int(x0), int(x1) + 1):
+            put(img, x, y, c)
+
+
+def fill_ellipse(img, cx, cy, rx, ry, c):
+    """Ellipse pleine centree (cx,cy), demi-axes rx/ry. Donne des corps arrondis
+    lisibles la ou un rectangle plein produit un rendu "carte/ecran"."""
+    if rx <= 0 or ry <= 0:
+        return
+    for y in range(int(cy - ry), int(cy + ry) + 1):
+        for x in range(int(cx - rx), int(cx + rx) + 1):
+            if ((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2 <= 1.0:
+                put(img, x, y, c)
+
+
+def fill_diamond(img, cx, cy, rx, ry, c):
+    """Losange plein (silhouette agile type drone)."""
+    if ry <= 0:
+        return
+    for y in range(int(cy - ry), int(cy + ry) + 1):
+        span = rx * (1.0 - abs(y - cy) / ry)
+        for x in range(int(round(cx - span)), int(round(cx + span)) + 1):
             put(img, x, y, c)
 
 

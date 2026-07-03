@@ -49,14 +49,30 @@ def raw_save(img, path):
 
 
 def shaded_save(img, path, core_colors, alpha_factor=1.0):
-    """Ombrage pseudo-3D + ombre portee, puis fade optionnel (frames de mort) —
-    toujours shader a pleine opacite AVANT de reduire l'alpha (cf. CLAUDE.md,
-    piege deja rencontre sur generate_character_sprites.py)."""
+    """Ombrage pseudo-3D + contour lisibilite + ombre portee, puis fade optionnel
+    (frames de mort) — toujours shader a pleine opacite AVANT de reduire l'alpha
+    (cf. CLAUDE.md, piege deja rencontre sur generate_character_sprites.py)."""
     shaded = p3d.shade_sprite(img, core_colors=core_colors)
+    shaded = p3d.add_outline(shaded)
     shaded = p3d.add_cast_shadow(shaded, alpha=90)
     if alpha_factor < 1.0:
         shaded = p3d.fade_alpha(shaded, alpha_factor)
     raw_save(shaded, path)
+
+
+def _death_scatter(img, d):
+    """Dissolution a la mort : efface une part croissante des pixels (seed stable
+    pour un rendu deterministe frame a frame)."""
+    if not d:
+        return
+    import random
+    rng = random.Random(d * 7 + 1)
+    px = img.load()
+    w, h = img.size
+    for y in range(h):
+        for x in range(w):
+            if px[x, y][3] > 0 and rng.random() < d * 0.16:
+                px[x, y] = (0, 0, 0, 0)
 
 
 # --------------------------------------------------------------------------- #
@@ -64,32 +80,35 @@ def shaded_save(img, path, core_colors, alpha_factor=1.0):
 # base = matiere (corps, ombree normalement) ; core = noyau energetique
 # (jamais assombri) ; eye = point d'attention (jamais assombri)
 # --------------------------------------------------------------------------- #
+# base = matiere du corps. Volontairement en TON MOYEN (V ~0.42-0.55) : shade_sprite
+# assombrit ensuite la face droite (V x0.55) et le bas/contact (V x0.35) — partir
+# d'une base trop sombre donnait des sprites "boueux" illisibles (corrige 2026-07-03).
 PALETTES = {
     # Sanctuaire — rouille/mecanique
-    "rust_amber":    {"base": (0x6A, 0x4A, 0x2A), "core": (0xFF, 0xAA, 0x33), "eye": (0xFF, 0xCC, 0x55)},
-    "steel_blue":    {"base": (0x3A, 0x44, 0x55), "core": (0x55, 0xAA, 0xFF), "eye": (0x55, 0xCC, 0xFF)},
-    "rust_copper":   {"base": (0x5A, 0x3A, 0x22), "core": (0xFF, 0x99, 0x44), "eye": (0xFF, 0xBB, 0x66)},
-    "iron_grey":     {"base": (0x4A, 0x4A, 0x52), "core": (0xAA, 0xB0, 0xC0), "eye": (0xCC, 0xDD, 0xEE)},
+    "rust_amber":    {"base": (0x9A, 0x6C, 0x3E), "core": (0xFF, 0xAA, 0x33), "eye": (0xFF, 0xCC, 0x55)},
+    "steel_blue":    {"base": (0x5E, 0x6E, 0x86), "core": (0x55, 0xAA, 0xFF), "eye": (0x99, 0xDD, 0xFF)},
+    "rust_copper":   {"base": (0x92, 0x60, 0x38), "core": (0xFF, 0x99, 0x44), "eye": (0xFF, 0xBB, 0x66)},
+    "iron_grey":     {"base": (0x6E, 0x70, 0x7E), "core": (0xAA, 0xB0, 0xC0), "eye": (0xDD, 0xE8, 0xF4)},
     # Aether — spectral/energetique
-    "violet_glow":   {"base": (0x4A, 0x2A, 0x66), "core": (0xAA, 0x44, 0xFF), "eye": (0xE0, 0xB0, 0xFF)},
-    "aether_teal":   {"base": (0x1A, 0x4A, 0x55), "core": (0x22, 0xE5, 0xCC), "eye": (0xAA, 0xFF, 0xEE)},
-    "violet_deep":   {"base": (0x35, 0x1A, 0x50), "core": (0x8A, 0x33, 0xE0), "eye": (0xC8, 0x99, 0xFF)},
-    "aether_white":  {"base": (0x4A, 0x3A, 0x66), "core": (0xE8, 0xDC, 0xFF), "eye": (0xF4, 0xEE, 0xFF)},
+    "violet_glow":   {"base": (0x74, 0x48, 0x9E), "core": (0xAA, 0x44, 0xFF), "eye": (0xE0, 0xB0, 0xFF)},
+    "aether_teal":   {"base": (0x2E, 0x74, 0x82), "core": (0x22, 0xE5, 0xCC), "eye": (0xAA, 0xFF, 0xEE)},
+    "violet_deep":   {"base": (0x5A, 0x36, 0x86), "core": (0x8A, 0x33, 0xE0), "eye": (0xC8, 0x99, 0xFF)},
+    "aether_white":  {"base": (0x74, 0x60, 0x9C), "core": (0xE8, 0xDC, 0xFF), "eye": (0xF4, 0xEE, 0xFF)},
     # Fournaise — igne/fondu
-    "ember_orange":  {"base": (0x5A, 0x2A, 0x18), "core": (0xFF, 0x66, 0x22), "eye": (0xFF, 0xAA, 0x55)},
-    "spark_yellow":  {"base": (0x5A, 0x44, 0x18), "core": (0xFF, 0xDD, 0x33), "eye": (0xFF, 0xEE, 0x88)},
-    "magma_red":     {"base": (0x4A, 0x1A, 0x14), "core": (0xFF, 0x33, 0x22), "eye": (0xFF, 0x88, 0x55)},
-    "molten_black":  {"base": (0x2A, 0x1A, 0x18), "core": (0xFF, 0x55, 0x22), "eye": (0xFF, 0x99, 0x44)},
+    "ember_orange":  {"base": (0x96, 0x50, 0x2E), "core": (0xFF, 0x66, 0x22), "eye": (0xFF, 0xAA, 0x55)},
+    "spark_yellow":  {"base": (0x94, 0x72, 0x30), "core": (0xFF, 0xDD, 0x33), "eye": (0xFF, 0xEE, 0x88)},
+    "magma_red":     {"base": (0x88, 0x3A, 0x2A), "core": (0xFF, 0x33, 0x22), "eye": (0xFF, 0x88, 0x55)},
+    "molten_black":  {"base": (0x66, 0x42, 0x34), "core": (0xFF, 0x55, 0x22), "eye": (0xFF, 0x99, 0x44)},
     # Givre — gele/cristallin
-    "frost_blue":    {"base": (0x2A, 0x44, 0x55), "core": (0x66, 0xCC, 0xFF), "eye": (0xBB, 0xEE, 0xFF)},
-    "ice_white":     {"base": (0x3A, 0x50, 0x5A), "core": (0xCC, 0xEE, 0xFF), "eye": (0xE8, 0xF8, 0xFF)},
-    "glacier_cyan":  {"base": (0x22, 0x4A, 0x55), "core": (0x44, 0xDD, 0xEE), "eye": (0xAA, 0xF5, 0xFF)},
-    "deep_ice":      {"base": (0x1A, 0x33, 0x44), "core": (0x55, 0xBB, 0xEE), "eye": (0xBB, 0xE8, 0xFF)},
+    "frost_blue":    {"base": (0x4C, 0x72, 0x88), "core": (0x66, 0xCC, 0xFF), "eye": (0xBB, 0xEE, 0xFF)},
+    "ice_white":     {"base": (0x62, 0x80, 0x8E), "core": (0xCC, 0xEE, 0xFF), "eye": (0xE8, 0xF8, 0xFF)},
+    "glacier_cyan":  {"base": (0x3C, 0x74, 0x84), "core": (0x44, 0xDD, 0xEE), "eye": (0xAA, 0xF5, 0xFF)},
+    "deep_ice":      {"base": (0x36, 0x5E, 0x76), "core": (0x55, 0xBB, 0xEE), "eye": (0xBB, 0xE8, 0xFF)},
     # Neon — synthetique/hologramme
-    "neon_magenta":  {"base": (0x3A, 0x1A, 0x3A), "core": (0xFF, 0x44, 0xCC), "eye": (0xFF, 0x99, 0xEE)},
-    "neon_glitch":   {"base": (0x2A, 0x2A, 0x44), "core": (0x66, 0xFF, 0xEE), "eye": (0xFF, 0x66, 0xEE)},
-    "neon_cyan":     {"base": (0x1A, 0x3A, 0x44), "core": (0x44, 0xEE, 0xFF), "eye": (0xAA, 0xFF, 0xFF)},
-    "neon_violet":   {"base": (0x2A, 0x1A, 0x44), "core": (0xAA, 0x66, 0xFF), "eye": (0xD0, 0xAA, 0xFF)},
+    "neon_magenta":  {"base": (0x72, 0x3A, 0x72), "core": (0xFF, 0x44, 0xCC), "eye": (0xFF, 0x99, 0xEE)},
+    "neon_glitch":   {"base": (0x44, 0x46, 0x72), "core": (0x66, 0xFF, 0xEE), "eye": (0xFF, 0x66, 0xEE)},
+    "neon_cyan":     {"base": (0x30, 0x66, 0x74), "core": (0x44, 0xEE, 0xFF), "eye": (0xAA, 0xFF, 0xFF)},
+    "neon_violet":   {"base": (0x50, 0x3A, 0x86), "core": (0xAA, 0x66, 0xFF), "eye": (0xD0, 0xAA, 0xFF)},
 }
 
 # id -> (archetype, colorPlaceholder) — cf. data/enemies_biome_expansion.json
@@ -125,104 +144,126 @@ ENEMIES = [
 # Silhouettes par archetype (32x32) — geometrie generique, palette parametree
 # --------------------------------------------------------------------------- #
 
-def draw_forager(img, pal, phase=0, move_phase=None, death_frame=None, squash=0):
-    """straight_chase — masse basse arrondie (cf. draw_rust_swarm_base)."""
-    cx, cy = 16, 18
-    base = pal["base"]; core = pal["core"]
-    osc = [-1, 0, 1][phase % 3] if move_phase is None else 0
-    stretch = [0, 1, 0, -1][move_phase % 4] * 2 if move_phase is not None else 0
+fill_ellipse = p3d.fill_ellipse
+fill_diamond = p3d.fill_diamond
 
-    body_w = 9 + abs(stretch) - squash
-    body_h = 6 - abs(stretch) // 2 - squash // 2
-    x0 = cx - body_w + osc; x1 = cx + body_w + osc
-    y0 = cy - body_h; y1 = cy + body_h
 
-    rect(img, x0, y0, x1, y1, (base[0], base[1], base[2], 255))
-    # arrondi des coins (retire les coins carres)
-    for c in [(x0, y0), (x1, y0), (x0, y1), (x1, y1)]:
-        put(img, c[0], c[1], (0, 0, 0, 0))
-    # noyau energetique (jamais assombri)
-    glow(img, cx + osc, cy - 1, 5, core, 0.45)
-    put(img, cx + osc, cy - 1, (core[0], core[1], core[2], 255))
-    put(img, cx + osc - 1, cy - 1, (core[0], core[1], core[2], 255))
+def _dark(base):
+    d = p3d.shade(base, "shadow")
+    return (d[0], d[1], d[2], 255)
+
+
+def draw_forager(img, pal, phase=0, move_phase=None, death_frame=None):
+    """straight_chase — rampant a carapace + pattes (lit comme une creature,
+    pas comme une carte). Vue 3/4 : 'avant' vers le bas."""
+    cx, cy = 16, 16
+    base = pal["base"]; core = pal["core"]; eye = pal["eye"]
+    B = (base[0], base[1], base[2], 255)
+    SG = _dark(base)
+    legph = move_phase if move_phase is not None else phase
+    # 6 pattes qui depassent la carapace (animees en opposition)
+    for i, (lx, ly) in enumerate([(-10, -1), (-11, 3), (-9, 6), (10, -1), (11, 3), (9, 6)]):
+        off = 1 if (i + legph) % 2 else 0
+        x = cx + lx; y = cy + ly + off
+        rect(img, x - 1, y, x + 1, y + 2, B)
+    # carapace bombee
+    fill_ellipse(img, cx, cy, 8, 6, B)
+    # tete a l'avant (bas)
+    fill_ellipse(img, cx, cy + 5, 4, 3, B)
+    # segmentation dorsale (detail interne sombre)
+    rect(img, cx - 6, cy - 2, cx + 6, cy - 2, SG)
+    rect(img, cx - 7, cy + 1, cx + 7, cy + 1, SG)
+    # noyau energetique dorsal (jamais assombri)
+    glow(img, cx, cy - 1, 4, core, 0.55)
+    rect(img, cx - 1, cy - 2, cx, cy, (core[0], core[1], core[2], 255))
+    # yeux sur la tete
+    put(img, cx - 2, cy + 5, (eye[0], eye[1], eye[2], 255))
+    put(img, cx + 2, cy + 5, (eye[0], eye[1], eye[2], 255))
     if death_frame is not None:
-        d = death_frame
-        for yy in range(y0, y1 + 1, 2):
-            rect(img, x0 + d, yy, x1 - d, yy, (0, 0, 0, 0))
+        _death_scatter(img, death_frame)
 
 
 def draw_harasser(img, pal, phase=0, death_frame=None):
-    """erratic_chase — silhouette agile en losange, oeil vif (cf. drone)."""
-    cx, cy = 16, 16
+    """erratic_chase — drone volant : corps losange + ailes fuyantes + oeil vif."""
+    cx, cy = 16, 15
     base = pal["base"]; core = pal["core"]; eye = pal["eye"]
-    wobble = [-1, 0, 1, 0][phase % 4]
-    pts_r = 9
-    # corps en losange (hexagone simplifie)
-    for dy in range(-6, 7):
-        half = max(0, pts_r - abs(dy) * 2)
-        rect(img, cx - half + wobble, cy + dy, cx + half + wobble, cy + dy, (base[0], base[1], base[2], 255))
-    # ailerons lateraux (lames)
-    rect(img, cx - pts_r - 3 + wobble, cy - 1, cx - pts_r + wobble, cy + 1, (base[0], base[1], base[2], 255))
-    rect(img, cx + pts_r + wobble, cy - 1, cx + pts_r + 3 + wobble, cy + 1, (base[0], base[1], base[2], 255))
+    B = (base[0], base[1], base[2], 255)
+    wob = [-1, 0, 1, 0][phase % 4]
+    cx += wob
+    # ailes en fleche
+    for s in (-1, 1):
+        rect(img, cx + s * 6, cy - 1, cx + s * 11, cy, B)
+        rect(img, cx + s * 7, cy + 1, cx + s * 10, cy + 2, B)
+    # corps losange
+    fill_diamond(img, cx, cy, 6, 7, B)
     # oeil / noyau (jamais assombri)
-    glow(img, cx + wobble, cy, 4, core, 0.4)
-    put(img, cx + wobble, cy, (eye[0], eye[1], eye[2], 255))
-    put(img, cx + wobble + 1, cy, (eye[0], eye[1], eye[2], 255))
+    glow(img, cx, cy, 4, core, 0.65)
+    fill_ellipse(img, cx, cy, 2, 2, (eye[0], eye[1], eye[2], 255))
+    # micro-reacteurs sous le corps
+    put(img, cx - 3, cy + 6, (core[0], core[1], core[2], 210))
+    put(img, cx + 3, cy + 6, (core[0], core[1], core[2], 210))
     if death_frame is not None:
-        d = death_frame
-        for yy in range(cy - 6, cy + 7, 2):
-            rect(img, cx - 9 + d, yy, cx + 9 - d, yy, (0, 0, 0, 0))
+        _death_scatter(img, death_frame)
 
 
 def draw_turret(img, pal, phase=0, attack=False, death_frame=None):
-    """ranged_kiter — chassis boite + visiere/canon (cf. sentinel)."""
-    cx, cy = 16, 17
+    """ranged_kiter — sentinelle sur trepied : dome + fente lumineuse (fine, pas
+    un grand ecran) + canon lateral."""
+    cx, cy = 16, 14
     base = pal["base"]; core = pal["core"]; eye = pal["eye"]
+    B = (base[0], base[1], base[2], 255)
     bob = [0, 1][phase % 2]
-    # base/chassis
-    rect(img, cx - 8, cy - 6 + bob, cx + 8, cy + 8 + bob, (base[0], base[1], base[2], 255))
-    # pieds trapus
-    rect(img, cx - 7, cy + 8 + bob, cx - 3, cy + 11 + bob, (base[0], base[1], base[2], 255))
-    rect(img, cx + 3, cy + 8 + bob, cx + 7, cy + 11 + bob, (base[0], base[1], base[2], 255))
-    # visiere / canon
-    barrel_len = 6 if not attack else 8
-    rect(img, cx + 8, cy - 1 + bob, cx + 8 + barrel_len, cy + 1 + bob, (base[0], base[1], base[2], 255))
-    # noyau/visiere (jamais assombri)
-    glow(img, cx, cy - 1 + bob, 5, core, 0.4 if not attack else 0.7)
-    rect(img, cx - 4, cy - 3 + bob, cx + 4, cy + 1 + bob, (eye[0], eye[1], eye[2], 255))
+    yb = cy + bob
+    # trepied
+    for lx in (-6, 0, 6):
+        rect(img, cx + lx - 1, yb + 5, cx + lx + 1, yb + 12, B)
+    # embase
+    fill_ellipse(img, cx, yb + 5, 7, 3, B)
+    # corps
+    fill_ellipse(img, cx, yb + 1, 6, 5, B)
+    # dome (tete)
+    fill_ellipse(img, cx, yb - 3, 7, 5, B)
+    # canon lateral
+    barrel_len = 8 if attack else 6
+    rect(img, cx + 5, yb - 4, cx + 5 + barrel_len, yb - 2, B)
+    # fente/oeil (mince) + noyau
+    rect(img, cx - 3, yb - 4, cx + 3, yb - 3, (eye[0], eye[1], eye[2], 255))
+    glow(img, cx, yb - 3, 4, core, 0.8 if attack else 0.5)
     if attack:
-        put(img, cx + 8 + barrel_len, cy + bob, (255, 255, 255, 230))
-        glow(img, cx + 8 + barrel_len, cy + bob, 3, core, 0.6)
+        mx = cx + 5 + barrel_len
+        put(img, mx, yb - 3, (255, 255, 255, 235))
+        glow(img, mx, yb - 3, 3, core, 0.7)
     if death_frame is not None:
-        d = death_frame
-        for yy in range(cy - 6, cy + 9, 2):
-            rect(img, cx - 8 + d, yy + bob, cx + 8 - d, yy + bob, (0, 0, 0, 0))
+        _death_scatter(img, death_frame)
 
 
 def draw_bruiser(img, pal, phase=0, death_frame=None):
-    """slow_hunter — golem trapu 32x32 (proportions Colosse, echelle reduite)."""
+    """slow_hunter — golem trapu (epaules bombees + tete + noyau poitrine)."""
     cx = 16
     top = 6 + (1 if phase % 2 else 0)
-    base = pal["base"]; core = pal["core"]
+    base = pal["base"]; core = pal["core"]; eye = pal["eye"]
     D = (base[0], base[1], base[2], 255)
+    SG = _dark(base)
     # jambes courtes
     rect(img, cx - 6, top + 18, cx - 2, top + 24, D)
     rect(img, cx + 2, top + 18, cx + 6, top + 24, D)
     # torse large
-    rect(img, cx - 9, top + 7, cx + 9, top + 19, D)
-    # epaules
-    rect(img, cx - 11, top + 6, cx - 7, top + 12, D)
-    rect(img, cx + 7, top + 6, cx + 11, top + 12, D)
-    # tete trapue
-    rect(img, cx - 5, top, cx + 5, top + 7, D)
+    rect(img, cx - 8, top + 8, cx + 8, top + 19, D)
+    # epaules bombees
+    fill_ellipse(img, cx - 8, top + 9, 4, 4, D)
+    fill_ellipse(img, cx + 8, top + 9, 4, 4, D)
+    # tete
+    fill_ellipse(img, cx, top + 3, 5, 4, D)
+    # separation torse (detail)
+    rect(img, cx - 8, top + 14, cx + 8, top + 14, SG)
     # noyau energetique poitrine (jamais assombri)
-    glow(img, cx, top + 13, 6, core, 0.5)
-    rect(img, cx - 2, top + 11, cx + 1, top + 15, (core[0], core[1], core[2], 255))
-    put(img, cx - 1, top + 12, (255, 255, 255, 180))
+    glow(img, cx, top + 12, 6, core, 0.55)
+    rect(img, cx - 2, top + 10, cx + 1, top + 14, (core[0], core[1], core[2], 255))
+    # yeux
+    put(img, cx - 2, top + 3, (eye[0], eye[1], eye[2], 255))
+    put(img, cx + 2, top + 3, (eye[0], eye[1], eye[2], 255))
     if death_frame is not None:
-        d = death_frame
-        for yy in range(top, top + 24, 2):
-            rect(img, cx - 9 + d, yy, cx + 9 - d, yy, (0, 0, 0, 0))
+        _death_scatter(img, death_frame)
 
 
 DRAW_FN = {
