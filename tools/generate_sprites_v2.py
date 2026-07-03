@@ -62,11 +62,16 @@ SPIDER_CRAK  = (0xBB, 0x44, 0x00, 255)
 SPIDER_EYE   = (0xFF, 0x22, 0x22, 255)
 
 # Drone hex
-DRONE_BODY   = (0x22, 0x22, 0x33, 255)
-DRONE_BLADE  = (0x55, 0x66, 0x77, 255)
-DRONE_BLADE2 = (0x44, 0x55, 0x66, 255)
-DRONE_EYE    = (0xFF, 0x22, 0x22, 255)
-DRONE_EYE_DK = (0x44, 0x00, 0x00, 255)
+# Drone corrompu : passe d'un navy quasi-noir (illisible, effet "cage") a un metal
+# corrompu de ton MOYEN teinte de violet (corruption) — le pseudo-3D peut alors creer
+# du volume sans virer au boueux (revue graphique 2026-07-03).
+DRONE_BODY   = (0x4C, 0x4E, 0x66, 255)
+DRONE_BODY_HI= (0x74, 0x78, 0x96, 255)
+DRONE_BLADE  = (0x9A, 0xA6, 0xB8, 255)
+DRONE_BLADE2 = (0x74, 0x80, 0x94, 255)
+DRONE_CORR   = (0x9A, 0x44, 0xEE, 255)   # veines de corruption violette (accent)
+DRONE_EYE    = (0xFF, 0x33, 0x33, 255)
+DRONE_EYE_DK = (0x55, 0x08, 0x08, 255)
 
 # Energie / Aether
 AETHER       = (0x00, 0xE5, 0xFF, 255)
@@ -118,7 +123,7 @@ import pseudo3d_lib as _p3d
 
 _CORE_COLORS = [
     AETHER[:3], AETHER_DARK[:3], IMPLANT_VIO[:3], IMPLANT_GLOW[:3],
-    DRONE_EYE[:3], DRONE_EYE_DK[:3], SPIDER_EYE[:3], CANON_TIP[:3], VISOR[:3],
+    DRONE_EYE[:3], DRONE_EYE_DK[:3], DRONE_CORR[:3], SPIDER_EYE[:3], CANON_TIP[:3], VISOR[:3],
     XP_T1_MAIN[:3], XP_T2_MAIN[:3], XP_T3_MAIN[:3], XP_T4_MAIN[:3],
 ]
 save = _p3d.wrap_save(save, core_colors=_CORE_COLORS)
@@ -356,45 +361,43 @@ def draw_drone_v2(img, phase=0, death_frame=None):
     # Rotation des pales : chaque frame tourne de 30 degres
     blade_rotation = phase * 30  # degres
 
-    # Corps hexagonal
-    draw_hexagon(img, cx, cy, 7, DRONE_BODY, BLACK)
-
-    # Detail interne : anneau leger
-    for angle_deg in range(0, 360, 20):
-        rad = math.radians(angle_deg)
-        rx = int(cx + math.cos(rad) * 4)
-        ry = int(cy + math.sin(rad) * 4)
-        px(img, rx, ry, METAL_MID)
-
-    # 3 pales en croix (120 deg de separation), partent du centre
+    # 3 pales rotatives (derriere le corps), metal clair -> lisibles en mouvement
     for base_angle in [0, 120, 240]:
-        angle = base_angle + blade_rotation
-        rad = math.radians(angle)
-        # La pale est un rectangle allonge 2x6 px dans la direction
-        for t in range(2, 8):
-            bx = int(cx + math.cos(rad) * t)
-            by = int(cy + math.sin(rad) * t)
-            # epaisseur 2px perpendiculaire
-            perp_rad = rad + math.pi / 2
+        rad = math.radians(base_angle + blade_rotation)
+        perp_rad = rad + math.pi / 2
+        for t in range(4, 10):
+            bx = int(round(cx + math.cos(rad) * t))
+            by = int(round(cy + math.sin(rad) * t))
             px(img, bx, by, DRONE_BLADE)
-            px(img, bx + int(math.cos(perp_rad)), by + int(math.sin(perp_rad)), DRONE_BLADE2)
-        # Bout de pale : pixel plus claire
-        tip_x = int(cx + math.cos(rad) * 8)
-        tip_y = int(cy + math.sin(rad) * 8)
+            px(img, bx + int(round(math.cos(perp_rad))), by + int(round(math.sin(perp_rad))), DRONE_BLADE2)
+        tip_x = int(round(cx + math.cos(rad) * 10))
+        tip_y = int(round(cy + math.sin(rad) * 10))
         px(img, tip_x, tip_y, BLADE_EDGE)
 
-    # Oeil central rouge 2x2 px luisant
-    eye_bright = (phase % 3 != 2)
-    eye_col = DRONE_EYE if eye_bright else DRONE_EYE_DK
-    px(img, cx, cy, eye_col)
-    px(img, cx + 1, cy, eye_col)
-    px(img, cx, cy + 1, eye_col)
-    # reflet blanc au centre
-    if eye_bright:
-        px(img, cx, cy, (0xFF, 0x88, 0x88, 255))
+    # Corps hexagonal (metal corrompu, ton moyen) — contour interne METAL_DARK
+    draw_hexagon(img, cx, cy, 6, DRONE_BODY, METAL_DARK)
 
-    # Contour exterieur renforce
-    outline(img, cx - 7, cy - 7, cx + 7, cy + 7, BLACK)
+    # Facette haute eclairee (donne du volume au dome)
+    for dx in range(-3, 4):
+        px(img, cx + dx, cy - 5, DRONE_BODY_HI)
+    for dx in range(-4, 5):
+        px(img, cx + dx, cy - 4, DRONE_BODY_HI)
+
+    # Veines de corruption violette (accent, non assombri)
+    for (vx, vy) in [(-4, -1), (-3, 1), (4, 0), (3, 2), (-2, 3)]:
+        px(img, cx + vx, cy + vy, DRONE_CORR)
+
+    # Logement de l'oeil (creux sombre)
+    rect(img, cx - 2, cy - 2, cx + 2, cy + 2, METAL_DARK)
+
+    # Oeil rouge lumineux 2x2 + halo (le point d'accroche du regard)
+    eye_bright = (phase % 3 != 2)
+    _p3d.glow(img, cx, cy, 3, (DRONE_EYE[0], DRONE_EYE[1], DRONE_EYE[2]), 0.6 if eye_bright else 0.25)
+    eye_col = DRONE_EYE if eye_bright else DRONE_EYE_DK
+    px(img, cx, cy, eye_col); px(img, cx + 1, cy, eye_col)
+    px(img, cx, cy + 1, eye_col); px(img, cx + 1, cy + 1, eye_col)
+    if eye_bright:
+        px(img, cx, cy, (0xFF, 0xCC, 0xCC, 255))
 
 
 def generate_drone_v2(out_dir):
