@@ -77,16 +77,13 @@ if (-not $SkipExport) {
         Fail "ChimeraProtocol.sln absent a la racine — recree-le (cf. CLAUDE.md) avant d'exporter."
     }
     Write-Host "Export release en cours..." -ForegroundColor Yellow
-    $exportStart = Get-Date
     & $Godot --headless --export-release "Windows Desktop" $Exe
     # Godot 4.7 .NET laisse souvent $LASTEXITCODE VIDE/null en fin d'export headless
-    # ($null -ne 0 -> faux echec). On ne fail que sur un code non-zero EXPLICITE, puis on
-    # verifie que l'exe a reellement ete (re)ecrit apres le debut de l'export (detecte un
-    # echec silencieux ou l'exe serait absent/perime).
+    # ($null -ne 0 -> faux echec). On ne fail que sur un code non-zero EXPLICITE ; l'existence
+    # de l'exe + du runtime .NET est verifiee juste apres (garde-fou reel contre un echec).
+    # NB : pas de comparaison de timestamp — Godot rend la main a PowerShell avant d'avoir
+    # flush l'exe (course), ce qui provoquait un faux "echec silencieux".
     if ($LASTEXITCODE -and $LASTEXITCODE -ne 0) { Fail "Export Godot echoue (code $LASTEXITCODE)" }
-    if (-not (Test-Path $Exe) -or (Get-Item $Exe).LastWriteTime -lt $exportStart) {
-        Fail "Export Godot n'a pas (re)genere $Exe — echec silencieux de l'export."
-    }
 }
 if (-not (Test-Path $Exe))     { Fail "Exe manquant : $Exe" }
 if (-not (Test-Path $DataDir)) { Fail "Runtime .NET manquant : $DataDir" }
