@@ -4,6 +4,67 @@ Rapport de sessions de test. Chaque section correspond à une session de test di
 
 ---
 
+## Test ciblé — VFX Lame à Fusion v2 : distorsion de chaleur — 2026-07-03
+
+**Testeur :** game-tester (agent Claude)
+**Branche :** main (+ enrichissement VFX FusionBlade non commité : heat haze BackBufferCopy + braises)
+**Moteur :** Godot 4.7.stable.mono, D3D12, AMD Radeon RX 9070.
+**Objet :** valider la distorsion de chaleur en espace écran (`BackBufferCopy` CopyMode=Viewport
+z=400 + `Sprite2D` shadé z=401 rééchantillonnant `hint_screen_texture` avec bruit Perlin animé,
+masqué au disque), les braises (`CpuParticles2D` z=402), l'anneau à bord incandescent (z=403).
+
+### Méthode
+
+Lancé via le hook `--debug-fusion` (fusion appliquée d'emblée, nuée ambiante conservée). Rebuild
+`dotnet build` : 0 avertissement / 0 erreur. Rafales de frames rapprochées (~0,33 s) joueur à
+l'arrêt sur le motif de grille du biome Aether — la grille régulière est le révélateur idéal de
+la distorsion, et les rafales détectent un éventuel clignotement du BackBufferCopy.
+Captures : `docs/heat_still_0..4.png`, `docs/heat_still2_0..3.png`. Log : `docs/fusion_heat_console.log`.
+
+### Résultat : **PASS avec 1 réserve de lisibilité** (points A/B/C/E PASS, D réserve)
+
+**A. Distorsion visible + ordre BackBufferCopy correct — PASS (point critique levé).**
+Le motif de grille du sol ET les obstacles (cristaux Aether) situés DANS le rayon sont nettement
+gondolés / ondulés vs la grille droite et nette à l'extérieur du disque (flagrant sur
+`heat_still_0.png` et `heat_still_3.png`). Aucun clignotement : le disque est rempli et distordu
+de façon identique sur les 5 frames de la 1re rafale et les 4 de la 2e → l'ordonnancement du
+`BackBufferCopy` (z absolu 400 avant le quad 401) capture bien l'écran rendu chaque frame, pas de
+frame vide/noire. **Le risque d'ordre de rendu ne s'est PAS matérialisé.**
+
+**B. Braises montantes — PASS (réserve mineure).** Des particules chaudes montantes sont présentes,
+mais elles se confondent visuellement avec les étincelles d'impact des autres armes équipées
+(pyre_stream/seeker) et le fill incandescent du disque. Lisibles en tant que « chaleur » mais peu
+distinctes en tant que « braises » spécifiques. Cosmétique, non bloquant.
+
+**C. Lecture « matière en fusion / chaleur » — PASS.** L'ensemble teinte chaude du disque + grille
+ondulée + liseré incandescent de l'anneau + braises lit clairement comme une zone de chaleur/fusion,
+bien au-delà d'un simple cercle. Objectif atteint.
+
+**D. Lisibilité en nuée / joueur discernable — RÉSERVE (Majeur cosmétique).**
+Au repos et hors pic de flash, le joueur reste discernable au centre (`heat_still_0.png`). En
+revanche, en combat soutenu (ennemis en permanence dans le rayon → `FlashPulse` quasi continu),
+le centre du disque devient un **blob blanc/doré très intense qui masque totalement le sprite du
+joueur** (`heat_still2_0.png`, `heat_still2_1.png`, deux frames à 0,33 s → persistant, pas un pic
+isolé). Hypothèse : cumul additif aura `PointLight2D` (énergie de flash 0.9) + overlay `molten_color`
+du shader + **glow/bloom du WorldEnvironment**, aggravé sur le biome Aether au sol déjà clair (et
+possiblement le pulse d'`overload_field` aussi équipé sur ce build de test). Voir BUG-701.
+
+**E. Aucune erreur console (FusionBlade / shader / BackBufferCopy) — PASS.** Log parfaitement propre :
+seules traces `[InventorySystem] Fusion appliquée : fusion_blade` et le print `--debug-fusion`.
+Aucune erreur de compilation shader, aucun warning `hint_screen_texture`, aucune exception.
+
+### [BUG-701] Hotspot de bloom masque le joueur pendant le flash de la Lame à Fusion — RÉSOLU (2026-07-03)
+- **Sévérité :** Majeur (cosmétique / lisibilité)
+- **Statut :** ✅ RÉSOLU. Correctif developpeur : aura `PointLight2D` énergie base 0.35→0.22 et TextureScale 6.0→4.5, pic de flash 0.9→0.4, contribution additive du liseré `molten_color` 0.30→0.20. Re-test game-tester `--debug-fusion --biome=aether`, combat soutenu joueur immobile dans la nuée (`docs/heatfix_still_2.png`, `docs/heatfix_still_4.png`, log `docs/fusion_heat2_console.log` propre) : le sprite joueur reste **clairement discernable** au centre du disque même flash actif, le fill est redevenu un halo laiteux doux (fini le blob blanc saturé). Non-régression OK : distorsion (grille ondulée dans le disque), anneau incandescent et braises montantes toujours bien visibles. **PASS.**
+- **Contexte :** run avec `fusion_blade` active, combat soutenu (ennemis en continu dans le rayon), biome clair (Aether).
+- **Reproduction :** `--debug-fusion`, amasser une nuée, rester immobile ennemis dans le rayon ~2 s.
+- **Observé :** le centre du disque blanchit en un blob lumineux qui recouvre le sprite du joueur ; on perd la position exacte du joueur.
+- **Attendu :** le joueur doit rester lisible même au pic de flash (juice VFX ≠ perte de lisibilité — cf. `juice-and-difficulty`).
+- **Hypothèse :** additif aura flash (energy 0.9) + `molten_color` edge + bloom WorldEnvironment se cumulent au-dessus du sprite joueur. Pistes : plafonner l'énergie de flash (~0.6), réduire la contribution additive du liseré `molten_color`, ou dessiner le sprite joueur au-dessus du stack VFX (z du joueur > 403) pour qu'il ne soit jamais noyé.
+- **Assigné à :** developpeur (arbitrage tuning avec game-designer sur l'intensité du flash).
+
+---
+
 ## Test ciblé — VFX Lame à Fusion (`fusion_blade`) — 2026-07-03
 
 **Testeur :** game-tester (agent Claude)
