@@ -270,6 +270,28 @@ def gen_vector_lance():
     disc(img, x0, y0, 1.6, CY); put(img, x0, y0, WH)
     save_icon(img, "ui_icon_vector_lance.png")
 
+# ---------------- Rayon Vecteur : faisceau dore continu perforant (fusion, or)
+def gen_vector_beam():
+    img = canvas()
+    GLD   = (255, 210, 90)
+    GLD_G = (255, 190, 70, 70)
+    WH    = (250, 255, 255)
+    # emetteur bas-gauche
+    ex, ey = 6, 26
+    # faisceau diagonal bas-gauche -> haut-droite, halo dore large + coeur blanc
+    x1, y1 = 27, 5
+    line(img, ex, ey, x1, y1, GLD_G, w=3)   # halo
+    line(img, ex, ey, x1, y1, GLD,   w=1)   # corps dore
+    line(img, ex, ey, x1, y1, WH,    w=0)   # coeur brillant
+    # pointe (tete de faisceau) + eclat
+    disc(img, x1, y1, 2.4, GLD); disc(img, x1, y1, 1.2, WH)
+    for k in range(6):
+        a = math.pi * 2 * k / 6
+        put(img, x1 + math.cos(a) * 3, y1 + math.sin(a) * 3, (GLD[0], GLD[1], GLD[2], 150))
+    # emetteur
+    disc(img, ex, ey, 2, GLD); put(img, ex, ey, WH)
+    save_icon(img, "ui_icon_vector_beam.png")
+
 # ---------------- Singularite : vortex spirale violet vers un coeur sombre
 def gen_singularity():
     img = canvas()
@@ -370,5 +392,6 @@ if __name__ == "__main__":
     gen_cryo()
     gen_pyre()
     gen_vector_lance()
+    gen_vector_beam()
     gen_singularity()
     print("Termine.")

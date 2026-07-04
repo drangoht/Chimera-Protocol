@@ -1727,7 +1727,16 @@ elle tire un trait perforant dans la **direction de déplacement du joueur** (`P
 dernière direction non nulle ; défaut bas). Twin-stick clavier/manette, pas de souris — cohérent avec
 le contrôle existant. Perforante dès le niveau 1 (récompense l'alignement) ; niv. 4-5 ajoutent des
 traits en éventail serré (14° puis 20°). Réutilise `Bullet` (aucun nouveau projectile). Le reste de
-l'arsenal garde l'auto-visée. Stats → `data/weapons.json`. Pas de fusion (pour l'instant).
+l'arsenal garde l'auto-visée. Stats → `data/weapons.json`.
+
+**Fusion — Rayon Vecteur (`vector_beam`, Épique)** : `vector_lance` niv.5 + **Servo-Moteurs**. Le trait
+dirigé devient un **rayon perforant CONTINU** (`type: continuous_beam`, plus de cooldown) orienté par
+`Player.AimDirection`, lissé (Slerp) pour pivoter sans à-coups. Inflige `damagePerTick=11` toutes les
+`tickInterval=0.13`s à tout ennemi à ≤ `hitRadius=34` px du segment `[joueur → joueur + 520px·aim]`
+(perforation totale). Amplifie le skill de visée (on « peint » l'écran). Stats en dur dans
+`VectorBeam.cs` (les fusions n'ont pas de niveaux JSON, cf. `SolarColumn`/`IonicStorm`). VFX : double
+`Line2D` (halo doré + cœur blanc) + `PointLight2D` à la source. Sépare Servo-Moteurs sur 3 fusions
+(orbital_swarm, hornet_swarm, vector_beam) — thème mobilité cohérent avec une arme liée au déplacement.
 
 ### 23.3 Courbe de difficulté non-linéaire
 `EnemyScaling.CurvedFactor` remplace le facteur linéaire `1 + t×perMinute` pour le scaling runtime

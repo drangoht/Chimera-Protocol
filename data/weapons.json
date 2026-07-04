@@ -555,8 +555,10 @@
           "spreadDegrees": 20
         }
       ],
-      "fusionRequires": null,
-      "fusionResult": null
+      "fusionRequires": {
+        "passive": "servo_motors"
+      },
+      "fusionResult": "vector_beam"
     },
     {
       "id": "singularity",
@@ -847,6 +849,26 @@
         "cooldown": 0.7
       },
       "replaces": "seeker_swarm"
+    },
+    {
+      "id": "vector_beam",
+      "name": "Rayon Vecteur",
+      "rarity": "epic",
+      "description": "La lance dirigée devient un rayon perforant continu orienté par ton déplacement : plus de cooldown, il balaie et traverse toute la ligne d'ennemis. Skill de visée à son paroxysme.",
+      "requires": {
+        "weapon": "vector_lance",
+        "weaponLevel": 5,
+        "passive": "servo_motors"
+      },
+      "stats": {
+        "damagePerTick": 11,
+        "tickInterval": 0.13,
+        "beamLength": 520,
+        "hitRadius": 34,
+        "piercing": true,
+        "type": "continuous_beam"
+      },
+      "replaces": "vector_lance"
     }
   ]
 }

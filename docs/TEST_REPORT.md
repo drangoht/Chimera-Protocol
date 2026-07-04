@@ -4,6 +4,75 @@ Rapport de sessions de test. Chaque section correspond à une session de test di
 
 ---
 
+## Fusion « Rayon Vecteur » (vector_beam) — 2026-07-04
+
+**Testeur :** game-tester (agent Claude)
+**Branche :** main. Working changes non commités liés à la fusion : `data/weapons.json`,
+`src/Systems/InventorySystem.cs`, `src/Systems/LevelUpSystem.cs`, `src/UI/Codex.cs`,
+`localization/ui.csv`, `tools/generate_weapon_icons.py`, `docs/*`, `.claude/skills/carte-projet` +
+non suivis `src/Weapons/VectorBeam.cs(.uid)`, `scenes/weapons/VectorBeam.tscn`,
+`assets/sprites/ui/ui_icon_vector_beam.png(.import)`.
+**Moteur :** Godot 4.7.stable.mono, D3D12, AMD Radeon RX 9070.
+**Build :** `dotnet build` OK — 0 erreur / 0 warning. Tests unitaires : 87/87 PASS.
+**Méthode :** revue de câblage (data + C# + loc + icône) ; captures scriptées PyAutoGUI avec
+scaffolding temporaire `--debug-vbeam` (monte vector_lance L5 + servo_motors + `ApplyFusion`),
+**revert intégral après test** (`git checkout GameManager.cs`, `git status` propre) ; boot base
+sans flag pour non-régression.
+
+**VERDICT : PASS.**
+
+### 1. Câblage de la fusion — PASS
+- `data/weapons.json` : `vector_lance` porte `fusionRequires.passive=servo_motors` +
+  `fusionResult=vector_beam` ; entrée `fusions[].vector_beam` complète (requires weapon
+  vector_lance / weaponLevel 5 / passive servo_motors, stats continuous_beam, `replaces=vector_lance`,
+  rareté epic).
+- `LevelUpSystem.AllFusionIds` contient `vector_beam`. L'offre de carte est data-driven
+  (`GetFusionCards` → `CanFuse`) et la règle de fusion forcée (`UpdatePendingFusion` +
+  `PickCards`, forcée si `currentLevel > lastFusionAvailableLevel + 1`) est générique — donc
+  identique aux 7 fusions déjà validées. `CanFuse("vector_beam")` a renvoyé **True** en jeu.
+- `InventorySystem.WeaponScenePaths` mappe `vector_beam → res://scenes/weapons/VectorBeam.tscn`.
+  `ApplyFusion` retire `vector_lance` (QueueFree + retrait de WeaponLevels) et instancie la fusion
+  dans le slot — confirmé par log `[InventorySystem] Fusion appliquée : vector_beam` et par le HUD
+  qui n'affiche plus qu'un slot arme mis à jour vers l'icône beam (le HUD itère `WeaponLevels` via
+  `Codex.LoadIcon`, donc le slot bascule automatiquement).
+- `Codex` : fiche `vector_beam` (TAG_FUSION, icône `ui_icon_vector_beam.png`, accent Gold) +
+  `IconById`. Icône présente, distincte (barre dorée à cœur clair), `.import` commité.
+- Loc `WPN_VECTOR_BEAM_NAME/_DESC` présentes EN/FR/ES.
+
+### 2. Comportement du rayon en jeu — PASS
+Observé sur captures (biomes Givre puis Fournaise) :
+- **Continuité** : rayon toujours affiché, jamais intermittent, part bien du joueur.
+- **Orientation** : suit la direction de déplacement (bas au repos = dernière dir par défaut Down ;
+  droite / haut / gauche selon les touches). Pivot **lisse** (Slerp 18×delta) capté en transitoire.
+  À l'arrêt, garde la dernière direction (vérifié au repos initial).
+- **Perforation / dégâts** : tue plusieurs ennemis alignés d'un coup (débris + orbes XP le long du
+  segment) ; montée LV1→LV3 en ~15 s en fauchant les nuées → dégâts continus confirmés
+  (11/0.13 s ≈ 85 DPS single-target, mais appliqués à TOUTE la ligne, 520 px / rayon 34 px).
+- **VFX** : halo doré (Line2D large) + cœur blanc (Line2D fin) + PointLight2D au muzzle (battement
+  léger). Joueur reste visible (robot + light cyan à l'origine). Pas de blob lumineux occultant.
+- **Stabilité** : aucun crash, log Godot propre (aucun SCRIPT ERROR / null / exception). Beam suit
+  le joueur (enfant de l'arme, pivoté chaque frame).
+
+### 3. Non-régression — PASS
+- `dotnet build` 0/0 ; 87/87 tests.
+- Boot base **sans** `--debug-vbeam` : jeu démarre normalement, arme de départ impulse_cannon,
+  28 ennemis chargés, aucun résidu de scaffolding, aucune erreur.
+- Impulse_cannon (arme de départ) présent et actif en parallèle du beam pendant les tests.
+
+### 4. Réserves / points d'attention (non bloquants)
+- **ZIndex du beam** : `VectorBeam.cs` ne pose aucun ZIndex sur ses Line2D/PointLight2D (défaut 0,
+  relatif → même plan que le joueur ZIndex=5, dessiné après le sprite joueur car enfant). En
+  pratique le joueur reste lisible (rayon fin de 6 px partant du centre) et la lumière est additive,
+  donc pas d'occultation gênante observée. À surveiller si le rendu du joueur doit rester
+  strictement au-dessus (les FusionBlade posent des ZIndex explicites 400+). **Cosmétique.**
+- Test de l'**apparition réelle de la carte de fusion** au level-up : validé par câblage +
+  `CanFuse=True`, pas par une run naturelle jusqu'à vector_lance L5 + servo_motors (coûteux à
+  atteindre sans scaffolding). Mécanisme strictement identique aux fusions déjà en prod.
+
+**Scaffolding temporaire `--debug-vbeam` : REVERTÉ. `git status` ne liste plus `GameManager.cs`.**
+
+---
+
 ## Affixes d'élite — 2026-07-04
 
 **Testeur :** game-tester (agent Claude)

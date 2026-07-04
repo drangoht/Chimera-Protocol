@@ -59,8 +59,9 @@ fréquence + tirage + `EliteModifiers`, cf. GDD §22). Les nœuds délèguent ic
 (cinématique) · `HUD` · `BuffBar` · `Banner` · `BiomeCatalog` · `Characters`.
 
 ## §Weapons — `src/Weapons/`
-Base : `WeaponBase` (⚠ `base._Ready()` EN DERNIER). 12 armes actives + 7 fusions.
-`VectorLance` = arme DIRIGÉE (tire vers `Player.AimDirection`, pas l'ennemi le plus proche).
+Base : `WeaponBase` (⚠ `base._Ready()` EN DERNIER). 12 armes actives + 8 fusions.
+`VectorLance` = arme DIRIGÉE (tire vers `Player.AimDirection`, pas l'ennemi le plus proche) ;
+sa fusion `VectorBeam` (+ servo_motors) = rayon perforant CONTINU dirigé (`continuous_beam`).
 Fusions : `FusionBlade`, `RailOvercharged`, `OrbitalSwarm`, `OverloadAegis`,
 `IonicStorm`, `SolarColumn`, `HornetSwarm`. Projectiles : `Bullet`, `GlaiveProjectile`,
 `SeekerMissile`, `DroneEntity`, etc.

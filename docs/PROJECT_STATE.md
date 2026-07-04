@@ -13,8 +13,9 @@
 
 - Direction artistique **pseudo-3D avec ombres** (`docs/ART_BRIEF_PSEUDO3D.md`) appliquée à TOUS les sprites via `tools/pseudo3d_lib.py` (lumière fixe haut-gauche 45°, dérivation shadow/highlight HSV, ombre portée elliptique) : 3 persos joueurs, 8 ennemis/mini-boss/boss existants, 20 nouveaux ennemis, obstacles, tuiles de biome, icônes d'armes/UI (640 PNG régénérés, `.import` à jour). Validé game-tester PASS 2026-07-03 (cohérence lumière, lisibilité joueur en nuée).
 - 3 personnages (Chimera, Titan, Vagabond) redessinés, 5 biomes (Sanctuaire, Aether, Fournaise, Givre, Néon)
-- 12 armes actives + 7 fusions + 4 passifs ; power-ups temporaires (4 types)
-  (`vector_lance` = 1re arme **dirigée** : tire vers `Player.AimDirection`, pas l'ennemi le plus proche — cf. GDD §23)
+- 12 armes actives + 8 fusions + 4 passifs ; power-ups temporaires (4 types)
+  (`vector_lance` = 1re arme **dirigée** : tire vers `Player.AimDirection`, pas l'ennemi le plus proche — cf. GDD §23 ;
+  sa fusion `vector_beam` + servo_motors = **rayon perforant continu dirigé**)
   (fusions : fusion_blade, rail_overcharged, orbital_swarm, overload_aegis, ionic_storm,
   solar_column, hornet_swarm — chaque évolution = arme de base niv.5 + passif requis, remplace l'arme)
 - Fin de niveau complète : survie sans fin, overtime, boss en boucle, déblocage progressif, high scores (temps+difficulté), arsenal à découverte
