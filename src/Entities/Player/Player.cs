@@ -33,10 +33,17 @@ public partial class Player : CharacterBody2D
     public  float SpeedMultiplier { get; private set; } = 1f;   // Célérité
     public  bool  Shielded        { get; private set; }          // Égide (invulnérabilité)
 
-    /// <summary>Direction de visée = dernière direction de déplacement non nulle (twin-stick
-    /// clavier/manette). Utilisée par les armes DIRIGÉES (ex. Lance Vectorielle) pour laisser
-    /// place au skill de placement, là où les autres armes auto-visent l'ennemi le plus proche.</summary>
+    /// <summary>Direction de VISÉE des armes dirigées (Lance Vectorielle / Rayon Vecteur) : vers le
+    /// curseur SOURIS en clavier/souris, ou selon le STICK DROIT en manette. Bascule automatiquement
+    /// selon le dernier périphérique utilisé, là où les autres armes auto-visent le plus proche.</summary>
     public  Vector2 AimDirection { get; private set; } = Vector2.Down;
+
+    // Visée : true = stick droit (manette), false = souris. Bascule au dernier périphérique actionné.
+    private bool       _gamepadAim = false;
+    private Vector2    _lastMousePos;
+    private Polygon2D? _aimIndicator;   // réticule (petit triangle) autour du joueur
+    private const float AimIndicatorRadius = 28f;
+    private const float AimStickDeadzone   = 0.35f;
     private readonly System.Collections.Generic.Dictionary<PowerUpType, float> _buffTime = new();
     private BuffBar? _buffBar;
 
@@ -74,6 +81,71 @@ public partial class Player : CharacterBody2D
         // Consommables meta rechargés à chaque run.
         _extraLivesLeft    = MetaProgressionSystem.Instance?.GetUpgradeLevel("extra_life")    ?? 0;
         _absorbChargesLeft = MetaProgressionSystem.Instance?.GetUpgradeLevel("damage_absorb")  ?? 0;
+
+        _lastMousePos = GetGlobalMousePosition();
+        BuildAimIndicator();
+    }
+
+    /// <summary>Réticule directionnel (petit triangle) placé autour du joueur, orienté vers la visée.
+    /// N'est affiché que si une arme dirigée est équipée (Lance Vectorielle / Rayon Vecteur).</summary>
+    private void BuildAimIndicator()
+    {
+        _aimIndicator = new Polygon2D
+        {
+            Name    = "AimIndicator",
+            Polygon = new Vector2[] { new(9f, 0f), new(-4f, -5f), new(-4f, 5f) },
+            Color   = _characterTint,
+            ZIndex  = 1,   // relatif au joueur (ZIndex 5) → au-dessus du sprite, sous les VFX d'impact
+            Visible = false,
+        };
+        AddChild(_aimIndicator);
+    }
+
+    /// <summary>
+    /// Met à jour la direction de visée (<see cref="AimDirection"/>) et le réticule.
+    /// Stick droit prioritaire dès qu'il dépasse la deadzone (mode manette) ; sinon suivi du curseur
+    /// souris. La bascule mémorise le dernier périphérique : bouger la souris repasse en mode souris,
+    /// pousser le stick droit repasse en mode manette (sans à-coup quand aucun des deux n'est actionné).
+    /// </summary>
+    private void UpdateAim()
+    {
+        // Stick droit du premier joypad connecté.
+        Vector2 stick = Vector2.Zero;
+        var pads = Input.GetConnectedJoypads();
+        if (pads.Count > 0)
+        {
+            int dev = pads[0];
+            stick = new Vector2(Input.GetJoyAxis(dev, JoyAxis.RightX), Input.GetJoyAxis(dev, JoyAxis.RightY));
+            if (stick.Length() < AimStickDeadzone) stick = Vector2.Zero;
+        }
+
+        var mousePos = GetGlobalMousePosition();
+        if (mousePos.DistanceTo(_lastMousePos) > 1f) { _gamepadAim = false; _lastMousePos = mousePos; }
+        if (stick != Vector2.Zero) _gamepadAim = true;
+
+        if (_gamepadAim)
+        {
+            if (stick != Vector2.Zero) AimDirection = stick.Normalized();   // sinon : garde la dernière visée
+        }
+        else
+        {
+            var toMouse = mousePos - GlobalPosition;
+            if (toMouse.LengthSquared() > 1f) AimDirection = toMouse.Normalized();
+        }
+
+        UpdateAimIndicator();
+    }
+
+    private void UpdateAimIndicator()
+    {
+        if (_aimIndicator == null) return;
+        var inv = InventorySystem.Instance;
+        bool directed = inv != null &&
+            (inv.WeaponLevels.ContainsKey("vector_lance") || inv.WeaponLevels.ContainsKey("vector_beam"));
+        _aimIndicator.Visible = directed;
+        if (!directed) return;
+        _aimIndicator.Position = AimDirection * AimIndicatorRadius;
+        _aimIndicator.Rotation = AimDirection.Angle();
     }
 
     public override void _ExitTree()
@@ -220,12 +292,11 @@ public partial class Player : CharacterBody2D
         UpdateHpRegen(delta);
 
         var direction = Input.GetVector("ui_left", "ui_right", "ui_up", "ui_down");
-        if (direction != Vector2.Zero)
-            AimDirection = direction.Normalized();   // mémorise la dernière direction (visée des armes dirigées)
         Velocity = direction.Normalized() * Stats.Speed * SpeedMultiplier;
         MoveAndSlide();
         ClampToArena();
 
+        UpdateAim();   // visée souris / stick droit + réticule
         UpdateAnimation(direction);
         UpdateHpBlink(delta);
         UpdateTrail();

@@ -508,7 +508,7 @@
       "name": "Lance Vectorielle",
       "type": "active",
       "rarity": "rare",
-      "description": "Arme dirigée : tire un trait perforant dans TA direction de déplacement, pas vers l'ennemi le plus proche. Récompense l'alignement.",
+      "description": "Arme dirigée : tire un trait perforant là où TU VISES (souris, ou stick droit à la manette), pas vers l'ennemi le plus proche. Un réticule montre la direction. Récompense la visée.",
       "maxLevel": 20,
       "levels": [
         {
@@ -856,7 +856,7 @@
       "id": "vector_beam",
       "name": "Rayon Vecteur",
       "rarity": "epic",
-      "description": "La lance dirigée devient un rayon perforant continu orienté par ton déplacement : plus de cooldown, il balaie et traverse toute la ligne d'ennemis. Skill de visée à son paroxysme.",
+      "description": "La lance dirigée devient un rayon perforant continu pointé là où tu vises (souris / stick droit) : plus de cooldown, il balaie et traverse toute la ligne d'ennemis. Skill de visée à son paroxysme.",
       "requires": {
         "weapon": "vector_lance",
         "weaponLevel": 5,

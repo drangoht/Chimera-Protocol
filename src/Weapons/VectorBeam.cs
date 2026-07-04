@@ -2,7 +2,8 @@ using Godot;
 
 /// <summary>
 /// Rayon Vecteur — fusion de la Lance Vectorielle + Servo-Moteurs. Le trait unique devient un
-/// RAYON perforant CONTINU orienté par la direction de déplacement du joueur (<see cref="Player.AimDirection"/>).
+/// RAYON perforant CONTINU orienté par la direction de VISÉE du joueur — curseur souris ou stick droit
+/// (<see cref="Player.AimDirection"/>).
 /// Plus de projectile ni de cooldown : le faisceau est toujours actif, pivote avec le joueur et
 /// inflige des dégâts par tick à tout ennemi le long de la ligne (perforation totale). Amplifie le
 /// skill de visée introduit par la Lance Vectorielle : on « peint » l'écran avec le rayon.

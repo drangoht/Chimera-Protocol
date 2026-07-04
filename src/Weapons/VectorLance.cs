@@ -2,8 +2,8 @@ using Godot;
 
 /// <summary>
 /// Lance Vectorielle — arme DIRIGÉE : au lieu de viser l'ennemi le plus proche, elle tire un
-/// projectile perforant dans la DIRECTION DE VISÉE du joueur (sa dernière direction de déplacement,
-/// cf. <see cref="Player.AimDirection"/>). Récompense le skill de placement/alignement là où le
+/// projectile perforant dans la DIRECTION DE VISÉE du joueur (curseur souris en clavier/souris, stick
+/// droit en manette — cf. <see cref="Player.AimDirection"/>). Récompense le skill de visée là où le
 /// reste de l'arsenal auto-vise. Perforant dès le niveau 1 ; les hauts niveaux ajoutent des
 /// projectiles en éventail serré. Tire même sans cible (balaie).
 /// </summary>

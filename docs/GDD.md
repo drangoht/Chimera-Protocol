@@ -1723,9 +1723,12 @@ par ses propres flammes sans retoucher chaque VFX.
 
 ### 23.2 Arme DIRIGÉE — Lance Vectorielle (`vector_lance`, Rare)
 Première arme qui laisse place au **skill de visée** : au lieu d'auto-viser l'ennemi le plus proche,
-elle tire un trait perforant dans la **direction de déplacement du joueur** (`Player.AimDirection` =
-dernière direction non nulle ; défaut bas). Twin-stick clavier/manette, pas de souris — cohérent avec
-le contrôle existant. Perforante dès le niveau 1 (récompense l'alignement) ; niv. 4-5 ajoutent des
+elle tire un trait perforant dans la **direction de visée du joueur** (`Player.AimDirection`). Visée
+**souris** en clavier/souris (direction joueur→curseur), **stick droit** en manette (`JoyAxis.RightX/Y`,
+deadzone 0.35) — bascule automatique selon le dernier périphérique actionné (mise à jour 2026-07-04,
+remplace l'ancienne visée par direction de déplacement). Un **réticule** (petit triangle `Polygon2D`
+teinté à l'identité du perso) tourne autour du joueur (`AimIndicatorRadius=28`) pour montrer la visée ;
+affiché uniquement si une arme dirigée est équipée (`vector_lance`/`vector_beam`). Perforante dès le niveau 1 (récompense l'alignement) ; niv. 4-5 ajoutent des
 traits en éventail serré (14° puis 20°). Réutilise `Bullet` (aucun nouveau projectile). Le reste de
 l'arsenal garde l'auto-visée. Stats → `data/weapons.json`.
 

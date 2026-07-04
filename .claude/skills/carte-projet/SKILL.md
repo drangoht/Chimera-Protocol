@@ -60,7 +60,7 @@ fréquence + tirage + `EliteModifiers`, cf. GDD §22). Les nœuds délèguent ic
 
 ## §Weapons — `src/Weapons/`
 Base : `WeaponBase` (⚠ `base._Ready()` EN DERNIER). 12 armes actives + 9 fusions.
-`VectorLance` = arme DIRIGÉE (tire vers `Player.AimDirection`, pas l'ennemi le plus proche) ;
+`VectorLance` = arme DIRIGÉE (tire vers `Player.AimDirection` = **souris** ou **stick droit**, pas l'ennemi le plus proche ; réticule `Player._aimIndicator`) ;
 sa fusion `VectorBeam` (+ servo_motors) = rayon perforant CONTINU dirigé (`continuous_beam`).
 `FrostVeil` (cryo_lance + reinforced_plating) = aura de givre CONTINUE (dégâts + slow radial).
 Fusions : `FusionBlade`, `RailOvercharged`, `OrbitalSwarm`, `OverloadAegis`,
