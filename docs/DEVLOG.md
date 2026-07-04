@@ -4,6 +4,43 @@
 > `release-manager`). Entrées en ordre décroissant (la plus récente en haut). Ton orienté
 > joueur, EN puis FR (audience itch surtout anglophone).
 
+## v1.8.1 — A real cold: reworked frost mist & visibly frozen enemies (2026-07-05)
+
+**Polish**
+- **Frost Veil is now a real cold front.** The cryo fusion no longer wraps you in a flat glowing ring —
+  it billows into a **swirling mist of cold**: drifting fog banks, drifting frost particles, and a crisp
+  **iced rim** at the edge of the aura. You can *see* the chill spread around you now.
+- **Slowed enemies look frozen.** Anything caught by the **Frost Veil** or the **Cryo Lance** now takes
+  on a **glacial blue tint** while it's slowed — so you can read at a glance exactly which foes are
+  locked down and which are still coming in hot.
+- **Clearer Vector Lance reticle.** The aiming triangle gains a **dark outline** for far better contrast
+  against bright arenas and dense swarms — no more losing your aim in the chaos.
+
+**Why it matters**
+- Same weapons, more readable battlefield. The frost effects now *communicate* what they do: you feel the
+  cold, you spot the frozen targets, and you always know where your next Vector shot is headed.
+
+---
+
+**Peaufinage**
+- **Le Voile de Givre dégage enfin un vrai froid.** La fusion cryo ne vous entoure plus d'un simple
+  anneau lumineux plat — elle déploie une **brume de froid tourbillonnante** : nappes de brume mouvantes,
+  particules de givre, et un **liseré glacé** net au bord de l'aura. On *voit* désormais le froid se
+  répandre autour de vous.
+- **Les ennemis ralentis paraissent gelés.** Tout ce qui est pris par le **Voile de Givre** ou la
+  **Lance Cryo** adopte une **teinte bleu glacé** tant qu'il est ralenti — vous lisez d'un coup d'œil
+  quels ennemis sont figés et lesquels foncent encore sur vous.
+- **Réticule de la Lance Vectorielle plus lisible.** Le triangle de visée gagne un **contour sombre**
+  pour un bien meilleur contraste sur les arènes claires et les nuées denses — fini de perdre sa visée
+  dans le chaos.
+
+**Pourquoi c'est important**
+- Mêmes armes, champ de bataille plus lisible. Les effets de givre *communiquent* enfin ce qu'ils font :
+  vous sentez le froid, vous repérez les cibles gelées, et vous savez toujours où part votre prochain
+  tir vectoriel.
+
+---
+
 ## v1.8.0 — Take aim: mouse & right-stick aiming for the Vector Lance (2026-07-04)
 
 **New**
