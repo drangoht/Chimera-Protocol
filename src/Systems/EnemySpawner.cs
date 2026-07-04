@@ -254,8 +254,17 @@ public partial class EnemySpawner : Node
         // On utilise ApplyScaling pour synchroniser _currentHp avec le MaxHp scalé.
         float hpMult  = GameSettings.Instance?.EnemyHpMult ?? 1f;
         float dmgMult = GameSettings.Instance?.EnemyDamageMult ?? 1f;
-        float scaledHp     = EnemyScaling.ScaledCurved(data.MaxHp,  tMinutes, data.HpScalingPerMinute,     hpMult);
-        float scaledDamage = EnemyScaling.ScaledCurved(data.Damage, tMinutes, data.DamageScalingPerMinute, dmgMult);
+        // La courbe non-linéaire (early grace + accélération late) cible les ennemis BASIQUES —
+        // c'est là que le joueur devient « OP » en survivant. Les mini-boss (maxSimultaneous > 0) et
+        // le boss de fin sont des gates de survie calibrés séparément (TTK, cf. GDD §17/§18/§20) :
+        // ils gardent le scaling LINÉAIRE historique pour ne pas fausser leur fenêtre de victoire.
+        bool isChampion = data.MaxSimultaneous > 0 || BossIds.Contains(data.Id);
+        float scaledHp = isChampion
+            ? EnemyScaling.Scaled(data.MaxHp, tMinutes, data.HpScalingPerMinute, hpMult)
+            : EnemyScaling.ScaledCurved(data.MaxHp, tMinutes, data.HpScalingPerMinute, hpMult);
+        float scaledDamage = isChampion
+            ? EnemyScaling.Scaled(data.Damage, tMinutes, data.DamageScalingPerMinute, dmgMult)
+            : EnemyScaling.ScaledCurved(data.Damage, tMinutes, data.DamageScalingPerMinute, dmgMult);
         node.ApplyScaling(scaledHp, scaledDamage);
 
         // Affixe d'élite : une fraction des ennemis BASIQUES (jamais mini-boss/boss) est promue.

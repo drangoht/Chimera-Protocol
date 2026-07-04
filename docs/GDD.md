@@ -1738,5 +1738,11 @@ l'arsenal garde l'auto-visée. Stats → `data/weapons.json`. Pas de fusion (pou
   rattrape le power-creep du build (fusions + multiplicateurs) → on ne devient plus « OP » passif.
   Ex. à t=12 min, un ennemi à `perMinute=0.14` est ~+27% plus coriace qu'en linéaire ; à t=15, ~+44%.
 
-`EnemyScaling.Scaled` (linéaire) est conservé pour compat + tests de référence. Couvert par 4 tests
-`CurvedFactor`/`ScaledCurved` (87 tests au total).
+**La courbe cible les ennemis BASIQUES uniquement.** Les mini-boss (`maxSimultaneous > 0`) et le boss
+de fin (`rusted_core`) gardent le **scaling linéaire** `Scaled` : ce sont des gates de survie calibrés
+séparément (TTK, cf. §17/§18/§20), la courbe fausserait leur fenêtre de victoire (+22% de PV boss à
+13 min). Le tri se fait dans `EnemySpawner.SpawnEnemy` via `isChampion`. `grafted_colossus`
+(`maxSimultaneous=0`, spawn ambiant + éligible élite) reste un ennemi basique costaud → courbe.
+
+`EnemyScaling.Scaled` (linéaire) est donc conservé à la fois pour les champions, la compat et les
+tests de référence. Couvert par 4 tests `CurvedFactor`/`ScaledCurved` (87 tests au total).
