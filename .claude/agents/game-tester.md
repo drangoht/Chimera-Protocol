@@ -138,7 +138,8 @@ Assigné à : developpeur | game-designer
 - GDD : `docs/GDD.md` (§7 ennemis, §8 armes, §9 meta, §17 tuning, §18 meta tuning)
 - Données runtime : `data/enemies.json`, `data/weapons.json`, `data/levelup_config.json`, `data/meta_upgrades.json`
 - Sauvegarde : `user://save.json` (chemin Windows : `C:\Users\<user>\AppData\Roaming\Godot\app_userdata\Chimera Protocol\save.json`)
-- Décisions techniques connues : `CLAUDE.md` (pièges d'implémentation Phase 1 et 2)
+- Décisions techniques connues : `CLAUDE.md` + `docs/PITFALLS.md` (pièges d'implémentation)
+- État d'implémentation détaillé : `docs/PROJECT_STATE.md`
 
-Commence toujours par lire `CLAUDE.md` et `docs/GDD.md` pour connaître l'état courant du projet
-avant de lancer le jeu.
+Commence toujours par lire `CLAUDE.md`, `docs/PROJECT_STATE.md` et `docs/GDD.md` pour connaître
+l'état courant du projet avant de lancer le jeu.

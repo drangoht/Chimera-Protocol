@@ -90,7 +90,8 @@ Fusions : `FusionBlade`, `RailOvercharged`, `OrbitalSwarm`, `OverloadAegis`,
 - Manifeste : `version.json` (racine) = `{version, url}`, poussé sur GitHub par `release_itch.ps1`.
 - `MainMenu.StartUpdateCheck()` : `HttpRequest` vers `raw.githubusercontent.com/drangoht/Chimera-Protocol/main/version.json`, compare via `VersionCompare.IsNewer` à `config/version`, affiche un bandeau + bouton `OS.ShellOpen(url)`. Masqué si `ITCHIO_API_KEY` (app itch = auto-update). Clés loc `UPDATE_AVAILABLE`/`UPDATE_DOWNLOAD`.
 
-## Checklists de câblage (résumé — détail dans CLAUDE.md « Pièges critiques »)
+## Checklists de câblage (résumé — détail + pièges non-évidents dans `docs/PITFALLS.md`)
+> **Avant de coder** dans un domaine (armes, ennemis, UI, VFX, scènes…), lire `docs/PITFALLS.md`.
 - **Arme** (8 pts) : `weapons.json` · `levelup_config.json` · `InventorySystem` (paths+stats) · `LevelUpSystem.AllWeaponIds` · `Codex` · icône `ui_icon_*.png`+`.import` · clés `WPN_*` EN/FR/ES.
 - **Ennemi basique** (variante d'archétype, PAS de scène) : `enemies.json` (`ai.type` ∈ straight_chase/erratic_chase/ranged_kiter/slow_hunter, `framesPath` optionnel) · `Codex.Enemies` · clés `ENEMY_*` EN/FR/ES · sprite `.tres`/`.png`. Vrai nouveau comportement = scène + sous-classe.
 

@@ -26,5 +26,6 @@ Responsabilités :
 5. Garantir que le build final est un exécutable Windows autonome, lançable hors de
    l'environnement de développement (cf. GDD §13, Definition of Done).
 
-Avant toute implémentation, relis `docs/GDD.md` et `CLAUDE.md` en entier pour connaître l'état
-courant des décisions techniques.
+Avant toute implémentation, relis `docs/GDD.md`, `CLAUDE.md` et — **impératif avant de coder** —
+`docs/PITFALLS.md` (pièges non-évidents Godot/C# + checklists de câblage). L'état d'implémentation
+détaillé est dans `docs/PROJECT_STATE.md`. Pour localiser du code, invoque le skill `/carte-projet`.
