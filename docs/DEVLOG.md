@@ -4,6 +4,26 @@
 > `release-manager`). Entrées en ordre décroissant (la plus récente en haut). Ton orienté
 > joueur, EN puis FR (audience itch surtout anglophone).
 
+## v1.6.0 — Vector Ray: the first aimed fusion (2026-07-04)
+
+**New**
+- **Vector Ray** — the first *aiming-skill* fusion. Take the **Vector Lance** to level 5, pick up the
+  **Servo-Motors** passive, and the aimed bolt evolves into a **continuous piercing RAY**: no more
+  cooldown, no more single shots. The beam locks to your movement direction and sweeps across the
+  battlefield, punching straight through the entire line of enemies it touches. Steer it like a
+  searchlight and carve lanes through the swarm.
+
+---
+
+**Nouveautés**
+- **Rayon Vecteur** — la première fusion *skill de visée*. Montez la **Lance Vectorielle** au niveau 5,
+  ramassez le passif **Servo-Moteurs**, et le trait dirigé évolue en **RAYON perforant CONTINU** : plus
+  de cooldown, fini les tirs isolés. Le rayon s'oriente selon votre direction de déplacement et balaie
+  l'arène en traversant de part en part toute la ligne d'ennemis qu'il touche. Pilotez-le comme un
+  projecteur et taillez des couloirs dans la nuée.
+
+---
+
 ## v1.5.0 — Aimed weapon & smarter difficulty curve (2026-07-04)
 
 **New**
