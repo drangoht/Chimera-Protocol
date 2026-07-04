@@ -260,6 +260,9 @@ public partial class RunEndScreen : CanvasLayer
         // remappes (.remap/.scn) et le fichier litteral est absent du PCK — FileExists
         // renverrait toujours false et enverrait vers le menu au lieu du Hub.
         string target   = ResourceLoader.Exists(hubPath) ? hubPath : menuPath;
+        // Purge les VFX monde figés par la pause (parentés à la racine) avant de changer de scène,
+        // sinon ils réapparaissent par-dessus le Hub/menu.
+        SceneCleanup.ClearWorldVfx(GetTree());
         GetTree().ChangeSceneToFile(target);
         GetParent().RemoveChild(this);
         QueueFree();
@@ -269,6 +272,9 @@ public partial class RunEndScreen : CanvasLayer
     {
         AudioSystem.Instance?.PlaySfx("sfx_ui_button");
         GetTree().Paused = false;
+        // Purge les VFX monde figés par la pause avant de relancer une run (sinon ils polluent le
+        // début de la nouvelle partie).
+        SceneCleanup.ClearWorldVfx(GetTree());
         GetTree().ChangeSceneToFile("res://scenes/Game.tscn");
         GetParent().RemoveChild(this);
         QueueFree();

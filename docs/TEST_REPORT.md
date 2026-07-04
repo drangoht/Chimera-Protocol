@@ -2707,3 +2707,33 @@ existants via `EnemyBase.SetSpriteFrames`), conformément au brief du game-desig
 **Verdict global : PASS.** Aucun bug bloquant/majeur trouvé sur le redesign pseudo-3D ni sur les 20
 nouveaux ennemis. Une observation (silhouette générique partagée par archétype) transmise pour
 arbitrage design, non bloquante.
+
+## Correctifs : VFX résiduels menu + retrait upgrade arme de départ — 2026-07-04
+
+**Testeur :** game-tester (agent Claude). Godot 4.7.stable.mono, rendu D3D12.
+
+**Contexte :** (1) purge des VFX/projectiles parentés à la racine, figés par la pause à la mort et
+persistant sur le menu/Hub → `SceneCleanup.ClearWorldVfx` appelé aux 3 sorties de run
+(`RunEndScreen.OnHubPressed`/`OnReplayPressed`, `PauseScreen.QuitToMenu`) ; (2) retrait de l'upgrade
+Hub `starting_weapon_alt` (« Prototype de Terrain ») sans effet (aucun sélecteur d'arme de départ
+câblé). Méthode : `--debug-boss --force-elites` pour une mort déterministe avec VFX massifs.
+
+**Correctif 1 — VFX résiduels**
+
+| # | Point | Verdict | Détail |
+|---|---|---|---|
+| 1-2 | Mort en action → « Retour au Hub » | **PASS** | VFX figés visibles derrière le panneau de fin, puis Hub **totalement propre** après transition. |
+| 3 | Mort → « Rejouer » | **PASS** | Nouvelle run **sans VFX résiduel** de la run précédente. |
+| 4 | Pause → « Quitter » → menu | **PASS** | Burst figé derrière le panneau PAUSE, menu principal **propre** après sortie. |
+| 5 | Absence de crash | **PASS** | Aucune erreur/exception console sur ces transitions. |
+
+**Correctif 2 — Retrait de l'upgrade « Prototype de Terrain »**
+
+| # | Point | Verdict | Détail |
+|---|---|---|---|
+| 1 | Absence dans le Hub | **PASS** | Upgrade absente de la liste. Console : « 17 upgrades chargés ». |
+| 2 | 17 upgrades, sans clé brute | **PASS** | 17 items, libellés propres, continuité tier-1→tier-2, se termine sur « Aimant Auxiliaire ». |
+| 3 | Achat/navigation sans crash | **PASS** | Achat Corps Renforcé (−180 Échos exact), boutons grisés hors budget. Aucun crash. |
+| 4 | Essaim de Drones = arme de départ du Titan | **PASS** | Sélection perso « Titan-Gardien » → Arme : Essaim de Drones. Intact, indépendant de l'upgrade retirée. |
+
+**Verdict global : PASS.** Les deux correctifs validés, aucune régression, aucun crash.

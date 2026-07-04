@@ -290,6 +290,8 @@ public partial class PauseScreen : CanvasLayer
         AudioSystem.Instance?.PlaySfx("sfx_ui_button");
         // Le tree était en pause : impératif de le relancer, sinon le menu reste figé.
         GetTree().Paused = false;
+        // Purge les VFX monde résiduels (parentés à la racine) avant de revenir au menu.
+        SceneCleanup.ClearWorldVfx(GetTree());
         GetTree().ChangeSceneToFile("res://scenes/MainMenu.tscn");
         // Le PauseScreen est enfant de la racine (pas de la scène déchargée) → on le retire.
         QueueFree();

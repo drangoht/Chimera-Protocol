@@ -63,10 +63,6 @@
     "damage_reduction": {
       "name": "Blindage Composite",
       "description": "Des plaques supplémentaires, des polymères de récupération, des écrans énergétiques de fortune. Chaque amélioration achetée avec les Échos gagnés sur les morts précédentes."
-    },
-    "starting_weapon_alt": {
-      "name": "Prototype de Terrain",
-      "description": "Les ingénieurs de l'enclave ont réussi à stabiliser un Essaim de Drones comme arme de départ. Fragile, imprévisible — mais disponible dès la première seconde d'une run."
     }
   },
   "enemies": {

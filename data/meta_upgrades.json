@@ -127,16 +127,6 @@
       "_designNote": "Rééquilibré 2026-07-02 (prix +14% en moyenne). Cumulable avec damage_reduction_2 (tier 2) — attention au hardcap global 40% si combiné à la Plaque Renforcée in-run (-20%) : 15%(ici)+8%(tier2)+20%(passif) = 43%, plafonné à 40% dans PlayerStats."
     },
     {
-      "id": "starting_weapon_alt",
-      "name": "Prototype de Terrain",
-      "description": "Déverrouille l'Essaim de Drones comme arme de départ sélectionnable au Hub (en plus du Canon à Impulsions).",
-      "maxLevel": 1,
-      "costPerLevel": [350],
-      "effectPerLevel": [1],
-      "statTarget": "UnlockStartingWeapon",
-      "_designNote": "Rééquilibré 2026-07-02 (300→350). Valeur : drone_swarm. Objectif de moyen terme (2-3 runs), renforce la rejouabilité par la variété de départ."
-    },
-    {
       "id": "reroll",
       "name": "Recalibrage Tactique",
       "description": "Renouvelle les cartes proposées à la montée de niveau. +1 utilisation par run et par niveau (max 3).",

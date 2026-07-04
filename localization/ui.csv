@@ -221,8 +221,6 @@ UPGRADE_COOLDOWN_REDUCTION_NAME,Aether Sync,Synchronisation Aether,Sincronizaci�
 UPGRADE_COOLDOWN_REDUCTION_DESC,-5% cooldown on all weapons per level from the start of the run.,-5% de cooldown sur toutes les armes par niveau dès le début de run.,-5% de enfriamiento en todas las armas por nivel desde el inicio de la partida.
 UPGRADE_DAMAGE_REDUCTION_NAME,Composite Armor,Blindage Composite,Blindaje Compuesto
 UPGRADE_DAMAGE_REDUCTION_DESC,"-5% damage taken per level (stacks with Reinforced Plating, global cap 40%).","-5% de dégâts reçus par niveau (cumulable avec la Plaque Renforcée, hardcap global 40%).","-5% de daño recibido por nivel (acumulable con la Placa Reforzada, tope global 40%)."
-UPGRADE_STARTING_WEAPON_ALT_NAME,Field Prototype,Prototype de Terrain,Prototipo de Campo
-UPGRADE_STARTING_WEAPON_ALT_DESC,Unlocks the Drone Swarm as a selectable starting weapon at the Hub.,Déverrouille l'Essaim de Drones comme arme de départ sélectionnable au Hub.,Desbloquea el Enjambre de Drones como arma inicial seleccionable en el Hub.
 UPGRADE_REROLL_NAME,Tactical Recalibration,Recalibrage Tactique,Recalibración Táctica
 UPGRADE_REROLL_DESC,Rerolls the cards offered at level-up. +1 use per run and per level (max 3).,Renouvelle les cartes proposées à la montée de niveau. +1 utilisation par run et par niveau (max 3).,Recarga las cartas ofrecidas al subir de nivel. +1 uso por partida y por nivel (máx. 3).
 UPGRADE_SKIP_NAME,Selection Dodge,Esquive de Sélection,Esquiva de Selección

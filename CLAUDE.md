@@ -39,7 +39,7 @@ tableau des phases (✅/🔲), roadmap, captures d'écran.
     (fusions : fusion_blade, rail_overcharged, orbital_swarm, overload_aegis, ionic_storm,
     solar_column, hornet_swarm — chaque évolution = arme de base niv.5 + passif requis, remplace l'arme)
   - Fin de niveau complète : survie sans fin, overtime, boss en boucle, déblocage progressif, high scores (temps+difficulté), arsenal à découverte
-  - Hub méta rééquilibré (2026-07-02) : 18 upgrades (8 rééquilibrés + 10 nouveaux), formule d'Échos plafonnée standard/overtime (`EchoFormula.Calculate`, caps + `overtimeDampening`/`overtimeBonusCap`), 5e composante "Bonus de Surcharge" sur `RunEndScreen`, `UpgradesList` scrollable
+  - Hub méta rééquilibré (2026-07-02) : 17 upgrades (7 rééquilibrés + 10 nouveaux ; `starting_weapon_alt` retiré 2026-07-04 car aucun sélecteur d'arme de départ n'est câblé), formule d'Échos plafonnée standard/overtime (`EchoFormula.Calculate`, caps + `overtimeDampening`/`overtimeBonusCap`), 5e composante "Bonus de Surcharge" sur `RunEndScreen`, `UpgradesList` scrollable
   - Cinématique d'intro (2026-07-03) : `src/UI/IntroScreen.cs` (scène de boot) — cut-scene 2D scriptée en 6 plans (noyau d'Aether, corruption d'un drone, nuée + colosse, sanctuaire, descente de l'Arpenteur, reveal du titre), sprites animés réutilisant les `SpriteFrames` existants + particules `CpuParticles2D` + zoom caméra via `Tween`, synchronisée sur la narration `INTRO_BEAT_1..5` (EN/FR/ES) et la musique dédiée `music_intro` (CC0, "Transmission"/SRG774, cf. `assets/audio/CREDITS.md`). Skippable. Reveal via clés `INTRO_TITLE`/`INTRO_TAGLINE`. Outil de capture : `tools/capture_intro.py`
   - Localisation EN/FR/ES (`localization/ui.csv` → clé `Loc.T("CLÉ")`) ; support manette complet
   - HUD thématisé par biome, atmosphère (brume/rais/parallaxe), scanlines CRT
@@ -107,6 +107,16 @@ de nécessiter scène + sous-classe dédiées (inchangé).
 `TriggerEliteExplosion()`/`ApplyLifesteal()` explicitement (déjà fait). Toute nouvelle sous-classe qui
 surcharge `Die()` ou `HandleContactDamage()` doit faire de même sous peine que l'affixe soit silencieux.
 `ApplyElite` teinte le `SelfModulate` du sprite (PAS le `Modulate` du corps, réservé au HitFlash).
+
+**VFX/projectiles parentés à la racine — purge à la sortie de run**
+Les entités éphémères de gameplay (balles, flammes, death bursts, anneaux de choc, explosions
+d'élite…) sont parentées à `GetTree().Root`, PAS à la scène de jeu → `ChangeSceneToFile` ne les
+libère pas. En temps normal elles s'auto-détruisent vite, mais **à la mort l'arbre est mis en pause**
+(`RunStatsTracker`), ce qui gèle leurs timers/tweens : elles réapparaissent, figées, par-dessus le
+menu/Hub. Correctif : `SceneCleanup.ClearWorldVfx(GetTree())` (libère les `Node2D` enfants directs de
+la racine sauf `CurrentScene` — sûr car tous les AutoLoads sont `Node`/`CanvasLayer`) appelé avant
+chaque `ChangeSceneToFile` qui quitte une run (`RunEndScreen` Hub/Rejouer, `PauseScreen` Quitter).
+Tout nouveau chemin de sortie de run doit l'appeler aussi.
 
 **Navigation clavier/manette**
 - Listes non focalisables (simples `PanelContainer`) : aucun voisin de focus → scroll dans `_UnhandledInput` via `_scroll.ScrollVertical` (`allowEcho:true` pour maintien)

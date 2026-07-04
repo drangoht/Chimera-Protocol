@@ -374,14 +374,21 @@ meta et comprend immédiatement pourquoi rejouer, ET comprend visuellement pourq
 overtime très longue ne rapporte pas des dizaines de fois plus qu'une run standard (le "Bonus de
 Surcharge" rend le plafond explicite plutôt que de le cacher dans un calcul opaque).
 
-### 9.5 Améliorations permanentes du Hub — v2 (18 améliorations, rééquilibré 2026-07-02)
+### 9.5 Améliorations permanentes du Hub — v2 (17 améliorations, rééquilibré 2026-07-02 ; `starting_weapon_alt` retiré 2026-07-04)
 
 Dépensées au Hub. Structure complète dans `data/meta_upgrades.json`. **Rééquilibrage complet**
-suite au §9.2/§9.3 : les 8 items MVP+post-MVP existants voient leurs prix augmenter modérément
+suite au §9.2/§9.3 : les items MVP+post-MVP existants voient leurs prix augmenter modérément
 (+8% à +29% selon leur puissance relative), et **10 nouveaux items** sont ajoutés pour étaler la
 progression sur beaucoup plus de runs maintenant que l'économie n'explose plus en overtime.
 
-**Les 8 améliorations existantes (prix rééquilibrés, effets inchangés) :**
+> **Retrait de `starting_weapon_alt` « Prototype de Terrain » (2026-07-04)** : cette amélioration
+> débloquait l'Essaim de Drones comme arme de départ *sélectionnable au Hub*, mais **aucun sélecteur
+> d'arme de départ n'a jamais été câblé** (l'arme de départ est déterminée par le personnage choisi,
+> cf. §4). L'achat était donc sans effet — retiré de `data/meta_upgrades.json`, des textes et des
+> clés de localisation, avec la méthode morte `MetaProgressionSystem.GetUnlockedStartingWeapons`.
+> L'Essaim de Drones reste jouable comme arme de départ du personnage qui le porte.
+
+**Les 7 améliorations existantes (prix rééquilibrés, effets inchangés) :**
 
 | id | Nom | Stat modifiée | Niveaux | Coûts par niveau | Bonus par niveau |
 |---|---|---|---|---|---|
@@ -390,11 +397,10 @@ progression sur beaucoup plus de runs maintenant que l'économie n'explose plus 
 | `speed_boost` | Servos Améliorés | `Speed` | 3 | 100/220/380 | +15 px/s |
 | `cooldown_reduction` | Synchronisation Aether | `CooldownReduction` | 3 | 140/290/470 | -5% cooldown |
 | `damage_reduction` | Blindage Composite | `DamageReduction` | 3 | 170/340/560 | -5% dégâts reçus |
-| `starting_weapon_alt` | Prototype de Terrain | `UnlockStartingWeapon`* | 1 | 350 | Débloque Essaim de Drones comme arme de départ |
 | `reroll` | Recalibrage Tactique | consommable* | 3 | 160/320/520 | +1 reroll/run |
 | `skip` | Esquive de Sélection | consommable* | 3 | 130/270/450 | +1 skip/run |
 
-Sous-total : **8 090 Échos** (était 6 960).
+Sous-total : **7 740 Échos**.
 
 **Les 10 nouvelles améliorations (2026-07-02) :**
 
@@ -411,7 +417,7 @@ Sous-total : **8 090 Échos** (était 6 960).
 | `overtime_stabilizer` | Stabilisateur de Surcharge | `OvertimeRampReduction`* | 3 | 450/750/1150 | -5% pente overtime (max -15%) |
 | `bonus_magnet` | Aimant Auxiliaire | `BonusMagnetCharges`* | 2 | 200/350 | +1 apparition Aimant/run (3→5) |
 
-Sous-total : **11 340 Échos**. **TOTAL ARBRE COMPLET (18 items) : 19 430 Échos.**
+Sous-total : **11 340 Échos**. **TOTAL ARBRE COMPLET (17 items) : 19 080 Échos.**
 
 \* Consommables par run ou valeurs lues directement par le système consommateur — **PAS** des
 champs `PlayerStats` (même pattern que `reroll`/`skip` déjà existants). \*\* `HpRegenPerSecond`
@@ -434,9 +440,8 @@ item.
 - Objectif de durée de vie de l'arbre complet : **plusieurs dizaines de runs** (là où l'ancienne
   économie avant le passage en overtime sans plafond permettait de tout débloquer en 1-3 runs
   exceptionnelles — cf. §9 intro).
-- `starting_weapon_alt` reste l'objectif de moyen terme (2-3 runs) qui renforce la rejouabilité
-  par la variété de build dès la sélection ; `bonus_magnet` en est l'équivalent bon marché côté
-  économie XP.
+- `bonus_magnet` est un objectif bon marché côté économie XP ; `core_magnetism` en est le pendant
+  côté ramassage de Noyaux.
 
 **Hardcaps meta cumulés (meta + passifs en run), mis à jour avec les tiers 2 :**
 - `DamageReduction` : meta max -15% (`damage_reduction`) -8% (`damage_reduction_2`) = -23% + Plaque
@@ -760,7 +765,7 @@ Objectif : quelque chose de jouable au clavier sans art ni audio.
 **Implémenté le 2026-06-20 (suite) :**
 - [x] Monnaie meta (Échos d'Aether) + Hub + sauvegarde (`SaveManager`)
   - `SaveManager` AutoLoad — sérialise/désérialise `user://save.json` via `System.Text.Json`
-  - `MetaProgressionSystem` AutoLoad — charge `data/meta_upgrades.json`, expose `AddEchoes`, `TryPurchase`, `ApplyMetaBonusesToStats`, `GetUnlockedStartingWeapons`, `GetStartingXp`
+  - `MetaProgressionSystem` AutoLoad — charge `data/meta_upgrades.json`, expose `AddEchoes`, `TryPurchase`, `ApplyMetaBonusesToStats`, `GetStartingXp`
   - `RunStatsTracker` (Node dans Game.tscn) — tracke temps/kills/noyaux, calcule Échos, appelle `EndRun`
   - `AetherCore` pickup (Area2D violet #AA44FF, rayon 20 px, ramassage manuel)
   - `AetherCoreSpawner` (Node dans Game.tscn) — spawn périodique toutes les 45 s
@@ -1276,7 +1281,6 @@ que ce rééquilibrage corrige).
       "speed_boost": 0,
       "cooldown_reduction": 0,
       "damage_reduction": 0,
-      "starting_weapon_alt": 0,
       "reroll": 0,
       "skip": 0,
       "hp_boost_2": 0,
@@ -1322,8 +1326,10 @@ PlayerStats.DamageReduction   += meta.damage_reduction_level × 0.05 + meta.dama
 PlayerStats.HpRegenPerSecond   = meta.hp_regen_level × 0.4     // NOUVEAU champ PlayerStats
 ```
 
-Si `starting_weapon_alt_level == 1` : `HubScreen` affiche un sélecteur avec `["impulse_cannon",
-"drone_swarm"]`. L'arme choisie est passée à `InventorySystem` via `GameManager.StartingWeaponId`.
+L'arme de départ est déterminée par le **personnage** choisi (`CharacterDef.StartingWeaponId` →
+`GameManager.StartingWeaponId` → `InventorySystem`), cf. §4. Le sélecteur d'arme de départ au Hub
+imaginé ici (piloté par l'ex-upgrade `starting_weapon_alt`) n'a jamais été câblé — l'upgrade a été
+retiré le 2026-07-04.
 
 Les statTargets **consommables par run ou lus au point d'usage** (pattern déjà établi par
 `reroll`/`skip` dans `LevelUpSystem`) ne passent PAS par `ApplyMetaBonusesToStats()` — chaque
@@ -1335,11 +1341,11 @@ système lit `MetaProgressionSystem.Instance.GetUpgradeLevel(id)` directement :
 
 ### 18.6 UX du Hub
 
-L'écran Hub liste désormais **18 améliorations** (au lieu de 8) :
+L'écran Hub liste désormais **17 améliorations** (au lieu de 8) :
 - Chaque ligne : nom de l'amélioration | niveau actuel / niveau max | coût niveau suivant | bouton
   "Acheter" (grisé si Échos insuffisants ou niveau max atteint).
 - En haut : compteur d'Échos disponibles, mis à jour en temps réel après chaque achat.
-- **Scroll requis** (post-MVP, à charge de `developpeur`) : la liste de 18 items déborde de l'écran
+- **Scroll requis** (post-MVP, à charge de `developpeur`) : la liste de 17 items déborde de l'écran
   dans le `VBoxContainer` simple actuel — nécessite un `ScrollContainer` (hors scope de cette
   passe de design, cf. brief `developpeur`).
 - Pas d'arbre visuel au MVP — liste suffisante pour valider la mécanique ; un regroupement visuel

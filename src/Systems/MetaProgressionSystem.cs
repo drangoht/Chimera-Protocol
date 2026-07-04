@@ -198,18 +198,6 @@ public partial class MetaProgressionSystem : Node
     }
 
     /// <summary>
-    /// Retourne la liste des armes de départ déverrouillées.
-    /// "impulse_cannon" toujours présent ; "drone_swarm" si starting_weapon_alt >= 1.
-    /// </summary>
-    public List<string> GetUnlockedStartingWeapons()
-    {
-        var weapons = new List<string> { "impulse_cannon" };
-        if (GetUpgradeLevel("starting_weapon_alt") >= 1)
-            weapons.Add("drone_swarm");
-        return weapons;
-    }
-
-    /// <summary>
     /// Réinitialise TOUTES les améliorations achetées et rembourse l'intégralité des Échos
     /// dépensés pour les niveaux possédés. Retourne le montant remboursé (0 si rien à reset).
     /// </summary>
