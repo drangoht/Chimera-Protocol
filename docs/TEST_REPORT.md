@@ -4,6 +4,25 @@ Rapport de sessions de test. Chaque section correspond à une session de test di
 
 ---
 
+## Refonte VFX Voile de Givre + ennemis gelés + réticule contouré — 2026-07-05
+
+**Testeur :** game-tester (agent Claude). **Moteur :** Godot 4.7.stable.mono, D3D12. **Build :** OK (0 warn / 0 err).
+**Verdict : PASS.** Working tree non commité (3 changements) validé visuellement, biome Givre Cryogénique.
+
+**Méthode :** scaffolding temporaire dans `GameManager.RegisterPlayer` (grant `frost_veil` + `vector_lance` au démarrage), REVERTÉ — arbre git propre hors ce fichier. Captures PyAutoGUI (joueur stationnaire, souris fixée à un offset pour la visée), zooms comparatifs ennemi intérieur/extérieur du voile.
+
+**1. VFX brume de froid (frost_veil) — OK.** Rendu = zone de froid lisible : liseré glacé (portée ~150), nappes de brume bleutée translucide + lueur froide douce au centre, particules de givre. Le joueur reste bien visible, pas de blob saturé (glow doux, non clampé au blanc). Lit comme un nuage/zone de froid, pas un simple cercle sec — le liseré reste l'élément le plus net (intention assumée « marquer la portée »), la brume volumétrique est présente mais subtile en frame statique. Pas de crash.
+
+**2. Ennemis gelés — OK (empirique).** Comparaison même type (crawler orange) : vif orange HORS voile, nettement assombri/refroidi + reflet givré bleu-blanc DANS le voile ; revient normal en sortant. NB : `FrostTint (0.55,0.8,1.3)` est un *multiply* → sur sprite orange le rendu « refroidi/terni » plutôt que cyan saturé (orange × bleu = terne, attendu). L'effet reste clairement perceptible et communique « affecté ». Revue code : `_baseSelfModulate` porte la teinte élite (ou blanc), `FrostTint` se multiplie par-dessus sur `SelfModulate` ; HitFlash agit sur `Modulate` du corps → pas d'écrasement, composition correcte. Bascule au seul changement d'état.
+
+**3. Réticule contouré (vector_lance) — OK.** Triangle blanc + contour sombre (triangle noir légèrement plus grand dessous) nettement contrasté et lisible sur sol clair bleuté. Corrige la réserve cosmétique notée le 2026-07-04.
+
+**Non-régression — OK.** Pas d'erreur C# / NullRef / exception console (uniquement le bruit de teardown Godot au forçage de sortie : RID leaks, unreferenced static strings). Slow partagé `ApplySlow` (donc rendu gelé de la Lance Cryo de base) validé indirectement via frost_veil qui emprunte le même chemin. Level-up, XP, timer, HUD OK.
+
+**Réserve mineure (non bloquante) :** teinte gelée peu « bleue » sur ennemis à dominante chaude (limite du multiply) — à arbitrer avec le DA si un bleu plus franc est souhaité (piste : lerp vers FrostTint plutôt que multiply pur). Brume volumétrique un peu discrète en statique (correcte en mouvement, nappes dérivantes).
+
+---
+
 ## Refonte VISÉE Lance Vectorielle (commit `2adec5d`) — 2026-07-04
 
 **Testeur :** game-tester (agent Claude). **Moteur :** Godot 4.7.stable.mono, D3D12. **Build :** OK (0 warn / 0 err).

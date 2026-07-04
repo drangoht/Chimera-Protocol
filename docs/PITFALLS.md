@@ -38,6 +38,11 @@ de nécessiter scène + sous-classe dédiées (inchangé).
 `TriggerEliteExplosion()`/`ApplyLifesteal()` explicitement (déjà fait). Toute nouvelle sous-classe qui
 surcharge `Die()` ou `HandleContactDamage()` doit faire de même sous peine que l'affixe soit silencieux.
 `ApplyElite` teinte le `SelfModulate` du sprite (PAS le `Modulate` du corps, réservé au HitFlash).
+Le **rendu « gelé »** (ennemi ralenti → bleu glacé) multiplie `FrostTint` sur `SelfModulate` par-dessus
+`_baseSelfModulate` (blanc, ou teinte d'élite) dans `EnemyBase.UpdateStatusEffects` : les deux teintes
+se composent sans conflit, et le HitFlash (Modulate du corps) reste net. Bascule au seul changement
+d'état (pas d'écriture par frame). Toute nouvelle teinte persistante du sprite doit passer par
+`_baseSelfModulate` pour ne pas casser cette composition.
 
 ## VFX/projectiles parentés à la racine — purge à la sortie de run
 Les entités éphémères de gameplay (balles, flammes, death bursts, anneaux de choc, explosions

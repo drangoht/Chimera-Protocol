@@ -41,7 +41,7 @@ public partial class Player : CharacterBody2D
     // Visée : true = stick droit (manette), false = souris. Bascule au dernier périphérique actionné.
     private bool       _gamepadAim = false;
     private Vector2    _lastMousePos;
-    private Polygon2D? _aimIndicator;   // réticule (petit triangle) autour du joueur
+    private Node2D?    _aimIndicator;   // réticule (petit triangle) autour du joueur
     private const float AimIndicatorRadius = 28f;
     private const float AimStickDeadzone   = 0.35f;
     private readonly System.Collections.Generic.Dictionary<PowerUpType, float> _buffTime = new();
@@ -90,14 +90,21 @@ public partial class Player : CharacterBody2D
     /// N'est affiché que si une arme dirigée est équipée (Lance Vectorielle / Rayon Vecteur).</summary>
     private void BuildAimIndicator()
     {
-        _aimIndicator = new Polygon2D
+        // Node2D porteur (orienté/positionné chaque frame) contenant un contour sombre + un triangle
+        // teinté : le contour garantit le contraste sur les sols clairs (polish DA).
+        _aimIndicator = new Node2D { Name = "AimIndicator", ZIndex = 1, Visible = false };
+        var outline = new Polygon2D
         {
-            Name    = "AimIndicator",
+            Polygon = new Vector2[] { new(11f, 0f), new(-6f, -7f), new(-6f, 7f) },
+            Color   = new Color(0.04f, 0.04f, 0.09f, 0.85f),
+        };
+        var fill = new Polygon2D
+        {
             Polygon = new Vector2[] { new(9f, 0f), new(-4f, -5f), new(-4f, 5f) },
             Color   = _characterTint,
-            ZIndex  = 1,   // relatif au joueur (ZIndex 5) → au-dessus du sprite, sous les VFX d'impact
-            Visible = false,
         };
+        _aimIndicator.AddChild(outline);
+        _aimIndicator.AddChild(fill);
         AddChild(_aimIndicator);
     }
 

@@ -26,6 +26,14 @@ public partial class EnemyBase : CharacterBody2D
     private static PackedScene? _xpOrbScene;
     private static PackedScene? _hpOrbScene;
 
+    // ── Rendu « gelé » : teinte glacée du sprite tant que l'ennemi est ralenti (toute source de
+    //    slow : Lance Cryo, Voile de Givre…). Multiplie la teinte de base (blanc, ou teinte d'élite)
+    //    via SelfModulate → se combine sans écraser l'affixe ni le HitFlash (qui agit sur Modulate). ──
+    private AnimatedSprite2D? _sprite;
+    private Color _baseSelfModulate = Colors.White;   // teinte hors-gel (élite pose la sienne)
+    private bool  _frostActive      = false;
+    private static readonly Color FrostTint = new(0.45f, 0.68f, 1.4f, 1f);   // bleu glacé (multiplié) : coupe fort R/G, pousse B pour un froid plus marqué
+
     // ── Affixe d'élite (voir EliteAffixTable) : None pour un ennemi normal ──────
     protected EliteAffix _eliteAffix       = EliteAffix.None;
     private float _damageTakenMult         = 1f;   // <1 = blindé
@@ -47,6 +55,7 @@ public partial class EnemyBase : CharacterBody2D
     {
         AddToGroup(Constants.GroupEnemies);
         _currentHp = MaxHp;
+        _sprite = GetNodeOrNull<AnimatedSprite2D>("AnimatedSprite2D");
         // Les ennemis traversent les murs (layer 1) mais sont BLOQUÉS par les obstacles
         // infranchissables (sur le bit 2). mask = 2 → collision avec les obstacles uniquement.
         CollisionMask = 2;
@@ -85,6 +94,15 @@ public partial class EnemyBase : CharacterBody2D
             if (_slowTime <= 0f) _slowMult = 1f;
         }
         Speed = _baseSpeed * _slowMult;   // les sous-classes lisent Speed → ralenties automatiquement
+
+        // Rendu « gelé » : bascule la teinte glacée uniquement au changement d'état (évite d'écrire
+        // SelfModulate à chaque frame pour 200-300 ennemis).
+        bool frozen = _slowTime > 0f;
+        if (frozen != _frostActive && _sprite != null)
+        {
+            _frostActive = frozen;
+            _sprite.SelfModulate = frozen ? _baseSelfModulate * FrostTint : _baseSelfModulate;
+        }
 
         if (_burnTime > 0f)
         {
@@ -206,12 +224,14 @@ public partial class EnemyBase : CharacterBody2D
         _hpDropChance           = m.HpDropChance;
 
         var tint = new Color(m.TintR, m.TintG, m.TintB, 1f);
-        var sprite = GetNodeOrNull<AnimatedSprite2D>("AnimatedSprite2D");
-        if (sprite != null)
+        _sprite ??= GetNodeOrNull<AnimatedSprite2D>("AnimatedSprite2D");
+        if (_sprite != null)
         {
             // SelfModulate teinte le sprite sans écraser le Modulate du corps (HitFlash reste net).
-            sprite.SelfModulate = tint;
-            sprite.Scale *= EliteAffixTable.VisualScale;
+            // _baseSelfModulate mémorise cette teinte pour que le gel (FrostTint) se multiplie dessus.
+            _baseSelfModulate    = tint;
+            _sprite.SelfModulate = _frostActive ? tint * FrostTint : tint;
+            _sprite.Scale *= EliteAffixTable.VisualScale;
         }
 
         // Halo pulsant derrière l'ennemi (couleur de l'affixe, semi-transparent).
