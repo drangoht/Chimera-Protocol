@@ -10,6 +10,11 @@ dépôt. Il doit rester court et stable ; le détail du design vit dans `docs/GD
 Référence complète : **`docs/GDD.md`** — toujours le consulter avant toute tâche de design
 ou d'implémentation, et le tenir à jour quand une décision est prise.
 
+**Avant d'explorer le code** (localiser un système, écran, arme, ennemi, fichier de données,
+outil…), invoquer le skill **`/carte-projet`** plutôt que de repartir de zéro avec Glob/Grep :
+il indexe toute l'arborescence + les checklists de câblage. **Le maintenir à jour** dans le même
+commit dès qu'un changement structurel modifie ce qu'il décrit (`.claude/skills/carte-projet/SKILL.md`).
+
 ## Équipe d'agents
 
 Agents définis dans `.claude/agents/` : `game-designer`, `directeur-artistique`, `graphiste`,

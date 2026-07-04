@@ -104,6 +104,32 @@ if ($LASTEXITCODE -ne 0) {
     Fail "butler push echoue (code $LASTEXITCODE). Si 'not authorized', lance une fois : `"$Butler`" login"
 }
 
+# --- 4b. Manifeste de version (bandeau "nouvelle version" cote jeu) ------------------
+# Les joueurs qui telechargent le ZIP via le web n'ont PAS l'auto-update de l'app itch.
+# Le menu principal lit ce fichier sur raw.githubusercontent pour afficher un bandeau
+# "nouvelle version dispo -> itch.io". On le regenere et on le pousse sur GitHub (main).
+$parts   = $Itch.Split("/")
+$itchUrl = "https://$($parts[0]).itch.io/$($parts[1])"
+$manifest = [ordered]@{ version = $Version; url = $itchUrl }
+$manifestPath = Join-Path $ProjectRoot "version.json"
+($manifest | ConvertTo-Json) | Out-File -FilePath $manifestPath -Encoding utf8
+Write-Host "version.json regenere : $Version" -ForegroundColor Cyan
+
+Push-Location $ProjectRoot
+git add version.json
+# Ne commit/push que si version.json a reellement change.
+git diff --cached --quiet
+if ($LASTEXITCODE -ne 0) {
+    git commit -m "chore(release): version.json -> $Version (bandeau MAJ web)"
+    if ($?) {
+        git push
+        if (-not $?) { Write-Host "AVERTISSEMENT : git push echoue — pousse version.json a la main pour activer le bandeau." -ForegroundColor Yellow }
+    }
+} else {
+    Write-Host "version.json inchange — rien a pousser." -ForegroundColor DarkGray
+}
+Pop-Location
+
 # --- 5. Etat des channels -----------------------------------------------------------
 & $Butler status $Itch
 Write-Host "`nPublication OK — version $Version poussee sur $Itch`:$Channel" -ForegroundColor Green

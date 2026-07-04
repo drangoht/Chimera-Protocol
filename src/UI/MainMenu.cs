@@ -15,6 +15,12 @@ public partial class MainMenu : Control
 
     private readonly System.Collections.Generic.List<Button> _langButtons = new();
 
+    /// <summary>Source de vérité de la dernière version publiée (fichier poussé à chaque release).</summary>
+    private const string VersionManifestUrl =
+        "https://raw.githubusercontent.com/drangoht/Chimera-Protocol/main/version.json";
+
+    private string _updateUrl = "https://drangoht.itch.io/chimera-protocol";
+
     public override void _Ready()
     {
         _playButton     = GetNode<Button>("VBox/PlayButton");
@@ -59,6 +65,97 @@ public partial class MainMenu : Control
              .SetTrans(Tween.TransitionType.Quad);
 
         _playButton.GrabFocus();
+
+        StartUpdateCheck();
+    }
+
+    // -------------------------------------------------------------------------
+    // Contrôle de mise à jour — pour les joueurs qui téléchargent le ZIP via le web
+    // (ceux de l'app itch.io reçoivent déjà l'auto-update natif de Butler).
+    // -------------------------------------------------------------------------
+
+    private void StartUpdateCheck()
+    {
+        // Lancé via l'app itch.io ? L'auto-update s'en charge déjà — pas de bandeau.
+        if (!string.IsNullOrEmpty(System.Environment.GetEnvironmentVariable("ITCHIO_API_KEY")))
+            return;
+
+        var http = new HttpRequest { Timeout = 5 };
+        AddChild(http);
+        http.RequestCompleted += OnUpdateCheckCompleted;
+        // En cas d'échec réseau : on ignore silencieusement (jeu jouable hors-ligne).
+        if (http.Request(VersionManifestUrl) != Error.Ok)
+            http.QueueFree();
+    }
+
+    private void OnUpdateCheckCompleted(long result, long responseCode, string[] headers, byte[] body)
+    {
+        if (result != (long)HttpRequest.Result.Success || responseCode != 200)
+            return;
+
+        var json = Json.ParseString(System.Text.Encoding.UTF8.GetString(body));
+        if (json.VariantType != Variant.Type.Dictionary)
+            return;
+
+        var dict = json.AsGodotDictionary();
+        string remote = dict.TryGetValue("version", out var v) ? v.AsString() : "";
+        if (string.IsNullOrEmpty(remote))
+            return;
+
+        if (dict.TryGetValue("url", out var u) && !string.IsNullOrEmpty(u.AsString()))
+            _updateUrl = u.AsString();
+
+        string local = ProjectSettings.GetSetting("application/config/version").AsString();
+        if (VersionCompare.IsNewer(remote, local))
+            ShowUpdateBanner(remote);
+    }
+
+    /// <summary>Bandeau discret en haut de l'écran : « Nouvelle version dispo » + bouton itch.io.</summary>
+    private void ShowUpdateBanner(string remoteVersion)
+    {
+        var panel = new PanelContainer
+        {
+            AnchorLeft = 0.5f, AnchorRight = 0.5f, AnchorTop = 0f, AnchorBottom = 0f,
+            GrowHorizontal = GrowDirection.Both, GrowVertical = GrowDirection.End,
+            OffsetTop = 12f,
+            MouseFilter = MouseFilterEnum.Pass,
+        };
+        var style = new StyleBoxFlat { BgColor = new Color(0.05f, 0.05f, 0.12f, 0.95f) };
+        style.SetBorderWidthAll(2);
+        style.BorderColor = new Color(1f, 0.8f, 0.267f); // or #FFCC44
+        style.SetCornerRadiusAll(4);
+        style.SetContentMarginAll(10);
+        panel.AddThemeStyleboxOverride("panel", style);
+
+        var row = new HBoxContainer();
+        row.AddThemeConstantOverride("separation", 12);
+        panel.AddChild(row);
+
+        var label = new Label
+        {
+            Text = Loc.T("UPDATE_AVAILABLE", remoteVersion),
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        label.AddThemeColorOverride("font_color", new Color(1f, 0.8f, 0.267f));
+        row.AddChild(label);
+
+        var btn = new Button { Text = Loc.T("UPDATE_DOWNLOAD") };
+        StyleMenuButton(btn);
+        ConnectHoverEffects(btn);
+        btn.Pressed += () =>
+        {
+            AudioSystem.Instance?.PlaySfx("sfx_ui_button");
+            OS.ShellOpen(_updateUrl);
+        };
+        row.AddChild(btn);
+
+        AddChild(panel);
+
+        // Apparition en fondu.
+        panel.Modulate = new Color(1f, 1f, 1f, 0f);
+        var tween = CreateTween();
+        tween.TweenProperty(panel, "modulate:a", 1.0f, 0.5)
+             .SetEase(Tween.EaseType.Out);
     }
 
     /// <summary>Applique les libellés traduits aux boutons du menu.</summary>

@@ -229,3 +229,23 @@ public class WeightedPickerTests
         Assert.Equal(10, counts[2]);
     }
 }
+
+public class VersionCompareTests
+{
+    [Theory]
+    [InlineData("1.2.1", "1.2.0")]   // correctif
+    [InlineData("1.3.0", "1.2.9")]   // mineur
+    [InlineData("2.0.0", "1.9.9")]   // majeur
+    [InlineData("1.2.1", "1.2")]     // correctif vs composant manquant cote local
+    [InlineData("v1.2.1", "1.2.0")]  // prefixe v tolere
+    public void IsNewer_DetecteUneVersionPlusRecente(string remote, string local)
+        => Assert.True(VersionCompare.IsNewer(remote, local));
+
+    [Theory]
+    [InlineData("1.2.0", "1.2.0")]   // identique
+    [InlineData("1.2.0", "1.2.1")]   // plus ancienne
+    [InlineData("1.2", "1.2.0")]     // equivalent (composant absent = 0)
+    [InlineData("", "1.2.0")]        // distant vide
+    public void IsNewer_FauxQuandPasPlusRecente(string remote, string local)
+        => Assert.False(VersionCompare.IsNewer(remote, local));
+}
