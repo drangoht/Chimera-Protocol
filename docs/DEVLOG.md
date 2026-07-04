@@ -4,6 +4,26 @@
 > `release-manager`). Entrées en ordre décroissant (la plus récente en haut). Ton orienté
 > joueur, EN puis FR (audience itch surtout anglophone).
 
+## v1.7.0 — Frost Veil: freeze the swarm in place (2026-07-04)
+
+**New**
+- **Frost Veil** — a new *defensive control* fusion. Take the **Cryo Lance** to level 5, pick up the
+  **Reinforced Plating** passive, and the icy beam stops firing in a line — instead it wraps around you
+  as a **permanent AURA of frost**. Every enemy caught in range takes continuous damage *and* is hit
+  with a massive slow, reapplied without pause. The swarm crawls toward you, frozen to a standstill,
+  while the aura grinds it down. Turn the tide from "outrun the horde" to "let it come and freeze."
+
+---
+
+**Nouveautés**
+- **Voile de Givre** — une nouvelle fusion de *contrôle défensif*. Montez la **Lance Cryo** au niveau 5,
+  ramassez le passif **Plaque Renforcée**, et le rayon glacé cesse de tirer en ligne — il s'enroule
+  autour de vous en **AURA de givre PERMANENTE**. Tout ennemi à portée subit des dégâts continus *et* un
+  ralentissement massif, réappliqué sans relâche. La nuée rampe vers vous, engluée au ralenti, pendant
+  que l'aura la broie. Passez de « fuir la horde » à « la laisser venir et la geler ».
+
+---
+
 ## v1.6.0 — Vector Ray: the first aimed fusion (2026-07-04)
 
 **New**
