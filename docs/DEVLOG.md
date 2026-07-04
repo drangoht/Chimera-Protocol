@@ -4,6 +4,43 @@
 > `release-manager`). Entrées en ordre décroissant (la plus récente en haut). Ton orienté
 > joueur, EN puis FR (audience itch surtout anglophone).
 
+## v1.8.0 — Take aim: mouse & right-stick aiming for the Vector Lance (2026-07-04)
+
+**New**
+- **Aim where you want with the Vector Lance.** The directional weapon (and its **Vector Ray** fusion)
+  no longer fire along your movement direction. Now you *aim*:
+  - **Mouse & keyboard** — the bolt fires toward your **cursor**. Point, shoot, carve.
+  - **Gamepad** — aim with the **right stick**, fully independent of where you're moving.
+  - The game **switches automatically** between the two based on the last device you touched — no menu,
+    no toggle.
+- **New aiming reticle.** A small **triangle** orbits your character and points, in real time, at your
+  current aim direction — so you always know exactly where the next shot is headed.
+
+**Why it matters**
+- The Vector Lance and Vector Ray were powerful but blunt: you had to *walk* toward your target to hit
+  it. Now you can strafe one way and fire another, kite while keeping your aim locked on a boss, and
+  thread bolts through gaps in the swarm. Far more control and skill on these directional weapons.
+
+---
+
+**Nouveautés**
+- **Visez où vous voulez avec la Lance Vectorielle.** L'arme dirigée (et sa fusion **Rayon Vecteur**) ne
+  tirent plus dans votre direction de déplacement. Désormais vous *visez* :
+  - **Clavier & souris** — le trait part vers le **curseur**. Pointez, tirez, taillez.
+  - **Manette** — visez au **stick droit**, indépendamment de votre déplacement.
+  - Le jeu **bascule automatiquement** entre les deux selon le dernier périphérique utilisé — aucun menu,
+    aucune option à cocher.
+- **Nouveau réticule de visée.** Un petit **triangle** gravite autour de votre personnage et pointe, en
+  temps réel, la direction visée — vous savez toujours exactement où part le prochain tir.
+
+**Pourquoi c'est important**
+- La Lance Vectorielle et le Rayon Vecteur frappaient fort mais restaient rigides : il fallait *marcher*
+  vers la cible pour l'atteindre. Vous pouvez maintenant vous déplacer d'un côté et tirer de l'autre,
+  kiter un boss en gardant la visée verrouillée, et faufiler vos traits dans les brèches de la nuée.
+  Bien plus de contrôle et de skill sur ces armes dirigées.
+
+---
+
 ## v1.7.0 — Frost Veil: freeze the swarm in place (2026-07-04)
 
 **New**
