@@ -47,6 +47,23 @@ public static class DebugHooks
         }
     }
 
+    private static bool? _forceElites;
+
+    /// <summary>
+    /// Vrai si lancé avec <c>--force-elites</c> : chaque ennemi basique devient élite (affixe tiré
+    /// au hasard), sans attendre la montée de fréquence. Sert au game-tester à valider les 5 affixes
+    /// (rendu + comportement) en une session, et au tuning. Aucun effet en build normal.
+    /// </summary>
+    public static bool ForceElites
+    {
+        get
+        {
+            if (_forceElites == null)
+                _forceElites = HasFlag("--force-elites");
+            return _forceElites.Value;
+        }
+    }
+
     private static bool HasFlag(string flag)
     {
         foreach (var arg in OS.GetCmdlineArgs())

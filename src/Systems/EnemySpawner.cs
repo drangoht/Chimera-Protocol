@@ -257,6 +257,14 @@ public partial class EnemySpawner : Node
         float scaledHp     = EnemyScaling.Scaled(data.MaxHp,  tMinutes, data.HpScalingPerMinute,     hpMult);
         float scaledDamage = EnemyScaling.Scaled(data.Damage, tMinutes, data.DamageScalingPerMinute, dmgMult);
         node.ApplyScaling(scaledHp, scaledDamage);
+
+        // Affixe d'élite : une fraction des ennemis BASIQUES (jamais mini-boss/boss) est promue.
+        // La fréquence monte avec le temps (EliteAffixTable, plafonnée). Appliqué APRÈS ApplyScaling
+        // pour multiplier les stats déjà scalées, et avant la 1re frame (capture de la vitesse de base).
+        bool eliteEligible = data.MaxSimultaneous == 0 && !BossIds.Contains(data.Id);
+        if (eliteEligible &&
+            (DebugHooks.ForceElites || EliteAffixTable.ShouldBeElite(tMinutes, _rng.Randf())))
+            node.ApplyElite(EliteAffixTable.Pick(_rng.Randf()));
     }
 
     private Vector2 RandomSpawnPosition()

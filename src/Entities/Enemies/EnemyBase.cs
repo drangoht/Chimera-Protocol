@@ -26,10 +26,22 @@ public partial class EnemyBase : CharacterBody2D
     private static PackedScene? _xpOrbScene;
     private static PackedScene? _hpOrbScene;
 
+    // ── Affixe d'élite (voir EliteAffixTable) : None pour un ennemi normal ──────
+    protected EliteAffix _eliteAffix       = EliteAffix.None;
+    private float _damageTakenMult         = 1f;   // <1 = blindé
+    private float _regenFractionPerSecond  = 0f;   // >0 = régénérant
+    private float _lifestealFraction       = 0f;   // >0 = vampirique
+    private float _explodeDamageMult       = 0f;   // >0 = explosif (AoE à la mort)
+    private float _timeSinceHit            = 999f; // pour le gating de la régénération
+    private float _hpDropChance            = 0.08f;
+    private static PackedScene? _shockwaveScene;
+
+    public bool IsElite => _eliteAffix != EliteAffix.None;
+
     [Signal] public delegate void DiedEventHandler(int xpValue);
 
     /// <summary>Probabilité de dropper un orbe HP à la mort. Surchargeable (mini-boss : 0.25f).</summary>
-    protected virtual float HpDropChance => 0.08f;
+    protected virtual float HpDropChance => _hpDropChance;
 
     public override void _Ready()
     {
@@ -52,6 +64,8 @@ public partial class EnemyBase : CharacterBody2D
 
         UpdateStatusEffects((float)delta);
         if (_isDead) return;   // la brûlure a pu tuer l'ennemi
+
+        UpdateEliteRegen((float)delta);
 
         UpdateMovement(player, delta);
         HandleContactDamage(player, delta);
@@ -83,6 +97,28 @@ public partial class EnemyBase : CharacterBody2D
             }
             if (_burnTime <= 0f) { _burnDps = 0f; _burnTick = 0f; }
         }
+    }
+
+    /// <summary>
+    /// Affixe Régénérant : soigne une fraction du MaxHp par seconde, tant que l'ennemi n'a pas été
+    /// frappé depuis <see cref="EliteAffixTable.RegenDelaySeconds"/> (récompense le DPS soutenu).
+    /// No-op pour un ennemi normal (_regenFractionPerSecond = 0).
+    /// </summary>
+    private void UpdateEliteRegen(float dt)
+    {
+        _timeSinceHit += dt;
+        if (_regenFractionPerSecond <= 0f || _isDead) return;
+        if (_timeSinceHit < EliteAffixTable.RegenDelaySeconds) return;
+        if (_currentHp >= MaxHp) return;
+        _currentHp = Mathf.Min(MaxHp, _currentHp + _regenFractionPerSecond * MaxHp * dt);
+    }
+
+    /// <summary>Affixe Vampirique : soigne l'ennemi d'une part des dégâts qu'il vient d'infliger.
+    /// Appelé par les chemins de dégâts de contact. No-op si _lifestealFraction = 0.</summary>
+    protected void ApplyLifesteal(float dealtDamage)
+    {
+        if (_lifestealFraction <= 0f || _isDead) return;
+        _currentHp = Mathf.Min(MaxHp, _currentHp + dealtDamage * _lifestealFraction);
     }
 
     /// <summary>Ralentit l'ennemi : <paramref name="mult"/> ∈ (0,1]. On garde le slow le plus fort,
@@ -124,6 +160,7 @@ public partial class EnemyBase : CharacterBody2D
                 var stats = player.Stats;
                 float reduced = Damage * (1f - stats.DamageReduction);
                 player.TakeDamage(reduced);
+                ApplyLifesteal(reduced);
                 _damageCooldown = DamageInterval;
             }
         }
@@ -141,6 +178,46 @@ public partial class EnemyBase : CharacterBody2D
         MaxHp      = scaledMaxHp;
         _currentHp = scaledMaxHp;
         Damage     = scaledDamage;
+    }
+
+    /// <summary>
+    /// Promeut cet ennemi en élite : applique les multiplicateurs de l'affixe (PV/vitesse/dégâts/XP),
+    /// active son comportement (blindage, régén, vampirisme, explosion) et le distingue visuellement
+    /// (teinte + agrandissement + halo). Appelé par EnemySpawner APRÈS ApplyScaling. Doit être appelé
+    /// avant la 1re frame physique (la vitesse de base est capturée à ce moment-là dans
+    /// UpdateStatusEffects). No-op si affix = None.
+    /// </summary>
+    public void ApplyElite(EliteAffix affix)
+    {
+        if (affix == EliteAffix.None) return;
+        _eliteAffix = affix;
+        var m = EliteAffixTable.Modifiers(affix);
+
+        MaxHp      *= m.HpMult;
+        _currentHp  = MaxHp;
+        Speed      *= m.SpeedMult;
+        Damage     *= m.DamageMult;
+        XpValue     = Mathf.Max(1, Mathf.RoundToInt(XpValue * m.XpMult));
+
+        _damageTakenMult        = m.DamageTakenMult;
+        _regenFractionPerSecond = m.RegenFractionPerSecond;
+        _lifestealFraction      = m.LifestealFraction;
+        _explodeDamageMult      = m.ExplodeDamageMult;
+        _hpDropChance           = m.HpDropChance;
+
+        var tint = new Color(m.TintR, m.TintG, m.TintB, 1f);
+        var sprite = GetNodeOrNull<AnimatedSprite2D>("AnimatedSprite2D");
+        if (sprite != null)
+        {
+            // SelfModulate teinte le sprite sans écraser le Modulate du corps (HitFlash reste net).
+            sprite.SelfModulate = tint;
+            sprite.Scale *= EliteAffixTable.VisualScale;
+        }
+
+        // Halo pulsant derrière l'ennemi (couleur de l'affixe, semi-transparent).
+        var aura = new EliteAura();
+        AddChild(aura);
+        aura.Configure(new Color(m.TintR, m.TintG, m.TintB, 0.28f), 20f * EliteAffixTable.VisualScale);
     }
 
     /// <summary>
@@ -177,7 +254,8 @@ public partial class EnemyBase : CharacterBody2D
     public void TakeDamage(float amount)
     {
         if (_isDead) return;
-        _currentHp -= amount;
+        _timeSinceHit = 0f;                    // suspend la régénération (affixe Régénérant)
+        _currentHp -= amount * _damageTakenMult; // <1 pour un affixe Blindé
         HitFlash(0.05f);
         if (_currentHp <= 0f)
             Die();
@@ -202,7 +280,36 @@ public partial class EnemyBase : CharacterBody2D
         SpawnXpOrb();
         TrySpawnHpOrb();
         SpawnDeathBurst();
+        TriggerEliteExplosion();
         QueueFree();
+    }
+
+    /// <summary>
+    /// Affixe Explosif : à la mort, inflige une AoE au joueur s'il est dans le rayon (respecte ses
+    /// i-frames via Player.TakeDamage) et joue un anneau de choc rouge. No-op sans l'affixe.
+    /// Appelable depuis les Die() surchargés (ex. GraftedColossus) pour que l'affixe reste universel.
+    /// </summary>
+    protected void TriggerEliteExplosion()
+    {
+        if (_explodeDamageMult <= 0f) return;
+
+        var player = GameManager.Instance?.PlayerInstance;
+        if (player != null &&
+            GlobalPosition.DistanceTo(player.GlobalPosition) < EliteAffixTable.ExplosionRadius)
+        {
+            float dmg = Damage * _explodeDamageMult * (1f - player.Stats.DamageReduction);
+            player.TakeDamage(dmg);
+        }
+
+        _shockwaveScene ??= GD.Load<PackedScene>("res://scenes/vfx/vfx_shockwave_ring.tscn");
+        if (_shockwaveScene != null)
+        {
+            var ring = _shockwaveScene.Instantiate<Node2D>();
+            ring.Modulate = new Color(1.6f, 0.5f, 0.3f, 1f); // teinte incandescente
+            GetTree().Root.CallDeferred(Node.MethodName.AddChild, ring);
+            ring.SetDeferred("global_position", GlobalPosition);
+        }
+        ScreenShake.Instance?.Shake(8f, 0.25f);
     }
 
     private static PackedScene? _deathBurstScene;

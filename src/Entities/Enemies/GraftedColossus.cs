@@ -96,6 +96,7 @@ public partial class GraftedColossus : EnemyBase
                 var stats = player.Stats;
                 float reduced = Damage * (1f - stats.DamageReduction);
                 player.TakeDamage(reduced);
+                ApplyLifesteal(reduced);   // affixe Vampirique (élite)
                 _meleeTimer = MeleeCooldown;
 
                 // Lancer l'animation attack à chaque frappe
@@ -119,6 +120,7 @@ public partial class GraftedColossus : EnemyBase
         EmitSignal(SignalName.Died, XpValue);
         GameManager.Instance?.NotifyEnemyKilled();
         PlayDeathSfx();
+        TriggerEliteExplosion();   // affixe Explosif (élite) — Die() surchargé n'appelle pas base.Die()
 
         // Spawn XP orb via EnemyBase.SpawnXpOrb (gère le tier et l'appel différé)
         SpawnXpOrb();

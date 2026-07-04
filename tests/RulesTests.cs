@@ -249,3 +249,65 @@ public class VersionCompareTests
     public void IsNewer_FauxQuandPasPlusRecente(string remote, string local)
         => Assert.False(VersionCompare.IsNewer(remote, local));
 }
+
+public class EliteAffixTableTests
+{
+    [Fact]
+    public void EliteChance_MonteAvecLeTempsEtEstPlafonnee()
+    {
+        Assert.Equal(EliteAffixTable.BaseChance, EliteAffixTable.EliteChance(0f), 4); // ~3% au début
+        Assert.True(EliteAffixTable.EliteChance(5f) > EliteAffixTable.EliteChance(0f)); // croît
+        Assert.Equal(EliteAffixTable.MaxChance, EliteAffixTable.EliteChance(100f), 4);  // plafonné
+    }
+
+    [Theory]
+    [InlineData(0f, 0.0f, true)]   // 0 < 3% → élite
+    [InlineData(0f, 0.5f, false)]  // 0.5 >= 3% → normal
+    [InlineData(100f, 0.27f, true)]// sous le plafond 28%
+    [InlineData(100f, 0.5f, false)]// au-dessus du plafond
+    public void ShouldBeElite_ComparingAuTirage(float tMin, float roll, bool expected)
+        => Assert.Equal(expected, EliteAffixTable.ShouldBeElite(tMin, roll));
+
+    [Theory]
+    [InlineData(0.0f, EliteAffix.Armored)]      // 1er segment
+    [InlineData(0.99f, EliteAffix.Vampiric)]    // dernier segment
+    [InlineData(1.5f, EliteAffix.Vampiric)]     // au-delà de 1 → clampé sur le dernier
+    [InlineData(-1f, EliteAffix.Armored)]       // sous 0 → clampé sur le premier
+    public void Pick_TombeDansLeBonAffixe(float roll, EliteAffix expected)
+        => Assert.Equal(expected, EliteAffixTable.Pick(roll));
+
+    [Fact]
+    public void Pick_CouvreTousLesAffixesSurLaPlage()
+    {
+        var seen = new System.Collections.Generic.HashSet<EliteAffix>();
+        for (int i = 0; i < EliteAffixTable.All.Length; i++)
+            seen.Add(EliteAffixTable.Pick((i + 0.5f) / EliteAffixTable.All.Length));
+        Assert.Equal(EliteAffixTable.All.Length, seen.Count); // chaque affixe atteignable
+    }
+
+    [Fact]
+    public void Modifiers_None_EstNeutre()
+    {
+        var m = EliteAffixTable.Modifiers(EliteAffix.None);
+        Assert.Equal(1f, m.HpMult, 3);
+        Assert.Equal(1f, m.DamageTakenMult, 3);
+        Assert.Equal(0f, m.ExplodeDamageMult, 3);
+    }
+
+    [Fact]
+    public void Modifiers_ChaqueAffixe_RecompenseEnXpEtAUneSignature()
+    {
+        foreach (var a in EliteAffixTable.All)
+        {
+            var m = EliteAffixTable.Modifiers(a);
+            Assert.True(m.XpMult > 1f, $"{a} doit récompenser davantage en XP");
+            Assert.True(m.HpDropChance > 0f, $"{a} doit pouvoir dropper un orbe de PV");
+        }
+        // Signatures distinctives attendues
+        Assert.True(EliteAffixTable.Modifiers(EliteAffix.Armored).DamageTakenMult < 1f);
+        Assert.True(EliteAffixTable.Modifiers(EliteAffix.Regenerating).RegenFractionPerSecond > 0f);
+        Assert.True(EliteAffixTable.Modifiers(EliteAffix.Explosive).ExplodeDamageMult > 0f);
+        Assert.True(EliteAffixTable.Modifiers(EliteAffix.Frenzied).SpeedMult > 1f);
+        Assert.True(EliteAffixTable.Modifiers(EliteAffix.Vampiric).LifestealFraction > 0f);
+    }
+}

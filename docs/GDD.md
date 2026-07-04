@@ -1644,3 +1644,61 @@ conventions `ai.type`). Câblage réalisé :
 - Palette suggérée par `colorPlaceholder` dans le JSON (ex. `rust_amber`, `violet_glow`,
   `ember_orange`, `frost_blue`, `neon_magenta`...) — à valider par `directeur-artistique` avant
   toute production de sprite, en cohérence avec `docs/STYLE_GUIDE.md`.
+
+## 22. Affixes d'élite (implémenté 2026-07-04)
+
+> Inspiration : les **élites/affixes** de Risk of Rain 2 et Diablo. N'importe quel ennemi *basique*
+> peut être promu « élite » et recevoir **un** affixe qui change radicalement sa menace, à coût de
+> production quasi nul (aucune nouvelle scène ni sprite — seulement des multiplicateurs de stats +
+> un rendu teinté/agrandi + un halo). Répond à la **limite « silhouettes recolorées »** de §21 : la
+> variété de menace vient désormais du *comportement*, pas de la forme. Logique pure et testée dans
+> `src/Core/Rules/EliteAffixTable.cs` (12 tests xUnit).
+
+### 22.1 Fréquence et éligibilité
+
+- **Éligibles** : uniquement les ennemis basiques (`maxSimultaneous == 0`). Les mini-boss, boss et
+  le boss de fin de niveau ne deviennent **jamais** élite (ils sont déjà des menaces uniques).
+- **Fréquence** (`EliteAffixTable.EliteChance`) : `clamp(0.03 + 0.02 × t_minutes, 0, 0.28)` — ~3 % au
+  début, montée de +2 %/min, **plafond dur à 28 %** (jamais une horde d'élites, garde-fou lisibilité
+  + perf). Un ennemi éligible tire son affixe au hasard, réparti également entre les 5.
+- **Flag debug** `--force-elites` : force tous les ennemis basiques en élite (validation game-tester
+  + tuning), combinable avec `--biome=<id>`. Aucun effet en build normal (`DebugHooks.ForceElites`).
+
+### 22.2 Les 5 affixes
+
+| Affixe | Teinte | Effet de jeu | Contre-jeu |
+|---|---|---|---|
+| **Blindé** (`Armored`) | bleu acier | dégâts reçus ×0.45, PV ×1.7 | burst/perce-armure, ou l'ignorer |
+| **Régénérant** (`Regenerating`) | vert | régén 6 %/s du MaxHp si non frappé depuis 1.5 s, PV ×1.5 | DPS soutenu (ne pas lâcher la cible) |
+| **Explosif** (`Explosive`) | orange | explose à la mort (AoE rayon 84 px, dégâts = contact ×2.2, anneau rouge + screenshake), PV ×1.1 | tuer à distance / ne pas être collé |
+| **Frénétique** (`Frenzied`) | rouge | vitesse ×1.7, dégâts ×1.3, mais PV ×0.7 (glass cannon) | prioriser, kiter |
+| **Vampirique** (`Vampiric`) | magenta | se soigne de 50 % des dégâts qu'il inflige au joueur, PV ×1.4 | ne pas le laisser toucher / burst |
+
+- **Récompense** : tout élite donne **×2.5 à ×3 d'XP** (orbe de tier supérieur automatiquement via
+  `GetOrbTier`) et une **proba de drop de PV relevée** (0.20–0.30 vs 0.08 normal) — le risque paie.
+- **Rendu** : teinte multiplicative sur le `SelfModulate` de l'`AnimatedSprite2D` (n'écrase pas le
+  `Modulate` du corps → le HitFlash reste net), agrandissement ×1.35, et **halo pulsant coloré**
+  (`EliteAura`, Node2D en `_Draw`) derrière l'ennemi. Pas de nameplate : la menace se lit à la
+  couleur + la taille (approche RoR2).
+
+### 22.3 Câblage technique
+
+- `EliteAffixTable` (Rules pur) : `EliteChance` / `ShouldBeElite(t, roll)` / `Pick(roll)` /
+  `Modifiers(affix)` → `EliteModifiers` (struct de multiplicateurs + teinte r/g/b, sans dépendance
+  Godot). Tuning centralisé ici.
+- `EnemyBase.ApplyElite(affix)` : applique les multiplicateurs **après** `ApplyScaling` (donc sur les
+  stats déjà scalées), câble les comportements (blindage via `_damageTakenMult` dans `TakeDamage`,
+  régén via `UpdateEliteRegen`, vampirisme via `ApplyLifesteal`, explosion via
+  `TriggerEliteExplosion` dans `Die`), et le rendu.
+- `EnemySpawner.SpawnEnemy` : tire l'élite pour les ids éligibles juste après `ApplyScaling`.
+- **Piège** : `GraftedColossus` (scène des `slow_hunter`, `Die()` surchargé qui n'appelle pas
+  `base.Die()`) appelle explicitement `TriggerEliteExplosion()` + `ApplyLifesteal()` pour que les
+  affixes Explosif/Vampirique restent universels. Les ennemis *ranged* (kiters) ne déclenchent pas le
+  vampirisme (ils ne touchent pas au contact) — c'est voulu.
+
+### 22.4 Extensions possibles (hors-scope actuel)
+
+- **Invocateur** (spawn de fourrage périodique) et **Aura de ralentissement** (slow du joueur à
+  proximité) : listés au brainstorm mais nécessitent un accès au spawner / une mécanique de slow
+  côté joueur — reportés (surface de code + risque plus élevés).
+- **Double affixe en overtime**, **affixes sur mini-boss**, ligne de bestiaire dédiée aux élites.

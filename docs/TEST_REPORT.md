@@ -4,6 +4,72 @@ Rapport de sessions de test. Chaque section correspond à une session de test di
 
 ---
 
+## Affixes d'élite — 2026-07-04
+
+**Testeur :** game-tester (agent Claude)
+**Branche :** main (working changes non commités : `EliteAffixTable.cs`, `EliteAura.cs`, +
+`EnemyBase`/`EnemySpawner`/`GraftedColossus`/`DebugHooks`/`RulesTests`).
+**Moteur :** Godot 4.7.stable.mono, D3D12, AMD Radeon RX 9070.
+**Build :** `dotnet build` OK — 0 erreur / 0 warning. Tests unitaires filtre `Elite` : 12/12 PASS.
+**Méthode :** captures scriptées (PyAutoGUI, bot kite en cercle) sur 5 sessions :
+`--force-elites --biome=neon`, rafale d'explosions neon, `--force-elites --biome=givre`,
+run normale `--biome=neon` (~95 s), + revue de code des chemins d'application.
+
+### 1. Stabilité — PASS
+Aucun crash ni exception sur les 5 sessions. Logs Godot propres (aucun `SCRIPT ERROR` / null / stack).
+Spawn massif d'élites (`--force-elites`, écran entier), morts en chaîne via singularity, explosions
+répétées près du joueur : le jeu tourne et reste fluide. Joueur survit > 55 s en mode full-élite
+(LV12), preuve que ni le spawn ni la mort des élites ne déstabilise la boucle.
+
+### 2. Lisibilité / différenciation — PASS
+Les élites sont nettement distinguables : agrandissement ×1.35 + teinte `SelfModulate` + halo
+`EliteAura` pulsant (disque translucide 0.28 + liseré vif) dessiné en `ZIndex=-1` derrière le sprite.
+Les 5 teintes sont différenciables sur **les deux fonds testés** :
+- Blindé = bleu acier, Régénérant = vert (rendu olive/jaune-vert au blend), Explosif = orange,
+  Frénétique = rouge, Vampirique = magenta/violet.
+- Sur **neon** (fond magenta sombre) : le halo **Vampirique magenta** est le moins contrasté
+  (proche de la couleur d'ambiance) mais reste lu grâce au liseré et à la taille.
+- Sur **givre** (fond bleu clair glacé) : c'est le halo **Blindé bleu acier** qui contraste le moins ;
+  toujours lisible via le liseré. Le Vampirique, lui, ressort très bien sur ce fond.
+- Aucun affixe n'est masqué de façon critique sur un biome donné (le pire cas de chaque teinte a le
+  meilleur cas sur l'autre fond).
+
+### 3. Explosion (affixe Explosif) — PASS (mécanique confirmée)
+Empirique : morts d'élites orange près du joueur produisent des gerbes orange denses + `HitFlash`
+cyan sur le joueur (dégâts AoE encaissés). Revue de code cohérente : `TriggerEliteExplosion`
+instancie `vfx_shockwave_ring.tscn` (modulate incandescent 1.6/0.5/0.3), `ScreenShake.Shake(8,0.25)`,
+et `player.TakeDamage` si distance < 84 px (respecte les i-frames via `Player.TakeDamage`).
+`GraftedColossus.Die()` appelle bien `TriggerEliteExplosion()` — l'affixe reste universel malgré
+son `Die()` custom. Note : en nuée dense, l'anneau rouge unique se noie visuellement dans la masse
+des death-bursts orange (cosmétique, pas un défaut).
+
+### 4. Ressenti / équilibrage — PASS
+Jouable même en mode full-élite : ce n'est pas un mur infranchissable. Blindés (`DamageTakenMult`
+0.45 + HP ×1.7) visiblement plus longs à tuer ; Frénétiques (rouge, vitesse ×1.7) foncent nettement
+plus vite et se massent au contact ; Régénérants forcent le burst. Récompense XP forte (×2.5–3) :
+en `--force-elites` la montée de niveau est très rapide (LV12 en ~55 s) — attendu pour le flag debug,
+sans incidence sur le mode normal.
+
+### 5. Fréquence en mode normal — PASS
+Run `--biome=neon` sans flag : à ~45 s (LV6) → 2 élites à l'écran parmi ~15 ennemis ; à ~95 s
+(LV12, ~1,5 min) → 1 seul élite (Blindé) parmi une quinzaine d'ennemis normaux. Les élites
+apparaissent occasionnellement, rares au début, sans jamais dominer la nuée. Conforme à la courbe
+`EliteAffixTable` (Base 3 % + 2 %/min, plafond 28 %). Éligibilité correcte : gate
+`data.MaxSimultaneous == 0 && !BossIds.Contains` → mini-boss et boss jamais promus.
+
+### 6. Observations mineures (non bloquantes, pour game-designer)
+- **[Cosmétique]** Halo Vampirique (magenta) sur neon et halo Blindé (bleu acier) sur givre : contraste
+  le plus faible de leur session respective. Lisibles mais envisager un liseré légèrement plus opaque
+  ou une teinte de halo distincte de la couleur d'ambiance du biome si l'on veut une lecture instantanée.
+- **[Cosmétique]** En nuée très dense, les halos translucides voisins se fondent en une nappe lumineuse
+  diffuse ; la lecture individuelle des affixes baisse (sans gêner la jouabilité).
+
+**Verdict global : PASS.** Feature stable, lisible et jouable sur les deux biomes testés. Aucun bug
+bloquant/majeur. Deux notes cosmétiques de lisibilité transmises au game-designer. Captures
+temporaires supprimées après analyse — aucun artefact laissé dans le dépôt.
+
+---
+
 ## Test ciblé — 3 nouvelles fusions d'armes (ionic_storm / solar_column / hornet_swarm) — 2026-07-03
 
 **Testeur :** game-tester (agent Claude)

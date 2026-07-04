@@ -8,10 +8,11 @@ Dans un monde ravagé par **la Rouille Vivante** (corruption mi-organique, mi-m�
 
 ## État du projet
 
-**Refonte visuelle pseudo-3D + faune par biome** *(2026-07-03)* — tous les sprites (persos, ennemis, obstacles, tuiles, icônes) redessinés en pseudo-3D avec ombres, 20 nouveaux ennemis basiques
+**Affixes d'élite** *(2026-07-04)* — une fraction des ennemis basiques devient « élite » avec 1 affixe parmi 5 (Blindé, Régénérant, Explosif, Frénétique, Vampirique), teinté et distinct visuellement
 
 | Phase | Statut | Contenu |
 |---|---|---|
+| **Affixes d'élite** | ✅ Livré | Élites façon Risk of Rain 2 / Diablo : n'importe quel ennemi basique peut recevoir 1 affixe parmi 5 — **Blindé** (encaisse), **Régénérant** (se soigne hors combat), **Explosif** (AoE à la mort), **Frénétique** (rapide/fragile), **Vampirique** (vole des PV). Rendu teinté + agrandi + halo pulsant, XP/drops relevés. Fréquence croissante plafonnée (3 %→28 %). Logique pure testée (`EliteAffixTable`, +12 tests) |
 | **Refonte visuelle pseudo-3D + faune par biome** | ✅ Livré | Direction artistique pseudo-3D avec ombres (`docs/ART_BRIEF_PSEUDO3D.md`, lib partagée `tools/pseudo3d_lib.py`) appliquée à **640 sprites** régénérés : 3 persos joueurs, 8 ennemis/mini-boss/boss existants, **20 nouveaux ennemis basiques** (4/biome, sprite data-driven sans nouvelle scène Godot), obstacles, tuiles de biome, icônes d'armes. Validé game-tester PASS |
 | Phase 1 — Prototype | ✅ Terminé | Joueur, arène, 1 ennemi, 1 arme |
 | Phase 2 — Gameplay core | ✅ Terminé | 4 ennemis, 4 armes, 4 passifs, 2 fusions, XP/level-up, Échos d'Aether, Hub, sauvegarde |

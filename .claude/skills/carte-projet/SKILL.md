@@ -30,7 +30,7 @@ data/              JSON de tuning (modifiable sans recompiler) — voir §Data
 localization/      ui.csv (source) → ui.{en,fr,es}.translation ; clé via Loc.T("CLÉ")
 assets/            Raw (sprites PNG 32×32, audio OGG/WAV, themes)
 tools/             Générateurs de sprites/audio + captures + release — voir §Outils
-tests/             xUnit — ChimeraProtocol.Tests.csproj (71 tests). `dotnet test tests/...`
+tests/             xUnit — ChimeraProtocol.Tests.csproj (83 tests). `dotnet test tests/...`
 docs/              GDD.md + briefs/plans — voir §Docs
 ```
 
@@ -42,7 +42,8 @@ docs/              GDD.md + briefs/plans — voir §Docs
 ## §Rules — `src/Core/Rules/` (logique pure, testée)
 XpCurve · EnemyScaling · SpawnCurve · WeaponLeveling · StatCaps · WeightedPicker ·
 EchoFormula · RarityWeights · CrowdControlCaps · DifficultyTuning · **VersionCompare**
-(comparaison sémantique pour le bandeau de MAJ). Les nœuds délèguent ici (SRP).
+(comparaison sémantique pour le bandeau de MAJ) · **EliteAffixTable** (affixes d'élite :
+fréquence + tirage + `EliteModifiers`, cf. GDD §22). Les nœuds délèguent ici (SRP).
 
 ## §Systems — `src/Systems/`
 - Spawn : `EnemySpawner` (+ `EnemySpawnData`), `PowerUpSpawner` (+ `PowerUp`), `MagnetSpawner`, `AetherCoreSpawner`
@@ -64,7 +65,7 @@ Fusions : `FusionBlade`, `RailOvercharged`, `OrbitalSwarm`, `OverloadAegis`,
 
 ## §Entities — `src/Entities/`
 - Player : `Player` (+ `PlayerStats`)
-- Enemies : `EnemyBase` (data-driven, `SetSpriteFrames`), `EnemyBullet`, `CorruptedDrone`, `CorruptedSentinel`, `RustSwarm`, `RustStalker`
+- Enemies : `EnemyBase` (data-driven, `SetSpriteFrames`, **`ApplyElite`** — affixes d'élite), `EliteAura` (halo VFX), `EnemyBullet`, `CorruptedDrone`, `CorruptedSentinel`, `RustSwarm`, `RustStalker`
 - MiniBoss : `AetherRevenant`, `MasterSentinel` · Boss : `GraftedColossus` (48×48, `Die()` custom)
 - Environment : `AetherCore`, `RustedCore`, `AetherGeyser`, `HpOrb`, `XpOrb`, `MagnetPickup`, `PowerUpPickup`
 
@@ -98,3 +99,4 @@ Fusions : `FusionBlade`, `RailOvercharged`, `OrbitalSwarm`, `OverloadAegis`,
 - Tests : `dotnet test tests/ChimeraProtocol.Tests.csproj`
 - Compil rapide C# : `dotnet build ChimeraProtocol.csproj`
 - Forcer un biome (tests/captures) : flag `--biome=<id>`
+- Forcer tous les ennemis basiques en élite (test des affixes) : flag `--force-elites` (`DebugHooks.ForceElites`)
