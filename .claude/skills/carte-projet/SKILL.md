@@ -77,7 +77,7 @@ Fusions : `FusionBlade`, `RailOvercharged`, `OrbitalSwarm`, `OverloadAegis`,
 - Audio : `generate_music_synth.py`, `generate_audio_v2.py`, `integrate_kenney_audio.py`
 - Captures : `screenshot_*.py`, `capture_*.py`, `window_capture.py`
 - Tests/équilibrage : `boss_ttk_test.py`, `test_balance_v2.py`, `test_ui_keyboard.py`, `smoketest_exe.py`
-- Release : **`release_itch.ps1`** (export → butler push → régénère & push `version.json`)
+- Release : **`release_itch.ps1`** (export → butler push → régénère & push `version.json`) — workflow complet via le skill **`/publier-itch`**
 - Python : `C:\Users\drang\AppData\Local\Programs\Python\Python313\python.exe`
 
 ## §Docs — `docs/`
