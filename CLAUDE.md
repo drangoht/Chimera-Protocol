@@ -19,10 +19,11 @@ Version publiée itch : **1.4.1**. Détail dans `docs/PROJECT_STATE.md`.
 ## Équipe d'agents
 
 Agents dans `.claude/agents/` : `game-designer`, `directeur-artistique`, `graphiste`, `developpeur`,
-`musicien`, `story-teller`, `marketing`, `game-tester`. Déléguer proactivement à l'agent compétent
-(ordre de lancement : `GUIDE-CLAUDE-CODE.md`).
+`musicien`, `story-teller`, `marketing`, `game-tester`, `release-manager`. Déléguer proactivement à
+l'agent compétent (ordre de lancement : `GUIDE-CLAUDE-CODE.md`).
 
 - **`game-tester`** : lance Godot (`--rendering-driver d3d12`), joue le jeu, documente les bugs dans `docs/TEST_REPORT.md`. À invoquer après chaque implémentation majeure.
+- **`release-manager`** : publie une version de bout en bout (bump semver, release notes, `tools/release_itch.ps1`, MAJ doc) puis poste un **devlog** sur itch.io (navigateur, fallback assisté). Source des notes : `docs/DEVLOG.md`.
 
 ## Maintenance de la doc
 
@@ -34,7 +35,7 @@ Agents dans `.claude/agents/` : `game-designer`, `directeur-artistique`, `graphi
 - Plateforme cible : Windows (.exe). Moteur : **Godot 4.7 .NET** (toujours la variante `.NET`, jamais la standard). Langage : C# (.NET 8), GodotSharp.
 - Build Windows : `"C:\CODE\JEUX\Godot_v4.7-stable_mono_win64\Godot_v4.7-stable_mono_win64.exe" --headless --export-release "Windows Desktop" "./build/ChimeraProtocol.exe"`
 - **CRITIQUE export .NET** : `ChimeraProtocol.sln` DOIT être présent à la racine (sinon le .exe crashe au lancement). Recréer : `dotnet new sln --name ChimeraProtocol --format sln && dotnet sln ChimeraProtocol.sln add ChimeraProtocol.csproj`. L'export produit `build/ChimeraProtocol.exe` + `build/data_ChimeraProtocol_windows_x86_64/` (runtime .NET 8, ignoré par git, régénéré).
-- **Publication & MAJ auto (itch.io + Butler)** : incrémenter `config/version` dans `project.godot`, puis skill **`/publier-itch`** (ou `tools/release_itch.ps1 -Version X.Y.Z`). Runbook : `docs/RELEASE.md`. Un push = auto-update pour les joueurs de l'app itch.
+- **Publication & MAJ auto (itch.io + Butler)** : incrémenter `config/version` dans `project.godot`, puis skill **`/publier-itch`** (ou `tools/release_itch.ps1 -Version X.Y.Z`), ou déléguer à l'agent **`release-manager`** (pipeline complet + devlog itch). Runbook : `docs/RELEASE.md`. Notes de version cumulées : `docs/DEVLOG.md`. Un push = auto-update pour les joueurs de l'app itch.
 - Style de code : PascalCase classes/méthodes, `_camelCase` champs privés, `readonly` par défaut.
 - Architecture : `src/` (logique C#) / `scenes/` (.tscn) / `assets/` (raw) / `data/` (JSON tuning modifiable sans recompiler).
 - **Logique pure testable** : `src/Core/Rules/` (classes statiques sans dépendance Godot — `XpCurve`, `EnemyScaling`, `EliteAffixTable`…). Les nœuds y délèguent (SRP).
