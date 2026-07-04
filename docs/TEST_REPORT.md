@@ -4,6 +4,29 @@ Rapport de sessions de test. Chaque section correspond à une session de test di
 
 ---
 
+## Fusion « Voile de Givre » (frost_veil) — 2026-07-04
+
+**Testeur :** game-tester (agent Claude). **Moteur :** Godot 4.7.stable.mono, D3D12.
+**Verdict : PASS.**
+
+**1. Câblage (vérif statique) — OK, 100 %.**
+- `weapons.json` : `cryo_lance` porte `fusionRequires.passive=reinforced_plating` + `fusionResult=frost_veil` ; entrée `fusions[].frost_veil` complète (weapon cryo_lance / weaponLevel 5 / passive reinforced_plating, `replaces=cryo_lance`, `damagePerTick 8.4`, `tickInterval 0.2`, `radius 150`, `slowMult 0.55`).
+- `LevelUpSystem.AllFusionIds` ✓ · `InventorySystem.WeaponScenePaths → FrostVeil.tscn` ✓ · `Codex` (TAG_FUSION + `IconById → ui_icon_frost_veil.png`) ✓ · loc `WPN_FROST_VEIL_NAME/_DESC` EN/FR/ES présentes et cohérentes ✓ · `FrostVeil.tscn` + icône `.import` commités ✓.
+- `CanFuse`/`ApplyFusion` sont génériques et lisent correctement `requires` : la carte se propose bien à cryo_lance L5 + reinforced_plating ≥1 ; `ApplyFusion` retire cryo_lance (QueueFree + WeaponLevels.Remove) et instancie frost_veil au slot. Cohérence `FrostVeil.cs` ↔ JSON : `Damage = Dps(42)×TickInterval(0.2) = 8.4`, radius 150, slow 0.55 → OK.
+
+**2. Comportement en jeu (scaffolding temporaire dans `GameManager`, REVERTÉ).**
+Forcé cryo_lance L5 + reinforced_plating + `ApplyFusion("frost_veil")` au démarrage. Observé (capture 35 s, LV 5) :
+- Aura **continue et centrée sur le joueur** : anneau Line2D glacé (~150 px) + halo PointLight2D bleu/violet + particules de givre.
+- **Dégâts de zone** actifs : flashs de hit sur le cluster d'ennemis au bord/dans l'aura, ennemis engluées au contour (slow réappliqué à chaque tick, code `ApplySlow(0.55, 0.5)` toutes les 0.2 s conforme).
+- **Joueur reste visible** au centre (VFX en ZIndex -1, confirmé visuellement).
+- Aucun crash ni erreur console ; run stable jusqu'à LV 5 / timer 12:21.
+
+**3. Non-régression.** Entrée JSON `cryo_lance` (5 niveaux, slow -40 % max) intacte ; FrostVeil est un script séparé ne modifiant pas la Lance Cryo de base. Build C# OK (0 warn / 0 err) avant et après revert.
+
+**Scaffolding reverté — `git status` propre hormis ce fichier.**
+
+---
+
 ## Fusion « Rayon Vecteur » (vector_beam) — 2026-07-04
 
 **Testeur :** game-tester (agent Claude)
