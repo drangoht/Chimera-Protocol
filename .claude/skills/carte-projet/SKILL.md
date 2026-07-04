@@ -30,7 +30,7 @@ data/              JSON de tuning (modifiable sans recompiler) — voir §Data
 localization/      ui.csv (source) → ui.{en,fr,es}.translation ; clé via Loc.T("CLÉ")
 assets/            Raw (sprites PNG 32×32, audio OGG/WAV, themes)
 tools/             Générateurs de sprites/audio + captures + release — voir §Outils
-tests/             xUnit — ChimeraProtocol.Tests.csproj (83 tests). `dotnet test tests/...`
+tests/             xUnit — ChimeraProtocol.Tests.csproj (87 tests). `dotnet test tests/...`
 docs/              GDD.md + briefs/plans — voir §Docs
 ```
 
@@ -40,7 +40,8 @@ docs/              GDD.md + briefs/plans — voir §Docs
 `FusionFlash` (scène). Accès partout via `NomSystem.Instance`.
 
 ## §Rules — `src/Core/Rules/` (logique pure, testée)
-XpCurve · EnemyScaling · SpawnCurve · WeaponLeveling · StatCaps · WeightedPicker ·
+XpCurve · EnemyScaling (`Scaled` linéaire + `ScaledCurved`/`CurvedFactor` = courbe non-linéaire :
+early grace + accélération late, cf. difficulté) · SpawnCurve · WeaponLeveling · StatCaps · WeightedPicker ·
 EchoFormula · RarityWeights · CrowdControlCaps · DifficultyTuning · **VersionCompare**
 (comparaison sémantique pour le bandeau de MAJ) · **EliteAffixTable** (affixes d'élite :
 fréquence + tirage + `EliteModifiers`, cf. GDD §22). Les nœuds délèguent ici (SRP).
@@ -58,7 +59,8 @@ fréquence + tirage + `EliteModifiers`, cf. GDD §22). Les nœuds délèguent ic
 (cinématique) · `HUD` · `BuffBar` · `Banner` · `BiomeCatalog` · `Characters`.
 
 ## §Weapons — `src/Weapons/`
-Base : `WeaponBase` (⚠ `base._Ready()` EN DERNIER). 11 armes actives + 7 fusions.
+Base : `WeaponBase` (⚠ `base._Ready()` EN DERNIER). 12 armes actives + 7 fusions.
+`VectorLance` = arme DIRIGÉE (tire vers `Player.AimDirection`, pas l'ennemi le plus proche).
 Fusions : `FusionBlade`, `RailOvercharged`, `OrbitalSwarm`, `OverloadAegis`,
 `IonicStorm`, `SolarColumn`, `HornetSwarm`. Projectiles : `Bullet`, `GlaiveProjectile`,
 `SeekerMissile`, `DroneEntity`, etc.

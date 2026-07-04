@@ -66,6 +66,40 @@ public class EnemyScalingTests
     [Fact]
     public void Scaled_T0EgaleLaBaseFoisDifficulte()
         => Assert.Equal(80f, EnemyScaling.Scaled(100f, 0f, 0.12f, 0.8f), 3);
+
+    // ── Courbe non-linéaire (early grace + late accel) ────────────────────────
+
+    [Fact]
+    public void CurvedFactor_DebutPlusDouxQueLineaire()
+    {
+        // À t=0, le facteur est sous 1.0 (ennemis affaiblis) alors que le linéaire vaut 1.0.
+        Assert.Equal(0.85f, EnemyScaling.CurvedFactor(0f, 0.14f), 3);   // 1 - 0.15
+        Assert.True(EnemyScaling.CurvedFactor(0.5f, 0.14f) < 1f + 0.5f * 0.14f);
+    }
+
+    [Fact]
+    public void CurvedFactor_RejointLeLineaireEntreEarlyEtLate()
+    {
+        // Entre la fin de la grâce (1.5) et le début de l'accélération (4), la courbe == linéaire.
+        Assert.Equal(1f + 2f * 0.14f, EnemyScaling.CurvedFactor(2f, 0.14f), 3);
+        Assert.Equal(1f + 4f * 0.14f, EnemyScaling.CurvedFactor(4f, 0.14f), 3);
+    }
+
+    [Fact]
+    public void CurvedFactor_LateDepasseLeLineaire()
+    {
+        // À t=12, la composante quadratique rend les ennemis nettement plus coriaces qu'en linéaire.
+        float linear = 1f + 12f * 0.14f;
+        Assert.True(EnemyScaling.CurvedFactor(12f, 0.14f) > linear * 1.2f);
+    }
+
+    [Fact]
+    public void ScaledCurved_AppliqueLaDifficulte()
+    {
+        // Le multiplicateur de difficulté reste un facteur externe pur.
+        float f = EnemyScaling.CurvedFactor(8f, 0.14f);
+        Assert.Equal(100f * f * 1.3f, EnemyScaling.ScaledCurved(100f, 8f, 0.14f, 1.3f), 3);
+    }
 }
 
 public class DifficultyTuningTests

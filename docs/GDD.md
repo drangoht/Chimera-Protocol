@@ -1708,3 +1708,35 @@ conventions `ai.type`). Câblage réalisé :
   proximité) : listés au brainstorm mais nécessitent un accès au spawner / une mécanique de slow
   côté joueur — reportés (surface de code + risque plus élevés).
 - **Double affixe en overtime**, **affixes sur mini-boss**, ligne de bestiaire dédiée aux élites.
+
+## 23. Retours testeur — arme dirigée + recadrage difficulté (2026-07-04)
+
+Suite au retour d'un testeur (« difficile au début, mais on devient OP trop facilement si on
+survit ; les flammes occultent le perso ; tout est auto-visé, peu de place au skill »), trois
+ajustements :
+
+### 23.1 Lisibilité — le joueur passe au-dessus des VFX d'armes
+`Player.ZIndex = 5` (posé dans `_Ready`) : le joueur reste visible « dans le feu de l'action »,
+au-dessus des flammes du Jet de Pyre (ZIndex 2), muzzle flashs (4), cônes/champs. Reste sous les
+flashs d'impact ponctuels (foudre ZIndex 6) et l'UI (CanvasLayer). Corrige l'occultation du perso
+par ses propres flammes sans retoucher chaque VFX.
+
+### 23.2 Arme DIRIGÉE — Lance Vectorielle (`vector_lance`, Rare)
+Première arme qui laisse place au **skill de visée** : au lieu d'auto-viser l'ennemi le plus proche,
+elle tire un trait perforant dans la **direction de déplacement du joueur** (`Player.AimDirection` =
+dernière direction non nulle ; défaut bas). Twin-stick clavier/manette, pas de souris — cohérent avec
+le contrôle existant. Perforante dès le niveau 1 (récompense l'alignement) ; niv. 4-5 ajoutent des
+traits en éventail serré (14° puis 20°). Réutilise `Bullet` (aucun nouveau projectile). Le reste de
+l'arsenal garde l'auto-visée. Stats → `data/weapons.json`. Pas de fusion (pour l'instant).
+
+### 23.3 Courbe de difficulté non-linéaire
+`EnemyScaling.CurvedFactor` remplace le facteur linéaire `1 + t×perMinute` pour le scaling runtime
+(HP/dégâts, via `ScaledCurved` dans `EnemySpawner`) :
+- **Early grace** (t < 1,5 min) : ennemis affaiblis jusqu'à −15% à t=0 → départ moins punitif.
+- **Linéaire** entre 1,5 et 4 min (identique à avant).
+- **Accélération quadratique** au-delà de 4 min (`LateCoeff=0.08 × perMinute × (t−4)²`) : le mid/late
+  rattrape le power-creep du build (fusions + multiplicateurs) → on ne devient plus « OP » passif.
+  Ex. à t=12 min, un ennemi à `perMinute=0.14` est ~+27% plus coriace qu'en linéaire ; à t=15, ~+44%.
+
+`EnemyScaling.Scaled` (linéaire) est conservé pour compat + tests de référence. Couvert par 4 tests
+`CurvedFactor`/`ScaledCurved` (87 tests au total).

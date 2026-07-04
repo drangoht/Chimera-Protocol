@@ -34,7 +34,7 @@ public partial class LevelUpSystem : Node
     public int SkipsLeft   { get; private set; }
 
     // Tous les ids connus (pour le pool complet)
-    private static readonly string[] AllWeaponIds  = { "impulse_cannon", "plasma_blade", "drone_swarm", "overload_field", "tesla_coil", "scatter_volley", "glaive", "seeker_swarm", "cryo_lance", "pyre_stream", "singularity" };
+    private static readonly string[] AllWeaponIds  = { "impulse_cannon", "plasma_blade", "drone_swarm", "overload_field", "tesla_coil", "scatter_volley", "glaive", "seeker_swarm", "cryo_lance", "pyre_stream", "vector_lance", "singularity" };
     private static readonly string[] AllPassiveIds = { "thermal_core", "reinforced_plating", "servo_motors", "capacitor" };
     private static readonly string[] AllFusionIds  = { "fusion_blade", "rail_overcharged", "orbital_swarm", "overload_aegis", "ionic_storm", "solar_column", "hornet_swarm" };
 

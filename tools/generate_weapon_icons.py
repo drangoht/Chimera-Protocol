@@ -241,6 +241,35 @@ def gen_pyre():
     disc(img, nx+2, ny-2, 1, WH)
     save_icon(img, "ui_icon_pyre.png")
 
+# ---------------- Lance Vectorielle : trait/fleche dirige cyan (vecteur) + tete triangulaire
+def gen_vector_lance():
+    img = canvas()
+    CY  = (80, 220, 255)
+    WH  = (240, 252, 255)
+    CY_G= (80, 220, 255, 70)
+    # hampe diagonale bas-gauche -> haut-droite (direction = vecteur de visee)
+    x0, y0 = 5, 27
+    x1, y1 = 24, 8
+    line(img, x0, y0, x1, y1, CY_G, w=2)   # halo
+    line(img, x0, y0, x1, y1, CY,   w=1)   # coeur
+    line(img, x0, y0, x1, y1, WH,   w=0)   # brillance
+    # tete de fleche triangulaire pleine a la pointe
+    ax, ay = 26, 6
+    a = math.atan2(y1 - y0, x1 - x0)       # angle de la hampe
+    for back in range(0, 8):
+        t = back / 7.0
+        half = int(round(3.2 * t))         # s'evase vers l'arriere de la pointe
+        bx = ax - math.cos(a) * back
+        by = ay - math.sin(a) * back
+        # perpendiculaire a la hampe
+        px, py = -math.sin(a), math.cos(a)
+        for s in range(-half, half + 1):
+            put(img, bx + px * s, by + py * s, CY if abs(s) == half else WH if back < 2 else CY)
+    put(img, ax, ay, WH)
+    # petit repere de depart (emetteur)
+    disc(img, x0, y0, 1.6, CY); put(img, x0, y0, WH)
+    save_icon(img, "ui_icon_vector_lance.png")
+
 # ---------------- Singularite : vortex spirale violet vers un coeur sombre
 def gen_singularity():
     img = canvas()
@@ -340,5 +369,6 @@ if __name__ == "__main__":
     gen_seeker()
     gen_cryo()
     gen_pyre()
+    gen_vector_lance()
     gen_singularity()
     print("Termine.")

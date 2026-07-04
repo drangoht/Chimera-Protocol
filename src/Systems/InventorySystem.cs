@@ -40,6 +40,7 @@ public partial class InventorySystem : Node
         { "seeker_swarm",    "res://scenes/weapons/SeekerSwarm.tscn"    },
         { "cryo_lance",      "res://scenes/weapons/CryoLance.tscn"      },
         { "pyre_stream",     "res://scenes/weapons/PyreStream.tscn"     },
+        { "vector_lance",    "res://scenes/weapons/VectorLance.tscn"    },
         { "singularity",     "res://scenes/weapons/Singularity.tscn"    },
         { "fusion_blade",    "res://scenes/weapons/FusionBlade.tscn"    },
         { "rail_overcharged","res://scenes/weapons/RailOvercharged.tscn"},
@@ -272,6 +273,14 @@ public partial class InventorySystem : Node
                 if (lvlData.TryGetProperty("burnDps",      out var pbd)) pyr.BurnDps      = pbd.GetSingle();
                 if (lvlData.TryGetProperty("burnDuration", out var pbt)) pyr.BurnDuration = pbt.GetSingle();
                 pyr.Damage *= dmgMult;
+                break;
+
+            case "vector_lance" when node is VectorLance vl:
+                if (lvlData.TryGetProperty("projectileCount", out var vpc)) vl.ProjectileCount = vpc.GetInt32();
+                if (lvlData.TryGetProperty("piercing",        out var vpi)) vl.IsPiercing      = vpi.GetBoolean();
+                if (lvlData.TryGetProperty("projectileSpeed", out var vps)) vl.ProjectileSpeed = vps.GetSingle();
+                if (lvlData.TryGetProperty("spreadDegrees",   out var vsd)) vl.SpreadDegrees   = vsd.GetSingle();
+                vl.Damage *= dmgMult;
                 break;
 
             case "singularity" when node is Singularity sg:

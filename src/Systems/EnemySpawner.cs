@@ -254,8 +254,8 @@ public partial class EnemySpawner : Node
         // On utilise ApplyScaling pour synchroniser _currentHp avec le MaxHp scalé.
         float hpMult  = GameSettings.Instance?.EnemyHpMult ?? 1f;
         float dmgMult = GameSettings.Instance?.EnemyDamageMult ?? 1f;
-        float scaledHp     = EnemyScaling.Scaled(data.MaxHp,  tMinutes, data.HpScalingPerMinute,     hpMult);
-        float scaledDamage = EnemyScaling.Scaled(data.Damage, tMinutes, data.DamageScalingPerMinute, dmgMult);
+        float scaledHp     = EnemyScaling.ScaledCurved(data.MaxHp,  tMinutes, data.HpScalingPerMinute,     hpMult);
+        float scaledDamage = EnemyScaling.ScaledCurved(data.Damage, tMinutes, data.DamageScalingPerMinute, dmgMult);
         node.ApplyScaling(scaledHp, scaledDamage);
 
         // Affixe d'élite : une fraction des ennemis BASIQUES (jamais mini-boss/boss) est promue.

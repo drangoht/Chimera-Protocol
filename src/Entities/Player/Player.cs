@@ -32,11 +32,22 @@ public partial class Player : CharacterBody2D
     // ── Power-ups temporaires (buffs à durée limitée, aucun power-creep permanent) ──
     public  float SpeedMultiplier { get; private set; } = 1f;   // Célérité
     public  bool  Shielded        { get; private set; }          // Égide (invulnérabilité)
+
+    /// <summary>Direction de visée = dernière direction de déplacement non nulle (twin-stick
+    /// clavier/manette). Utilisée par les armes DIRIGÉES (ex. Lance Vectorielle) pour laisser
+    /// place au skill de placement, là où les autres armes auto-visent l'ennemi le plus proche.</summary>
+    public  Vector2 AimDirection { get; private set; } = Vector2.Down;
     private readonly System.Collections.Generic.Dictionary<PowerUpType, float> _buffTime = new();
     private BuffBar? _buffBar;
 
     public override void _Ready()
     {
+        // Le joueur passe AU-DESSUS des VFX d'armes proches (flammes du Jet de Pyre ZIndex=2,
+        // muzzle flash 4, cônes/champs) pour rester lisible « dans le feu de l'action » — sans
+        // ce ZIndex il était occulté par ses propres projectiles. Reste sous les flashs d'impact
+        // très ponctuels (foudre ZIndex=6) et sous l'UI (CanvasLayer).
+        ZIndex = 5;
+
         _sprite = GetNodeOrNull<AnimatedSprite2D>("AnimatedSprite2D");
         _sprite?.Play("idle");
 
@@ -209,6 +220,8 @@ public partial class Player : CharacterBody2D
         UpdateHpRegen(delta);
 
         var direction = Input.GetVector("ui_left", "ui_right", "ui_up", "ui_down");
+        if (direction != Vector2.Zero)
+            AimDirection = direction.Normalized();   // mémorise la dernière direction (visée des armes dirigées)
         Velocity = direction.Normalized() * Stats.Speed * SpeedMultiplier;
         MoveAndSlide();
         ClampToArena();

@@ -123,7 +123,7 @@ chimera-protocol/
 ├── src/
 │   ├── Core/          GameManager, Constants, SaveManager + Rules/ (logique pure testable)
 │   ├── Entities/      Player, EnemyBase + 4 ennemis + 3 mini-boss + boss, XpOrb, HpOrb, MagnetPickup, AetherGeyser
-│   ├── Weapons/       11 armes actives + 4 fusions + Bullet
+│   ├── Weapons/       12 armes actives (dont Lance Vectorielle dirigée) + 7 fusions + Bullet
 │   ├── Systems/       XpSystem, InventorySystem, LevelUpSystem, EnemySpawner, AetherCoreSpawner, MagnetSpawner, GameSettings, Loc, GroundRenderer
 │   ├── UI/            MainMenu, CharacterSelect, LevelSelect, Hub, LevelUp, RunEnd, Pause, Options, Bestiary, Arsenal, HUD, Codex
 │   ├── VFX/           EnemyDeathBurst, ImpactBurst, FusionFlash, PlasmaArcFlash, MuzzleFlash, ShockwaveRing
