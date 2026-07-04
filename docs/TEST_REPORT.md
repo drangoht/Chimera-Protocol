@@ -4,6 +4,29 @@ Rapport de sessions de test. Chaque section correspond à une session de test di
 
 ---
 
+## Refonte VISÉE Lance Vectorielle (commit `2adec5d`) — 2026-07-04
+
+**Testeur :** game-tester (agent Claude). **Moteur :** Godot 4.7.stable.mono, D3D12. **Build :** OK (0 warn / 0 err).
+**Verdict : PASS.**
+
+**Méthode :** scaffolding temporaire dans `GameManager.RegisterPlayer` (grant `vector_lance` L5 au démarrage), REVERTÉ — arbre git propre (hors ce fichier). Captures empiriques via script PyAutoGUI (souris fixée à un offset du joueur centré caméra, joueur stationnaire ou en déplacement opposé).
+
+**1. Visée souris (empirique) — OK.** Souris à droite → réticule (petit triangle) à droite du joueur, pointant à droite ; souris en haut → réticule au-dessus, pointant en haut. Le réticule suit le curseur, pas l'ennemi le plus proche ni la direction de déplacement.
+
+**2. Découplage déplacement/visée (empirique, critique) — OK.** Maintien flèche GAUCHE (joueur se déplace à gauche) + souris à DROITE → muzzle flash doré + impacts de la Lance sur les ennemis à DROITE, réticule à droite. Le tir suit la SOURIS, pas le déplacement. Confirmé sur capture `d2_move_left_aim_right`.
+
+**3. Réticule (présence/tinte) — OK.** Affiché uniquement quand `vector_lance`/`vector_beam` équipé (`UpdateAimIndicator` teste `InventorySystem.WeaponLevels`). Absence sans arme dirigée vérifiée par revue de code (condition `directed` sans ambiguïté ; le réticule n'apparaît en jeu qu'après le grant de la Lance par le scaffold). Tinte : `Color = _characterTint` posé par `ApplyCharacterVisual` via `RegisterPlayer` (ligne 65) AVANT `BuildAimIndicator` (ligne 86) → réticule bien teinté à l'identité du perso (rendu blanchâtre = tinte claire du perso par défaut, normal).
+
+**4. Manette / stick droit — OK (revue de code, pas de manette dispo).** `UpdateAim` lit `Input.GetJoyAxis(pads[0], JoyAxis.RightX/RightY)` du 1er joypad connecté, applique la deadzone 0.35 (`AimStickDeadzone`), passe `_gamepadAim=true` quand le stick dépasse la zone morte et repasse en mode souris dès que la souris bouge (>1 px). Logique de bascule correcte ; conserve la dernière visée quand aucun périphérique n'est actionné.
+
+**5. Rayon Vecteur (fusion `vector_beam`) — couvert.** `VectorBeam` consomme le même `Player.AimDirection` ; le réticule s'affiche aussi pour `vector_beam` (condition `UpdateAimIndicator`). Non re-testé empiriquement séparément (même source de vérité).
+
+**6. Non-régression — OK.** Pas de crash ni erreur console sur ~3 lancements. Armes auto-visées (impulse_cannon vu tirer sur l'ennemi le plus proche pendant que la Lance visait la souris) non affectées. Build 0 err ; 87 tests déjà validés (logique de visée sans dépendance testable, non couverte par xUnit).
+
+**Réserve mineure (non bloquante) :** aucune. Suggestion cosmétique optionnelle : le réticule blanchâtre par défaut est peu contrasté sur le sol clair — à surveiller côté DA si feedback joueur.
+
+---
+
 ## Fusion « Voile de Givre » (frost_veil) — 2026-07-04
 
 **Testeur :** game-tester (agent Claude). **Moteur :** Godot 4.7.stable.mono, D3D12.
