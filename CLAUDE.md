@@ -13,8 +13,8 @@ cyborgs, robots), inspiré de Vampire Survivors et Everything is Crab.
 - **Avant de coder** dans un domaine (armes, ennemis, UI/focus, VFX, scènes, assets, tests headless) → lire **`docs/PITFALLS.md`** (pièges non-évidents Godot/C# + checklists de câblage). Y ajouter tout nouveau piège découvert.
 - **État d'implémentation détaillé & version courante → `docs/PROJECT_STATE.md`** (évolutif). Résumé de phase ci-dessous.
 
-**Phase actuelle : libre.** Dernières livraisons : affixes d'élite + correctifs VFX menu (2026-07-04).
-Version publiée itch : **1.4.1**. Détail dans `docs/PROJECT_STATE.md`.
+**Phase actuelle : libre.** Dernières livraisons : fusion Rayon Vecteur (`vector_beam`), arme dirigée
++ affixes d'élite (2026-07-04). Version publiée itch : **1.6.0**. Détail dans `docs/PROJECT_STATE.md`.
 
 ## Équipe d'agents
 
