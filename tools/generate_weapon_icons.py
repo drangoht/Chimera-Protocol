@@ -292,6 +292,30 @@ def gen_vector_beam():
     disc(img, ex, ey, 2, GLD); put(img, ex, ey, WH)
     save_icon(img, "ui_icon_vector_beam.png")
 
+# ---------------- Voile de Givre : couronne glacee doree (fusion, or) + flocon central
+def gen_frost_veil():
+    img = canvas()
+    GLD   = (255, 210, 90)
+    GLD_G = (150, 200, 245, 60)   # halo froid
+    ICE   = (150, 220, 255)
+    WH    = (240, 252, 255)
+    cx, cy = 16, 16
+    disc(img, cx, cy, 13, GLD_G)                 # halo glace
+    ring(img, cx, cy, 12, 1, (GLD[0], GLD[1], GLD[2], 150))   # couronne doree (fusion)
+    ring(img, cx, cy, 9, 1, (ICE[0], ICE[1], ICE[2], 160))    # anneau de givre
+    # flocon central : 6 branches avec barbes
+    for k in range(6):
+        a = math.pi * 2 * k / 6
+        x1 = cx + math.cos(a) * 7; y1 = cy + math.sin(a) * 7
+        line(img, cx, cy, x1, y1, ICE, w=0)
+        # barbes
+        bx = cx + math.cos(a) * 4.5; by = cy + math.sin(a) * 4.5
+        for s in (-1, 1):
+            a2 = a + s * 0.5
+            put(img, bx + math.cos(a2) * 2.2, by + math.sin(a2) * 2.2, (WH[0], WH[1], WH[2], 200))
+    disc(img, cx, cy, 2, WH)
+    save_icon(img, "ui_icon_frost_veil.png")
+
 # ---------------- Singularite : vortex spirale violet vers un coeur sombre
 def gen_singularity():
     img = canvas()
@@ -393,5 +417,6 @@ if __name__ == "__main__":
     gen_pyre()
     gen_vector_lance()
     gen_vector_beam()
+    gen_frost_veil()
     gen_singularity()
     print("Termine.")

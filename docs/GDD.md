@@ -1755,3 +1755,23 @@ séparément (TTK, cf. §17/§18/§20), la courbe fausserait leur fenêtre de vi
 
 `EnemyScaling.Scaled` (linéaire) est donc conservé à la fois pour les champions, la compat et les
 tests de référence. Couvert par 4 tests `CurvedFactor`/`ScaledCurved` (87 tests au total).
+
+## 24. Fusion — Voile de Givre (`frost_veil`, Épique) (2026-07-04)
+
+Nouvelle fusion complétant la matrice arme/passif et rééquilibrant l'usage de **Plaque Renforcée**
+(qui n'alimentait qu'une seule fusion, `overload_aegis`).
+
+**`cryo_lance` niv.5 + Plaque Renforcée → Voile de Givre.** Le rayon glacé perçant devient une **aura
+de givre CONTINUE** centrée sur le joueur (`type: continuous_frost_aura`, plus de cooldown discret,
+tick 0.2 s) : chaque tick inflige `damagePerTick=8.4` (42 DPS) ET un ralentissement fort
+(`slowMult=0.55`, plafonné à −40 % par `CrowdControlCaps` via `EnemyBase.ApplySlow`, `slowDuration=0.5`
+réappliqué en continu) à tout ennemi dans `radius=150` px. Résultat : la nuée reste engluée au ralenti
+à portée — traduction gameplay du fantasme défensif du blindage (« ta meilleure armure, c'est le froid »).
+
+Implémentée façon `FusionBlade` (aura radiale, stats en dur dans `FrostVeil.cs`, les fusions n'ayant pas
+de niveaux JSON). VFX sobres, sans shader : anneau `Line2D` glacé + `PointLight2D` bleu pulsé +
+`CpuParticles2D` de givre, tous en `ZIndex=-1` (sous le sprite joueur, au-dessus des ennemis).
+
+Répartition des passifs sur les fusions après ajout : thermal_core ×2, capacitor ×2, servo_motors ×3
+(orbital/hornet/vector_beam), reinforced_plating ×2 (overload_aegis/frost_veil). Armes encore sans
+fusion : scatter_volley, glaive, singularity.

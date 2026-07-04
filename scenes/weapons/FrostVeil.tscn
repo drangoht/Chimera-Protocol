@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://frostveil001"]
+
+[ext_resource type="Script" path="res://src/Weapons/FrostVeil.cs" id="1"]
+
+[node name="FrostVeil" type="Node2D"]
+script = ExtResource("1")

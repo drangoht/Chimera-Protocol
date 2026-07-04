@@ -50,6 +50,7 @@ public partial class InventorySystem : Node
         { "solar_column",    "res://scenes/weapons/SolarColumn.tscn"    },
         { "hornet_swarm",    "res://scenes/weapons/HornetSwarm.tscn"    },
         { "vector_beam",     "res://scenes/weapons/VectorBeam.tscn"     },
+        { "frost_veil",      "res://scenes/weapons/FrostVeil.tscn"      },
     };
 
     public override void _Ready()

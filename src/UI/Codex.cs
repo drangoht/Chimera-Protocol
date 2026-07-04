@@ -249,6 +249,9 @@ public static class Codex
 
         new("vector_beam", "WPN_VECTOR_BEAM_NAME", "TAG_FUSION", "WPN_VECTOR_BEAM_DESC",
             IconDir + "ui_icon_vector_beam.png", Gold),
+
+        new("frost_veil", "WPN_FROST_VEIL_NAME", "TAG_FUSION", "WPN_FROST_VEIL_DESC",
+            IconDir + "ui_icon_frost_veil.png", Gold),
     };
 
     // ── Correspondance id → icône (armes ET passifs) ──────────────────────────
@@ -274,6 +277,7 @@ public static class Codex
         { "solar_column",      IconDir + "ui_icon_solar_column.png"   },
         { "hornet_swarm",      IconDir + "ui_icon_hornet_swarm.png"   },
         { "vector_beam",       IconDir + "ui_icon_vector_beam.png"    },
+        { "frost_veil",        IconDir + "ui_icon_frost_veil.png"     },
         { "thermal_core",      IconDir + "ui_icon_thermal_core.png"   },
         { "reinforced_plating",IconDir + "ui_icon_reinforced_plate.png" },
         { "servo_motors",      IconDir + "ui_icon_servomotors.png"    },
