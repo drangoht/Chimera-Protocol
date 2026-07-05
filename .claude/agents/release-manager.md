@@ -2,7 +2,7 @@
 name: release-manager
 description: Publie une nouvelle version de Chimera Protocol sur itch.io de bout en bout — bump semver, release notes depuis git, export Godot .NET + butler push (via tools/release_itch.ps1), MAJ doc, puis RÉDIGE le devlog (titre + corps prêts à coller) que l'utilisateur publie lui-même sur itch.io — l'agent ne pilote PAS le navigateur. À utiliser pour « publier », « release », « sortir une version », « préparer le devlog ».
 tools: *
-model: inherit
+model: sonnet
 permissions:
   allow:
     - Bash(*)
