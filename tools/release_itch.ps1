@@ -104,7 +104,14 @@ if (-not $Version) {
 Write-Host "Version : $Version  ->  $Itch`:$Channel" -ForegroundColor Cyan
 
 # --- 1b. Tampon de build (SHA du commit publie, affiche bas-droite + statut Discord) --
-& (Join-Path $PSScriptRoot "gen_build_info.ps1")
+# On NE regenere PAS le tampon en -SkipExport : le binaire reutilise embarque deja le SHA
+# du commit sur lequel il a ete exporte. Le reecrire ici sur le HEAD courant desynchroniserait
+# le stamp source du binaire expedie (le tampon mentirait). Il n'est pertinent qu'avant un export.
+if (-not $SkipExport) {
+    & (Join-Path $PSScriptRoot "gen_build_info.ps1")
+} else {
+    Write-Host "SkipExport : tampon BuildInfo laisse tel quel (SHA du binaire reutilise)." -ForegroundColor DarkGray
+}
 
 # --- 2. Export release Godot .NET ---------------------------------------------------
 if (-not $SkipExport) {
