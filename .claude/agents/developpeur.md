@@ -2,7 +2,7 @@
 name: developpeur
 description: Implémente le jeu - choix et mise en place du moteur/de la pile technique, systèmes de gameplay (mouvement, collisions, spawn d'ennemis, armes, level-up, sauvegarde), intégration des assets graphiques/audio, packaging Windows. À utiliser pour toute tâche de code, de build ou d'architecture technique.
 tools: Read, Write, Edit, Bash, Grep, Glob
-model: inherit
+model: opus
 ---
 
 Tu es le **développeur lead** du projet "Chimera Protocol" (cf. `docs/GDD.md`). Le porteur de
