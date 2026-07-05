@@ -1,9 +1,10 @@
 """
-Genere des sprites pixel art DEDIES pour les 2 personnages alternatifs (32x32,
+Genere des sprites pixel art DEDIES pour les personnages alternatifs (32x32,
 style maison cohérent avec generate_sprites.py / generate_boss_sprites.py).
 
 - titan    : robot-gardien lourd, chassis blindé acier + visière orange.
 - vagabond : humain survivant, capuche/cape kaki + écharpe verte.
+- vecteur  : cyborg de précision élancé, châssis violet + visière-scanner énergie.
 
 Memes animations que le joueur d'origine pour que Player.cs marche sans changement :
   idle (4), run_right (6), run_down (6), death (8).
@@ -147,8 +148,62 @@ def draw_vagabond(img, leg=0, bob=0, facing="down", dead=0, alpha=255):
         for yy in range(top, top+24, 2):
             rect(img, cx-6, yy, cx+6, yy, (0,0,0, 0))
 
+# ================================================================ VECTEUR (cyborg precision)
+VC_DARK = (52, 46, 74)     # châssis violet sombre
+VC_MID  = (96, 86, 128)
+VC_LITE = (150, 140, 188)
+VC_ACC  = (178, 108, 255)  # énergie violette (accent — jamais assombri)
+VC_ACCB = (214, 170, 255)
+
+def draw_vecteur(img, leg=0, bob=0, facing="down", dead=0, alpha=255):
+    cx = 16
+    top = 6 + bob
+    a = alpha
+    D=(VC_DARK[0],VC_DARK[1],VC_DARK[2],a); M=(VC_MID[0],VC_MID[1],VC_MID[2],a); L=(VC_LITE[0],VC_LITE[1],VC_LITE[2],a)
+    AC=(VC_ACC[0],VC_ACC[1],VC_ACC[2],a)
+
+    lo = int(leg*2)
+    # jambes fines et longues
+    rect(img, cx-4, top+18+max(0,lo), cx-2, top+24+max(0,lo), D)
+    rect(img, cx+2, top+18+max(0,-lo), cx+4, top+24+max(0,-lo), D)
+
+    # torse élancé
+    rect(img, cx-6, top+8, cx+6, top+19, D)
+    rect(img, cx-4, top+9, cx+4, top+18, M)
+    # ligne d'énergie centrale (le « vecteur ») + noyau lumineux
+    rect(img, cx, top+10, cx, top+17, AC)
+    glow(img, cx, top+13, 5, VC_ACC, 0.45)
+    put(img, cx, top+13, VC_ACCB)
+    # épaulières fines (biseau clair)
+    rect(img, cx-7, top+8, cx-5, top+11, D); rect(img, cx-7, top+8, cx-5, top+8, L)
+    rect(img, cx+5, top+8, cx+7, top+11, D); rect(img, cx+5, top+8, cx+7, top+8, L)
+    # émetteur d'épaule (petit canon dirigé, côté visée)
+    if facing == "right":
+        rect(img, cx+6, top+9, cx+9, top+10, M)
+        put(img, cx+9, top+9, AC)
+    else:
+        rect(img, cx+5, top+9, cx+7, top+10, M)
+        put(img, cx+7, top+9, AC)
+
+    # tête fine + bandeau-scanner violet
+    rect(img, cx-4, top, cx+4, top+7, D)
+    rect(img, cx-3, top+1, cx+3, top+6, M)
+    if facing == "right":
+        rect(img, cx+0, top+3, cx+3, top+4, AC)
+        glow(img, cx+2, top+3, 4, VC_ACC, 0.4)
+    else:
+        rect(img, cx-3, top+3, cx+3, top+4, AC)   # bandeau scanner horizontal
+        glow(img, cx, top+3, 5, VC_ACC, 0.35)
+    # ailette de visée (fine antenne biseautée)
+    put(img, cx+3, top-1, L); put(img, cx+4, top-2, AC)
+
+    if dead:
+        for yy in range(top, top+24, 2):
+            rect(img, cx-6, yy, cx+6, yy, (0,0,0, 0))
+
 # Noyau energetique / accents jamais assombris par l'ombrage (§5/§6 du brief).
-_CORE_COLORS = [T_ORN[:3], T_ORNB[:3], (V_SCRF[0], V_SCRF[1], V_SCRF[2])]
+_CORE_COLORS = [T_ORN[:3], T_ORNB[:3], (V_SCRF[0], V_SCRF[1], V_SCRF[2]),
+                VC_ACC[:3], VC_ACCB[:3]]
 save = _p3d.wrap_save(_raw_save, core_colors=_CORE_COLORS)
 
 
@@ -238,8 +293,11 @@ def write_tres(folder, prefix, counts, speeds):
 
 def main():
     speeds = {"idle": 6.0, "run_right": 12.0, "run_down": 12.0, "death": 10.0}
-    gen_char("titan", draw_titan, speeds)
-    gen_char("vagabond", draw_vagabond, speeds)
+    only = sys.argv[1] if len(sys.argv) > 1 else None
+    chars = {"titan": draw_titan, "vagabond": draw_vagabond, "vecteur": draw_vecteur}
+    for name, draw in chars.items():
+        if only is None or only == name:
+            gen_char(name, draw, speeds)
     print("Termine.")
 
 if __name__ == "__main__":

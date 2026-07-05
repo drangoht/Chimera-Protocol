@@ -88,6 +88,9 @@ CHAR_TITAN_DESC,"Armored combat chassis: far more HP but slower. Starts with the
 CHAR_VAGABOND_NAME,Vagabond,Vagabond,Vagabundo
 CHAR_VAGABOND_TAG,Human — mobility,Humain — mobilité,Humano — movilidad
 CHAR_VAGABOND_DESC,"Survivor of flesh and blood: little HP but very fast. Starts with the Plasma Blade to strike and break away. Rewards aggressive kiting and dodging.","Survivant de chair et d'os : peu de PV mais très rapide. Démarre avec la Lame Plasma pour frapper et se dégager. Récompense le kite agressif et l'esquive.","Superviviente de carne y hueso: poca vida pero muy rápido. Empieza con la Hoja de Plasma para golpear y escapar. Recompensa el kiteo agresivo y la esquiva."
+CHAR_VECTEUR_NAME,Vector,Vecteur,Vector
+CHAR_VECTEUR_TAG,Cyborg — precision,Cyborg — précision,Cyborg — precisión
+CHAR_VECTEUR_DESC,"A precision cyborg wired for the Vector Lance: aim it yourself toward the cursor or right stick to pierce whole rows of foes. Fragile but lethal — rewards steady aim over auto-fire.","Cyborg de précision câblé pour la Lance Vectorielle : visez-la vous-même vers le curseur ou le stick droit pour transpercer des rangées entières d'ennemis. Fragile mais létal — récompense la visée maîtrisée plutôt que le tir auto.","Cyborg de precisión cableado para la Lanza Vectorial: apúntala tú mismo hacia el cursor o el stick derecho para atravesar filas enteras de enemigos. Frágil pero letal: recompensa la puntería sobre el disparo automático."
 BIOME_SANCTUAIRE_NAME,Rusted Sanctuary,Sanctuaire Rouillé,Santuario Oxidado
 BIOME_SANCTUAIRE_EFFECT,Neutral terrain,Terrain neutre,Terreno neutral
 BIOME_SANCTUAIRE_DESC,"The original arena, steel-blue. No bonus or penalty — the right place to learn the loop.","L'arène d'origine, bleu-acier. Aucun bonus ni malus — le bon endroit pour apprendre la boucle.","La arena original, azul acero. Sin bonus ni penalización: el lugar ideal para aprender el bucle."

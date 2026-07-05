@@ -110,7 +110,7 @@ public partial class GameSettings : Node
     private readonly HashSet<string> _discovered = new();
 
     /// <summary>Armes de signature des personnages : toujours considérées découvertes.</summary>
-    public static readonly string[] SignatureWeapons = { "impulse_cannon", "drone_swarm", "plasma_blade" };
+    public static readonly string[] SignatureWeapons = { "impulse_cannon", "drone_swarm", "plasma_blade", "vector_lance" };
 
     /// <summary>L'arme a-t-elle été découverte (équipée au moins une fois) ou est-elle une arme de signature ?</summary>
     public bool IsDiscovered(string weaponId)

@@ -1799,3 +1799,16 @@ sur une touche » → la prochaine touche pressée devient la touche principale 
 annule). Les flèches et la manette restent toujours actives en secondaire. Un bouton « Touches par défaut
 (ZQSD) » restaure. Persistance : section `input` de `user://settings.cfg` (keycode par action), rechargée
 et appliquée au démarrage via `GameSettings.Apply → InputRemap.ApplyAll`.
+
+## 26. Personnage — Vecteur (cyborg de précision) (2026-07-05)
+
+4e personnage jouable, premier bâti autour d'une **arme dirigée**. `Characters.All` (id `vecteur`) :
+PV 90 / vitesse 210 (profil médian-fragile, entre Chimera et Vagabond), teinte violette `(0.72, 0.5, 1)`,
+sprite dédié `assets/sprites/player/vecteur/` (généré par `tools/generate_character_sprites.py` — châssis
+violet élancé, bandeau-scanner + noyau énergie). **Arme de signature : `vector_lance`** (Lance Vectorielle),
+donc le réticule de visée (souris/stick droit, cf. §23.2) est actif dès le départ et teinté à son identité.
+Ajouté à `GameSettings.SignatureWeapons` (toujours « découverte » à l'arsenal). Aucune nouvelle mécanique
+moteur : réutilise entièrement le pipeline perso existant (`GameManager` pose stats/frames/teinte +
+`InventorySystem.AddOrUpgradeWeapon("vector_lance")`). Clés loc `CHAR_VECTEUR_NAME/TAG/DESC` (EN/FR/ES).
+Fantasme : récompenser la visée maîtrisée plutôt que l'auto-tir — le seul perso dont l'arme de base « vise
+à la main ».

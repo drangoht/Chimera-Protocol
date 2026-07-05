@@ -5,7 +5,8 @@
 > `CLAUDE.md` ; le design complet dans `docs/GDD.md` ; la carte du code dans `/carte-projet`.
 
 - Pile technique : **Godot 4.7 .NET (C# / .NET 8 / GodotSharp)**
-- **Phase actuelle : libre** — dernières livraisons : **remap clavier + ZQSD par défaut**
+- **Phase actuelle : libre** — dernières livraisons : **nouveau perso Vecteur** (cyborg de précision,
+  arme de base Lance Vectorielle dirigée, 2026-07-05), **remap clavier + ZQSD par défaut**
   (`src/Systems/InputRemap.cs`, section Contrôles des Options, 2026-07-05), visée souris/stick + réticule
   Lance Vectorielle (1.8.0), fusions Rayon Vecteur & Voile de Givre (brume de froid + ennemis gelés,
   1.8.1), affixes d'élite. Version publiée itch : **1.9.0**.
@@ -13,7 +14,7 @@
 ## Ce qui est implémenté
 
 - Direction artistique **pseudo-3D avec ombres** (`docs/ART_BRIEF_PSEUDO3D.md`) appliquée à TOUS les sprites via `tools/pseudo3d_lib.py` (lumière fixe haut-gauche 45°, dérivation shadow/highlight HSV, ombre portée elliptique) : 3 persos joueurs, 8 ennemis/mini-boss/boss existants, 20 nouveaux ennemis, obstacles, tuiles de biome, icônes d'armes/UI (640 PNG régénérés, `.import` à jour). Validé game-tester PASS 2026-07-03 (cohérence lumière, lisibilité joueur en nuée).
-- 3 personnages (Chimera, Titan, Vagabond) redessinés, 5 biomes (Sanctuaire, Aether, Fournaise, Givre, Néon)
+- 4 personnages jouables (Chimera/Canon à Impulsions, Titan/Essaim de Drones, Vagabond/Lame Plasma, **Vecteur/Lance Vectorielle** — cyborg de précision, arme dirigée, ajouté 2026-07-05), 5 biomes (Sanctuaire, Aether, Fournaise, Givre, Néon)
 - 12 armes actives + 9 fusions + 4 passifs ; power-ups temporaires (4 types)
   (`vector_lance` = 1re arme **dirigée** : tire vers `Player.AimDirection`, pas l'ennemi le plus proche — cf. GDD §23 ;
   sa fusion `vector_beam` + servo_motors = **rayon perforant continu dirigé** ;

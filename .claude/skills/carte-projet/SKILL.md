@@ -57,7 +57,9 @@ fréquence + tirage + `EliteModifiers`, cf. GDD §22). Les nœuds délèguent ic
 `MainMenu` (+ **bandeau MAJ** → §MAJ) · `CharacterSelectScreen` · `LevelSelectScreen` ·
 `HubScreen` · `BestiaryScreen` / `ArsenalScreen` / `CodexScreenBase` (+ `Codex`) ·
 `OptionsScreen` · `PauseScreen` · `LevelUpScreen` · `RunEndScreen` · `IntroScreen`
-(cinématique) · `HUD` · `BuffBar` · `Banner` · `BiomeCatalog` · `Characters`.
+(cinématique) · `HUD` · `BuffBar` · `Banner` · `BiomeCatalog` · `Characters` (registre
+des 4 persos jouables : chimera/impulse_cannon, titan/drone_swarm, vagabond/plasma_blade,
+vecteur/vector_lance ; `CharacterSelectScreen` en fait les cartes).
 
 ## §Weapons — `src/Weapons/`
 Base : `WeaponBase` (⚠ `base._Ready()` EN DERNIER). 12 armes actives + 9 fusions.
@@ -99,6 +101,7 @@ Fusions : `FusionBlade`, `RailOvercharged`, `OrbitalSwarm`, `OverloadAegis`,
 > **Avant de coder** dans un domaine (armes, ennemis, UI, VFX, scènes…), lire `docs/PITFALLS.md`.
 - **Arme** (8 pts) : `weapons.json` · `levelup_config.json` · `InventorySystem` (paths+stats) · `LevelUpSystem.AllWeaponIds` · `Codex` · icône `ui_icon_*.png`+`.import` · clés `WPN_*` EN/FR/ES.
 - **Ennemi basique** (variante d'archétype, PAS de scène) : `enemies.json` (`ai.type` ∈ straight_chase/erratic_chase/ranged_kiter/slow_hunter, `framesPath` optionnel) · `Codex.Enemies` · clés `ENEMY_*` EN/FR/ES · sprite `.tres`/`.png`. Vrai nouveau comportement = scène + sous-classe.
+- **Personnage jouable** (5 pts) : `Characters.All` (id, stats, `StartingWeaponId`, `Tint`, `FramesPath`) · sprite dédié via `tools/generate_character_sprites.py <id>` (+ `.tres` + import Godot) · clés `CHAR_<ID>_NAME/TAG/DESC` EN/FR/ES (l'écran lit les clés, pas les champs C#) · `GameSettings.SignatureWeapons` si l'arme de base doit être « découverte » d'office · aucune méca moteur (le pipeline `GameManager`/`InventorySystem` gère toute arme de départ).
 
 ## Commandes utiles
 - Build .exe : `"…/Godot_v4.7…mono.exe" --headless --export-release "Windows Desktop" "./build/ChimeraProtocol.exe"` (⚠ `ChimeraProtocol.sln` requis à la racine)

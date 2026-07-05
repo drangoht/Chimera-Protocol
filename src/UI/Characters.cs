@@ -33,6 +33,7 @@ public static class Characters
     private static readonly Color Cyan   = new(0.6f,  1f,    0.95f);
     private static readonly Color Orange = new(1f,    0.78f, 0.55f);
     private static readonly Color Green  = new(0.7f,  1f,    0.7f);
+    private static readonly Color Violet = new(0.72f, 0.5f,  1f);
 
     public static readonly IReadOnlyList<CharacterDef> All = new List<CharacterDef>
     {
@@ -53,6 +54,12 @@ public static class Characters
             + "pour frapper et se dégager. Récompense le kite agressif et l'esquive.",
             75f, 245f, "plasma_blade", Green,
             "res://assets/sprites/player/vagabond/vagabond_frames.tres"),
+
+        new("vecteur", "Vecteur", "Cyborg — précision",
+            "Cyborg de précision câblé pour la Lance Vectorielle : visez-la vous-même vers le curseur "
+            + "ou le stick droit pour transpercer des rangées entières. Fragile mais létal.",
+            90f, 210f, "vector_lance", Violet,
+            "res://assets/sprites/player/vecteur/vecteur_frames.tres"),
     };
 
     public static CharacterDef Get(string id)
