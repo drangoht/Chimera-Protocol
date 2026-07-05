@@ -4,6 +4,41 @@
 > `release-manager`). Entrées en ordre décroissant (la plus récente en haut). Ton orienté
 > joueur, EN puis FR (audience itch surtout anglophone).
 
+## v1.11.2 — The Frost biome finally looks cold (2026-07-05)
+
+**Fixes**
+- **Frozen enemies now actually turn to ice.** Freeze effects used to wash enemies with a blue tint —
+  but a tint can only ever *darken* a warm sprite, so orange foes just went muddy instead of frosty.
+  The frost state is now driven by a dedicated shader that pulls each pixel toward a crisp glacial blue,
+  so a burning-orange brute reads as unmistakably *frozen* while keeping its pseudo-3D shading. Hit
+  flashes and elite tints still layer cleanly on top.
+- **The Frost Veil reads like real mist.** Chimera's frost aura went from two thin concentric rings to
+  a proper churning bank — six offset puffs plus denser frost particles — so it looks like a
+  volumetric cloud of cold even when you stand still, instead of a flat halo.
+
+**Why it matters**
+- Visual polish only, no gameplay or balance changes. This closes the two outstanding readability notes
+  on the Frost biome: freezes and the Frost Veil now sell the cold instead of hinting at it.
+
+---
+
+**Corrections**
+- **Les ennemis gelés virent enfin à la glace.** Le gel appliquait jusqu'ici une teinte bleue sur les
+  ennemis — mais une teinte ne peut qu'*assombrir* un sprite chaud, si bien qu'un ennemi orange tournait
+  au terne plutôt qu'au givré. L'état gelé passe désormais par un shader dédié qui tire chaque pixel vers
+  un bleu glacial franc : une brute orange incandescente se lit comme réellement *gelée*, en conservant
+  son relief pseudo-3D. Le flash de dégâts et la teinte d'élite se composent proprement par-dessus.
+- **Le Voile de Givre se lit comme une vraie brume.** L'aura de givre de Chimera passe de deux fines
+  nappes concentriques à un banc dense qui tournoie — six bouffées décalées et des particules de givre
+  densifiées — pour donner un nuage de froid volumétrique même à l'arrêt, au lieu d'un simple halo plat.
+
+**Pourquoi c'est important**
+- Du polish visuel uniquement, aucun changement de gameplay ni d'équilibrage. Cela ferme les deux
+  réserves de lisibilité sur le biome Givre : le gel et le Voile de Givre vendent enfin le froid au lieu
+  de le suggérer.
+
+---
+
 ## v1.11.1 — Level-up cards read clean again (2026-07-05)
 
 **Fixes**

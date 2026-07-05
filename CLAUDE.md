@@ -16,7 +16,7 @@ cyborgs, robots), inspiré de Vampire Survivors et Everything is Crab.
 **Phase actuelle : libre.** Dernières livraisons : **Discord Rich Presence** (`src/Systems/DiscordPresence.cs`,
 statut « joue à Chimera Protocol » + contexte perso/biome) et **tampon de version** `v<ver>-<sha>` bas-droite
 (`VersionStamp` + `BuildInfo`), nouveau perso **Vecteur** (Lance Vectorielle dirigée), remap clavier + ZQSD
-par défaut (`src/Systems/InputRemap.cs`), 2026-07-05. Version publiée itch : **1.11.0**. Détail dans
+par défaut (`src/Systems/InputRemap.cs`), 2026-07-05. Version publiée itch : **1.11.2**. Détail dans
 `docs/PROJECT_STATE.md`.
 
 ## Équipe d'agents

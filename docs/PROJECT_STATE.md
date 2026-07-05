@@ -12,7 +12,9 @@
   (`src/Systems/InputRemap.cs`, section Contrôles des Options, 2026-07-05), visée souris/stick + réticule
   Lance Vectorielle (1.8.0), fusions Rayon Vecteur & Voile de Givre (brume de froid + ennemis gelés,
   1.8.1), affixes d'élite. **Correctif carte de level-up** (texte ancré sous l'icône, fini le chevauchement
-  sur descriptions longues type fusions, 1.11.1). Version publiée itch : **1.11.1**.
+  sur descriptions longues type fusions, 1.11.1). **Polish VFX biome Givre** (rendu ennemi gelé refait par
+  shader `enemy_frost.gdshader` — lerp vers bleu glacial franc au lieu d'un multiply qui ternit ; brume du
+  Voile de Givre densifiée en 6 puffs volumétriques, `src/Weapons/FrostVeil.cs`, 1.11.2). Version publiée itch : **1.11.2**.
 
 ## Ce qui est implémenté
 
