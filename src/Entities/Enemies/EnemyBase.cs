@@ -26,13 +26,25 @@ public partial class EnemyBase : CharacterBody2D
     private static PackedScene? _xpOrbScene;
     private static PackedScene? _hpOrbScene;
 
-    // ── Rendu « gelé » : teinte glacée du sprite tant que l'ennemi est ralenti (toute source de
-    //    slow : Lance Cryo, Voile de Givre…). Multiplie la teinte de base (blanc, ou teinte d'élite)
-    //    via SelfModulate → se combine sans écraser l'affixe ni le HitFlash (qui agit sur Modulate). ──
+    // ── Rendu « gelé » : tant que l'ennemi est ralenti (toute source de slow : Lance Cryo, Voile de
+    //    Givre…), un shader recolore sa texture vers un bleu glacé (paramètre `frost` 0→1). Un multiply
+    //    sur SelfModulate ne peut qu'assombrir, jamais AJOUTER du bleu à un sprite chaud (orange) → le
+    //    shader lerpe la couleur du pixel. Il ne touche pas MODULATE, donc HitFlash (modulate du nœud)
+    //    et la teinte d'élite (self_modulate) restent composés par-dessus. ──
     private AnimatedSprite2D? _sprite;
-    private Color _baseSelfModulate = Colors.White;   // teinte hors-gel (élite pose la sienne)
-    private bool  _frostActive      = false;
-    private static readonly Color FrostTint = new(0.45f, 0.68f, 1.4f, 1f);   // bleu glacé (multiplié) : coupe fort R/G, pousse B pour un froid plus marqué
+    private bool  _frostActive = false;
+    private ShaderMaterial? _frostMaterial;   // posé au 1er gel (lazy → batching préservé hors Givre)
+    private static Shader?  _frostShader;
+
+    /// <summary>Pose le shader de gel sur le sprite au premier besoin (lazy : les ennemis jamais gelés
+    /// gardent leur matériau par défaut et restent batchables).</summary>
+    private void EnsureFrostMaterial()
+    {
+        if (_frostMaterial != null || _sprite == null) return;
+        _frostShader ??= GD.Load<Shader>("res://assets/shaders/enemy_frost.gdshader");
+        _frostMaterial = new ShaderMaterial { Shader = _frostShader };
+        _sprite.Material = _frostMaterial;
+    }
 
     // ── Affixe d'élite (voir EliteAffixTable) : None pour un ennemi normal ──────
     protected EliteAffix _eliteAffix       = EliteAffix.None;
@@ -95,13 +107,14 @@ public partial class EnemyBase : CharacterBody2D
         }
         Speed = _baseSpeed * _slowMult;   // les sous-classes lisent Speed → ralenties automatiquement
 
-        // Rendu « gelé » : bascule la teinte glacée uniquement au changement d'état (évite d'écrire
-        // SelfModulate à chaque frame pour 200-300 ennemis).
+        // Rendu « gelé » : bascule le paramètre `frost` du shader uniquement au changement d'état
+        // (évite d'écrire le uniform à chaque frame pour 200-300 ennemis).
         bool frozen = _slowTime > 0f;
         if (frozen != _frostActive && _sprite != null)
         {
             _frostActive = frozen;
-            _sprite.SelfModulate = frozen ? _baseSelfModulate * FrostTint : _baseSelfModulate;
+            EnsureFrostMaterial();
+            _frostMaterial?.SetShaderParameter("frost", frozen ? 1f : 0f);
         }
 
         if (_burnTime > 0f)
@@ -228,9 +241,8 @@ public partial class EnemyBase : CharacterBody2D
         if (_sprite != null)
         {
             // SelfModulate teinte le sprite sans écraser le Modulate du corps (HitFlash reste net).
-            // _baseSelfModulate mémorise cette teinte pour que le gel (FrostTint) se multiplie dessus.
-            _baseSelfModulate    = tint;
-            _sprite.SelfModulate = _frostActive ? tint * FrostTint : tint;
+            // Le gel est géré indépendamment par le shader (paramètre `frost`), pas par SelfModulate.
+            _sprite.SelfModulate = tint;
             _sprite.Scale *= EliteAffixTable.VisualScale;
         }
 

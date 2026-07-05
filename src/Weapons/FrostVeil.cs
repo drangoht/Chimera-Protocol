@@ -8,10 +8,11 @@ using Godot;
 /// virent au bleu glacé (rendu « gelé », cf. EnemyBase). Fantasme défensif du blindage. Stats en dur
 /// (les fusions n'ont pas de niveaux JSON).
 ///
-/// VFX « vraie brume de froid » : deux nappes de brume douce (sprites radiaux translucides bleutés)
-/// qui dérivent et pulsent en sens opposés pour un effet volumétrique tourbillonnant, des particules
-/// de givre qui flottent lentement dans la zone, un liseré glacé discret marquant la portée, et une
-/// lueur froide additive légère. Sans shader (robuste, léger).
+/// VFX « vraie brume de froid » : un amas de nappes douces (sprites radiaux translucides bleutés) qui
+/// se recouvrent — une grande nappe centrale + des puffs plus petits répartis sur un anneau — chacune
+/// dérivant/pulsant sur une phase propre pour un effet volumétrique tourbillonnant lisible même à
+/// l'arrêt, des particules de givre densifiées qui flottent dans la zone, un liseré glacé discret
+/// marquant la portée, et une lueur froide additive légère. Sans shader (robuste, léger).
 /// </summary>
 public partial class FrostVeil : WeaponBase
 {
@@ -23,7 +24,14 @@ public partial class FrostVeil : WeaponBase
 
     private static readonly Color MistColor = new(0.72f, 0.86f, 1f);   // brume bleu pâle
 
-    private Sprite2D?       _fogA, _fogB;
+    // Amas de nappes de brume : plusieurs petits sprites radiaux décalés se recouvrent → densité interne
+    // variable qui lit comme un nuage même en frame fixe (au lieu d'un simple halo radial concentrique).
+    private const int PuffCount = 6;
+    private readonly Sprite2D[] _puffs      = new Sprite2D[PuffCount];
+    private readonly Vector2[]  _puffOrigin = new Vector2[PuffCount];   // ancre de l'orbite de dérive
+    private readonly float[]    _puffScale  = new float[PuffCount];     // échelle de base (relatif au rayon)
+    private readonly float[]    _puffPhase  = new float[PuffCount];     // déphasage de la dérive/pulsation
+
     private Line2D?         _ring;
     private PointLight2D?   _coldLight;
     private CpuParticles2D? _frost;
@@ -44,29 +52,36 @@ public partial class FrostVeil : WeaponBase
         base._Ready();
     }
 
-    /// <summary>Deux nappes de brume douce (sprites radiaux) qui donnent le volume du voile.</summary>
+    /// <summary>Amas de nappes de brume douce (sprites radiaux décalés) qui donnent le volume du voile.
+    /// Une nappe large centrale + des puffs plus petits répartis sur l'anneau : leur recouvrement crée
+    /// une brume texturée lisible même à l'arrêt. Chaque puff a une échelle/opacité/phase distincte.</summary>
     private void BuildMist()
     {
         _softTex ??= Player.MakeRadialLightTexture(96);
-        float scale = (2f * Radius) / 96f;
+        float full = (2f * Radius) / 96f;   // échelle pour couvrir tout le diamètre
 
-        _fogA = new Sprite2D
+        for (int i = 0; i < PuffCount; i++)
         {
-            Texture  = _softTex,
-            Scale    = new Vector2(scale, scale),
-            Modulate = new Color(MistColor.R, MistColor.G, MistColor.B, 0.22f),
-            ZIndex   = -1,   // sous le sprite du joueur, au-dessus des ennemis
-        };
-        AddChild(_fogA);
+            // i == 0 : grande nappe centrale ; i >= 1 : puffs plus petits sur un anneau intermédiaire.
+            bool  center = i == 0;
+            float ring   = center ? 0f : Radius * 0.5f;
+            float angle  = 2f * Mathf.Pi * (i - 1) / (PuffCount - 1) + 0.6f;
+            _puffOrigin[i] = center ? Vector2.Zero : new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * ring;
+            _puffScale[i]  = center ? 0.95f : 0.5f + 0.12f * (i % 3);
+            _puffPhase[i]  = i * 1.7f;
 
-        _fogB = new Sprite2D
-        {
-            Texture  = _softTex,
-            Scale    = new Vector2(scale * 0.82f, scale * 0.82f),
-            Modulate = new Color(MistColor.R, MistColor.G, MistColor.B, 0.18f),
-            ZIndex   = -1,
-        };
-        AddChild(_fogB);
+            float alpha = center ? 0.18f : 0.15f;
+            var puff = new Sprite2D
+            {
+                Texture  = _softTex,
+                Position = _puffOrigin[i],
+                Scale    = new Vector2(full * _puffScale[i], full * _puffScale[i]),
+                Modulate = new Color(MistColor.R, MistColor.G, MistColor.B, alpha),
+                ZIndex   = -1,   // sous le sprite du joueur, au-dessus des ennemis
+            };
+            _puffs[i] = puff;
+            AddChild(puff);
+        }
     }
 
     /// <summary>Liseré glacé discret : marque la portée du voile (lisibilité de la zone).</summary>
@@ -106,8 +121,8 @@ public partial class FrostVeil : WeaponBase
     {
         _frost = new CpuParticles2D
         {
-            Amount               = 32,
-            Lifetime             = 2.2,
+            Amount               = 56,   // densifié : les motes portent le volume en frame statique
+            Lifetime             = 2.6,
             Emitting             = true,
             EmissionShape        = CpuParticles2D.EmissionShapeEnum.Sphere,
             EmissionSphereRadius = Radius * 0.85f,
@@ -116,9 +131,9 @@ public partial class FrostVeil : WeaponBase
             Gravity              = new Vector2(0, -6f),   // légère montée, comme un froid qui s'élève
             InitialVelocityMin   = 3f,
             InitialVelocityMax   = 12f,
-            ScaleAmountMin       = 1.4f,
-            ScaleAmountMax       = 3.2f,
-            Color                = new Color(0.85f, 0.95f, 1f, 0.55f),
+            ScaleAmountMin       = 1.6f,
+            ScaleAmountMax       = 3.6f,
+            Color                = new Color(0.85f, 0.95f, 1f, 0.7f),
             ZIndex               = -1,
         };
         AddChild(_frost);
@@ -129,16 +144,19 @@ public partial class FrostVeil : WeaponBase
         base._Process(delta);   // gère le tick de dégâts → Attack()
 
         _t += (float)delta;
-        // Dérive circulaire lente et pulsation d'opacité en sens opposés → la brume tourbillonne.
-        if (_fogA != null)
+        // Chaque puff dérive sur une petite orbite et pulse en opacité, avec une phase propre → l'amas
+        // ondule et tourbillonne sans jamais s'aligner, ce qui entretient la texture de brume.
+        for (int i = 0; i < PuffCount; i++)
         {
-            _fogA.Position = new Vector2(Mathf.Cos(_t * 0.6f), Mathf.Sin(_t * 0.6f)) * 9f;
-            _fogA.Modulate = new Color(MistColor.R, MistColor.G, MistColor.B, 0.20f + 0.05f * Mathf.Sin(_t * 1.3f));
-        }
-        if (_fogB != null)
-        {
-            _fogB.Position = new Vector2(Mathf.Cos(-_t * 0.45f + 3.14f), Mathf.Sin(-_t * 0.45f + 3.14f)) * 12f;
-            _fogB.Modulate = new Color(MistColor.R, MistColor.G, MistColor.B, 0.16f + 0.05f * Mathf.Sin(_t * 1.1f + 1.5f));
+            var puff = _puffs[i];
+            if (puff == null) continue;
+            float ph  = _puffPhase[i];
+            float dir = (i % 2 == 0) ? 1f : -1f;   // sens de dérive alterné
+            puff.Position = _puffOrigin[i]
+                + new Vector2(Mathf.Cos(_t * 0.5f * dir + ph), Mathf.Sin(_t * 0.5f * dir + ph)) * 10f;
+            float baseA = i == 0 ? 0.18f : 0.15f;
+            puff.Modulate = new Color(MistColor.R, MistColor.G, MistColor.B,
+                baseA + 0.045f * Mathf.Sin(_t * 1.2f + ph));
         }
         if (_coldLight != null)
             _coldLight.Energy = 0.14f + 0.05f * Mathf.Sin(_t * 1.7f);

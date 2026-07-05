@@ -38,11 +38,19 @@ de nécessiter scène + sous-classe dédiées (inchangé).
 `TriggerEliteExplosion()`/`ApplyLifesteal()` explicitement (déjà fait). Toute nouvelle sous-classe qui
 surcharge `Die()` ou `HandleContactDamage()` doit faire de même sous peine que l'affixe soit silencieux.
 `ApplyElite` teinte le `SelfModulate` du sprite (PAS le `Modulate` du corps, réservé au HitFlash).
-Le **rendu « gelé »** (ennemi ralenti → bleu glacé) multiplie `FrostTint` sur `SelfModulate` par-dessus
-`_baseSelfModulate` (blanc, ou teinte d'élite) dans `EnemyBase.UpdateStatusEffects` : les deux teintes
-se composent sans conflit, et le HitFlash (Modulate du corps) reste net. Bascule au seul changement
-d'état (pas d'écriture par frame). Toute nouvelle teinte persistante du sprite doit passer par
-`_baseSelfModulate` pour ne pas casser cette composition.
+Le **rendu « gelé »** (ennemi ralenti → bleu glacé) passe par un **shader**
+(`assets/shaders/enemy_frost.gdshader`), PAS par un multiply sur `SelfModulate` : un multiply ne peut
+qu'ASSOMBRIR, jamais AJOUTER du bleu absent d'un sprite chaud (orange → terne, pas bleu). Le shader
+`mix(texture, bleu·luminance, frost)` lerpe la couleur du pixel. `EnemyBase.EnsureFrostMaterial()` pose
+un `ShaderMaterial` (shader partagé) sur le sprite au 1er gel (lazy → batching préservé hors Givre) ;
+`UpdateStatusEffects` bascule le uniform `frost` 0↔1 au seul changement d'état (pas d'écriture par frame).
+**Piège Godot critique** : un fragment canvas_item custom qui écrit `COLOR` doit **terminer par `* COLOR`**
+— sous le batching 2D, le `Modulate` du nœud (HitFlash) et le `SelfModulate` (teinte d'élite) sont bakés
+dans le `COLOR` ENTRANT, et NE sont PAS ré-appliqués automatiquement après un fragment custom (référencer
+`MODULATE` ne les restaure pas non plus). Écraser `COLOR` casse donc HitFlash + teinte d'élite ; `* COLOR`
+les préserve. À `frost=0`, `mix(...,0)=texture` puis `* COLOR` = strictement identique à l'absence de
+shader. (Limite connue, non bloquante : l'éclairage 2D d'un biome chaud — Fournaise — désature le bleu
+vers un gris froid ; le rendu reste lisible « gelé » mais moins bleu que dans un biome neutre.)
 
 ## VFX/projectiles parentés à la racine — purge à la sortie de run
 Les entités éphémères de gameplay (balles, flammes, death bursts, anneaux de choc, explosions

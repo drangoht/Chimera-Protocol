@@ -4,6 +4,88 @@ Rapport de sessions de test. Chaque section correspond à une session de test di
 
 ---
 
+## Revue Fix rendu gelé v3 (shader `* COLOR`) : bleu + HitFlash + élite — 2026-07-05 (SESSION CIBLÉE)
+
+**Testeur :** game-tester (agent). **Moteur :** Godot 4.7.stable.mono, D3D12. **Build :** vert (0 err, 87 tests).
+**Working tree (non commité) :** correctif `assets/shaders/enemy_frost.gdshader` (ligne clé `COLOR = vec4(mix(tex.rgb, frosted, frost), tex.a) * COLOR;`) + `EnemyBase.cs` (`EnsureFrostMaterial`/`UpdateStatusEffects`) + `FrostVeil.cs`. **Scaffolding TEMPORAIRE entièrement REVERTÉ** (grant `frost_veil` + retrait armes offensives dans `GameManager.RegisterPlayer` ; coupe/rétablissement `TakeDamage` du voile ; maintien `Modulate=(4,4,4)` dans `HitFlash`) — arbre propre hors ce fichier. Captures PyAutoGUI joueur immobile, biome Fournaise (ennemis orange) + `--force-elites`, zooms + échantillonnage pixel objectif.
+
+**VERDICT GLOBAL : PASS** (les 3 points visés + non-régression). Une nuance de saturation notée au point 1 (observation art/tuning, pas un blocage).
+
+### 1. Ennemi ORANGE → BLEU dans le voile : **PASS** (avec nuance)
+Un cinder/rust orange qui entre dans le voile est **clairement dé-orangé et refroidi** : échantillon corps mesuré B−R **−98 → −44** (le frost s'engage bien ; un « multiply pur » n'aurait pas pu bleuir — la réserve du FAIL historique est levée). Relief pseudo-3D préservé, **retour orange net en sortant** (ennemis hors zone vifs orange). **Nuance :** en biome **Fournaise** (ambiance/éclairage chaud), le rendu lit plutôt un **gris froid désaturé** qu'un **bleu glacé saturé** — le corps reste légèrement chaud-neutre (B<R) au lieu de virer franchement bleu (le calcul shader isolé prédit ~(64,100,175) bleu, l'éclairage chaud du biome le ramène vers le gris). Lisible comme état « gelé », mais pas le bleu vif de la spec dans les biomes chauds. → **remontée `game-designer`/`directeur-artistique`** : envisager de renforcer `frost` ou `frost_color`, ou de rendre l'ennemi gelé insensible à l'éclairage chaud (unshaded), pour un bleu saturé quel que soit le biome. Non bloquant.
+
+### 2. NON-RÉGRESSION HitFlash sur ennemi GELÉ : **PASS** (corrige l'ancien FAIL critique)
+Test déterministe : `HitFlash` scaffolé pour maintenir `Modulate=(4,4,4)` + dégâts du voile actifs (frappe chaque tick 0,2 s). Les ennemis **gelés ET frappés** dans le voile deviennent **BLANC ÉCLATANT** (pixel mesuré **(254,254,254)**), tandis que les ennemis hors voile restent orange. Le `* COLOR` du shader préserve donc bien le `Modulate` du nœud : le HitFlash compose par-dessus le gel. L'ancien FAIL (shader qui écrasait `COLOR` → HitFlash perdu) est **corrigé**.
+
+### 3. TEINTE D'ÉLITE sur ennemi GELÉ : **PASS** (corrige l'ancien FAIL)
+Lancé `--force-elites`.
+- **Élite gelé ≠ bleu uniforme :** un Régénérant (self_modulate vert) gelé dans le voile lit **vert/teal** (mélange teinte+frost) ; un Frénétique (rouge) gelé lit **marron/rouge maté** (R−B +103 → +30, reste rougeâtre, PAS bleu). La teinte d'affixe traverse le gel.
+- **Hors gel, teinte intacte :** élites hors voile montrent leur affixe pur (vert-olive, rouge vif, magenta). Le `* COLOR` préserve le `SelfModulate` d'élite. Ancien FAIL corrigé.
+
+### 4. Non-régression technique : **PASS**
+~8 lancements sans crash. Console : **aucune erreur de compilation shader, aucun `SCRIPT ERROR`/NullRef** (seuls messages de fermeture abrupte quand le process est tué au timeout — `Unreferenced static string`, `RID leaked at exit`, bruit normal). Perf visuellement fluide (200+ entités + voile). Bonus observé : mort joueur affiche toujours « MORT EN SERVICE » (non-régression fin de run).
+
+---
+
+## Revue Fix 1 v2 (rendu gelé par SHADER) : bleu + non-régression HitFlash/élite — 2026-07-05 (3)
+
+**Testeur :** game-tester (agent Claude). **Moteur :** Godot 4.7.stable.mono, D3D12. **Build :** OK (0 err).
+**Working tree (non commité) :** nouveau `assets/shaders/enemy_frost.gdshader` + `src/Entities/Enemies/EnemyBase.cs` (gel via `ShaderMaterial`, plus SelfModulate) + `src/Weapons/FrostVeil.cs`. Scaffolding temporaire (grant `frost_veil`, DPS voile abaissé, HitFlash allongé/maintenu, `--force-elites`) REVERTÉ — arbre propre hors ce fichier. Captures PyAutoGUI joueur immobile, biomes Fournaise/Sanctuaire, zooms.
+
+### 1. Objectif de la réserve — ennemi chaud → BLEU : **PASS**
+Un ennemi à dominante chaude (rust swarm / cinder orange) qui entre dans le Voile de Givre lit maintenant **clairement BLEU glacé**, relief pseudo-3D préservé (le `mix(tex, frost_color*luminance, frost)` conserve ombres/highlights). Nette réussite vs le multiply précédent. Le shader charge sans erreur console. La réserve du FAIL précédent est levée sur ce point.
+
+### 2. NON-RÉGRESSION HitFlash — **FAIL (critique)**
+Un ennemi **gelé qui est frappé ne flashe PLUS en blanc**. Test déterministe : HitFlash scaffoldé pour MAINTENIR `modulate = (4,4,4)` en continu ; tous les ennemis dans le voile (frappés chaque tick 0.2 s) devraient être blancs éclatants si le modulate compositait. **Ils restent bleus.** → le `modulate` du nœud n'est PAS appliqué par-dessus le shader.
+**Cause :** le fragment écrit `COLOR = vec4(mix(...), tex.a)` en **écrasant** le `COLOR` entrant sans le remultiplier ni référencer `MODULATE`. En Godot 4, `modulate` n'est PAS auto-appliqué à un fragment canvas_item qui réécrit `COLOR` (batching 2D → passé via le built-in `MODULATE`). La supposition « le moteur multiplie ensuite automatiquement par le modulate » (commentaire du shader L8-10) est **fausse**.
+**Portée aggravée :** `EnsureFrostMaterial()` pose le `ShaderMaterial` au 1er gel et ne le retire jamais (bascule seulement `frost` 0/1). Donc **tout ennemi ayant été gelé une fois ne flashe plus JAMAIS à l'impact**, même après dégel (à `frost=0`, `COLOR=tex.rgb` ignore toujours le modulate). Régression de feedback de combat majeure en build Cryo/Givre où la plupart des ennemis passent par le gel.
+
+### 3. NON-RÉGRESSION teinte d'élite (self_modulate) — **FAIL**
+Hors du voile, les élites gardent bien leur teinte d'affixe (sprite orange/vert/rouge via `SelfModulate`) — OK tant que le matériau shader n'est pas encore posé. **Une fois GELÉS, les sprites d'élite deviennent bleu uniforme** : la teinte d'affixe du sprite est perdue (le shader lit `texture()` brut, sans `self_modulate`). L'**aura** (nœud `EliteAura` séparé) conserve sa couleur → les élites restent distinguables par le halo, mais le « mélange lisible élite+gel » visé est perdu. Même défaut permanent : après un 1er gel la teinte d'affixe du sprite ne revient plus (matériau jamais retiré).
+
+### 4. Robustesse — **OK**
+Aucune erreur de compilation shader / `gdshader` / NullRef / script error C# en console (hors bruit de fermeture moteur). Perf non dégradée à l'œil (nuée + voile + shader partagé, matériau lazy → batching préservé hors gel).
+
+### Correctif suggéré (→ developpeur)
+Le shader doit **réappliquer** le modulate ET le self_modulate au lieu de les écraser. Piste (à valider sur la sémantique Godot 4.7 : `self_modulate` est porté par le `COLOR` de vertex, `modulate` par le built-in `MODULATE`) :
+```glsl
+void fragment() {
+    vec4 tex = texture(TEXTURE, UV);
+    float lum = dot(tex.rgb, vec3(0.299, 0.587, 0.114));
+    vec3 frosted = frost_color.rgb * (0.35 + 0.75 * lum);
+    vec3 rgb = mix(tex.rgb, frosted, frost);
+    COLOR = vec4(rgb, tex.a) * COLOR * MODULATE;  // restaure self_modulate (élite) + modulate (HitFlash)
+}
+```
+Fichier : `assets/shaders/enemy_frost.gdshader` L14-20.
+
+### Verdict global : **Objectif bleu PASS / non-régression HitFlash FAIL (critique) + teinte élite FAIL.**
+Ne pas expédier en l'état : le rendu bleu est excellent mais le shader casse le feedback d'impact (HitFlash) de façon permanente sur tout ennemi gelé, et écrase la teinte d'affixe des élites gelés. À renvoyer au developpeur pour remultiplier `COLOR * MODULATE` dans le fragment (puis re-test HitFlash + élite gelés).
+
+---
+
+## Revue ciblée VFX Givre : teinte gelée (Fix 1) + densité de brume (Fix 2) — 2026-07-05 (2)
+
+**Testeur :** game-tester (agent Claude). **Moteur :** Godot 4.7.stable.mono, D3D12. **Build :** OK (0 warn / 0 err, 87 tests verts en amont).
+**Working tree :** `src/Entities/Enemies/EnemyBase.cs` + `src/Weapons/FrostVeil.cs` (non commité). Scaffolding temporaire (grant `frost_veil` dans `GameManager.RegisterPlayer`, DPS voile abaissé ponctuellement) REVERTÉ — arbre propre hors ce fichier. Captures PyAutoGUI joueur immobile, biomes Fournaise (ennemis orange) + Sanctuaire (fond neutre), zooms comparatifs.
+
+### Fix 2 — Brume plus dense/volumétrique en statique : **PASS**
+Sur fond neutre (Sanctuaire), joueur immobile : la zone lit clairement comme une **brume texturée/nuageuse**, densité interne variable (amas de puffs + motes de givre densifiées), PAS un cercle/halo sec ni un blob blanc saturé. Le liseré marque toujours la portée, le joueur reste visible, glow non clampé au blanc. Nette amélioration vs le halo concentrique précédent. Sur fond Fournaise (orange vif) la brume bleue est plus lavée mais reste lisible. RAS.
+
+### Fix 1 — Teinte gelée « bleu franc » sur ennemis chauds : **FAIL**
+Objectif non atteint. Un ennemi à dominante chaude (cinder/rust swarm, orange) qui entre dans le Voile de Givre **reste orange/terne — il ne lit PAS bleu**. Vérifié empiriquement (zooms Fournaise ET Sanctuaire : ennemis orange figés dans le voile restent orange) et confirmé analytiquement.
+
+**Cause (déterministe) :** `_sprite.SelfModulate` est un **multiply par canal** texture×couleur. Il ne peut PAS *ajouter* du bleu absent de la texture — au mieux il assombrit. `FrozenColor(White) ≈ (0.505, 0.735, 1.317)` ; pour un pixel orange `(1.0, 0.45, 0.15)` → `(0.505, 0.33, 0.20)` : R reste dominant, B plafonné par la source (≈0.2) → toujours orange/terne. Pire : le coefficient B passe de `1.4` (FrostTint seul, avant) à `1.317` (après Lerp vers FrostTarget) → le nouvel helper rend l'orange **marginalement MOINS bleu** qu'avant, à l'opposé de l'intention. Le Lerp agit sur les coefficients du multiply, jamais sur le pixel final. La méthode ne peut fonctionner que sur des sprites déjà clairs/froids (blanc/gris/bleu) ; elle est structurellement incapable de bleuir un sprite chaud.
+
+**Remède (→ developpeur) :** un multiply ne conviendra jamais. Options : (a) shader `canvas_item` qui lerpe la couleur du pixel *final* vers un bleu cible (`mix(tex.rgb, frostBlue, k)`) ; (b) overlay d'un sprite/Modulate additif bleu par-dessus ; (c) `CanvasItemMaterial` en mode teinte. `src/Entities/Enemies/EnemyBase.cs:41-42` (`FrozenColor`) et son application L111 / L240.
+
+### Non-régression : **OK**
+Aucun script error / NullRef C# en console (seul bruit de fermeture moteur sur kill forcé). HUD (barre XP, timer, HP, compteur noyaux), montée de niveau (écran de cartes, clic applique), spawn/combat OK. Perf non dégradée à l'œil (nuée + voile + biome).
+
+**Verdict global : Fix 2 PASS / Fix 1 FAIL.** Ne pas expédier Fix 1 en l'état : sur un sprite chaud il n'atteint pas le bleu franc visé (et régresse très légèrement la composante bleue). À renvoyer au developpeur pour une approche non-multiply.
+
+---
+
 ## Refonte VFX Voile de Givre + ennemis gelés + réticule contouré — 2026-07-05
 
 **Testeur :** game-tester (agent Claude). **Moteur :** Godot 4.7.stable.mono, D3D12. **Build :** OK (0 warn / 0 err).
