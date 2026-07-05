@@ -140,7 +140,7 @@ public partial class LevelUpScreen : CanvasLayer
         string description  = card["description"].AsString();
         string rarity       = card["rarity"].AsString();
 
-        // Icône en haut de la carte (le texte centré laisse l'espace haut libre).
+        // Icône en haut de la carte (zone réservée y=18..82).
         var icon = btn.GetNodeOrNull<TextureRect>("Icon");
         if (icon == null)
         {
@@ -159,8 +159,31 @@ public partial class LevelUpScreen : CanvasLayer
         icon.Texture = Codex.LoadIcon(id);
         icon.Visible = icon.Texture != null;
 
-        // 4 lignes vides en tête → le texte centré reste sous l'icône.
-        btn.Text = $"\n\n[{RarityLabel(rarity)}]\n{displayName}\n\n{description}";
+        // Texte dans un Label enfant ANCRÉ SOUS l'icône, aligné en haut : indépendant de la
+        // longueur, il ne peut donc jamais remonter sur l'icône (contrairement au texte de
+        // Button centré verticalement qui débordait vers le haut pour les descriptions longues,
+        // ex. fusions frost_veil/vector_beam). ClipText = garde-fou contre le débordement bas.
+        var body = btn.GetNodeOrNull<Label>("Body");
+        if (body == null)
+        {
+            body = new Label
+            {
+                Name                = "Body",
+                MouseFilter         = Control.MouseFilterEnum.Ignore,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment   = VerticalAlignment.Top,
+                AutowrapMode        = TextServer.AutowrapMode.WordSmart,
+                ClipText            = true,
+            };
+            body.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+            body.OffsetLeft = 12; body.OffsetRight = -12;
+            body.OffsetTop  = 90; body.OffsetBottom = -14;
+            body.AddThemeFontSizeOverride("font_size", 14);
+            body.AddThemeColorOverride("font_color", new Color(0.85f, 0.85f, 0.95f));
+            btn.AddChild(body);
+        }
+        body.Text = $"[{RarityLabel(rarity)}]\n{displayName}\n\n{description}";
+        btn.Text  = "";
 
         // Couleur du bouton selon rareté
         var stylebox = new StyleBoxFlat();
