@@ -1,4 +1,4 @@
-using Godot;
+﻿using Godot;
 
 /// <summary>
 /// Informations de build exposées à l'UI (tampon de version bas-droite) et à Discord.
@@ -10,7 +10,7 @@ using Godot;
 public static class BuildInfo
 {
     // <AUTOGEN:GITSHA> — remplacé par le SHA court courant lors de la génération.
-    public const string GitSha = "186397d";
+    public const string GitSha = "cbdda3e";
     // </AUTOGEN:GITSHA>
 
     /// <summary>Version sémantique déclarée dans project.godot (ex. "1.10.0").</summary>
