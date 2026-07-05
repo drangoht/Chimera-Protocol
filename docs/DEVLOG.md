@@ -4,6 +4,56 @@
 > `release-manager`). Entrées en ordre décroissant (la plus récente en haut). Ton orienté
 > joueur, EN puis FR (audience itch surtout anglophone).
 
+## v1.10.0 — Meet Vector: a precision cyborg with a guided lance (2026-07-05)
+
+**New**
+- **A fourth playable character: Vector.** A precision-built cyborg — lean violet chassis, scanner
+  visor — who trades bulk for reach. Medium-fragile frame (**90 HP**, **speed 210**) that rewards
+  positioning over brute force. Pick him from the character select screen and play the arena at arm's
+  length.
+- **The Vector Lance — your first *aimed* signature weapon.** Vector starts with a fully **directed**
+  weapon: an on-screen **aiming reticle** (mouse or right stick) is live from the very first second,
+  tinted to his identity. Line up your shot and the lance **pierces straight through every enemy in
+  its path** — reward for lining up the crowd instead of spraying blind.
+- **Already in your arsenal.** The Vector Lance is a signature weapon, so it's **always available in
+  the arsenal** — no unlock grind to try the new playstyle.
+
+**Fixes**
+- **Options screen scrolls now.** The **Controls** section added in 1.9.0 could overflow at 720p and
+  hide the **Back** and **Reset all** buttons — the whole screen is now scrollable (keyboard focus
+  auto-scrolls to the selected item), so everything is reachable again.
+
+**Why it matters**
+- Vector is the first character built entirely around aimed fire: a new, skill-forward way to play the
+  same arenas. No new engine tricks under the hood — he rides the existing character pipeline — just a
+  sharper way to kill.
+
+---
+
+**Nouveautés**
+- **Un quatrième personnage jouable : Vecteur.** Un cyborg de précision — châssis violet élancé, visière
+  scanner — qui échange le blindage contre l'allonge. Cadre médian-fragile (**90 PV**, **vitesse 210**)
+  qui récompense le placement plutôt que la force brute. Choisissez-le à l'écran de sélection et jouez
+  l'arène à distance.
+- **La Lance Vectorielle — votre première arme de signature *dirigée*.** Vecteur démarre avec une arme
+  entièrement **dirigée** : un **réticule de visée** à l'écran (souris ou stick droit) est actif dès la
+  première seconde, teinté à son identité. Alignez votre tir et la lance **transperce d'un trait tous les
+  ennemis sur sa trajectoire** — la récompense d'un alignement propre plutôt que d'un tir à l'aveugle.
+- **Déjà dans votre arsenal.** La Lance Vectorielle est une arme de signature : elle est **toujours
+  disponible à l'arsenal** — aucun déblocage à farmer pour essayer le nouveau style.
+
+**Corrections**
+- **L'écran Options défile désormais.** La section **Contrôles** ajoutée en 1.9.0 pouvait déborder en
+  720p et masquer les boutons **Retour** et **Tout réinitialiser** — l'écran est maintenant défilable
+  (le focus clavier fait défiler automatiquement vers l'élément sélectionné), tout redevient atteignable.
+
+**Pourquoi c'est important**
+- Vecteur est le premier personnage entièrement construit autour du tir visé : une nouvelle façon de jouer
+  les mêmes arènes, plus technique. Aucune nouvelle mécanique moteur sous le capot — il réutilise le
+  pipeline de personnage existant — juste une manière plus chirurgicale de faire le ménage.
+
+---
+
 ## v1.9.0 — Your keys, your way: ZQSD by default + full keyboard remapping (2026-07-05)
 
 **New**
