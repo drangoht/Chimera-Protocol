@@ -4,6 +4,36 @@
 > `release-manager`). Entrées en ordre décroissant (la plus récente en haut). Ton orienté
 > joueur, EN puis FR (audience itch surtout anglophone).
 
+## v1.11.1 — Level-up cards read clean again (2026-07-05)
+
+**Fixes**
+- **No more overlap on the level-up screen.** On longer upgrade descriptions — the **Frost Veil**,
+  **Vector Beam** and **Vector Lance** fusions were the worst offenders — the text could creep upward
+  and collide with the icon at the top of the card. The description now lives in its own slot anchored
+  right below the icon, top-aligned, wrapping and clipping cleanly. The two can no longer touch: pick
+  your upgrades without squinting through a pile-up.
+
+**Why it matters**
+- Pure polish, no gameplay change. This was a full pass across every screen — the Bestiary, Arsenal,
+  Character Select, Intro, Hub and end-of-run screens already used separate containers and were clean,
+  so the level-up card was the last one standing.
+
+---
+
+**Corrections**
+- **Fini le chevauchement sur l'écran de montée de niveau.** Sur les descriptions d'amélioration un peu
+  longues — les fusions **Voile de Givre**, **Rayon Vecteur** et **Lance Vectorielle** en tête — le texte
+  pouvait remonter et venir chevaucher l'icône en haut de la carte. La description occupe désormais son
+  propre emplacement ancré juste sous l'icône, aligné en haut, avec retour à la ligne et découpe propres.
+  Les deux ne peuvent plus se toucher : choisissez vos améliorations sans déchiffrer un empilement.
+
+**Pourquoi c'est important**
+- Du polish pur, aucun changement de gameplay. C'était une passe complète sur tous les écrans — le
+  Bestiaire, l'Arsenal, la Sélection de perso, l'Intro, le Hub et les écrans de fin de run utilisaient
+  déjà des conteneurs séparés et étaient sains ; la carte de level-up était la dernière concernée.
+
+---
+
 ## v1.11.0 — Show the arena on your Discord + a version stamp on every screen (2026-07-05)
 
 **New**

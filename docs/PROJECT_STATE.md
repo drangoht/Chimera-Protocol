@@ -11,7 +11,8 @@
   **remap clavier + ZQSD par défaut**
   (`src/Systems/InputRemap.cs`, section Contrôles des Options, 2026-07-05), visée souris/stick + réticule
   Lance Vectorielle (1.8.0), fusions Rayon Vecteur & Voile de Givre (brume de froid + ennemis gelés,
-  1.8.1), affixes d'élite. Version publiée itch : **1.11.0**.
+  1.8.1), affixes d'élite. **Correctif carte de level-up** (texte ancré sous l'icône, fini le chevauchement
+  sur descriptions longues type fusions, 1.11.1). Version publiée itch : **1.11.1**.
 
 ## Ce qui est implémenté
 
