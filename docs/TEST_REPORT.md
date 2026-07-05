@@ -4,6 +4,37 @@ Rapport de sessions de test. Chaque section correspond à une session de test di
 
 ---
 
+## Revue Fix rendu obstacles (occultation joueur, commit `e8fbd00`) — 2026-07-05 (SESSION CIBLÉE)
+
+**Testeur :** game-tester (agent). **Moteur :** Godot 4.7.stable.mono, D3D12. **Build :** vert (0 err/0 warn). **Version :** `1.11.2-f5ecd4b`. **Fix testé :** `e8fbd00` — corps des obstacles `ZIndex 1→6` (enfants relatifs → 7-10) dans `BiomeObstacles.Build`, ombre au sol ré-ancrée en `ZAsRelative=false`/`ZIndex=1` absolu, sprite de colonne `GroundRenderer.PlaceColumn` `1→6`. Joueur à `ZIndex=5`, ennemis à `ZIndex=0` (défaut), HUD/PostFX sur `CanvasLayer`.
+
+**Instrumentation temporaire (ENTIÈREMENT REVERTÉE, arbre propre) :** flag `--no-spawn` (arène vide, pas de level-up parasite) + 2-3 obstacles garantis autour du spawn joueur (`GroundRenderer.BuildObstacles`) pour forcer le chevauchement joueur↔obstacle de façon déterministe. Captures PyAutoGUI, 5 biomes forcés via `--biome=<id>`, dossier de captures temporaire supprimé.
+
+**VERDICT GLOBAL : PASS.** Le fix restaure l'illusion « obstacle solide infranchissable ». Le compromis (occultation quand le joueur est devant) est **acceptable — pas de Y-sort nécessaire à ce stade**.
+
+### 1. Occultation corps > joueur : **PASS** (les 5 biomes)
+Joueur pressé DERRIÈRE un obstacle (au-dessus à l'écran, contre son pied) → le corps passe bien DEVANT le joueur :
+- **Sanctuaire (pilier)** et **Aether (cristal)** : silhouettes hautes → joueur **entièrement masqué** derrière le corps (aucun pixel joueur ne perce le corps opaque). Réapparaît net dès qu'il s'écarte latéralement.
+- **Givre (monolithe)** / **Néon (pylône)** : joueur masqué, seul le sommet (antenne du robot) affleure au-dessus des silhouettes moins hautes — correct.
+- **Fournaise (basalte)** : silhouette basse et large → occulte **uniquement la moitié basse** du joueur (jambes derrière le rocher), tête visible au-dessus. C'est le comportement Z attendu (le corps couvre exactement la portion qui le chevauche). Avant le fix, le joueur (Z5) se dessinait toujours par-dessus le corps (Z≤4) → survol cassant l'illusion ; désormais l'ordre est correct.
+
+### 2. Ombre au sol : **PASS**
+L'ombre portée (Polygon2D ré-ancré `ZAsRelative=false`, Z absolu = 1) reste **au sol au pied de chaque obstacle** dans tous les biomes, **sous le joueur** (Z5) — le joueur marche par-dessus les ombres sans être masqué par elles. L'ombre ne flotte pas par-dessus le joueur. Détail vérifié analytiquement : Z ombre inchangé avant/après le fix (avant = corps 1 + enfant relatif 0 = 1 ; après = 1 absolu) → **aucune régression** introduite par le ré-ancrage.
+
+### 3. Blocage physique intact : **PASS**
+Collision au pied inchangée (le fix ne touche que le rendu) : joueur bloqué net au pied de chaque obstacle, ne le traverse pas, dans les 5 biomes. `CollisionLayer/Mask` inchangés.
+
+### 4. Compromis assumé (joueur DEVANT l'obstacle) : **ACCEPTABLE / négligeable**
+Sans Y-sort, l'obstacle (Z 6-10) est toujours au-dessus du joueur (Z5), donc occulte aussi le joueur quand il est « devant » (en dessous à l'écran). **En pratique peu visible** : la collision est ancrée au PIED de l'obstacle, donc un joueur venant du dessous est stoppé SOUS la base — le chevauchement « fautif » se limite aux quelques pixels du sommet de sa tête effleurant la base de l'obstacle. Combiné au mouvement constant du joueur (survivor), c'est négligeable. **Verdict : ne justifie pas un Y-sort** (qui casserait la relation `ZIndex` joueur↔VFX d'armes, cf. `Player.cs` L52-56). À rouvrir seulement si un futur obstacle très large/bas (type basalte étendu) rend le défaut gênant.
+
+### 5. Non-régression de rendu ailleurs : **PASS**
+- **UI/HUD :** `HUD.tscn` et `PostFX` sont des `CanvasLayer` → dessinés au-dessus de tout `ZIndex` du monde (max obstacle = 10 << CanvasLayer). Obstacles ne passent jamais devant le HUD (confirmé sur une frame de level-up captée : cartes/HUD nets au-dessus de la scène).
+- **Joueur/VFX :** joueur (Z5) toujours au-dessus de ses VFX d'armes proches (Z2-4). Point d'attention documenté : l'éclair d'impact (`ZIndex=6`, cf. `Player.cs`) est désormais au même niveau que le corps d'obstacle — un éclair passant derrière un obstacle peut être occulté, ce qui est cohérent (obstacle solide). Aucun impact sur la lisibilité observé.
+
+**Remontées :** aucune. Fix validé tel quel. Note pour `developpeur` (info, pas action) : si un Y-sort est un jour envisagé, il faudra préserver la relation joueur(Z5)↔VFX d'armes — piste : Y-sort limité au couple joueur↔obstacles via un `YSortEnabled` sur un conteneur dédié, en gardant les VFX hors de ce tri.
+
+---
+
 ## Revue Fix rendu gelé v3 (shader `* COLOR`) : bleu + HitFlash + élite — 2026-07-05 (SESSION CIBLÉE)
 
 **Testeur :** game-tester (agent). **Moteur :** Godot 4.7.stable.mono, D3D12. **Build :** vert (0 err, 87 tests).
