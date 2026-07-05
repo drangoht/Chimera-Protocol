@@ -1,7 +1,9 @@
 using Godot;
+using System.Collections.Generic;
 
 /// <summary>
-/// Écran Options : volumes (master/musique/SFX), plein écran, screen shake.
+/// Écran Options : volumes (master/musique/SFX), plein écran, screen shake, langue,
+/// difficulté et remap des touches de déplacement (ZQSD par défaut, rebindables).
 /// Lit/écrit via <see cref="GameSettings"/> (appliqué + persisté immédiatement).
 /// UI construite en code ; la scène = root Control + script. Retour : Échap / bouton.
 /// </summary>
@@ -17,6 +19,10 @@ public partial class OptionsScreen : Control
 
     private Button? _resetButton;
     private bool    _resetArmed = false;
+
+    // Remap clavier : action en cours d'écoute (null = aucune) + boutons par action.
+    private string? _listeningAction;
+    private readonly Dictionary<string, Button> _rebindButtons = new();
 
     public override void _Ready()
     {
@@ -54,6 +60,9 @@ public partial class OptionsScreen : Control
         AddToggle(vbox, Loc.T("OPTIONS_SHAKE"), s?.ShakeEnabled ?? true, v => GameSettings.Instance?.SetShake(v));
         AddDifficulty(vbox, s?.Difficulty ?? GameSettings.GameDifficulty.Normal);
         AddLanguage(vbox, s?.Language ?? "en");
+
+        vbox.AddChild(new HSeparator());
+        AddControls(vbox);
 
         vbox.AddChild(new HSeparator());
         AddResetButton(vbox);
@@ -163,6 +172,83 @@ public partial class OptionsScreen : Control
         parent.AddChild(row);
     }
 
+    // ── Remap des touches de déplacement (ZQSD par défaut) ────────────────────
+    private static readonly (string Action, string LabelKey)[] MoveRows =
+    {
+        (InputRemap.Up,    "OPTIONS_MOVE_UP"),
+        (InputRemap.Down,  "OPTIONS_MOVE_DOWN"),
+        (InputRemap.Left,  "OPTIONS_MOVE_LEFT"),
+        (InputRemap.Right, "OPTIONS_MOVE_RIGHT"),
+    };
+
+    private void AddControls(VBoxContainer parent)
+    {
+        var header = new Label
+        {
+            Text                = Loc.T("OPTIONS_CONTROLS"),
+            HorizontalAlignment = HorizontalAlignment.Center,
+        };
+        header.AddThemeFontSizeOverride("font_size", 22);
+        header.AddThemeColorOverride("font_color", Cyan);
+        parent.AddChild(header);
+
+        foreach (var (action, labelKey) in MoveRows)
+            AddRebindRow(parent, action, labelKey);
+
+        var reset = new Button { Text = Loc.T("OPTIONS_CONTROLS_RESET"), CustomMinimumSize = new Vector2(280, 40) };
+        StyleButton(reset);
+        reset.Pressed += () =>
+        {
+            AudioSystem.Instance?.PlaySfx("sfx_ui_button");
+            GameSettings.Instance?.ResetMoveKeys();
+            RefreshRebindLabels();
+        };
+        var wrap = new CenterContainer();
+        wrap.AddChild(reset);
+        parent.AddChild(wrap);
+    }
+
+    private void AddRebindRow(VBoxContainer parent, string action, string labelKey)
+    {
+        var row = new HBoxContainer();
+        row.AddThemeConstantOverride("separation", 16);
+
+        var lbl = new Label { Text = Loc.T(labelKey), CustomMinimumSize = new Vector2(220, 0) };
+        lbl.AddThemeColorOverride("font_color", Text);
+        row.AddChild(lbl);
+
+        var btn = new Button { CustomMinimumSize = new Vector2(180, 40) };
+        StyleButton(btn);
+        btn.Pressed += () => StartListening(action);
+        _rebindButtons[action] = btn;
+        row.AddChild(btn);
+
+        parent.AddChild(row);
+        RefreshRebindLabel(action);
+    }
+
+    /// <summary>Passe le bouton d'une action en attente de la prochaine touche pressée.</summary>
+    private void StartListening(string action)
+    {
+        if (_listeningAction != null) return;   // déjà en écoute sur une autre action
+        AudioSystem.Instance?.PlaySfx("sfx_ui_button");
+        _listeningAction = action;
+        if (_rebindButtons.TryGetValue(action, out var btn))
+            btn.Text = Loc.T("OPTIONS_CONTROLS_PRESS");
+    }
+
+    private void RefreshRebindLabels()
+    {
+        foreach (var action in InputRemap.Actions) RefreshRebindLabel(action);
+    }
+
+    private void RefreshRebindLabel(string action)
+    {
+        if (!_rebindButtons.TryGetValue(action, out var btn)) return;
+        Key key = GameSettings.Instance?.MoveKey(action) ?? InputRemap.DefaultKeys[action];
+        btn.Text = InputRemap.KeyName(key);
+    }
+
     // ── Réinitialisation totale (état initial du jeu, Échos inclus) ───────────
     private static readonly Color Danger = new(1f, 0.35f, 0.35f);
 
@@ -211,8 +297,28 @@ public partial class OptionsScreen : Control
         btn.AddThemeColorOverride("font_color", Text);
     }
 
+    public override void _Input(InputEvent @event)
+    {
+        // Capture de touche pour le remap : intercepte AVANT la nav UI (_Input passe en premier).
+        if (_listeningAction == null) return;
+        if (@event is not InputEventKey { Pressed: true, Echo: false } key) return;
+
+        GetViewport().SetInputAsHandled();
+        string action = _listeningAction;
+        _listeningAction = null;
+
+        // Échap = annuler l'assignation (on garde la touche actuelle).
+        if (key.Keycode != Key.Escape)
+        {
+            Key chosen = key.Keycode != Key.None ? key.Keycode : (Key)key.PhysicalKeycode;
+            GameSettings.Instance?.SetMoveKey(action, chosen);
+        }
+        RefreshRebindLabel(action);
+    }
+
     public override void _UnhandledInput(InputEvent @event)
     {
+        if (_listeningAction != null) return;   // en écoute de remap : ignorer le retour
         if (@event.IsActionPressed("ui_cancel"))
         {
             GetViewport().SetInputAsHandled();

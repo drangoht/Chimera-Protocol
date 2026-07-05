@@ -68,6 +68,13 @@ OPTIONS_FULLSCREEN,Fullscreen,Plein écran,Pantalla completa
 OPTIONS_SHAKE,Screen shake,Secousses écran,Vibración de pantalla
 OPTIONS_DIFFICULTY,Difficulty,Difficulté,Dificultad
 OPTIONS_LANGUAGE,Language,Langue,Idioma
+OPTIONS_CONTROLS,Controls,Contrôles,Controles
+OPTIONS_MOVE_UP,Move up,Haut,Arriba
+OPTIONS_MOVE_DOWN,Move down,Bas,Abajo
+OPTIONS_MOVE_LEFT,Move left,Gauche,Izquierda
+OPTIONS_MOVE_RIGHT,Move right,Droite,Derecha
+OPTIONS_CONTROLS_PRESS,Press a key…,Appuyez sur une touche…,Pulsa una tecla…
+OPTIONS_CONTROLS_RESET,Reset keys (ZQSD),Touches par défaut (ZQSD),Teclas por defecto (ZQSD)
 DIFF_EASY,Easy,Facile,Fácil
 DIFF_NORMAL,Normal,Normal,Normal
 DIFF_HARD,Hard,Difficile,Difícil

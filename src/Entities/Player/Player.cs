@@ -298,7 +298,7 @@ public partial class Player : CharacterBody2D
         UpdateBuffs((float)delta);
         UpdateHpRegen(delta);
 
-        var direction = Input.GetVector("ui_left", "ui_right", "ui_up", "ui_down");
+        var direction = Input.GetVector(InputRemap.Left, InputRemap.Right, InputRemap.Up, InputRemap.Down);
         Velocity = direction.Normalized() * Stats.Speed * SpeedMultiplier;
         MoveAndSlide();
         ClampToArena();

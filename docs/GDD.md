@@ -1785,3 +1785,17 @@ sur `_baseSelfModulate`) et n'interfère pas avec le HitFlash (qui agit sur `Mod
 Répartition des passifs sur les fusions après ajout : thermal_core ×2, capacitor ×2, servo_motors ×3
 (orbital/hornet/vector_beam), reinforced_plating ×2 (overload_aegis/frost_veil). Armes encore sans
 fusion : scatter_volley, glaive, singularity.
+
+## 25. Contrôles de déplacement — ZQSD + remap clavier (2026-07-05)
+
+Le déplacement passe des actions natives `ui_*` (flèches uniquement) à des actions dédiées
+**`move_up/down/left/right`** (`InputRemap`), séparées de la navigation menu (qui garde `ui_*`) pour
+qu'un remap ne casse jamais le focus clavier. Bindings par défaut : **ZQSD** (touches par label →
+AZERTY natif) + flèches directionnelles + manette (D-pad & stick gauche). Le `Player` lit
+`Input.GetVector(move_left, move_right, move_up, move_down)`.
+
+**Remap** : l'écran Options ajoute une section « Contrôles » avec un bouton par direction. Clic → « appuyez
+sur une touche » → la prochaine touche pressée devient la touche principale de la direction (Échap
+annule). Les flèches et la manette restent toujours actives en secondaire. Un bouton « Touches par défaut
+(ZQSD) » restaure. Persistance : section `input` de `user://settings.cfg` (keycode par action), rechargée
+et appliquée au démarrage via `GameSettings.Apply → InputRemap.ApplyAll`.

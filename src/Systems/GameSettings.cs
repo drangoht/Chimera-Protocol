@@ -30,6 +30,9 @@ public partial class GameSettings : Node
     public float EnemyHpMult     => DifficultyTuning.EnemyHp((int)Difficulty);
     public float SpawnMult       => DifficultyTuning.Spawn((int)Difficulty);
 
+    // Touches de déplacement personnalisées (move_up/down/left/right → keycode). Absente = défaut ZQSD.
+    private readonly Dictionary<string, Key> _moveKeys = new();
+
     // Biomes vaincus (boss final battu), clés "biomeId:difficulté". Sert au badge de l'écran de sélection.
     private readonly HashSet<string> _completions = new();
 
@@ -120,6 +123,26 @@ public partial class GameSettings : Node
         if (_discovered.Add(weaponId)) Save();
     }
 
+    // ── Touches de déplacement (remap clavier) ────────────────────────────────
+    /// <summary>Touche clavier principale d'une action de déplacement (perso ou défaut ZQSD).</summary>
+    public Key MoveKey(string action) => _moveKeys.GetValueOrDefault(action, InputRemap.DefaultKeys[action]);
+
+    /// <summary>Réaffecte la touche principale d'une action de déplacement, l'applique et persiste.</summary>
+    public void SetMoveKey(string action, Key key)
+    {
+        _moveKeys[action] = key;
+        InputRemap.SetKey(action, key);
+        Save();
+    }
+
+    /// <summary>Restaure les touches de déplacement par défaut (ZQSD), applique et persiste.</summary>
+    public void ResetMoveKeys()
+    {
+        _moveKeys.Clear();
+        InputRemap.ApplyAll(this);
+        Save();
+    }
+
     // ── Setters (appliquent + sauvegardent) ───────────────────────────────────
     public void SetMaster(float v)     { Master = Mathf.Clamp(v, 0f, 1f); ApplyAudio(); Save(); }
     public void SetMusic(float v)      { Music  = Mathf.Clamp(v, 0f, 1f); ApplyAudio(); Save(); }
@@ -144,6 +167,7 @@ public partial class GameSettings : Node
         ApplyDisplay();
         ScreenShake.Enabled = ShakeEnabled;
         TranslationServer.SetLocale(Language);
+        InputRemap.ApplyAll(this);
     }
 
     private void ApplyAudio()
@@ -197,6 +221,13 @@ public partial class GameSettings : Node
         _discovered.Clear();
         foreach (string id in cfg.GetValue("discovered", "weapons", new string[0]).AsStringArray())
             _discovered.Add(id);
+
+        _moveKeys.Clear();
+        foreach (string action in InputRemap.Actions)
+        {
+            int code = cfg.GetValue("input", action, 0).AsInt32();
+            if (code != 0) _moveKeys[action] = (Key)code;
+        }
     }
 
     /// <summary>Réinitialise TOUTE la progression (complétions, high scores, armes découvertes) et
@@ -234,6 +265,9 @@ public partial class GameSettings : Node
         var disc = new string[_discovered.Count];
         _discovered.CopyTo(disc);
         cfg.SetValue("discovered", "weapons", disc);
+
+        foreach (var (action, key) in _moveKeys)
+            cfg.SetValue("input", action, (int)key);
         cfg.Save(Path);
     }
 }

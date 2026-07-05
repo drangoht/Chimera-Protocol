@@ -50,7 +50,8 @@ fréquence + tirage + `EliteModifiers`, cf. GDD §22). Les nœuds délèguent ic
 - Spawn : `EnemySpawner` (+ `EnemySpawnData`), `PowerUpSpawner` (+ `PowerUp`), `MagnetSpawner`, `AetherCoreSpawner`
 - Progression : `XpSystem`, `LevelUpSystem` (+ `LevelUpCardData`), `InventorySystem`, `MetaProgressionSystem` (+ `MetaUpgradeDefinition`)
 - Biome/arène : `BiomeAtmosphere`, `BiomeObstacles`, `FloorFeatures`, `GroundRenderer`, `DeepMotifShape`, `VignetteFollow`
-- Divers : `AudioSystem`, `GameSettings`, `Loc`, `FusionFlash`, `ScreenShake`, `RunStatsTracker`
+- Divers : `AudioSystem`, `GameSettings` (audio/affichage/diff/langue + **touches move_* rebindables**), `Loc`, `FusionFlash`, `ScreenShake`, `RunStatsTracker`
+- Input : **`InputRemap`** (statique) — actions `move_up/down/left/right` (défaut ZQSD + flèches + manette), séparées des `ui_*` menu ; le Player lit `Input.GetVector(move_*)`, remap via l'écran Options, persisté dans `GameSettings`
 
 ## §UI — `src/UI/` (écrans Control)
 `MainMenu` (+ **bandeau MAJ** → §MAJ) · `CharacterSelectScreen` · `LevelSelectScreen` ·
