@@ -2972,3 +2972,57 @@ Playthrough réel piloté (D3D12, captures + console). `dotnet build` 0/0, `dotn
 
 ### BUG-OPT-01 (Mineur) — écran Options tronqué en 720p — **CORRIGÉ (même session)**
 La section « Contrôles » faisait déborder le VBox (dans un simple `CenterContainer`) → « Retour » et « Tout réinitialiser » hors écran. **Fix** : `OptionsScreen._Ready` — contenu placé dans un `ScrollContainer` (`FollowFocus = true`, scroll horizontal désactivé) + `HBoxContainer` de centrage. Vérifié visuellement : tout le contenu est de nouveau atteignable, la nav clavier auto-scrolle vers l'élément focalisé.
+
+---
+
+## Session 2026-07-05 — Poussée des ennemis (push, pas de ghosting) (commit 11e2a83)
+
+Build headless `--build-solutions` : **0 erreur**. Vérif analytique (valeurs de séparation par
+type d'ennemi) + captures empiriques (run nuée + `--debug-boss`, D3D12).
+
+**Mécanique testée** : `Player.PushEnemiesAside()` (après `MoveAndSlide`) déplace chaque ennemi
+chevauchant le corps du joueur sur un anneau `sep = max(PlayerBodyRadius=13, PushRadius−6)`. Le
+joueur ne collisionne pas avec les ennemis (mask=2) → jamais bloqué. `PushRadius = ContactRadius`.
+
+| # | Point | Verdict | Détail |
+|---|---|---|---|
+| 1 | Pas de blocage / pleine vitesse | **PASS** | Joueur atteint le centre et sweep librement à travers les paquets. Impossible d'être freiné : les ennemis ne sont pas dans le mask de collision du joueur ; seul l'ENNEMI est déplacé. |
+| 2 | Pas de ghosting | **PASS** | Aucun ennemi ne recouvre le centre du joueur ; ils sont maintenus sur le bord du corps. Boss (`--debug-boss`) jamais superposé au sprite joueur, tenu à distance de l'anneau. |
+| 3 | Dégâts de contact actifs | **PASS** | `sep < ContactRadius` pour **tous** les ennemis contondants (marge 6 px partout où `PushRadius>19`). Empirique : le boss tue le joueur en 16 s au corps-à-corps. I-frames 0.45 s intacts. |
+| 4 | Feel de la poussée | **PASS (téléport OK, pas besoin d'interpoler)** | Détail ci-dessous. |
+| 5 | Gros ennemis / boss | **PASS** | Boss (`ContactRadius 56` → `sep 50`) repoussé plus loin que les basiques ; pas de tremblement ni téléportation visible sur les stills, plow cohérent. |
+| 6 | Non-régression | **PASS** | Orbes XP ramassés (level-ups en chaîne), pas de crash, obstacles/tirs inchangés (le commit ne touche que le déplacement des ennemis en groupe). |
+
+### Vérif analytique de la séparation (contact préservé)
+
+| Ennemi | ContactRadius | sep = max(13, R−6) | Marge (R−sep) | Contact |
+|---|---|---|---|---|
+| CorruptedDrone | 20 | 14 | 6 | oui |
+| RustSwarm / défaut | 24 | 18 | 6 | oui |
+| AetherRevenant | 34 | 28 | 6 | oui |
+| RustStalker | 32 | 26 | 6 | oui |
+| GraftedColossus (Colosse) | 36 | 30 | 6 | oui |
+| RustedCore (boss) | 56 | 50 | 6 | oui |
+
+`CorruptedSentinel`/`MasterSentinel` : `HandleContactDamage` vide (à distance) → non concernés.
+Marge constante de 6 px : le contact reste actif pour chaque archétype, gros ennemis écartés
+proportionnellement (plus la silhouette est grosse, plus l'anneau est large). **Aucun ennemi
+actuel avec `ContactRadius` entre 13 et 19** (sinon la marge tomberait sous 6 px).
+
+### Feel — verdict
+
+Le hard-set (téléport, sans interpolation) est **acceptable en l'état** : les ennemis sont lents
+(~40–90 px/s → <1,5 px/frame à 60 fps), donc à l'entrée dans l'anneau le clamp ne recule l'ennemi
+que d'une fraction de pixel — **aucun saut visible**. Maintenu à l'anneau, l'ennemi oscille en
+sous-pixel (imperceptible). Le joueur qui fonce « laboure » la foule (bow-wave) de façon
+satisfaisante. **Pas besoin de passer à une interpolation.**
+
+### OBS-PUSH-01 (Cosmétique) — fallback `Vector2.Right` sur recouvrement quasi-parfait
+`PushEnemiesAside` : si `dist <= 0.01` la direction retombe sur `Vector2.Right`. Un ennemi que le
+joueur centre parfaitement est projeté 1 frame à sa DROITE quel que soit le sens de déplacement.
+Cas rare (recouvrement quasi pixel-parfait), 1 frame, non observé en jeu. Améliorable en réutilisant
+la dernière direction de déplacement du joueur (`Velocity`) plutôt qu'une constante, mais impact
+négligeable — non bloquant. Assigné à : developpeur (optionnel, polish).
+
+**Verdict global : PASS.** Le feel est bon, la poussée est fluide et lisible, le contact et les
+i-frames sont préservés, aucun blocage, aucun ghosting. Rien à lisser côté séparation.

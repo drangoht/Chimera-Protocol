@@ -333,8 +333,11 @@ public partial class Player : CharacterBody2D
             float dist = offset.Length();
             if (dist >= sep) continue;
 
-            // Superposition quasi-parfaite → direction déterministe pour éviter un NaN.
-            var dir = dist > 0.01f ? offset / dist : Vector2.Right;
+            // Superposition quasi-parfaite → repousser dans le sens du déplacement du joueur
+            // (fallback stable évitant un NaN, et cohérent avec le « labourage » de la foule).
+            var dir = dist > 0.01f
+                ? offset / dist
+                : (Velocity.LengthSquared() > 1f ? Velocity.Normalized() : Vector2.Right);
             enemy.GlobalPosition = GlobalPosition + dir * sep;
         }
     }
