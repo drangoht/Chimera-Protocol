@@ -16,6 +16,17 @@
 - `file sealed class` interdit dans signatures de membres `public partial` → utiliser `internal sealed class`
 - `FileAccess` ambigu si `using System.Text.Json` → toujours qualifier `Godot.FileAccess.Open(...)`
 
+## Profondeur pseudo-3D (ZIndex) — obstacles vs joueur
+Pas de Y-sort dans le projet : la profondeur est en **ZIndex fixes**. Le **joueur** a `ZIndex = 5`
+(`Player.cs`, pour passer au-dessus de ses VFX d'armes). Un obstacle dont le corps est sous 5 est
+**survolé graphiquement** par le joueur (bug « infranchissable mais transparent »), même si la collision
+au pied bloque bien. Règle : le **corps** d'un obstacle infranchissable doit être à `ZIndex ≥ 6`
+(`BiomeObstacles` body = 6 → enfants relatifs 7-10 ; colonnes de `GroundRenderer` sprite = 6), et son
+**ombre au sol** doit être ré-ancrée en `ZAsRelative = false` (sinon elle hérite du Z du corps et flotte
+au-dessus des entités). Compromis assumé : l'obstacle occulte aussi le joueur quand il est « devant »
+(en dessous à l'écran) — négligeable pour des silhouettes hautes/fines, à remplacer par un vrai Y-sort
+si gênant (attention : Y-sort casse la relation ZIndex joueur↔VFX).
+
 ## Couches de collision (bits) — ne pas casser tirs/pickups
 Schéma : **bit 1** = joueur (layer) + ennemis (layer) ; **bit 2** = obstacles bloquants. Le **joueur**
 a `collision_mask = 2` (dans `Player.tscn`) → il traverse les ennemis (bit 1 seul) mais reste bloqué

@@ -23,7 +23,11 @@ public static class BiomeObstacles
             Position       = pos,
             CollisionLayer = 3u, // bit 2 = bloque le joueur (mask=2) ET les ennemis (mask=2) ; bit 1 conservé (compat)
             CollisionMask  = 1u,
-            ZIndex         = 1,
+            // Corps AU-DESSUS du joueur (ZIndex=5) pour qu'un obstacle « infranchissable »
+            // occulte le joueur au lieu d'être survolé graphiquement. Les enfants héritent en
+            // relatif (z_as_relative) → corps 7, facettes 8-9, contour 10. L'ombre (AddShadow)
+            // se réancre en absolu pour rester au sol, sous les entités.
+            ZIndex         = 6,
             Name           = $"Obstacle_{biomeId}_{index}",
         };
         switch (biomeId)
@@ -270,7 +274,14 @@ public static class BiomeObstacles
             float a = Mathf.Tau * i / 12f;
             pts[i] = new Vector2(Mathf.Cos(a) * halfW, y + Mathf.Sin(a) * halfH);
         }
-        parent.AddChild(new Polygon2D { Polygon = pts, Color = new Color(0f, 0f, 0f, 0.38f), ZIndex = 0 });
+        // Ombre ancrée en Z absolu (le corps parent est à ZIndex=6) : reste au sol, sous les entités.
+        parent.AddChild(new Polygon2D
+        {
+            Polygon      = pts,
+            Color        = new Color(0f, 0f, 0f, 0.38f),
+            ZIndex       = 1,
+            ZAsRelative  = false,
+        });
     }
 
     /// <summary>Contour accent vif fermé — la frontière infranchissable doit sauter aux yeux.</summary>

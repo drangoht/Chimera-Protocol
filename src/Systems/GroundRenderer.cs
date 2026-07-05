@@ -375,7 +375,8 @@ public partial class GroundRenderer : Node2D
             CollisionMask  = 1u,
             Name           = "Column",
         };
-        var sprite = new Sprite2D { Texture = tex, ZIndex = 1 };
+        // ZIndex=6 : au-dessus du joueur (5) → la colonne l'occulte au lieu d'être survolée.
+        var sprite = new Sprite2D { Texture = tex, ZIndex = 6 };
         body.AddChild(collShape);
         body.AddChild(sprite);
         parent.AddChild(body);
