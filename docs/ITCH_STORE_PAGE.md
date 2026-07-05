@@ -15,7 +15,7 @@
 
 Variantes d'accroche (au choix selon le slot) :
 - « Un survivor roguelite où tes armes évoluent — et ne se contentent pas de monter de niveau. »
-- « Bullet-heaven cyberpunk : 5 biomes, 3 Arpenteurs, 1 boss à vaincre pour s'extraire. »
+- « Bullet-heaven cyberpunk : 5 biomes, 4 Arpenteurs, 1 boss à vaincre pour s'extraire. »
 
 ---
 
@@ -60,9 +60,11 @@ il mute.
 
 ### Les points forts
 
-- **3 personnages jouables**, chacun avec ses stats, son aura et son arme de signature :
-  **Chimera** (cyborg, Canon à Impulsions), **Titan-Gardien** (robot lourd, Essaim de Drones),
-  **Vagabond** (humain, Lame Plasma).
+- **4 personnages jouables**, chacun avec ses stats, son aura et son arme de signature :
+  **Chimera** (cyborg équilibré, Canon à Impulsions), **Titan-Gardien** (robot lourd, Essaim de Drones),
+  **Vagabond** (humain mobile, Lame Plasma) et **Vecteur** (cyborg de précision, **Lance Vectorielle** —
+  la seule arme de départ **dirigée** : tu vises toi-même à la souris ou au stick droit, avec un réticule,
+  et le trait transperce tous les ennemis alignés).
 - **5 biomes avec effets de gameplay** (pas juste cosmétiques) :
   - *Sanctuaire Rouillé* — terrain neutre, pour apprendre la boucle.
   - *Friche d'Aether* — **+20 % d'XP**, montée en puissance accélérée.
@@ -72,7 +74,7 @@ il mute.
     (risque vs récompense).
 - **Une faune propre à chaque biome** : rampants rouillés au Sanctuaire, spectres dans la Friche
   d'Aether, colosses de magma dans la Fournaise, titans cristallins dans le Givre, glitchs
-  holographiques dans le Néon. **24 ennemis de base** au total, chacun avec son propre sprite.
+  holographiques dans le Néon. **28 ennemis de base** au total, chacun avec son propre sprite.
 - **Progression des niveaux** : les 5 biomes se débloquent l'un après l'autre (termine un niveau pour
   ouvrir le suivant) ; chacun garde son **meilleur temps de survie + difficulté**, avec un badge
   **« VAINCU »**.
@@ -81,15 +83,17 @@ il mute.
 - **Power-ups temporaires** : des buffs ramassables à durée limitée — Surcadence (cadence), Furie
   (dégâts), Égide (invulnérabilité), Célérité (vitesse). Aucun power-creep permanent.
 - **Difficulté réglable** : Facile / Normal / Difficile (multiplicateurs de dégâts, de PV et de spawn).
-- **Un bestiaire qui monte en intensité** : **24 ennemis de base** répartis par biome, **3 mini-boss**
+- **Un bestiaire qui monte en intensité** : **28 ennemis de base** répartis par biome, avec des
+  **élites** aux affixes dangereux (Blindé, Régénérant, Explosif, Frénétique, Vampirique), **3 mini-boss**
   (Revenant d'Aether, Rôdeur de Rouille, Sentinelle Maîtresse) et **1 boss de fin** (Le Noyau Rouillé).
-- **Un arsenal qui se construit** : **11 armes**, **4 passifs** et **4 fusions** à combiner — dont une
+- **Un arsenal qui se construit** : **12 armes**, **4 passifs** et **9 fusions** à combiner — dont une
   lame boomerang, des missiles à tête chercheuse, un rayon cryo ralentisseur, un cône de flammes
-  incendiaire et une singularité gravitationnelle épique.
+  incendiaire, une lance vectorielle dirigée et une singularité gravitationnelle épique.
 - **Méta-progression** : les Échos d'Aether gagnés en run s'investissent en améliorations permanentes
   au Hub.
 - **Intro narrative skippable** : le lore raconté en 5 temps au lancement — sautable d'une touche.
-- **Navigation manette ET clavier** sur tous les menus.
+- **Clavier (ZQSD par défaut) ou manette** — avec **touches de déplacement redéfinissables** depuis
+  les Options, et navigation clavier + manette sur tous les menus.
 - **Esthétique cyberpunk / CRT** : pixel art **pseudo-3D avec ombres** (lumière directionnelle fixe +
   ombres portées pour la profondeur), néons, scanlines, HUD minimal façon Cyberpunk 2077 coloré selon
   le biome, screen shake, bloom et aberration chromatique sur les fusions.
@@ -97,7 +101,7 @@ il mute.
 
 ### Codex intégré
 
-Un **Bestiaire** (28 ennemis avec sprite animé, rôle et description) et un **Arsenal** (11 armes +
+Un **Bestiaire** (28 ennemis avec sprite animé, rôle et description) et un **Arsenal** (12 armes +
 4 passifs, icônes et descriptions) sont consultables directement depuis le menu principal.
 
 ---
@@ -156,7 +160,7 @@ Captures à jour (rendu pseudo-3D, anglais, 1280×720 sauf cover), régénérée
 | 1 | `docs/store_screens/gameplay_fournaise.png` | **Run en Fournaise** — coulée de lave, sol pseudo-3D, joueur au centre | « Survis aux marées de Rouille sur 5 biomes. » |
 | 2 | `docs/store_screens/bestiary.png` | **Bestiaire** — faune néon (Security Drone, Holographic Glitch, Laser Turret, Synthetic Golem) | « Une faune propre à chaque biome. » |
 | 3 | `docs/store_screens/menu.png` | **Menu principal** stylé (titre néon, Bestiaire/Arsenal/Options) | Image de couverture / vitrine. |
-| 4 | `docs/store_screens/charsel.png` | **Sélection de personnage** — les 3 Arpenteurs redessinés en pseudo-3D | « 3 Arpenteurs, 3 styles de jeu. » |
+| 4 | `docs/store_screens/charsel.png` | **Sélection de personnage** — les Arpenteurs redessinés en pseudo-3D ⚠️ **à re-capturer** (montre encore 3 persos, Vecteur ajouté en 1.10.0) | « 4 Arpenteurs, 4 styles de jeu. » |
 | 5 | `docs/store_screens/levelsel.png` | **Sélection de biome** — les 5 arènes et leurs effets | « 5 biomes, 5 règles. Conquiers-les tous. » |
 | 6 | `docs/store_screens/arsenal.png` | **Arsenal** — armes/passifs avec icônes et descriptions | « Un arsenal qui se construit. » |
 | 7 | `docs/store_screens/gameplay_neon.png` | **Run en Secteur Néon** — grille néon, ambiance overclock | « Risque vs récompense : +10 % vitesse, +15 % XP. » |
@@ -212,6 +216,6 @@ Ces moments forts ne sont pas encore dans `docs/` et feraient la différence —
 
 ---
 
-*Document marketing — ne décrit que des fonctionnalités présentes dans le build au 2026-07-03.
+*Document marketing — ne décrit que des fonctionnalités présentes dans le build au 2026-07-05 (v1.10.0).
 Toute promesse nécessitant une feature non listée doit être signalée à `game-designer` avant d'être
 ajoutée à la page.*
