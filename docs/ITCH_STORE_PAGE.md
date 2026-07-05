@@ -160,7 +160,7 @@ Captures à jour (rendu pseudo-3D, anglais, 1280×720 sauf cover), régénérée
 | 1 | `docs/store_screens/gameplay_fournaise.png` | **Run en Fournaise** — coulée de lave, sol pseudo-3D, joueur au centre | « Survis aux marées de Rouille sur 5 biomes. » |
 | 2 | `docs/store_screens/bestiary.png` | **Bestiaire** — faune néon (Security Drone, Holographic Glitch, Laser Turret, Synthetic Golem) | « Une faune propre à chaque biome. » |
 | 3 | `docs/store_screens/menu.png` | **Menu principal** stylé (titre néon, Bestiaire/Arsenal/Options) | Image de couverture / vitrine. |
-| 4 | `docs/store_screens/charsel.png` | **Sélection de personnage** — les Arpenteurs redessinés en pseudo-3D ⚠️ **à re-capturer** (montre encore 3 persos, Vecteur ajouté en 1.10.0) | « 4 Arpenteurs, 4 styles de jeu. » |
+| 4 | `docs/store_screens/charsel.png` | **Sélection de personnage** — les 4 Arpenteurs en pseudo-3D (Chimera, Titan, Vagabond, Vecteur), EN, à jour 1.10.0 | « 4 Arpenteurs, 4 styles de jeu. » |
 | 5 | `docs/store_screens/levelsel.png` | **Sélection de biome** — les 5 arènes et leurs effets | « 5 biomes, 5 règles. Conquiers-les tous. » |
 | 6 | `docs/store_screens/arsenal.png` | **Arsenal** — armes/passifs avec icônes et descriptions | « Un arsenal qui se construit. » |
 | 7 | `docs/store_screens/gameplay_neon.png` | **Run en Secteur Néon** — grille néon, ambiance overclock | « Risque vs récompense : +10 % vitesse, +15 % XP. » |
