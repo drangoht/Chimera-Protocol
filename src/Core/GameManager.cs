@@ -103,6 +103,9 @@ public partial class GameManager : Node
         player.SetCharacterFrames(character.FramesPath);
         player.ApplyCharacterVisual(character.Tint);
 
+        // Statut Discord : bascule en « en run » (personnage + biome courant).
+        DiscordPresence.Instance?.SetInRun(character.Name, BiomeName);
+
         // Réinitialise les systèmes avant chaque run
         XpSystem.Instance?.Reset();
         InventorySystem.Instance?.Reset();

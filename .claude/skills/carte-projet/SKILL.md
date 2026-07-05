@@ -37,7 +37,7 @@ docs/              GDD.md + briefs/plans — voir §Docs
 ## Singletons AutoLoad (project.godot)
 `GameManager` · `XpSystem` · `InventorySystem` · `LevelUpSystem` · `SaveManager` ·
 `MetaProgressionSystem` · `AudioSystem` · `ScreenShake` · `GameSettings` ·
-`FusionFlash` (scène). Accès partout via `NomSystem.Instance`.
+`DiscordPresence` · `VersionStamp` · `FusionFlash` (scène). Accès partout via `NomSystem.Instance`.
 
 ## §Rules — `src/Core/Rules/` (logique pure, testée)
 XpCurve · EnemyScaling (`Scaled` linéaire + `ScaledCurved`/`CurvedFactor` = courbe non-linéaire :
@@ -52,6 +52,7 @@ fréquence + tirage + `EliteModifiers`, cf. GDD §22). Les nœuds délèguent ic
 - Biome/arène : `BiomeAtmosphere`, `BiomeObstacles`, `FloorFeatures`, `GroundRenderer`, `DeepMotifShape`, `VignetteFollow`
 - Divers : `AudioSystem`, `GameSettings` (audio/affichage/diff/langue + **touches move_* rebindables**), `Loc`, `FusionFlash`, `ScreenShake`, `RunStatsTracker`
 - Input : **`InputRemap`** (statique) — actions `move_up/down/left/right` (défaut ZQSD + flèches + manette), séparées des `ui_*` menu ; le Player lit `Input.GetVector(move_*)`, remap via l'écran Options, persisté dans `GameSettings`
+- Intégrations : **`DiscordPresence`** (autoload, NuGet `DiscordRichPresence` — statut « joue à Chimera Protocol », clés art `chimera`/`chimera_small`, tolérant à l'absence de Discord ; `SetInMenus`/`SetInRun` appelés par MainMenu/GameManager), **`VersionStamp`** (autoload, overlay `v<ver>-<sha>` bas-droite) ; **`BuildInfo`** (`src/Core/`, `GitSha` auto-généré par `tools/gen_build_info.ps1`, version lue de project.godot)
 
 ## §UI — `src/UI/` (écrans Control)
 `MainMenu` (+ **bandeau MAJ** → §MAJ) · `CharacterSelectScreen` · `LevelSelectScreen` ·

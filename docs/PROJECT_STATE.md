@@ -5,8 +5,10 @@
 > `CLAUDE.md` ; le design complet dans `docs/GDD.md` ; la carte du code dans `/carte-projet`.
 
 - Pile technique : **Godot 4.7 .NET (C# / .NET 8 / GodotSharp)**
-- **Phase actuelle : libre** — dernières livraisons : **nouveau perso Vecteur** (cyborg de précision,
-  arme de base Lance Vectorielle dirigée, 2026-07-05), **remap clavier + ZQSD par défaut**
+- **Phase actuelle : libre** — dernières livraisons : **Discord Rich Presence** (`DiscordPresence`,
+  statut « joue à Chimera Protocol » + tampon de version `v<ver>-<sha>` bas-droite `VersionStamp`, 2026-07-05),
+  **nouveau perso Vecteur** (cyborg de précision, arme de base Lance Vectorielle dirigée, 2026-07-05),
+  **remap clavier + ZQSD par défaut**
   (`src/Systems/InputRemap.cs`, section Contrôles des Options, 2026-07-05), visée souris/stick + réticule
   Lance Vectorielle (1.8.0), fusions Rayon Vecteur & Voile de Givre (brume de froid + ennemis gelés,
   1.8.1), affixes d'élite. Version publiée itch : **1.10.0**.

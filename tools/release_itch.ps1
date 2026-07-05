@@ -70,6 +70,9 @@ if (-not $Version) {
 }
 Write-Host "Version : $Version  ->  $Itch`:$Channel" -ForegroundColor Cyan
 
+# --- 1b. Tampon de build (SHA du commit publie, affiche bas-droite + statut Discord) --
+& (Join-Path $PSScriptRoot "gen_build_info.ps1")
+
 # --- 2. Export release Godot .NET ---------------------------------------------------
 if (-not $SkipExport) {
     # Le .sln est CRITIQUE pour l'export .NET (sans lui, l'exe crashe au lancement).

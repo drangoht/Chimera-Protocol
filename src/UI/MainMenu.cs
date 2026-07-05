@@ -23,6 +23,8 @@ public partial class MainMenu : Control
 
     public override void _Ready()
     {
+        DiscordPresence.Instance?.SetInMenus();   // retour au menu → statut « in the menus »
+
         _playButton     = GetNode<Button>("VBox/PlayButton");
         _hubButton      = GetNode<Button>("VBox/HubButton");
         _bestiaryButton = GetNode<Button>("VBox/BestiaryButton");

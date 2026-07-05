@@ -27,6 +27,8 @@ MetaProgressionSystem="*res://src/Systems/MetaProgressionSystem.cs"
 AudioSystem="*res://src/Systems/AudioSystem.cs"
 ScreenShake="*res://src/Systems/ScreenShake.cs"
 GameSettings="*res://src/Systems/GameSettings.cs"
+DiscordPresence="*res://src/Systems/DiscordPresence.cs"
+VersionStamp="*res://src/UI/VersionStamp.cs"
 FusionFlash="*res://scenes/ui/FusionFlash.tscn"
 
 [display]

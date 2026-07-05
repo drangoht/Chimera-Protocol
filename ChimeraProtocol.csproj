@@ -9,4 +9,8 @@
   <ItemGroup>
     <Compile Remove="tests/**/*.cs" />
   </ItemGroup>
+  <!-- Discord Rich Presence (client managé, IPC vers le client Discord local). -->
+  <ItemGroup>
+    <PackageReference Include="DiscordRichPresence" Version="1.2.1.24" />
+  </ItemGroup>
 </Project>
