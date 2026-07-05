@@ -21,7 +21,7 @@ public static class BiomeObstacles
         var body = new StaticBody2D
         {
             Position       = pos,
-            CollisionLayer = 3u, // bit 1 (joueur via mask=1) + bit 2 (bloque aussi les ennemis)
+            CollisionLayer = 3u, // bit 2 = bloque le joueur (mask=2) ET les ennemis (mask=2) ; bit 1 conservé (compat)
             CollisionMask  = 1u,
             ZIndex         = 1,
             Name           = $"Obstacle_{biomeId}_{index}",

@@ -16,6 +16,17 @@
 - `file sealed class` interdit dans signatures de membres `public partial` → utiliser `internal sealed class`
 - `FileAccess` ambigu si `using System.Text.Json` → toujours qualifier `Godot.FileAccess.Open(...)`
 
+## Couches de collision (bits) — ne pas casser tirs/pickups
+Schéma : **bit 1** = joueur (layer) + ennemis (layer) ; **bit 2** = obstacles bloquants. Le **joueur**
+a `collision_mask = 2` (dans `Player.tscn`) → il traverse les ennemis (bit 1 seul) mais reste bloqué
+par les obstacles `BiomeObstacles` (layer 3 = bits 1+2). Les **ennemis** ont `CollisionMask = 2`
+(bloqués par les obstacles, jamais par le joueur). L'arène est bornée par `Player.ClampToArena()`
+(clamp de position), PAS par des murs physiques. **Piège** : les armes touchent les ennemis via
+`Area2D.BodyEntered` + `body is EnemyBase` (détection PHYSIQUE, pas par groupe pour les projectiles) —
+NE PAS déplacer la couche (layer) des ennemis hors du bit 1 sans mettre à jour le masque de tous les
+projectiles/zones. Pour changer le blocage du joueur, agir sur son **masque** (Player.tscn), pas sur la
+couche des ennemis. Dégâts de contact = check de distance dans le code, indépendants de la collision.
+
 ## Armes — câblage (checklist 8 points)
 Ajouter une arme requiert : `weapons.json` (5 niveaux) · `levelup_config.json` rarityByCard · `InventorySystem` (WeaponScenePaths + ApplySpecializedStats) · `LevelUpSystem.AllWeaponIds` · `Codex.Weapons` + `IconById` · icône `ui_icon_*.png` + `.import` · clés `WPN_*` EN/FR/ES dans `localization/ui.csv`
 
