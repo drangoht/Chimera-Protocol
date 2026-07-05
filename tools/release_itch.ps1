@@ -51,6 +51,39 @@ $Staging  = Join-Path $BuildDir "dist_windows"
 
 function Fail($msg) { Write-Host "ERREUR : $msg" -ForegroundColor Red; exit 1 }
 
+# DLL qui DOIVENT etre presentes dans le runtime .NET expedie (sinon build amputee).
+# Godot 4.7 .NET rend la main a PowerShell AVANT que `dotnet publish` ait fini d'ecrire
+# le runtime (course connue) -> un staging premature peut omettre des DLL sans erreur.
+$CriticalDlls = @("ChimeraProtocol.dll", "GodotSharp.dll", "DiscordRPC.dll", "Newtonsoft.Json.dll")
+
+# Attend que le dossier soit STABLE (nb de fichiers + taille totale inchanges sur
+# plusieurs sondages consecutifs) — garde-fou contre la course d'ecriture de dotnet publish.
+function Wait-DirStable($dir, $stableReads = 3, $intervalMs = 800, $timeoutSec = 90) {
+    $deadline = (Get-Date).AddSeconds($timeoutSec)
+    $last = ""; $streak = 0
+    while ((Get-Date) -lt $deadline) {
+        $files = Get-ChildItem -Path $dir -Recurse -File -ErrorAction SilentlyContinue
+        $sig = "{0}:{1}" -f $files.Count, (($files | Measure-Object -Property Length -Sum).Sum)
+        if ($sig -eq $last) { $streak++ } else { $streak = 0; $last = $sig }
+        if ($streak -ge $stableReads) {
+            Write-Host "Runtime stable ($($files.Count) fichiers)." -ForegroundColor DarkGray
+            return
+        }
+        Start-Sleep -Milliseconds $intervalMs
+    }
+    Write-Host "AVERTISSEMENT : stabilite du runtime non confirmee apres $timeoutSec s (on continue, la verif DLL tranchera)." -ForegroundColor Yellow
+}
+
+# Verifie la presence des DLL critiques dans un dossier runtime donne ; Fail sinon.
+function Assert-CriticalDlls($dataDir, $label) {
+    foreach ($dll in $CriticalDlls) {
+        if (-not (Test-Path (Join-Path $dataDir $dll))) {
+            Fail "$dll absente de $label — export incomplet (course dotnet publish ?). Relance l'export."
+        }
+    }
+    Write-Host "DLL critiques presentes ($label)." -ForegroundColor DarkGray
+}
+
 # --- 0. Localise Butler (fourni par l'app itch.io, dossier broth versionne) ---------
 $brothGlob = Join-Path $env:APPDATA "itch\broth\butler\versions\*\butler.exe"
 $butler = Get-ChildItem -Path $brothGlob -ErrorAction SilentlyContinue |
@@ -91,6 +124,10 @@ if (-not $SkipExport) {
 if (-not (Test-Path $Exe))     { Fail "Exe manquant : $Exe" }
 if (-not (Test-Path $DataDir)) { Fail "Runtime .NET manquant : $DataDir" }
 
+# Garde-fou course dotnet publish : on n'attend/verifie que si on vient d'exporter.
+if (-not $SkipExport) { Wait-DirStable $DataDir }
+Assert-CriticalDlls $DataDir "runtime source"
+
 # --- 3. Dossier de distribution propre (exe + runtime uniquement) -------------------
 # Butler diffe au niveau fichier : on pousse un DOSSIER (pas un zip), sans les
 # artefacts parasites de build/ (covers, screenshots, anciens zips).
@@ -98,6 +135,8 @@ if (Test-Path $Staging) { Remove-Item $Staging -Recurse -Force }
 New-Item -ItemType Directory -Path $Staging | Out-Null
 Copy-Item $Exe -Destination $Staging
 Copy-Item $DataDir -Destination $Staging -Recurse
+# Re-verif APRES copie : ce qui part chez butler doit contenir les DLL critiques.
+Assert-CriticalDlls (Join-Path $Staging (Split-Path -Leaf $DataDir)) "staging"
 Write-Host "Staging pret : $Staging" -ForegroundColor Cyan
 
 # --- 4. Push Butler (versionne) -----------------------------------------------------
