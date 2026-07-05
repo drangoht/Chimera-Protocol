@@ -26,6 +26,11 @@ par les obstacles `BiomeObstacles` (layer 3 = bits 1+2). Les **ennemis** ont `Co
 NE PAS déplacer la couche (layer) des ennemis hors du bit 1 sans mettre à jour le masque de tous les
 projectiles/zones. Pour changer le blocage du joueur, agir sur son **masque** (Player.tscn), pas sur la
 couche des ennemis. Dégâts de contact = check de distance dans le code, indépendants de la collision.
+**Poussée (game feel)** : le joueur ne collisionne PAS physiquement avec les ennemis (il n'est jamais
+bloqué), mais `Player.PushEnemiesAside()` déplace chaque ennemi chevauchant son corps hors d'un anneau
+(`sep = max(PlayerBodyRadius, enemy.PushRadius − 6)`). La séparation reste **sous** le rayon de contact
+de l'ennemi → les dégâts de contact continuent de s'appliquer. Ne PAS pousser jusqu'au rayon de contact
+plein, sinon plus aucun dégât de contact.
 
 ## Armes — câblage (checklist 8 points)
 Ajouter une arme requiert : `weapons.json` (5 niveaux) · `levelup_config.json` rarityByCard · `InventorySystem` (WeaponScenePaths + ApplySpecializedStats) · `LevelUpSystem.AllWeaponIds` · `Codex.Weapons` + `IconById` · icône `ui_icon_*.png` + `.import` · clés `WPN_*` EN/FR/ES dans `localization/ui.csv`

@@ -200,6 +200,10 @@ public partial class EnemyBase : CharacterBody2D
     /// <summary>Distance de contact (px). Les sous-classes peuvent la surcharger.</summary>
     protected virtual float ContactRadius => 24f;
 
+    /// <summary>Rayon (px) utilisé par le joueur pour repousser cet ennemi de son corps
+    /// sans être bloqué. Basé sur la taille de contact → un gros ennemi est écarté plus loin.</summary>
+    public float PushRadius => ContactRadius;
+
     /// <summary>
     /// Appelé par EnemySpawner après AddChild pour appliquer le scaling temporel.
     /// Synchronise _currentHp avec le MaxHp scalé.

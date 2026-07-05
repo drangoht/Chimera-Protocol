@@ -2,7 +2,7 @@
 name: game-tester
 description: Teste le jeu en conditions réelles — lance Godot, joue chaque système (gameplay, UI, enchainement des écrans, sauvegarde, meta), documente les bugs et incohérences, et remonte les rapports au game-designer et au developpeur. À utiliser après chaque implémentation majeure pour valider avant de passer à la phase suivante.
 tools: Read, Write, Edit, Bash, Grep, Glob
-model: sonnet
+model: opus
 permissions:
   allow:
     - Bash(*)

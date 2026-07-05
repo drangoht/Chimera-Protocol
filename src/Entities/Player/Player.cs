@@ -302,12 +302,41 @@ public partial class Player : CharacterBody2D
         Velocity = direction.Normalized() * Stats.Speed * SpeedMultiplier;
         MoveAndSlide();
         ClampToArena();
+        PushEnemiesAside();
 
         UpdateAim();   // visée souris / stick droit + réticule
         UpdateAnimation(direction);
         UpdateHpBlink(delta);
         UpdateTrail();
         UpdateAura();
+    }
+
+    // Demi-taille du corps du joueur (px) : distance minimale à laquelle un ennemi peut
+    // approcher le centre du joueur. En deçà, il est repoussé sur l'anneau du corps.
+    private const float PlayerBodyRadius = 13f;
+
+    /// <summary>Repousse les ennemis qui chevauchent le corps du joueur au lieu de les traverser.
+    /// Le joueur n'est jamais bloqué (il ne collisionne pas physiquement avec eux, mask=2) : on
+    /// déplace l'ENNEMI hors du corps du joueur. La séparation reste sous le rayon de contact de
+    /// l'ennemi → les dégâts de contact continuent de s'appliquer (feel « je bouscule la foule »).</summary>
+    private void PushEnemiesAside()
+    {
+        foreach (var node in GetTree().GetNodesInGroup(Constants.GroupEnemies))
+        {
+            if (node is not EnemyBase enemy || !IsInstanceValid(enemy)) continue;
+
+            // Séparation : bord du corps du joueur, sans dépasser (rayon de contact − marge)
+            // pour que l'ennemi reste dans sa portée de dégâts.
+            float sep = Mathf.Max(PlayerBodyRadius, enemy.PushRadius - 6f);
+
+            var offset = enemy.GlobalPosition - GlobalPosition;
+            float dist = offset.Length();
+            if (dist >= sep) continue;
+
+            // Superposition quasi-parfaite → direction déterministe pour éviter un NaN.
+            var dir = dist > 0.01f ? offset / dist : Vector2.Right;
+            enemy.GlobalPosition = GlobalPosition + dir * sep;
+        }
     }
 
     /// <summary>Auto-Réparation (upgrade meta hp_regen) : régénération continue clampée à MaxHp.</summary>
