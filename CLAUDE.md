@@ -13,10 +13,11 @@ cyborgs, robots), inspiré de Vampire Survivors et Everything is Crab.
 - **Avant de coder** dans un domaine (armes, ennemis, UI/focus, VFX, scènes, assets, tests headless) → lire **`docs/PITFALLS.md`** (pièges non-évidents Godot/C# + checklists de câblage). Y ajouter tout nouveau piège découvert.
 - **État d'implémentation détaillé & version courante → `docs/PROJECT_STATE.md`** (évolutif). Résumé de phase ci-dessous.
 
-**Phase actuelle : libre.** Dernières livraisons : nouveau perso **Vecteur** (cyborg de précision, arme
-de base Lance Vectorielle dirigée, réticule dès le départ), écran Options défilable, remap clavier +
-ZQSD par défaut (section Contrôles des Options, `src/Systems/InputRemap.cs`), 2026-07-05. Version publiée
-itch : **1.10.0**. Détail dans `docs/PROJECT_STATE.md`.
+**Phase actuelle : libre.** Dernières livraisons : **Discord Rich Presence** (`src/Systems/DiscordPresence.cs`,
+statut « joue à Chimera Protocol » + contexte perso/biome) et **tampon de version** `v<ver>-<sha>` bas-droite
+(`VersionStamp` + `BuildInfo`), nouveau perso **Vecteur** (Lance Vectorielle dirigée), remap clavier + ZQSD
+par défaut (`src/Systems/InputRemap.cs`), 2026-07-05. Version publiée itch : **1.11.0**. Détail dans
+`docs/PROJECT_STATE.md`.
 
 ## Équipe d'agents
 

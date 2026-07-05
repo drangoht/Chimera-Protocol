@@ -4,6 +4,40 @@
 > `release-manager`). Entrées en ordre décroissant (la plus récente en haut). Ton orienté
 > joueur, EN puis FR (audience itch surtout anglophone).
 
+## v1.11.0 — Show the arena on your Discord + a version stamp on every screen (2026-07-05)
+
+**New**
+- **Discord Rich Presence.** Fire up the game and your Discord status now reads **"Playing Chimera
+  Protocol"** — with the game icon, a contextual line (browsing the menus, or *in a run*: your
+  character and current biome) and a session timer ticking up. It's fully optional and completely
+  silent if Discord isn't running — no prompt, no slowdown, never a crash.
+- **A version stamp on every screen.** A small `v<version>-<commit>` tag now sits in the bottom-right
+  corner of every screen. When you report a bug or share a clip, that stamp tells us exactly which
+  build you were on — no guessing.
+
+**Why it matters**
+- No gameplay changes this time: this build makes Chimera Protocol easier to *share* and easier to
+  *support*. Your friends see what you're playing, and every screenshot carries its own build number.
+
+---
+
+**Nouveautés**
+- **Discord Rich Presence.** Lancez le jeu et votre statut Discord affiche désormais **« joue à Chimera
+  Protocol »** — avec l'icône du jeu, une ligne contextuelle (navigation dans les menus, ou *en run* :
+  votre personnage et le biome en cours) et un chrono de session qui tourne. C'est entièrement optionnel
+  et totalement silencieux si Discord n'est pas lancé — aucune demande, aucun ralentissement, jamais de
+  plantage.
+- **Un tampon de version sur chaque écran.** Une petite étiquette `v<version>-<commit>` s'affiche
+  maintenant en bas à droite de tous les écrans. Quand vous remontez un bug ou partagez un clip, ce
+  tampon nous dit exactement sur quel build vous étiez — fini les devinettes.
+
+**Pourquoi c'est important**
+- Aucun changement de gameplay cette fois : ce build rend Chimera Protocol plus facile à *partager* et
+  plus facile à *suivre*. Vos amis voient à quoi vous jouez, et chaque capture porte son propre numéro
+  de build.
+
+---
+
 ## v1.10.0 — Meet Vector: a precision cyborg with a guided lance (2026-07-05)
 
 **New**
