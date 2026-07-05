@@ -33,14 +33,22 @@ public partial class OptionsScreen : Control
         bg.MouseFilter = MouseFilterEnum.Ignore;
         AddChild(bg);
 
-        // Conteneur central
-        var center = new CenterContainer();
-        center.SetAnchorsPreset(LayoutPreset.FullRect);
-        AddChild(center);
+        // Conteneur défilable (le contenu dépasse la hauteur en 720p depuis l'ajout
+        // de la section Contrôles) — FollowFocus garde l'élément focalisé visible en nav clavier.
+        var scroll = new ScrollContainer();
+        scroll.SetAnchorsPreset(LayoutPreset.FullRect);
+        scroll.HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled;
+        scroll.FollowFocus = true;
+        AddChild(scroll);
+
+        // Centrage horizontal du panneau à largeur fixe, tout en laissant la hauteur défiler.
+        var hcenter = new HBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill,
+                                          Alignment = BoxContainer.AlignmentMode.Center };
+        scroll.AddChild(hcenter);
 
         var vbox = new VBoxContainer { CustomMinimumSize = new Vector2(560, 0) };
         vbox.AddThemeConstantOverride("separation", 18);
-        center.AddChild(vbox);
+        hcenter.AddChild(vbox);
 
         var title = new Label
         {

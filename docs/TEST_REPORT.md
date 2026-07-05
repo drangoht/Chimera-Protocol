@@ -2871,3 +2871,22 @@ câblé). Méthode : `--debug-boss --force-elites` pour une mort déterministe a
 | 4 | Essaim de Drones = arme de départ du Titan | **PASS** | Sélection perso « Titan-Gardien » → Arme : Essaim de Drones. Intact, indépendant de l'upgrade retirée. |
 
 **Verdict global : PASS.** Les deux correctifs validés, aucune régression, aucun crash.
+
+---
+
+## Session 2026-07-05 — Perso Vecteur + ZQSD/remap clavier (commit 784deeb)
+
+Playthrough réel piloté (D3D12, captures + console). `dotnet build` 0/0, `dotnet test` **87/87**.
+
+| Piste | Verdict | Détail |
+|---|---|---|
+| Perso **Vecteur** — sélection | **PASS** | 4e carte « Vecteur — Cyborg — précision », sprite violet, PV 90 / Vit 210 / Arme Lance Vectorielle, desc FR. |
+| Vecteur — run | **PASS** | Lance Vectorielle comme arme de départ, **réticule violet** suivant la souris, tir dirigé perforant. Aucune exception. |
+| **ZQSD** en jeu | **PASS** | Z/Q/S/D déplacent le joueur, flèches conservées. |
+| **Remap** (Options → Contrôles) | **PASS** | 4 boutons de direction, remap Haut→K appliqué+persisté, Échap annule sans quitter, « Touches par défaut (ZQSD) » restaure. |
+| Non-régression nav clavier | **PASS** | Focus MainMenu/CharacterSelect intact (actions `move_*` séparées des `ui_*`). |
+
+**Verdict global : PASS** — publication recommandée.
+
+### BUG-OPT-01 (Mineur) — écran Options tronqué en 720p — **CORRIGÉ (même session)**
+La section « Contrôles » faisait déborder le VBox (dans un simple `CenterContainer`) → « Retour » et « Tout réinitialiser » hors écran. **Fix** : `OptionsScreen._Ready` — contenu placé dans un `ScrollContainer` (`FollowFocus = true`, scroll horizontal désactivé) + `HBoxContainer` de centrage. Vérifié visuellement : tout le contenu est de nouveau atteignable, la nav clavier auto-scrolle vers l'élément focalisé.
