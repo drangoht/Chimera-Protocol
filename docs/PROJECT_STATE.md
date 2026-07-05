@@ -5,10 +5,10 @@
 > `CLAUDE.md` ; le design complet dans `docs/GDD.md` ; la carte du code dans `/carte-projet`.
 
 - Pile technique : **Godot 4.7 .NET (C# / .NET 8 / GodotSharp)**
-- **Phase actuelle : libre** — dernières livraisons : fusion **Rayon Vecteur** (`vector_beam`,
-  2026-07-04), retours testeur (arme dirigée + recadrage difficulté + lisibilité joueur, 2026-07-04),
-  affixes d'élite (2026-07-04), correctifs VFX menu + retrait upgrade « arme de départ » (2026-07-04).
-  Version publiée itch : **1.6.0**.
+- **Phase actuelle : libre** — dernières livraisons : **remap clavier + ZQSD par défaut**
+  (`src/Systems/InputRemap.cs`, section Contrôles des Options, 2026-07-05), visée souris/stick + réticule
+  Lance Vectorielle (1.8.0), fusions Rayon Vecteur & Voile de Givre (brume de froid + ennemis gelés,
+  1.8.1), affixes d'élite. Version publiée itch : **1.9.0**.
 
 ## Ce qui est implémenté
 

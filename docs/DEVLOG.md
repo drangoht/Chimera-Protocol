@@ -4,6 +4,47 @@
 > `release-manager`). Entrées en ordre décroissant (la plus récente en haut). Ton orienté
 > joueur, EN puis FR (audience itch surtout anglophone).
 
+## v1.9.0 — Your keys, your way: ZQSD by default + full keyboard remapping (2026-07-05)
+
+**New**
+- **Move with ZQSD out of the box.** The default movement layout now matches an AZERTY keyboard
+  natively — **Z Q S D** for up/left/down/right — alongside the **arrow keys** and full **gamepad**
+  support (D-pad & left stick). No more fighting a QWERTY-centric default on the first run.
+- **Rebind every direction.** A brand-new **Controls** section in the **Options** screen lets you
+  remap each movement direction: click a direction, press the key you want ("press a key…", **Esc**
+  cancels), done. Prefer WASD, ESDF, IJKL? It's yours in seconds.
+- **One-click reset.** A **Default keys (ZQSD)** button restores the stock layout instantly if you
+  ever want to start over.
+- **Your bindings stick.** Custom keys are saved to your settings and re-applied automatically every
+  time you launch the game.
+
+**Why it matters**
+- Movement is separated from the menu inputs under the hood, so remapping is clean and never breaks
+  UI navigation. Whatever keyboard you play on, the controls now bend to you — not the other way around.
+
+---
+
+**Nouveautés**
+- **Déplacement en ZQSD dès le départ.** La disposition de mouvement par défaut correspond désormais
+  nativement à un clavier AZERTY — **Z Q S D** pour haut/gauche/bas/droite — en plus des **flèches
+  directionnelles** et de la **manette** (croix directionnelle & stick gauche). Fini de subir un défaut
+  pensé pour le QWERTY dès la première partie.
+- **Remappez chaque direction.** Une toute nouvelle section **Contrôles** dans l'écran **Options**
+  permet de réassigner chaque direction de déplacement : cliquez sur une direction, appuyez sur la
+  touche voulue (« appuyez sur une touche… », **Échap** annule), c'est fait. Vous préférez ZQSD, ESDF,
+  IJKL ? C'est à vous en quelques secondes.
+- **Réinitialisation en un clic.** Un bouton **Touches par défaut (ZQSD)** rétablit instantanément la
+  disposition d'origine si vous voulez repartir de zéro.
+- **Vos touches sont conservées.** Vos raccourcis personnalisés sont enregistrés et ré-appliqués
+  automatiquement à chaque lancement du jeu.
+
+**Pourquoi c'est important**
+- Le déplacement est désormais séparé des entrées de menu en interne : le remappage est propre et ne
+  casse jamais la navigation de l'UI. Quel que soit votre clavier, les contrôles s'adaptent à vous —
+  et non l'inverse.
+
+---
+
 ## v1.8.1 — A real cold: reworked frost mist & visibly frozen enemies (2026-07-05)
 
 **Polish**
