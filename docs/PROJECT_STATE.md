@@ -14,7 +14,11 @@
   1.8.1), affixes d'élite. **Correctif carte de level-up** (texte ancré sous l'icône, fini le chevauchement
   sur descriptions longues type fusions, 1.11.1). **Polish VFX biome Givre** (rendu ennemi gelé refait par
   shader `enemy_frost.gdshader` — lerp vers bleu glacial franc au lieu d'un multiply qui ternit ; brume du
-  Voile de Givre densifiée en 6 puffs volumétriques, `src/Weapons/FrostVeil.cs`, 1.11.2). Version publiée itch : **1.11.2**.
+  Voile de Givre densifiée en 6 puffs volumétriques, `src/Weapons/FrostVeil.cs`, 1.11.2). **Poussée d'ennemis**
+  (le joueur écarte les ennemis qui chevauchent son corps au lieu de les traverser, sans perte de vitesse ni
+  perte des dégâts de contact, `Player.PushEnemiesAside()`, poussée dans le sens du déplacement si ennemi centré,
+  1.11.3) et **fix occultation obstacles** (correction de z-index : les obstacles infranchissables dessinent
+  désormais au-dessus du joueur, ombre re-ancrée au sol, dans les 5 biomes, 1.11.3). Version publiée itch : **1.11.3**.
 
 ## Ce qui est implémenté
 

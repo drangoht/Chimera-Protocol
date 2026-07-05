@@ -4,6 +4,53 @@
 > `release-manager`). Entrées en ordre décroissant (la plus récente en haut). Ton orienté
 > joueur, EN puis FR (audience itch surtout anglophone).
 
+## v1.11.3 — Enemies don't ghost through you anymore (2026-07-05)
+
+**Improvements**
+- **The player now pushes enemies aside instead of passing through them.** Foes overlapping your
+  body get shoved outward along a ring around you — you never lose speed or get stuck, and contact
+  damage still applies exactly as before. A big target like the Colossus gets pushed further away
+  than a small one, so heavies still *feel* heavy. When an enemy is dead-centered on you, it gets
+  pushed along your current direction of travel instead of a random side, so the shove reads as a
+  natural continuation of your movement rather than a jitter.
+- **Solid obstacles now actually hide you when you're behind them.** A z-index bug let the player
+  sprite render on top of impassable obstacles even while physically blocked by them, breaking the
+  "solid wall" illusion. Obstacle bodies now draw above the player and their ground shadow is
+  re-anchored correctly, so occlusion matches the physics in all five biomes.
+
+**Why it matters**
+- Pure game-feel and readability fixes, no balance change. The player-vs-enemy overlap used to look
+  like ghosting through crowds; obstacles used to look transparent despite blocking movement. Both
+  now read correctly. Validated in-game across all five biomes (push: no stalling, no ghosting,
+  contact damage intact; occlusion: correct in every biome, shadow grounded, physics blocking
+  unaffected) — see `docs/TEST_REPORT.md`.
+
+---
+
+**Améliorations**
+- **Le joueur écarte désormais les ennemis au lieu de les traverser.** Les ennemis qui chevauchent
+  votre corps sont repoussés vers l'extérieur sur un anneau autour de vous — vous ne perdez jamais
+  de vitesse et ne restez jamais bloqué, et les dégâts de contact s'appliquent toujours exactement
+  comme avant. Une grosse cible comme le Colosse est repoussée plus loin qu'une petite, pour que les
+  poids lourds *se sentent* lourds. Quand un ennemi est parfaitement centré sur vous, il est repoussé
+  dans le sens de votre déplacement plutôt que sur un côté aléatoire, pour que la poussée se lise
+  comme un prolongement naturel du mouvement plutôt qu'un à-coup.
+- **Les obstacles infranchissables vous cachent enfin quand vous passez derrière.** Un bug de z-index
+  laissait le sprite du joueur s'afficher au-dessus des obstacles impassables alors même qu'il en
+  était physiquement bloqué, brisant l'illusion de « mur solide ». Le corps des obstacles se dessine
+  désormais au-dessus du joueur et leur ombre au sol est ré-ancrée correctement : l'occultation
+  correspond enfin à la physique dans les cinq biomes.
+
+**Pourquoi c'est important**
+- Corrections pures de gamefeel et de lisibilité, aucun changement d'équilibrage. Le chevauchement
+  joueur/ennemi ressemblait à du ghosting en pleine nuée ; les obstacles semblaient transparents
+  malgré le blocage physique. Les deux se lisent maintenant correctement. Validé en jeu dans les
+  cinq biomes (poussée : pas de blocage, pas de ghosting, dégâts de contact intacts ; occultation :
+  correcte dans chaque biome, ombre au sol cohérente, blocage physique préservé) — voir
+  `docs/TEST_REPORT.md`.
+
+---
+
 ## v1.11.2 — The Frost biome finally looks cold (2026-07-05)
 
 **Fixes**

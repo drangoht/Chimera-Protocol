@@ -13,11 +13,10 @@ cyborgs, robots), inspiré de Vampire Survivors et Everything is Crab.
 - **Avant de coder** dans un domaine (armes, ennemis, UI/focus, VFX, scènes, assets, tests headless) → lire **`docs/PITFALLS.md`** (pièges non-évidents Godot/C# + checklists de câblage). Y ajouter tout nouveau piège découvert.
 - **État d'implémentation détaillé & version courante → `docs/PROJECT_STATE.md`** (évolutif). Résumé de phase ci-dessous.
 
-**Phase actuelle : libre.** Dernières livraisons : **Discord Rich Presence** (`src/Systems/DiscordPresence.cs`,
-statut « joue à Chimera Protocol » + contexte perso/biome) et **tampon de version** `v<ver>-<sha>` bas-droite
-(`VersionStamp` + `BuildInfo`), nouveau perso **Vecteur** (Lance Vectorielle dirigée), remap clavier + ZQSD
-par défaut (`src/Systems/InputRemap.cs`), 2026-07-05. Version publiée itch : **1.11.2**. Détail dans
-`docs/PROJECT_STATE.md`.
+**Phase actuelle : libre.** Dernières livraisons : **poussée d'ennemis** (le joueur écarte les ennemis
+qui le chevauchent au lieu de les traverser, `Player.PushEnemiesAside()`) et **fix occultation obstacles**
+(z-index corrigé : les obstacles infranchissables cachent le joueur derrière eux dans les 5 biomes),
+2026-07-05. Version publiée itch : **1.11.3**. Détail dans `docs/PROJECT_STATE.md`.
 
 ## Équipe d'agents
 
