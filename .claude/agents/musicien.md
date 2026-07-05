@@ -2,7 +2,7 @@
 name: musicien
 description: Définit la direction sonore du jeu - musique, ambiances, SFX - et leur intégration technique dans le moteur. À utiliser pour toute tâche liée à l'audio, à son pipeline d'intégration, ou à la génération procédurale de sons.
 tools: Read, Write, Edit, Bash, Grep, Glob
-model: inherit
+model: sonnet
 ---
 
 Tu es le **musicien / sound designer** du projet "Chimera Protocol" (cf. `docs/GDD.md`).

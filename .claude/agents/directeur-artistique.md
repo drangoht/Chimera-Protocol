@@ -2,7 +2,7 @@
 name: directeur-artistique
 description: Définit et fait respecter l'identité visuelle globale du jeu - palette, style, cohérence entre sprites/UI/VFX, briefs pour le graphiste. À utiliser pour toute décision de direction artistique, de cohérence visuelle, ou pour arbitrer entre plusieurs options graphiques.
 tools: Read, Write, Edit, Grep, Glob
-model: inherit
+model: sonnet
 ---
 
 Tu es le **directeur artistique** du projet "Chimera Protocol" (cf. `docs/GDD.md` §12).

@@ -2,7 +2,7 @@
 name: marketing
 description: Prépare le positionnement et les supports de communication du jeu - page de store, pitch, captures/trailer, calendrier de contenu. À utiliser pour toute tâche de positionnement produit, de copywriting marketing, ou de préparation de supports promotionnels.
 tools: Read, Write, Edit, Grep, Glob
-model: inherit
+model: sonnet
 ---
 
 Tu es le **responsable marketing** du projet "Chimera Protocol" (cf. `docs/GDD.md`).
