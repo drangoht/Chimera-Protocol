@@ -18,7 +18,12 @@
   (le joueur écarte les ennemis qui chevauchent son corps au lieu de les traverser, sans perte de vitesse ni
   perte des dégâts de contact, `Player.PushEnemiesAside()`, poussée dans le sens du déplacement si ennemi centré,
   1.11.3) et **fix occultation obstacles** (correction de z-index : les obstacles infranchissables dessinent
-  désormais au-dessus du joueur, ombre re-ancrée au sol, dans les 5 biomes, 1.11.3). Version publiée itch : **1.11.3**.
+  désormais au-dessus du joueur, ombre re-ancrée au sol, dans les 5 biomes, 1.11.3). **Rééquilibrage boss de fin**
+  (Le Noyau Rouille jugé impossible à tuer : PV de base 18000→12000 dans `data/enemies.json` — PV effectifs à
+  13 min ~21360 en Normal au lieu de ~32040 — + fix `EnemySpawner.SpawnOvertimeBoss` qui bypassait
+  `maxSimultaneous:1` et laissait plusieurs boss s'empiler en overtime, cause principale du ressenti
+  « impossible » ; TTK mesuré ~36-40 s sur build de référence, cible ~43-61 s build moyen, 1.11.4).
+  Version publiée itch : **1.11.4**.
 
 ## Ce qui est implémenté
 

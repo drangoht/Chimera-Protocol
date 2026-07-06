@@ -4,6 +4,55 @@
 > `release-manager`). Entrées en ordre décroissant (la plus récente en haut). Ton orienté
 > joueur, EN puis FR (audience itch surtout anglophone).
 
+## v1.11.4 — The end boss is beatable again (2026-07-06)
+
+**Fixes**
+- **Rusted Core HP cut from 18,000 to 12,000.** The end boss (Rusted Core, ~13 min) had become
+  effectively unkillable for an average build — its effective HP at 13 minutes in Normal was
+  ~32,040, requiring 700-900 mono-target DPS to hit a reasonable time-to-kill. It's now ~21,360
+  effective HP, putting the fight back in reach: measured time-to-kill is ~36-40 s on a reference
+  build, with an average build expected around 43-61 s.
+- **Fixed overtime boss stacking.** In overtime, a second (or third) Rusted Core could spawn
+  before the first one died, because the boss's `maxSimultaneous: 1` cap was being bypassed on
+  respawn. Multiple 21k-HP bosses piling up was the main reason the fight *felt* impossible — it
+  now respects the cap: exactly one Rusted Core alive at a time, and the next one only appears
+  after the current one is actually defeated.
+- Dead-code cleanup in `RustedCore` (stale placeholder stats overwritten by the JSON tuning at
+  runtime anyway) — no gameplay effect.
+
+**Why it matters**
+- Pure balance/bugfix pass, no new content. This was the top player complaint on the end boss:
+  "impossible to kill." Both root causes are addressed — HP was tuned too high for the intended
+  TTK band, and the stacking bug compounded it by throwing multiple full-HP bosses at the player
+  at once. Validated via `--debug-boss` TTK measurement + code-level non-regression check on the
+  spawn cap — see `docs/TEST_REPORT.md` (session 2026-07-06).
+
+---
+
+**Corrections**
+- **PV du Noyau Rouillé réduits de 18 000 à 12 000.** Le boss de fin (Le Noyau Rouille, ~13 min)
+  était devenu quasi impossible à tuer pour un build moyen — ses PV effectifs à 13 minutes en
+  Normal atteignaient ~32 040, exigeant 700-900 DPS mono-cible pour respecter un temps de mise à
+  mort raisonnable. Ils sont désormais à ~21 360 PV effectifs : le combat redevient jouable, avec
+  un TTK mesuré de ~36-40 s sur un build de référence, et ~43-61 s attendu pour un build moyen.
+- **Fix de l'empilement de boss en overtime.** En overtime, un deuxième (voire un troisième) Noyau
+  Rouille pouvait apparaître avant que le premier ne soit mort, car le plafond `maxSimultaneous: 1`
+  du boss était contourné au respawn. L'empilement de plusieurs boss à 21k PV était la cause
+  principale du ressenti « impossible à tuer » — le plafond est désormais respecté : un seul Noyau
+  Rouille vivant à la fois, le suivant n'apparaissant qu'après la mort effective du précédent.
+- Nettoyage de code mort dans `RustedCore` (statistiques placeholder obsolètes, de toute façon
+  écrasées par le tuning JSON à l'exécution) — sans effet sur le gameplay.
+
+**Pourquoi c'est important**
+- Passe pure d'équilibrage/correctif, sans nouveau contenu. C'était la plainte joueur numéro un sur
+  le boss de fin : « impossible à tuer ». Les deux causes racines sont traitées — des PV réglés trop
+  haut pour la bande de TTK visée, et un bug d'empilement qui aggravait la situation en envoyant
+  plusieurs boss à pleins PV simultanément. Validé via mesure de TTK (`--debug-boss`) et vérification
+  de non-régression du plafond de spawn par analyse de code — voir `docs/TEST_REPORT.md` (session
+  2026-07-06).
+
+---
+
 ## v1.11.3 — Enemies don't ghost through you anymore (2026-07-05)
 
 **Improvements**

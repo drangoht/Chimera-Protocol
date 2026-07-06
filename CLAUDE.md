@@ -16,7 +16,9 @@ cyborgs, robots), inspiré de Vampire Survivors et Everything is Crab.
 **Phase actuelle : libre.** Dernières livraisons : **poussée d'ennemis** (le joueur écarte les ennemis
 qui le chevauchent au lieu de les traverser, `Player.PushEnemiesAside()`) et **fix occultation obstacles**
 (z-index corrigé : les obstacles infranchissables cachent le joueur derrière eux dans les 5 biomes),
-2026-07-05. Version publiée itch : **1.11.3**. Détail dans `docs/PROJECT_STATE.md`.
+2026-07-05 ; puis **rééquilibrage du boss de fin** (Le Noyau Rouille jugé impossible à tuer : PV
+18000→12000 + fix empilement de boss en overtime), 2026-07-06. Version publiée itch : **1.11.4**.
+Détail dans `docs/PROJECT_STATE.md`.
 
 ## Équipe d'agents
 
