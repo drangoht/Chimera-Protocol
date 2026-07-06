@@ -3057,3 +3057,64 @@ négligeable — non bloquant. Assigné à : developpeur (optionnel, polish).
 
 **Verdict global : PASS.** Le feel est bon, la poussée est fluide et lisible, le contact et les
 i-frames sont préservés, aucun blocage, aucun ghosting. Rien à lisser côté séparation.
+
+---
+
+## Session 2026-07-06 — Rééquilibrage boss « Le Noyau Rouillé » (PV 18000→12000) + non-régression empilement
+
+Build : `main` (v1.11.3-a7c6425), `dotnet build` **0 erreur / 0 warning**. Méthode : hook
+`--debug-boss` (loadout de référence 5 armes L10 + thermal_core ×1.45, boss isolé, spawn ambiant
+coupé), instrumentation temporaire `[BOSS-TTK] spawn/dead ticks` dans `RustedCore` (retirée après
+mesure, build revérifié propre). Runner `scratchpad/boss_ttk_run2.py` (Godot d3d12).
+
+### A) Mesure du TTK boss
+
+| Élément | Valeur |
+|---|---|
+| PV réel du boss à t=13 min (Normal) | 12000 × (1 + 13×0,06) = **21 360 PV** |
+| DPS analytique single-target, loadout réf. L10 + thermal ×1,45 | **~550 DPS** (impulse ~76 + scatter ~43 + tesla ~71 + plasma ~90 + drones ~100, pré-thermal ~380, ×1,45) |
+| **TTK analytique** | 21 360 / 550 ≈ **~39 s** |
+| **TTK empirique mesuré** (spawn tick 962 ms → dead tick 37 038 ms) | **36,1 s** |
+
+**Note méthodo :** la mesure empirique a d'abord échoué (1re passe : joueur MORT à T=16 s, K=0 —
+problème de *survie* du kite, pas de killabilité). Pour isoler le TTK indépendamment de la survie,
+`rusted_core.damagePerProjectile` a été mis temporairement à 0 (backup + **restauration vérifiée**,
+PV inchangés), joueur quasi-immobile → toutes les armes en portée. Le 36,1 s est donc une **borne
+basse (best-case, DPS maximal)** ; un vrai combat kité (armes intermittentes) serait un peu plus
+long, cohérent avec le `tuningNote` visé (~43-61 s pour un build moyen ~350-500 DPS).
+
+Capture `docs/boss_ttk/v2_death.png` : explosion dorée du boss + 3 Noyaux d'Aether (losanges cyan),
+HP joueur 140/140 (invincibilité dégâts=0 OK), biome Givre. Kill réel confirmé (log :
+`[BOSS-TTK] dead ticks=37038`, pas de `Player died`).
+
+**Résultat A : PASS.** Le boss est **BATTABLE**, TTK ≈ 36-39 s sur le build de référence (fort),
+et ~43-61 s attendu pour un build moyen. Loin du seuil d'échec (>90 s / boss immortel). Dans la
+bande cible.
+
+### B) Non-régression empilement (maxSimultaneous en overtime)
+
+Vérification par lecture de code (`src/Systems/EnemySpawner.cs`) — non trivial à reproduire
+visuellement (13 min de run + overtime) :
+
+- `SpawnOvertimeBoss` (l.182-190) appelle `SpawnEnemy(data, tEff)` **sans** `ignoreMaxSimultaneous`.
+- Le garde de `SpawnEnemy` (l.243-245) : `!ignoreMaxSimultaneous && data.MaxSimultaneous(=1) > 0 &&
+  GetNodesInGroup("rusted_core").Count >= 1 → return`.
+- `RustedCore._Ready()` fait `AddToGroup("rusted_core")` ; sortie du groupe seulement au `QueueFree()`
+  (fin d'anim de mort, `FinishDeath`).
+
+→ Un seul `rusted_core` vivant à la fois ; un nouveau ne re-spawn qu'**après** la mort effective du
+précédent (y compris pas de spawn pendant l'anim de mort). **Résultat B : PASS (par analyse).**
+
+### C) Anomalies / observations
+
+- **OBS-BOSS-01 (Doc, non bloquant)** : le script fourni `tools/boss_ttk_test.py` et sa docstring
+  (« encadrer l'apparition de l'écran EXTRACTION RÉUSSIE ») sont **périmés**. La logique actuelle
+  (`RustedCore.FinishDeath → RunStatsTracker.OnLevelBossDefeated`, cf. GDD §17) ne déclenche **plus**
+  d'écran « EXTRACTION RÉUSSIE » à la mort du boss : elle affiche une bannière dorée « NIVEAU
+  TERMINÉ » et **la run continue** (survie sans fin). L'écran de fin cyan « EXTRACTION RÉUSSIE »
+  n'apparaît qu'au `RunEndScreen` (mort du joueur) avec le flag `PendingLevelCompleted`. Le script
+  ne détecte donc jamais de fin ; il faut viser la bannière/explosion. Assigné à : developpeur
+  (mettre à jour le script + docstring).
+
+**Verdict session : PASS.** Boss battable (TTK ~36-39 s réf. / ~43-61 s build moyen), empilement
+corrigé (un seul boss vivant), aucune régression. Reste OBS-BOSS-01 (outil de test à rafraîchir).

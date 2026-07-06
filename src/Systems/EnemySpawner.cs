@@ -175,13 +175,16 @@ public partial class EnemySpawner : Node
     }
 
     /// <summary>Force le spawn du boss de fin de niveau (overtime). Le 1er ≈ à l'instant où le timer
-    /// atteint 0 (= « le boss arrive à la fin du temps imparti »), puis en boucle.</summary>
+    /// atteint 0 (= « le boss arrive à la fin du temps imparti »), puis en boucle APRÈS chaque mise à
+    /// mort. On NE passe PAS ignoreMaxSimultaneous : le boss respecte maxSimultaneous=1, donc un seul
+    /// Noyau Rouille vit à la fois. Sans ce garde-fou, un 2e boss (32k PV) spawnait toutes les ~28-50 s
+    /// avant que le 1er soit mort → empilement de boss ingérable (« boss impossible à tuer »).</summary>
     private void SpawnOvertimeBoss(float tEff)
     {
         foreach (var data in _enemyPool)
             if (data.Id == "rusted_core")
             {
-                SpawnEnemy(data, tEff, ignoreMaxSimultaneous: true);
+                SpawnEnemy(data, tEff);
                 return;
             }
     }

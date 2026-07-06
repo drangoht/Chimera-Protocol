@@ -3,7 +3,8 @@ using Godot;
 /// <summary>
 /// Le Noyau Rouillé — BOSS DE FIN (~13 min). Sprite dédié rouge-or, agrandi ×2.4 (imposant).
 /// Avance lentement, tire des salves radiales de 16 projectiles toutes les 2.0 s et émet des
-/// ondes de choc. Très résistant (HP base 18000 → ~32000 effectif à 13 min en Normal).
+/// ondes de choc. Très résistant (HP base 12000 → ~21360 effectif à 13 min en Normal).
+/// Un seul boss vit à la fois (maxSimultaneous=1, respecté par EnemySpawner en overtime).
 /// Le vaincre = VICTOIRE de la run : à la mort, 3 Noyaux d'Aether + explosion massive,
 /// puis écran de fin "extraction réussie" (~1,4 s plus tard). Pas d'orbe XP ni de choix
 /// d'arme — la run se termine, ce serait sans effet et risquerait un LevelUpScreen parasite.
@@ -27,9 +28,12 @@ public partial class RustedCore : EnemyBase
 
     public override void _Ready()
     {
-        MaxHp   = 1600f;
+        // NB : ces valeurs sont écrasées par EnemySpawner.ApplyScaling() qui lit data/enemies.json
+        // (source de vérité du tuning) juste après _Ready. On les garde alignées sur le JSON pour
+        // documenter l'intention et éviter la dérive (l'ancien 1600f datait d'avant le rebalance PV).
+        MaxHp   = 12000f;
         Speed   = 46f;
-        Damage  = 28f;
+        Damage  = 34f;
         XpValue = 500;
         AddToGroup("rusted_core");
         base._Ready();

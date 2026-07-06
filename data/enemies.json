@@ -243,7 +243,7 @@
       "name": "Le Noyau Rouille",
       "role": "boss",
       "isBoss": true,
-      "maxHp": 18000,
+      "maxHp": 12000,
       "speed": 46,
       "damagePerProjectile": 34,
       "xpValue": 500,
@@ -254,7 +254,7 @@
       "maxSimultaneous": 1,
       "hpScalingPerMinute": 0.06,
       "damageScalingPerMinute": 0.08,
-      "tuningNote": "PV releves le 2026-06-29 (12000->18000) + scaling 0.05->0.06 : le mid/end game manquait de challenge. PV effectifs a 13 min ~32040 en Normal (18000 x 1.78), ~41650 en Difficile. Degats proj. 26->34, scaling degats 0.06->0.08. Cible TTK ~35-45 s sur build moyen. Cf. GDD section 20.",
+      "tuningNote": "PV abaisses le 2026-07-06 (18000->12000) : a 18000 le boss demandait ~700-900 DPS mono-cible pour tenir le TTK cible, hors de portee d'un build moyen (retour joueur 'boss impossible a tuer'). PV effectifs a 13 min ~21360 en Normal (12000 x 1.78), ~17100 en Facile, ~27770 en Difficile. TTK ~43-61 s pour un build moyen (~350-500 DPS), ~27 s pour un build fort. CORRECTIF LIE (EnemySpawner.SpawnOvertimeBoss) : le boss respecte desormais maxSimultaneous=1 (plus d'empilement de boss en overtime, qui rendait la mise a mort impossible). Degats proj. 34, scaling degats 0.08 inchanges. Cf. GDD section 20.",
       "ai": {
         "type": "boss_core",
         "description": "Boss de fin. Avance lentement et inexorablement, tire des salves radiales de projectiles toutes les 2.5 s et emet des ondes de choc. Tres resistant. Le vaincre termine la run en VICTOIRE : a la mort, 3 Noyaux d'Aether + explosion massive, puis ecran de fin extraction reussie (~1.4 s plus tard). Pas d'orbe XP ni de choix d'arme (la run se termine)."
