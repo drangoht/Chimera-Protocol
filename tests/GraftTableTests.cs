@@ -41,6 +41,22 @@ public class GraftTableTests
           ""statMods"": { ""damageReductionAdd"": 0.15, ""maxHpAdd"": 25, ""speedMult"": 0.82 } },
         { ""id"": ""stalker_wave"", ""name"": ""Onde du Rôdeur"", ""gauge"": ""stalker"", ""sourceAiType"": ""champion"", ""rarity"": ""epic"",
           ""effects"": { ""shockwave"": { ""damage"": 60, ""radiusPx"": 160 } }, ""statMods"": {} }
+      ],
+      ""fusions"": [
+        { ""id"": ""fusion_charge_blindee"", ""name"": ""Charge Blindée"", ""rarity"": ""epic"",
+          ""requires"": [""grafted_carapace"", ""erratic_servos""],
+          ""sourceAiTypes"": [""slow_hunter"", ""erratic_chase""],
+          ""freesSlot"": true,
+          ""gauge"": { ""key"": ""fusion_charge_blindee"", ""threshold"": 20, ""pointsPerKillSourceArchetype"": 1, ""pointsPerEliteKillSourceArchetype"": 2 },
+          ""effects"": { ""charge"": { ""impactDamage"": 45, ""knockbackPx"": 90 } },
+          ""statMods"": { ""damageReductionAdd"": 0.15, ""speedMult"": 0.90 } },
+        { ""id"": ""fusion_ruche_tourelles"", ""name"": ""Ruche de Tourelles"", ""rarity"": ""epic"",
+          ""requires"": [""aiming_eye"", ""swarm_symbiote""],
+          ""sourceAiTypes"": [""ranged_kiter"", ""straight_chase""],
+          ""freesSlot"": true,
+          ""gauge"": { ""key"": ""fusion_ruche_tourelles"", ""threshold"": 40, ""pointsPerKillSourceArchetype"": 1, ""pointsPerEliteKillSourceArchetype"": 2 },
+          ""effects"": { ""turrets"": { ""count"": 4, ""damage"": 12 } },
+          ""statMods"": {} }
       ]
     }";
 
@@ -177,4 +193,42 @@ public class GraftTableTests
     [InlineData(3, 5)]   // plafonné à maxCount
     public void SlotCount_RespecteLePlafond(int metaBonus, int expected)
         => Assert.Equal(expected, GraftTable.SlotCount(Cfg(), metaBonus));
+
+    // ── Fusions (§15) ─────────────────────────────────────────────────────────
+    [Fact]
+    public void Parse_LitLesDeuxFusions()
+    {
+        var cfg = Cfg();
+        Assert.Equal(2, cfg.Fusions.Count);
+        var f = cfg.FusionById("fusion_charge_blindee")!;
+        Assert.Equal(new[] { "grafted_carapace", "erratic_servos" }, f.Requires.ToArray());
+        Assert.Equal(new[] { "slow_hunter", "erratic_chase" }, f.SourceAiTypes.ToArray());
+        Assert.True(f.FreesSlot);
+        Assert.Equal(20, f.GaugeThreshold);
+    }
+
+    [Fact]
+    public void Parse_AjouteLeSeuilDeFusionALaTableGenerale()
+        // EffectiveThreshold (AssimilationSystem) lit Thresholds → doit contenir les jauges de fusion.
+        => Assert.Equal(40, Cfg().Thresholds["fusion_ruche_tourelles"]);
+
+    [Fact]
+    public void FusionForGauge_ResoutParCleDeJauge()
+        => Assert.Equal("fusion_charge_blindee", Cfg().FusionForGauge("fusion_charge_blindee")!.Id);
+
+    [Fact]
+    public void GraftById_TrouveAussiLesFusions()
+        => Assert.Equal("Ruche de Tourelles", Cfg().GraftById("fusion_ruche_tourelles")!.Name);
+
+    [Fact]
+    public void FusionKillPoints_ArchetypeSourceBasique_Donne1()
+        => Assert.Equal(1, Cfg().FusionById("fusion_charge_blindee")!.KillPoints("slow_hunter", isElite: false));
+
+    [Fact]
+    public void FusionKillPoints_ArchetypeSourceElite_Donne2()
+        => Assert.Equal(2, Cfg().FusionById("fusion_charge_blindee")!.KillPoints("erratic_chase", isElite: true));
+
+    [Fact]
+    public void FusionKillPoints_ArchetypeNonSource_Donne0()
+        => Assert.Equal(0, Cfg().FusionById("fusion_charge_blindee")!.KillPoints("ranged_kiter", isElite: true));
 }

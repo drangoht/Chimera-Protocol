@@ -317,6 +317,10 @@ ASSIM_ASSIMILATE,ASSIMILATE,ASSIMILER,ASIMILAR
 ASSIM_REJECT,REJECT,REJETER,RECHAZAR
 ASSIM_KEEP,KEEP,CONSERVER,CONSERVAR
 ASSIM_REPLACE_WITH,Replace: {0},Remplacer : {0},Reemplazar: {0}
+ASSIM_FUSION_TITLE,FUSION,FUSION,FUSIÓN
+ASSIM_FUSION_TAG,FUSION,FUSION,FUSIÓN
+ASSIM_FUSE,ASSIMILATE FUSION,ASSIMILER LA FUSION,ASIMILAR FUSIÓN
+ASSIM_REFUSE,REFUSE,REFUSER,RECHAZAR
 GRAFT_SWARM_SYMBIOTE_NAME,Symbiotic Swarm,Nuée Symbiotique,Enjambre Simbiótico
 GRAFT_SWARM_SYMBIOTE_DESC,"4 mini-swarms of living rust orbit you, biting anything that nears and stealing HP on contact.","4 mini-essaims de rouille vivante t'entourent, mordant ce qui approche et volant des PV au contact.","4 mini-enjambres de herrumbre viva te rodean, mordiendo lo que se acerca y robando PV al contacto."
 GRAFT_ERRATIC_SERVOS_NAME,Erratic Servos,Servos Erratiques,Servos Erráticos
@@ -327,3 +331,7 @@ GRAFT_GRAFTED_CARAPACE_NAME,Grafted Carapace,Carapace Greffée,Caparazón Injert
 GRAFT_GRAFTED_CARAPACE_DESC,"Colossus plating fused to your skin: heavy armor and contact retaliation — but you grow slow.","La plaque du Colosse fusionnée à ta peau : armure lourde et représailles au contact — mais tu deviens lent.","La placa del Coloso fusionada a tu piel: armadura pesada y represalia al contacto, pero te vuelves lento."
 GRAFT_STALKER_WAVE_NAME,Stalker Wave,Onde du Rôdeur,Onda del Acechador
 GRAFT_STALKER_WAVE_DESC,"The Stalker's hunting pulse, now yours: a periodic shockwave that sweeps and pushes back the swarm.","L'onde de chasse du Rôdeur, désormais tienne : une onde de choc périodique qui balaie et repousse la nuée.","El pulso de caza del Acechador, ahora tuyo: una onda de choque periódica que barre y repele al enjambre."
+GRAFT_FUSION_CHARGE_BLINDEE_NAME,Armored Charge,Charge Blindée,Carga Blindada
+GRAFT_FUSION_CHARGE_BLINDEE_DESC,"Your dash becomes an armored charge: barrel through, tank the hits, knock enemies aside. The tank moves again.","Ton dash devient une charge blindée : traverse, encaisse et projette. Le tank qui bouge à nouveau.","Tu embestida se vuelve una carga blindada: atraviesa, aguanta y proyecta. El tanque que vuelve a moverse."
+GRAFT_FUSION_RUCHE_TOURELLES_NAME,Turret Hive,Ruche de Tourelles,Colmena de Torretas
+GRAFT_FUSION_RUCHE_TOURELLES_DESC,"Your 4 swarms freeze into turrets firing in 360°. Still steals HP — now from range.","Tes 4 essaims se figent en tourelles qui tirent à 360°. Vole encore des PV, mais à distance.","Tus 4 enjambres se congelan en torretas que disparan a 360°. Aún roba PV, pero a distancia."

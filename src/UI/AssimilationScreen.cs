@@ -31,6 +31,7 @@ public partial class AssimilationScreen : CanvasLayer
     private readonly Button[] _replaceBtns = new Button[MaxSlots];
 
     private string _gauge = "";
+    private bool   _isFusion;
 
     public override void _Ready()
     {
@@ -168,8 +169,13 @@ public partial class AssimilationScreen : CanvasLayer
     private void Present(string gaugeKey)
     {
         var sys = AssimilationSystem.Instance;
-        var def = sys?.GraftForGauge(gaugeKey);
-        if (sys == null || def == null) { Close(); return; }
+        if (sys == null) { Close(); return; }
+
+        // Une jauge de fusion (§15) présente une carte de fusion (toujours 2 boutons) ; sinon greffe.
+        var fusion = sys.FusionForGauge(gaugeKey);
+        GraftTable.GraftDef? def = fusion ?? sys.GraftForGauge(gaugeKey);
+        if (def == null) { Close(); return; }
+        _isFusion = fusion != null;
 
         _gauge = gaugeKey;
         Visible = true;
@@ -177,7 +183,9 @@ public partial class AssimilationScreen : CanvasLayer
         string idKey = def.Id.ToUpperInvariant();
         _nameLabel.Text = TFallback($"GRAFT_{idKey}_NAME", def.Name);
         _descLabel.Text = TFallback($"GRAFT_{idKey}_DESC", def.Description);
-        _tagLabel.Text  = $"{RarityLabel(def.Rarity)}  ·  {def.Gauge}";
+        _tagLabel.Text  = _isFusion
+            ? $"{RarityLabel(def.Rarity)}  ·  {TFallback("ASSIM_FUSION_TAG", "FUSION")}"
+            : $"{RarityLabel(def.Rarity)}  ·  {def.Gauge}";
         _tagLabel.AddThemeColorOverride("font_color",
             new Color(def.Tint[0], def.Tint[1], def.Tint[2]) * new Color(1, 1, 1, 1));
 
@@ -185,12 +193,28 @@ public partial class AssimilationScreen : CanvasLayer
         _icon.Texture = tex;
         _icon.Visible = tex != null;
 
+        Button? firstFocus;
+
+        // Cas fusion : 2 boutons, jamais de remplacement (la fusion libère un slot, §15.1).
+        if (_isFusion)
+        {
+            _assimilateBtn.Visible = true;
+            _rejectBtn.Visible     = true;
+            _replaceBox.Visible    = false;
+            _assimilateBtn.Text = TFallback("ASSIM_FUSE", "ASSIMILER LA FUSION");
+            _rejectBtn.Text     = TFallback("ASSIM_REFUSE", "REFUSER");
+            _title.Text         = TFallback("ASSIM_FUSION_TITLE", "FUSION");
+            firstFocus = _assimilateBtn;
+            var fbtn = firstFocus;
+            Callable.From(() => { if (Visible && fbtn != null && IsInstanceValid(fbtn)) fbtn.GrabFocus(); }).CallDeferred();
+            return;
+        }
+
         bool free = sys.HasFreeSlot;
         _assimilateBtn.Visible = free;
         _rejectBtn.Visible     = free;
         _replaceBox.Visible    = !free;
 
-        Button? firstFocus;
         if (free)
         {
             _assimilateBtn.Text = TFallback("ASSIM_ASSIMILATE", "ASSIMILER");
@@ -222,9 +246,23 @@ public partial class AssimilationScreen : CanvasLayer
         Callable.From(() => { if (Visible && btn != null && IsInstanceValid(btn)) btn.GrabFocus(); }).CallDeferred();
     }
 
-    private void OnAssimilate() { AssimilationSystem.Instance?.Assimilate(_gauge); Close(); }
-    private void OnReject()     { AssimilationSystem.Instance?.Reject(_gauge);     Close(); }
-    private void OnKeep()       { AssimilationSystem.Instance?.Keep(_gauge);       Close(); }
+    private void OnAssimilate()
+    {
+        var sys = AssimilationSystem.Instance;
+        if (_isFusion) sys?.AssimilateFusion(_gauge);
+        else           sys?.Assimilate(_gauge);
+        Close();
+    }
+
+    private void OnReject()
+    {
+        var sys = AssimilationSystem.Instance;
+        if (_isFusion) sys?.RejectFusion(_gauge);
+        else           sys?.Reject(_gauge);
+        Close();
+    }
+
+    private void OnKeep() { AssimilationSystem.Instance?.Keep(_gauge); Close(); }
 
     private void OnReplace(int index)
     {

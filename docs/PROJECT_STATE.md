@@ -52,10 +52,21 @@ Livré en Phase A :
     **Fallback carré teinté conservé** si l'icône est absente ; slot vide toujours grisé.
 - **Méta Hub** : `graft_slots` (500/950, +1 slot, max 5) et `graft_metabolism` (180/320/520, −30% seuil max)
   dans `meta_upgrades.json` (arbre → 19 items). Codex : découvertes persistées (`GameSettings.DiscoverGraft`).
-- **Hors Phase A** (→ Phase B) : synergies/fusions de greffes, refonte de la silhouette par couches,
-  variantes de greffe par biome. Textes/lore/loc à finaliser par `story-teller` (clés `GRAFT_*`/`ASSIM_*`/
-  `UPGRADE_GRAFT_*` posées avec placeholder FR). Icônes `assets/sprites/grafts/*.png` à produire par
-  `graphiste` (fallback carré teinté en attendant).
+- **Phase B volet 1 — Fusions de greffes (2026-07-06)** : 2 greffes prérequises se lient en 1 fusion
+  (occupation 2→1, un slot libéré). **Charge Blindée** (Carapace+Servos : le dash devient une charge
+  240 px / 45 dmg + knockback, tank conservé, malus vitesse allégé) et **Ruche de Tourelles**
+  (Œil+Nuée : 4 essaims → 4 tourelles en suivi lerp, ~48 DPS 360° + lifesteal). Jauge de fusion dédiée
+  (`fusion_<id>`) qui n'accumule que si les 2 prérequis sont équipés (routage `AssimilationSystem.
+  RouteFusionKill` + garde) ; carte de fusion sur `AssimilationScreen` (2 boutons, jamais de
+  remplacement) ; `FusionFlash` à l'acceptation. Data-driven (`data/grafts.json` → section `fusions`),
+  logique pure `GraftTable.FusionDef` (+7 tests xUnit → **119**). Comportements côté nœuds : charge
+  (`Player` — couloir de dégâts, contourne `MaxSpeed`, i-frames en max), tourelles (`GraftManager`,
+  réutilise `Bullet`). Détail chiffré : `docs/DESIGN_ASSIMILATION.md` §15. Clés loc `GRAFT_FUSION_*`/
+  `ASSIM_FUSE`/`ASSIM_FUSION_*` posées (placeholder à finaliser `story-teller`) ; icônes
+  `fusion_*_icon.png` à produire (`graphiste`, fallback carré teinté).
+- **Hors Phase A/B-volet-1** (→ Phase B suite) : refonte de la silhouette par couches, variantes de
+  greffe par biome, 3e fusion (Nova du Rôdeur, §15.6). Textes/lore/loc greffes+fusions à finaliser par
+  `story-teller`. Icônes de greffe/fusion à produire par `graphiste` (fallback carré teinté en attendant).
 
 ## Ce qui est implémenté
 

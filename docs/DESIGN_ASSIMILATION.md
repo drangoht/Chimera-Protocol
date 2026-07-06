@@ -406,12 +406,249 @@ malus.
 > Épique et **débloquée tard** (jauge `stalker` : mini-boss/boss/élites). Récompense défensive de
 > fin de run, cohérente avec l'arrivée du 1er mini-boss (~12 min) et l'escalade overtime.
 
-## 15. Synergies / fusions de greffes — **PHASE B (hors-scope Phase A)**
+## 15. Synergies / fusions de greffes — **✅ IMPLÉMENTÉ (Phase B volet 1, 2026-07-06)**
 
-Reporté explicitement (cadrage utilisateur). Rappel des combos ciblés (Partie I §5), à chiffrer en
-Phase B : **Carapace + Servos → « Charge Blindée »** (le dash devient une charge qui encaisse et
-projette) ; **Œil + Nuée → « Ruche de Tourelles »** (les mini-essaims deviennent des tourelles
-fixes). Réutiliseront `FusionFlash`. **Ne rien coder de cela en Phase A.**
+> Rédigé par `game-designer` le 2026-07-06 (transformation de l'esquisse Partie I §5 / §15 initial en
+> design chiffré). **Phase A livrée et validée en jeu.** Ce volet est le **différenciateur le plus
+> fort** du système (« la vraie chimère ») : deux Rouilles domestiquées que le noyau de greffe force
+> à se **lier** en une forme composée plus dense (cohérence lore §7 : le noyau lie deux
+> domestications en une seule charge de stabilisation combinée — d'où le **slot libéré**, cf. 15.2).
+> Toutes les valeurs sont dans le même monde que §14, les armes (GDD §8) et les hardcaps `StatCaps`
+> (DR ≤ 0,40, cooldown ≥ 0,15 s, vitesse ≤ 380 px/s). **Réutilise au maximum l'existant** :
+> `AssimilationTracker`, signal `GaugeFilled`, `AssimilationScreen`, `ModalQueue`, `FusionFlash`
+> (+ hit stop de fusion, GDD §12). **NE PAS coder ici** — c'est la spec chiffrée pour `developpeur`.
+
+### 15.0 Les 4 décisions de design tranchées
+
+| # | Question | Décision | Justification |
+|---|---|---|---|
+| **1** | **Déclenchement** | **Jauge de fusion dédiée** par paire, alimentée par les kills des **deux** archétypes sources, qui **ne commence à s'accumuler qu'une fois les 2 greffes prérequises équipées simultanément**. À seuil atteint → `GaugeFilled("fusion_<id>")` → **carte de fusion spéciale** sur l'`AssimilationScreen` existant (bandeau « FUSION », teinte or+magenta). | Réutilise **exactement** l'infra jauge (`Dictionary<string,float>` de `AssimilationTracker`) et le flux `GaugeFilled → AssimilationScreen → ModalQueue`. Déterministe (pas de RNG, cohérent §12). Thématique : « en portant les deux Rouilles, tu les laisses se lier au fil des kills des deux espèces ». Zéro nouvel écran. |
+| **2** | **Coût en slots** | **2 greffes → 1 fusion → +1 slot libéré** (occupation 2 → 1). | Lore §7 : le noyau lie deux domestications en une seule charge combinée, plus dense. Équilibrage : c'est LA récompense structurelle qui rend le combo désirable (moteur de théorycraft, §5) ; si la fusion occupait 2 slots, aucun intérêt à viser un combo. Le slot libéré est « mérité » par la jauge de fusion (lente, arrive mid-late run). **Effet de bord vertueux** : une fusion est **toujours acceptable même slots pleins** (elle réduit l'occupation) → elle devient la soupape quand on est saturé, jamais un écran de remplacement (15.1). |
+| **3** | **Réversibilité** | **Pas de « défusion »** (on ne récupère pas les 2 greffes de base). Mais la fusion **occupe un slot comme une greffe normale et est remplaçable** par le mécanisme §13.3 si les slots sont pleins plus tard. Si elle est remplacée, elle est perdue et les **jauges des 2 archétypes sources reprennent** leur accumulation (elles n'étaient plus en pause depuis la fusion → peuvent re-proposer les greffes de base). | Lore §7 : deux Rouilles liées ne se re-séparent pas (relâcher la fusion = relâcher les deux d'un coup). UI plus simple (pas de split). Cohérent §12.3 (jauges mémorisées, pas remises à 0). |
+| **4** | **Combien de fusions** | **2 fusions pour ce volet 1** (les 2 canon §5 : **Charge Blindée** = Carapace+Servos ; **Ruche de Tourelles** = Œil+Nuée). Une 3e impliquant l'Onde du Rôdeur est **documentée en piste volet 2** (15.6), **hors-scope de cette livraison**. | Arbitrage de scope (mission §4, GDD §13/§14). Les 2 canon forment un **maillage disjoint propre** : chacun des 4 archétypes de base est dans **exactement une** recette (drone+colossus / swarm+sentinel), **zéro conflit de possession**, règle de proposition triviale. Ajouter une 3e forcerait un **partage de greffe** (les 4 autres sont prises) → conflit d'éligibilité qui complique la spec sans bénéfice de test proportionné. L'Onde du Rôdeur (épique, tardive) se suffit à elle-même dans ce volet. |
+
+### 15.1 Règles de l'écran de fusion (réutilise `AssimilationScreen` + `ModalQueue`)
+
+- **Éligibilité d'une jauge de fusion** : la clé `fusion_<id>` n'accumule que si **les 2 greffes
+  prérequises sont équipées** à l'instant du kill. Si l'une est retirée (remplacée), la jauge de
+  fusion **se met en pause** en conservant sa valeur (même mécanique que §12.3) et **reprend** si les
+  2 sont ré-équipées.
+- **Alimentation** : chaque kill d'un ennemi de **l'un OU l'autre** des 2 archétypes sources = **1
+  point** ; **élite** de ces archétypes = **2 points** (cohérent §12.1). Pas de contribution
+  `stalker`/boss (les fusions de ce volet ne concernent pas les champions).
+- **Déclenchement** : à seuil atteint, `AssimilationSystem` émet `GaugeFilled("fusion_charge_blindee"
+  | "fusion_ruche_tourelles")`. L'`AssimilationScreen` s'enfile dans la `ModalQueue` **derrière le
+  level-up** (priorité inchangée, §13.2). Un seul `GetTree().Paused = false` en fin de file.
+- **Contenu de la carte** : rendu **distinct** d'une carte de greffe normale — bandeau « FUSION »,
+  teinte **or (`#FFCC44`) + magenta/rouille** plus intense, icône **bi-teinte** des 2 sources, texte
+  de l'effet composé, et un rappel visuel des 2 greffes consommées (« Carapace + Servos → Charge
+  Blindée »). **Deux boutons seulement** : **« ASSIMILER LA FUSION »** / **« REFUSER »** — jamais
+  d'écran de remplacement (la fusion libère un slot, elle ne peut pas saturer, cf. décision 2).
+- **À l'acceptation** : retire proprement les 2 greffes sources (stats + comportements + rendu),
+  équipe la fusion dans un slot (occupation −1), applique l'effet, puis **`FusionFlash`** (désaturation
+  0,35 s, AutoLoad existant) **+ hit stop de fusion** (`Engine.TimeScale = 0.05` ~2-3 frames, déjà
+  prévu pour les fusions d'armes, GDD §12) — c'est **le** moment signature du système.
+- **Au refus** : jauge de fusion remise à 0, **seuil ×1,5** pour le prochain cycle (`declineThreshold
+  Multiplier`, cohérent §12.3). Les 2 greffes restent équipées.
+- **HUD** : les **2 slots** des greffes sources fusionnent visuellement en **1 slot** (animation de
+  fusion des icônes), teinte perso cumulée renforcée sur `SelfModulate` (marque « chimère avancée »,
+  §13.4 — additif, ne pas écraser `Modulate`). Le slot libéré redevient un emplacement grisé.
+
+### 15.2 `fusion_charge_blindee` — **Charge Blindée** (Épique) — Carapace Greffée + Servos Erratiques
+
+*« La carapace du Colosse et les servos du Drone ne font plus qu'un : tu ne fuis plus, tu enfonces. »*
+Rôle : **bruiser mobile**. Le dash d'esquive devient une **charge d'impact blindée**.
+
+**Prérequis** : `grafted_carapace` **ET** `erratic_servos` équipées.
+**Jauge** `fusion_charge_blindee` : archétypes `slow_hunter` **+** `erratic_chase` ; **seuil 20**
+(les 2 greffes sont tardives — Carapace ~10,5 min — donc la jauge démarre tard ; 20 points ≈ 1-2 min
+de kills drone+colosse cumulés en late/overtime → fusion proposée ~12-13 min).
+
+**Effet (le dash → charge)** — même input `dash` :
+- **Charge** : propulse le joueur de **240 px** (vs 180 du dash de base) sur **0,22 s** (burst de
+  translation, **`MaxSpeed` non applicable**, cf. §14.2).
+- **Cooldown 4,0 s**, réduit par `CooldownReduction`, **plancher 1,8 s** (garde-fou greffe, distinct
+  du `MinCooldown` 0,15 s des armes ; empêche le spam d'invulnérabilité).
+- **I-frames pendant toute la charge : 0,30 s** (couvre la durée + court report), **non cumulables**
+  avec les i-frames de dégât 0,45 s (on prend le **max** de la fenêtre active, cf. §14.2).
+- **Dégâts d'impact** : tout ennemi dans le **couloir de charge** (largeur **48 px**) subit **45**
+  dégâts (× `DamageMultiplier`) + **knockback 90 px**. Un ennemi ne peut être touché **qu'une fois
+  par charge**.
+- **Bonus défensifs de Carapace CONSERVÉS** : **+0,15 `DamageReduction`** (sous cap 0,40 seule, mêmes
+  notes de cumul que §14.4), **+25 `MaxHp`**, **thorns** (18 dmg × `DamageMultiplier` à ≤ 40 px toutes
+  les 0,6 s).
+- **Malus de vitesse ALLÉGÉ** : le −18 % `Speed` de la Carapace seule devient **−10 %** (`speedMult`
+  0,90, appliqué après recalcul servo_motors, ne touche jamais `MaxSpeed`). **C'est le cœur du saut
+  qualitatif** : les servos rendent la mobilité que la Carapace confisquait.
+
+**Comparaison vs somme des 2 greffes de base :**
+
+| Aspect | Carapace + Servos (séparées) | **Charge Blindée (fusion)** | Saut |
+|---|---|---|---|
+| Dash | esquive pure, 180 px, 0 dégât | **charge offensive** 240 px, **45 dmg + KB 90 px** en ligne | passe défensif → offensif+contrôle |
+| Tank | +0,15 DR, +25 HP, thorns | **conservés à l'identique** | maintenu |
+| Mobilité | **−18 %** vitesse (lent) | **−10 %** vitesse | mobilité **rendue** |
+| Slots | **2 occupés** | **1 occupé (+1 libre)** | +1 greffe possible |
+
+DPS de charge : 45 × (3-5 ennemis en nuée) / 4 s ≈ **34-56 DPS burst en ligne** + knockback (crée de
+l'air). Sous une arme niv.1 (Canon ~40 DPS), au-dessus quand la ligne est dense — complément, pas
+arme. Vrai saut (rôle transformé + malus allégé + slot) sans trivialiser (arrive ~12-13 min).
+
+### 15.3 `fusion_ruche_tourelles` — **Ruche de Tourelles** (Épique) — Œil de Visée + Nuée Symbiotique
+
+*« L'œil de la Sentinelle greffé sur ta nuée : tes essaims se figent et deviennent des canons. »*
+Rôle : **zone control à distance**. La nuée de contact (risquée) devient une couverture de feu 360°.
+
+**Prérequis** : `aiming_eye` **ET** `swarm_symbiote` équipées.
+**Jauge** `fusion_ruche_tourelles` : archétypes `ranged_kiter` **+** `straight_chase` ; **seuil 40**
+(le fourrage `straight_chase` abonde → jauge rapide ; seuil plus haut que Charge Blindée pour
+compenser une disponibilité plus précoce — Œil ~7 min, Nuée ~2 min → ~1,5-2 min de kills swarm →
+fusion proposée ~9 min).
+
+**Effet (les 4 mini-essaims → 4 tourelles)** :
+- Les **4 mini-essaims** de la Nuée cessent d'orbiter et deviennent **4 tourelles** en anneau à
+  **90 px** autour du joueur, en **suivi lerp lent** (~120 px/s → elles **traînent** derrière le
+  joueur, ce qui « déploie » naturellement la ruche ; **choix de design assumé** : des tourelles
+  strictement fixes au sol seraient distancées par un joueur mobile — inadapté à un survivor).
+- Chaque tourelle **tire** : 1 projectile / **1,0 s**, **12** dégâts (× `DamageMultiplier`), **perfore
+  1**, **300 px/s**, portée **380 px**, cible l'ennemi le plus proche **de la tourelle** (réutilise
+  `Bullet`, aucune nouvelle scène). Cooldown réduit par `CooldownReduction`, plancher **0,15 s**
+  (`MinCooldown`).
+- **DPS à distance = 4 × 12 / 1,0 s = 48 DPS**, réparti spatialement sur **360°**.
+- **Lifesteal CONSERVÉ mais réduit** : **4 %** des dégâts des tourelles rendus en PV (≈ 2 HP/s en
+  combat dense ; vs 6 % au contact de la Nuée — les tourelles ne sont plus au corps, moindre risque).
+- **Contact résiduel** (héritage nuée, dissuade le hug) : un ennemi qui touche une tourelle subit
+  **8** dmg (× `DamageMultiplier`) toutes les **0,6 s**.
+- **Aucune modification de stat** → aucun hardcap concerné.
+
+**Comparaison vs somme des 2 greffes de base :**
+
+| Aspect | Œil + Nuée (séparées) | **Ruche de Tourelles (fusion)** | Saut |
+|---|---|---|---|
+| Dégâts distance | Œil : ~13 DPS (1 projectile) | **48 DPS répartis 360°** (4 canons) | ×~3,7, couverture totale |
+| Nuée | ~71 DPS **au contact** (risqué, colle) | tourelles **à distance sûre** | mêlée risquée → zone safe |
+| Lifesteal | 6 % au contact | 4 % à distance | maintenu, sans le risque |
+| Slots | **2 occupés** | **1 occupé (+1 libre)** | +1 greffe possible |
+
+48 DPS distant < somme théorique collée (84) mais **très supérieur en pratique** (plus besoin de
+coller la nuée sur les ennemis, couverture 360° à distance). Transformation de rôle nette + slot
+libéré. 48 DPS reste largement sous les armes maxées (400+ endgame, §20) → complément, pas
+game-breaker.
+
+### 15.4 Spec data — section `fusions` de `data/grafts.json` (à créer par `developpeur`, PAS ici)
+
+Nouvelle section `fusions` (frère de `grafts`, mêmes conventions runtime/`_comment` que §16). Le
+routage des jauges de fusion s'ajoute à `AssimilationTracker` : une clé `fusion_<id>` n'accumule
+que si `requires[]` est **entièrement équipé** (garde côté `AssimilationSystem`).
+
+```jsonc
+{
+  // ... "slots", "gauges", "grafts" existants (§16) ...
+
+  "fusions": [
+    {
+      "id": "fusion_charge_blindee",
+      "name": "Charge Blindée",
+      "rarity": "epic",
+      "requires": ["grafted_carapace", "erratic_servos"],
+      "sourceAiTypes": ["slow_hunter", "erratic_chase"],
+      "description": "Ton dash devient une charge blindée : traverse, encaisse et projette. Tank qui bouge à nouveau.",
+      "hudIcon": "res://assets/sprites/grafts/fusion_charge_blindee_icon.png",
+      "tint": [1.35, 0.65, 0.45],
+      "freesSlot": true,
+      "_comment_freesSlot": "2 greffes consommees -> 1 fusion : occupation -1. Jamais d'ecran de remplacement (voir §15.1).",
+      "gauge": {
+        "key": "fusion_charge_blindee",
+        "threshold": 20,
+        "pointsPerKillSourceArchetype": 1,
+        "pointsPerEliteKillSourceArchetype": 2,
+        "accumulatesOnlyWhenRequiresEquipped": true,
+        "pausesGaugeWhenRequirePartRemoved": true,
+        "declineThresholdMultiplier": 1.5
+      },
+      "effects": {
+        "charge": {
+          "distancePx": 240, "durationSec": 0.22, "cooldownSec": 4.0,
+          "cooldownFloorSec": 1.8, "affectedByCooldownReduction": true,
+          "iframesSec": 0.30, "inputAction": "dash",
+          "corridorWidthPx": 48, "impactDamage": 45, "scalesWithDamageMultiplier": true,
+          "knockbackPx": 90, "oneHitPerEnemyPerCharge": true
+        },
+        "thorns": { "damage": 18, "radiusPx": 40, "rehitIntervalSec": 0.6, "scalesWithDamageMultiplier": true }
+      },
+      "statMods": {
+        "damageReductionAdd": 0.15,
+        "maxHpAdd": 25,
+        "speedMult": 0.90,
+        "_comment_caps": "damageReductionAdd via StatCaps.CapDamageReduction (0.40). speedMult apres recalcul servo_motors, ne touche pas MaxSpeed. Malus allege vs Carapace seule (0.82 -> 0.90) = le saut de la fusion."
+      }
+    },
+    {
+      "id": "fusion_ruche_tourelles",
+      "name": "Ruche de Tourelles",
+      "rarity": "epic",
+      "requires": ["aiming_eye", "swarm_symbiote"],
+      "sourceAiTypes": ["ranged_kiter", "straight_chase"],
+      "description": "Tes 4 essaims se figent en tourelles qui tirent a 360°. Vole encore des PV, mais a distance.",
+      "hudIcon": "res://assets/sprites/grafts/fusion_ruche_tourelles_icon.png",
+      "tint": [1.3, 0.7, 0.4],
+      "freesSlot": true,
+      "gauge": {
+        "key": "fusion_ruche_tourelles",
+        "threshold": 40,
+        "pointsPerKillSourceArchetype": 1,
+        "pointsPerEliteKillSourceArchetype": 2,
+        "accumulatesOnlyWhenRequiresEquipped": true,
+        "pausesGaugeWhenRequirePartRemoved": true,
+        "declineThresholdMultiplier": 1.5
+      },
+      "effects": {
+        "turrets": {
+          "count": 4, "anchorRadiusPx": 90, "followSpeedPx": 120,
+          "cooldownSec": 1.0, "affectedByCooldownReduction": true, "cooldownFloorSec": 0.15,
+          "damage": 12, "scalesWithDamageMultiplier": true, "pierceCount": 1,
+          "projectileSpeed": 300, "targetRangePx": 380, "reuseBullet": true,
+          "lifestealFraction": 0.04,
+          "contactDamage": 8, "contactRehitIntervalSec": 0.6
+        }
+      },
+      "statMods": {}
+    }
+  ]
+}
+```
+
+> Notes `developpeur` : `GraftTable.cs` (Rules pur) expose les recettes (`requires`), les seuils/points
+> de jauge de fusion et les structs d'effets `charge`/`turrets` — **elle ne décide que des chiffres**.
+> `AssimilationSystem` (AutoLoad) : (a) ne route les points `fusion_<id>` que si `requires[]` est
+> équipé ; (b) émet `GaugeFilled("fusion_<id>")` ; (c) à l'acceptation, **retire les 2 greffes**
+> sources et **équipe la fusion** (occupation −1). L'`AssimilationScreen` ajoute un **mode carte de
+> fusion** (bandeau + 2 boutons, pas de remplacement). Les comportements (charge, tourelles) vivent
+> côté nœuds (SRP), comme les greffes de base. Ajouter les 2 fusions au **Codex** (persistance
+> `user://settings.cfg`, comme les greffes/armes découvertes). Piège à documenter dans
+> `PITFALLS.md` : la charge (burst) contourne `MaxSpeed` comme le dash de base, et ses i-frames se
+> combinent en **max** (pas cumul) avec les i-frames de dégât.
+
+### 15.5 Récap calibrage vs hardcaps (`StatCaps`)
+
+| Fusion | Stat touchée | Valeur | Hardcap | Marge |
+|---|---|---|---|---|
+| Charge Blindée | `DamageReduction` | +0,15 | **0,40** | OK seule ; écrêtée en cumul méta+Plaque (volontaire, §14.4) |
+| Charge Blindée | `MaxHp` | +25 | aucun | — |
+| Charge Blindée | `Speed` | ×0,90 | baisse (jamais `MaxSpeed`) | — |
+| Charge Blindée | charge (burst) | 240 px / 0,22 s | `MaxSpeed` **non applicable** | — |
+| Charge Blindée | CD charge | 4,0 s, plancher 1,8 s | garde-fou greffe | — |
+| Ruche de Tourelles | — (cooldown propre) | 1,0 s, plancher 0,15 s | `MinCooldown` respecté | — |
+
+Aucune fusion ne franchit un plafond **seule** (mêmes conditions que les greffes de base).
+
+### 15.6 Piste volet 2 (hors-scope de cette livraison)
+
+**« Nova du Rôdeur »** (Onde du Rôdeur + une greffe déjà employée) — rattacherait `stalker_wave` au
+réseau de fusions. **Non chiffrée volontairement** : impliquerait le **partage d'une greffe** entre
+deux recettes (les 4 archétypes de base sont déjà pris par les 2 fusions du volet 1), donc une règle
+d'éligibilité plus complexe (2 fusions candidates si le joueur possède le trio) à ne traiter qu'après
+validation en jeu du volet 1. À rouvrir en Phase B volet 2.
 
 ## 16. Spécification de `data/grafts.json` (à créer par `developpeur`, PAS ici)
 

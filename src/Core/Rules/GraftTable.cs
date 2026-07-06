@@ -21,7 +21,7 @@ public static class GraftTable
     }
 
     /// <summary>Définition d'une greffe (chiffres bruts lus depuis grafts.json).</summary>
-    public sealed class GraftDef
+    public class GraftDef
     {
         public string Id = "";
         public string Name = "";
@@ -43,6 +43,29 @@ public static class GraftTable
 
         public double Stat(string key, double fallback = 0.0)
             => StatMods.TryGetValue(key, out var v) ? v : fallback;
+    }
+
+    /// <summary>
+    /// Définition d'une fusion de greffes (§15) : deux greffes prérequises se lient en une forme
+    /// composée. Hérite de GraftDef (mêmes Effects/StatMods/Tint pour l'application côté nœuds) et
+    /// ajoute la recette (Requires), les archétypes qui alimentent sa jauge dédiée, et les paramètres
+    /// de cette jauge. À l'acceptation : les 2 greffes sources sont retirées, la fusion équipée
+    /// (occupation 2→1, un slot libéré si FreesSlot).
+    /// </summary>
+    public sealed class FusionDef : GraftDef
+    {
+        public List<string> Requires = new();       // greffes prérequises (2)
+        public List<string> SourceAiTypes = new();  // archétypes qui alimentent la jauge de fusion
+        public bool FreesSlot = true;
+        public string GaugeKey = "";
+        public int GaugeThreshold = 20;
+        public int PointsPerKill = 1;
+        public int PointsPerEliteKill = 2;
+        public double DeclineMult = 1.5;
+
+        /// <summary>Points d'un kill vers la jauge de fusion (0 si l'archétype n'y contribue pas).</summary>
+        public int KillPoints(string aiType, bool isElite)
+            => SourceAiTypes.Contains(aiType) ? (isElite ? PointsPerEliteKill : PointsPerKill) : 0;
     }
 
     /// <summary>Configuration complète chargée depuis grafts.json (immuable après parsing).</summary>
@@ -67,6 +90,7 @@ public static class GraftTable
         public string ChampionGaugeKey = "stalker";
 
         public List<GraftDef> Grafts = new();
+        public List<FusionDef> Fusions = new();
 
         /// <summary>Greffe associée à une clé de jauge (1:1), ou null.</summary>
         public GraftDef? GraftForGauge(string gauge)
@@ -75,9 +99,24 @@ public static class GraftTable
             return null;
         }
 
+        /// <summary>Cherche une greffe OU une fusion par id (le HUD/écran/pause affichent les deux).</summary>
         public GraftDef? GraftById(string id)
         {
             foreach (var g in Grafts) if (g.Id == id) return g;
+            foreach (var f in Fusions) if (f.Id == id) return f;
+            return null;
+        }
+
+        /// <summary>Fusion associée à une clé de jauge de fusion, ou null.</summary>
+        public FusionDef? FusionForGauge(string gaugeKey)
+        {
+            foreach (var f in Fusions) if (f.GaugeKey == gaugeKey) return f;
+            return null;
+        }
+
+        public FusionDef? FusionById(string id)
+        {
+            foreach (var f in Fusions) if (f.Id == id) return f;
             return null;
         }
 
@@ -168,6 +207,69 @@ public static class GraftTable
 
                 if (def.SourceAiType == "champion" && !string.IsNullOrEmpty(def.Gauge))
                     cfg.ChampionGaugeKey = def.Gauge;
+            }
+        }
+
+        if (root.TryGetProperty("fusions", out var fusions) && fusions.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var e in fusions.EnumerateArray())
+            {
+                var def = new FusionDef
+                {
+                    Id = GetString(e, "id"),
+                    Name = GetString(e, "name"),
+                    Rarity = GetString(e, "rarity", "epic"),
+                    Description = GetString(e, "description"),
+                    HudIcon = GetString(e, "hudIcon"),
+                    FreesSlot = GetBool(e, "freesSlot", true),
+                };
+
+                if (e.TryGetProperty("tint", out var tint) && tint.ValueKind == JsonValueKind.Array)
+                {
+                    var list = new List<float>();
+                    foreach (var t in tint.EnumerateArray()) list.Add((float)t.GetDouble());
+                    if (list.Count >= 3) def.Tint = new[] { list[0], list[1], list[2] };
+                }
+
+                if (e.TryGetProperty("requires", out var req) && req.ValueKind == JsonValueKind.Array)
+                    foreach (var r in req.EnumerateArray())
+                        if (r.ValueKind == JsonValueKind.String) def.Requires.Add(r.GetString() ?? "");
+
+                if (e.TryGetProperty("sourceAiTypes", out var srcs) && srcs.ValueKind == JsonValueKind.Array)
+                    foreach (var s in srcs.EnumerateArray())
+                        if (s.ValueKind == JsonValueKind.String) def.SourceAiTypes.Add(s.GetString() ?? "");
+
+                if (e.TryGetProperty("gauge", out var g) && g.ValueKind == JsonValueKind.Object)
+                {
+                    def.GaugeKey = GetString(g, "key");
+                    def.GaugeThreshold = GetInt(g, "threshold", def.GaugeThreshold);
+                    def.PointsPerKill = GetInt(g, "pointsPerKillSourceArchetype", def.PointsPerKill);
+                    def.PointsPerEliteKill = GetInt(g, "pointsPerEliteKillSourceArchetype", def.PointsPerEliteKill);
+                    def.DeclineMult = GetDouble(g, "declineThresholdMultiplier", def.DeclineMult);
+                }
+
+                if (e.TryGetProperty("effects", out var effects) && effects.ValueKind == JsonValueKind.Object)
+                    foreach (var group in effects.EnumerateObject())
+                    {
+                        if (group.Name.StartsWith("_") || group.Value.ValueKind != JsonValueKind.Object) continue;
+                        var pars = new Dictionary<string, double>();
+                        foreach (var p in group.Value.EnumerateObject())
+                            if (!p.Name.StartsWith("_") && p.Value.ValueKind == JsonValueKind.Number)
+                                pars[p.Name] = p.Value.GetDouble();
+                        def.Effects[group.Name] = pars;
+                    }
+
+                if (e.TryGetProperty("statMods", out var sm) && sm.ValueKind == JsonValueKind.Object)
+                    foreach (var p in sm.EnumerateObject())
+                        if (!p.Name.StartsWith("_") && p.Value.ValueKind == JsonValueKind.Number)
+                            def.StatMods[p.Name] = p.Value.GetDouble();
+
+                cfg.Fusions.Add(def);
+
+                // Le seuil de la jauge de fusion rejoint la table générale : EffectiveThreshold
+                // (bonus méta + malus de refus) fonctionne alors uniformément pour les fusions.
+                if (!string.IsNullOrEmpty(def.GaugeKey))
+                    cfg.Thresholds[def.GaugeKey] = def.GaugeThreshold;
             }
         }
 

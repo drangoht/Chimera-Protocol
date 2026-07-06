@@ -121,5 +121,72 @@
       },
       "statMods": {}
     }
+  ],
+
+  "_comment_fusions": "Fusions de greffes (Phase B volet 1, docs/DESIGN_ASSIMILATION.md §15). 2 greffes prerequises (requires) se lient en 1 fusion : occupation 2->1 (freesSlot). Jauge dediee 'fusion_<id>' alimentee par les kills des sourceAiTypes, uniquement quand requires est entierement equipe (garde cote AssimilationSystem).",
+  "fusions": [
+    {
+      "id": "fusion_charge_blindee",
+      "name": "Charge Blindée",
+      "rarity": "epic",
+      "requires": ["grafted_carapace", "erratic_servos"],
+      "sourceAiTypes": ["slow_hunter", "erratic_chase"],
+      "description": "Ton dash devient une charge blindée : traverse, encaisse et projette. Le tank qui bouge à nouveau.",
+      "hudIcon": "res://assets/sprites/grafts/fusion_charge_blindee_icon.png",
+      "tint": [1.35, 0.65, 0.45],
+      "freesSlot": true,
+      "gauge": {
+        "key": "fusion_charge_blindee",
+        "threshold": 20,
+        "pointsPerKillSourceArchetype": 1,
+        "pointsPerEliteKillSourceArchetype": 2,
+        "declineThresholdMultiplier": 1.5
+      },
+      "effects": {
+        "charge": {
+          "distancePx": 240, "durationSec": 0.22, "cooldownSec": 4.0,
+          "cooldownFloorSec": 1.8, "affectedByCooldownReduction": 1,
+          "iframesSec": 0.30,
+          "corridorWidthPx": 48, "impactDamage": 45, "scalesWithDamageMultiplier": 1,
+          "knockbackPx": 90
+        },
+        "thorns": { "damage": 18, "radiusPx": 40, "rehitIntervalSec": 0.6, "scalesWithDamageMultiplier": 1 }
+      },
+      "statMods": {
+        "damageReductionAdd": 0.15,
+        "maxHpAdd": 25,
+        "speedMult": 0.90,
+        "_comment_caps": "damageReductionAdd via StatCaps.CapDamageReduction (0.40). speedMult apres recalcul servo_motors, ne touche pas MaxSpeed. Malus allege vs Carapace seule (0.82 -> 0.90) = le saut de la fusion."
+      }
+    },
+    {
+      "id": "fusion_ruche_tourelles",
+      "name": "Ruche de Tourelles",
+      "rarity": "epic",
+      "requires": ["aiming_eye", "swarm_symbiote"],
+      "sourceAiTypes": ["ranged_kiter", "straight_chase"],
+      "description": "Tes 4 essaims se figent en tourelles qui tirent à 360°. Vole encore des PV, mais à distance.",
+      "hudIcon": "res://assets/sprites/grafts/fusion_ruche_tourelles_icon.png",
+      "tint": [1.3, 0.7, 0.4],
+      "freesSlot": true,
+      "gauge": {
+        "key": "fusion_ruche_tourelles",
+        "threshold": 40,
+        "pointsPerKillSourceArchetype": 1,
+        "pointsPerEliteKillSourceArchetype": 2,
+        "declineThresholdMultiplier": 1.5
+      },
+      "effects": {
+        "turrets": {
+          "count": 4, "anchorRadiusPx": 90, "followSpeedPx": 120,
+          "cooldownSec": 1.0, "affectedByCooldownReduction": 1, "cooldownFloorSec": 0.15,
+          "damage": 12, "scalesWithDamageMultiplier": 1, "pierceCount": 1,
+          "projectileSpeed": 300, "targetRangePx": 380,
+          "lifestealFraction": 0.04,
+          "contactDamage": 8, "contactRehitIntervalSec": 0.6
+        }
+      },
+      "statMods": {}
+    }
   ]
 }

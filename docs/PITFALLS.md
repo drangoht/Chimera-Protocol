@@ -140,6 +140,15 @@ Tout nouveau chemin de sortie de run doit l'appeler aussi.
   `GameManager.NotifyEnemyKilled(this)` (les 9 `Die()`/overrides passent `this`). Les métadonnées
   (`AssimArchetype`/`AssimIsMiniBoss`/`AssimIsBoss`) sont posées par `EnemySpawner.SpawnEnemy`. Une jauge
   d'une greffe équipée est **en pause** ; refus → seuil ×1,5 pour le cycle (`_declined`).
+- **Fusions de greffes (§15)** : une jauge `fusion_<id>` n'accumule (`AssimilationSystem.RouteFusionKill`)
+  QUE si **les 2 greffes `requires` sont équipées** ET que le kill est un basique/élite d'un archétype
+  source (mini-boss/boss exclus). À l'acceptation, `AssimilateFusion` **retire les 2 greffes sources et
+  équipe la fusion** → occupation 2→1 (jamais d'écran de remplacement). La `FusionDef` **hérite** de
+  `GraftDef` → `GraftById`/HUD/pause/écran la traitent comme une greffe ; son seuil est injecté dans
+  `Thresholds` au parse pour qu'`EffectiveThreshold` marche uniformément. La **charge** (fusion Charge
+  Blindée) réutilise le dash (`Player.EnableDash` avec params de charge : couloir `_chargeWidth`, un hit
+  par ennemi via `_chargeHit`, knockback ; contourne `MaxSpeed`, i-frames en **max** avec celles de
+  dégât, pas cumul). Les **tourelles** (Ruche) vivent dans `GraftManager._Process` (suivi lerp + `Bullet`).
 - **Nouvelles clés `ui.csv` non prises en compte au runtime** : les `.translation` compilés ne sont PAS
   régénérés par un simple `--headless` ; lancer **`godot --headless --import`** (ou l'éditeur) pour
   recompiler la CSV. En attendant, `AssimilationScreen.TFallback` retombe sur le texte FR du `grafts.json`

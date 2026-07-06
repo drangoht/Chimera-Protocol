@@ -46,6 +46,11 @@ public partial class Player : CharacterBody2D
     private float   _dashCdTimer, _dashActiveLeft, _dashIframeLeft;
     private Vector2 _dashVel;
 
+    // Charge (fusion Charge Blindée) : le dash devient un couloir de dégâts + knockback.
+    private bool  _dashIsCharge;
+    private float _chargeWidth, _chargeDamage, _chargeKnockback;
+    private readonly System.Collections.Generic.HashSet<EnemyBase> _chargeHit = new();
+
     /// <summary>Direction de VISÉE des armes dirigées (Lance Vectorielle / Rayon Vecteur) : vers le
     /// curseur SOURIS en clavier/souris, ou selon le STICK DROIT en manette. Bascule automatiquement
     /// selon le dernier périphérique utilisé, là où les autres armes auto-visent le plus proche.</summary>
@@ -331,6 +336,7 @@ public partial class Player : CharacterBody2D
         MoveAndSlide();
         ClampToArena();
         PushEnemiesAside();
+        if (_dashActiveLeft > 0f && _dashIsCharge) ApplyChargeDamage();
 
         UpdateAim();   // visée souris / stick droit + réticule
         UpdateAnimation(direction);
@@ -372,9 +378,14 @@ public partial class Player : CharacterBody2D
 
     // ─── Dash (greffe Servos Erratiques) ──────────────────────────────────────
 
-    /// <summary>Active le dash avec ses paramètres (appelé par GraftManager à l'équipement).</summary>
+    /// <summary>
+    /// Active le dash avec ses paramètres (appelé par GraftManager à l'équipement). Les 3 derniers
+    /// paramètres (défaut 0) transforment le dash en <b>charge</b> (fusion Charge Blindée) : couloir
+    /// de dégâts + knockback. chargeDamage &gt; 0 ⇒ c'est une charge.
+    /// </summary>
     public void EnableDash(float distance, float duration, float cooldown, float cooldownFloor,
-                           float iframes, bool affectedByCdr)
+                           float iframes, bool affectedByCdr,
+                           float chargeWidth = 0f, float chargeDamage = 0f, float chargeKnockback = 0f)
     {
         _dashEnabled  = true;
         _dashDistance = distance;
@@ -384,6 +395,11 @@ public partial class Player : CharacterBody2D
         _dashIframes  = iframes;
         _dashCdr      = affectedByCdr;
         _dashCdTimer  = 0f; // disponible immédiatement
+
+        _chargeWidth     = chargeWidth;
+        _chargeDamage    = chargeDamage;
+        _chargeKnockback = chargeKnockback;
+        _dashIsCharge    = chargeDamage > 0f;
     }
 
     /// <summary>Désactive le dash (retrait de la greffe).</summary>
@@ -391,6 +407,7 @@ public partial class Player : CharacterBody2D
     {
         _dashEnabled    = false;
         _dashActiveLeft = 0f;
+        _dashIsCharge   = false;
     }
 
     private void UpdateDashTimers(float dt)
@@ -408,12 +425,32 @@ public partial class Player : CharacterBody2D
         _dashVel        = dir * (_dashDistance / _dashDuration);
         _dashActiveLeft = _dashDuration;
         _dashIframeLeft = _dashIframes;
+        if (_dashIsCharge) _chargeHit.Clear(); // un ennemi n'est touché qu'une fois par charge
 
         float reduced = _dashCdr ? _dashCooldown * (1f - Stats.CooldownReduction) : _dashCooldown;
         _dashCdTimer  = Mathf.Max(_dashCdFloor, reduced);
 
         HitFlash(0.12f, new Color(1.2f, 1.8f, 2.4f, 1f));
         AudioSystem.Instance?.PlaySfx("sfx_card_select");
+    }
+
+    /// <summary>Dégâts de couloir de la charge (fusion Charge Blindée) : chaque ennemi une fois par charge.</summary>
+    private void ApplyChargeDamage()
+    {
+        var center = GlobalPosition;
+        foreach (var node in GetTree().GetNodesInGroup(Constants.GroupEnemies))
+        {
+            if (node is not EnemyBase enemy || !IsInstanceValid(enemy)) continue;
+            if (_chargeHit.Contains(enemy)) continue;
+            if (center.DistanceTo(enemy.GlobalPosition) > _chargeWidth) continue;
+
+            enemy.TakeDamage(_chargeDamage);
+            var dir = enemy.GlobalPosition - center;
+            dir = dir.LengthSquared() > 0.01f ? dir.Normalized()
+                : (_dashVel.LengthSquared() > 0.01f ? _dashVel.Normalized() : Vector2.Right);
+            enemy.GlobalPosition += dir * _chargeKnockback;
+            _chargeHit.Add(enemy);
+        }
     }
 
     /// <summary>Soigne d'un montant FIXE de PV (lifesteal de greffe), sans flash. Clampé à MaxHp.</summary>

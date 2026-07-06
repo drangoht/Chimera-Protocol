@@ -98,6 +98,37 @@ public partial class AssimilationSystem : Node
                 EmitSignal(SignalName.GaugeFilled, c.Gauge);
             }
         }
+
+        RouteFusionKill(aiType ?? "", isElite, isMiniBoss, isBoss);
+    }
+
+    /// <summary>
+    /// Jauges de fusion (§15.1) : n'accumulent QUE si les 2 greffes prérequises sont équipées et
+    /// que le kill est un basique/élite d'un archétype source (les champions ne comptent pas).
+    /// </summary>
+    private void RouteFusionKill(string aiType, bool isElite, bool isMiniBoss, bool isBoss)
+    {
+        if (isMiniBoss || isBoss) return;
+
+        foreach (var fusion in _config.Fusions)
+        {
+            if (_equipped.Contains(fusion.Id)) continue;           // fusion déjà équipée
+            if (_pending.Contains(fusion.GaugeKey)) continue;      // déjà en attente d'écran
+
+            bool ready = true;
+            foreach (var r in fusion.Requires) if (!_equipped.Contains(r)) { ready = false; break; }
+            if (!ready) continue;                                  // requires pas entièrement équipé
+
+            int pts = fusion.KillPoints(aiType, isElite);
+            if (pts <= 0) continue;
+
+            _points[fusion.GaugeKey] = _points.GetValueOrDefault(fusion.GaugeKey) + pts;
+            if (_points[fusion.GaugeKey] >= EffectiveThreshold(fusion.GaugeKey))
+            {
+                _pending.Add(fusion.GaugeKey);
+                EmitSignal(SignalName.GaugeFilled, fusion.GaugeKey);
+            }
+        }
     }
 
     /// <summary>Seuil effectif d'une jauge (bonus méta + malus de refus éventuel).</summary>
@@ -169,6 +200,47 @@ public partial class AssimilationSystem : Node
 
     /// <summary>Conserve les 3 greffes actuelles (refus de remplacement) : même effet qu'un refus.</summary>
     public void Keep(string gauge) => Reject(gauge);
+
+    // -------------------------------------------------------------------------
+    // Fusions (§15)
+    // -------------------------------------------------------------------------
+
+    public IReadOnlyList<GraftTable.FusionDef> Fusions => _config.Fusions;
+    public GraftTable.FusionDef? FusionForGauge(string gaugeKey) => _config.FusionForGauge(gaugeKey);
+
+    /// <summary>
+    /// Accepte une fusion (§15.1) : retire les 2 greffes sources et équipe la fusion → occupation 2→1
+    /// (un slot se libère). Ne déclenche jamais d'écran de remplacement.
+    /// </summary>
+    public void AssimilateFusion(string gaugeKey)
+    {
+        var fusion = _config.FusionForGauge(gaugeKey);
+        if (fusion != null && !_equipped.Contains(fusion.Id))
+        {
+            bool ready = true;
+            foreach (var r in fusion.Requires) if (!_equipped.Contains(r)) { ready = false; break; }
+            if (ready)
+            {
+                foreach (var r in fusion.Requires)          // retire les 2 greffes sources
+                    if (_equipped.Remove(r)) RemoveFromPlayer(r);
+
+                _equipped.Add(fusion.Id);                   // équipe la fusion (occupation −1)
+                _declined[gaugeKey] = false;
+                EquipOnPlayer(fusion);
+                Discover(fusion.Id);
+                GraftsVersion++;
+            }
+        }
+        _pending.Remove(gaugeKey);
+    }
+
+    /// <summary>Refuse la fusion : jauge remise à 0, seuil ×1.5 au prochain cycle. Les 2 greffes restent.</summary>
+    public void RejectFusion(string gaugeKey)
+    {
+        _points[gaugeKey] = 0f;
+        _declined[gaugeKey] = true;
+        _pending.Remove(gaugeKey);
+    }
 
     public GraftTable.GraftDef? GraftForGauge(string gauge) => _config.GraftForGauge(gauge);
     public GraftTable.GraftDef? GraftById(string id) => _config.GraftById(id);

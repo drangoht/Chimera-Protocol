@@ -41,6 +41,16 @@ public partial class GraftManager : Node2D
     private float _shockTimer, _shockCd, _shockDamage, _shockRadius, _shockKnockback;
     private bool  _shockCdr;
 
+    // ── Tourelles (fusion Ruche de Tourelles) ──
+    private bool  _turretsActive;
+    private readonly List<Node2D> _turrets = new();
+    private readonly List<float>  _turretsTimer = new();
+    private readonly Dictionary<EnemyBase, float> _turretsContactRehit = new();
+    private int   _turretsCount;
+    private float _turretsAnchorR, _turretsFollow, _turretsCd, _turretsCdFloor, _turretsDamage;
+    private float _turretsRange, _turretsSpeed, _turretsLifesteal, _turretsContactDmg, _turretsContactRehitSec;
+    private bool  _turretsCdr, _turretsPierce;
+
     private static PackedScene? _bulletScene;
     private static PackedScene? _shockwaveScene;
 
@@ -128,17 +138,24 @@ public partial class GraftManager : Node2D
         foreach (var o in _orbiters) if (IsInstanceValid(o)) o.QueueFree();
         _orbiters.Clear();
         _orbiterRehit.Clear();
+        // Purge des tourelles existantes.
+        foreach (var t in _turrets) if (IsInstanceValid(t)) t.QueueFree();
+        _turrets.Clear();
+        _turretsTimer.Clear();
+        _turretsContactRehit.Clear();
 
-        _swarmActive = _turretActive = _thornsActive = _shockActive = false;
+        _swarmActive = _turretActive = _thornsActive = _shockActive = _turretsActive = false;
         bool dash = false;
 
         foreach (var def in _active.Values)
         {
             if (def.HasEffect("orbitingAllies")) SetupSwarm(def);
-            if (def.HasEffect("dash")) { SetupDash(def); dash = true; }
+            if (def.HasEffect("dash"))   { SetupDash(def);   dash = true; }
+            if (def.HasEffect("charge")) { SetupCharge(def); dash = true; } // fusion : le dash devient une charge
             if (def.HasEffect("autoTurret")) SetupTurret(def);
             if (def.HasEffect("thorns")) SetupThorns(def);
             if (def.HasEffect("shockwave")) SetupShockwave(def);
+            if (def.HasEffect("turrets")) SetupTurrets(def);
         }
 
         if (!dash) _player.DisableDash();
@@ -180,6 +197,65 @@ public partial class GraftManager : Node2D
             cooldownFloor: (float)def.Effect("dash", "cooldownFloorSec", 1.5),
             iframes: (float)def.Effect("dash", "iframesSec", 0.25),
             affectedByCdr: def.Effect("dash", "affectedByCooldownReduction", 1) != 0);
+    }
+
+    /// <summary>Fusion Charge Blindée : le dash devient une charge (couloir de dégâts + knockback).</summary>
+    private void SetupCharge(GraftTable.GraftDef def)
+    {
+        float dmg = (float)def.Effect("charge", "impactDamage", 45);
+        if (def.Effect("charge", "scalesWithDamageMultiplier", 1) != 0)
+            dmg *= _player.Stats.DamageMultiplier;
+
+        _player.EnableDash(
+            distance:      (float)def.Effect("charge", "distancePx", 240),
+            duration:      (float)def.Effect("charge", "durationSec", 0.22),
+            cooldown:      (float)def.Effect("charge", "cooldownSec", 4.0),
+            cooldownFloor: (float)def.Effect("charge", "cooldownFloorSec", 1.8),
+            iframes:       (float)def.Effect("charge", "iframesSec", 0.30),
+            affectedByCdr: def.Effect("charge", "affectedByCooldownReduction", 1) != 0,
+            chargeWidth:     (float)def.Effect("charge", "corridorWidthPx", 48),
+            chargeDamage:    dmg,
+            chargeKnockback: (float)def.Effect("charge", "knockbackPx", 90));
+    }
+
+    /// <summary>Fusion Ruche de Tourelles : les 4 essaims deviennent 4 tourelles en suivi lerp qui tirent.</summary>
+    private void SetupTurrets(GraftTable.GraftDef def)
+    {
+        _turretsActive          = true;
+        _turretsCount           = Mathf.Max(1, (int)def.Effect("turrets", "count", 4));
+        _turretsAnchorR         = (float)def.Effect("turrets", "anchorRadiusPx", 90);
+        _turretsFollow          = (float)def.Effect("turrets", "followSpeedPx", 120);
+        _turretsCd              = (float)def.Effect("turrets", "cooldownSec", 1.0);
+        _turretsCdFloor         = (float)def.Effect("turrets", "cooldownFloorSec", 0.15);
+        _turretsDamage          = (float)def.Effect("turrets", "damage", 12);
+        _turretsRange           = (float)def.Effect("turrets", "targetRangePx", 380);
+        _turretsSpeed           = (float)def.Effect("turrets", "projectileSpeed", 300);
+        _turretsPierce          = def.Effect("turrets", "pierceCount", 1) >= 1;
+        _turretsCdr             = def.Effect("turrets", "affectedByCooldownReduction", 1) != 0;
+        _turretsLifesteal       = (float)def.Effect("turrets", "lifestealFraction", 0.04);
+        _turretsContactDmg      = (float)def.Effect("turrets", "contactDamage", 8);
+        _turretsContactRehitSec = (float)def.Effect("turrets", "contactRehitIntervalSec", 0.6);
+        if (def.Effect("turrets", "scalesWithDamageMultiplier", 1) != 0)
+        {
+            _turretsDamage     *= _player.Stats.DamageMultiplier;
+            _turretsContactDmg *= _player.Stats.DamageMultiplier;
+        }
+
+        var col = TintColor(def);
+        for (int i = 0; i < _turretsCount; i++)
+        {
+            var t = new Node2D { ZIndex = 4 };
+            var poly = new Polygon2D
+            {
+                Polygon = new Vector2[] { new(7, 0), new(3, -6), new(-5, -5), new(-5, 5), new(3, 6) },
+                Color   = col,
+            };
+            t.AddChild(poly);
+            AddChild(t);
+            t.GlobalPosition = _player.GlobalPosition;
+            _turrets.Add(t);
+            _turretsTimer.Add(EffectiveCd(_turretsCd, _turretsCdFloor, _turretsCdr));
+        }
     }
 
     private void SetupTurret(GraftTable.GraftDef def)
@@ -228,10 +304,11 @@ public partial class GraftManager : Node2D
     public override void _Process(double delta)
     {
         float dt = (float)delta;
-        if (_swarmActive)  UpdateSwarm(dt);
-        if (_turretActive) UpdateTurret(dt);
-        if (_thornsActive) UpdateThorns(dt);
-        if (_shockActive)  UpdateShockwave(dt);
+        if (_swarmActive)   UpdateSwarm(dt);
+        if (_turretActive)  UpdateTurret(dt);
+        if (_thornsActive)  UpdateThorns(dt);
+        if (_shockActive)   UpdateShockwave(dt);
+        if (_turretsActive) UpdateTurrets(dt);
     }
 
     private void UpdateSwarm(float dt)
@@ -345,6 +422,75 @@ public partial class GraftManager : Node2D
         }
     }
 
+    private void UpdateTurrets(float dt)
+    {
+        var center = _player.GlobalPosition;
+
+        // Décroissance des cooldowns de contact + purge des invalides.
+        var stale = new List<EnemyBase>();
+        foreach (var kv in _turretsContactRehit) if (!IsInstanceValid(kv.Key)) stale.Add(kv.Key);
+        foreach (var e in stale) _turretsContactRehit.Remove(e);
+        var keys = new List<EnemyBase>(_turretsContactRehit.Keys);
+        foreach (var e in keys) _turretsContactRehit[e] -= dt;
+
+        for (int i = 0; i < _turrets.Count; i++)
+        {
+            if (!IsInstanceValid(_turrets[i])) continue;
+
+            // Ancre en anneau ; suivi lerp lent (les tourelles traînent derrière le joueur, §15.3).
+            float a = i * (Mathf.Tau / _turrets.Count);
+            var anchor = center + Vector2.Right.Rotated(a) * _turretsAnchorR;
+            _turrets[i].GlobalPosition = _turrets[i].GlobalPosition.MoveToward(anchor, _turretsFollow * dt);
+
+            // Tir sur l'ennemi le plus proche de la tourelle.
+            _turretsTimer[i] -= dt;
+            if (_turretsTimer[i] <= 0f)
+            {
+                var target = NearestEnemyTo(_turrets[i].GlobalPosition, _turretsRange);
+                if (target != null)
+                {
+                    _turretsTimer[i] = EffectiveCd(_turretsCd, _turretsCdFloor, _turretsCdr);
+                    _bulletScene ??= GD.Load<PackedScene>("res://scenes/weapons/Bullet.tscn");
+                    if (_bulletScene != null)
+                    {
+                        var b = _bulletScene.Instantiate<Bullet>();
+                        b.Direction  = (target.GlobalPosition - _turrets[i].GlobalPosition).Normalized();
+                        b.Speed      = _turretsSpeed;
+                        b.Damage     = _turretsDamage;
+                        b.IsPiercing = _turretsPierce;
+                        b.Power      = 2;
+                        GetTree().Root.AddChild(b);
+                        b.GlobalPosition = _turrets[i].GlobalPosition;
+                        if (_turretsLifesteal > 0f) _player.HealFlat(_turretsDamage * _turretsLifesteal);
+                    }
+                }
+                // Pas de cible : timer reste <= 0, on re-teste au prochain frame.
+            }
+        }
+
+        // Contact résiduel (dissuade le hug d'une tourelle).
+        if (_turretsContactDmg > 0f)
+        {
+            const float hitR = 16f;
+            foreach (var node in GetTree().GetNodesInGroup(Constants.GroupEnemies))
+            {
+                if (node is not EnemyBase enemy || !IsInstanceValid(enemy)) continue;
+                if (_turretsContactRehit.GetValueOrDefault(enemy, 0f) > 0f) continue;
+
+                bool touching = false;
+                for (int i = 0; i < _turrets.Count; i++)
+                {
+                    if (!IsInstanceValid(_turrets[i])) continue;
+                    if (_turrets[i].GlobalPosition.DistanceTo(enemy.GlobalPosition) <= hitR) { touching = true; break; }
+                }
+                if (!touching) continue;
+
+                enemy.TakeDamage(_turretsContactDmg);
+                _turretsContactRehit[enemy] = _turretsContactRehitSec;
+            }
+        }
+    }
+
     // -------------------------------------------------------------------------
     // Rendu — teinte additive cumulée sur SelfModulate (pas Modulate, réservé HitFlash/blink)
     // -------------------------------------------------------------------------
@@ -378,15 +524,16 @@ public partial class GraftManager : Node2D
         return Mathf.Max(floor, reduced);
     }
 
-    private EnemyBase? NearestEnemy(float maxRange)
+    private EnemyBase? NearestEnemy(float maxRange) => NearestEnemyTo(_player.GlobalPosition, maxRange);
+
+    private EnemyBase? NearestEnemyTo(Vector2 from, float maxRange)
     {
         EnemyBase? best = null;
         float bestSq = maxRange * maxRange;
-        var p = _player.GlobalPosition;
         foreach (var node in GetTree().GetNodesInGroup(Constants.GroupEnemies))
         {
             if (node is not EnemyBase e || !IsInstanceValid(e)) continue;
-            float dsq = p.DistanceSquaredTo(e.GlobalPosition);
+            float dsq = from.DistanceSquaredTo(e.GlobalPosition);
             if (dsq <= bestSq) { bestSq = dsq; best = e; }
         }
         return best;
