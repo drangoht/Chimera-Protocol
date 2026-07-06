@@ -97,6 +97,7 @@ public partial class PauseScreen : CanvasLayer
         BuildMissionSection(left);
         BuildPlayerSection(left);
         BuildInventorySection(right);
+        BuildGraftsSection(right);
 
         // Boutons : reprendre + quitter la partie
         root.AddChild(Sep(_violet));
@@ -222,6 +223,73 @@ public partial class PauseScreen : CanvasLayer
                 StatRow(grid, pname, $"Niv. {lvl}/{maxLvl}", _gold);
             }
         }
+    }
+
+    // ── Section GREFFES (Assimilation) ────────────────────────────────────────
+
+    private static void BuildGraftsSection(VBoxContainer col)
+    {
+        var sys = AssimilationSystem.Instance;
+        if (sys == null) return;
+
+        col.AddChild(ThinSep());
+
+        // Titre + compteur d'emplacements (X/max)
+        var header = new HBoxContainer();
+        header.AddThemeConstantOverride("separation", 8);
+        col.AddChild(header);
+        header.AddChild(SectionLbl(Loc.T("PAUSE_GRAFTS")));
+        header.AddChild(Lbl($"{sys.EquippedGrafts.Count}/{sys.SlotCount}", 13, _grey));
+
+        if (sys.EquippedGrafts.Count == 0)
+        {
+            col.AddChild(Lbl(Loc.T("PAUSE_NONE"), 13, _grey));
+            return;
+        }
+
+        foreach (var id in sys.EquippedGrafts)
+        {
+            var def = sys.GraftById(id);
+            if (def == null) continue;
+
+            string key   = id.ToUpperInvariant();
+            string name  = TLoc($"GRAFT_{key}_NAME", def.Name);
+            string desc  = TLoc($"GRAFT_{key}_DESC", def.Description);
+            Color  color = GraftRarityColor(def.Rarity);
+
+            var nameRow = new HBoxContainer();
+            nameRow.AddThemeConstantOverride("separation", 8);
+            col.AddChild(nameRow);
+            nameRow.AddChild(Lbl("◆ " + name, 15, color));
+            nameRow.AddChild(Lbl(GraftRarityLabel(def.Rarity), 12, _grey));
+
+            var descLbl = Lbl("    " + desc, 12, _offWhite);
+            descLbl.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+            descLbl.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+            descLbl.CustomMinimumSize = new Vector2(420f, 0f);
+            col.AddChild(descLbl);
+        }
+    }
+
+    private static Color GraftRarityColor(string rarity) => rarity switch
+    {
+        "rare" => _cyan,
+        "epic" => _violet,
+        _      => _offWhite,
+    };
+
+    private static string GraftRarityLabel(string rarity) => rarity switch
+    {
+        "rare" => Loc.T("RARITY_RARE"),
+        "epic" => Loc.T("RARITY_EPIC"),
+        _      => Loc.T("RARITY_COMMON"),
+    };
+
+    /// <summary>Loc.T avec repli sur un texte par défaut si la clé n'est pas traduite.</summary>
+    private static string TLoc(string key, string fallback)
+    {
+        string t = Loc.T(key);
+        return t == key ? fallback : t;
     }
 
     // ── Détails arme ──────────────────────────────────────────────────────────

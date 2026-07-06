@@ -73,7 +73,7 @@ public partial class AssimilationScreen : CanvasLayer
         var card = new Panel
         {
             AnchorLeft = 0.5f, AnchorRight = 0.5f, AnchorTop = 0.5f, AnchorBottom = 0.5f,
-            OffsetLeft = -220, OffsetRight = 220, OffsetTop = -196, OffsetBottom = 28,
+            OffsetLeft = -220, OffsetRight = 220, OffsetTop = -206, OffsetBottom = 44,
             GrowHorizontal = Control.GrowDirection.Both,
         };
         var cardStyle = new StyleBoxFlat { BgColor = new Color(0.10f, 0.05f, 0.12f, 0.95f) };
@@ -106,22 +106,22 @@ public partial class AssimilationScreen : CanvasLayer
             VerticalAlignment   = VerticalAlignment.Top,
             AutowrapMode        = TextServer.AutowrapMode.WordSmart,
             Position            = new Vector2(24, 168),
-            Size                = new Vector2(392, 56),
+            Size                = new Vector2(392, 76),
         };
-        _descLabel.AddThemeFontSizeOverride("font_size", 15);
+        _descLabel.AddThemeFontSizeOverride("font_size", 14);
         _descLabel.AddThemeColorOverride("font_color", new Color(0.82f, 0.82f, 0.92f));
         card.AddChild(_descLabel);
 
         // Boutons d'action slot-libre (ASSIMILER / REJETER).
         _assimilateBtn = MakeButton(Magenta);
         _assimilateBtn.AnchorLeft = 0.5f; _assimilateBtn.AnchorRight = 0.5f; _assimilateBtn.AnchorTop = 0.5f; _assimilateBtn.AnchorBottom = 0.5f;
-        _assimilateBtn.OffsetLeft = -230; _assimilateBtn.OffsetRight = -20; _assimilateBtn.OffsetTop = 56; _assimilateBtn.OffsetBottom = 108;
+        _assimilateBtn.OffsetLeft = -230; _assimilateBtn.OffsetRight = -20; _assimilateBtn.OffsetTop = 68; _assimilateBtn.OffsetBottom = 120;
         _assimilateBtn.Pressed += OnAssimilate;
         _root.AddChild(_assimilateBtn);
 
         _rejectBtn = MakeButton(new Color(0.6f, 0.6f, 0.68f));
         _rejectBtn.AnchorLeft = 0.5f; _rejectBtn.AnchorRight = 0.5f; _rejectBtn.AnchorTop = 0.5f; _rejectBtn.AnchorBottom = 0.5f;
-        _rejectBtn.OffsetLeft = 20; _rejectBtn.OffsetRight = 230; _rejectBtn.OffsetTop = 56; _rejectBtn.OffsetBottom = 108;
+        _rejectBtn.OffsetLeft = 20; _rejectBtn.OffsetRight = 230; _rejectBtn.OffsetTop = 68; _rejectBtn.OffsetBottom = 120;
         _rejectBtn.Pressed += OnReject;
         _root.AddChild(_rejectBtn);
 
