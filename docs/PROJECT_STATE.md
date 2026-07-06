@@ -25,6 +25,38 @@
   « impossible » ; TTK mesuré ~36-40 s sur build de référence, cible ~43-61 s build moyen, 1.11.4).
   Version publiée itch : **1.11.4**.
 
+### Système d'Assimilation / Greffes — **Phase A** (en cours, 2026-07-06, non publié)
+
+Troisième axe de progression (« deviens la chimère »), cf. `docs/DESIGN_ASSIMILATION.md` Partie II.
+Livré en Phase A :
+- **`GraftTable`** (`src/Core/Rules/`, logique pure testée — **+25 tests xUnit**, suite à 112) : parse
+  `data/grafts.json`, routage kill→jauge (`RouteKill` : basique/élite/mini-boss/boss → jauge d'archétype
+  et/ou `stalker`), seuils effectifs (bonus méta `graft_metabolism`) et de refus (×1,5), `SlotCount`.
+- **`AssimilationSystem`** (autoload) : jauges de points par archétype (`Dictionary<string,float>`),
+  slots équipés + remplacement, pause de jauge d'une greffe possédée + reprise depuis valeur mémorisée,
+  émet `GaugeFilled`. `Reset()` par run lit `graft_slots`/`graft_metabolism`.
+- **`AssimilationScreen`** (`src/UI/`, scène `scenes/ui/AssimilationScreen.tscn`) : écran modal magenta,
+  slot libre → ASSIMILER/REJETER, slots pleins → remplacer/CONSERVER. Partage **`ModalQueue`** avec le
+  LevelUpScreen (un seul `Paused`, level-up prioritaire, jamais simultanés).
+- **5 greffes** (`GraftManager`, enfant du Player) : Nuée Symbiotique (3 mini-essaims orbitants +
+  lifesteal), Servos Erratiques (dash invulnérable, action d'entrée `dash` = Maj gauche/RB), Œil de Visée
+  (tourelle auto réutilisant `Bullet`), Carapace Greffée (+DR/+PV/thorns, malus −18% via
+  `Player.GraftSpeedMultiplier`), Onde du Rôdeur (onde de choc périodique + knockback, réutilise
+  `ShockwaveRing`). Retrait propre au remplacement (deltas de stat réversibles, hardcaps respectés).
+- **Rendu Phase A minimal** : rangée d'emplacements de greffe au HUD (sous la barre XP), teinte additive
+  cumulée sur `SelfModulate` du joueur, `FusionFlash` à l'assimilation.
+  - **Icônes de greffe au HUD livrées (2026-07-06)** : `HUD.RefreshGraftSlots()` affiche la texture
+    `def.HudIcon` (`assets/sprites/grafts/<id>_icon.png`) via un `TextureRect` (Nearest,
+    `KeepAspectCentered`, ~16-18 px dans le slot de 20 px), même pattern de chargement que
+    `AssimilationScreen.LoadGraftIcon` (`Godot.FileAccess.FileExists` + `GD.Load<Texture2D>`).
+    **Fallback carré teinté conservé** si l'icône est absente ; slot vide toujours grisé.
+- **Méta Hub** : `graft_slots` (500/950, +1 slot, max 5) et `graft_metabolism` (180/320/520, −30% seuil max)
+  dans `meta_upgrades.json` (arbre → 19 items). Codex : découvertes persistées (`GameSettings.DiscoverGraft`).
+- **Hors Phase A** (→ Phase B) : synergies/fusions de greffes, refonte de la silhouette par couches,
+  variantes de greffe par biome. Textes/lore/loc à finaliser par `story-teller` (clés `GRAFT_*`/`ASSIM_*`/
+  `UPGRADE_GRAFT_*` posées avec placeholder FR). Icônes `assets/sprites/grafts/*.png` à produire par
+  `graphiste` (fallback carré teinté en attendant).
+
 ## Ce qui est implémenté
 
 - Direction artistique **pseudo-3D avec ombres** (`docs/ART_BRIEF_PSEUDO3D.md`) appliquée à TOUS les sprites via `tools/pseudo3d_lib.py` (lumière fixe haut-gauche 45°, dérivation shadow/highlight HSV, ombre portée elliptique) : 3 persos joueurs, 8 ennemis/mini-boss/boss existants, 20 nouveaux ennemis, obstacles, tuiles de biome, icônes d'armes/UI (640 PNG régénérés, `.import` à jour). Validé game-tester PASS 2026-07-03 (cohérence lumière, lisibilité joueur en nuée).
@@ -37,7 +69,7 @@
   solar_column, hornet_swarm — chaque évolution = arme de base niv.5 + passif requis, remplace l'arme)
 - Fin de niveau complète : survie sans fin, overtime, boss en boucle, déblocage progressif, high scores (temps+difficulté), arsenal à découverte
 - Hub méta rééquilibré (2026-07-02) : 17 upgrades (7 rééquilibrés + 10 nouveaux ; `starting_weapon_alt` retiré 2026-07-04 car aucun sélecteur d'arme de départ n'est câblé), formule d'Échos plafonnée standard/overtime (`EchoFormula.Calculate`, caps + `overtimeDampening`/`overtimeBonusCap`), 5e composante "Bonus de Surcharge" sur `RunEndScreen`, `UpgradesList` scrollable
-- Cinématique d'intro (2026-07-03) : `src/UI/IntroScreen.cs` (scène de boot) — cut-scene 2D scriptée en 6 plans (noyau d'Aether, corruption d'un drone, nuée + colosse, sanctuaire, descente de l'Arpenteur, reveal du titre), sprites animés réutilisant les `SpriteFrames` existants + particules `CpuParticles2D` + zoom caméra via `Tween`, synchronisée sur la narration `INTRO_BEAT_1..5` (EN/FR/ES) et la musique dédiée `music_intro` (CC0, "Transmission"/SRG774, cf. `assets/audio/CREDITS.md`). Skippable. Reveal via clés `INTRO_TITLE`/`INTRO_TAGLINE`. Outil de capture : `tools/capture_intro.py`
+- Cinématique d'intro (2026-07-03, **plan Assimilation ajouté 2026-07-06**) : `src/UI/IntroScreen.cs` (scène de boot) — cut-scene 2D scriptée en **6 plans narratifs + reveal du titre** (noyau d'Aether, corruption d'un drone, nuée + colosse, sanctuaire, descente de l'Arpenteur, **assimilation**), sprites animés réutilisant les `SpriteFrames` existants + particules `CpuParticles2D` + zoom caméra via `Tween`, synchronisée sur la narration `INTRO_BEAT_1..6` (EN/FR/ES) et la musique dédiée `music_intro` (CC0, "Transmission"/SRG774, cf. `assets/audio/CREDITS.md`). Skippable. Reveal via clés `INTRO_TITLE`/`INTRO_TAGLINE` (tagline alignée sur le pitch : « Ne tue pas les monstres. Deviens-les. »). **Plan 6 `ShotAssimilation`** (`INTRO_BEAT_6`, 4,0 s, cf. `docs/DESIGN_ASSIMILATION.md` §20) : mise à mort d'un Rust Swarm → arrachement d'un fragment (particules rouille→cyan vers le joueur) → mutation (aura `FusionFlash`/`FusionAura` + teinte subtile du joueur), n'utilise que des assets déjà chargés. Outil de capture : `tools/capture_intro.py`
 - Localisation EN/FR/ES (`localization/ui.csv` → clé `Loc.T("CLÉ")`) ; support manette complet
 - HUD thématisé par biome, atmosphère (brume/rais/parallaxe), scanlines CRT
 - Arènes : obstacles thématisés par biome (`BiomeObstacles.cs`), features de sol (`FloorFeatures.cs` — lave/rivières/chemin pavé/conduits), gabarits structurés, décor rouillé réservé au Sanctuaire ; flag `--biome=<id>` pour forcer un biome (tests/captures)

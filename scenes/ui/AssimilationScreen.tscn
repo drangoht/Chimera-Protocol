@@ -1,0 +1,7 @@
+[gd_scene load_steps=2 format=3 uid="uid://assimscreen001"]
+
+[ext_resource type="Script" path="res://src/UI/AssimilationScreen.cs" id="1_assim"]
+
+[node name="AssimilationScreen" type="CanvasLayer"]
+layer = 60
+script = ExtResource("1_assim")

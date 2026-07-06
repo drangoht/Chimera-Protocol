@@ -50,6 +50,7 @@ public partial class GameManager : Node
     {
         Instance = this;
         EnsureGamepadUiBindings();
+        InputRemap.EnsureExtraActions(); // action « dash » (greffe Servos Erratiques)
     }
 
     /// <summary>
@@ -110,6 +111,8 @@ public partial class GameManager : Node
         XpSystem.Instance?.Reset();
         InventorySystem.Instance?.Reset();
         LevelUpSystem.Instance?.Reset();
+        AssimilationSystem.Instance?.Reset();
+        ModalQueue.Reset();
 
         // Gère l'arme de départ hardcodée dans Player.tscn
         foreach (var child in player.GetChildren())
@@ -184,9 +187,15 @@ public partial class GameManager : Node
         }
     }
 
-    /// <summary>Appelé par EnemyBase.Die() pour notifier la fin d'un ennemi.</summary>
-    public void NotifyEnemyKilled()
+    /// <summary>Appelé par EnemyBase.Die() (et les Die() surchargés) pour notifier la fin d'un ennemi.
+    /// Route aussi le kill vers le système d'Assimilation (jauge de greffe via l'archétype/champion).
+    /// <paramref name="enemy"/> est optionnel (rétro-compat) : sans lui, seul le signal EnemyKilled part.</summary>
+    public void NotifyEnemyKilled(EnemyBase? enemy = null)
     {
         EmitSignal(SignalName.EnemyKilled);
+
+        if (enemy != null)
+            AssimilationSystem.Instance?.OnEnemyKilled(
+                enemy.AssimArchetype, enemy.IsElite, enemy.AssimIsMiniBoss, enemy.AssimIsBoss);
     }
 }

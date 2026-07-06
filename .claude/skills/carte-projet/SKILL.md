@@ -35,8 +35,8 @@ docs/              GDD.md + briefs/plans — voir §Docs
 ```
 
 ## Singletons AutoLoad (project.godot)
-`GameManager` · `XpSystem` · `InventorySystem` · `LevelUpSystem` · `SaveManager` ·
-`MetaProgressionSystem` · `AudioSystem` · `ScreenShake` · `GameSettings` ·
+`GameManager` · `XpSystem` · `InventorySystem` · `LevelUpSystem` · **`AssimilationSystem`** ·
+`SaveManager` · `MetaProgressionSystem` · `AudioSystem` · `ScreenShake` · `GameSettings` ·
 `DiscordPresence` · `VersionStamp` · `FusionFlash` (scène). Accès partout via `NomSystem.Instance`.
 
 ## §Rules — `src/Core/Rules/` (logique pure, testée)
@@ -44,21 +44,27 @@ XpCurve · EnemyScaling (`Scaled` linéaire + `ScaledCurved`/`CurvedFactor` = co
 early grace + accélération late, cf. difficulté) · SpawnCurve · WeaponLeveling · StatCaps · WeightedPicker ·
 EchoFormula · RarityWeights · CrowdControlCaps · DifficultyTuning · **VersionCompare**
 (comparaison sémantique pour le bandeau de MAJ) · **EliteAffixTable** (affixes d'élite :
-fréquence + tirage + `EliteModifiers`, cf. GDD §22). Les nœuds délèguent ici (SRP).
+fréquence + tirage + `EliteModifiers`, cf. GDD §22) · **GraftTable** (Assimilation : parse
+`grafts.json`, routage kill→jauge `RouteKill`, seuils `EffectiveThreshold`/`DeclinedThreshold`,
+`SlotCount` ; cf. docs/DESIGN_ASSIMILATION.md §11-18). Les nœuds délèguent ici (SRP).
 
 ## §Systems — `src/Systems/`
 - Spawn : `EnemySpawner` (+ `EnemySpawnData`), `PowerUpSpawner` (+ `PowerUp`), `MagnetSpawner`, `AetherCoreSpawner`
 - Progression : `XpSystem`, `LevelUpSystem` (+ `LevelUpCardData`), `InventorySystem`, `MetaProgressionSystem` (+ `MetaUpgradeDefinition`)
+- **Assimilation (greffes)** : `AssimilationSystem` (autoload — jauges par archétype, slots équipés, pause/reprise de jauge, émet `GaugeFilled` ; délègue les chiffres à `GraftTable`) ; effets côté Player → `GraftManager` (§Entities) ; écran → `AssimilationScreen` (§UI). Data → `grafts.json`. Meta : `graft_slots`/`graft_metabolism`. Action d'entrée `dash` (InputRemap). Cf. docs/DESIGN_ASSIMILATION.md.
 - Biome/arène : `BiomeAtmosphere`, `BiomeObstacles`, `FloorFeatures`, `GroundRenderer`, `DeepMotifShape`, `VignetteFollow`
 - Divers : `AudioSystem`, `GameSettings` (audio/affichage/diff/langue + **touches move_* rebindables**), `Loc`, `FusionFlash`, `ScreenShake`, `RunStatsTracker`
-- Input : **`InputRemap`** (statique) — actions `move_up/down/left/right` (défaut ZQSD + flèches + manette), séparées des `ui_*` menu ; le Player lit `Input.GetVector(move_*)`, remap via l'écran Options, persisté dans `GameSettings`
+- Input : **`InputRemap`** (statique) — actions `move_up/down/left/right` (défaut ZQSD + flèches + manette), séparées des `ui_*` menu ; le Player lit `Input.GetVector(move_*)`, remap via l'écran Options, persisté dans `GameSettings`. Action **`dash`** (Maj gauche / RB, `EnsureExtraActions()` au boot via GameManager) pour la greffe Servos Erratiques
 - Intégrations : **`DiscordPresence`** (autoload, NuGet `DiscordRichPresence` — statut « joue à Chimera Protocol », clés art `chimera`/`chimera_small`, tolérant à l'absence de Discord ; `SetInMenus`/`SetInRun` appelés par MainMenu/GameManager), **`VersionStamp`** (autoload, overlay `v<ver>-<sha>` bas-droite) ; **`BuildInfo`** (`src/Core/`, `GitSha` auto-généré par `tools/gen_build_info.ps1`, version lue de project.godot)
 
 ## §UI — `src/UI/` (écrans Control)
 `MainMenu` (+ **bandeau MAJ** → §MAJ) · `CharacterSelectScreen` · `LevelSelectScreen` ·
 `HubScreen` · `BestiaryScreen` / `ArsenalScreen` / `CodexScreenBase` (+ `Codex`) ·
-`OptionsScreen` · `PauseScreen` · `LevelUpScreen` · `RunEndScreen` · `IntroScreen`
-(cinématique) · `HUD` · `BuffBar` · `Banner` · `BiomeCatalog` · `Characters` (registre
+`OptionsScreen` · `PauseScreen` · `LevelUpScreen` · **`AssimilationScreen`** (écran modal des
+greffes, UI construite en code) · **`ModalQueue`** (statique — coordonne LevelUpScreen +
+AssimilationScreen : un SEUL `Paused`, level-up prioritaire ; jamais affichés simultanément) ·
+`RunEndScreen` · `IntroScreen`
+(cinématique) · `HUD` (+ rangée d'emplacements de greffe sous la barre XP) · `BuffBar` · `Banner` · `BiomeCatalog` · `Characters` (registre
 des 4 persos jouables : chimera/impulse_cannon, titan/drone_swarm, vagabond/plasma_blade,
 vecteur/vector_lance ; `CharacterSelectScreen` en fait les cartes).
 
@@ -72,14 +78,15 @@ Fusions : `FusionBlade`, `RailOvercharged`, `OrbitalSwarm`, `OverloadAegis`,
 `SeekerMissile`, `DroneEntity`, etc.
 
 ## §Entities — `src/Entities/`
-- Player : `Player` (+ `PlayerStats`)
+- Player : `Player` (+ `PlayerStats`, + **`GraftManager`** : applique les effets de greffe — stat mods avec retrait exact, mini-essaims orbitants/tourelle/thorns/onde en `_Process`, teinte additive `SelfModulate` ; le dash vit dans `Player` : `EnableDash`/`DisableDash`, `GraftSpeedMultiplier`, `HealFlat`, `SetGraftTint`)
 - Enemies : `EnemyBase` (data-driven, `SetSpriteFrames`, **`ApplyElite`** — affixes d'élite), `EliteAura` (halo VFX), `EnemyBullet`, `CorruptedDrone`, `CorruptedSentinel`, `RustSwarm`, `RustStalker`
 - MiniBoss : `AetherRevenant`, `MasterSentinel` · Boss : `GraftedColossus` (48×48, `Die()` custom)
 - Environment : `AetherCore`, `RustedCore`, `AetherGeyser`, `HpOrb`, `XpOrb`, `MagnetPickup`, `PowerUpPickup`
 
 ## §Data — `data/*.json` (tuning sans recompiler)
 `weapons.json` (5 niveaux/arme) · `enemies.json` + `enemies_biome_expansion.json` ·
-`levelup_config.json` (rarityByCard) · `meta_upgrades.json` (hub) · `texts.json`.
+`levelup_config.json` (rarityByCard) · `meta_upgrades.json` (hub, 19 items — inclut `graft_slots`/`graft_metabolism`) ·
+**`grafts.json`** (Assimilation : slots/gauges/grafts, cf. GraftTable) · `texts.json`.
 
 ## §Outils — `tools/`
 - Sprites : `pseudo3d_lib.py` (⚠ toujours dériver ombre/highlight via ce lib), `generate_*` (sprites/icônes/tiles/vfx)
@@ -102,6 +109,7 @@ Fusions : `FusionBlade`, `RailOvercharged`, `OrbitalSwarm`, `OverloadAegis`,
 > **Avant de coder** dans un domaine (armes, ennemis, UI, VFX, scènes…), lire `docs/PITFALLS.md`.
 - **Arme** (8 pts) : `weapons.json` · `levelup_config.json` · `InventorySystem` (paths+stats) · `LevelUpSystem.AllWeaponIds` · `Codex` · icône `ui_icon_*.png`+`.import` · clés `WPN_*` EN/FR/ES.
 - **Ennemi basique** (variante d'archétype, PAS de scène) : `enemies.json` (`ai.type` ∈ straight_chase/erratic_chase/ranged_kiter/slow_hunter, `framesPath` optionnel) · `Codex.Enemies` · clés `ENEMY_*` EN/FR/ES · sprite `.tres`/`.png`. Vrai nouveau comportement = scène + sous-classe.
+- **Greffe (Assimilation)** : `grafts.json` (entrée `grafts[]` : gauge 1:1, sourceAiType, rarity, tint, effects/statMods) · effet appliqué dans `GraftManager` (Setup*/Update* + retrait via RebuildBehaviors/ReverseStatMods ; stat sur `PlayerStats` avec delta réversible et hardcaps `StatCaps`) · clés loc `GRAFT_<ID>_NAME/_DESC` EN/FR/ES (fallback FR du json via `TFallback`) · icône `assets/sprites/grafts/<id>_icon.png` (optionnelle, fallback carré teinté). Routage kill→jauge = pur (`GraftTable.RouteKill`, testé). Nouveau comportement moteur (dash-like lisant l'entrée) = côté `Player`, pas GraftManager.
 - **Personnage jouable** (5 pts) : `Characters.All` (id, stats, `StartingWeaponId`, `Tint`, `FramesPath`) · sprite dédié via `tools/generate_character_sprites.py <id>` (+ `.tres` + import Godot) · clés `CHAR_<ID>_NAME/TAG/DESC` EN/FR/ES (l'écran lit les clés, pas les champs C#) · `GameSettings.SignatureWeapons` si l'arme de base doit être « découverte » d'office · aucune méca moteur (le pipeline `GameManager`/`InventorySystem` gère toute arme de départ).
 
 ## Commandes utiles

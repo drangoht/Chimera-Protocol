@@ -260,6 +260,7 @@ INTRO_BEAT_2,"The Convergence was neither war nor explosion, but a fusion.\nMach
 INTRO_BEAT_3,"From that corruption was born the Living Rust.\nIt does not destroy: it integrates. It transforms.","De cette corruption naquit la Rouille Vivante.\nElle ne détruit pas : elle intègre. Elle transforme.","De esa corrupción nació la Herrumbre Viviente.\nNo destruye: integra. Transforma."
 INTRO_BEAT_4,"The Sanctuaries, ruins saturated with Aether,\nkeep the Cores — the last hope of the enclaves.","Les Sanctuaires, ruines saturées d'Aether,\ngardent les Noyaux — le dernier espoir des enclaves.","Los Santuarios, ruinas saturadas de Aether,\nguardan los Núcleos — la última esperanza de los enclaves."
 INTRO_BEAT_5,"Someone must descend there.\nIt will be you.","Quelqu'un doit y descendre.\nCe sera toi.","Alguien debe descender allí.\nSerás tú."
+INTRO_BEAT_6,"You will not just kill what hunts you.\nYou will tear a piece of it free — and let it become part of you.","Tu ne te contenteras pas de tuer ce qui te traque.\nTu lui arracheras un fragment — et le laisseras devenir toi.","No te limitarás a matar lo que te acecha.\nLe arrancarás un fragmento — y dejarás que se vuelva parte de ti."
 BIOME_NEON_NAME,Neon Sector,Secteur Néon,Sector Neón
 BIOME_NEON_EFFECT,"Overclock: enemies +10% faster, +15% XP","Overclock : ennemis +10% rapides, +15% XP","Overclock: enemigos +10% rápidos, +15% XP"
 BIOME_NEON_DESC,"An overclocked data sector bathed in neon. Enemies are 10% faster, but XP is boosted by 15%: risk versus reward.","Un secteur de données overclocké, nappé de néons. Les ennemis vont 10% plus vite, mais l'XP est augmentée de 15% : risque contre récompense.","Un sector de datos overclockeado, bañado en neón. Los enemigos son un 10% más rápidos, pero la XP aumenta un 15%: riesgo contra recompensa."
@@ -296,7 +297,7 @@ OPTIONS_RESET,Reset everything,Tout réinitialiser,Reiniciar todo
 OPTIONS_RESET_CONFIRM,⚠ Confirm? (irreversible — deletes Echoes & progress),⚠ Confirmer ? (irréversible — efface Échos & progression),⚠ ¿Confirmar? (irreversible — borra Ecos y progreso)
 OPTIONS_RESET_DONE,✓ Reset done,✓ Réinitialisé,✓ Reiniciado
 INTRO_TITLE,CHIMERA PROTOCOL,CHIMERA PROTOCOL,CHIMERA PROTOCOL
-INTRO_TAGLINE,Survive. Evolve. Never return the same.,Survis. Évolue. Ne reviens jamais le même.,Sobrevive. Evoluciona. Nunca vuelvas igual.
+INTRO_TAGLINE,Don't kill the monsters. Become them.,Ne tue pas les monstres. Deviens-les.,No mates a los monstruos. Conviértete en ellos.
 WPN_IONIC_STORM_NAME,Ionic Storm,Tempête Ionique,Tormenta Iónica
 WPN_IONIC_STORM_DESC,"Evolution of the Tesla Coil + Capacitor: the arc never stops, a string of lightning strikes and bounces continuously across a long chain of enemies.","Évolution de la Bobine Tesla + Capaciteur : l'arc ne s'arrête plus, un chapelet d'éclairs frappe et rebondit en continu sur une longue chaîne d'ennemis.","Evolución de la Bobina Tesla + Capacitor: el arco no se detiene, una ristra de rayos golpea y rebota sin cesar sobre una larga cadena de enemigos."
 WPN_SOLAR_COLUMN_NAME,Solar Column,Colonne Solaire,Columna Solar
@@ -305,3 +306,23 @@ WPN_HORNET_SWARM_NAME,Hornet Swarm,Nuée de Frelons,Enjambre de Avispones
 WPN_HORNET_SWARM_DESC,"Evolution of the Seeker Swarm + Servo-Motors: the swarm floods the screen, 7 homing missiles per volley, faster and fiercer, retargeting relentlessly.","Évolution de l'Essaim Traqueur + Servo-Moteurs : l'essaim sature l'écran, 7 missiles chercheurs par salve, plus rapides et plus mordants, qui re-ciblent sans relâche.","Evolución del Enjambre Rastreador + Servomotores: el enjambre satura la pantalla, 7 misiles teledirigidos por andanada, más rápidos y feroces, que reapuntan sin descanso."
 UPDATE_AVAILABLE,New version {0} available!,Nouvelle version {0} disponible !,¡Nueva versión {0} disponible!
 UPDATE_DOWNLOAD,Get it on itch.io,Récupérer sur itch.io,Conseguir en itch.io
+UPGRADE_GRAFT_SLOTS_NAME,Assimilation Matrix,Matrice d'Assimilation,Matriz de Asimilación
+UPGRADE_GRAFT_SLOTS_DESC,"Your core can bear one more graft. +1 Assimilation slot per level (base 3, up to 5).","Ton noyau supporte une greffe de plus. +1 emplacement d'Assimilation par niveau (base 3, jusqu'à 5).","Tu núcleo soporta un injerto más. +1 espacio de Asimilación por nivel (base 3, hasta 5)."
+UPGRADE_GRAFT_METABOLISM_NAME,Voracious Metabolism,Métabolisme Vorace,Metabolismo Voraz
+UPGRADE_GRAFT_METABOLISM_DESC,"Your core purges corrupted biomass faster: -10% Assimilation gauge threshold per level (max -30%).","Ton noyau purge la biomasse corrompue plus vite : -10% de seuil de jauge d'Assimilation par niveau (max -30%).","Tu núcleo purga la biomasa corrupta más rápido: -10% de umbral de la jauge de Asimilación por nivel (máx. -30%)."
+ASSIM_TITLE,ASSIMILATION,ASSIMILATION,ASIMILACIÓN
+ASSIM_REPLACE_TITLE,ONE GRAFT MUST GIVE WAY,UNE GREFFE DOIT CÉDER SA PLACE,UN INJERTO DEBE CEDER SU LUGAR
+ASSIM_ASSIMILATE,ASSIMILATE,ASSIMILER,ASIMILAR
+ASSIM_REJECT,REJECT,REJETER,RECHAZAR
+ASSIM_KEEP,KEEP,CONSERVER,CONSERVAR
+ASSIM_REPLACE_WITH,Replace: {0},Remplacer : {0},Reemplazar: {0}
+GRAFT_SWARM_SYMBIOTE_NAME,Symbiotic Swarm,Nuée Symbiotique,Enjambre Simbiótico
+GRAFT_SWARM_SYMBIOTE_DESC,"4 mini-swarms of living rust orbit you, biting anything that nears and stealing HP on contact.","4 mini-essaims de rouille vivante t'entourent, mordant ce qui approche et volant des PV au contact.","4 mini-enjambres de herrumbre viva te rodean, mordiendo lo que se acerca y robando PV al contacto."
+GRAFT_ERRATIC_SERVOS_NAME,Erratic Servos,Servos Erratiques,Servos Erráticos
+GRAFT_ERRATIC_SERVOS_DESC,"Drone reflexes grafted to your legs: a brief invulnerable dodge dash, on cooldown.","Les réflexes du drone greffés à tes jambes : une ruade d'esquive brève et invulnérable, à recharge.","Los reflejos del dron injertados en tus piernas: una embestida de esquiva breve e invulnerable, con recarga."
+GRAFT_AIMING_EYE_NAME,Aiming Eye,Œil de Visée,Ojo de Puntería
+GRAFT_AIMING_EYE_DESC,A sentinel's eye grafted into your skull fires on its own at the nearest enemy.,Un œil de sentinelle greffé dans ton crâne tire seul sur l'ennemi le plus proche.,Un ojo de centinela injertado en tu cráneo dispara solo al enemigo más cercano.
+GRAFT_GRAFTED_CARAPACE_NAME,Grafted Carapace,Carapace Greffée,Caparazón Injertado
+GRAFT_GRAFTED_CARAPACE_DESC,"Colossus plating fused to your skin: heavy armor and contact retaliation — but you grow slow.","La plaque du Colosse fusionnée à ta peau : armure lourde et représailles au contact — mais tu deviens lent.","La placa del Coloso fusionada a tu piel: armadura pesada y represalia al contacto, pero te vuelves lento."
+GRAFT_STALKER_WAVE_NAME,Stalker Wave,Onde du Rôdeur,Onda del Acechador
+GRAFT_STALKER_WAVE_DESC,"The Stalker's hunting pulse, now yours: a periodic shockwave that sweeps and pushes back the swarm.","L'onde de chasse du Rôdeur, désormais tienne : une onde de choc périodique qui balaie et repousse la nuée.","El pulso de caza del Acechador, ahora tuyo: una onda de choque periódica que barre y repele al enjambre."

@@ -250,6 +250,11 @@ public partial class EnemySpawner : Node
             node.SetSpriteFrames(data.FramesPath);
         node.GlobalPosition = RandomSpawnPosition();
 
+        // Métadonnées d'Assimilation : routage kill → jauge de greffe (archétype / champion).
+        node.AssimArchetype  = data.AiType;
+        node.AssimIsBoss     = BossIds.Contains(data.Id);
+        node.AssimIsMiniBoss = data.MaxSimultaneous > 0 && !node.AssimIsBoss;
+
         // Effet de biome : modifie la vitesse de base de tous les ennemis.
         node.Speed *= GameManager.Instance?.BiomeEnemySpeedMult ?? 1f;
 

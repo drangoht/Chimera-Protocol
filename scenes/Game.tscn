@@ -4,6 +4,7 @@
 [ext_resource type="Script" uid="uid://cogqwcenbu21l" path="res://src/Systems/EnemySpawner.cs" id="3"]
 [ext_resource type="PackedScene" uid="uid://hud001" path="res://scenes/ui/HUD.tscn" id="4"]
 [ext_resource type="PackedScene" uid="uid://bill22xev3plw" path="res://scenes/ui/LevelUpScreen.tscn" id="5"]
+[ext_resource type="PackedScene" uid="uid://assimscreen001" path="res://scenes/ui/AssimilationScreen.tscn" id="15"]
 [ext_resource type="Script" uid="uid://ip8xkl37r8k1" path="res://src/Systems/RunStatsTracker.cs" id="6"]
 [ext_resource type="Script" uid="uid://dp0o8iom5jmxy" path="res://src/Systems/AetherCoreSpawner.cs" id="7"]
 [ext_resource type="Script" uid="uid://brwyeqww7j1kp" path="res://src/Systems/MagnetSpawner.cs" id="13"]
@@ -117,6 +118,8 @@ script = ExtResource("3")
 [node name="HUD" parent="." unique_id=856505824 instance=ExtResource("4")]
 
 [node name="LevelUpScreen" parent="." unique_id=1029738705 instance=ExtResource("5")]
+
+[node name="AssimilationScreen" parent="." instance=ExtResource("15")]
 
 [node name="RunStatsTracker" type="Node" parent="." unique_id=1327913182]
 script = ExtResource("6")

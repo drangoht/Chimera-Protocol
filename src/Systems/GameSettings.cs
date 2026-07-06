@@ -123,6 +123,19 @@ public partial class GameSettings : Node
         if (_discovered.Add(weaponId)) Save();
     }
 
+    // ── Greffes découvertes (Assimilation) ────────────────────────────────────
+    private readonly HashSet<string> _discoveredGrafts = new();
+
+    /// <summary>La greffe a-t-elle déjà été assimilée au moins une fois ?</summary>
+    public bool IsGraftDiscovered(string graftId) => _discoveredGrafts.Contains(graftId);
+
+    /// <summary>Marque une greffe comme découverte (1re assimilation) et persiste.</summary>
+    public void DiscoverGraft(string graftId)
+    {
+        if (graftId.Length == 0) return;
+        if (_discoveredGrafts.Add(graftId)) Save();
+    }
+
     // ── Touches de déplacement (remap clavier) ────────────────────────────────
     /// <summary>Touche clavier principale d'une action de déplacement (perso ou défaut ZQSD).</summary>
     public Key MoveKey(string action) => _moveKeys.GetValueOrDefault(action, InputRemap.DefaultKeys[action]);
@@ -222,6 +235,10 @@ public partial class GameSettings : Node
         foreach (string id in cfg.GetValue("discovered", "weapons", new string[0]).AsStringArray())
             _discovered.Add(id);
 
+        _discoveredGrafts.Clear();
+        foreach (string id in cfg.GetValue("discovered", "grafts", new string[0]).AsStringArray())
+            _discoveredGrafts.Add(id);
+
         _moveKeys.Clear();
         foreach (string action in InputRemap.Actions)
         {
@@ -239,6 +256,7 @@ public partial class GameSettings : Node
         _bestTimes.Clear();
         _bestDiff.Clear();
         _discovered.Clear();
+        _discoveredGrafts.Clear();
         Save();
     }
 
@@ -265,6 +283,10 @@ public partial class GameSettings : Node
         var disc = new string[_discovered.Count];
         _discovered.CopyTo(disc);
         cfg.SetValue("discovered", "weapons", disc);
+
+        var discGrafts = new string[_discoveredGrafts.Count];
+        _discoveredGrafts.CopyTo(discGrafts);
+        cfg.SetValue("discovered", "grafts", discGrafts);
 
         foreach (var (action, key) in _moveKeys)
             cfg.SetValue("input", action, (int)key);

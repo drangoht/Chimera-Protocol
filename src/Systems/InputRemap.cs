@@ -16,6 +16,9 @@ public static class InputRemap
     public const string Left  = "move_left";
     public const string Right = "move_right";
 
+    /// <summary>Action de ruade (greffe Servos Erratiques) : Maj gauche (clavier) / RB (manette).</summary>
+    public const string Dash  = "dash";
+
     /// <summary>Actions rebindables, dans l'ordre d'affichage (haut/bas/gauche/droite).</summary>
     public static readonly string[] Actions = { Up, Down, Left, Right };
 
@@ -78,6 +81,18 @@ public static class InputRemap
         InputMap.ActionAddEvent(action, new InputEventJoypadButton { ButtonIndex = DpadButtons[action] });
         var (axis, value) = StickAxes[action];
         InputMap.ActionAddEvent(action, new InputEventJoypadMotion { Axis = axis, AxisValue = value });
+    }
+
+    /// <summary>Enregistre les actions hors déplacement (dash) avec leurs bindings par défaut.
+    /// Idempotent (n'écrase pas des bindings déjà présents). À appeler au boot (GameManager).</summary>
+    public static void EnsureExtraActions()
+    {
+        if (!InputMap.HasAction(Dash)) InputMap.AddAction(Dash);
+        if (InputMap.ActionGetEvents(Dash).Count == 0)
+        {
+            InputMap.ActionAddEvent(Dash, new InputEventKey { Keycode = Key.Shift });
+            InputMap.ActionAddEvent(Dash, new InputEventJoypadButton { ButtonIndex = JoyButton.RightShoulder });
+        }
     }
 
     /// <summary>Nom lisible de la touche clavier principale d'une action (pour l'UI Options).</summary>

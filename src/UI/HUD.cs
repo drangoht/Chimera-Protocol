@@ -38,6 +38,8 @@ public partial class HUD : CanvasLayer
 	private Label        _biomeChip   = null!;
 	private HBoxContainer _loadout    = null!;
 	private int          _lastWeaponCount = -1;
+	private HBoxContainer _graftRow   = null!;
+	private int          _lastGraftsVersion = -1;
 
 	private const float HpBarW = 222f;
 	private const float XpBarW = 296f;
@@ -161,8 +163,14 @@ public partial class HUD : CanvasLayer
 		_biomeChip.AddThemeColorOverride("font_color", _accent);
 		root.AddChild(_biomeChip);
 
+		// ── Rangée d'emplacements de greffe (Assimilation) sous la barre XP ──
+		_graftRow = new HBoxContainer { Position = new Vector2(30, 92),
+										MouseFilter = Control.MouseFilterEnum.Ignore };
+		_graftRow.AddThemeConstantOverride("separation", 5);
+		root.AddChild(_graftRow);
+
 		// ── Bandeau de loadout (armes équipées) sous le panneau ──
-		_loadout = new HBoxContainer { Position = new Vector2(20, 116),
+		_loadout = new HBoxContainer { Position = new Vector2(20, 120),
 									   MouseFilter = Control.MouseFilterEnum.Ignore };
 		_loadout.AddThemeConstantOverride("separation", 6);
 		root.AddChild(_loadout);
@@ -238,6 +246,76 @@ public partial class HUD : CanvasLayer
 			_lastWeaponCount = inv.WeaponLevels.Count;
 			RefreshLoadout();
 		}
+
+		// Rafraîchit les emplacements de greffe si l'état a changé (équipement / remplacement / +slot).
+		var assim = AssimilationSystem.Instance;
+		if (assim != null && assim.GraftsVersion != _lastGraftsVersion)
+		{
+			_lastGraftsVersion = assim.GraftsVersion;
+			RefreshGraftSlots();
+		}
+	}
+
+	// ── Emplacements de greffe (Assimilation) ──────────────────────────────────────
+	private void RefreshGraftSlots()
+	{
+		if (_graftRow == null) return;
+		foreach (var c in _graftRow.GetChildren()) c.QueueFree();
+
+		var assim = AssimilationSystem.Instance;
+		if (assim == null) return;
+
+		int slots = assim.SlotCount;
+		var equipped = assim.EquippedGrafts;
+		for (int i = 0; i < slots; i++)
+		{
+			bool filled = i < equipped.Count;
+			var slot = new Panel { CustomMinimumSize = new Vector2(20, 20),
+								   MouseFilter = Control.MouseFilterEnum.Ignore };
+			var st = new StyleBoxFlat();
+			st.SetCornerRadiusAll(4); st.SetBorderWidthAll(1);
+
+			if (filled)
+			{
+				var def = assim.GraftById(equipped[i]);
+				var tint = def != null ? new Color(def.Tint[0], def.Tint[1], def.Tint[2]) : _accent;
+				st.BgColor    = new Color(tint.R, tint.G, tint.B, 0.55f);
+				st.BorderColor = tint;
+
+				// Icône dédiée de la greffe si le PNG existe ; sinon on garde le carré teinté (fallback robuste).
+				var icon = LoadGraftHudIcon(def);
+				if (icon != null)
+				{
+					// Le carré teinté devient un liseré discret derrière l'icône (repère d'archétype).
+					st.BgColor = new Color(tint.R, tint.G, tint.B, 0.25f);
+					var tex = new TextureRect
+					{
+						Texture       = icon,
+						TextureFilter = Control.TextureFilterEnum.Nearest,
+						StretchMode   = TextureRect.StretchModeEnum.KeepAspectCentered,
+						MouseFilter   = Control.MouseFilterEnum.Ignore,
+					};
+					// Remplit le slot (20 px) avec une petite marge → icône ~16-18 px cohérente avec la rangée.
+					tex.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+					tex.OffsetLeft = tex.OffsetTop = 2; tex.OffsetRight = tex.OffsetBottom = -2;
+					slot.AddChild(tex);
+				}
+			}
+			else
+			{
+				st.BgColor    = new Color(0.10f, 0.11f, 0.16f, 0.7f);
+				st.BorderColor = new Color(0.4f, 0.42f, 0.5f, 0.6f);
+			}
+			slot.AddThemeStyleboxOverride("panel", st);
+			_graftRow.AddChild(slot);
+		}
+	}
+
+	/// <summary>Charge la texture d'icône d'une greffe si le PNG existe (repli null → carré teinté).</summary>
+	private static Texture2D? LoadGraftHudIcon(GraftTable.GraftDef? def)
+	{
+		if (def == null || string.IsNullOrEmpty(def.HudIcon)) return null;
+		return Godot.FileAccess.FileExists(def.HudIcon) ? GD.Load<Texture2D>(def.HudIcon) : null;
 	}
 
 	// ── PV ─────────────────────────────────────────────────────────────────────

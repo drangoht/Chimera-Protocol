@@ -58,6 +58,14 @@ public partial class EnemyBase : CharacterBody2D
 
     public bool IsElite => _eliteAffix != EliteAffix.None;
 
+    // ── Métadonnées d'Assimilation (posées par EnemySpawner) : routage kill → jauge de greffe ──
+    /// <summary>Archétype d'IA source (ai.type de enemies.json), pour router le kill vers sa jauge.</summary>
+    public string AssimArchetype { get; set; } = "";
+    /// <summary>Vrai si mini-boss (maxSimultaneous &gt; 0, non-boss) → jauge 'stalker'.</summary>
+    public bool AssimIsMiniBoss { get; set; }
+    /// <summary>Vrai si boss de fin → jauge 'stalker'.</summary>
+    public bool AssimIsBoss { get; set; }
+
     [Signal] public delegate void DiedEventHandler(int xpValue);
 
     /// <summary>Probabilité de dropper un orbe HP à la mort. Surchargeable (mini-boss : 0.25f).</summary>
@@ -311,7 +319,7 @@ public partial class EnemyBase : CharacterBody2D
         _isDead = true;
 
         EmitSignal(SignalName.Died, XpValue);
-        GameManager.Instance?.NotifyEnemyKilled();
+        GameManager.Instance?.NotifyEnemyKilled(this);
         PlayDeathSfx();
         SpawnXpOrb();
         TrySpawnHpOrb();

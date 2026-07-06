@@ -118,7 +118,7 @@ public partial class GraftedColossus : EnemyBase
         // Signaux et XP spawning immédiats (depuis EnemyBase, sans QueueFree)
         _isDead = true;
         EmitSignal(SignalName.Died, XpValue);
-        GameManager.Instance?.NotifyEnemyKilled();
+        GameManager.Instance?.NotifyEnemyKilled(this);
         PlayDeathSfx();
         TriggerEliteExplosion();   // affixe Explosif (élite) — Die() surchargé n'appelle pas base.Die()
 

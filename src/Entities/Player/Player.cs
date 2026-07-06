@@ -33,6 +33,19 @@ public partial class Player : CharacterBody2D
     public  float SpeedMultiplier { get; private set; } = 1f;   // Célérité
     public  bool  Shielded        { get; private set; }          // Égide (invulnérabilité)
 
+    // ── Greffes (système d'Assimilation) ──
+    /// <summary>Gestionnaire des effets de greffes (enfant du joueur). Voir GraftManager.</summary>
+    public GraftManager? Grafts { get; private set; }
+    /// <summary>Multiplicateur de vitesse dû aux greffes (ex. Carapace ×0,82). Ne touche jamais MaxSpeed.</summary>
+    public float GraftSpeedMultiplier { get; set; } = 1f;
+
+    // Dash de la greffe Servos Erratiques (câblé par GraftManager.EnableDash).
+    private bool    _dashEnabled;
+    private float   _dashDistance, _dashDuration, _dashCooldown, _dashCdFloor, _dashIframes;
+    private bool    _dashCdr;
+    private float   _dashCdTimer, _dashActiveLeft, _dashIframeLeft;
+    private Vector2 _dashVel;
+
     /// <summary>Direction de VISÉE des armes dirigées (Lance Vectorielle / Rayon Vecteur) : vers le
     /// curseur SOURIS en clavier/souris, ou selon le STICK DROIT en manette. Bascule automatiquement
     /// selon le dernier périphérique utilisé, là où les autres armes auto-visent le plus proche.</summary>
@@ -84,6 +97,11 @@ public partial class Player : CharacterBody2D
 
         _lastMousePos = GetGlobalMousePosition();
         BuildAimIndicator();
+
+        // Gestionnaire de greffes (enfant : ses comportements orbitent/tirent autour du joueur).
+        Grafts = new GraftManager { Name = "GraftManager" };
+        AddChild(Grafts);
+        Grafts.Init(this);
     }
 
     /// <summary>Réticule directionnel (petit triangle) placé autour du joueur, orienté vers la visée.
@@ -295,11 +313,21 @@ public partial class Player : CharacterBody2D
         if (_isDead) return;
 
         if (_invulnTimer > 0f) _invulnTimer -= (float)delta;
+        UpdateDashTimers((float)delta);
         UpdateBuffs((float)delta);
         UpdateHpRegen(delta);
 
         var direction = Input.GetVector(InputRemap.Left, InputRemap.Right, InputRemap.Up, InputRemap.Down);
-        Velocity = direction.Normalized() * Stats.Speed * SpeedMultiplier;
+
+        // Déclenchement du dash (greffe Servos Erratiques) : ruade brève et invulnérable.
+        if (_dashEnabled && _dashActiveLeft <= 0f && _dashCdTimer <= 0f && Input.IsActionJustPressed("dash"))
+            StartDash(direction);
+
+        if (_dashActiveLeft > 0f)
+            Velocity = _dashVel; // override en burst (ne passe pas par MaxSpeed)
+        else
+            Velocity = direction.Normalized() * Stats.Speed * SpeedMultiplier * GraftSpeedMultiplier;
+
         MoveAndSlide();
         ClampToArena();
         PushEnemiesAside();
@@ -340,6 +368,69 @@ public partial class Player : CharacterBody2D
                 : (Velocity.LengthSquared() > 1f ? Velocity.Normalized() : Vector2.Right);
             enemy.GlobalPosition = GlobalPosition + dir * sep;
         }
+    }
+
+    // ─── Dash (greffe Servos Erratiques) ──────────────────────────────────────
+
+    /// <summary>Active le dash avec ses paramètres (appelé par GraftManager à l'équipement).</summary>
+    public void EnableDash(float distance, float duration, float cooldown, float cooldownFloor,
+                           float iframes, bool affectedByCdr)
+    {
+        _dashEnabled  = true;
+        _dashDistance = distance;
+        _dashDuration = Mathf.Max(0.01f, duration);
+        _dashCooldown = cooldown;
+        _dashCdFloor  = cooldownFloor;
+        _dashIframes  = iframes;
+        _dashCdr      = affectedByCdr;
+        _dashCdTimer  = 0f; // disponible immédiatement
+    }
+
+    /// <summary>Désactive le dash (retrait de la greffe).</summary>
+    public void DisableDash()
+    {
+        _dashEnabled    = false;
+        _dashActiveLeft = 0f;
+    }
+
+    private void UpdateDashTimers(float dt)
+    {
+        if (_dashCdTimer    > 0f) _dashCdTimer    -= dt;
+        if (_dashActiveLeft > 0f) _dashActiveLeft -= dt;
+        if (_dashIframeLeft > 0f) _dashIframeLeft -= dt;
+    }
+
+    private void StartDash(Vector2 moveDir)
+    {
+        var dir = moveDir.LengthSquared() > 0.01f ? moveDir.Normalized() : AimDirection;
+        if (dir.LengthSquared() < 0.01f) dir = Vector2.Down;
+
+        _dashVel        = dir * (_dashDistance / _dashDuration);
+        _dashActiveLeft = _dashDuration;
+        _dashIframeLeft = _dashIframes;
+
+        float reduced = _dashCdr ? _dashCooldown * (1f - Stats.CooldownReduction) : _dashCooldown;
+        _dashCdTimer  = Mathf.Max(_dashCdFloor, reduced);
+
+        HitFlash(0.12f, new Color(1.2f, 1.8f, 2.4f, 1f));
+        AudioSystem.Instance?.PlaySfx("sfx_card_select");
+    }
+
+    /// <summary>Soigne d'un montant FIXE de PV (lifesteal de greffe), sans flash. Clampé à MaxHp.</summary>
+    public void HealFlat(float amount)
+    {
+        if (amount <= 0f || Stats.CurrentHp <= 0f) return;
+        float before = Stats.CurrentHp;
+        Stats.CurrentHp = Mathf.Min(Stats.MaxHp, Stats.CurrentHp + amount);
+        if (Stats.CurrentHp != before)
+            EmitSignal(SignalName.HpChanged, Stats.CurrentHp, Stats.MaxHp);
+    }
+
+    /// <summary>Teinte additive cumulée des greffes sur le SelfModulate du sprite (pas le Modulate,
+    /// réservé au HitFlash/blink — cf. PITFALLS teinte SelfModulate vs Modulate).</summary>
+    public void SetGraftTint(Color tint)
+    {
+        if (_sprite != null) _sprite.SelfModulate = tint;
     }
 
     /// <summary>Auto-Réparation (upgrade meta hp_regen) : régénération continue clampée à MaxHp.</summary>
@@ -462,6 +553,8 @@ public partial class Player : CharacterBody2D
     public void TakeDamage(float amount)
     {
         if (_isDead) return;
+        // I-frames de dash (greffe Servos Erratiques) : invulnérabilité pendant la ruade.
+        if (_dashIframeLeft > 0f) return;
         // Plaque Adaptative (consommable meta damage_absorb) : absorbe totalement les premiers coups.
         if (_absorbChargesLeft > 0)
         {

@@ -163,6 +163,7 @@ public partial class IntroScreen : Control
         AddShot("INTRO_BEAT_3", ShotRustSwarm,        3.6);  // la Rouille Vivante déferle
         AddShot("INTRO_BEAT_4", ShotSanctuaryCore,    3.4);  // les Sanctuaires gardent les Noyaux
         AddShot("INTRO_BEAT_5", ShotArpenteurDescent, 3.8);  // « Ce sera toi » : l'Arpenteur avance
+        AddShot("INTRO_BEAT_6", ShotAssimilation,     4.0);  // « Deviens-les » : arrachement + mutation
 
         _seq.TweenCallback(Callable.From(RevealTitle));      // flash + titre
         _seq.TweenInterval(2.6);
@@ -289,6 +290,60 @@ public partial class IntroScreen : Control
         AddParticles(NoyauParticle, Center + new Vector2(0, 120), Cyan, amount: 40, velocity: 60f,
                      spread: 60f, direction: Vector2.Up, scale: 1.8f);
         SlowZoom(1.0f, 1.15f, 7.0);
+    }
+
+    // Plan 6 — Assimilation : mise à mort → arrachement d'un fragment → mutation (le pitch du jeu).
+    // Réutilise UNIQUEMENT des assets déjà chargés (SwarmFrames, PlayerFrames, FusionAura, NoyauParticle).
+    private void ShotAssimilation()
+    {
+        var playerPos = Center + new Vector2(0, 40);
+        var player = MakeAnimated(PlayerFrames, "idle", playerPos, 5.5f, Colors.White);
+
+        // Ennemi source = le Rust Swarm (cohérence : 1er ennemi rencontré + 1re greffe Nuée Symbiotique).
+        var enemyStart = Center + new Vector2(300, -55);
+        var enemyStop  = Center + new Vector2(95, -6);
+        var enemy = MakeAnimated(SwarmFrames, "move", enemyStart, 2.9f, Rust);
+
+        Vector2 pull = (playerPos - enemyStop).Normalized();   // du mort → vers le joueur (arrachement)
+
+        // 1) Mise à mort (0,0 → 1,2 s) : l'ennemi fond sur le joueur, s'arrête net, flash d'impact bref.
+        var kill = enemy.CreateTween();
+        kill.TweenProperty(enemy, "position", enemyStop, 1.0)
+            .SetTrans(Tween.TransitionType.Sine).SetEase(Tween.EaseType.In);   // arrêt brusque, pas de ralenti
+        kill.TweenProperty(enemy, "modulate", new Color(1.6f, 1.35f, 1.15f), 0.08);  // flash blanc/rust
+        kill.TweenProperty(enemy, "modulate", Rust, 0.12);
+
+        // 2) Arrachement (1,2 → 2,4 s) : l'ennemi se désagrège ; un fragment file vers le joueur,
+        //    virant de la rouille vers l'identité du joueur (cyan). Fade-out du sprite ennemi.
+        var fade = enemy.CreateTween();
+        fade.TweenInterval(1.2);
+        fade.TweenProperty(enemy, "modulate:a", 0f, 0.6).SetTrans(Tween.TransitionType.Sine);
+
+        var frag = player.CreateTween();   // timeline des particules (portée sur un nœud persistant du plan)
+        frag.TweenInterval(1.2);
+        frag.TweenCallback(Callable.From(() => AddParticles(
+            NoyauParticle, enemyStop, Rust, amount: 26, velocity: 150f,
+            spread: 20f, direction: pull, scale: 1.8f)));
+        frag.TweenInterval(0.35);
+        frag.TweenCallback(Callable.From(() => AddParticles(
+            NoyauParticle, enemyStop + pull * 45f, Cyan, amount: 22, velocity: 150f,
+            spread: 16f, direction: pull, scale: 1.6f)));
+
+        // 3) Mutation (2,4 → 4,0 s) : le fragment atteint le joueur → aura de fusion (pop) + teinte
+        //    cumulative subtile sur le joueur (même principe que le halo/teinte HUD des greffes, §13.4).
+        var aura = MakeSprite(FusionAura, playerPos, 0.5f, new Color(Cyan.R, Cyan.G, Cyan.B, 0f));
+        var auraT = aura.CreateTween();
+        auraT.TweenInterval(2.4);
+        auraT.TweenProperty(aura, "scale", Vector2.One * 4f, 0.3).SetTrans(Tween.TransitionType.Back);  // pop
+        auraT.Parallel().TweenProperty(aura, "modulate:a", 0.8f, 0.3);
+        auraT.TweenProperty(aura, "modulate:a", 0f, 1.2);   // fade-out sur le reste du plan
+
+        var tint = player.CreateTween();
+        tint.TweenInterval(2.4);
+        tint.TweenProperty(player, "modulate", new Color(0.75f, 0.85f, 0.85f), 0.5)
+            .SetTrans(Tween.TransitionType.Sine);   // teinte subtile cyan/rust, pas un remplacement du sprite
+
+        SlowZoom(1.0f, 1.1f, 4.0);
     }
 
     // -------------------------------------------------------------------------

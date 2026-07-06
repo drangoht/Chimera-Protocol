@@ -49,7 +49,7 @@ public partial class RustSwarm : EnemyBase
         _isDead = true;
 
         EmitSignal(SignalName.Died, XpValue);
-        GameManager.Instance?.NotifyEnemyKilled();
+        GameManager.Instance?.NotifyEnemyKilled(this);
         PlayDeathSfx();
         SpawnXpOrb();
         SpawnDeathBurst();

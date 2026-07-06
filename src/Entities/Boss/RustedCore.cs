@@ -164,7 +164,7 @@ public partial class RustedCore : EnemyBase
         _cachedDeathPos = GlobalPosition;
 
         EmitSignal(SignalName.Died, XpValue);
-        GameManager.Instance?.NotifyEnemyKilled();
+        GameManager.Instance?.NotifyEnemyKilled(this);
         PlayDeathSfx();
         // Pas de SpawnXpOrb() : vaincre le boss termine la run. 500 XP juste avant l'écran
         // de victoire pourrait ouvrir un LevelUpScreen parasite (cf. OBS-2 du game-tester).

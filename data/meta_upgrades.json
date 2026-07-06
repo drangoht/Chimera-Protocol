@@ -246,6 +246,27 @@
       "effectPerLevel": [1, 1],
       "statTarget": "BonusMagnetCharges",
       "_designNote": "NOUVEAU 2026-07-02. PAS un champ PlayerStats — consommable par run, même pattern que reroll/skip : MagnetSpawner.cs lit GetUpgradeLevel(\"bonus_magnet\") à son _Ready() pour ajouter N fenêtres de spawn supplémentaires APRÈS la 3e existante (~11.7-12.7 min), positionnées en overtime (ex. une toutes les ~8 min après le boss, jusqu'à épuisement des charges) — cohérent avec le fait que l'overtime dure potentiellement très longtemps et que l'XP y devient rare à ramasser manuellement dans le chaos. Item bon marché (550 Échos cumulés), pensé comme un objectif court terme alternatif à starting_weapon_alt."
+    },
+
+    {
+      "id": "graft_slots",
+      "name": "Matrice d'Assimilation",
+      "description": "+1 emplacement de greffe (Assimilation). Base 3, jusqu'à 5. Change fondamentalement le pouvoir de la chimère.",
+      "maxLevel": 2,
+      "costPerLevel": [500, 950],
+      "effectPerLevel": [1, 1],
+      "statTarget": "GraftSlotBonus",
+      "_designNote": "NOUVEAU 2026-07-06 (système d'Assimilation, docs/DESIGN_ASSIMILATION.md §17). PAS un champ PlayerStats — valeur lue directement par AssimilationSystem.Reset() via GetUpgradeLevel(\"graft_slots\") au début de run (même pattern que reroll/skip/overtime_stabilizer). Slots = min(3 + niveau, 5). Cher (comme extra_life 450/800) car une chimère à 5 greffes est un autre jeu → objectif long terme."
+    },
+    {
+      "id": "graft_metabolism",
+      "name": "Métabolisme Vorace",
+      "description": "-10% de seuil de jauge d'assimilation par niveau (max -30%). Les greffes arrivent plus vite.",
+      "maxLevel": 3,
+      "costPerLevel": [180, 320, 520],
+      "effectPerLevel": [0.10, 0.10, 0.10],
+      "statTarget": "GraftGaugeSpeedBonus",
+      "_designNote": "NOUVEAU 2026-07-06 (système d'Assimilation, docs/DESIGN_ASSIMILATION.md §17). PAS un champ PlayerStats — lu par AssimilationSystem.Reset() : GraftGaugeSpeedBonus = niveau * 0.10 (max 0.30). Seuil effectif = round(threshold * (1 - GraftGaugeSpeedBonus)), cf. GraftTable.EffectiveThreshold. Bon marché (comme reroll 160/320/520). Formule = round (et non ceil) pour reproduire les 5 valeurs cibles du design §17 à -30% : 30->21, 24->17, 14->10, 7->5, 3->2 (ceil aurait laissé stalker à 3, upgrade sans effet sur cette jauge)."
     }
   ],
 

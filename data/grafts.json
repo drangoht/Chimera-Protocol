@@ -1,0 +1,125 @@
+{
+  "_comment": "grafts.json — Chimera Protocol. Système d'Assimilation (greffes). Chargé par GraftTable/AssimilationSystem. Voir docs/DESIGN_ASSIMILATION.md Partie II. Modifiable sans recompiler.",
+
+  "slots": {
+    "baseCount": 3,
+    "_comment_slots": "Extensible via l'upgrade méta 'graft_slots' (lu comme reroll/skip, PAS un champ PlayerStats). Max 5.",
+    "maxCount": 5,
+    "replacementWhenFull": true
+  },
+
+  "gauges": {
+    "_comment": "Une jauge par clé (archétype d'IA + 'stalker' pour les champions). Seuil en 'points d'assimilation'.",
+    "thresholds": { "swarm": 30, "drone": 24, "sentinel": 14, "colossus": 4, "stalker": 5 },
+    "aiTypeToGauge": {
+      "straight_chase": "swarm",
+      "erratic_chase":  "drone",
+      "ranged_kiter":   "sentinel",
+      "slow_hunter":    "colossus"
+    },
+    "pointsBasicKill": 1,
+    "eliteKillArchetypePoints": 2,
+    "eliteKillStalkerPoints": 1,
+    "miniBossStalkerPoints": 2,
+    "bossStalkerPoints": 3,
+    "ownedGraftPausesGauge": true,
+    "resumePausedGaugeFromSavedValue": true,
+    "declineThresholdMultiplier": 1.5,
+    "gaugeSpeedMetaBonusStat": "GraftGaugeSpeedBonus",
+    "_comment_speed_meta": "Réduction de seuil (%) apportée par l'upgrade méta 'graft_metabolism' (max -30%). Seuil effectif = round(threshold * (1 - GraftGaugeSpeedBonus))."
+  },
+
+  "grafts": [
+    {
+      "id": "swarm_symbiote",
+      "name": "Nuée Symbiotique",
+      "gauge": "swarm",
+      "sourceAiType": "straight_chase",
+      "rarity": "common",
+      "description": "4 mini-essaims orbitent et mordent ce qui t'approche. Vole des PV au contact.",
+      "hudIcon": "res://assets/sprites/grafts/swarm_symbiote_icon.png",
+      "tint": [1.3, 0.55, 0.4],
+      "effects": {
+        "orbitingAllies": {
+          "count": 4, "orbitRadiusPx": 48, "angularSpeedDegPerSec": 165,
+          "contactDamage": 8, "rehitIntervalSec": 0.45, "scalesWithDamageMultiplier": 1,
+          "lifestealFraction": 0.06
+        }
+      },
+      "statMods": {}
+    },
+    {
+      "id": "erratic_servos",
+      "name": "Servos Erratiques",
+      "gauge": "drone",
+      "sourceAiType": "erratic_chase",
+      "rarity": "common",
+      "description": "Ruade d'esquive brève et invulnérable, à recharge.",
+      "hudIcon": "res://assets/sprites/grafts/erratic_servos_icon.png",
+      "tint": [0.6, 0.85, 1.3],
+      "effects": {
+        "dash": {
+          "distancePx": 180, "durationSec": 0.18, "cooldownSec": 3.5,
+          "cooldownFloorSec": 1.5, "affectedByCooldownReduction": 1,
+          "iframesSec": 0.25
+        }
+      },
+      "statMods": {}
+    },
+    {
+      "id": "aiming_eye",
+      "name": "Œil de Visée",
+      "gauge": "sentinel",
+      "sourceAiType": "ranged_kiter",
+      "rarity": "rare",
+      "description": "Un œil greffé tire seul sur l'ennemi le plus proche.",
+      "hudIcon": "res://assets/sprites/grafts/aiming_eye_icon.png",
+      "tint": [1.3, 0.75, 0.4],
+      "effects": {
+        "autoTurret": {
+          "cooldownSec": 1.4, "affectedByCooldownReduction": 1, "cooldownFloorSec": 0.15,
+          "damage": 18, "scalesWithDamageMultiplier": 1, "pierceCount": 1,
+          "projectileSpeed": 320, "targetRangePx": 420
+        }
+      },
+      "statMods": {}
+    },
+    {
+      "id": "grafted_carapace",
+      "name": "Carapace Greffée",
+      "gauge": "colossus",
+      "sourceAiType": "slow_hunter",
+      "rarity": "rare",
+      "description": "Armure lourde et représailles de contact. Mais tu deviens lent.",
+      "hudIcon": "res://assets/sprites/grafts/grafted_carapace_icon.png",
+      "tint": [0.7, 0.5, 0.45],
+      "effects": {
+        "thorns": { "damage": 18, "radiusPx": 40, "rehitIntervalSec": 0.6, "scalesWithDamageMultiplier": 1 }
+      },
+      "statMods": {
+        "damageReductionAdd": 0.15,
+        "maxHpAdd": 25,
+        "speedMult": 0.82,
+        "_comment_caps": "damageReductionAdd passe par StatCaps.CapDamageReduction (hardcap 0.40). speedMult appliqué via Player.GraftSpeedMultiplier, ne touche pas MaxSpeed."
+      }
+    },
+    {
+      "id": "stalker_wave",
+      "name": "Onde du Rôdeur",
+      "gauge": "stalker",
+      "sourceAiType": "champion",
+      "rarity": "epic",
+      "description": "Onde de choc périodique qui balaie et repousse la nuée.",
+      "hudIcon": "res://assets/sprites/grafts/stalker_wave_icon.png",
+      "tint": [1.2, 0.4, 0.9],
+      "effects": {
+        "shockwave": {
+          "cooldownSec": 4.0, "affectedByCooldownReduction": 1,
+          "radiusPx": 160, "damage": 60, "scalesWithDamageMultiplier": 1,
+          "knockbackPx": 60
+        }
+      },
+      "statMods": {}
+    }
+  ]
+}

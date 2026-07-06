@@ -115,9 +115,44 @@ Tout nouveau chemin de sortie de run doit l'appeler aussi.
 - Musique WAV : `loop_mode=0` par défaut dans Godot 4.7 → reboucler via signal `Finished` dans `AudioSystem`
 - `AudioSystem.LoadMusic()` tente `.ogg` en priorité, puis `.wav` fallback
 
+## Assimilation / greffes (écrans modaux, routage, effets)
+- **Deux écrans modaux qui togglent `GetTree().Paused` se marchent dessus** (LevelUpScreen +
+  AssimilationScreen) → passer par **`ModalQueue`** (statique, `src/UI/`) : chaque écran *soumet*
+  une présentation (`Submit(tree, show, highPriority)`) et signale la résolution (`Done()`). UN SEUL
+  `Paused=false` rendu quand la file est vide ; le level-up est prioritaire (highPriority) ; les deux
+  écrans ne sont donc **jamais affichés en même temps** (pas de conflit de focus/clic). `ModalQueue.Reset()`
+  au début de chaque run (`GameManager.RegisterPlayer`) sinon un état bloqué (mort en plein écran modal)
+  fuit sur la run suivante. Tout NOUVEL écran modal pausant doit utiliser ModalQueue (ne PAS toggler `Paused` en direct).
+- **`AssimilationSystem.GaugeFilled` peut être émis depuis un callback physique** (`EnemyBase.Die` ←
+  `Bullet.OnBodyEntered`). Donc `AssimilationScreen` **pré-construit TOUTE son UI dans `_Ready`** (aucun
+  `AddChild` à la présentation — sinon crash « AddChild interdit en callback physique ») ; la présentation
+  ne fait que configurer/afficher des nœuds existants, et `GrabFocus` est **différé** (`Callable.From(...).CallDeferred()`).
+- **Effets de greffe (mini-essaims, tourelle, thorns, onde) dans `GraftManager._Process`** (pas
+  `_PhysicsProcess`) → `AddChild` de balles/anneaux sûr, et gel automatique pendant une pause modale
+  (GraftManager est enfant du Player, `ProcessMode` hérité). Le **dash** est l'exception : il lit l'entrée
+  et déplace le corps → il vit dans `Player._PhysicsProcess` (burst via override de `Velocity`, i-frames
+  propres qui court-circuitent `TakeDamage`, jamais soumis à `MaxSpeed`).
+- **Retrait propre d'un stat mod malgré les hardcaps** : à l'équipement, stocker le **delta réellement
+  appliqué** (post-`StatCaps.CapDamageReduction`) et le soustraire au retrait (`GraftManager.StatDelta`) —
+  soustraire la valeur brute (0,15) après écrêtage donnerait un résultat faux. Le malus de vitesse passe par
+  `Player.GraftSpeedMultiplier` (produit des `speedMult` actifs), **jamais** par `Stats.Speed`/`MaxSpeed`.
+- **Routage kill→jauge = logique pure** (`GraftTable.RouteKill`, testé xUnit) : le kill est notifié via
+  `GameManager.NotifyEnemyKilled(this)` (les 9 `Die()`/overrides passent `this`). Les métadonnées
+  (`AssimArchetype`/`AssimIsMiniBoss`/`AssimIsBoss`) sont posées par `EnemySpawner.SpawnEnemy`. Une jauge
+  d'une greffe équipée est **en pause** ; refus → seuil ×1,5 pour le cycle (`_declined`).
+- **Nouvelles clés `ui.csv` non prises en compte au runtime** : les `.translation` compilés ne sont PAS
+  régénérés par un simple `--headless` ; lancer **`godot --headless --import`** (ou l'éditeur) pour
+  recompiler la CSV. En attendant, `AssimilationScreen.TFallback` retombe sur le texte FR du `grafts.json`
+  (l'écran reste lisible), mais `HubScreen` (Loc.T direct) afficherait la clé brute.
+
 ## Tests headless
 - `LevelUpScreen` met l'arbre EN PAUSE → gèle le serveur physique en headless (neutraliser l'XP de départ pour tester le gameplay)
 - `Area2D` ne détecte un corps que via vrai mouvement physique (`MoveAndSlide`) — pas un téléport ni un `Tween`
+
+## Casse de fichier C# sur Windows — `HUD.cs` réécrit en `Hud.cs` casse l'instanciation from-source
+- **État canonique (ne pas dévier)** : fichier `src/UI/HUD.cs` (majuscules) + classe `public partial class HUD` + sidecar `src/UI/HUD.cs.uid` + ext_resource `path="res://src/UI/HUD.cs"` dans `scenes/ui/HUD.tscn`. Tout doit être en **`HUD`** — Godot exige que le nom de classe corresponde **exactement** au nom de fichier (sensible à la casse).
+- **Piège** : sur FS Windows insensible à la casse, écrire le fichier via l'outil Write avec un chemin `src/UI/Hud.cs` (minuscule) **n'échoue pas** et écrase le même fichier, mais **change la casse NTFS réelle sur disque** en `Hud.cs`. La build incrémentale C# enregistre alors la classe `HUD` sous le chemin `res://src/UI/Hud.cs`, en désaccord avec le `.tscn` (`res://src/UI/HUD.cs`). Symptôme au lancement from-source (`godot ... res://scenes/Game.tscn`) : `ERROR: Cannot instantiate C# script because the associated class could not be found. Script: 'res://src/UI/HUD.cs'` → le nœud `HUD` (CanvasLayer) existe **sans script** → aucune barre HP/XP/timer/greffe (le reste tourne : biome, joueur, `LevelUpScreen`, `Banner`, autoloads OK). **N'affecte PAS l'export Windows** (git tracke `HUD.cs`, un checkout/export propre a la bonne casse) — c'est un artefact du working tree local.
+- **Résolution (appliquée 2026-07-06)** : (1) restaurer la casse disque via double rename (FS insensible) — `mv src/UI/Hud.cs src/UI/_tmp.cs && mv src/UI/_tmp.cs src/UI/HUD.cs` ; (2) **rebuild propre** obligatoire pour reconstruire le mapping classe→chemin : `rm -rf obj bin .godot/mono && dotnet build` ; (3) `godot --headless --import`. Vérif : `godot --headless res://scenes/Game.tscn --quit-after 150` ne doit plus émettre l'erreur. **Règle de prévention** : ne jamais référencer ce fichier en `Hud.cs` dans un outil d'édition — toujours `src/UI/HUD.cs`.
 
 ## Export .NET & release itch (course dotnet publish)
 - **Godot 4.7 .NET rend la main à PowerShell AVANT la fin de `dotnet publish`** : `tools/release_itch.ps1` peut alors stager un runtime `data_*/` INCOMPLET (DLL manquantes) et le pousser via butler **sans erreur visible** → build amputée en ligne. Symptôme vécu : `DiscordRPC.dll`/`Newtonsoft.Json.dll` absentes (183 DLL au lieu de 185), Discord non fonctionnel.

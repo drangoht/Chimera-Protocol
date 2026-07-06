@@ -22,12 +22,6 @@ public partial class LevelUpScreen : CanvasLayer
     // Données des 3 cartes actuelles
     private Godot.Collections.Array _currentCards = new();
 
-    // File d'attente des level-ups : un gros gain d'XP (XP de départ, boss…) peut
-    // déclencher plusieurs montées de niveau d'un coup. On les empile et on présente
-    // une carte après l'autre au lieu d'écraser/perdre les écrans intermédiaires.
-    private readonly System.Collections.Generic.Queue<Godot.Collections.Array> _queue = new();
-    private bool _active = false;
-
     // Couleurs de rareté
     private static readonly Color ColorCommon = new(0.67f, 0.67f, 0.67f);
     private static readonly Color ColorRare   = new(0.27f, 0.67f, 1.0f);
@@ -65,31 +59,16 @@ public partial class LevelUpScreen : CanvasLayer
         ProcessMode = ProcessModeEnum.Always;
     }
 
-    /// <summary>Reçoit une demande d'écran de level-up : empile et affiche si rien en cours.</summary>
+    /// <summary>Reçoit une demande d'écran de level-up : la soumet à la file modale partagée
+    /// (prioritaire sur l'assimilation, §13.2). Un SEUL Paused est géré par ModalQueue.</summary>
     private void OnShowRequested(Godot.Collections.Array cards)
     {
-        _queue.Enqueue(cards);
-        if (!_active) ShowNext();
-    }
-
-    /// <summary>Affiche la prochaine carte en file, ou reprend le jeu si la file est vide.</summary>
-    private void ShowNext()
-    {
-        if (_queue.Count == 0)
-        {
-            _active  = false;
-            Visible  = false;
-            GetTree().Paused = false;
-            return;
-        }
-        _active = true;
-        Display(_queue.Dequeue());
+        ModalQueue.Submit(GetTree(), () => Display(cards), highPriority: true);
     }
 
     private void Display(Godot.Collections.Array cards)
     {
         Visible = true;
-        GetTree().Paused = true;
 
         bool isWeaponDrop = LevelUpSystem.Instance?.IsWeaponDrop ?? false;
         if (isWeaponDrop)
@@ -230,8 +209,10 @@ public partial class LevelUpScreen : CanvasLayer
         // Réinitialise l'état weapon drop dans LevelUpSystem
         LevelUpSystem.Instance?.ResolveWeaponDrop();
 
-        // Enchaîne sur le level-up suivant en file, ou reprend le jeu si vide.
-        ShowNext();
+        // Ferme cette présentation ; ModalQueue enchaîne (level-up suivant, assimilation en attente,
+        // ou reprise du jeu si la file est vide).
+        Visible = false;
+        ModalQueue.Done();
     }
 
     // -------------------------------------------------------------------------
@@ -296,7 +277,8 @@ public partial class LevelUpScreen : CanvasLayer
         if (sys == null || !sys.TryConsumeSkip()) return;
         AudioSystem.Instance?.PlaySfx("sfx_ui_button");
         sys.ResolveWeaponDrop();
-        ShowNext();
+        Visible = false;
+        ModalQueue.Done();
     }
 
     /// <summary>Met à jour libellés/visibilité/état des boutons selon les consommables restants.</summary>

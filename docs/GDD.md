@@ -40,6 +40,53 @@ Le joueur incarne un **Arpenteur** envoyé en mission d'extraction dans un Sanct
 plus longtemps possible, absorber de l'énergie pour évoluer sur place, puis extraire un maximum de
 Noyaux avant la mort ou la fin du temps imparti.
 
+### 3.1 Le Protocole Chimère — comment l'Arpenteur assimile sans être corrompu
+
+> **LORE CANONIQUE — validé par l'utilisateur le 2026-07-06.** Répond à la question de cohérence
+> soulevée par `game-tester`/`game-designer` sur le système d'Assimilation (greffes,
+> `docs/DESIGN_ASSIMILATION.md`) : comment un Arpenteur peut-il greffer de la Rouille Vivante sur son
+> corps sans être converti par elle ? Détail développé dans `docs/lore-bible.md` §7.
+
+La Rouille Vivante n'est pas un poison qui tue — c'est une corruption qui **intègre** (cf. la
+cinématique d'ouverture : *« Elle ne détruit pas : elle intègre. Elle transforme. »*). Un humain, un
+cyborg ou un automate en contact prolongé avec elle ne meurt pas : il devient un ennemi de plus. C'est
+précisément ce risque qui rend l'Assimilation crédible comme **technique maîtrisée** plutôt que comme
+simple pillage de pièces détachées : les Arpenteurs sont les seuls formés à la pratiquer sans se faire
+retourner, parce qu'ils portent en eux la seule chose qui puisse discipliner la Rouille — l'Aether.
+
+Chaque Arpenteur part en mission avec un **noyau de greffe** : un éclat d'Aether personnel, greffé au
+même titre que l'augmentation des cyborgs (« Greffés », §4 — l'Assimilation n'invente pas la
+greffe, elle en est le prolongement extrême). Au moment où l'Arpenteur porte le coup de grâce à une
+créature de Rouille, ce noyau **purge l'intention corruptrice du tissu prélevé** dans l'instant même
+de la greffe : il n'assimile pas la Rouille telle quelle, il assimile ce qu'elle a fait à la biomasse
+— le muscle-servo du Drone, l'œil de la Sentinelle, la carapace du Colosse — vidé de sa volonté
+d'intégrer à son tour son porteur. Le Protocole Chimère est donc un acte de **domestication**, pas
+de guérison : la Rouille grafée reste en l'Arpenteur, neutralisée mais présente, ce qui explique la
+teinte rouille/organique qui s'accumule visuellement sur lui à mesure qu'il assimile (halo/teinte du
+HUD, cf. `docs/DESIGN_ASSIMILATION.md` §13.4) — ce n'est pas un simple effet cosmétique, c'est la
+marque diégétique de la Rouille qu'il porte, tenue en respect.
+
+Cette domestication a un **prix assumé**, qui justifie les règles de jeu déjà écrites plutôt que de
+les contredire :
+- **Le nombre de slots est limité** (3, extensible via le Hub) parce que le noyau de greffe d'un
+  Arpenteur ne peut stabiliser qu'une quantité finie de Rouille contenue à la fois — au-delà, il
+  faut choisir laquelle on relâche pour en contenir une autre (le « choix cornélien » de
+  remplacement, §13.3 du design, devient un choix littéral : quelle part de Rouille dormante
+  garder en soi).
+- **Le remplacement n'est pas gratuit dans la fiction** : relâcher une greffe libère un instant la
+  Rouille qu'elle contenait avant que le noyau ne la neutralise à nouveau ailleurs — cohérent avec
+  l'idée qu'une greffe assimilée reste « vivante » tant qu'elle est portée.
+- **Un Arpenteur qui pousserait le Protocole trop loin** (au-delà de ce que son noyau peut tenir)
+  risquerait de perdre le contrôle de la domestication — piste narrative pour une fin d'exploitation
+  future (échos, complétions, ou un antagoniste/mini-boss "Arpenteur corrompu" qui aurait échoué le
+  Protocole), sans rien contredire de l'existant.
+
+Ce cadrage explique aussi pourquoi le boss de fin, **Le Noyau Rouillé**, porte ce nom : il n'est pas
+une simple grosse créature, mais un ancien noyau de stabilisation — de Sanctuaire ou d'Arpenteur —
+qui a cédé, où l'équilibre entre Aether et Rouille s'est inversé. Le joueur, en l'affrontant, voit
+ce qui arrive quand le Protocole échoue ; en l'assimilant à travers ses greffes tout au long de la
+run, il en démontre l'inverse.
+
 ## 4. Personnages jouables
 
 Trois archétypes prévus à terme (un seul requis pour le MVP, cf. §13) :
