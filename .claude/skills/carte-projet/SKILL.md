@@ -61,7 +61,10 @@ fréquence + tirage + `EliteModifiers`, cf. GDD §22) · **GraftTable** (Assimil
 `MainMenu` (+ **bandeau MAJ** → §MAJ) · `CharacterSelectScreen` · `LevelSelectScreen` ·
 `HubScreen` · `BestiaryScreen` / `ArsenalScreen` / `CodexScreenBase` (+ `Codex`) ·
 `OptionsScreen` · `PauseScreen` · `LevelUpScreen` · **`AssimilationScreen`** (écran modal des
-greffes, UI construite en code) · **`ModalQueue`** (statique — coordonne LevelUpScreen +
+greffes, UI construite en code) · **`ChimeraCodexScreen`** (codex explicatif des greffes/fusions —
+sous-classe `CodexScreenBase`, entrées dérivées de `AssimilationSystem.Config` ; accessible depuis le
+bouton « Chimère » du MainMenu ; `CodexScreenBase.IntroText` = paragraphe d'intro optionnel) ·
+**`ModalQueue`** (statique — coordonne LevelUpScreen +
 AssimilationScreen : un SEUL `Paused`, level-up prioritaire ; jamais affichés simultanément) ·
 `RunEndScreen` · `IntroScreen`
 (cinématique) · `HUD` (+ rangée d'emplacements de greffe sous la barre XP) · `BuffBar` · `Banner` · `BiomeCatalog` · `Characters` (registre

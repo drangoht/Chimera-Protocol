@@ -270,7 +270,7 @@ public partial class HUD : CanvasLayer
 		for (int i = 0; i < slots; i++)
 		{
 			bool filled = i < equipped.Count;
-			var slot = new Panel { CustomMinimumSize = new Vector2(20, 20),
+			var slot = new Panel { CustomMinimumSize = new Vector2(26, 26),
 								   ClipContents = true, // garde-fou : rien ne peut déborder du slot (icônes plein-cadre)
 								   MouseFilter = Control.MouseFilterEnum.Ignore };
 			var st = new StyleBoxFlat();
@@ -305,8 +305,10 @@ public partial class HUD : CanvasLayer
 			}
 			else
 			{
-				st.BgColor    = new Color(0.10f, 0.11f, 0.16f, 0.7f);
-				st.BorderColor = new Color(0.4f, 0.42f, 0.5f, 0.6f);
+				// Emplacement vide : liseré magenta discret pour identifier la rangée « Assimilation »
+				// (distincte du loadout d'armes, teinté biome).
+				st.BgColor    = new Color(0.16f, 0.08f, 0.16f, 0.65f);
+				st.BorderColor = new Color(0.85f, 0.30f, 0.80f, 0.55f);
 			}
 			slot.AddThemeStyleboxOverride("panel", st);
 			_graftRow.AddChild(slot);

@@ -9,6 +9,7 @@ public partial class MainMenu : Control
     private Button    _hubButton      = null!;
     private Button    _bestiaryButton = null!;
     private Button    _arsenalButton  = null!;
+    private Button    _chimeraButton  = null!;
     private Button    _optionsButton  = null!;
     private Button    _quitButton     = null!;
     private ColorRect _fadeOverlay    = null!;
@@ -29,6 +30,7 @@ public partial class MainMenu : Control
         _hubButton      = GetNode<Button>("VBox/HubButton");
         _bestiaryButton = GetNode<Button>("VBox/BestiaryButton");
         _arsenalButton  = GetNode<Button>("VBox/ArsenalButton");
+        _chimeraButton  = GetNode<Button>("VBox/ChimeraButton");
         _optionsButton  = GetNode<Button>("VBox/OptionsButton");
         _quitButton     = GetNode<Button>("VBox/QuitButton");
         _fadeOverlay    = GetNode<ColorRect>("FadeOverlay");
@@ -36,6 +38,7 @@ public partial class MainMenu : Control
         // Les boutons Bestiaire/Arsenal/Options sont ajoutés sans styleboxes dans le .tscn — stylés ici.
         StyleMenuButton(_bestiaryButton);
         StyleMenuButton(_arsenalButton);
+        StyleMenuButton(_chimeraButton);
         StyleMenuButton(_optionsButton);
 
         // --- Signaux boutons ---
@@ -43,6 +46,7 @@ public partial class MainMenu : Control
         _hubButton.Pressed      += OnHubPressed;
         _bestiaryButton.Pressed += OnBestiaryPressed;
         _arsenalButton.Pressed  += OnArsenalPressed;
+        _chimeraButton.Pressed  += OnChimeraPressed;
         _optionsButton.Pressed  += OnOptionsPressed;
         _quitButton.Pressed     += OnQuitPressed;
 
@@ -51,6 +55,7 @@ public partial class MainMenu : Control
         ConnectHoverEffects(_hubButton);
         ConnectHoverEffects(_bestiaryButton);
         ConnectHoverEffects(_arsenalButton);
+        ConnectHoverEffects(_chimeraButton);
         ConnectHoverEffects(_optionsButton);
         ConnectHoverEffects(_quitButton);
 
@@ -167,6 +172,7 @@ public partial class MainMenu : Control
         _hubButton.Text      = Loc.T("MENU_HUB");
         _bestiaryButton.Text = Loc.T("MENU_BESTIARY");
         _arsenalButton.Text  = Loc.T("MENU_ARSENAL");
+        _chimeraButton.Text  = TextOr("MENU_CHIMERA", "Chimère");
         _optionsButton.Text  = Loc.T("MENU_OPTIONS");
         _quitButton.Text     = Loc.T("MENU_QUIT");
     }
@@ -291,6 +297,19 @@ public partial class MainMenu : Control
         TransitionTo("res://scenes/ui/ArsenalScreen.tscn");
     }
 
+    private void OnChimeraPressed()
+    {
+        AudioSystem.Instance?.PlaySfx("sfx_ui_button");
+        TransitionTo("res://scenes/ui/ChimeraCodexScreen.tscn");
+    }
+
+    /// <summary>Loc.T avec repli si la clé n'est pas encore traduite (nouvelle clé de menu).</summary>
+    private static string TextOr(string key, string fallback)
+    {
+        string t = Loc.T(key);
+        return t == key ? fallback : t;
+    }
+
     private void OnOptionsPressed()
     {
         AudioSystem.Instance?.PlaySfx("sfx_ui_button");
@@ -340,6 +359,7 @@ public partial class MainMenu : Control
         _hubButton.Disabled      = true;
         _bestiaryButton.Disabled = true;
         _arsenalButton.Disabled  = true;
+        _chimeraButton.Disabled  = true;
         _optionsButton.Disabled  = true;
         _quitButton.Disabled     = true;
 

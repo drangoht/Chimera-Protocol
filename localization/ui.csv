@@ -4,6 +4,7 @@ MENU_PLAY,Play,Jouer,Jugar
 MENU_HUB,Hub,Hub,Hub
 MENU_BESTIARY,Bestiary,Bestiaire,Bestiario
 MENU_ARSENAL,Arsenal,Arsenal,Arsenal
+MENU_CHIMERA,Chimera,Chimère,Quimera
 MENU_OPTIONS,Options,Options,Opciones
 MENU_QUIT,Quit,Quitter,Salir
 MENU_LANGUAGE,Language,Langue,Idioma
@@ -319,6 +320,8 @@ ASSIM_KEEP,KEEP,CONSERVER,CONSERVAR
 ASSIM_REPLACE_WITH,Replace: {0},Remplacer : {0},Reemplazar: {0}
 ASSIM_FUSION_TITLE,FUSION,FUSION,FUSIÓN
 ASSIM_FUSION_TAG,FUSION,FUSION,FUSIÓN
+CHIMERA_CODEX_TITLE,CHIMERA — ASSIMILATION,CHIMÈRE — ASSIMILATION,QUIMERA — ASIMILACIÓN
+CHIMERA_CODEX_INTRO,"Don't just kill the Rust's creatures: become them. Each enemy archetype fills an assimilation gauge; once full, you can graft part of the creature onto your body. Grafts fill limited, replaceable slots. Two compatible grafts can fuse into a superior form that frees up a slot.","Ne te contente pas de tuer les créatures de la Rouille : deviens-les. Chaque archétype d'ennemi remplit une jauge d'assimilation ; une fois pleine, tu peux greffer une partie de la créature à ton corps. Les greffes occupent des emplacements limités (remplaçables). Deux greffes compatibles peuvent fusionner en une forme supérieure qui libère un emplacement.","No te limites a matar a las criaturas de la Herrumbre: conviértete en ellas. Cada arquetipo de enemigo llena un medidor de asimilación; una vez lleno, puedes injertar parte de la criatura en tu cuerpo. Los injertos ocupan espacios limitados y reemplazables. Dos injertos compatibles pueden fusionarse en una forma superior que libera un espacio."
 ASSIM_FUSE,ASSIMILATE FUSION,ASSIMILER LA FUSION,ASIMILAR FUSIÓN
 ASSIM_REFUSE,REFUSE,REFUSER,RECHAZAR
 GRAFT_SWARM_SYMBIOTE_NAME,Symbiotic Swarm,Nuée Symbiotique,Enjambre Simbiótico

@@ -12,6 +12,10 @@ public abstract partial class CodexScreenBase : Control
     protected abstract Color  TitleAccent { get; }
     protected abstract IReadOnlyList<CodexEntry> Entries { get; }
 
+    /// <summary>Paragraphe d'introduction optionnel affiché sous le titre, avant la liste
+    /// (null = aucun, cas Bestiaire/Arsenal). Sert aux écrans qui expliquent un système.</summary>
+    protected virtual string? IntroText => null;
+
     /// <summary>Une entrée doit-elle être affichée « verrouillée » (non découverte) ? Par défaut non
     /// (Bestiaire). L'Arsenal surcharge pour masquer les armes non encore découvertes.</summary>
     protected virtual bool IsEntryLocked(CodexEntry e) => false;
@@ -72,6 +76,15 @@ public abstract partial class CodexScreenBase : Control
             CustomMinimumSize = new Vector2(0, 2),
         };
         root.AddChild(sep);
+
+        // Paragraphe d'introduction (écrans « système » : Chimère…). Absent pour Bestiaire/Arsenal.
+        if (IntroText is { Length: > 0 } intro)
+        {
+            var introLbl = new Label { Text = intro, AutowrapMode = TextServer.AutowrapMode.WordSmart };
+            introLbl.AddThemeFontSizeOverride("font_size", 15);
+            introLbl.AddThemeColorOverride("font_color", new Color(0.78f, 0.78f, 0.88f));
+            root.AddChild(introLbl);
+        }
 
         // Liste scrollable
         _scroll = new ScrollContainer

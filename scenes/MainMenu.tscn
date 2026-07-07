@@ -163,11 +163,11 @@ anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
 offset_left = -130.0
-offset_top = 222.0
+offset_top = 185.0
 offset_right = 130.0
-offset_bottom = 655.0
+offset_bottom = 665.0
 alignment = 1
-theme_override_constants/separation = 10
+theme_override_constants/separation = 8
 
 [node name="PlayButton" type="Button" parent="VBox"]
 custom_minimum_size = Vector2(260, 60)
@@ -198,6 +198,12 @@ theme_override_colors/font_color = Color(0.8, 0.8, 1.0, 1)
 [node name="ArsenalButton" type="Button" parent="VBox"]
 custom_minimum_size = Vector2(260, 56)
 text = "Arsenal"
+theme_override_font_sizes/font_size = 20
+theme_override_colors/font_color = Color(0.8, 0.8, 1.0, 1)
+
+[node name="ChimeraButton" type="Button" parent="VBox"]
+custom_minimum_size = Vector2(260, 56)
+text = "Chimère"
 theme_override_font_sizes/font_size = 20
 theme_override_colors/font_color = Color(0.8, 0.8, 1.0, 1)
 
