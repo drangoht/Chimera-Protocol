@@ -4,6 +4,27 @@
 > `release-manager`). Entrées en ordre décroissant (la plus récente en haut). Ton orienté
 > joueur, EN puis FR (audience itch surtout anglophone).
 
+## v1.14.1 — Nova Strike gets its icon (2026-07-07)
+
+**Polish**
+- **Nova Strike now has its own icon.** The third fusion was still showing a plain tinted square — it now
+  gets a proper crafted icon: a violet-to-magenta star burst (its Stalker's Wave nova) trailing a cyan blink
+  (its Servos dash). All 8 grafts & fusions now have dedicated, aligned icons — no more placeholders.
+- **Lore.** Fleshed out the Chimera Protocol chapter with the missing bits: *why* two grafts can fuse (and
+  free a slot), and *why* the biome you graft in leaves its mark. Flavor, no gameplay change.
+
+---
+
+**Fignolage**
+- **La Frappe Nova a enfin son icône.** La 3e fusion affichait encore un carré teinté — elle a désormais une
+  vraie icône dessinée : une étoile de détonation violet→magenta (sa nova, héritée de l'Onde du Rôdeur)
+  traînant un blink cyan (sa ruade, héritée des Servos). Les 8 greffes et fusions ont maintenant toutes leur
+  icône dédiée et alignée — fini les placeholders.
+- **Lore.** Chapitre du Protocole Chimère complété : *pourquoi* deux greffes peuvent fusionner (et libérer un
+  emplacement), et *pourquoi* le biome où tu greffes laisse sa marque. De la saveur, aucun changement de jeu.
+
+---
+
 ## v1.14.0 — Nova Strike & biome affinities (2026-07-07)
 
 **New**
