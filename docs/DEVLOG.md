@@ -4,6 +4,46 @@
 > `release-manager`). Entrées en ordre décroissant (la plus récente en haut). Ton orienté
 > joueur, EN puis FR (audience itch surtout anglophone).
 
+## v1.13.0 — Wear your chimera (2026-07-07)
+
+**New**
+- **Your body now shows what you've become.** Until now, assimilating grafts only tinted your
+  character. From this version, each graft and fusion **grafts a visible part onto your body** — the
+  chimera you build is the chimera you see:
+  - **Grafted Carapace** — armored plating and pauldrons over your torso.
+  - **Erratic Servos** — thruster fins on your flanks whose vents flare when you dash.
+  - **Aiming Eye** — a floating eye above your head, its pupil tracking your nearest target.
+  - **Stalker Wave** — a resonator crown that spins and swells right before each shockwave.
+  - **Armored Charge** (fusion) — a heavy ram prow that faces the way you're heading and lights up on impact.
+  - **Turret Hive** (fusion) — a hive core on your back (on top of the four turrets you already deploy).
+- Parts are shaded to match the game's pseudo-3D lighting and stack up as you assimilate more —
+  every run visibly builds a different monster.
+
+**Why it matters**
+- This is the payoff of "don't kill the monsters, become them": the transformation is now readable
+  at a glance, not just a number on a HUD slot.
+
+---
+
+**Nouveautés**
+- **Ton corps montre enfin ce que tu deviens.** Jusqu'ici, assimiler des greffes ne faisait que
+  teinter ton personnage. À partir de cette version, chaque greffe et fusion **greffe une pièce
+  visible sur ton corps** — la chimère que tu construis est celle que tu vois :
+  - **Carapace Greffée** — plastron blindé et épaulières sur le torse.
+  - **Servos Erratiques** — tuyères sur les flancs, dont les vents s'embrasent quand tu fais une ruade.
+  - **Œil de Visée** — un œil flottant au-dessus de la tête, pupille braquée sur l'ennemi le plus proche.
+  - **Onde du Rôdeur** — une couronne-résonateur qui tourne et enfle juste avant chaque onde de choc.
+  - **Charge Blindée** (fusion) — une proue-bélier orientée dans ton sens de marche, qui s'illumine à l'impact.
+  - **Ruche de Tourelles** (fusion) — un cœur de ruche dans le dos (en plus des quatre tourelles déployées).
+- Les pièces sont ombrées pour coller à l'éclairage pseudo-3D du jeu et s'accumulent à mesure que tu
+  assimiles — chaque run construit visiblement un monstre différent.
+
+**Pourquoi c'est important**
+- C'est la récompense de « ne tue pas les monstres, deviens-les » : la transformation se lit d'un
+  coup d'œil, plus seulement dans un chiffre sur le HUD.
+
+---
+
 ## v1.12.1 — Control comfort & readability (2026-07-07)
 
 **New**
