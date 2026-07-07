@@ -44,7 +44,15 @@ public partial class Player : CharacterBody2D
     private float   _dashDistance, _dashDuration, _dashCooldown, _dashCdFloor, _dashIframes;
     private bool    _dashCdr;
     private float   _dashCdTimer, _dashActiveLeft, _dashIframeLeft;
+    private float   _dashCdDuration = 1f; // cooldown effectif du dernier dash (pour le ratio HUD)
     private Vector2 _dashVel;
+
+    /// <summary>Le dash (greffe Servos Érratiques / fusion Charge) est-il équipé ? (jauge HUD)</summary>
+    public bool DashEnabled => _dashEnabled;
+
+    /// <summary>Progression de recharge du dash dans [0,1] : 0 juste après usage, 1 = prêt (jauge HUD).</summary>
+    public float DashReadyRatio => _dashCdDuration <= 0f ? 1f
+        : Mathf.Clamp(1f - _dashCdTimer / _dashCdDuration, 0f, 1f);
 
     // Charge (fusion Charge Blindée) : le dash devient un couloir de dégâts + knockback.
     private bool  _dashIsCharge;
@@ -428,7 +436,8 @@ public partial class Player : CharacterBody2D
         if (_dashIsCharge) _chargeHit.Clear(); // un ennemi n'est touché qu'une fois par charge
 
         float reduced = _dashCdr ? _dashCooldown * (1f - Stats.CooldownReduction) : _dashCooldown;
-        _dashCdTimer  = Mathf.Max(_dashCdFloor, reduced);
+        _dashCdTimer    = Mathf.Max(_dashCdFloor, reduced);
+        _dashCdDuration = _dashCdTimer; // mémorise la durée pleine pour le ratio de recharge HUD
 
         HitFlash(0.12f, new Color(1.2f, 1.8f, 2.4f, 1f));
         AudioSystem.Instance?.PlaySfx("sfx_card_select");

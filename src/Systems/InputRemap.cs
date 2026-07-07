@@ -19,8 +19,22 @@ public static class InputRemap
     /// <summary>Action de ruade (greffe Servos Erratiques) : Maj gauche (clavier) / RB (manette).</summary>
     public const string Dash  = "dash";
 
+    /// <summary>Touche clavier de dash par défaut (rebindable).</summary>
+    public const Key DefaultDashKey = Key.Shift;
+
     /// <summary>Actions rebindables, dans l'ordre d'affichage (haut/bas/gauche/droite).</summary>
     public static readonly string[] Actions = { Up, Down, Left, Right };
+
+    /// <summary>Action <c>ui_*</c> de navigation menu miroir de chaque action de déplacement.
+    /// Permet de naviguer dans les menus/modals avec les touches de déplacement (ZQSD) en plus
+    /// des flèches : la nav focus de Godot lit les <c>ui_*</c>, qui n'étaient bindées qu'aux flèches.</summary>
+    private static readonly Dictionary<string, string> UiNav = new()
+    {
+        { Up,    "ui_up" },
+        { Down,  "ui_down" },
+        { Left,  "ui_left" },
+        { Right, "ui_right" },
+    };
 
     /// <summary>Touche clavier principale par défaut (ZQSD, layout AZERTY par label).</summary>
     public static readonly Dictionary<string, Key> DefaultKeys = new()
@@ -65,22 +79,31 @@ public static class InputRemap
             SetKey(action, settings.MoveKey(action));
     }
 
-    /// <summary>(Re)construit une action : touche clavier principale + flèche + manette (d-pad & stick).</summary>
+    /// <summary>(Re)construit une action de déplacement <b>et</b> sa nav menu miroir (<c>ui_*</c>) :
+    /// touche clavier principale + flèche + manette (d-pad &amp; stick).</summary>
     public static void SetKey(string action, Key key)
     {
-        if (!InputMap.HasAction(action)) InputMap.AddAction(action);
-        InputMap.ActionEraseEvents(action);
+        BuildDirectional(action, action, key);   // action de déplacement (Player)
+        BuildDirectional(UiNav[action], action, key); // nav menu miroir (focus des Control)
+    }
+
+    /// <summary>Reconstruit une action directionnelle <paramref name="target"/> avec les événements
+    /// de <paramref name="action"/> : touche clavier principale rebindable + flèche + d-pad + stick.</summary>
+    private static void BuildDirectional(string target, string action, Key key)
+    {
+        if (!InputMap.HasAction(target)) InputMap.AddAction(target);
+        InputMap.ActionEraseEvents(target);
 
         // Touche clavier principale (rebindable, par label pour respecter l'AZERTY).
-        InputMap.ActionAddEvent(action, new InputEventKey { Keycode = key });
+        InputMap.ActionAddEvent(target, new InputEventKey { Keycode = key });
 
         // Flèche directionnelle (secondaire, toujours dispo).
-        InputMap.ActionAddEvent(action, new InputEventKey { Keycode = ArrowKeys[action] });
+        InputMap.ActionAddEvent(target, new InputEventKey { Keycode = ArrowKeys[action] });
 
         // Manette : D-pad + stick gauche.
-        InputMap.ActionAddEvent(action, new InputEventJoypadButton { ButtonIndex = DpadButtons[action] });
+        InputMap.ActionAddEvent(target, new InputEventJoypadButton { ButtonIndex = DpadButtons[action] });
         var (axis, value) = StickAxes[action];
-        InputMap.ActionAddEvent(action, new InputEventJoypadMotion { Axis = axis, AxisValue = value });
+        InputMap.ActionAddEvent(target, new InputEventJoypadMotion { Axis = axis, AxisValue = value });
     }
 
     /// <summary>Enregistre les actions hors déplacement (dash) avec leurs bindings par défaut.
@@ -89,10 +112,16 @@ public static class InputRemap
     {
         if (!InputMap.HasAction(Dash)) InputMap.AddAction(Dash);
         if (InputMap.ActionGetEvents(Dash).Count == 0)
-        {
-            InputMap.ActionAddEvent(Dash, new InputEventKey { Keycode = Key.Shift });
-            InputMap.ActionAddEvent(Dash, new InputEventJoypadButton { ButtonIndex = JoyButton.RightShoulder });
-        }
+            SetDashKey(DefaultDashKey);
+    }
+
+    /// <summary>(Re)construit l'action de dash : touche clavier principale (rebindable) + RB manette (fixe).</summary>
+    public static void SetDashKey(Key key)
+    {
+        if (!InputMap.HasAction(Dash)) InputMap.AddAction(Dash);
+        InputMap.ActionEraseEvents(Dash);
+        InputMap.ActionAddEvent(Dash, new InputEventKey { Keycode = key });
+        InputMap.ActionAddEvent(Dash, new InputEventJoypadButton { ButtonIndex = JoyButton.RightShoulder });
     }
 
     /// <summary>Nom lisible de la touche clavier principale d'une action (pour l'UI Options).</summary>

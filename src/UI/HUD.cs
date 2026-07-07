@@ -40,6 +40,9 @@ public partial class HUD : CanvasLayer
 	private int          _lastWeaponCount = -1;
 	private HBoxContainer _graftRow   = null!;
 	private int          _lastGraftsVersion = -1;
+	// Voile de recharge posé sur le slot de la greffe de dash (Servos Érratiques / fusion Charge).
+	private ColorRect?   _dashCdVeil;
+	private float        _dashSlotSize;
 
 	private const float HpBarW = 222f;
 	private const float XpBarW = 296f;
@@ -77,16 +80,17 @@ public partial class HUD : CanvasLayer
 		if (scanShader != null) scan.Material = new ShaderMaterial { Shader = scanShader };
 		root.AddChild(scan);
 
-		// ── Cluster haut-gauche : panneau + LV + PV + XP ──
-		_panel = new Panel { Position = new Vector2(16, 12), Size = new Vector2(326, 96),
+		// ── Cluster haut-gauche : panneau + LV + PV + XP + rangée de greffes ──
+		// Hauteur 122 : contient la rangée de greffes (y 92→118) avec une marge basse.
+		_panel = new Panel { Position = new Vector2(16, 12), Size = new Vector2(326, 122),
 							 MouseFilter = Control.MouseFilterEnum.Ignore };
 		_panelStyle = new StyleBoxFlat { BgColor = new Color(0.04f, 0.05f, 0.09f, 0.82f) };
 		_panelStyle.SetCornerRadiusAll(6);
 		_panel.AddThemeStyleboxOverride("panel", _panelStyle);
 		root.AddChild(_panel);
 
-		// Liseré d'accent (animé : respiration lente)
-		_stripe = new ColorRect { Position = new Vector2(20, 18), Size = new Vector2(4, 84),
+		// Liseré d'accent (animé : respiration lente) — court sur toute la hauteur du panneau.
+		_stripe = new ColorRect { Position = new Vector2(20, 18), Size = new Vector2(4, 110),
 								  Color = _accent, MouseFilter = Control.MouseFilterEnum.Ignore };
 		root.AddChild(_stripe);
 
@@ -169,8 +173,8 @@ public partial class HUD : CanvasLayer
 		_graftRow.AddThemeConstantOverride("separation", 5);
 		root.AddChild(_graftRow);
 
-		// ── Bandeau de loadout (armes équipées) sous le panneau ──
-		_loadout = new HBoxContainer { Position = new Vector2(20, 120),
+		// ── Bandeau de loadout (armes équipées) sous le panneau agrandi ──
+		_loadout = new HBoxContainer { Position = new Vector2(20, 144),
 									   MouseFilter = Control.MouseFilterEnum.Ignore };
 		_loadout.AddThemeConstantOverride("separation", 6);
 		root.AddChild(_loadout);
@@ -254,13 +258,18 @@ public partial class HUD : CanvasLayer
 			_lastGraftsVersion = assim.GraftsVersion;
 			RefreshGraftSlots();
 		}
+
+		UpdateDashCooldownVeil();
 	}
 
 	// ── Emplacements de greffe (Assimilation) ──────────────────────────────────────
+	private const float GraftSlotSize = 26f;
+
 	private void RefreshGraftSlots()
 	{
 		if (_graftRow == null) return;
 		foreach (var c in _graftRow.GetChildren()) c.QueueFree();
+		_dashCdVeil = null; // les slots sont recréés : on relie le voile au nouveau slot de dash
 
 		var assim = AssimilationSystem.Instance;
 		if (assim == null) return;
@@ -270,7 +279,7 @@ public partial class HUD : CanvasLayer
 		for (int i = 0; i < slots; i++)
 		{
 			bool filled = i < equipped.Count;
-			var slot = new Panel { CustomMinimumSize = new Vector2(26, 26),
+			var slot = new Panel { CustomMinimumSize = new Vector2(GraftSlotSize, GraftSlotSize),
 								   ClipContents = true, // garde-fou : rien ne peut déborder du slot (icônes plein-cadre)
 								   MouseFilter = Control.MouseFilterEnum.Ignore };
 			var st = new StyleBoxFlat();
@@ -293,14 +302,34 @@ public partial class HUD : CanvasLayer
 					{
 						Texture       = icon,
 						TextureFilter = Control.TextureFilterEnum.Nearest,
-						StretchMode   = TextureRect.StretchModeEnum.KeepAspectCentered,
-						MouseFilter   = Control.MouseFilterEnum.Ignore,
+						StretchMode    = TextureRect.StretchModeEnum.KeepAspectCentered,
+						// IgnoreSize sinon le TextureRect prend la taille de la texture (32px) comme
+						// taille minimale — elle l'emporte sur le rect d'ancrage (20px), l'icône déborde
+						// du slot de 26px (ClipContents) et on n'en voit qu'un coin (BUG icônes tronquées).
+						ExpandMode     = TextureRect.ExpandModeEnum.IgnoreSize,
+						MouseFilter    = Control.MouseFilterEnum.Ignore,
 					};
 					// Remplit le slot (20 px) avec une marge dégageant le liseré arrondi (corner radius 4) :
 					// évite que les icônes plein-cadre (ruche, œil) affleurent/mordent le bord (BUG-F04).
 					tex.SetAnchorsPreset(Control.LayoutPreset.FullRect);
 					tex.OffsetLeft = tex.OffsetTop = 3; tex.OffsetRight = tex.OffsetBottom = -3;
 					slot.AddChild(tex);
+				}
+
+				// Jauge de recharge du dash (Servos Érratiques ou fusion Charge) : voile sombre qui
+				// couvre le slot après usage puis se retire par le bas au fil de la recharge (§dash).
+				if (def != null && (def.HasEffect("dash") || def.HasEffect("charge")))
+				{
+					_dashCdVeil = new ColorRect
+					{
+						Color       = new Color(0.03f, 0.03f, 0.06f, 0.72f),
+						Position    = Vector2.Zero,
+						Size        = new Vector2(GraftSlotSize, 0f),
+						MouseFilter = Control.MouseFilterEnum.Ignore,
+						Visible     = false,
+					};
+					slot.AddChild(_dashCdVeil); // au-dessus de l'icône (ajouté en dernier)
+					_dashSlotSize = GraftSlotSize;
 				}
 			}
 			else
@@ -315,11 +344,27 @@ public partial class HUD : CanvasLayer
 		}
 	}
 
-	/// <summary>Charge la texture d'icône d'une greffe si le PNG existe (repli null → carré teinté).</summary>
+	/// <summary>Anime le voile de recharge du dash : hauteur ∝ cooldown restant, se retire par le bas.</summary>
+	private void UpdateDashCooldownVeil()
+	{
+		if (_dashCdVeil == null || !IsInstanceValid(_dashCdVeil)) return;
+		var player = GameManager.Instance?.PlayerInstance;
+		if (player == null || !player.DashEnabled) { _dashCdVeil.Visible = false; return; }
+
+		float ready = player.DashReadyRatio;          // 0 = juste utilisé, 1 = prêt
+		if (ready >= 1f) { _dashCdVeil.Visible = false; return; }
+		_dashCdVeil.Visible = true;
+		_dashCdVeil.Size = new Vector2(_dashSlotSize, _dashSlotSize * (1f - ready)); // couvre par le haut
+	}
+
+	/// <summary>Charge la texture d'icône d'une greffe si la ressource existe (repli null → carré teinté).
+	/// Utilise <see cref="ResourceLoader.Exists"/> (et non FileAccess) : en build exporté le PNG source
+	/// n'est pas dans le .pck (seule la texture importée .ctex l'est) — FileExists renverrait toujours
+	/// faux et masquerait toutes les icônes en jeu (BUG icônes greffes absentes du HUD).</summary>
 	private static Texture2D? LoadGraftHudIcon(GraftTable.GraftDef? def)
 	{
 		if (def == null || string.IsNullOrEmpty(def.HudIcon)) return null;
-		return Godot.FileAccess.FileExists(def.HudIcon) ? GD.Load<Texture2D>(def.HudIcon) : null;
+		return ResourceLoader.Exists(def.HudIcon) ? GD.Load<Texture2D>(def.HudIcon) : null;
 	}
 
 	// ── PV ─────────────────────────────────────────────────────────────────────

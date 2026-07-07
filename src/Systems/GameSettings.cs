@@ -33,6 +33,9 @@ public partial class GameSettings : Node
     // Touches de déplacement personnalisées (move_up/down/left/right → keycode). Absente = défaut ZQSD.
     private readonly Dictionary<string, Key> _moveKeys = new();
 
+    // Touche de dash personnalisée (greffe Servos Erratiques). Null = défaut (Maj).
+    private Key? _dashKey;
+
     // Biomes vaincus (boss final battu), clés "biomeId:difficulté". Sert au badge de l'écran de sélection.
     private readonly HashSet<string> _completions = new();
 
@@ -148,11 +151,24 @@ public partial class GameSettings : Node
         Save();
     }
 
-    /// <summary>Restaure les touches de déplacement par défaut (ZQSD), applique et persiste.</summary>
+    /// <summary>Touche clavier de dash (perso ou défaut Maj).</summary>
+    public Key DashKey => _dashKey ?? InputRemap.DefaultDashKey;
+
+    /// <summary>Réaffecte la touche de dash, l'applique et persiste.</summary>
+    public void SetDashKey(Key key)
+    {
+        _dashKey = key;
+        InputRemap.SetDashKey(key);
+        Save();
+    }
+
+    /// <summary>Restaure les touches de déplacement par défaut (ZQSD) + dash (Maj), applique et persiste.</summary>
     public void ResetMoveKeys()
     {
         _moveKeys.Clear();
+        _dashKey = null;
         InputRemap.ApplyAll(this);
+        InputRemap.SetDashKey(DashKey);
         Save();
     }
 
@@ -181,6 +197,7 @@ public partial class GameSettings : Node
         ScreenShake.Enabled = ShakeEnabled;
         TranslationServer.SetLocale(Language);
         InputRemap.ApplyAll(this);
+        InputRemap.SetDashKey(DashKey);
     }
 
     private void ApplyAudio()
@@ -245,6 +262,8 @@ public partial class GameSettings : Node
             int code = cfg.GetValue("input", action, 0).AsInt32();
             if (code != 0) _moveKeys[action] = (Key)code;
         }
+        int dashCode = cfg.GetValue("input", InputRemap.Dash, 0).AsInt32();
+        _dashKey = dashCode != 0 ? (Key)dashCode : null;
     }
 
     /// <summary>Réinitialise TOUTE la progression (complétions, high scores, armes découvertes) et
@@ -290,6 +309,8 @@ public partial class GameSettings : Node
 
         foreach (var (action, key) in _moveKeys)
             cfg.SetValue("input", action, (int)key);
+        if (_dashKey.HasValue)
+            cfg.SetValue("input", InputRemap.Dash, (int)_dashKey.Value);
         cfg.Save(Path);
     }
 }

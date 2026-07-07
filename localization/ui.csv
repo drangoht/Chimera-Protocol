@@ -75,6 +75,7 @@ OPTIONS_MOVE_UP,Move up,Haut,Arriba
 OPTIONS_MOVE_DOWN,Move down,Bas,Abajo
 OPTIONS_MOVE_LEFT,Move left,Gauche,Izquierda
 OPTIONS_MOVE_RIGHT,Move right,Droite,Derecha
+OPTIONS_DASH,Dash (dodge),Ruade (esquive),Impulso (esquiva)
 OPTIONS_CONTROLS_PRESS,Press a key…,Appuyez sur une touche…,Pulsa una tecla…
 OPTIONS_CONTROLS_RESET,Reset keys (ZQSD),Touches par défaut (ZQSD),Teclas por defecto (ZQSD)
 DIFF_EASY,Easy,Facile,Fácil

@@ -180,14 +180,27 @@ public partial class OptionsScreen : Control
         parent.AddChild(row);
     }
 
-    // ── Remap des touches de déplacement (ZQSD par défaut) ────────────────────
+    // ── Remap des touches (déplacement ZQSD + dash) ───────────────────────────
     private static readonly (string Action, string LabelKey)[] MoveRows =
     {
         (InputRemap.Up,    "OPTIONS_MOVE_UP"),
         (InputRemap.Down,  "OPTIONS_MOVE_DOWN"),
         (InputRemap.Left,  "OPTIONS_MOVE_LEFT"),
         (InputRemap.Right, "OPTIONS_MOVE_RIGHT"),
+        (InputRemap.Dash,  "OPTIONS_DASH"),
     };
+
+    /// <summary>Touche clavier actuelle d'une action rebindable (déplacement ou dash).</summary>
+    private static Key KeyForAction(string action) => action == InputRemap.Dash
+        ? (GameSettings.Instance?.DashKey ?? InputRemap.DefaultDashKey)
+        : (GameSettings.Instance?.MoveKey(action) ?? InputRemap.DefaultKeys[action]);
+
+    /// <summary>Réaffecte la touche d'une action rebindable (déplacement ou dash).</summary>
+    private static void AssignKey(string action, Key key)
+    {
+        if (action == InputRemap.Dash) GameSettings.Instance?.SetDashKey(key);
+        else                           GameSettings.Instance?.SetMoveKey(action, key);
+    }
 
     private void AddControls(VBoxContainer parent)
     {
@@ -247,14 +260,13 @@ public partial class OptionsScreen : Control
 
     private void RefreshRebindLabels()
     {
-        foreach (var action in InputRemap.Actions) RefreshRebindLabel(action);
+        foreach (var action in _rebindButtons.Keys) RefreshRebindLabel(action);
     }
 
     private void RefreshRebindLabel(string action)
     {
         if (!_rebindButtons.TryGetValue(action, out var btn)) return;
-        Key key = GameSettings.Instance?.MoveKey(action) ?? InputRemap.DefaultKeys[action];
-        btn.Text = InputRemap.KeyName(key);
+        btn.Text = InputRemap.KeyName(KeyForAction(action));
     }
 
     // ── Réinitialisation totale (état initial du jeu, Échos inclus) ───────────
@@ -319,7 +331,7 @@ public partial class OptionsScreen : Control
         if (key.Keycode != Key.Escape)
         {
             Key chosen = key.Keycode != Key.None ? key.Keycode : (Key)key.PhysicalKeycode;
-            GameSettings.Instance?.SetMoveKey(action, chosen);
+            AssignKey(action, chosen);
         }
         RefreshRebindLabel(action);
     }

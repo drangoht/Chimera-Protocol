@@ -4,6 +4,67 @@
 > `release-manager`). Entrées en ordre décroissant (la plus récente en haut). Ton orienté
 > joueur, EN puis FR (audience itch surtout anglophone).
 
+## v1.12.1 — Control comfort & readability (2026-07-07)
+
+**New**
+- **Dash cooldown gauge.** The dash graft (Erratic Servos, or the Armored Charge fusion) now shows
+  its recharge right on its HUD slot: the square darkens on use and the icon refills from the bottom
+  as the cooldown ticks down — so you can read at a glance when your evade is ready again.
+
+**Fixes**
+- **Dash is rebindable.** The Erratic Servos graft's dash was hard-wired to Shift/RB and missing
+  from the Options screen. It's now a proper remap line — **"Dash (evade)"** — with its own save
+  slot and covered by the "Reset to defaults" button.
+- **Graft icons are centered again.** They were rendered oversized and clipped inside their HUD
+  slots — you only saw a corner. Now each graft icon sits fully centered in its square.
+- **WASD-style keys (ZQSD) now navigate menus.** Move keys and menu-navigation keys were separate
+  under the hood, so pause, level-up, codex and other modals only responded to arrow keys. Movement
+  keys now mirror onto menu navigation automatically, including after a remap — arrows, ZQSD and
+  gamepad all work everywhere.
+- **Graft icons were missing in the exported build.** The HUD's icon lookup used a file check that
+  always returns false outside the editor, silently falling back to a plain tinted square for all
+  7 grafts (including both fusions). Fixed — the real icons render in the shipped .exe.
+- **HUD graft row no longer clips.** The panel was too short for the graft-slot row, which spilled
+  past the rounded edge and crowded the weapon loadout below it. Panel enlarged, spacing cleaned up.
+
+**Why it matters**
+- All quality-of-life this time, no new content: the Assimilation grafts shipped last version are
+  now fully visible and controllable the way they were meant to be.
+
+---
+
+**Nouveautés**
+- **Jauge de recharge du dash.** La greffe de dash (Servos Erratiques, ou la fusion Charge Blindée)
+  affiche désormais sa recharge directement sur son emplacement HUD : le carré s'assombrit à l'usage
+  et l'icône se remplit par le bas au fil du cooldown — d'un coup d'œil, tu sais quand ton esquive
+  est de nouveau prête.
+
+**Corrections**
+- **La ruade est enfin rebindable.** Le dash de la greffe Servos Erratiques était câblé en dur
+  (Maj/RB) et absent de l'écran Options. C'est désormais une ligne de remap à part entière —
+  **« Ruade (esquive) »** — avec sa propre persistance, couverte par le bouton « Touches par
+  défaut ».
+- **Les icônes de greffe sont de nouveau centrées.** Elles s'affichaient trop grandes et tronquées
+  dans leurs emplacements HUD — on n'en voyait qu'un coin. Chaque icône est désormais entièrement
+  centrée dans son carré.
+- **ZQSD navigue enfin dans les menus.** Les touches de déplacement et les touches de navigation
+  menu étaient séparées en interne : pause, level-up, codex et autres modals ne répondaient qu'aux
+  flèches. Les touches de déplacement se miroitent désormais automatiquement vers la navigation
+  menu, y compris après un remap — flèches, ZQSD et manette fonctionnent partout.
+- **Les icônes de greffe manquaient en build exporté.** La détection d'icône du HUD reposait sur un
+  test de fichier qui renvoie toujours faux hors éditeur, retombant silencieusement sur un simple
+  carré teinté pour les 7 greffes (fusions comprises). Corrigé — les vraies icônes s'affichent dans
+  l'exe publié.
+- **La rangée de greffes du HUD ne déborde plus.** Le panneau était trop court pour la rangée
+  d'emplacements de greffe, qui débordait du bord arrondi et empiétait sur le loadout d'armes juste
+  en dessous. Panneau agrandi, espacement nettoyé.
+
+**Pourquoi c'est important**
+- Que du confort cette fois, pas de nouveau contenu : les greffes d'Assimilation sorties la version
+  précédente sont désormais pleinement visibles et pilotables comme prévu.
+
+---
+
 ## v1.12.0 — Assimilation: don't kill the monsters, become them (2026-07-07)
 
 **New**

@@ -90,6 +90,8 @@ chaque `ChangeSceneToFile` qui quitte une run (`RunEndScreen` Hub/Rejouer, `Paus
 Tout nouveau chemin de sortie de run doit l'appeler aussi.
 
 ## Navigation clavier/manette
+- Les touches de déplacement (ZQSD, `move_*`) sont **séparées** des `ui_*` (nav focus des menus/modals). Pour que ZQSD navigue aussi les menus, `InputRemap.SetKey` **miroite** chaque `move_*` vers son `ui_*` (`BuildDirectional(UiNav[action], …)`). Un menu qui repose sur le focus natif de Godot lit les `ui_*` : sans ce miroir, seules les flèches fonctionnent. Tout nouvel écran doit donc s'appuyer sur les `ui_*` (focus natif) et non lire `move_*` en dur.
+- Le **dash** (`dash`) est une action à part (Maj/RB), rebindable via Options (`GameSettings.SetDashKey` → `InputRemap.SetDashKey`, persistée sous `[input] dash`). Non miroitée vers `ui_*` (ce n'est pas une direction).
 - Listes non focalisables (simples `PanelContainer`) : aucun voisin de focus → scroll dans `_UnhandledInput` via `_scroll.ScrollVertical` (`allowEcho:true` pour maintien)
 - Focus spatial de Godot ne traverse pas les `PanelContainer` → `SetupFocusChain` avec `FocusNeighborTop/Bottom` explicites après génération complète de la liste
 - Listes focalisables qui débordent → `FocusEntered → ScrollContainer.EnsureControlVisible()`
@@ -97,6 +99,7 @@ Tout nouveau chemin de sortie de run doit l'appeler aussi.
 - `FocusEntered` = tween scale uniquement (pas de SFX) ; `MouseEntered` = scale + SFX
 
 ## UI — pièges StyleBox / focus
+- **`TextureRect` dans un petit conteneur clippé** : `ExpandMode` par défaut = `KeepSize` → le `TextureRect` prend la **taille de sa texture** (ex. 32 px) comme taille minimale, qui l'emporte sur un rect d'ancrage plus petit (ex. 20 px). L'icône déborde et, si le parent a `ClipContents=true`, on n'en voit qu'un coin (BUG icônes de greffe tronquées, slots 26 px). Poser `ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize` pour que `KeepAspectCentered` respecte le rect et recentre l'icône entière.
 - `theme_override_styles/focus` dans un `.tscn` écrase `AddThemeStyleboxOverride()` runtime → ne jamais poser les deux
 - `StyleBoxFlat` 3 états : chaque bouton doit avoir ses **propres instances** (pas de sub_resource partagée — Godot les lie et casse l'état hover/pressed)
 - `PivotOffset` pour hover scale : calculer dans `MouseEntered` (`btn.Size / 2f`), PAS dans `_Ready()` (size = Vector2.Zero à ce stade)
@@ -112,6 +115,7 @@ Tout nouveau chemin de sortie de run doit l'appeler aussi.
 
 ## Assets
 - `.import` des PNG générés par script DOIT être commité (BUG-301) — sinon Godot ignore les assets au runtime
+- **Tester l'existence d'un asset : `ResourceLoader.Exists("res://…png")`, jamais `FileAccess.FileExists`.** En build exporté le PNG source n'est **pas** dans le `.pck` (seule la texture importée `.ctex` l'est) → `FileExists` renvoie toujours `false` et masque l'asset en jeu alors qu'il marche dans l'éditeur (BUG icônes de greffes absentes du HUD). `GD.Load` seul suffit souvent (renvoie null proprement si absent).
 - Musique WAV : `loop_mode=0` par défaut dans Godot 4.7 → reboucler via signal `Finished` dans `AudioSystem`
 - `AudioSystem.LoadMusic()` tente `.ogg` en priorité, puis `.wav` fallback
 
