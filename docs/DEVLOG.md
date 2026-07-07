@@ -4,6 +4,52 @@
 > `release-manager`). Entrées en ordre décroissant (la plus récente en haut). Ton orienté
 > joueur, EN puis FR (audience itch surtout anglophone).
 
+## v1.14.0 — Nova Strike & biome affinities (2026-07-07)
+
+**New**
+- **Third graft fusion — Nova Strike.** Fuse *Stalker's Wave* + *Erratic Servos* and your dash becomes
+  an **offensive blink**: you teleport in and **detonate a nova** where you land (a big shockwave, ~175px,
+  with knockback), gated by your dash cooldown. The passive wave becomes a burst you aim. Heads-up — it
+  shares the Servos graft with Armored Charge, so those two fusions are **mutually exclusive**: pick your
+  dash (mobile ram vs. blink-nova).
+- **Biome affinities — where you graft matters now.** A graft (or fusion) **captures the biome** you
+  assimilate it in and gains its flavor:
+  - **Sanctuary** — Stable: +12% graft damage.
+  - **Aether** — Resonant: +20% graft range/area.
+  - **Furnace** — Ardent: your grafts **set enemies ablaze** (burn).
+  - **Frost** — Glacial: your grafts **slow** enemies.
+  - **Neon** — Overcharged: −18% graft cooldown.
+  The assimilation card tells you the affinity you'll get, and your silhouette parts take on the biome's
+  tint. Same grafts, different runs: a swarm grafted in the Furnace burns; the same swarm in Frost chills.
+
+**Why it matters**
+- This closes the Assimilation expansion: three fusions, and a reason to think about *which biome* you
+  build your chimera in. Every run shapes a different monster — now down to the elemental flavor.
+
+---
+
+**Nouveautés**
+- **3e fusion de greffes — Frappe Nova.** Fusionne *Onde du Rôdeur* + *Servos Erratiques* et ta ruade
+  devient une **téléportation offensive** : tu blinkes et **détones une nova** au point d'arrivée (grosse
+  onde de choc ~175px + knockback), gatée par la recharge du dash. L'onde passive devient un burst que tu
+  vises. À noter — elle partage la greffe Servos avec la Charge Blindée : ces deux fusions sont
+  **mutuellement exclusives** (choisis ton dash : bélier mobile ou blink-nova).
+- **Affinités de biome — où tu greffes compte, désormais.** Une greffe (ou fusion) **capture le biome**
+  où tu l'assimiles et en prend la saveur :
+  - **Sanctuaire** — Stable : +12% de dégâts de greffe.
+  - **Aether** — Résonante : +20% de portée.
+  - **Fournaise** — Ardente : tes greffes **enflamment** (brûlure).
+  - **Givre** — Glaciale : tes greffes **ralentissent**.
+  - **Néon** — Surchargée : −18% de cooldown de greffe.
+  La carte d'assimilation t'indique l'affinité que tu obtiendras, et tes pièces de silhouette prennent la
+  teinte du biome. Mêmes greffes, runs différents : une Nuée greffée en Fournaise brûle, la même en Givre gèle.
+
+**Pourquoi c'est important**
+- Ça referme l'expansion Assimilation : trois fusions, et une raison de réfléchir au *biome* où tu bâtis
+  ta chimère. Chaque run façonne un monstre différent — jusqu'à la saveur élémentaire.
+
+---
+
 ## v1.13.0 — Wear your chimera (2026-07-07)
 
 **New**

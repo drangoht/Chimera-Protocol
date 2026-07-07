@@ -16,10 +16,11 @@ cyborgs, robots), inspiré de Vampire Survivors et Everything is Crab.
 **Phase actuelle : libre.** Dernière livraison majeure : **Assimilation en ligne** — 3e axe de
 progression (« Ne tue pas les monstres. Deviens-les. ») publié pour la première fois : 5 greffes,
 2 fusions (Charge Blindée, Ruche de Tourelles), nouvel écran Codex **Chimère**, lisibilité HUD des
-greffes, 2026-07-07. Détail chiffré : `docs/DESIGN_ASSIMILATION.md`. Version publiée itch : **1.13.0**
-(**silhouette-chimère** — le corps du joueur change visuellement selon les greffes/fusions équipées via
-des props attachés ombrés pseudo-3D : carapace, servos, œil, onde, proue de charge, cœur de ruche ;
-Phase B volet 2, `DESIGN_ASSIMILATION.md` §19). Détail dans `docs/PROJECT_STATE.md`.
+greffes, 2026-07-07. Détail chiffré : `docs/DESIGN_ASSIMILATION.md`. Version publiée itch : **1.14.0**
+(**Phase B Assimilation terminée** : silhouette-chimère §19 — le corps change selon les greffes ; 3e
+fusion **Frappe Nova** §15.8 — dash-blink + nova ; **affinités de biome** §21 — la greffe capture le
+biome où tu l'assimiles, Fournaise brûle / Givre gèle / Néon accélère / etc.). Détail dans
+`docs/PROJECT_STATE.md`.
 
 ## Équipe d'agents
 

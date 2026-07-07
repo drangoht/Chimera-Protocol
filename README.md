@@ -8,7 +8,7 @@ Dans un monde ravagé par **la Rouille Vivante** (corruption mi-organique, mi-m�
 
 ## État du projet
 
-**Assimilation** *(2026-07-07, v1.13.0)* — 3e axe de progression : tue des ennemis pour remplir une jauge d'archétype, deviens la chimère en assimilant leurs greffes, puis fusionne 2 greffes en une forme évoluée plus dense. La **silhouette du joueur change visuellement** selon les greffes/fusions équipées (carapace, servos, œil, onde, proue de charge, cœur de ruche)
+**Assimilation** *(2026-07-07, v1.14.0)* — 3e axe de progression : tue des ennemis pour remplir une jauge d'archétype, deviens la chimère en assimilant leurs greffes, puis fusionne 2 greffes (**3 fusions** : Charge Blindée, Ruche de Tourelles, **Frappe Nova**) en une forme évoluée. La **silhouette du joueur change visuellement** selon les greffes/fusions (carapace, servos, œil, onde, proue de charge, cœur de ruche). **Affinités de biome** : où tu assimiles compte — Fournaise brûle, Givre gèle, Néon accélère…
 
 | Phase | Statut | Contenu |
 |---|---|---|
