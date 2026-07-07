@@ -10,7 +10,7 @@
 public static class BuildInfo
 {
     // <AUTOGEN:GITSHA> — remplacé par le SHA court courant lors de la génération.
-    public const string GitSha = "5b5b787";
+    public const string GitSha = "b91865b";
     // </AUTOGEN:GITSHA>
 
     /// <summary>Version sémantique déclarée dans project.godot (ex. "1.10.0").</summary>
