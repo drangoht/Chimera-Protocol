@@ -16,9 +16,10 @@ public partial class BuffBar : CanvasLayer
         _root = new VBoxContainer { Name = "Buffs" };
         _root.AddThemeConstantOverride("separation", 4);
         _root.AnchorLeft = 0f; _root.AnchorTop = 0f;
-        // Sous le cluster haut-gauche ET sous le loadout d'armes (~y158) : ne recouvre plus la
-        // rangée de greffes (Assimilation) qui vit à y92, juste sous la barre XP (cf. HUD.cs).
-        _root.OffsetLeft = 20; _root.OffsetTop = 166;
+        // Sous le loadout d'armes : les puces d'arme font 38px et démarrent à y144 (cf. HUD.cs
+        // _loadout Position (20,144) + MakeChip 38px) → la rangée occupe y144–182. On se place à
+        // y188 (marge 6px) pour ne recouvrir ni les armes ni la rangée de greffes (y92, sous la barre XP).
+        _root.OffsetLeft = 20; _root.OffsetTop = 188;
         AddChild(_root);
 
         foreach (var def in PowerUps.All)
