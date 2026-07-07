@@ -187,6 +187,33 @@
         }
       },
       "statMods": {}
+    },
+    {
+      "id": "fusion_nova_rodeur",
+      "name": "Frappe Nova",
+      "rarity": "epic",
+      "requires": ["stalker_wave", "erratic_servos"],
+      "sourceAiTypes": ["erratic_chase"],
+      "_comment_source": "Onde du Rôdeur (champion) + Servos (erratic_chase). L'archétype champion est exclu du routage de fusion (mini-boss/boss), donc la jauge est alimentée par les drones erratic_chase (communs) + leurs élites — fiable. Partage la greffe erratic_servos avec fusion_charge_blindee : les deux consomment les servos, donc mutuellement exclusives (garde AssimilateFusion + pause de jauge). Cf. DESIGN_ASSIMILATION §15.8.",
+      "description": "Ta ruade devient une téléportation offensive : tu blinkes et détones une nova à l'arrivée. L'onde passive devient un burst positionnel que tu vises.",
+      "hudIcon": "res://assets/sprites/grafts/fusion_nova_rodeur_icon.png",
+      "tint": [1.1, 0.5, 1.15],
+      "freesSlot": true,
+      "gauge": {
+        "key": "fusion_nova_rodeur",
+        "threshold": 24,
+        "pointsPerKillSourceArchetype": 1,
+        "pointsPerEliteKillSourceArchetype": 2,
+        "declineThresholdMultiplier": 1.5
+      },
+      "effects": {
+        "novaDash": {
+          "distancePx": 190, "durationSec": 0.18, "cooldownSec": 3.8,
+          "cooldownFloorSec": 1.6, "affectedByCooldownReduction": 1, "iframesSec": 0.25,
+          "novaRadiusPx": 175, "novaDamage": 80, "scalesWithDamageMultiplier": 1, "novaKnockbackPx": 90
+        }
+      },
+      "statMods": {}
     }
   ]
 }

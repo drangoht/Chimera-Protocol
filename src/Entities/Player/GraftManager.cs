@@ -41,6 +41,11 @@ public partial class GraftManager : Node2D
     private float _shockTimer, _shockCd, _shockDamage, _shockRadius, _shockKnockback;
     private bool  _shockCdr;
 
+    // ── Frappe Nova (fusion : le dash détone une nova à l'arrivée) ──
+    private bool  _novaActive;
+    private float _novaRadius, _novaDamage, _novaKnockback;
+    private bool  _wasDashing; // détecte le front descendant du dash (fin de ruade) pour déclencher la nova
+
     // ── Tourelles (fusion Ruche de Tourelles) ──
     private bool  _turretsActive;
     private readonly List<Node2D> _turrets = new();
@@ -156,7 +161,7 @@ public partial class GraftManager : Node2D
         foreach (var p in _props) if (IsInstanceValid(p.Node)) p.Node.QueueFree();
         _props.Clear();
 
-        _swarmActive = _turretActive = _thornsActive = _shockActive = _turretsActive = false;
+        _swarmActive = _turretActive = _thornsActive = _shockActive = _turretsActive = _novaActive = false;
         bool dash = false;
 
         foreach (var def in _active.Values)
@@ -164,6 +169,7 @@ public partial class GraftManager : Node2D
             if (def.HasEffect("orbitingAllies")) SetupSwarm(def);
             if (def.HasEffect("dash"))   { SetupDash(def);   dash = true; }
             if (def.HasEffect("charge")) { SetupCharge(def); dash = true; } // fusion : le dash devient une charge
+            if (def.HasEffect("novaDash")) { SetupNovaDash(def); dash = true; } // fusion : le dash détone une nova
             if (def.HasEffect("autoTurret")) SetupTurret(def);
             if (def.HasEffect("thorns")) SetupThorns(def);
             if (def.HasEffect("shockwave")) SetupShockwave(def);
@@ -229,6 +235,28 @@ public partial class GraftManager : Node2D
             chargeWidth:     (float)def.Effect("charge", "corridorWidthPx", 48),
             chargeDamage:    dmg,
             chargeKnockback: (float)def.Effect("charge", "knockbackPx", 90));
+    }
+
+    /// <summary>Fusion Frappe Nova : le dash reste une ruade (mobilité + i-frames) mais détone une
+    /// nova (onde de choc amplifiée) à l'arrivée — l'onde passive devient un burst positionnel actif.</summary>
+    private void SetupNovaDash(GraftTable.GraftDef def)
+    {
+        _novaActive    = true;
+        _novaRadius    = (float)def.Effect("novaDash", "novaRadiusPx", 175);
+        _novaDamage    = (float)def.Effect("novaDash", "novaDamage", 80);
+        _novaKnockback = (float)def.Effect("novaDash", "novaKnockbackPx", 90);
+        if (def.Effect("novaDash", "scalesWithDamageMultiplier", 1) != 0)
+            _novaDamage *= _player.Stats.DamageMultiplier;
+        _wasDashing = _player.IsDashing;
+
+        // Dash « nu » (pas de couloir de charge) : la nova part à la fin de la ruade (front descendant).
+        _player.EnableDash(
+            distance:      (float)def.Effect("novaDash", "distancePx", 190),
+            duration:      (float)def.Effect("novaDash", "durationSec", 0.18),
+            cooldown:      (float)def.Effect("novaDash", "cooldownSec", 3.8),
+            cooldownFloor: (float)def.Effect("novaDash", "cooldownFloorSec", 1.6),
+            iframes:       (float)def.Effect("novaDash", "iframesSec", 0.25),
+            affectedByCdr: def.Effect("novaDash", "affectedByCooldownReduction", 1) != 0);
     }
 
     /// <summary>Fusion Ruche de Tourelles : les 4 essaims deviennent 4 tourelles en suivi lerp qui tirent.</summary>
@@ -342,6 +370,7 @@ public partial class GraftManager : Node2D
         if (_thornsActive)  UpdateThorns(dt);
         if (_shockActive)   UpdateShockwave(dt);
         if (_turretsActive) UpdateTurrets(dt);
+        if (_novaActive)    UpdateNova(dt);
         if (_props.Count > 0) UpdateProps(dt);
     }
 
@@ -431,28 +460,44 @@ public partial class GraftManager : Node2D
         _shockTimer -= dt;
         if (_shockTimer > 0f) return;
         _shockTimer = EffectiveCd(_shockCd, StatCaps.MinCooldown, _shockCdr);
+        EmitShockwave(_player.GlobalPosition, _shockRadius, _shockDamage, _shockKnockback,
+                      new Color(1.3f, 0.4f, 1.0f, 1f), shakeAmp: 4f, shakeDur: 0.15f);
+    }
 
-        var center = _player.GlobalPosition;
+    /// <summary>Fusion Frappe Nova : détone une nova au front descendant du dash (fin de la ruade).</summary>
+    private void UpdateNova(float dt)
+    {
+        bool dashing = _player.IsDashing;
+        if (_wasDashing && !dashing) // la ruade vient de se terminer → nova au point d'arrivée
+            EmitShockwave(_player.GlobalPosition, _novaRadius, _novaDamage, _novaKnockback,
+                          new Color(1.25f, 0.5f, 1.25f, 1f), shakeAmp: 6.5f, shakeDur: 0.22f, ringScale: 1.25f);
+        _wasDashing = dashing;
+    }
 
-        // VFX : réutilise l'anneau de choc (teinté magenta/rouille).
+    /// <summary>Onde de choc partagée (onde périodique OU nova de dash) : anneau VFX teinté + dégâts
+    /// radiaux + knockback. Réutilise `vfx_shockwave_ring.tscn`.</summary>
+    private void EmitShockwave(Vector2 center, float radius, float damage, float knockback,
+                              Color tint, float shakeAmp, float shakeDur, float ringScale = 1f)
+    {
         _shockwaveScene ??= GD.Load<PackedScene>("res://scenes/vfx/vfx_shockwave_ring.tscn");
         if (_shockwaveScene != null)
         {
             var ring = _shockwaveScene.Instantiate<Node2D>();
-            ring.Modulate = new Color(1.3f, 0.4f, 1.0f, 1f);
+            ring.Modulate = tint;
+            if (ringScale != 1f) ring.Scale = new Vector2(ringScale, ringScale);
             GetTree().Root.AddChild(ring);
             ring.GlobalPosition = center;
         }
-        ScreenShake.Instance?.Shake(4f, 0.15f);
+        ScreenShake.Instance?.Shake(shakeAmp, shakeDur);
 
         foreach (var node in GetTree().GetNodesInGroup(Constants.GroupEnemies))
         {
             if (node is not EnemyBase enemy || !IsInstanceValid(enemy)) continue;
             var off = enemy.GlobalPosition - center;
-            if (off.Length() > _shockRadius) continue;
-            enemy.TakeDamage(_shockDamage);
+            if (off.Length() > radius) continue;
+            enemy.TakeDamage(damage);
             var dir = off.LengthSquared() > 0.01f ? off.Normalized() : Vector2.Right;
-            enemy.GlobalPosition += dir * _shockKnockback; // repousse
+            enemy.GlobalPosition += dir * knockback; // repousse
         }
     }
 
@@ -582,6 +627,7 @@ public partial class GraftManager : Node2D
             case "stalker_wave":            BuildWaveProp(b);     break;
             case "fusion_charge_blindee":   BuildChargeProwProp(b); break;
             case "fusion_ruche_tourelles":  BuildHiveCoreProp(b);   break;
+            case "fusion_nova_rodeur":      BuildNovaCoreProp(b);   break;
         }
     }
 
@@ -736,6 +782,33 @@ public partial class GraftManager : Node2D
             float g = 0.85f + 0.15f * Mathf.Sin(_propBob * 4f); // léger battement
             p.Node.Modulate = new Color(g, g, g);
         });
+    }
+
+    // ── Fusion Frappe Nova : cœur d'étoile pulsant qui s'embrase au dash (annonce la nova) ──
+    private void BuildNovaCoreProp(Color b)
+    {
+        var hi = Shade(b, Face.Highlight);
+        var node = new Node2D();
+        // Étoile à 4 branches (halo sombre + corps teinté), pivote lentement.
+        var star = new[] { V(0, -7), V(2, -2), V(7, 0), V(2, 2), V(0, 7), V(-2, 2), V(-7, 0), V(-2, -2) };
+        node.AddChild(P(NovaStar(1.3f), new Color(b.R * 0.3f, b.G * 0.2f, b.B * 0.3f, 0.6f)));
+        node.AddChild(P(star, b));
+        var core = new Node2D();
+        core.AddChild(P(Octagon(2.6f), hi));
+        node.AddChild(core);
+        AddProp(node, new Vector2(0, 1), mirror: false, z: 1, sub: core, update: (p, dt) =>
+        {
+            p.Node.Rotation += dt * 1.3f;
+            float flare = _player.IsDashing ? 2.0f : 1f + 0.25f * Mathf.Sin(_propBob * 5f);
+            if (p.Sub != null) { p.Sub.Scale = new Vector2(flare, flare); p.Sub.Modulate = new Color(flare, flare, flare); }
+        });
+    }
+
+    private static Vector2[] NovaStar(float s)
+    {
+        var pts = new[] { V(0, -7), V(2, -2), V(7, 0), V(2, 2), V(0, 7), V(-2, 2), V(-7, 0), V(-2, -2) };
+        for (int i = 0; i < pts.Length; i++) pts[i] *= s;
+        return pts;
     }
 
     // ── Primitives géométriques ──

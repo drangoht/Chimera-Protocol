@@ -71,6 +71,8 @@ try:
 
     os.makedirs(OUTDIR, exist_ok=True)
 
+    DASH = os.environ.get("DASH")  # tape Shift (dash) pendant le mouvement -> déclenche la nova
+
     def kite_and_shot(key, label, hold=1.4):
         # Dissipe d'eventuelles cartes de level-up (clic centre = selection) avant de bouger.
         for _ in range(3):
@@ -78,6 +80,9 @@ try:
             time.sleep(0.25)
         pyautogui.keyDown(key)
         time.sleep(hold)
+        if DASH:
+            pyautogui.press("shift")  # ruade -> nova a l'arrivee
+            time.sleep(0.12)
         # Capture EN MOUVEMENT (le facing = key) : on shoote juste avant de relacher.
         img = capture_window(hwnd, client_only=True)
         pyautogui.keyUp(key)

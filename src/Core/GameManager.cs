@@ -183,6 +183,7 @@ public partial class GameManager : Node
         {
             sys.DebugForceFusion("fusion_charge_blindee");
             sys.DebugForceFusion("fusion_ruche_tourelles");
+            sys.DebugForceFusion("fusion_nova_rodeur");
         }
         else
         {
