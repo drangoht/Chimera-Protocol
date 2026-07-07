@@ -28,6 +28,12 @@ public partial class AssimilationSystem : Node
     // Jauges en attente de résolution à l'écran (évite de re-émettre GaugeFilled en boucle).
     private readonly HashSet<string> _pending = new();
 
+    // Cadence des prompts (playtest 2026-07-07) : cooldown minimal entre deux ouvertures de l'écran
+    // ASSIMILATION. Une jauge qui se remplit pendant le cooldown est différée puis re-proposée ensuite.
+    private const ulong PromptCooldownMs = 10000;
+    private ulong _promptBlockUntilMs;
+    private readonly List<string> _deferred = new();
+
     private int _slotCount = 3;
     private float _gaugeSpeedBonus = 0f;
 
@@ -63,6 +69,8 @@ public partial class AssimilationSystem : Node
         _declined.Clear();
         _equipped.Clear();
         _pending.Clear();
+        _deferred.Clear();
+        _promptBlockUntilMs = 0;
 
         var meta = MetaProgressionSystem.Instance;
         int slotBonus = meta?.GetUpgradeLevel("graft_slots") ?? 0;
@@ -88,19 +96,56 @@ public partial class AssimilationSystem : Node
             var def = _config.GraftForGauge(c.Gauge);
             // Jauge en pause tant que sa greffe est équipée (§12.3).
             if (def != null && _equipped.Contains(def.Id)) continue;
-            if (_pending.Contains(c.Gauge)) continue; // déjà en attente d'écran
+            // Jauge en pause si sa greffe a été absorbée par une fusion équipée (§15, anti double-dip).
+            if (def != null && IsFusionSourceEquipped(def.Id)) continue;
+            if (_pending.Contains(c.Gauge) || _deferred.Contains(c.Gauge)) continue; // déjà proposée/différée
 
             _points[c.Gauge] = _points.GetValueOrDefault(c.Gauge) + c.Points;
 
             if (_points[c.Gauge] >= EffectiveThreshold(c.Gauge))
-            {
-                _pending.Add(c.Gauge);
-                EmitSignal(SignalName.GaugeFilled, c.Gauge);
-            }
+                TryEmitGauge(c.Gauge);
         }
 
         RouteFusionKill(aiType ?? "", isElite, isMiniBoss, isBoss);
+        FlushDeferred();
     }
+
+    /// <summary>Vrai si <paramref name="graftId"/> est une greffe source d'une fusion actuellement équipée.</summary>
+    private bool IsFusionSourceEquipped(string graftId)
+    {
+        foreach (var id in _equipped)
+        {
+            var fusion = _config.FusionById(id);
+            if (fusion != null && fusion.Requires.Contains(graftId)) return true;
+        }
+        return false;
+    }
+
+    /// <summary>Ouvre l'écran d'assimilation si aucun n'est en attente et hors cooldown ; sinon diffère.</summary>
+    private void TryEmitGauge(string gauge)
+    {
+        if (_pending.Count > 0 || Time.GetTicksMsec() < _promptBlockUntilMs)
+        {
+            if (!_deferred.Contains(gauge)) _deferred.Add(gauge);
+            return;
+        }
+        _pending.Add(gauge);
+        EmitSignal(SignalName.GaugeFilled, gauge);
+    }
+
+    /// <summary>Re-propose la plus ancienne jauge différée dès que l'écran est libre et le cooldown écoulé.</summary>
+    private void FlushDeferred()
+    {
+        if (_pending.Count > 0 || _deferred.Count == 0) return;
+        if (Time.GetTicksMsec() < _promptBlockUntilMs) return;
+        string g = _deferred[0];
+        _deferred.RemoveAt(0);
+        _pending.Add(g);
+        EmitSignal(SignalName.GaugeFilled, g);
+    }
+
+    /// <summary>Démarre le cooldown de prompt (appelé à chaque résolution d'un écran d'assimilation).</summary>
+    private void StartPromptCooldown() => _promptBlockUntilMs = Time.GetTicksMsec() + PromptCooldownMs;
 
     /// <summary>
     /// Jauges de fusion (§15.1) : n'accumulent QUE si les 2 greffes prérequises sont équipées et
@@ -113,7 +158,7 @@ public partial class AssimilationSystem : Node
         foreach (var fusion in _config.Fusions)
         {
             if (_equipped.Contains(fusion.Id)) continue;           // fusion déjà équipée
-            if (_pending.Contains(fusion.GaugeKey)) continue;      // déjà en attente d'écran
+            if (_pending.Contains(fusion.GaugeKey) || _deferred.Contains(fusion.GaugeKey)) continue; // déjà proposée/différée
 
             bool ready = true;
             foreach (var r in fusion.Requires) if (!_equipped.Contains(r)) { ready = false; break; }
@@ -124,10 +169,7 @@ public partial class AssimilationSystem : Node
 
             _points[fusion.GaugeKey] = _points.GetValueOrDefault(fusion.GaugeKey) + pts;
             if (_points[fusion.GaugeKey] >= EffectiveThreshold(fusion.GaugeKey))
-            {
-                _pending.Add(fusion.GaugeKey);
-                EmitSignal(SignalName.GaugeFilled, fusion.GaugeKey);
-            }
+                TryEmitGauge(fusion.GaugeKey);
         }
     }
 
@@ -165,6 +207,7 @@ public partial class AssimilationSystem : Node
             GraftsVersion++;
         }
         _pending.Remove(gauge);
+        StartPromptCooldown();
     }
 
     /// <summary>Refuse la greffe : jauge remise à 0, seuil ×1.5 pour le prochain cycle (§12.3).</summary>
@@ -173,13 +216,14 @@ public partial class AssimilationSystem : Node
         _points[gauge] = 0f;
         _declined[gauge] = true;
         _pending.Remove(gauge);
+        StartPromptCooldown();
     }
 
     /// <summary>Remplace <paramref name="oldGraftId"/> par la greffe de la jauge (§13.3, cas slots pleins).</summary>
     public void Replace(string gauge, string oldGraftId)
     {
         var def = _config.GraftForGauge(gauge);
-        if (def == null) { _pending.Remove(gauge); return; }
+        if (def == null) { _pending.Remove(gauge); StartPromptCooldown(); return; }
 
         if (_equipped.Remove(oldGraftId))
         {
@@ -196,6 +240,7 @@ public partial class AssimilationSystem : Node
         }
         GraftsVersion++;
         _pending.Remove(gauge);
+        StartPromptCooldown();
     }
 
     /// <summary>Conserve les 3 greffes actuelles (refus de remplacement) : même effet qu'un refus.</summary>
@@ -232,6 +277,7 @@ public partial class AssimilationSystem : Node
             }
         }
         _pending.Remove(gaugeKey);
+        StartPromptCooldown();
     }
 
     /// <summary>Refuse la fusion : jauge remise à 0, seuil ×1.5 au prochain cycle. Les 2 greffes restent.</summary>
@@ -240,6 +286,7 @@ public partial class AssimilationSystem : Node
         _points[gaugeKey] = 0f;
         _declined[gaugeKey] = true;
         _pending.Remove(gaugeKey);
+        StartPromptCooldown();
     }
 
     public GraftTable.GraftDef? GraftForGauge(string gauge) => _config.GraftForGauge(gauge);

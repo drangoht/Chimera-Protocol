@@ -650,6 +650,29 @@ deux recettes (les 4 archétypes de base sont déjà pris par les 2 fusions du v
 d'éligibilité plus complexe (2 fusions candidates si le joueur possède le trio) à ne traiter qu'après
 validation en jeu du volet 1. À rouvrir en Phase B volet 2.
 
+### 15.7 Playtest du 2026-07-07 — verdict + ajustements post-test
+
+Playtest ciblé des 2 fusions (game-tester, flag debug `--force-fusion=<id|all>`) : **stable, 0 crash**.
+Les 2 risques d'équilibrage anticipés **ne se matérialisent pas** → tuning conservé :
+- **i-frames Charge non exploitables** : uptime d'invulnérabilité max = 0,30 s / 1,8 s = **16,7 %**, soit
+  ≥ 1,5 s de vulnérabilité entre deux charges. Spam de charge « increvable » **mécaniquement impossible**.
+- **lifesteal Ruche non abusif** : ~1,9 HP/s de base (≤ ~2,8 avec Noyau Thermique) face à 20–65 DPS
+  entrants. **Garder 4 %** (ne PAS descendre à 3 %). Nuance : le soin part à l'émission du tir, pas au hit.
+
+**Ajustements livrés** (correctifs playtest) :
+1. **Lisibilité des tourelles** (BUG-F01) : corps **cyan #44FFEE** (≠ ennemis de rouille), **Z=6** (au-dessus
+   des ennemis), plus grosses (~22 px), contour sombre + cœur clair, **lien d'ancrage** fin vers le joueur,
+   canon **orienté vers la cible** au tir. `GraftManager.SetupTurrets`/`UpdateTurrets`.
+2. **Impact de charge** (BUG-F03) : `ScreenShake` court + flash à l'impact réel. `Player.ApplyChargeDamage`.
+3. **Anti double-dip fusion** (BUG-F02, décision utilisateur : **poser une garde**) : la jauge d'une greffe
+   **absorbée par une fusion équipée** est **mise en pause** (comme une greffe possédée) → plus de
+   re-proposition de la greffe de base tant que la fusion est portée. `AssimilationSystem.IsFusionSourceEquipped`.
+4. **Cadence des prompts** (décision utilisateur : **ajouter un cooldown**) : **délai minimal de 10 s** entre
+   deux ouvertures de l'écran ASSIMILATION. Une jauge qui atteint son seuil pendant le cooldown est
+   **différée** (`_deferred`) puis re-proposée dès que l'écran est libre et le cooldown écoulé. Empêche le
+   harcèlement de pop-ups en forte densité de kills (jauge refusée/conservée re-proposée trop vite).
+   `AssimilationSystem.TryEmitGauge`/`FlushDeferred`/`StartPromptCooldown`.
+
 ## 16. Spécification de `data/grafts.json` (à créer par `developpeur`, PAS ici)
 
 Mêmes conventions que `weapons.json` / `enemies.json` / `meta_upgrades.json` (chargé au runtime,
