@@ -861,6 +861,41 @@ Aucune greffe ne franchit un plafond **seule**. Seul le cumul `DamageReduction` 
 Renforcée + Carapace) atteint le cap 0,40 — chevauchement assumé, identique au comportement des
 tiers 2 méta (§9.5).
 
+## 19. Silhouette-chimère — **✅ IMPLÉMENTÉ (Phase B volet 2, 2026-07-07)**
+
+> Volet 2 de la Phase B (« Identité chimère », §9). Objectif : que le joueur **ressemble** à sa
+> chimère au lieu d'une simple teinte additive — la promesse marketing « lisible en un GIF » (§10).
+
+**Approche retenue (arbitrage utilisateur 2026-07-07) : props attachés**, pas de couches de sprite
+par frame. Chaque greffe/fusion sans nœud visuel propre reçoit un **prop** : un petit assemblage de
+`Polygon2D` ancré au corps du joueur, ombré pseudo-3D (lumière haut-gauche, `ART_BRIEF_PSEUDO3D`
+§1-2, dérivation HSV répliquée en C#). **Procédural** (aucun asset PNG), cohérent avec les
+essaims/tourelles déjà procéduraux, et **indépendant du personnage** : marche pour les 4 corps
+jouables sans art par perso/frame. La Nuée (essaims orbitants) et la Ruche (4 tourelles) servaient
+déjà de silhouette — inchangées.
+
+| Greffe / fusion | Prop de silhouette | Ancre / z | Anim |
+|---|---|---|---|
+| Carapace Greffée | plastron + 2 pauldrons blindés | torse, z+1 | statique |
+| Servos Erratiques | 2 tuyères sur les flancs bas (débordent la silhouette) + vents lumineux | bas, z+1 | vents pulsent, s'embrasent au dash |
+| Œil de Visée | orbe flottant au-dessus de la tête, **pupille qui suit l'ennemi le plus proche** | tête, z+2 | flottaison + visée |
+| Onde du Rôdeur | couronne-résonateur (3 nubs sur un anneau) | corps, z−1 | tourne + enfle avant chaque onde |
+| **Charge Blindée** (fusion) | proue blindée orientée au facing | avant, z+1, **miroir** | s'illumine à la charge |
+| **Ruche de Tourelles** (fusion) | cœur de ruche (grappe d'alvéoles) | dos, z+1 | léger battement |
+| Nuée / Ruche | — (essaims orbitants / 4 tourelles déjà en place) | — | — |
+
+**Implémentation** (`GraftManager`, § « Props de silhouette ») : `GraftProp` (Node2D + ancre + flag
+miroir + délégué d'update), construit dans `RebuildBehaviors`/`BuildPropFor` (switch par id, bespoke),
+positionné/miroité/animé dans `UpdateProps` (espace local du GraftManager = espace joueur, miroir X
+via `Player.FacingLeft`, intensité dash via `Player.IsDashing`), purgé au retrait. Ombrage
+`Shade(color, Face)` + normalisation `BaseColorFromTint` (teinte-multiplicateur → couleur de matière).
+**Flag debug `--force-graft=<id|all>`** (`DebugHooks`/`GameManager.ApplyGraftDebugHook`/
+`AssimilationSystem.DebugForceGraft`) + outil `tools/capture_graft_silhouette.py` (capture par PID).
+Validé visuellement 2026-07-07 (lisibilité, cohérence lumière, visage non occulté), 119 tests verts.
+
+**Reste Phase B** (volets non livrés) : 3e fusion « Nova du Rôdeur » (§15.6), variantes de greffe par
+biome (§4/§9).
+
 ---
 
 # PARTIE III — INTRO : spec du plan d'assimilation (2026-07-06, `story-teller`)

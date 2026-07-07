@@ -152,6 +152,22 @@ public partial class GameManager : Node
         // pour valider leur ressenti/équilibrage sans grinder les jauges. Aucun effet sans le flag.
         if (!string.IsNullOrEmpty(DebugHooks.ForcedFusion))
             Callable.From(ApplyFusionDebugHook).CallDeferred();
+
+        // Hook --force-graft=<id|all> : équipe d'office une (ou les 5) greffe(s) de base pour valider
+        // visuellement les props de silhouette (Phase B). Aucun effet sans le flag.
+        if (!string.IsNullOrEmpty(DebugHooks.ForcedGraft))
+            Callable.From(ApplyGraftDebugHook).CallDeferred();
+    }
+
+    /// <summary>
+    /// Hook --force-graft : équipe la (ou les) greffe(s) demandée(s) via AssimilationSystem.DebugForceGraft.
+    /// <c>all</c> équipe les 5 greffes de base. N'est appelé que si le flag est présent.
+    /// </summary>
+    private void ApplyGraftDebugHook()
+    {
+        var sys = AssimilationSystem.Instance;
+        if (sys == null) return;
+        sys.DebugForceGraft(DebugHooks.ForcedGraft!);
     }
 
     /// <summary>

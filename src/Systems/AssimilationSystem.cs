@@ -316,6 +316,31 @@ public partial class AssimilationSystem : Node
         GD.Print($"[AssimilationSystem] --force-fusion : '{fusionId}' équipée.");
     }
 
+    /// <summary>
+    /// DEBUG (--force-graft) : équipe d'office une greffe de base (ou <c>all</c> = les 5), sans jauge
+    /// ni limite de slot — sert à valider visuellement les props de silhouette (Phase B). Aucun appel
+    /// en build normal.
+    /// </summary>
+    public void DebugForceGraft(string graftId)
+    {
+        void EquipOne(string id)
+        {
+            if (_equipped.Contains(id)) return;
+            var def = _config.GraftById(id);
+            if (def == null) { GD.PrintErr($"[AssimilationSystem] --force-graft : greffe '{id}' inconnue."); return; }
+            _equipped.Add(id);
+            EquipOnPlayer(def);
+            Discover(id);
+        }
+
+        if (graftId == "all")
+            foreach (var g in _config.Grafts) EquipOne(g.Id);
+        else
+            EquipOne(graftId);
+        GraftsVersion++;
+        GD.Print($"[AssimilationSystem] --force-graft : '{graftId}' équipée.");
+    }
+
     // -------------------------------------------------------------------------
     // Application côté Player (délégué à GraftManager)
     // -------------------------------------------------------------------------

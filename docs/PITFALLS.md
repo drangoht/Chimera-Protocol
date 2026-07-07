@@ -157,6 +157,19 @@ Tout nouveau chemin de sortie de run doit l'appeler aussi.
   régénérés par un simple `--headless` ; lancer **`godot --headless --import`** (ou l'éditeur) pour
   recompiler la CSV. En attendant, `AssimilationScreen.TFallback` retombe sur le texte FR du `grafts.json`
   (l'écran reste lisible), mais `HubScreen` (Loc.T direct) afficherait la clé brute.
+- **Props de silhouette (Phase B volet 2, `GraftManager` § « Props de silhouette »)** : nœuds visuels
+  procéduraux attachés au joueur, **construits/purgés dans `RebuildBehaviors`** (comme les essaims/
+  tourelles) et animés dans `UpdateProps` (`_Process`, pas physique). **Espace local** : les props sont
+  enfants du GraftManager (à l'origine du joueur) → position en LOCAL (suit le joueur gratuitement),
+  contrairement aux essaims/tourelles qui utilisent `GlobalPosition`. **Miroir** du facing via
+  `Player.FacingLeft` (négation `Anchor.X` + `Scale.X=-1` pour les props directionnels `Mirror=true` ;
+  props centrés = `Mirror=false`). **`ZIndex` relatif** (ZAsRelative) : le joueur est à z=5 ; un prop
+  z=+1 rend AU-DESSUS du sprite, z=−1 EN DESSOUS (un thruster à z=−1 disparaît derrière les jambes —
+  le mettre à z=+1 pour qu'il déborde et lise). **Teinte** : `def.Tint` est un MULTIPLICATEUR (canaux
+  &gt; 1 possibles) → passer par `BaseColorFromTint` (normalise en couleur de matière) avant d'ombrer
+  via `Shade(color, Face)` (dérivation HSV du brief pseudo-3D, PAS de noir/blanc pur). Flag debug
+  `--force-graft=<id|all>` ; capture par **PID** (`tools/capture_graft_silhouette.py`) car
+  `find_window("Chimera")` attrape un navigateur/éditeur titré « Chimera » (devlog) au lieu du jeu.
 
 ## Tests headless
 - `LevelUpScreen` met l'arbre EN PAUSE → gèle le serveur physique en headless (neutraliser l'XP de départ pour tester le gameplay)

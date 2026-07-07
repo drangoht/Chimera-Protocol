@@ -79,9 +79,18 @@ Livré en Phase A :
 - **Lisibilité HUD des greffes (2026-07-07)** : la rangée de la `BuffBar` (power-ups temporaires)
   recouvrait la rangée d'emplacements de greffe — emplacements agrandis + liseré magenta, fin du
   chevauchement (`f1c7431`, `21f18c4`).
-- **Hors Phase A/B-volet-1** (→ Phase B suite) : refonte de la silhouette par couches, variantes de
-  greffe par biome, 3e fusion (Nova du Rôdeur, §15.6). Textes/lore/loc greffes+fusions à finaliser par
-  `story-teller`. Icônes de greffe/fusion à produire par `graphiste` (fallback carré teinté en attendant).
+- **Silhouette-chimère — Phase B volet 2 (2026-07-07)** : le corps du joueur **change visuellement**
+  selon les greffes/fusions équipées (fini la simple teinte). **Props attachés** procéduraux ombrés
+  pseudo-3D, indépendants du personnage (4 corps jouables) : Carapace (plastron+pauldrons), Servos
+  (tuyères+vents qui s'embrasent au dash), Œil (orbe flottant, pupille qui vise), Onde (couronne-
+  résonateur qui enfle avant l'onde), Charge Blindée (proue orientée au facing), Ruche (cœur de ruche).
+  La Nuée/Ruche utilisaient déjà leurs essaims/tourelles comme silhouette. Impl. `GraftManager`
+  (`GraftProp`/`BuildPropFor`/`UpdateProps`, ombrage `Shade`/`BaseColorFromTint`), miroir via
+  `Player.FacingLeft`. Flag debug `--force-graft=<id|all>`, outil `tools/capture_graft_silhouette.py`.
+  Détail : `docs/DESIGN_ASSIMILATION.md` §19. Validé visuellement, 119 tests verts. **Non publié.**
+- **Hors Phase A/B (→ Phase B suite)** : 3e fusion (Nova du Rôdeur, §15.6), variantes de greffe par
+  biome (§4/§9). Textes/lore/loc greffes+fusions à finaliser par `story-teller`. Icônes de
+  greffe/fusion à produire par `graphiste` (fallback carré teinté en attendant).
 
 ## Ce qui est implémenté
 

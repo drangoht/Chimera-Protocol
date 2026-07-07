@@ -81,7 +81,7 @@ Fusions : `FusionBlade`, `RailOvercharged`, `OrbitalSwarm`, `OverloadAegis`,
 `SeekerMissile`, `DroneEntity`, etc.
 
 ## §Entities — `src/Entities/`
-- Player : `Player` (+ `PlayerStats`, + **`GraftManager`** : applique les effets de greffe — stat mods avec retrait exact, mini-essaims orbitants/tourelle/thorns/onde en `_Process`, teinte additive `SelfModulate` ; le dash vit dans `Player` : `EnableDash`/`DisableDash`, `GraftSpeedMultiplier`, `HealFlat`, `SetGraftTint`)
+- Player : `Player` (+ `PlayerStats`, + **`GraftManager`** : applique les effets de greffe — stat mods avec retrait exact, mini-essaims orbitants/tourelle/thorns/onde en `_Process`, teinte additive `SelfModulate`, + **props de silhouette** Phase B `BuildPropFor`/`UpdateProps`/`Shade` : carapace/servos/œil/onde/proue de charge/cœur de ruche ancrés au corps, miroir via `Player.FacingLeft` ; le dash vit dans `Player` : `EnableDash`/`DisableDash`, `GraftSpeedMultiplier`, `HealFlat`, `SetGraftTint`, `FacingLeft`, `IsDashing`)
 - Enemies : `EnemyBase` (data-driven, `SetSpriteFrames`, **`ApplyElite`** — affixes d'élite), `EliteAura` (halo VFX), `EnemyBullet`, `CorruptedDrone`, `CorruptedSentinel`, `RustSwarm`, `RustStalker`
 - MiniBoss : `AetherRevenant`, `MasterSentinel` · Boss : `GraftedColossus` (48×48, `Die()` custom)
 - Environment : `AetherCore`, `RustedCore`, `AetherGeyser`, `HpOrb`, `XpOrb`, `MagnetPickup`, `PowerUpPickup`
@@ -122,3 +122,4 @@ Fusions : `FusionBlade`, `RailOvercharged`, `OrbitalSwarm`, `OverloadAegis`,
 - Forcer un biome (tests/captures) : flag `--biome=<id>`
 - Forcer tous les ennemis basiques en élite (test des affixes) : flag `--force-elites` (`DebugHooks.ForceElites`)
 - Forcer l'équipement d'une (ou des deux) fusion(s) de greffes sans grinder les jauges : flag `--force-fusion=<id|all>` (`DebugHooks.ForcedFusion`, équipe d'abord les 2 greffes prérequises)
+- Forcer l'équipement d'une (ou des 5) greffe(s) de base pour valider les props de silhouette : flag `--force-graft=<id|all>` (`DebugHooks.ForcedGraft`) ; capture par PID via `tools/capture_graft_silhouette.py`

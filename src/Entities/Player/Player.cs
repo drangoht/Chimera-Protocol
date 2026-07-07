@@ -54,6 +54,14 @@ public partial class Player : CharacterBody2D
     public float DashReadyRatio => _dashCdDuration <= 0f ? 1f
         : Mathf.Clamp(1f - _dashCdTimer / _dashCdDuration, 0f, 1f);
 
+    /// <summary>Le sprite regarde-t-il vers la gauche (FlipH) ? Lu par GraftManager pour miroiter
+    /// les props de greffe latéraux (servos, proue de charge) avec le facing du joueur.</summary>
+    public bool FacingLeft => _sprite?.FlipH ?? false;
+
+    /// <summary>Une ruade/charge est-elle en cours ? Lu par GraftManager pour intensifier les props
+    /// (vents des servos, proue de la Charge Blindée) pendant le dash.</summary>
+    public bool IsDashing => _dashActiveLeft > 0f;
+
     // Charge (fusion Charge Blindée) : le dash devient un couloir de dégâts + knockback.
     private bool  _dashIsCharge;
     private float _chargeWidth, _chargeDamage, _chargeKnockback;

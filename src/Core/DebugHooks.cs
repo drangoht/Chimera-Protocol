@@ -86,6 +86,28 @@ public static class DebugHooks
         }
     }
 
+    private static bool _forcedGraftRead;
+    private static string? _forcedGraft;
+
+    /// <summary>
+    /// Id de greffe à équiper d'office via <c>--force-graft=&lt;id&gt;</c> (ex.
+    /// <c>--force-graft=grafted_carapace</c>) ou <c>--force-graft=all</c> pour les 5 greffes de base, ou
+    /// null. Sert à valider visuellement les props de silhouette (Phase B) sans grinder les jauges.
+    /// Aucun effet en build normal. Voir GameManager.ApplyGraftDebugHook.
+    /// </summary>
+    public static string? ForcedGraft
+    {
+        get
+        {
+            if (!_forcedGraftRead)
+            {
+                _forcedGraft     = ValueFlag("--force-graft=");
+                _forcedGraftRead = true;
+            }
+            return _forcedGraft;
+        }
+    }
+
     private static bool HasFlag(string flag)
     {
         foreach (var arg in OS.GetCmdlineArgs())
