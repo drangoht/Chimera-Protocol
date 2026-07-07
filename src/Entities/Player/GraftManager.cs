@@ -44,6 +44,7 @@ public partial class GraftManager : Node2D
     // ── Tourelles (fusion Ruche de Tourelles) ──
     private bool  _turretsActive;
     private readonly List<Node2D> _turrets = new();
+    private readonly List<Line2D> _turretLines = new(); // liens d'ancrage joueur↔tourelle (lisibilité)
     private readonly List<float>  _turretsTimer = new();
     private readonly Dictionary<EnemyBase, float> _turretsContactRehit = new();
     private int   _turretsCount;
@@ -138,9 +139,10 @@ public partial class GraftManager : Node2D
         foreach (var o in _orbiters) if (IsInstanceValid(o)) o.QueueFree();
         _orbiters.Clear();
         _orbiterRehit.Clear();
-        // Purge des tourelles existantes.
+        // Purge des tourelles existantes (les liens d'ancrage sont enfants → libérés avec).
         foreach (var t in _turrets) if (IsInstanceValid(t)) t.QueueFree();
         _turrets.Clear();
+        _turretLines.Clear();
         _turretsTimer.Clear();
         _turretsContactRehit.Clear();
 
@@ -241,22 +243,42 @@ public partial class GraftManager : Node2D
             _turretsContactDmg *= _player.Stats.DamageMultiplier;
         }
 
-        var col = TintColor(def);
+        // Lisibilité (playtest 2026-07-07, BUG-F01) : les tourelles doivent trancher nettement sur
+        // les ennemis de rouille (orange) et passer AU-DESSUS d'eux. Corps cyan de la palette UI
+        // (≠ teinte de greffe), Z=6 (ennemis ~0, joueur 5), plus grosses, contour sombre + cœur clair,
+        // et un lien d'ancrage fin vers le joueur pour rattacher visuellement les 4 tourelles.
+        var body    = new Color(0.27f, 1f, 0.93f);     // cyan #44FFEE
+        var outline = new Color(0f, 0.12f, 0.11f, 0.7f);
+        var core    = new Color(0.85f, 1f, 0.98f);
         for (int i = 0; i < _turretsCount; i++)
         {
-            var t = new Node2D { ZIndex = 4 };
-            var poly = new Polygon2D
+            var t = new Node2D { ZIndex = 6 };
+            // Lien d'ancrage joueur↔tourelle (derrière le corps), mis à jour dans UpdateTurrets.
+            var link = new Line2D
             {
-                Polygon = new Vector2[] { new(7, 0), new(3, -6), new(-5, -5), new(-5, 5), new(3, 6) },
-                Color   = col,
+                Width        = 2f,
+                DefaultColor = new Color(body.R, body.G, body.B, 0.22f),
+                ZIndex       = -1,
+                Points       = new Vector2[] { Vector2.Zero, Vector2.Zero },
             };
-            t.AddChild(poly);
+            t.AddChild(link);
+            _turretLines.Add(link);
+            // Contour sombre (halo de contraste), corps cyan, puis cœur clair — arrow ~22 px.
+            t.AddChild(new Polygon2D { Polygon = TurretShape(1.35f), Color = outline });
+            t.AddChild(new Polygon2D { Polygon = TurretShape(1.0f),  Color = body });
+            t.AddChild(new Polygon2D { Polygon = TurretShape(0.42f), Color = core });
             AddChild(t);
             t.GlobalPosition = _player.GlobalPosition;
             _turrets.Add(t);
             _turretsTimer.Add(EffectiveCd(_turretsCd, _turretsCdFloor, _turretsCdr));
         }
     }
+
+    /// <summary>Silhouette de tourelle (flèche pointant +x, ~22 px de long à scale 1) mise à l'échelle.</summary>
+    private static Vector2[] TurretShape(float s) => new Vector2[]
+    {
+        new(11 * s, 0), new(5 * s, -8 * s), new(-7 * s, -7 * s), new(-7 * s, 7 * s), new(5 * s, 8 * s),
+    };
 
     private void SetupTurret(GraftTable.GraftDef def)
     {
@@ -442,6 +464,12 @@ public partial class GraftManager : Node2D
             var anchor = center + Vector2.Right.Rotated(a) * _turretsAnchorR;
             _turrets[i].GlobalPosition = _turrets[i].GlobalPosition.MoveToward(anchor, _turretsFollow * dt);
 
+            // Lien d'ancrage vers le joueur (point 1 en coordonnées locales : le nœud tourelle peut
+            // être pivoté vers sa cible, donc on contre-rotate pour que le lien vise toujours le joueur).
+            if (i < _turretLines.Count && IsInstanceValid(_turretLines[i]))
+                _turretLines[i].SetPointPosition(1,
+                    (center - _turrets[i].GlobalPosition).Rotated(-_turrets[i].Rotation));
+
             // Tir sur l'ennemi le plus proche de la tourelle.
             _turretsTimer[i] -= dt;
             if (_turretsTimer[i] <= 0f)
@@ -451,10 +479,13 @@ public partial class GraftManager : Node2D
                 {
                     _turretsTimer[i] = EffectiveCd(_turretsCd, _turretsCdFloor, _turretsCdr);
                     _bulletScene ??= GD.Load<PackedScene>("res://scenes/weapons/Bullet.tscn");
+                    // Oriente la tourelle vers sa cible (le canon montre d'où part le tir → lisibilité).
+                    var dir = (target.GlobalPosition - _turrets[i].GlobalPosition).Normalized();
+                    _turrets[i].Rotation = dir.Angle();
                     if (_bulletScene != null)
                     {
                         var b = _bulletScene.Instantiate<Bullet>();
-                        b.Direction  = (target.GlobalPosition - _turrets[i].GlobalPosition).Normalized();
+                        b.Direction  = dir;
                         b.Speed      = _turretsSpeed;
                         b.Damage     = _turretsDamage;
                         b.IsPiercing = _turretsPierce;

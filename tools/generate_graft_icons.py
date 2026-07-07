@@ -349,11 +349,11 @@ def gen_fusion_ruche_tourelles():
     # 4 tourelles ancrees autour du moyeu, chacune tire un trait ambre vers l'exterieur
     for k in range(4):
         a = math.pi * 2 * k / 4 + math.pi / 4
-        tx = cx + math.cos(a) * 9
-        ty = cy + math.sin(a) * 9
-        # tir (rayon ambre partant de la tourelle vers l'exterieur)
-        ex = cx + math.cos(a) * 15
-        ey = cy + math.sin(a) * 15
+        tx = cx + math.cos(a) * 8
+        ty = cy + math.sin(a) * 8
+        # tir (rayon ambre partant de la tourelle vers l'exterieur, resserre pour tenir dans le slot)
+        ex = cx + math.cos(a) * 13
+        ey = cy + math.sin(a) * 13
         line(img, tx, ty, ex, ey, (AMB_L[0], AMB_L[1], AMB_L[2], 190), w=0)
         put(img, ex, ey, WH)
         # petit reticule/oeil de la tourelle

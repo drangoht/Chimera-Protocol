@@ -438,6 +438,7 @@ public partial class Player : CharacterBody2D
     private void ApplyChargeDamage()
     {
         var center = GlobalPosition;
+        bool hitAny = false;
         foreach (var node in GetTree().GetNodesInGroup(Constants.GroupEnemies))
         {
             if (node is not EnemyBase enemy || !IsInstanceValid(enemy)) continue;
@@ -450,6 +451,15 @@ public partial class Player : CharacterBody2D
                 : (_dashVel.LengthSquared() > 0.01f ? _dashVel.Normalized() : Vector2.Right);
             enemy.GlobalPosition += dir * _chargeKnockback;
             _chargeHit.Add(enemy);
+            hitAny = true;
+        }
+
+        // Feedback d'impact (playtest 2026-07-07, BUG-F03) : secousse courte + flash quand la charge
+        // percute réellement — vend le « poids » du tank. Une fois par frame de collision, pas par ennemi.
+        if (hitAny)
+        {
+            ScreenShake.Instance?.Shake(4.5f, 0.14f);
+            HitFlash(0.08f, new Color(1.6f, 1.3f, 1.0f, 1f));
         }
     }
 
