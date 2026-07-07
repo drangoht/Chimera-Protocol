@@ -271,6 +271,7 @@ public partial class HUD : CanvasLayer
 		{
 			bool filled = i < equipped.Count;
 			var slot = new Panel { CustomMinimumSize = new Vector2(20, 20),
+								   ClipContents = true, // garde-fou : rien ne peut déborder du slot (icônes plein-cadre)
 								   MouseFilter = Control.MouseFilterEnum.Ignore };
 			var st = new StyleBoxFlat();
 			st.SetCornerRadiusAll(4); st.SetBorderWidthAll(1);
@@ -295,9 +296,10 @@ public partial class HUD : CanvasLayer
 						StretchMode   = TextureRect.StretchModeEnum.KeepAspectCentered,
 						MouseFilter   = Control.MouseFilterEnum.Ignore,
 					};
-					// Remplit le slot (20 px) avec une petite marge → icône ~16-18 px cohérente avec la rangée.
+					// Remplit le slot (20 px) avec une marge dégageant le liseré arrondi (corner radius 4) :
+					// évite que les icônes plein-cadre (ruche, œil) affleurent/mordent le bord (BUG-F04).
 					tex.SetAnchorsPreset(Control.LayoutPreset.FullRect);
-					tex.OffsetLeft = tex.OffsetTop = 2; tex.OffsetRight = tex.OffsetBottom = -2;
+					tex.OffsetLeft = tex.OffsetTop = 3; tex.OffsetRight = tex.OffsetBottom = -3;
 					slot.AddChild(tex);
 				}
 			}
