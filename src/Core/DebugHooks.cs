@@ -64,6 +64,28 @@ public static class DebugHooks
         }
     }
 
+    private static bool _forcedFusionRead;
+    private static string? _forcedFusion;
+
+    /// <summary>
+    /// Id de fusion à équiper d'office via <c>--force-fusion=&lt;id&gt;</c> (ex.
+    /// <c>--force-fusion=fusion_charge_blindee</c>) ou <c>--force-fusion=all</c> pour les deux, ou null.
+    /// Sert au game-tester à valider le ressenti/l'équilibrage des fusions sans grinder les jauges.
+    /// Aucun effet en build normal. Voir GameManager.ApplyFusionDebugHook.
+    /// </summary>
+    public static string? ForcedFusion
+    {
+        get
+        {
+            if (!_forcedFusionRead)
+            {
+                _forcedFusion     = ValueFlag("--force-fusion=");
+                _forcedFusionRead = true;
+            }
+            return _forcedFusion;
+        }
+    }
+
     private static bool HasFlag(string flag)
     {
         foreach (var arg in OS.GetCmdlineArgs())

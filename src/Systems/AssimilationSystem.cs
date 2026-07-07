@@ -245,6 +245,30 @@ public partial class AssimilationSystem : Node
     public GraftTable.GraftDef? GraftForGauge(string gauge) => _config.GraftForGauge(gauge);
     public GraftTable.GraftDef? GraftById(string id) => _config.GraftById(id);
 
+    /// <summary>
+    /// DEBUG (--force-fusion) : équipe d'office une fusion, en équipant d'abord ses 2 greffes
+    /// prérequises puis en fusionnant — reproduit exactement le chemin normal (occupation 2→1),
+    /// sans avoir à remplir les jauges. Aucun appel en build normal.
+    /// </summary>
+    public void DebugForceFusion(string fusionId)
+    {
+        var fusion = _config.FusionById(fusionId);
+        if (fusion == null) { GD.PrintErr($"[AssimilationSystem] --force-fusion : fusion '{fusionId}' inconnue."); return; }
+
+        foreach (var r in fusion.Requires)
+        {
+            if (_equipped.Contains(r)) continue;
+            var def = _config.GraftById(r);
+            if (def == null) continue;
+            _equipped.Add(r);
+            EquipOnPlayer(def);
+            Discover(r);
+        }
+        GraftsVersion++;
+        AssimilateFusion(fusion.GaugeKey);
+        GD.Print($"[AssimilationSystem] --force-fusion : '{fusionId}' équipée.");
+    }
+
     // -------------------------------------------------------------------------
     // Application côté Player (délégué à GraftManager)
     // -------------------------------------------------------------------------

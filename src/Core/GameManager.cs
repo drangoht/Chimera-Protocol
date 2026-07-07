@@ -147,6 +147,31 @@ public partial class GameManager : Node
         // Aucun effet sans le flag.
         if (DebugHooks.BossDebug)
             Callable.From(ApplyBossDebugHook).CallDeferred();
+
+        // Hook --force-fusion=<id|all> : équipe d'office une (ou les deux) fusion(s) de greffes
+        // pour valider leur ressenti/équilibrage sans grinder les jauges. Aucun effet sans le flag.
+        if (!string.IsNullOrEmpty(DebugHooks.ForcedFusion))
+            Callable.From(ApplyFusionDebugHook).CallDeferred();
+    }
+
+    /// <summary>
+    /// Hook --force-fusion : équipe la ou les fusions demandées via AssimilationSystem.DebugForceFusion.
+    /// <c>all</c> équipe les deux fusions livrées. N'est appelé que si le flag est présent.
+    /// </summary>
+    private void ApplyFusionDebugHook()
+    {
+        var sys = AssimilationSystem.Instance;
+        if (sys == null) return;
+        string arg = DebugHooks.ForcedFusion!;
+        if (arg == "all")
+        {
+            sys.DebugForceFusion("fusion_charge_blindee");
+            sys.DebugForceFusion("fusion_ruche_tourelles");
+        }
+        else
+        {
+            sys.DebugForceFusion(arg);
+        }
     }
 
     /// <summary>
