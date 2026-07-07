@@ -5,7 +5,16 @@
 > `CLAUDE.md` ; le design complet dans `docs/GDD.md` ; la carte du code dans `/carte-projet`.
 
 - Pile technique : **Godot 4.7 .NET (C# / .NET 8 / GodotSharp)**
-- **Phase actuelle : libre** — dernières livraisons : **Discord Rich Presence** (`DiscordPresence`,
+- **Phase actuelle : libre** — dernière livraison majeure : **Assimilation en ligne (1.12.0,
+  2026-07-07)** — 3e axe de progression publié pour la première fois (Phase A + Phase B volet 1 +
+  écran Codex Chimère, tout ce qui suit était encore « non publié » à la sortie de 1.11.4) : 5
+  greffes (Nuée Symbiotique, Servos Erratiques, Œil de Visée, Carapace Greffée, Onde du Rôdeur),
+  2 fusions (**Charge Blindée** = Carapace+Servos → dash devient charge blindée ; **Ruche de
+  Tourelles** = Œil+Nuée → 4 tourelles 360° + lifesteal), nouvel écran **`ChimeraCodexScreen`**
+  (menu principal) expliquant greffes/fusions, HUD des greffes agrandi + liseré magenta (fin du
+  recouvrement par la BuffBar). Détail chiffré : `docs/DESIGN_ASSIMILATION.md`. Version publiée
+  itch : **1.12.0**.
+- Dernières livraisons précédentes : **Discord Rich Presence** (`DiscordPresence`,
   statut « joue à Chimera Protocol » + tampon de version `v<ver>-<sha>` bas-droite `VersionStamp`, 2026-07-05),
   **nouveau perso Vecteur** (cyborg de précision, arme de base Lance Vectorielle dirigée, 2026-07-05),
   **remap clavier + ZQSD par défaut**
@@ -23,9 +32,8 @@
   13 min ~21360 en Normal au lieu de ~32040 — + fix `EnemySpawner.SpawnOvertimeBoss` qui bypassait
   `maxSimultaneous:1` et laissait plusieurs boss s'empiler en overtime, cause principale du ressenti
   « impossible » ; TTK mesuré ~36-40 s sur build de référence, cible ~43-61 s build moyen, 1.11.4).
-  Version publiée itch : **1.11.4**.
 
-### Système d'Assimilation / Greffes — **Phase A** (en cours, 2026-07-06, non publié)
+### Système d'Assimilation / Greffes — **Phase A + Phase B volet 1** (✅ publié 1.12.0, 2026-07-07)
 
 Troisième axe de progression (« deviens la chimère »), cf. `docs/DESIGN_ASSIMILATION.md` Partie II.
 Livré en Phase A :
@@ -64,6 +72,13 @@ Livré en Phase A :
   réutilise `Bullet`). Détail chiffré : `docs/DESIGN_ASSIMILATION.md` §15. Clés loc `GRAFT_FUSION_*`/
   `ASSIM_FUSE`/`ASSIM_FUSION_*` posées (placeholder à finaliser `story-teller`) ; icônes
   `fusion_*_icon.png` à produire (`graphiste`, fallback carré teinté).
+- **Écran Codex « Chimère » (2026-07-07)** : `ChimeraCodexScreen` (`src/UI/`, scène
+  `scenes/ui/ChimeraCodexScreen.tscn`), accessible depuis le menu principal au même rang que
+  Bestiaire/Arsenal — liste les 5 greffes + 2 fusions (icône, effet, prérequis), même socle
+  `CodexScreenBase` (scroll clavier/manette).
+- **Lisibilité HUD des greffes (2026-07-07)** : la rangée de la `BuffBar` (power-ups temporaires)
+  recouvrait la rangée d'emplacements de greffe — emplacements agrandis + liseré magenta, fin du
+  chevauchement (`f1c7431`, `21f18c4`).
 - **Hors Phase A/B-volet-1** (→ Phase B suite) : refonte de la silhouette par couches, variantes de
   greffe par biome, 3e fusion (Nova du Rôdeur, §15.6). Textes/lore/loc greffes+fusions à finaliser par
   `story-teller`. Icônes de greffe/fusion à produire par `graphiste` (fallback carré teinté en attendant).

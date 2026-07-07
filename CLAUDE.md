@@ -13,11 +13,10 @@ cyborgs, robots), inspiré de Vampire Survivors et Everything is Crab.
 - **Avant de coder** dans un domaine (armes, ennemis, UI/focus, VFX, scènes, assets, tests headless) → lire **`docs/PITFALLS.md`** (pièges non-évidents Godot/C# + checklists de câblage). Y ajouter tout nouveau piège découvert.
 - **État d'implémentation détaillé & version courante → `docs/PROJECT_STATE.md`** (évolutif). Résumé de phase ci-dessous.
 
-**Phase actuelle : libre.** Dernières livraisons : **poussée d'ennemis** (le joueur écarte les ennemis
-qui le chevauchent au lieu de les traverser, `Player.PushEnemiesAside()`) et **fix occultation obstacles**
-(z-index corrigé : les obstacles infranchissables cachent le joueur derrière eux dans les 5 biomes),
-2026-07-05 ; puis **rééquilibrage du boss de fin** (Le Noyau Rouille jugé impossible à tuer : PV
-18000→12000 + fix empilement de boss en overtime), 2026-07-06. Version publiée itch : **1.11.4**.
+**Phase actuelle : libre.** Dernière livraison majeure : **Assimilation en ligne** — 3e axe de
+progression (« Ne tue pas les monstres. Deviens-les. ») publié pour la première fois : 5 greffes,
+2 fusions (Charge Blindée, Ruche de Tourelles), nouvel écran Codex **Chimère**, lisibilité HUD des
+greffes, 2026-07-07. Détail chiffré : `docs/DESIGN_ASSIMILATION.md`. Version publiée itch : **1.12.0**.
 Détail dans `docs/PROJECT_STATE.md`.
 
 ## Équipe d'agents
@@ -43,7 +42,7 @@ l'agent compétent (ordre de lancement : `GUIDE-CLAUDE-CODE.md`).
 - Style de code : PascalCase classes/méthodes, `_camelCase` champs privés, `readonly` par défaut.
 - Architecture : `src/` (logique C#) / `scenes/` (.tscn) / `assets/` (raw) / `data/` (JSON tuning modifiable sans recompiler).
 - **Logique pure testable** : `src/Core/Rules/` (classes statiques sans dépendance Godot — `XpCurve`, `EnemyScaling`, `EliteAffixTable`…). Les nœuds y délèguent (SRP).
-- **Tests unitaires** : xUnit, `dotnet test tests/ChimeraProtocol.Tests.csproj`. **87 tests**.
+- **Tests unitaires** : xUnit, `dotnet test tests/ChimeraProtocol.Tests.csproj`. **119 tests**.
 - Singletons (AutoLoad) : `GameManager`, `XpSystem`, `InventorySystem`, `LevelUpSystem`, `SaveManager`, `MetaProgressionSystem`, `AudioSystem`, `FusionFlash`, `ScreenShake`, `GameSettings`, `DiscordPresence` (Rich Presence), `VersionStamp` (tampon `v<ver>-<sha>` bas-droite).
 - Sauvegarde : `user://save.json` (méta/Échos) + `user://settings.cfg` (préférences, high scores, complétions, armes découvertes).
 - Sprites : PNG transparent, grille 32×32 px (Colosse 48×48 — exception), `texture_filter = Nearest` global. Style **pseudo-3D avec ombres** (`docs/ART_BRIEF_PSEUDO3D.md`) via `tools/pseudo3d_lib.py` — toujours dériver shadow/highlight avec `shade()`/`shade_sprite()`/`shade_tile()`/`shade_icon()`, jamais des couleurs plates ad hoc.

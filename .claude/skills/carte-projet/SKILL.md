@@ -30,7 +30,7 @@ data/              JSON de tuning (modifiable sans recompiler) — voir §Data
 localization/      ui.csv (source) → ui.{en,fr,es}.translation ; clé via Loc.T("CLÉ")
 assets/            Raw (sprites PNG 32×32, audio OGG/WAV, themes)
 tools/             Générateurs de sprites/audio + captures + release — voir §Outils
-tests/             xUnit — ChimeraProtocol.Tests.csproj (87 tests). `dotnet test tests/...`
+tests/             xUnit — ChimeraProtocol.Tests.csproj (119 tests). `dotnet test tests/...`
 docs/              GDD.md + briefs/plans — voir §Docs
 ```
 
@@ -121,3 +121,4 @@ Fusions : `FusionBlade`, `RailOvercharged`, `OrbitalSwarm`, `OverloadAegis`,
 - Compil rapide C# : `dotnet build ChimeraProtocol.csproj`
 - Forcer un biome (tests/captures) : flag `--biome=<id>`
 - Forcer tous les ennemis basiques en élite (test des affixes) : flag `--force-elites` (`DebugHooks.ForceElites`)
+- Forcer l'équipement d'une (ou des deux) fusion(s) de greffes sans grinder les jauges : flag `--force-fusion=<id|all>` (`DebugHooks.ForcedFusion`, équipe d'abord les 2 greffes prérequises)
