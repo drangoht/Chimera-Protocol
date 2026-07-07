@@ -266,10 +266,119 @@ def gen_stalker_wave():
     save_icon(img, "stalker_wave_icon.png")
 
 
+# ============================================================================
+# FUSIONS (Phase B volet 1, docs/DESIGN_ASSIMILATION.md §15) : chaque icone
+# fusionne visuellement les deux greffes requises (couleurs + motifs des deux).
+# ============================================================================
+
+# ---------------- F1) Charge Blindee : plaque blindee (Carapace) qui CHARGE avec
+# chevrons de vitesse (Servos). Brun blinde + trainee cyan. tint rouille-orange.
+def gen_fusion_charge_blindee():
+    img = canvas()
+    BRN   = (150, 105, 80)
+    BRN_D = (95, 65, 55)
+    BRN_L = (200, 160, 130)
+    SPK   = (220, 200, 180)
+    CY    = (110, 175, 255)
+    CY_L  = (200, 230, 255)
+
+    # direction de charge : bas-gauche -> haut-droite
+    dirx, diry = 0.78, -0.62
+    perp = (-diry, dirx)
+    # centre de la plaque, decale vers l'avant
+    cx, cy = 20, 13
+
+    # 3 trainees cyan de vitesse derriere la plaque (after-image, alpha decroissant)
+    for k, alpha in ((1, 200), (2, 130), (3, 70)):
+        bx = cx - dirx * (7 + k * 4)
+        by = cy - diry * (7 + k * 4)
+        line(img, bx - perp[0] * 6, by - perp[1] * 6,
+                  bx + perp[0] * 6, by + perp[1] * 6,
+                  (CY[0], CY[1], CY[2], alpha), w=0)
+
+    # plaque blindee inclinee (ecu oriente dans le sens de la charge)
+    for t in range(-7, 8):
+        # axe transversal de l'ecu (perp a la charge)
+        px = cx + perp[0] * t
+        py = cy + perp[1] * t
+        # largeur longitudinale : nez pointu a l'avant, arriere plus large
+        halffront = 5.0 * (1 - (t / 8.0) ** 2) ** 0.5
+        for s in range(-6, int(round(halffront)) + 1):
+            x = px + dirx * s
+            y = py + diry * s
+            edge = (t <= -6 or t >= 6 or s >= int(round(halffront)) - 1)
+            put(img, x, y, BRN_D if edge else BRN)
+    # rainures de plaque (2 lignes longitudinales)
+    for toff in (-3, 3):
+        px = cx + perp[0] * toff
+        py = cy + perp[1] * toff
+        line(img, px - dirx * 5, py - diry * 5, px + dirx * 4, py + diry * 4,
+             (BRN_D[0], BRN_D[1], BRN_D[2], 170), w=0)
+    # reflet haut-gauche sur le nez
+    put(img, cx + dirx * 3 + perp[0] * -2, cy + diry * 3 + perp[1] * -2, BRN_L)
+    put(img, cx + dirx * 4, cy + diry * 4, CY_L)
+
+    # 3 epines qui depassent du bord d'attaque (thorns conserves de la Carapace)
+    for toff in (-4, 0, 4):
+        bx = cx + perp[0] * toff + dirx * 5
+        by = cy + perp[1] * toff + diry * 5
+        tx = bx + dirx * 4
+        ty = by + diry * 4
+        line(img, bx, by, tx, ty, SPK, w=0)
+        put(img, tx, ty, BRN_L)
+    save_icon(img, "fusion_charge_blindee_icon.png")
+
+
+# ---------------- F2) Ruche de Tourelles : moyeu de biomasse (Nuee) + 4 tourelles
+# a reticule ambre (Oeil) tirant a 360. Orange + ambre. tint ambre-orange.
+def gen_fusion_ruche_tourelles():
+    img = canvas()
+    ORA   = (225, 110, 55)
+    ORA_D = (140, 65, 35)
+    ORA_L = (255, 175, 115)
+    AMB   = (255, 180, 80)
+    AMB_L = (255, 225, 165)
+    IRIS  = (150, 90, 25)
+    PUP   = (35, 18, 8)
+    WH    = (255, 245, 225)
+    cx, cy = 16, 16
+
+    # halo organique
+    disc(img, cx, cy, 13, (ORA[0], ORA[1], ORA[2], 40))
+
+    # 4 tourelles ancrees autour du moyeu, chacune tire un trait ambre vers l'exterieur
+    for k in range(4):
+        a = math.pi * 2 * k / 4 + math.pi / 4
+        tx = cx + math.cos(a) * 9
+        ty = cy + math.sin(a) * 9
+        # tir (rayon ambre partant de la tourelle vers l'exterieur)
+        ex = cx + math.cos(a) * 15
+        ey = cy + math.sin(a) * 15
+        line(img, tx, ty, ex, ey, (AMB_L[0], AMB_L[1], AMB_L[2], 190), w=0)
+        put(img, ex, ey, WH)
+        # petit reticule/oeil de la tourelle
+        ring(img, tx, ty, 2.4, 1, AMB)
+        disc(img, tx, ty, 1.3, IRIS)
+        put(img, tx, ty, WH)
+
+    # moyeu central : biomasse (blob irregulier, comme la Nuee)
+    disc(img, cx, cy, 5, ORA)
+    disc(img, cx - 2, cy + 2, 3, ORA_D)
+    disc(img, cx + 2, cy - 2, 3, ORA_L)
+    for (dx, dy) in [(-2, 0), (1, -1), (2, 1), (-1, 2)]:
+        put(img, cx + dx, cy + dy, (ORA_D[0], ORA_D[1], ORA_D[2], 220))
+    # oeil-noyau central (heritage de l'Oeil de Visee)
+    disc(img, cx, cy, 2, PUP)
+    put(img, cx - 1, cy - 1, WH)
+    save_icon(img, "fusion_ruche_tourelles_icon.png")
+
+
 if __name__ == "__main__":
     gen_swarm_symbiote()
     gen_erratic_servos()
     gen_aiming_eye()
     gen_grafted_carapace()
     gen_stalker_wave()
+    gen_fusion_charge_blindee()
+    gen_fusion_ruche_tourelles()
     print("Termine.")
