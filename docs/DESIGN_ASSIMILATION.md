@@ -941,8 +941,47 @@ via `Player.FacingLeft`, intensité dash via `Player.IsDashing`), purgé au retr
 `AssimilationSystem.DebugForceGraft`) + outil `tools/capture_graft_silhouette.py` (capture par PID).
 Validé visuellement 2026-07-07 (lisibilité, cohérence lumière, visage non occulté), 119 tests verts.
 
-**Reste Phase B** (volets non livrés) : 3e fusion « Nova du Rôdeur » (§15.6), variantes de greffe par
-biome (§4/§9).
+**Reste Phase B** (volets non livrés) : — (3e fusion Nova = §15.8 ✅ ; variantes par biome = §21 ✅).
+
+## 21. Variantes de greffe par biome — **✅ IMPLÉMENTÉ (Phase B, 2026-07-07)**
+
+> Dernier volet de la Phase B (§4/§9 : « variantes de greffe sur la même jauge »). Objectif : **où**
+> tu assimiles compte — la même greffe prend une saveur différente selon le biome.
+
+**Mécanique : affinité de biome.** Une greffe/fusion **capture le biome courant** (`GameManager.
+CurrentBiomeId`) au moment de l'assimilation et gagne son **affinité** — un jeu de modificateurs
+appliqués à ses effets. 5 leviers distincts, réutilisant les APIs existantes (`EnemyBase.ApplyBurn/
+ApplySlow`, plafonnés par `CrowdControlCaps`) :
+
+| Biome | Affinité | Effet | Levier |
+|---|---|---|---|
+| Sanctuaire | Stable | +12 % dégâts de greffe | `damageMult` |
+| Aether | Résonante | +20 % rayon/portée des effets | `radiusMult` |
+| Fournaise | Ardente | les dégâts de greffe **enflamment** (brûlure DoT) | `burnDps`/`burnTime` |
+| Givre | Glaciale | les dégâts de greffe **ralentissent** | `slowMult`/`slowTime` |
+| Néon | Surchargée | −18 % cooldown des effets de greffe | `cooldownMult` |
+
+**Portée d'application** : `damageMult`/`radiusMult`/`cooldownMult` s'appliquent à **toutes** les
+greffes (dégâts, rayons/portées, cooldowns dans chaque `Setup*`). **burn/slow** s'appliquent sur les
+dégâts **directs** (Nuée, thorns, onde, nova — `ApplyAffinityOnHit`) ET sur les **balles** de l'Œil et
+de la Ruche (`Bullet.BurnDps/SlowMult`). Exception : la **charge** (Charge Blindée) ne reçoit pas
+burn/slow (ses dégâts sont gérés côté `Player`), seulement damage/largeur/cooldown.
+
+**Data-driven** : section `biomeAffinities` de `data/grafts.json` (5 biomes ×
+{damageMult, radiusMult, cooldownMult, burnDps, burnTime, slowMult, slowTime, accent}). Logique pure
+`GraftTable.BiomeAffinity` + `GraftConfig.GetAffinity(biomeId)` (**neutre** si biome inconnu/null) —
+**+5 tests xUnit → 124**. `AssimilationSystem.EquipOnPlayer` résout l'affinité et la passe à
+`GraftManager.Equip(def, aff)` ; stockée par greffe (`_affById`), appliquée par comportement.
+
+**Lisibilité** : la carte d'assimilation affiche l'affinité que la greffe **gagnera ici** (ligne
+`◈ Affinité …`, clés loc `BIOME_AFFINITY_<BIOME>` EN/FR/ES). **Visuel** : l'accent du biome est baké
+(22 %) dans la couleur de matière du **prop de silhouette** (§19) → l'ombrage pseudo-3D en dérive
+(carapace plus chaude en Fournaise, plus froide en Givre). Validé en jeu (boot + accents par biome),
+124 tests verts.
+
+**Rejouabilité obtenue** : un même build de greffes joue différemment selon le parcours de biomes —
+une Nuée assimilée en Fournaise brûle, la même en Givre gèle, en Néon frappe plus souvent. Zéro
+nouvelle greffe, variété combinatoire (5 greffes × 5 biomes) « sur la même jauge » (§4).
 
 ---
 

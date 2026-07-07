@@ -123,6 +123,15 @@
     }
   ],
 
+  "_comment_biomeAffinities": "Variantes de greffe par biome (Phase B, docs/DESIGN_ASSIMILATION.md §21). Une greffe/fusion capture le biome ou elle est assimilee (GameManager.CurrentBiomeId) et gagne son affinite : modificateurs appliques aux effets de greffe (damageMult/radiusMult/cooldownMult) + effet on-hit (burn/slow, reutilise EnemyBase.ApplyBurn/ApplySlow, plafonnes par CrowdControlCaps). accent = teinte biome du prop de silhouette. Biome inconnu -> affinite neutre (tout a 1, pas de burn/slow).",
+  "biomeAffinities": {
+    "sanctuaire": { "damageMult": 1.12, "radiusMult": 1.0,  "cooldownMult": 1.0,  "burnDps": 0, "burnTime": 0,   "slowMult": 1.0, "slowTime": 0,   "accent": [0.30, 0.85, 0.95] },
+    "aether":     { "damageMult": 1.0,  "radiusMult": 1.20, "cooldownMult": 1.0,  "burnDps": 0, "burnTime": 0,   "slowMult": 1.0, "slowTime": 0,   "accent": [0.62, 0.40, 1.0]  },
+    "fournaise":  { "damageMult": 1.0,  "radiusMult": 1.0,  "cooldownMult": 1.0,  "burnDps": 6, "burnTime": 2.0, "slowMult": 1.0, "slowTime": 0,   "accent": [1.0,  0.50, 0.19] },
+    "givre":      { "damageMult": 1.0,  "radiusMult": 1.0,  "cooldownMult": 1.0,  "burnDps": 0, "burnTime": 0,   "slowMult": 0.7, "slowTime": 1.2, "accent": [0.62, 0.88, 0.95] },
+    "neon":       { "damageMult": 1.0,  "radiusMult": 1.0,  "cooldownMult": 0.82, "burnDps": 0, "burnTime": 0,   "slowMult": 1.0, "slowTime": 0,   "accent": [0.95, 0.30, 0.85] }
+  },
+
   "_comment_fusions": "Fusions de greffes (Phase B volet 1, docs/DESIGN_ASSIMILATION.md §15). 2 greffes prerequises (requires) se lient en 1 fusion : occupation 2->1 (freesSlot). Jauge dediee 'fusion_<id>' alimentee par les kills des sourceAiTypes, uniquement quand requires est entierement equipe (garde cote AssimilationSystem).",
   "fusions": [
     {

@@ -46,7 +46,8 @@ EchoFormula · RarityWeights · CrowdControlCaps · DifficultyTuning · **Versio
 (comparaison sémantique pour le bandeau de MAJ) · **EliteAffixTable** (affixes d'élite :
 fréquence + tirage + `EliteModifiers`, cf. GDD §22) · **GraftTable** (Assimilation : parse
 `grafts.json`, routage kill→jauge `RouteKill`, seuils `EffectiveThreshold`/`DeclinedThreshold`,
-`SlotCount` ; cf. docs/DESIGN_ASSIMILATION.md §11-18). Les nœuds délèguent ici (SRP).
+`SlotCount`, **`BiomeAffinity`/`GetAffinity`** = affinités de greffe par biome §21 ; cf.
+docs/DESIGN_ASSIMILATION.md §11-21). Les nœuds délèguent ici (SRP).
 
 ## §Systems — `src/Systems/`
 - Spawn : `EnemySpawner` (+ `EnemySpawnData`), `PowerUpSpawner` (+ `PowerUp`), `MagnetSpawner`, `AetherCoreSpawner`
@@ -89,7 +90,7 @@ Fusions : `FusionBlade`, `RailOvercharged`, `OrbitalSwarm`, `OverloadAegis`,
 ## §Data — `data/*.json` (tuning sans recompiler)
 `weapons.json` (5 niveaux/arme) · `enemies.json` + `enemies_biome_expansion.json` ·
 `levelup_config.json` (rarityByCard) · `meta_upgrades.json` (hub, 19 items — inclut `graft_slots`/`graft_metabolism`) ·
-**`grafts.json`** (Assimilation : slots/gauges/grafts, cf. GraftTable) · `texts.json`.
+**`grafts.json`** (Assimilation : slots/gauges/grafts/fusions/**biomeAffinities** §21, cf. GraftTable) · `texts.json`.
 
 ## §Outils — `tools/`
 - Sprites : `pseudo3d_lib.py` (⚠ toujours dériver ombre/highlight via ce lib), `generate_*` (sprites/icônes/tiles/vfx)

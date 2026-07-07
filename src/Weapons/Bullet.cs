@@ -10,6 +10,13 @@ public partial class Bullet : Area2D
     /// <summary>Niveau de l'arme tirante (1-5+). Calibre la brillance et l'impact.</summary>
     public int     Power      { get; set; } = 1;
 
+    // Affinité de biome portée par la balle (greffes Œil/Ruche assimilées en Fournaise/Givre, §21).
+    // Neutre par défaut (aucun effet) → n'impacte pas les balles d'armes normales.
+    public float   BurnDps    { get; set; } = 0f;
+    public float   BurnTime   { get; set; } = 0f;
+    public float   SlowMult   { get; set; } = 1f;
+    public float   SlowTime   { get; set; } = 0f;
+
     private float _lifetime = 3f;
 
     private static PackedScene? _impactBurstScene;
@@ -90,6 +97,8 @@ public partial class Bullet : Area2D
         if (body is EnemyBase enemy)
         {
             enemy.TakeDamage(Damage);
+            if (BurnDps > 0f && BurnTime > 0f) enemy.ApplyBurn(BurnDps, BurnTime); // affinité Fournaise
+            if (SlowMult < 1f && SlowTime > 0f) enemy.ApplySlow(SlowMult, SlowTime); // affinité Givre
             SpawnImpactBurst();
             if (!IsPiercing)
                 QueueFree();

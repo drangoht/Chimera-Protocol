@@ -183,6 +183,9 @@ public partial class AssimilationScreen : CanvasLayer
         string idKey = def.Id.ToUpperInvariant();
         _nameLabel.Text = TFallback($"GRAFT_{idKey}_NAME", def.Name);
         _descLabel.Text = TFallback($"GRAFT_{idKey}_DESC", def.Description);
+        // Affinité de biome (§21) : ce que la greffe gagnera en étant assimilée ICI.
+        string affLine = BiomeAffinityLine();
+        if (!string.IsNullOrEmpty(affLine)) _descLabel.Text += "\n\n" + affLine;
         _tagLabel.Text  = _isFusion
             ? $"{RarityLabel(def.Rarity)}  ·  {TFallback("ASSIM_FUSION_TAG", "FUSION")}"
             : $"{RarityLabel(def.Rarity)}  ·  {def.Gauge}";
@@ -286,6 +289,16 @@ public partial class AssimilationScreen : CanvasLayer
     {
         if (string.IsNullOrEmpty(def.HudIcon)) return null;
         return Godot.FileAccess.FileExists(def.HudIcon) ? GD.Load<Texture2D>(def.HudIcon) : null;
+    }
+
+    /// <summary>Ligne d'affinité de biome affichée sur la carte (§21) : l'effet que la greffe gagnera
+    /// en étant assimilée dans le biome courant. Vide si biome inconnu ou clé loc absente.</summary>
+    private static string BiomeAffinityLine()
+    {
+        string? biome = GameManager.Instance?.CurrentBiomeId;
+        if (string.IsNullOrEmpty(biome)) return "";
+        string txt = TFallback($"BIOME_AFFINITY_{biome.ToUpperInvariant()}", "");
+        return string.IsNullOrEmpty(txt) ? "" : "◈ " + txt;
     }
 
     /// <summary>Loc.T avec repli sur un texte FR par défaut si la clé n'est pas encore traduite.</summary>

@@ -162,6 +162,16 @@ Tout nouveau chemin de sortie de run doit l'appeler aussi.
   conflit de dash. La **Nova** détone au **front descendant** de `Player.IsDashing` (`GraftManager.
   UpdateNova`, pas un timer) → réutilise le helper partagé `EmitShockwave` (onde périodique ET nova de
   dash passent par lui ; ne pas dupliquer la logique anneau+dégâts).
+- **Affinités de biome (§21)** : une greffe **capture le biome à l'assimilation** (`GameManager.
+  CurrentBiomeId` lu dans `AssimilationSystem.EquipOnPlayer`) et le garde même si le joueur change de
+  biome ensuite → stocké par greffe dans `GraftManager._affById`, PAS relu chaque frame. Appliquer
+  l'affinité **dans les `Setup*`** (damage/radius/cooldown ×mult) et les **boucles de hit**
+  (`ApplyAffinityOnHit` pour Nuée/thorns/onde/nova ; `SetBulletAffinity` pour les balles Œil/Ruche).
+  Piège : `def.Tint` est un multiplicateur, mais `BiomeAffinity.Accent` est une **couleur** (rgb 0-1) —
+  l'accent est baké (22 %) dans la couleur de matière du prop, PAS dans `def.Tint`. Biome inconnu/null →
+  `GetAffinity` renvoie `Neutral` (tout à 1, pas de burn/slow) : ne jamais supposer qu'une affinité
+  existe. La **charge** (Charge Blindée) ne porte pas burn/slow (dégâts côté `Player`), seulement les
+  mults numériques via `SetupCharge`.
 - **Nouvelles clés `ui.csv` non prises en compte au runtime** : les `.translation` compilés ne sont PAS
   régénérés par un simple `--headless` ; lancer **`godot --headless --import`** (ou l'éditeur) pour
   recompiler la CSV. En attendant, `AssimilationScreen.TFallback` retombe sur le texte FR du `grafts.json`

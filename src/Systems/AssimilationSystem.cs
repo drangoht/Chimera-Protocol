@@ -348,7 +348,9 @@ public partial class AssimilationSystem : Node
     private void EquipOnPlayer(GraftTable.GraftDef def)
     {
         var player = GameManager.Instance?.PlayerInstance;
-        player?.Grafts?.Equip(def);
+        // Affinité de biome (§21) : la greffe capture le biome courant à l'assimilation.
+        var aff = _config.GetAffinity(GameManager.Instance?.CurrentBiomeId);
+        player?.Grafts?.Equip(def, aff);
         FusionFlash.Instance?.TriggerFlash();
         AudioSystem.Instance?.PlaySfx("sfx_fusion_evolve");
     }

@@ -341,3 +341,8 @@ GRAFT_FUSION_RUCHE_TOURELLES_NAME,Turret Hive,Ruche de Tourelles,Colmena de Torr
 GRAFT_FUSION_RUCHE_TOURELLES_DESC,"Your 4 swarms freeze into turrets firing in 360°. Still steals HP — now from range.","Tes 4 essaims se figent en tourelles qui tirent à 360°. Vole encore des PV, mais à distance.","Tus 4 enjambres se congelan en torretas que disparan a 360°. Aún roba PV, pero a distancia."
 GRAFT_FUSION_NOVA_RODEUR_NAME,Nova Strike,Frappe Nova,Golpe Nova
 GRAFT_FUSION_NOVA_RODEUR_DESC,"Your dash becomes an offensive blink: teleport in and detonate a nova on arrival. The passive wave becomes a burst you aim.","Ta ruade devient une téléportation offensive : tu blinkes et détones une nova à l'arrivée. L'onde passive devient un burst que tu vises.","Tu embestida se vuelve un parpadeo ofensivo: te teletransportas y detonas una nova al llegar. La onda pasiva se vuelve una ráfaga que apuntas."
+BIOME_AFFINITY_SANCTUAIRE,Stable affinity — +12% graft damage,Affinité Stable — +12% de dégâts de greffe,Afinidad Estable — +12% de daño de injerto
+BIOME_AFFINITY_AETHER,Resonant affinity — +20% graft range,Affinité Résonante — +20% de portée de greffe,Afinidad Resonante — +20% de alcance de injerto
+BIOME_AFFINITY_FOURNAISE,Ardent affinity — grafts set enemies ablaze,Affinité Ardente — les greffes enflamment,Afinidad Ardiente — los injertos incendian
+BIOME_AFFINITY_GIVRE,Glacial affinity — grafts slow enemies,Affinité Glaciale — les greffes ralentissent,Afinidad Glacial — los injertos ralentizan
+BIOME_AFFINITY_NEON,Overcharged affinity — −18% graft cooldown,Affinité Surchargée — −18% de cooldown de greffe,Afinidad Sobrecargada — −18% de enfriamiento de injerto

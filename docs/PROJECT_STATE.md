@@ -95,9 +95,16 @@ Livré en Phase A :
   exclusives** (choix de build ram blindé vs blink-nova ; l'infra fusion existante absorbe le partage).
   Data-driven (effet `novaDash`, 0 changement `GraftTable`), helper partagé `EmitShockwave`, prop cœur
   d'étoile pulsant. Détail : `docs/DESIGN_ASSIMILATION.md` §15.8. **Non publié.**
-- **Hors Phase A/B (→ Phase B suite)** : variantes de greffe par biome (§4/§9). Textes/lore/loc
-  greffes+fusions à finaliser par `story-teller`. Icônes de greffe/fusion à produire par `graphiste`
-  (fallback carré teinté en attendant).
+- **Variantes de greffe par biome — affinités (2026-07-07)** : **où** tu assimiles compte. Une greffe/
+  fusion capture le biome courant et gagne son **affinité** (5 leviers) : Sanctuaire +12% dégâts,
+  Aether +20% portée, Fournaise **brûlure** on-hit, Givre **ralentissement** on-hit, Néon −18% cooldown.
+  damage/radius/cooldown sur toutes les greffes ; burn/slow sur dégâts directs (Nuée/thorns/onde/nova)
+  + balles (Œil/Ruche, `Bullet.BurnDps/SlowMult`). Data-driven (`biomeAffinities` de `grafts.json`),
+  logique pure `GraftTable.BiomeAffinity`/`GetAffinity` (+5 tests → **124**). Carte d'assimilation
+  affiche l'affinité gagnée ici ; accent biome baké dans le prop de silhouette. Rejouabilité : une Nuée
+  brûle en Fournaise, gèle en Givre. Détail : `docs/DESIGN_ASSIMILATION.md` §21. **Non publié.**
+- **Phase B TERMINÉE.** Reste optionnel : textes/lore/loc à peaufiner par `story-teller` ; icônes de
+  greffe/fusion à produire par `graphiste` (fallback carré teinté en attendant).
 
 ## Ce qui est implémenté
 

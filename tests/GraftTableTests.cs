@@ -57,7 +57,13 @@ public class GraftTableTests
           ""gauge"": { ""key"": ""fusion_ruche_tourelles"", ""threshold"": 40, ""pointsPerKillSourceArchetype"": 1, ""pointsPerEliteKillSourceArchetype"": 2 },
           ""effects"": { ""turrets"": { ""count"": 4, ""damage"": 12 } },
           ""statMods"": {} }
-      ]
+      ],
+      ""biomeAffinities"": {
+        ""sanctuaire"": { ""damageMult"": 1.12, ""radiusMult"": 1.0, ""cooldownMult"": 1.0, ""burnDps"": 0, ""burnTime"": 0, ""slowMult"": 1.0, ""slowTime"": 0, ""accent"": [0.30, 0.85, 0.95] },
+        ""fournaise"": { ""damageMult"": 1.0, ""radiusMult"": 1.0, ""cooldownMult"": 1.0, ""burnDps"": 6, ""burnTime"": 2.0, ""slowMult"": 1.0, ""slowTime"": 0, ""accent"": [1.0, 0.50, 0.19] },
+        ""givre"": { ""damageMult"": 1.0, ""radiusMult"": 1.0, ""cooldownMult"": 1.0, ""burnDps"": 0, ""burnTime"": 0, ""slowMult"": 0.7, ""slowTime"": 1.2, ""accent"": [0.62, 0.88, 0.95] },
+        ""neon"": { ""damageMult"": 1.0, ""radiusMult"": 1.0, ""cooldownMult"": 0.82, ""burnDps"": 0, ""burnTime"": 0, ""slowMult"": 1.0, ""slowTime"": 0, ""accent"": [0.95, 0.30, 0.85] }
+      }
     }";
 
     private static GraftTable.GraftConfig Cfg() => GraftTable.Parse(Json);
@@ -77,6 +83,52 @@ public class GraftTableTests
     [Fact]
     public void Parse_DeriveLaJaugeChampionDepuisSourceAiType()
         => Assert.Equal("stalker", Cfg().ChampionGaugeKey);
+
+    // ── Affinités de biome (§21) ─────────────────────────────────────────────
+    [Fact]
+    public void Affinite_Sanctuaire_BonusDegats()
+    {
+        var a = Cfg().GetAffinity("sanctuaire");
+        Assert.Equal(1.12f, a.DamageMult, 3);
+        Assert.False(a.HasBurn);
+        Assert.False(a.HasSlow);
+    }
+
+    [Fact]
+    public void Affinite_Fournaise_Brulure()
+    {
+        var a = Cfg().GetAffinity("fournaise");
+        Assert.True(a.HasBurn);
+        Assert.Equal(6f, a.BurnDps, 3);
+        Assert.False(a.HasSlow);
+    }
+
+    [Fact]
+    public void Affinite_Givre_Ralentissement()
+    {
+        var a = Cfg().GetAffinity("givre");
+        Assert.True(a.HasSlow);
+        Assert.Equal(0.7f, a.SlowMult, 3);
+        Assert.False(a.HasBurn);
+    }
+
+    [Fact]
+    public void Affinite_Neon_ReduitCooldown()
+        => Assert.Equal(0.82f, Cfg().GetAffinity("neon").CooldownMult, 3);
+
+    [Fact]
+    public void Affinite_BiomeInconnuOuNull_EstNeutre()
+    {
+        var cfg = Cfg();
+        foreach (var a in new[] { cfg.GetAffinity("inconnu"), cfg.GetAffinity(null) })
+        {
+            Assert.Equal(1f, a.DamageMult, 3);
+            Assert.Equal(1f, a.RadiusMult, 3);
+            Assert.Equal(1f, a.CooldownMult, 3);
+            Assert.False(a.HasBurn);
+            Assert.False(a.HasSlow);
+        }
+    }
 
     [Fact]
     public void Parse_LitEffetsEtStatMods()

@@ -68,6 +68,30 @@ public static class GraftTable
             => SourceAiTypes.Contains(aiType) ? (isElite ? PointsPerEliteKill : PointsPerKill) : 0;
     }
 
+    /// <summary>Affinité de biome (§21) : modificateurs appliqués aux effets d'une greffe selon le
+    /// biome où elle a été assimilée. `Neutral` = aucun effet (biome inconnu).</summary>
+    public struct BiomeAffinity
+    {
+        public float DamageMult;
+        public float RadiusMult;
+        public float CooldownMult;
+        public float BurnDps;    // brûlure on-hit (0 = aucune)
+        public float BurnTime;
+        public float SlowMult;   // ralentissement on-hit (1 = aucun)
+        public float SlowTime;
+        public float[] Accent;   // teinte biome (rgb 0-1) pour le prop de silhouette
+
+        public static BiomeAffinity Neutral => new()
+        {
+            DamageMult = 1f, RadiusMult = 1f, CooldownMult = 1f,
+            BurnDps = 0f, BurnTime = 0f, SlowMult = 1f, SlowTime = 0f,
+            Accent = new[] { 1f, 1f, 1f },
+        };
+
+        public bool HasBurn => BurnDps > 0f && BurnTime > 0f;
+        public bool HasSlow => SlowMult < 1f && SlowTime > 0f;
+    }
+
     /// <summary>Configuration complète chargée depuis grafts.json (immuable après parsing).</summary>
     public sealed class GraftConfig
     {
@@ -91,6 +115,11 @@ public static class GraftTable
 
         public List<GraftDef> Grafts = new();
         public List<FusionDef> Fusions = new();
+        public Dictionary<string, BiomeAffinity> BiomeAffinities = new();
+
+        /// <summary>Affinité du biome donné, ou neutre si inconnu/null (§21).</summary>
+        public BiomeAffinity GetAffinity(string? biomeId)
+            => biomeId != null && BiomeAffinities.TryGetValue(biomeId, out var a) ? a : BiomeAffinity.Neutral;
 
         /// <summary>Greffe associée à une clé de jauge (1:1), ou null.</summary>
         public GraftDef? GraftForGauge(string gauge)
@@ -270,6 +299,32 @@ public static class GraftTable
                 // (bonus méta + malus de refus) fonctionne alors uniformément pour les fusions.
                 if (!string.IsNullOrEmpty(def.GaugeKey))
                     cfg.Thresholds[def.GaugeKey] = def.GaugeThreshold;
+            }
+        }
+
+        if (root.TryGetProperty("biomeAffinities", out var affs) && affs.ValueKind == JsonValueKind.Object)
+        {
+            foreach (var biome in affs.EnumerateObject())
+            {
+                if (biome.Name.StartsWith("_") || biome.Value.ValueKind != JsonValueKind.Object) continue;
+                var a = new BiomeAffinity
+                {
+                    DamageMult   = (float)GetDouble(biome.Value, "damageMult", 1.0),
+                    RadiusMult   = (float)GetDouble(biome.Value, "radiusMult", 1.0),
+                    CooldownMult = (float)GetDouble(biome.Value, "cooldownMult", 1.0),
+                    BurnDps      = (float)GetDouble(biome.Value, "burnDps", 0.0),
+                    BurnTime     = (float)GetDouble(biome.Value, "burnTime", 0.0),
+                    SlowMult     = (float)GetDouble(biome.Value, "slowMult", 1.0),
+                    SlowTime     = (float)GetDouble(biome.Value, "slowTime", 0.0),
+                    Accent       = new[] { 1f, 1f, 1f },
+                };
+                if (biome.Value.TryGetProperty("accent", out var ac) && ac.ValueKind == JsonValueKind.Array)
+                {
+                    var list = new List<float>();
+                    foreach (var t in ac.EnumerateArray()) list.Add((float)t.GetDouble());
+                    if (list.Count >= 3) a.Accent = new[] { list[0], list[1], list[2] };
+                }
+                cfg.BiomeAffinities[biome.Name] = a;
             }
         }
 

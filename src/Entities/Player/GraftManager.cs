@@ -19,6 +19,10 @@ public partial class GraftManager : Node2D
     private struct StatDelta { public float MaxHp; public float DamageReduction; }
     private readonly Dictionary<string, StatDelta> _statDeltas = new();
 
+    // Affinités de biome par greffe (§21) : capturées à l'assimilation, appliquées par comportement.
+    private readonly Dictionary<string, GraftTable.BiomeAffinity> _affById = new();
+    private GraftTable.BiomeAffinity _swarmAff, _turretAff, _thornsAff, _shockAff, _turretsAff, _novaAff;
+
     // ── Mini-essaims orbitants (swarm_symbiote) ──
     private readonly List<Node2D> _orbiters = new();
     private readonly Dictionary<EnemyBase, float> _orbiterRehit = new();
@@ -73,10 +77,11 @@ public partial class GraftManager : Node2D
     // Équipement / retrait
     // -------------------------------------------------------------------------
 
-    public void Equip(GraftTable.GraftDef def)
+    public void Equip(GraftTable.GraftDef def, GraftTable.BiomeAffinity aff)
     {
         if (def == null || _active.ContainsKey(def.Id)) return;
         _active[def.Id] = def;
+        _affById[def.Id] = aff; // affinité de biome capturée à l'assimilation (§21)
         ApplyStatMods(def);
         RebuildBehaviors();
         RecomputeTint();
@@ -87,8 +92,27 @@ public partial class GraftManager : Node2D
         if (!_active.ContainsKey(graftId)) return;
         ReverseStatMods(graftId);
         _active.Remove(graftId);
+        _affById.Remove(graftId);
         RebuildBehaviors();
         RecomputeTint();
+    }
+
+    /// <summary>Affinité de biome d'une greffe équipée (neutre si non capturée).</summary>
+    private GraftTable.BiomeAffinity AffFor(string graftId)
+        => _affById.TryGetValue(graftId, out var a) ? a : GraftTable.BiomeAffinity.Neutral;
+
+    /// <summary>Effets on-hit de l'affinité de biome (§21) : brûlure (Fournaise) / ralentissement (Givre).</summary>
+    private static void ApplyAffinityOnHit(EnemyBase enemy, in GraftTable.BiomeAffinity aff)
+    {
+        if (aff.HasBurn) enemy.ApplyBurn(aff.BurnDps, aff.BurnTime);
+        if (aff.HasSlow) enemy.ApplySlow(aff.SlowMult, aff.SlowTime);
+    }
+
+    /// <summary>Reporte le burn/slow de l'affinité sur une balle de greffe (Œil/Ruche, §21).</summary>
+    private static void SetBulletAffinity(Bullet b, in GraftTable.BiomeAffinity aff)
+    {
+        b.BurnDps = aff.BurnDps; b.BurnTime = aff.BurnTime;
+        b.SlowMult = aff.SlowMult; b.SlowTime = aff.SlowTime;
     }
 
     private void ApplyStatMods(GraftTable.GraftDef def)
@@ -191,6 +215,9 @@ public partial class GraftManager : Node2D
         _swarmLifesteal    = (float)def.Effect("orbitingAllies", "lifestealFraction", 0.04);
         bool scales        = def.Effect("orbitingAllies", "scalesWithDamageMultiplier", 1) != 0;
         if (scales) _swarmDamage *= _player.Stats.DamageMultiplier;
+        _swarmAff     = AffFor(def.Id);              // affinité de biome (§21)
+        _swarmDamage *= _swarmAff.DamageMult;
+        _swarmRadius *= _swarmAff.RadiusMult;
 
         var col = TintColor(def);
         for (int i = 0; i < _swarmCount; i++)
@@ -209,10 +236,11 @@ public partial class GraftManager : Node2D
 
     private void SetupDash(GraftTable.GraftDef def)
     {
+        var aff = AffFor(def.Id); // affinité de biome (§21) — le dash ne subit que le mult de cooldown
         _player.EnableDash(
             distance: (float)def.Effect("dash", "distancePx", 180),
             duration: (float)def.Effect("dash", "durationSec", 0.18),
-            cooldown: (float)def.Effect("dash", "cooldownSec", 3.5),
+            cooldown: (float)def.Effect("dash", "cooldownSec", 3.5) * aff.CooldownMult,
             cooldownFloor: (float)def.Effect("dash", "cooldownFloorSec", 1.5),
             iframes: (float)def.Effect("dash", "iframesSec", 0.25),
             affectedByCdr: def.Effect("dash", "affectedByCooldownReduction", 1) != 0);
@@ -221,18 +249,20 @@ public partial class GraftManager : Node2D
     /// <summary>Fusion Charge Blindée : le dash devient une charge (couloir de dégâts + knockback).</summary>
     private void SetupCharge(GraftTable.GraftDef def)
     {
+        var aff = AffFor(def.Id); // affinité de biome (§21) : dégâts/largeur/cooldown (burn/slow gérés côté Player = hors scope charge)
         float dmg = (float)def.Effect("charge", "impactDamage", 45);
         if (def.Effect("charge", "scalesWithDamageMultiplier", 1) != 0)
             dmg *= _player.Stats.DamageMultiplier;
+        dmg *= aff.DamageMult;
 
         _player.EnableDash(
             distance:      (float)def.Effect("charge", "distancePx", 240),
             duration:      (float)def.Effect("charge", "durationSec", 0.22),
-            cooldown:      (float)def.Effect("charge", "cooldownSec", 4.0),
+            cooldown:      (float)def.Effect("charge", "cooldownSec", 4.0) * aff.CooldownMult,
             cooldownFloor: (float)def.Effect("charge", "cooldownFloorSec", 1.8),
             iframes:       (float)def.Effect("charge", "iframesSec", 0.30),
             affectedByCdr: def.Effect("charge", "affectedByCooldownReduction", 1) != 0,
-            chargeWidth:     (float)def.Effect("charge", "corridorWidthPx", 48),
+            chargeWidth:     (float)def.Effect("charge", "corridorWidthPx", 48) * aff.RadiusMult,
             chargeDamage:    dmg,
             chargeKnockback: (float)def.Effect("charge", "knockbackPx", 90));
     }
@@ -241,19 +271,22 @@ public partial class GraftManager : Node2D
     /// nova (onde de choc amplifiée) à l'arrivée — l'onde passive devient un burst positionnel actif.</summary>
     private void SetupNovaDash(GraftTable.GraftDef def)
     {
+        var aff = AffFor(def.Id); // affinité de biome (§21) : dégâts/rayon/cooldown ; burn/slow via EmitShockwave
         _novaActive    = true;
-        _novaRadius    = (float)def.Effect("novaDash", "novaRadiusPx", 175);
+        _novaAff       = aff;
+        _novaRadius    = (float)def.Effect("novaDash", "novaRadiusPx", 175) * aff.RadiusMult;
         _novaDamage    = (float)def.Effect("novaDash", "novaDamage", 80);
         _novaKnockback = (float)def.Effect("novaDash", "novaKnockbackPx", 90);
         if (def.Effect("novaDash", "scalesWithDamageMultiplier", 1) != 0)
             _novaDamage *= _player.Stats.DamageMultiplier;
+        _novaDamage *= aff.DamageMult;
         _wasDashing = _player.IsDashing;
 
         // Dash « nu » (pas de couloir de charge) : la nova part à la fin de la ruade (front descendant).
         _player.EnableDash(
             distance:      (float)def.Effect("novaDash", "distancePx", 190),
             duration:      (float)def.Effect("novaDash", "durationSec", 0.18),
-            cooldown:      (float)def.Effect("novaDash", "cooldownSec", 3.8),
+            cooldown:      (float)def.Effect("novaDash", "cooldownSec", 3.8) * aff.CooldownMult,
             cooldownFloor: (float)def.Effect("novaDash", "cooldownFloorSec", 1.6),
             iframes:       (float)def.Effect("novaDash", "iframesSec", 0.25),
             affectedByCdr: def.Effect("novaDash", "affectedByCooldownReduction", 1) != 0);
@@ -281,6 +314,12 @@ public partial class GraftManager : Node2D
             _turretsDamage     *= _player.Stats.DamageMultiplier;
             _turretsContactDmg *= _player.Stats.DamageMultiplier;
         }
+        _turretsAff         = AffFor(def.Id); // affinité de biome (§21)
+        _turretsDamage     *= _turretsAff.DamageMult;
+        _turretsContactDmg *= _turretsAff.DamageMult;
+        _turretsRange      *= _turretsAff.RadiusMult;
+        _turretsAnchorR    *= _turretsAff.RadiusMult;
+        _turretsCd         *= _turretsAff.CooldownMult;
 
         // Lisibilité (playtest 2026-07-07, BUG-F01) : les tourelles doivent trancher nettement sur
         // les ennemis de rouille (orange) et passer AU-DESSUS d'eux. Corps cyan de la palette UI
@@ -331,6 +370,10 @@ public partial class GraftManager : Node2D
         _turretCdr     = def.Effect("autoTurret", "affectedByCooldownReduction", 1) != 0;
         if (def.Effect("autoTurret", "scalesWithDamageMultiplier", 1) != 0)
             _turretDamage *= _player.Stats.DamageMultiplier;
+        _turretAff     = AffFor(def.Id); // affinité de biome (§21)
+        _turretDamage *= _turretAff.DamageMult;
+        _turretRange  *= _turretAff.RadiusMult;
+        _turretCd     *= _turretAff.CooldownMult;
         _turretTimer = EffectiveCd(_turretCd, _turretCdFloor, _turretCdr);
     }
 
@@ -342,6 +385,9 @@ public partial class GraftManager : Node2D
         _thornsRadius = (float)def.Effect("thorns", "radiusPx", 40);
         if (def.Effect("thorns", "scalesWithDamageMultiplier", 1) != 0)
             _thornsDamage *= _player.Stats.DamageMultiplier;
+        _thornsAff     = AffFor(def.Id); // affinité de biome (§21)
+        _thornsDamage *= _thornsAff.DamageMult;
+        _thornsRadius *= _thornsAff.RadiusMult;
         _thornsTimer = _thornsRehit;
     }
 
@@ -355,6 +401,10 @@ public partial class GraftManager : Node2D
         _shockCdr       = def.Effect("shockwave", "affectedByCooldownReduction", 1) != 0;
         if (def.Effect("shockwave", "scalesWithDamageMultiplier", 1) != 0)
             _shockDamage *= _player.Stats.DamageMultiplier;
+        _shockAff     = AffFor(def.Id); // affinité de biome (§21)
+        _shockDamage *= _shockAff.DamageMult;
+        _shockRadius *= _shockAff.RadiusMult;
+        _shockCd     *= _shockAff.CooldownMult;
         _shockTimer = EffectiveCd(_shockCd, StatCaps.MinCooldown, _shockCdr);
     }
 
@@ -413,6 +463,7 @@ public partial class GraftManager : Node2D
             if (!touching) continue;
 
             enemy.TakeDamage(_swarmDamage);
+            ApplyAffinityOnHit(enemy, _swarmAff);
             _orbiterRehit[enemy] = _swarmRehit;
             if (_swarmLifesteal > 0f) _player.HealFlat(_swarmDamage * _swarmLifesteal);
         }
@@ -435,6 +486,7 @@ public partial class GraftManager : Node2D
         b.Damage     = _turretDamage;
         b.IsPiercing = _turretPierce;
         b.Power      = 2;
+        SetBulletAffinity(b, _turretAff);
         GetTree().Root.AddChild(b);
         b.GlobalPosition = _player.GlobalPosition;
         AudioSystem.Instance?.PlaySfx("sfx_card_select");
@@ -451,7 +503,10 @@ public partial class GraftManager : Node2D
         {
             if (node is not EnemyBase enemy || !IsInstanceValid(enemy)) continue;
             if (center.DistanceTo(enemy.GlobalPosition) <= _thornsRadius)
+            {
                 enemy.TakeDamage(_thornsDamage);
+                ApplyAffinityOnHit(enemy, _thornsAff);
+            }
         }
     }
 
@@ -461,7 +516,7 @@ public partial class GraftManager : Node2D
         if (_shockTimer > 0f) return;
         _shockTimer = EffectiveCd(_shockCd, StatCaps.MinCooldown, _shockCdr);
         EmitShockwave(_player.GlobalPosition, _shockRadius, _shockDamage, _shockKnockback,
-                      new Color(1.3f, 0.4f, 1.0f, 1f), shakeAmp: 4f, shakeDur: 0.15f);
+                      new Color(1.3f, 0.4f, 1.0f, 1f), _shockAff, shakeAmp: 4f, shakeDur: 0.15f);
     }
 
     /// <summary>Fusion Frappe Nova : détone une nova au front descendant du dash (fin de la ruade).</summary>
@@ -470,14 +525,14 @@ public partial class GraftManager : Node2D
         bool dashing = _player.IsDashing;
         if (_wasDashing && !dashing) // la ruade vient de se terminer → nova au point d'arrivée
             EmitShockwave(_player.GlobalPosition, _novaRadius, _novaDamage, _novaKnockback,
-                          new Color(1.25f, 0.5f, 1.25f, 1f), shakeAmp: 6.5f, shakeDur: 0.22f, ringScale: 1.25f);
+                          new Color(1.25f, 0.5f, 1.25f, 1f), _novaAff, shakeAmp: 6.5f, shakeDur: 0.22f, ringScale: 1.25f);
         _wasDashing = dashing;
     }
 
     /// <summary>Onde de choc partagée (onde périodique OU nova de dash) : anneau VFX teinté + dégâts
     /// radiaux + knockback. Réutilise `vfx_shockwave_ring.tscn`.</summary>
     private void EmitShockwave(Vector2 center, float radius, float damage, float knockback,
-                              Color tint, float shakeAmp, float shakeDur, float ringScale = 1f)
+                              Color tint, GraftTable.BiomeAffinity aff, float shakeAmp, float shakeDur, float ringScale = 1f)
     {
         _shockwaveScene ??= GD.Load<PackedScene>("res://scenes/vfx/vfx_shockwave_ring.tscn");
         if (_shockwaveScene != null)
@@ -496,6 +551,7 @@ public partial class GraftManager : Node2D
             var off = enemy.GlobalPosition - center;
             if (off.Length() > radius) continue;
             enemy.TakeDamage(damage);
+            ApplyAffinityOnHit(enemy, aff);
             var dir = off.LengthSquared() > 0.01f ? off.Normalized() : Vector2.Right;
             enemy.GlobalPosition += dir * knockback; // repousse
         }
@@ -547,6 +603,7 @@ public partial class GraftManager : Node2D
                         b.Damage     = _turretsDamage;
                         b.IsPiercing = _turretsPierce;
                         b.Power      = 2;
+                        SetBulletAffinity(b, _turretsAff);
                         GetTree().Root.AddChild(b);
                         b.GlobalPosition = _turrets[i].GlobalPosition;
                         if (_turretsLifesteal > 0f) _player.HealFlat(_turretsDamage * _turretsLifesteal);
@@ -619,6 +676,11 @@ public partial class GraftManager : Node2D
     private void BuildPropFor(GraftTable.GraftDef def)
     {
         var b = BaseColorFromTint(def.Tint);
+        // Accent de biome (§21) baké dans la couleur de matière → l'ombrage pseudo-3D en dérive et
+        // les Update qui modulent le prop en préservent la teinte. Ignoré si affinité neutre (blanc).
+        var acc = AffFor(def.Id).Accent;
+        if (acc[0] < 0.99f || acc[1] < 0.99f || acc[2] < 0.99f)
+            b = b.Lerp(new Color(acc[0], acc[1], acc[2]), 0.22f);
         switch (def.Id)
         {
             case "grafted_carapace":        BuildCarapaceProp(b); break;
