@@ -153,6 +153,15 @@ Tout nouveau chemin de sortie de run doit l'appeler aussi.
   Blindée) réutilise le dash (`Player.EnableDash` avec params de charge : couloir `_chargeWidth`, un hit
   par ennemi via `_chargeHit`, knockback ; contourne `MaxSpeed`, i-frames en **max** avec celles de
   dégât, pas cumul). Les **tourelles** (Ruche) vivent dans `GraftManager._Process` (suivi lerp + `Bullet`).
+- **Fusions qui partagent une greffe (3e fusion Frappe Nova, §15.8)** : `fusion_nova_rodeur`
+  (`stalker_wave`+`erratic_servos`) partage `erratic_servos` avec `fusion_charge_blindee`. **Ne PAS**
+  ajouter de règle d'éligibilité spéciale : l'infra existante suffit — `RouteFusionKill` n'accumule que
+  si TOUS les `requires` sont dans `_equipped`, et `AssimilateFusion` re-garde `ready` avant de
+  consommer. Équiper une des deux fusions retire les servos → l'autre devient inéligible (exclusion
+  mutuelle = choix de build, voulu). Les deux redéfinissant le dash, cette exclusion évite aussi tout
+  conflit de dash. La **Nova** détone au **front descendant** de `Player.IsDashing` (`GraftManager.
+  UpdateNova`, pas un timer) → réutilise le helper partagé `EmitShockwave` (onde périodique ET nova de
+  dash passent par lui ; ne pas dupliquer la logique anneau+dégâts).
 - **Nouvelles clés `ui.csv` non prises en compte au runtime** : les `.translation` compilés ne sont PAS
   régénérés par un simple `--headless` ; lancer **`godot --headless --import`** (ou l'éditeur) pour
   recompiler la CSV. En attendant, `AssimilationScreen.TFallback` retombe sur le texte FR du `grafts.json`

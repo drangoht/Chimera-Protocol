@@ -642,13 +642,13 @@ que si `requires[]` est **entièrement équipé** (garde côté `AssimilationSys
 
 Aucune fusion ne franchit un plafond **seule** (mêmes conditions que les greffes de base).
 
-### 15.6 Piste volet 2 (hors-scope de cette livraison)
+### 15.6 Piste volet 2 → **✅ CHIFFRÉE ET IMPLÉMENTÉE (2026-07-07)** : voir §15.8
 
-**« Nova du Rôdeur »** (Onde du Rôdeur + une greffe déjà employée) — rattacherait `stalker_wave` au
-réseau de fusions. **Non chiffrée volontairement** : impliquerait le **partage d'une greffe** entre
-deux recettes (les 4 archétypes de base sont déjà pris par les 2 fusions du volet 1), donc une règle
-d'éligibilité plus complexe (2 fusions candidates si le joueur possède le trio) à ne traiter qu'après
-validation en jeu du volet 1. À rouvrir en Phase B volet 2.
+**« Nova du Rôdeur »** (Onde du Rôdeur + une greffe déjà employée) rattache `stalker_wave` au réseau
+de fusions. Le **partage d'une greffe** entre deux recettes (les 4 archétypes de base étant pris par
+les 2 fusions du volet 1) — la complexité redoutée — s'avère **absorbée par l'infra existante** :
+`AssimilateFusion` garde déjà `ready` (les 2 requires équipés) avant de consommer, et `RouteFusionKill`
+n'accumule que si les 2 requires sont équipés. Chiffrage + implémentation en **§15.8** ci-dessous.
 
 ### 15.7 Playtest du 2026-07-07 — verdict + ajustements post-test
 
@@ -672,6 +672,54 @@ Les 2 risques d'équilibrage anticipés **ne se matérialisent pas** → tuning 
    **différée** (`_deferred`) puis re-proposée dès que l'écran est libre et le cooldown écoulé. Empêche le
    harcèlement de pop-ups en forte densité de kills (jauge refusée/conservée re-proposée trop vite).
    `AssimilationSystem.TryEmitGauge`/`FlushDeferred`/`StartPromptCooldown`.
+
+### 15.8 `fusion_nova_rodeur` — **Frappe Nova** (Épique) — Onde du Rôdeur + Servos Erratiques ✅ 2026-07-07
+
+*« Le Rôdeur ne balaie plus le sol : il te téléporte au cœur de la mêlée et détone. »* Rôle :
+**assassin de zone actif**. Le dash d'esquive devient une **téléportation offensive** ; l'onde
+passive périodique devient un **burst positionnel** que le joueur vise avec sa ruade.
+
+**Prérequis** : `stalker_wave` **ET** `erratic_servos` équipées.
+**Jauge** `fusion_nova_rodeur` : archétype source **`erratic_chase`** (seul — l'archétype `champion`
+de l'Onde est exclu du routage de fusion, cf. §15.1 mini-boss/boss exclus ; les drones communs
+alimentent donc la jauge de façon fiable, + leurs élites à 2 pts) ; **seuil 24**. Les deux greffes
+arrivant tard (Onde épique ~5-6 min, Servos ~4 min), la Nova est proposée **~7-9 min**.
+
+**Effet (le dash → blink + nova)** — même input `dash` :
+- **Ruade conservée** : propulse le joueur de **190 px** sur **0,18 s** (burst, `MaxSpeed` non
+  applicable), **i-frames 0,25 s** — la mobilité et l'esquive des Servos sont maintenues.
+- **Nova à l'arrivée** : au **front descendant du dash** (fin de la ruade), détone une onde de choc
+  amplifiée au point d'arrivée — rayon **175 px**, **80** dégâts (× `DamageMultiplier`), knockback
+  **90 px**. Réutilise `vfx_shockwave_ring` (teinté magenta, `ringScale` 1,25) + `ScreenShake`.
+- **Cooldown 3,8 s**, réduit par `CooldownReduction`, **plancher 1,6 s** (garde-fou greffe) — la nova
+  est **gatée par la recharge du dash** (pas de spam).
+- **Aucune modification de stat** → aucun hardcap concerné.
+
+**Partage de greffe & exclusion mutuelle** : `erratic_servos` est requise par **Nova ET Charge
+Blindée**. Les deux fusions consomment les servos → **mutuellement exclusives** : équiper l'une retire
+les servos, ce qui rend l'autre inéligible (`RouteFusionKill` teste `_equipped.Contains(require)`, et
+`AssimilateFusion` garde `ready`). C'est un **choix de build** (ram blindé mobile vs blink-nova), pas
+un conflit à gérer par une règle spéciale. Comme les deux redéfinissent le dash, cette exclusion
+évite aussi tout conflit de dash.
+
+**Comparaison vs somme des 2 greffes de base :**
+
+| Aspect | Onde + Servos (séparées) | **Frappe Nova (fusion)** | Saut |
+|---|---|---|---|
+| Onde | ~15 DPS AoE **passive** centrée sur soi | **nova 80 dmg / 175 px** au point de dash, **visée** | passif → burst positionnel |
+| Dash | esquive pure, 180 px | **blink offensif** 190 px + nova + KB | esquive → frappe |
+| Slots | **2 occupés** | **1 occupé (+1 libre)** | +1 greffe possible |
+
+DPS nova : 80 × (4-6 ennemis) / 3,8 s ≈ **85-125 DPS burst** on-demand + knockback + i-frames +
+mobilité. Sous les armes maxées (400+ endgame) → complément, pas game-breaker ; mais très supérieur
+à l'onde passive (rôle transformé). Arrive très tard (Onde épique + Servos + jauge de fusion).
+
+**Implémentation** (`GraftManager`) : effet `novaDash` (data-driven, parsing générique — 0 changement
+`GraftTable`) → `SetupNovaDash` (dash nu via `Player.EnableDash` + params nova) ; `UpdateNova` détecte
+le front descendant de `Player.IsDashing` et appelle le **helper partagé `EmitShockwave`** (extrait de
+`UpdateShockwave`, réutilisé par l'onde ET la nova). Prop de silhouette : **cœur d'étoile pulsant**
+(`BuildNovaCoreProp`) qui s'embrase pendant le dash. Flag debug `--force-fusion=fusion_nova_rodeur`
+(ou `all`). Validé visuellement (blink + détonation), 119 tests verts.
 
 ## 16. Spécification de `data/grafts.json` (à créer par `developpeur`, PAS ici)
 

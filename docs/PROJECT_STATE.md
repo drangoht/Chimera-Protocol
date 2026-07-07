@@ -88,9 +88,16 @@ Livré en Phase A :
   (`GraftProp`/`BuildPropFor`/`UpdateProps`, ombrage `Shade`/`BaseColorFromTint`), miroir via
   `Player.FacingLeft`. Flag debug `--force-graft=<id|all>`, outil `tools/capture_graft_silhouette.py`.
   Détail : `docs/DESIGN_ASSIMILATION.md` §19. Validé visuellement, 119 tests verts. **Non publié.**
-- **Hors Phase A/B (→ Phase B suite)** : 3e fusion (Nova du Rôdeur, §15.6), variantes de greffe par
-  biome (§4/§9). Textes/lore/loc greffes+fusions à finaliser par `story-teller`. Icônes de
-  greffe/fusion à produire par `graphiste` (fallback carré teinté en attendant).
+- **3e fusion — Frappe Nova (2026-07-07, `fusion_nova_rodeur`)** : Onde du Rôdeur + Servos Erratiques.
+  Le dash devient une **téléportation offensive** : blink 190 px + i-frames, puis **nova** au point
+  d'arrivée (onde de choc 175 px / 80 dmg / knockback 90, gatée par la recharge du dash). L'onde passive
+  devient un burst positionnel visé. **Partage `erratic_servos` avec Charge Blindée → mutuellement
+  exclusives** (choix de build ram blindé vs blink-nova ; l'infra fusion existante absorbe le partage).
+  Data-driven (effet `novaDash`, 0 changement `GraftTable`), helper partagé `EmitShockwave`, prop cœur
+  d'étoile pulsant. Détail : `docs/DESIGN_ASSIMILATION.md` §15.8. **Non publié.**
+- **Hors Phase A/B (→ Phase B suite)** : variantes de greffe par biome (§4/§9). Textes/lore/loc
+  greffes+fusions à finaliser par `story-teller`. Icônes de greffe/fusion à produire par `graphiste`
+  (fallback carré teinté en attendant).
 
 ## Ce qui est implémenté
 
