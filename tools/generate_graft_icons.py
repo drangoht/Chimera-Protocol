@@ -1,4 +1,4 @@
-"""Genere les 5 icones de greffe du systeme d'Assimilation (docs/DESIGN_ASSIMILATION.md).
+"""Genere les 8 icones de greffe du systeme d'Assimilation (5 greffes + 3 fusions, docs/DESIGN_ASSIMILATION.md).
 
 Meme pipeline / meme format que les icones d'armes (tools/generate_weapon_icons.py) :
 canvas RGBA 32x32, dessin par primitives (put/disc/ring/line), puis ombrage pseudo-3D
@@ -373,6 +373,64 @@ def gen_fusion_ruche_tourelles():
     save_icon(img, "fusion_ruche_tourelles_icon.png")
 
 
+# ---------------- F3) Frappe Nova : blink cyan (Servos Erratiques) qui arrive et
+# detone une nova en etoile magenta/violet (Onde du Rodeur). Trainee de teleportation
+# cyan + explosion violette a pointes + coeur d'etoile. tint magenta-violet.
+def gen_fusion_nova_rodeur():
+    img = canvas()
+    VIO   = (180, 80, 230)
+    MG    = (235, 70, 205)
+    MG_L  = (255, 165, 235)
+    CY    = (110, 175, 255)
+    CY_L  = (205, 235, 255)
+    WH    = (255, 240, 255)
+    cx, cy = 18, 14   # point d'arrivee du blink = centre de la nova (decale haut-droite)
+
+    # blink cyan : trainee de teleportation bas-gauche -> point de nova (after-image, alpha decroissant)
+    bx0, by0 = 3, 29
+    for off, alpha, w in ((0, 255, 1), (-3, 140, 0), (-6, 75, 0)):
+        line(img, bx0, by0 + off, cx - 4, cy + 4 - off * 0.3,
+             (CY[0], CY[1], CY[2], alpha), w=w)
+    # eclat residuel au point de depart du blink
+    disc(img, bx0, by0, 1.6, (CY_L[0], CY_L[1], CY_L[2], 150))
+
+    # detonation (PAS d'anneaux concentriques : signature de l'Onde du Rodeur) :
+    # halo violet diffus + un unique arc de souffle esquisse (dash), le reste = explosion
+    disc(img, cx, cy, 12, (VIO[0], VIO[1], VIO[2], 50))
+    for k in range(0, 24, 2):  # arc de souffle pointille (moitie superieure)
+        a = math.pi + math.pi * k / 24.0
+        put(img, cx + math.cos(a) * 11, cy + math.sin(a) * 11, (VIO[0], VIO[1], VIO[2], 150))
+
+    # etoile de nova : 8 pointes rayonnantes acerees (detonation), longueur alternee,
+    # effilees (chaud violet a la base -> magenta clair a la pointe)
+    for k in range(8):
+        a = math.pi * 2 * k / 8
+        r_out = 12 if k % 2 == 0 else 7
+        n = int(r_out) + 1
+        for i in range(n + 1):
+            t = i / n
+            r = 1 + (r_out - 1) * t
+            col = (
+                int(VIO[0] + (MG_L[0] - VIO[0]) * t),
+                int(VIO[1] + (MG_L[1] - VIO[1]) * t),
+                int(VIO[2] + (MG_L[2] - VIO[2]) * t),
+                255,
+            )
+            # pointe effilee : epaisse a la base, 1px a l'extremite
+            wdt = 1 if t < 0.45 else 0
+            for dw in range(-wdt, wdt + 1):
+                perp = a + math.pi / 2
+                put(img, cx + math.cos(a) * r + math.cos(perp) * dw,
+                         cy + math.sin(a) * r + math.sin(perp) * dw, col)
+        put(img, cx + math.cos(a) * r_out, cy + math.sin(a) * r_out, WH)
+
+    # coeur d'etoile brulant (heritage du prop 'coeur d'etoile')
+    disc(img, cx, cy, 3, MG)
+    disc(img, cx, cy, 2, MG_L)
+    disc(img, cx, cy, 1, WH)
+    save_icon(img, "fusion_nova_rodeur_icon.png")
+
+
 if __name__ == "__main__":
     gen_swarm_symbiote()
     gen_erratic_servos()
@@ -381,4 +439,5 @@ if __name__ == "__main__":
     gen_stalker_wave()
     gen_fusion_charge_blindee()
     gen_fusion_ruche_tourelles()
+    gen_fusion_nova_rodeur()
     print("Termine.")

@@ -138,6 +138,30 @@ explique après coup :
   aujourd'hui) pour justifier un futur antagoniste — un Arpenteur qui a poussé trop loin — sans nier
   ce qui est déjà écrit sur le boss de fin (§8).
 
+### La fusion : deux domestications qui apprennent à ne faire qu'une
+Tenir deux fragments de Rouille domestiqués assez longtemps sous le même noyau ne les laisse pas
+seulement coexister. Certaines paires — une carapace et des servos, un œil et une nuée — se révèlent
+**compatibles** : leurs tissus, purgés de la volonté de la Rouille mais pas de sa plasticité, finissent
+par *résonner* et se replier l'un dans l'autre en une forme hybride unique. Ce n'est pas une addition,
+c'est une économie : l'hybride est plus stable que la somme de ses parts, et coûte donc au noyau *moins*
+qu'il ne dépensait à tenir les deux séparément — ce qui **libère un emplacement** (mécaniquement, les
+deux slots fusionnés en un). Le noyau n'a pas gagné de puissance brute ; il a appris une combinaison.
+C'est pourquoi une fusion n'est jamais disponible d'emblée : il faut d'abord porter les deux greffes,
+laisser le noyau les métaboliser ensemble, avant qu'il puisse proposer la forme supérieure. La Frappe
+Nova en est l'exemple limite — l'onde du Rôdeur et les servos du Drone ne se contentent plus de
+cohabiter : l'esquive devient un saut hors de l'espace, et l'onde, une détonation portée à son point
+d'arrivée.
+
+### L'affinité de biome : la Rouille garde la trace du lieu où on la dompte
+La purge d'un fragment se produit à un endroit précis, et cet endroit n'est jamais neutre : une
+Fournaise sature l'air d'une chaleur qui ne demande qu'à se propager, un champ de Givre fige, un couloir
+Néon crépite de surcharge. Le noyau ne purge pas *dans le vide* — il domestique le fragment au milieu de
+cette signature ambiante, et cette signature **s'imprime dans la domestication**. La greffe capture donc
+le biome où elle est assimilée et en conserve une marque fonctionnelle : la même carapace, prélevée dans
+la Fournaise ou dans le Givre, ne brûlera ou ne gèlera pas de la même façon. C'est diégétiquement pour
+cette raison que le joueur a intérêt à *choisir où* il assimile, et non seulement *quoi* — le lieu fait
+partie de la greffe autant que la créature dont elle vient.
+
 ### Pourquoi ça n'a jamais été fait avant (et pourquoi le joueur, si)
 Si le Protocole Chimère existait depuis longtemps, la Rouille serait un problème résolu, ce qui
 contredirait le reste de l'univers. La réponse : c'est une technique **récente, expérimentale, et
