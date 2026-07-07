@@ -4,6 +4,76 @@
 > `release-manager`). Entrées en ordre décroissant (la plus récente en haut). Ton orienté
 > joueur, EN puis FR (audience itch surtout anglophone).
 
+## v1.12.0 — Assimilation: don't kill the monsters, become them (2026-07-07)
+
+**New**
+- **A third progression axis: Assimilation.** Alongside XP levels and meta-upgrades, every kill now
+  feeds a per-archetype gauge (Swarm / Drone / Sentinel / Colossus). Fill one and you're offered a
+  **graft** — a piece of that monster, grafted onto your own body. Accept it and it's yours for the
+  run, in a dedicated slot on the HUD.
+- **5 grafts to hunt.** **Symbiotic Swarm** (three orbiting mini-swarms + lifesteal), **Erratic
+  Servos** (an invulnerable dash), **Aiming Eye** (a self-aiming turret), **Grafted Carapace**
+  (damage reduction, bonus HP and thorns, at the cost of speed) and **Stalker's Wave** (a periodic
+  knockback shockwave). **3 slots** by default, up to **5** via two new Hub upgrades — **Graft
+  Slots** and **Graft Metabolism** (lowers gauge thresholds).
+- **Fusions: two grafts become one, and stronger.** Carry both prerequisite grafts long enough and
+  a **fusion** gauge fills instead, offering a single evolved form that **frees a slot**. **Armored
+  Charge** (Carapace + Servos) turns your dash into a **240px armored charge** that deals impact
+  damage and knockback along the way, while easing the Carapace's speed penalty. **Turret Hive**
+  (Eye + Swarm) turns your four orbiting swarms into **four auto-turrets** ringing you at range,
+  covering 360° instead of relying on risky melee contact.
+- **A new Codex screen: Chimera.** Browse every graft and fusion — effect, requirements, lore —
+  from the main menu, the same way the Bestiary and Arsenal already work.
+
+**Fixes**
+- **Graft slots are readable now.** The buff-icon row used to overlap the graft slot row on the
+  HUD; slots are bigger, tinted with a magenta accent, and icons no longer spill outside their
+  frame.
+
+**Why it matters**
+- This is the game's core differentiator, live for the first time: *"Don't kill the monsters.
+  Become them."* It's not cosmetic — grafts change your kit (a new dash, a new turret, contact
+  thorns), and fusions are the payoff for committing to a combo instead of chasing whatever drops.
+  Full design rationale in `docs/DESIGN_ASSIMILATION.md`.
+
+---
+
+**Nouveautés**
+- **Un troisième axe de progression : l'Assimilation.** En plus des niveaux d'XP et des
+  améliorations méta, chaque kill alimente désormais une jauge par archétype (Nuée / Drone /
+  Sentinelle / Colosse). Une jauge pleine propose une **greffe** — un fragment du monstre, greffé
+  sur votre propre corps. Acceptez-la et elle est à vous pour la run, dans un emplacement dédié au
+  HUD.
+- **5 greffes à traquer.** **Nuée Symbiotique** (trois mini-essaims orbitants + vol de vie),
+  **Servos Erratiques** (un dash invulnérable), **Œil de Visée** (une tourelle auto-visée),
+  **Carapace Greffée** (réduction de dégâts, PV bonus et épines, au prix de la vitesse) et **Onde
+  du Rôdeur** (une onde de choc périodique à knockback). **3 emplacements** par défaut, jusqu'à
+  **5** via deux nouvelles améliorations du Hub — **Emplacements de Greffe** et **Métabolisme de
+  Greffe** (abaisse les seuils de jauge).
+- **Fusions : deux greffes deviennent une, et plus fortes.** Portez les 2 greffes prérequises
+  assez longtemps et une jauge de **fusion** se remplit à son tour, proposant une forme évoluée
+  unique qui **libère un emplacement**. **Charge Blindée** (Carapace + Servos) transforme votre
+  dash en une **charge blindée de 240px** infligeant dégâts et knockback sur son passage, tout en
+  allégeant le malus de vitesse de la Carapace. **Ruche de Tourelles** (Œil + Nuée) transforme vos
+  quatre mini-essaims orbitants en **quatre tourelles automatiques** postées autour de vous,
+  couvrant 360° au lieu de dépendre d'un contact de mêlée risqué.
+- **Un nouvel écran Codex : Chimère.** Parcourez toutes les greffes et fusions — effet,
+  prérequis, lore — depuis le menu principal, sur le même principe que le Bestiaire et l'Arsenal.
+
+**Corrections**
+- **Les emplacements de greffe sont enfin lisibles.** La rangée d'icônes de buffs recouvrait
+  auparavant la rangée d'emplacements de greffe au HUD ; les emplacements sont désormais plus
+  grands, teintés d'un liseré magenta, et les icônes ne débordent plus de leur cadre.
+
+**Pourquoi c'est important**
+- C'est le vrai différenciateur du jeu, en ligne pour la première fois : *« Ne tue pas les
+  monstres. Deviens-les. »* Ce n'est pas cosmétique — les greffes changent votre kit (nouveau
+  dash, nouvelle tourelle, épines de contact), et les fusions récompensent l'engagement dans un
+  combo plutôt que la course au drop. Détail du design complet dans
+  `docs/DESIGN_ASSIMILATION.md`.
+
+---
+
 ## v1.11.4 — The end boss is beatable again (2026-07-06)
 
 **Fixes**
