@@ -4,6 +4,20 @@
 > `release-manager`). Entrées en ordre décroissant (la plus récente en haut). Ton orienté
 > joueur, EN puis FR (audience itch surtout anglophone).
 
+## v1.14.2 — HUD fix: buff bar no longer overlaps weapons (2026-07-07)
+
+**Fix**
+- The temporary power-up bar was drawing on top of your weapon loadout on the in-game HUD. It now sits
+  cleanly below the weapon row. No more overlap.
+
+---
+
+**Correctif**
+- La barre de power-up temporaire s'affichait par-dessus le loadout d'armes sur le HUD en jeu. Elle se
+  place désormais proprement sous la rangée d'armes. Fini le chevauchement.
+
+---
+
 ## v1.14.1 — Nova Strike gets its icon (2026-07-07)
 
 **Polish**
