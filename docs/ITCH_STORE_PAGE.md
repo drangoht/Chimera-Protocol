@@ -11,19 +11,22 @@
 **Titre :** Chimera Protocol
 
 **Tagline (accroche courte) :**
-> Survive à la Rouille Vivante, fusionne tes armes, abats Le Noyau Rouillé.
+> Ne tue pas les monstres. Deviens-les. Survis à la Rouille Vivante, assimile leurs greffes,
+> fusionne tes armes, abats Le Noyau Rouillé.
 
 Variantes d'accroche (au choix selon le slot) :
-- « Un survivor roguelite où tes armes évoluent — et ne se contentent pas de monter de niveau. »
-- « Bullet-heaven cyberpunk : 5 biomes, 4 Arpenteurs, 1 boss à vaincre pour s'extraire. »
+- « Un survivor roguelite où tu ne fais pas que monter de niveau : tu deviens la chimère que tu
+  combats. »
+- « Bullet-heaven cyberpunk : 5 biomes, 4 Arpenteurs, des greffes de monstres à assimiler, 1 boss à
+  vaincre pour s'extraire. »
 
 ---
 
 ## 2. Description courte (liste itch, 1–2 phrases)
 
 > Survivor roguelite vue du dessus dans un univers cyberpunk-fantasy rongé par la Rouille
-> Vivante. Affronte des nuées d'ennemis, fais évoluer tes armes par fusion, et survis assez
-> longtemps pour vaincre le boss final et t'extraire.
+> Vivante. Affronte des nuées d'ennemis, assimile les monstres que tu tues, fais évoluer tes armes
+> par fusion, et survis assez longtemps pour vaincre le boss final et t'extraire.
 
 ---
 
@@ -37,10 +40,13 @@ Chaque run est une descente : les hordes se densifient, le temps presse, et **un
 finit par émerger**. Survivre ne suffit plus — il faut le terrasser pour s'extraire.
 
 **Chimera Protocol** prend la boucle addictive de Vampire Survivors (nuées, montée en
-puissance, level-up rapides) et lui ajoute son propre crochet : **des armes qui se transforment
-réellement**. Quand une arme atteint son apogée et rencontre le bon module passif, elle **fusionne**
-en une forme évoluée — visuellement et mécaniquement différente. Ton build ne fait pas que grossir :
-il mute.
+puissance, level-up rapides) et lui ajoute deux crochets bien à lui. D'abord, **des armes qui se
+transforment réellement** : quand une arme atteint son apogée et rencontre le bon module passif,
+elle **fusionne** en une forme évoluée — visuellement et mécaniquement différente. Ensuite, et
+c'est le cœur du jeu : **ne te contente pas de tuer les monstres — deviens-les**. Chaque kill
+remplit une jauge d'assimilation propre à l'archétype ; une fois pleine, tu peux **greffer** un
+fragment de la créature sur ton propre corps. Ton build ne fait pas que grossir : il mute,
+littéralement.
 
 ### La boucle de jeu
 
@@ -52,6 +58,10 @@ il mute.
 - **Fusions qui transforment l'arme** : amène une arme à son niveau max + possède le passif prérequis,
   et débloque sa forme évoluée. La Lame Plasma devient un anneau de fusion continu ; le Canon à
   Impulsions devient un rail perforant ; et d'autres encore.
+- **Assimilation : deviens la chimère** : chaque kill remplit la jauge de son archétype ; jauge
+  pleine → une **greffe** t'est proposée (emplacements limités, remplaçables). Deux greffes
+  compatibles peuvent **fusionner** en une forme supérieure qui libère un emplacement — ton propre
+  corps devient un troisième axe de build, à côté des niveaux et des améliorations méta.
 - **Fin de niveau en survie sans fin** : le timer est un décompte avant l'arrivée du **boss final,
   Le Noyau Rouillé** (~13 min). Quand il atteint zéro, la difficulté **s'emballe** : vagues massives,
   mini-boss et **boss en boucle**. Abattre le boss **termine le niveau** (débloque le suivant) et marque
@@ -60,6 +70,14 @@ il mute.
 
 ### Les points forts
 
+- **Un troisième axe de progression : l'Assimilation.** « Ne tue pas les monstres. Deviens-les. »
+  Chaque archétype d'ennemi (Nuée, Drone, Sentinelle, Colosse) a sa propre jauge, remplie par tes
+  kills ; jauge pleine → greffe proposée parmi **5** (Nuée Symbiotique, Servos Erratiques, Œil de
+  Visée, Carapace Greffée, Onde du Rôdeur). **3 emplacements** de base, jusqu'à **5** via le Hub.
+  Porte les 2 bonnes greffes assez longtemps et elles **fusionnent** en une forme épique qui libère
+  un emplacement — **Charge Blindée** (le dash devient une charge qui encaisse et projette) ou
+  **Ruche de Tourelles** (tes essaims deviennent 4 tourelles à 360°). Un nouvel écran **Chimère**
+  au menu principal explique tout.
 - **4 personnages jouables**, chacun avec ses stats, son aura et son arme de signature :
   **Chimera** (cyborg équilibré, Canon à Impulsions), **Titan-Gardien** (robot lourd, Essaim de Drones),
   **Vagabond** (humain mobile, Lame Plasma) et **Vecteur** (cyborg de précision, **Lance Vectorielle** —
@@ -101,8 +119,9 @@ il mute.
 
 ### Codex intégré
 
-Un **Bestiaire** (28 ennemis avec sprite animé, rôle et description) et un **Arsenal** (12 armes +
-4 passifs, icônes et descriptions) sont consultables directement depuis le menu principal.
+Trois rubriques consultables directement depuis le menu principal : un **Bestiaire** (28 ennemis
+avec sprite animé, rôle et description), un **Arsenal** (12 armes + 4 passifs, icônes et
+descriptions) et un écran **Chimère** (5 greffes + 2 fusions d'Assimilation, effet et prérequis).
 
 ---
 
@@ -152,18 +171,26 @@ Genre principal recommandé : **Action**. Made with : **Godot**.
 
 ### Visuels EXISTANTS à réutiliser (dans `docs/store_screens/`)
 
-Captures à jour (rendu pseudo-3D, anglais, 1280×720 sauf cover), régénérées le 2026-07-03.
+Captures à jour (rendu pseudo-3D, anglais sauf mention contraire, 1280×720 sauf cover).
 À placer dans cet ordre de priorité sur la page (les premiers sont les plus « vendeurs ») :
 
 | Ordre | Fichier | Ce qu'il montre | Légende suggérée |
 |---|---|---|---|
-| 1 | `docs/store_screens/gameplay_fournaise.png` | **Run en Fournaise** — coulée de lave, sol pseudo-3D, joueur au centre | « Survis aux marées de Rouille sur 5 biomes. » |
-| 2 | `docs/store_screens/bestiary.png` | **Bestiaire** — faune néon (Security Drone, Holographic Glitch, Laser Turret, Synthetic Golem) | « Une faune propre à chaque biome. » |
-| 3 | `docs/store_screens/menu.png` | **Menu principal** stylé (titre néon, Bestiaire/Arsenal/Options) | Image de couverture / vitrine. |
-| 4 | `docs/store_screens/charsel.png` | **Sélection de personnage** — les 4 Arpenteurs en pseudo-3D (Chimera, Titan, Vagabond, Vecteur), EN, à jour 1.10.0 | « 4 Arpenteurs, 4 styles de jeu. » |
-| 5 | `docs/store_screens/levelsel.png` | **Sélection de biome** — les 5 arènes et leurs effets | « 5 biomes, 5 règles. Conquiers-les tous. » |
-| 6 | `docs/store_screens/arsenal.png` | **Arsenal** — armes/passifs avec icônes et descriptions | « Un arsenal qui se construit. » |
-| 7 | `docs/store_screens/gameplay_neon.png` | **Run en Secteur Néon** — grille néon, ambiance overclock | « Risque vs récompense : +10 % vitesse, +15 % XP. » |
+| 1 | `docs/store_screens/hud_fusion.png` | **HUD en run, 2 fusions de greffes actives** (Charge Blindée + Ruche de Tourelles), Fournaise, régénérée 2026-07-07, FR | « Ne tue pas les monstres. Deviens-les. » |
+| 2 | `docs/store_screens/chimera_codex.png` | **Écran Codex « Chimère »** — les 5 greffes d'Assimilation, régénérée 2026-07-07, FR | « Chaque kill nourrit une jauge. Chaque jauge pleine te transforme. » |
+| 3 | `docs/store_screens/assimilation_graft.png` | **Écran ASSIMILATION** — jauge Nuée pleine, carte de greffe « Nuée Symbiotique » (ASSIMILER/REJETER), régénérée 2026-07-07, FR | « Ton build ne fait pas que grossir : il mute. » |
+| 4 | `docs/store_screens/gameplay_fournaise.png` | **Run en Fournaise** — coulée de lave, sol pseudo-3D, joueur au centre | « Survis aux marées de Rouille sur 5 biomes. » |
+| 5 | `docs/store_screens/bestiary.png` | **Bestiaire** — faune néon (Security Drone, Holographic Glitch, Laser Turret, Synthetic Golem) | « Une faune propre à chaque biome. » |
+| 6 | `docs/store_screens/menu.png` | **Menu principal** stylé (titre néon, Bestiaire/Arsenal/Options) | Image de couverture / vitrine. |
+| 7 | `docs/store_screens/charsel.png` | **Sélection de personnage** — les 4 Arpenteurs en pseudo-3D (Chimera, Titan, Vagabond, Vecteur), EN, à jour 1.10.0 | « 4 Arpenteurs, 4 styles de jeu. » |
+| 8 | `docs/store_screens/levelsel.png` | **Sélection de biome** — les 5 arènes et leurs effets | « 5 biomes, 5 règles. Conquiers-les tous. » |
+| 9 | `docs/store_screens/arsenal.png` | **Arsenal** — armes/passifs avec icônes et descriptions | « Un arsenal qui se construit. » |
+| 10 | `docs/store_screens/gameplay_neon.png` | **Run en Secteur Néon** — grille néon, ambiance overclock | « Risque vs récompense : +10 % vitesse, +15 % XP. » |
+
+> Note : `hud_fusion.png`, `chimera_codex.png` et `assimilation_graft.png` sont capturées en
+> **français** (langue de la session de capture) — à régénérer en anglais avant publication si
+> l'on veut une galerie 100 % homogène (le reste des captures est en EN). Fonctionnellement
+> identique, seul le texte change (`localization/ui.csv`).
 
 **Cover / bannière** : `docs/store_screens/cover.png` (630×500, key art Fournaise).
 Autres biomes disponibles pour la galerie : `gameplay_sanctuaire.png`, `gameplay_aether.png`,
@@ -179,12 +206,15 @@ Ces moments forts ne sont pas encore dans `docs/` et feraient la différence —
    on n'a qu'une capture fixe (`swarm_review.png`).
 2. **GIF / capture d'une FUSION** : le moment où l'arme se transforme (FusionFlash + aberration
    chromatique). C'est le différenciateur du jeu — il doit être montré en mouvement.
-3. **Capture de combat de boss en cours** (Le Noyau Rouillé en train de tirer ses salves radiales) :
+3. **Capture de la carte de FUSION** (bandeau « FUSION » or+magenta, cf. §15.1 de
+   `docs/DESIGN_ASSIMILATION.md`) : `assimilation_graft.png` montre déjà le modal ASSIMILATION
+   standard (carte de greffe simple) — la carte de fusion spécifique (2 greffes → 1, teinte
+   or+magenta) reste à capturer (jauge de fusion plus longue à remplir, cf. §15.0).
+4. **Capture de combat de boss en cours** (Le Noyau Rouillé en train de tirer ses salves radiales) :
    `boss_combat.png` montre l'écran de victoire, pas l'affrontement lui-même.
-4. **Capture d'un choix de level-up** (les 3 cartes avec icônes) : montre la mécanique de build.
 5. **Trailer 30–60 s** (optionnel mais fortement recommandé) : intro lore (3 s) → montée en puissance
-   → fusion spectaculaire → boss → « EXTRACTION RÉUSSIE ». Brief à transmettre à
-   `graphiste` + `developpeur` + `musicien`.
+   → assimilation d'une greffe → fusion d'arme spectaculaire → boss → « EXTRACTION RÉUSSIE ». Brief
+   à transmettre à `graphiste` + `developpeur` + `musicien`.
 
 > Format itch recommandé : bannière / cover **630×500 px**, captures en **16:9** (1280×720 ou plus),
 > GIF < 3 Mo si possible pour le chargement de page.
@@ -199,7 +229,9 @@ Ces moments forts ne sont pas encore dans `docs/` et feraient la différence —
 - [ ] **Tester le zip sur une machine/dossier propre** (hors environnement de dev) pour confirmer
       que le runtime embarqué suffit.
 - [x] **Captures à jour** dans `docs/store_screens/` (rendu pseudo-3D, titre propre « Chimera Protocol »,
-      anglais, 1280×720 + cover 630×500) — régénérées le 2026-07-03.
+      1280×720 + cover 630×500) — galerie biomes/menus régénérée le 2026-07-03, captures
+      Assimilation (`hud_fusion.png`, `chimera_codex.png`, `assimilation_graft.png`) ajoutées le
+      2026-07-07 (FR — à harmoniser en EN, cf. note section 7).
 - [ ] **Renseigner le prix** : gratuit, « payez ce que vous voulez », ou prix fixe (à décider).
 - [ ] **Remplir la page** : titre, tagline, descriptions courte + longue (sections 1–4 ci-dessus).
 - [ ] **Uploader les visuels** (cover + galerie, section 7) ; ajouter le GIF/trailer dès qu'il existe.
@@ -216,6 +248,6 @@ Ces moments forts ne sont pas encore dans `docs/` et feraient la différence —
 
 ---
 
-*Document marketing — ne décrit que des fonctionnalités présentes dans le build au 2026-07-05 (v1.10.0).
+*Document marketing — ne décrit que des fonctionnalités présentes dans le build au 2026-07-07 (v1.12.0).
 Toute promesse nécessitant une feature non listée doit être signalée à `game-designer` avant d'être
 ajoutée à la page.*

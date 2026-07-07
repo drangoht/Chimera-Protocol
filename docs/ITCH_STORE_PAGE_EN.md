@@ -6,26 +6,28 @@
 Chimera Protocol
 
 ## Tagline (short text under title)
-Survive the Living Rust, fuse your weapons, bring down the Rusted Core.
+Don't kill the monsters. Become them. Survive the Living Rust, assimilate their grafts, fuse your weapons, bring down the Rusted Core.
 
 ## Short description (one line)
-A top-down survivor roguelite in a cyberpunk-fantasy world eaten by the Living Rust — face endless swarms, evolve your weapons through fusion, and survive long enough to defeat the final boss and extract.
+A top-down survivor roguelite in a cyberpunk-fantasy world eaten by the Living Rust — face endless swarms, assimilate the monsters you kill, evolve your weapons through fusion, and survive long enough to defeat the final boss and extract.
 
 ## Long description (page body)
 
 ### The pitch
 In a world where magic and machine merged into a corruption called the **Living Rust**, you are a **Walker** sent on an extraction mission into a fallen Sanctuary. Every run is a descent: the hordes thicken, time runs short, and **a final boss eventually emerges**. Surviving is no longer enough — you have to bring it down to extract.
 
-**Chimera Protocol** takes the addictive Vampire Survivors loop (swarms, snowballing power, fast level-ups) and adds its own hook: **weapons that truly transform**. When a weapon reaches its peak and meets the right passive module, it **fuses** into an evolved form — visually and mechanically different. Your build doesn't just grow: it mutates.
+**Chimera Protocol** takes the addictive Vampire Survivors loop (swarms, snowballing power, fast level-ups) and adds two hooks of its own. First, **weapons that truly transform**: when a weapon reaches its peak and meets the right passive module, it **fuses** into an evolved form — visually and mechanically different. Second, and this is the game's core idea: **don't just kill the monsters — become them**. Every kill fills an assimilation gauge tied to that enemy's archetype; fill it and you can **graft** a piece of the creature onto your own body. Your build doesn't just grow: it mutates, literally.
 
 ### Gameplay loop
 - **Top-down survivor roguelite** — move, kite the swarms, your weapons fire on their own.
 - **Dense bullet-heaven swarms** — up to 300 enemies on screen, batch and wave spawning, with i-frames that make the hordes playable instead of punishing.
 - **3-card level-ups** — each level, pick one of 3 cards (new weapon, passive module, or fusion) and heal 25% of your max HP.
 - **Fusions that transform the weapon** — max out a weapon while owning its required passive to unlock its evolved form. The Plasma Blade becomes a continuous fusion ring; the Impulse Cannon becomes a piercing rail; and more.
+- **Assimilation: become the chimera** — every kill fills its archetype's gauge; a full gauge offers a **graft** (limited, replaceable slots). Two compatible grafts can **fuse** into a stronger form that frees up a slot — your own body is a third build axis, alongside levels and meta-upgrades.
 - **Endless-survival end-game** — the timer counts down to the **end-of-level boss**. When it hits zero, the difficulty escalates **hard**: massive waves, mini-bosses and **bosses on a loop**. Beating the boss **completes the level** (unlocking the next) but the run keeps going — you survive as long as you can. Your **survival time is the level's high score** (with the difficulty it was set on).
 
 ### Highlights
+- **A third progression axis: Assimilation.** *"Don't kill the monsters. Become them."* Every enemy archetype (Swarm, Drone, Sentinel, Colossus) has its own gauge, filled by your kills; a full gauge offers a graft from a pool of **5** (Symbiotic Swarm, Erratic Servos, Aiming Eye, Grafted Carapace, Stalker's Wave). **3 slots** by default, up to **5** through the Hub. Carry the right pair of grafts long enough and they **fuse** into an epic form that frees a slot — **Armored Charge** (your dash becomes an impact charge) or **Turret Hive** (your swarms become 4 auto-turrets covering 360°). A new **Chimera** codex screen on the main menu explains it all.
 - **4 playable characters**, each with their own stats, aura and signature weapon: **Chimera** (balanced cyborg, Impulse Cannon), **Titan-Guardian** (heavy robot, Drone Swarm), **Wanderer** (mobile human, Plasma Blade) and **Vector** (precision cyborg, **Vector Lance** — the only *aimed* starting weapon: you aim it yourself with the mouse or right stick, with an on-screen reticle, and the bolt pierces straight through every enemy in its path).
 - **5 biomes with gameplay effects** (not just cosmetic):
   - *Rusted Sanctuary* — neutral ground to learn the loop.
@@ -45,7 +47,7 @@ In a world where magic and machine merged into a corruption called the **Living 
 - **Skippable narrative intro** — the lore told in 5 beats on launch, skippable with any key/click/button.
 - **Keyboard or gamepad** — arrow keys, ZQSD or your own layout: **movement keys are fully rebindable** in the Options, plus keyboard + gamepad navigation on every menu.
 - **Cyberpunk / CRT aesthetic** — pseudo-3D shaded pixel art (fixed directional light + drop shadows for depth), neon, scanlines, per-biome atmosphere (drifting fog, light shafts, parallax dust), a minimal Cyberpunk-2077-style HUD tinted per biome, screen shake, bloom and chromatic aberration on fusions.
-- **Built-in Codex** — a Bestiary (28 enemies with animated sprite, role and description) and an Arsenal (12 weapons + 4 passives) browsable from the main menu.
+- **Built-in Codex** — three screens browsable from the main menu: a Bestiary (28 enemies with animated sprite, role and description), an Arsenal (12 weapons + 4 passives) and a Chimera screen (5 grafts + 2 fusions, effect and requirements).
 - **Localized in English, French and Spanish.**
 
 ### Setting
