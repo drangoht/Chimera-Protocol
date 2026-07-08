@@ -179,9 +179,9 @@ anchor_right = 0.5
 offset_left = -130.0
 offset_top = 185.0
 offset_right = 130.0
-offset_bottom = 705.0
+offset_bottom = 605.0
 alignment = 1
-theme_override_constants/separation = 8
+theme_override_constants/separation = 10
 
 [node name="PlayButton" type="Button" parent="VBox"]
 custom_minimum_size = Vector2(260, 60)
@@ -203,27 +203,9 @@ theme_override_styles/hover = SubResource("StyleHover_Hub")
 theme_override_styles/pressed = SubResource("StylePressed_Hub")
 theme_override_styles/focus = SubResource("StyleNormal_Hub")
 
-[node name="BestiaryButton" type="Button" parent="VBox"]
+[node name="CodexButton" type="Button" parent="VBox"]
 custom_minimum_size = Vector2(260, 56)
-text = "Bestiaire"
-theme_override_font_sizes/font_size = 20
-theme_override_colors/font_color = Color(0.8, 0.8, 1.0, 1)
-
-[node name="ArsenalButton" type="Button" parent="VBox"]
-custom_minimum_size = Vector2(260, 56)
-text = "Arsenal"
-theme_override_font_sizes/font_size = 20
-theme_override_colors/font_color = Color(0.8, 0.8, 1.0, 1)
-
-[node name="ChimeraButton" type="Button" parent="VBox"]
-custom_minimum_size = Vector2(260, 56)
-text = "Chimère"
-theme_override_font_sizes/font_size = 20
-theme_override_colors/font_color = Color(0.8, 0.8, 1.0, 1)
-
-[node name="ChallengesButton" type="Button" parent="VBox"]
-custom_minimum_size = Vector2(260, 56)
-text = "Défis"
+text = "Codex"
 theme_override_font_sizes/font_size = 20
 theme_override_colors/font_color = Color(0.8, 0.8, 1.0, 1)
 

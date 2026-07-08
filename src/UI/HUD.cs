@@ -316,9 +316,10 @@ public partial class HUD : CanvasLayer
 					slot.AddChild(tex);
 				}
 
-				// Jauge de recharge du dash (Servos Érratiques ou fusion Charge) : voile sombre qui
-				// couvre le slot après usage puis se retire par le bas au fil de la recharge (§dash).
-				if (def != null && (def.HasEffect("dash") || def.HasEffect("charge")))
+				// Jauge de recharge du dash (Servos Érratiques, fusion Charge ou fusion Frappe Nova) :
+				// voile sombre qui couvre le slot après usage puis se retire par le bas au fil de la
+				// recharge (§dash). Les 3 partagent le système de dash du Player (DashReadyRatio).
+				if (def != null && (def.HasEffect("dash") || def.HasEffect("charge") || def.HasEffect("novaDash")))
 				{
 					_dashCdVeil = new ColorRect
 					{

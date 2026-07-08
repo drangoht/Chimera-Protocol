@@ -7,10 +7,7 @@ public partial class MainMenu : Control
 {
     private Button    _playButton     = null!;
     private Button    _hubButton      = null!;
-    private Button    _bestiaryButton = null!;
-    private Button    _arsenalButton  = null!;
-    private Button    _chimeraButton  = null!;
-    private Button    _challengesButton = null!;
+    private Button    _codexButton    = null!;
     private Button    _optionsButton  = null!;
     private Button    _quitButton     = null!;
     private ColorRect _fadeOverlay    = null!;
@@ -29,38 +26,26 @@ public partial class MainMenu : Control
 
         _playButton     = GetNode<Button>("VBox/PlayButton");
         _hubButton      = GetNode<Button>("VBox/HubButton");
-        _bestiaryButton = GetNode<Button>("VBox/BestiaryButton");
-        _arsenalButton  = GetNode<Button>("VBox/ArsenalButton");
-        _chimeraButton  = GetNode<Button>("VBox/ChimeraButton");
-        _challengesButton = GetNode<Button>("VBox/ChallengesButton");
+        _codexButton    = GetNode<Button>("VBox/CodexButton");
         _optionsButton  = GetNode<Button>("VBox/OptionsButton");
         _quitButton     = GetNode<Button>("VBox/QuitButton");
         _fadeOverlay    = GetNode<ColorRect>("FadeOverlay");
 
-        // Les boutons Bestiaire/Arsenal/Options sont ajoutés sans styleboxes dans le .tscn — stylés ici.
-        StyleMenuButton(_bestiaryButton);
-        StyleMenuButton(_arsenalButton);
-        StyleMenuButton(_chimeraButton);
-        StyleMenuButton(_challengesButton);
+        // Les boutons Codex/Options sont ajoutés sans styleboxes dans le .tscn — stylés ici.
+        StyleMenuButton(_codexButton);
         StyleMenuButton(_optionsButton);
 
         // --- Signaux boutons ---
         _playButton.Pressed     += OnPlayPressed;
         _hubButton.Pressed      += OnHubPressed;
-        _bestiaryButton.Pressed += OnBestiaryPressed;
-        _arsenalButton.Pressed  += OnArsenalPressed;
-        _chimeraButton.Pressed  += OnChimeraPressed;
-        _challengesButton.Pressed += OnChallengesPressed;
+        _codexButton.Pressed    += OnCodexPressed;
         _optionsButton.Pressed  += OnOptionsPressed;
         _quitButton.Pressed     += OnQuitPressed;
 
         // --- Hover effects ---
         ConnectHoverEffects(_playButton);
         ConnectHoverEffects(_hubButton);
-        ConnectHoverEffects(_bestiaryButton);
-        ConnectHoverEffects(_arsenalButton);
-        ConnectHoverEffects(_chimeraButton);
-        ConnectHoverEffects(_challengesButton);
+        ConnectHoverEffects(_codexButton);
         ConnectHoverEffects(_optionsButton);
         ConnectHoverEffects(_quitButton);
 
@@ -175,31 +160,38 @@ public partial class MainMenu : Control
     {
         _playButton.Text     = Loc.T("MENU_PLAY");
         _hubButton.Text      = Loc.T("MENU_HUB");
-        _bestiaryButton.Text = Loc.T("MENU_BESTIARY");
-        _arsenalButton.Text  = Loc.T("MENU_ARSENAL");
-        _chimeraButton.Text  = TextOr("MENU_CHIMERA", "Chimère");
-        _challengesButton.Text = TextOr("MENU_CHALLENGES", "Défis");
+        _codexButton.Text    = TextOr("MENU_CODEX", "Codex");
         _optionsButton.Text  = Loc.T("MENU_OPTIONS");
         ApplyTitleFlair();
         _quitButton.Text     = Loc.T("MENU_QUIT");
     }
 
-    /// <summary>Rangée EN/FR/ES en bas de l'écran ; change la langue et ré-applique les textes.</summary>
+    /// <summary>Rangée de drapeaux EN/FR/ES en haut à droite de l'écran ; change la langue et
+    /// ré-applique les textes. La langue active est surlignée (liseré or).</summary>
     private void BuildLanguageSelector()
     {
         var row = new HBoxContainer
         {
-            Alignment      = BoxContainer.AlignmentMode.Center,
-            AnchorLeft     = 0.5f, AnchorRight = 0.5f, AnchorTop = 1f, AnchorBottom = 1f,
-            OffsetLeft     = -160f, OffsetRight = 160f, OffsetTop = -52f, OffsetBottom = -14f,
-            GrowHorizontal = GrowDirection.Both, GrowVertical = GrowDirection.Begin,
+            AnchorLeft     = 1f, AnchorRight = 1f, AnchorTop = 0f, AnchorBottom = 0f,
+            OffsetLeft     = -172f, OffsetRight = -16f, OffsetTop = 16f, OffsetBottom = 52f,
+            GrowHorizontal = GrowDirection.Begin, GrowVertical = GrowDirection.End,
         };
-        row.AddThemeConstantOverride("separation", 10);
+        row.AddThemeConstantOverride("separation", 8);
         AddChild(row);
 
         foreach (var lang in GameSettings.Languages)
         {
-            var b = new Button { Text = lang.ToUpper(), CustomMinimumSize = new Vector2(64, 34) };
+            var b = new Button
+            {
+                CustomMinimumSize = new Vector2(44, 30),
+                TooltipText       = lang.ToUpper(),
+                ExpandIcon        = true,
+                IconAlignment     = HorizontalAlignment.Center,
+            };
+            string flagPath = $"res://assets/sprites/ui/flag_{lang}.png";
+            if (ResourceLoader.Exists(flagPath)) b.Icon = GD.Load<Texture2D>(flagPath);
+            else b.Text = lang.ToUpper();   // repli si le drapeau manque
+            b.TextureFilter = TextureFilterEnum.Nearest;
             string code = lang;
             b.Pressed += () => OnLanguageChosen(code);
             ConnectHoverEffects(b);
@@ -217,12 +209,19 @@ public partial class MainMenu : Control
         RefreshLanguageButtons();
     }
 
-    /// <summary>Le bouton de la langue active est désactivé (= sélectionné).</summary>
+    /// <summary>Surligne le drapeau de la langue active (liseré or) ; les autres restent neutres.</summary>
     private void RefreshLanguageButtons()
     {
         string current = GameSettings.Instance?.Language ?? "en";
-        foreach (var b in _langButtons)
-            b.Disabled = string.Equals(b.Text, current, System.StringComparison.OrdinalIgnoreCase);
+        for (int i = 0; i < _langButtons.Count && i < GameSettings.Languages.Length; i++)
+        {
+            bool active = string.Equals(GameSettings.Languages[i], current, System.StringComparison.OrdinalIgnoreCase);
+            var style = new StyleBoxFlat { BgColor = new Color(0.08f, 0.08f, 0.16f, active ? 0.95f : 0.5f) };
+            style.SetBorderWidthAll(active ? 3 : 1);
+            style.BorderColor = active ? new Color(1f, 0.8f, 0.267f) : new Color(0.5f, 0.5f, 0.6f, 0.7f);
+            style.SetCornerRadiusAll(3); style.SetContentMarginAll(3);
+            _langButtons[i].AddThemeStyleboxOverride("normal", style);
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -292,28 +291,10 @@ public partial class MainMenu : Control
         TransitionTo("res://scenes/ui/HubScreen.tscn");
     }
 
-    private void OnBestiaryPressed()
+    private void OnCodexPressed()
     {
         AudioSystem.Instance?.PlaySfx("sfx_ui_button");
-        TransitionTo("res://scenes/ui/BestiaryScreen.tscn");
-    }
-
-    private void OnArsenalPressed()
-    {
-        AudioSystem.Instance?.PlaySfx("sfx_ui_button");
-        TransitionTo("res://scenes/ui/ArsenalScreen.tscn");
-    }
-
-    private void OnChimeraPressed()
-    {
-        AudioSystem.Instance?.PlaySfx("sfx_ui_button");
-        TransitionTo("res://scenes/ui/ChimeraCodexScreen.tscn");
-    }
-
-    private void OnChallengesPressed()
-    {
-        AudioSystem.Instance?.PlaySfx("sfx_ui_button");
-        TransitionTo("res://scenes/ui/ChallengesScreen.tscn");
+        TransitionTo("res://scenes/ui/CodexMenuScreen.tscn");
     }
 
     /// <summary>Affiche le titre cosmétique équipé (débloqué via les Défis, choisi au Hub) sous le logo.
@@ -385,10 +366,7 @@ public partial class MainMenu : Control
         // Bloque les interactions pendant le fade
         _playButton.Disabled     = true;
         _hubButton.Disabled      = true;
-        _bestiaryButton.Disabled = true;
-        _arsenalButton.Disabled  = true;
-        _chimeraButton.Disabled  = true;
-        _challengesButton.Disabled = true;
+        _codexButton.Disabled    = true;
         _optionsButton.Disabled  = true;
         _quitButton.Disabled     = true;
 

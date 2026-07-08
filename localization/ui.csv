@@ -395,3 +395,8 @@ HUB_TITLES,Title,Titre,Título
 TITLE_CHIMERA,The Chimera,La Chimère,La Quimera
 TITLE_APEX,Apex Predator,Prédateur Alpha,Depredador Alfa
 TITLE_EXTERMINATOR,Exterminator,Exterminateur,Exterminador
+MENU_CODEX,Codex,Codex,Códice
+MENU_PERKS,Perks,Perks,Ventajas
+PERKS_TITLE,STARTING PERKS,PERKS DE DÉPART,VENTAJAS INICIALES
+PERKS_INTRO,"Starting perks are start-of-run bonuses, unlocked by completing Challenges and equipped at the Hub (one at a time). Each new run applies the equipped perk.","Les perks de départ sont des bonus de début de run, débloqués en accomplissant des Défis et équipés au Hub (un seul à la fois). Chaque nouvelle run applique le perk équipé.","Las ventajas iniciales son bonificaciones de inicio de partida, desbloqueadas al completar Desafíos y equipadas en el Hub (una a la vez). Cada nueva partida aplica la ventaja equipada."
+PERK_STATUS_LOCKED,Locked,Verrouillé,Bloqueado

@@ -63,7 +63,7 @@ docs/DESIGN_ASSIMILATION.md §11-21) · **ChallengeTable** (Défis/succès : par
 - Intégrations : **`DiscordPresence`** (autoload, NuGet `DiscordRichPresence` — statut « joue à Chimera Protocol », clés art `chimera`/`chimera_small`, tolérant à l'absence de Discord ; `SetInMenus`/`SetInRun` appelés par MainMenu/GameManager), **`VersionStamp`** (autoload, overlay `v<ver>-<sha>` bas-droite) ; **`BuildInfo`** (`src/Core/`, `GitSha` auto-généré par `tools/gen_build_info.ps1`, version lue de project.godot)
 
 ## §UI — `src/UI/` (écrans Control)
-`MainMenu` (+ **bandeau MAJ** → §MAJ) · `CharacterSelectScreen` · `LevelSelectScreen` ·
+`MainMenu` (+ **bandeau MAJ** → §MAJ ; 5 entrées : Jouer/Hub/**Codex**/Options/Quitter — les écrans info sont sous le sous-menu Codex ; sélecteur de langue = drapeaux `flag_{fr,en,es}.png` en haut à droite ; flair du titre équipé sous le logo via `ApplyTitleFlair`) · `CharacterSelectScreen` · `LevelSelectScreen` ·
 `HubScreen` · `BestiaryScreen` / `ArsenalScreen` / `CodexScreenBase` (+ `Codex`) ·
 `OptionsScreen` · `PauseScreen` · `LevelUpScreen` · **`AssimilationScreen`** (écran modal des
 greffes, UI construite en code) · **`ChimeraCodexScreen`** (codex explicatif des greffes/fusions —
@@ -71,7 +71,10 @@ sous-classe `CodexScreenBase`, entrées dérivées de `AssimilationSystem.Config
 bouton « Chimère » du MainMenu ; `CodexScreenBase.IntroText` = paragraphe d'intro optionnel) ·
 **`ChallengesScreen`** (écran Défis/succès — sous-classe `CodexScreenBase`, entrées dérivées de
 `ChallengeSystem.Defs`, statut accompli/à faire encodé dans accent+tag, objectif+récompense composés
-dans la description ; bouton « Défis » du MainMenu ; cf. docs/DESIGN_CHALLENGES.md) ·
+dans la description ; cf. docs/DESIGN_CHALLENGES.md) · **`PerksScreen`** (décrit les perks de départ —
+sous-classe `CodexScreenBase`, entrées de `StartingPerks.All`, statut débloqué/verrouillé) ·
+**`CodexMenuScreen`** (sous-menu regroupant Bestiaire/Arsenal/Chimère/Défis/Perks — désencombre le
+MainMenu ; les écrans codex y reviennent via `CodexScreenBase.BackScenePath`) ·
 **`ModalQueue`** (statique — coordonne LevelUpScreen +
 AssimilationScreen : un SEUL `Paused`, level-up prioritaire ; jamais affichés simultanément) ·
 `RunEndScreen` · `IntroScreen`

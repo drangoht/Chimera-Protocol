@@ -238,6 +238,10 @@ public abstract partial class CodexScreenBase : Control
         btn.FocusExited  += () => CreateTween().TweenProperty(btn, "scale", Vector2.One, 0.1);
     }
 
+    /// <summary>Scène de retour. Tous les écrans codex vivent désormais sous le sous-menu Codex, donc
+    /// « Retour » y ramène (surchargeable si un écran est atteint depuis ailleurs).</summary>
+    protected virtual string BackScenePath => "res://scenes/ui/CodexMenuScreen.tscn";
+
     private void OnBackPressed()
     {
         AudioSystem.Instance?.PlaySfx("sfx_ui_button");
@@ -245,7 +249,7 @@ public abstract partial class CodexScreenBase : Control
         var tw = CreateTween();
         tw.TweenProperty(_fade, "color:a", 1f, 0.35);
         tw.TweenCallback(Callable.From(() =>
-            GetTree().ChangeSceneToFile("res://scenes/MainMenu.tscn")));
+            GetTree().ChangeSceneToFile(BackScenePath)));
     }
 
     public override void _UnhandledInput(InputEvent @event)
