@@ -22,6 +22,9 @@ public partial class HubScreen : Control
     // Lignes de l'UI générées dynamiquement
     private readonly List<UpgradeRow> _rows = new();
 
+    // Sélecteur de perk de départ (section construite en code si ≥1 perk débloqué)
+    private readonly List<Button> _perkChips = new();
+
     public override void _Ready()
     {
         _echoesLabel        = GetNode<Label>("VBox/EchoesLabel");
@@ -38,6 +41,7 @@ public partial class HubScreen : Control
         _backButton.Text = Loc.T("COMMON_BACK");
 
         BuildUpgradesList();
+        BuildPerkSelector();
         BuildResetButton();
         RefreshDisplay();
         SetupFocusChain();
@@ -163,6 +167,109 @@ public partial class HubScreen : Control
     /// Bouton « Réinitialiser les améliorations » (rembourse l'intégralité des Échos dépensés).
     /// Confirmation en 2 temps pour éviter les clics accidentels.
     /// </summary>
+    // ---------------------------------------------------------------------------
+    // Sélecteur de perk de départ (débloqués via les Défis)
+    // ---------------------------------------------------------------------------
+
+    private static readonly Color PerkAccent = new(0.667f, 0.267f, 1f);   // violet
+
+    /// <summary>Construit la section « Perks de départ » : un chip « Aucun » + un chip par perk
+    /// débloqué. Masquée tant qu'aucun perk n'est débloqué (reste discret pour les nouveaux joueurs).</summary>
+    private void BuildPerkSelector()
+    {
+        var meta = MetaProgressionSystem.Instance;
+        var unlocked = new List<PerkDef>();
+        foreach (var p in StartingPerks.All)
+            if (meta.Meta.UnlockedPerks.Contains(p.Id)) unlocked.Add(p);
+        if (unlocked.Count == 0) return;
+
+        var section = new VBoxContainer();
+        section.AddThemeConstantOverride("separation", 6);
+
+        var header = new Label { Text = Loc.T("HUB_PERKS") };
+        header.AddThemeFontSizeOverride("font_size", 18);
+        header.AddThemeColorOverride("font_color", PerkAccent);
+        section.AddChild(header);
+
+        var row = new HBoxContainer();
+        row.AddThemeConstantOverride("separation", 8);
+        section.AddChild(row);
+
+        row.AddChild(MakePerkChip("", Loc.T("HUB_PERK_NONE"), null));
+        foreach (var p in unlocked)
+            row.AddChild(MakePerkChip(p.Id, Loc.T(p.NameKey), p.IconPath));
+
+        var vbox       = GetNode<VBoxContainer>("VBox");
+        var buttonsRow = GetNode<Control>("VBox/ButtonsRow");
+        vbox.AddChild(section);
+        vbox.MoveChild(section, buttonsRow.GetIndex());
+
+        RefreshPerkChips();
+    }
+
+    private Button MakePerkChip(string perkId, string label, string? iconPath)
+    {
+        var btn = new Button
+        {
+            Text              = label,
+            CustomMinimumSize = new Vector2(0, 44),
+            ExpandIcon        = true,
+        };
+        if (iconPath != null)
+        {
+            var tex = GD.Load<Texture2D>(iconPath);
+            if (tex != null) btn.Icon = tex;
+        }
+        btn.AddThemeFontSizeOverride("font_size", 15);
+        btn.AddThemeColorOverride("font_color", new Color(0.85f, 0.85f, 0.95f));
+        btn.SetMeta("perkId", perkId);
+        btn.Pressed += () => OnPerkChipPressed(perkId);
+        ConnectHoverEffects(btn, 1.03f);
+        _perkChips.Add(btn);
+        return btn;
+    }
+
+    /// <summary>Restyle chaque chip selon le perk équipé (bordure or + fond appuyé = sélectionné).</summary>
+    private void RefreshPerkChips()
+    {
+        string equipped = MetaProgressionSystem.Instance.Meta.EquippedPerk;
+        foreach (var chip in _perkChips)
+        {
+            bool selected = chip.GetMeta("perkId").AsString() == equipped;
+            ApplyChipStyle(chip, selected);
+        }
+    }
+
+    private static void ApplyChipStyle(Button btn, bool selected)
+    {
+        Color border = selected ? new Color(1f, 0.8f, 0.267f) : new Color(PerkAccent.R, PerkAccent.G, PerkAccent.B, 0.55f);
+        float bgA    = selected ? 0.95f : 0.85f;
+        Color bg     = selected ? new Color(0.12f, 0.09f, 0.04f, bgA) : new Color(0.08f, 0.08f, 0.16f, bgA);
+
+        var normal = new StyleBoxFlat { BgColor = bg };
+        normal.SetBorderWidthAll(selected ? 3 : 1); normal.BorderColor = border; normal.SetCornerRadiusAll(4);
+        normal.SetContentMarginAll(8);
+        btn.AddThemeStyleboxOverride("normal", normal);
+
+        var hover = new StyleBoxFlat { BgColor = new Color(0.12f, 0.12f, 0.22f, 0.95f) };
+        hover.SetBorderWidthAll(3); hover.BorderColor = border; hover.SetCornerRadiusAll(4); hover.SetContentMarginAll(8);
+        btn.AddThemeStyleboxOverride("hover", hover);
+        btn.AddThemeStyleboxOverride("pressed", hover);
+
+        var focus = new StyleBoxFlat { BgColor = hover.BgColor };
+        focus.SetBorderWidthAll(3); focus.BorderColor = new Color(1f, 0.8f, 0.267f); focus.SetCornerRadiusAll(4); focus.SetContentMarginAll(8);
+        btn.AddThemeStyleboxOverride("focus", focus);
+    }
+
+    private void OnPerkChipPressed(string perkId)
+    {
+        var meta = MetaProgressionSystem.Instance;
+        meta.Meta.EquippedPerk = perkId;   // "" = aucun
+        meta.PersistMeta();
+        AudioSystem.Instance?.PlaySfx("sfx_ui_button");
+        RefreshPerkChips();
+    }
+
     private void BuildResetButton()
     {
         _resetButton = new Button
@@ -362,8 +469,27 @@ public partial class HubScreen : Control
             btn.FocusNeighborBottom = btn.GetPathTo(i == _rows.Count - 1 ? (Control)_resetButton : _rows[i + 1].BuyButton);
         }
 
-        // Bouton Reset intercalé entre la dernière amélioration et le bouton Retour.
-        _resetButton.FocusNeighborTop    = _resetButton.GetPathTo(_rows[^1].BuyButton);
+        // Chips de perk intercalés (si présents) entre la dernière amélioration et le bouton Reset.
+        if (_perkChips.Count > 0)
+        {
+            var last = _rows[^1].BuyButton;
+            last.FocusNeighborBottom = last.GetPathTo(_perkChips[0]);
+
+            for (int i = 0; i < _perkChips.Count; i++)
+            {
+                var chip = _perkChips[i];
+                chip.FocusNeighborTop    = chip.GetPathTo(last);
+                chip.FocusNeighborBottom = chip.GetPathTo(_resetButton);
+                if (i > 0) chip.FocusNeighborLeft = chip.GetPathTo(_perkChips[i - 1]);
+                if (i < _perkChips.Count - 1) chip.FocusNeighborRight = chip.GetPathTo(_perkChips[i + 1]);
+            }
+            _resetButton.FocusNeighborTop = _resetButton.GetPathTo(_perkChips[0]);
+        }
+        else
+        {
+            _resetButton.FocusNeighborTop = _resetButton.GetPathTo(_rows[^1].BuyButton);
+        }
+
         _resetButton.FocusNeighborBottom = _resetButton.GetPathTo(_backButton);
         _backButton.FocusNeighborTop     = _backButton.GetPathTo(_resetButton);
     }

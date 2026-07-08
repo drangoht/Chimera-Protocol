@@ -81,6 +81,28 @@ public partial class AssimilationSystem : Node
         GraftsVersion++;
     }
 
+    /// <summary>Perk de départ « +1 emplacement » : ajoute des slots de greffe pour la run courante
+    /// (au-dessus de ceux dérivés du méta). Runtime uniquement, remis à zéro au prochain Reset.</summary>
+    public void AddBonusSlots(int n)
+    {
+        if (n <= 0) return;
+        _slotCount += n;
+        GraftsVersion++;
+    }
+
+    /// <summary>Perk de départ « greffe offerte » : équipe d'office une greffe de base au début de run
+    /// (occupe un emplacement, marquée découverte). Sans effet si déjà équipée ou id inconnu.</summary>
+    public void GrantStartingGraft(string graftId)
+    {
+        if (_equipped.Contains(graftId)) return;
+        var def = _config.GraftById(graftId);
+        if (def == null) { GD.PrintErr($"[AssimilationSystem] Perk : greffe '{graftId}' inconnue."); return; }
+        _equipped.Add(graftId);
+        EquipOnPlayer(def);
+        Discover(graftId);
+        GraftsVersion++;
+    }
+
     // -------------------------------------------------------------------------
     // Routage des kills → jauges
     // -------------------------------------------------------------------------

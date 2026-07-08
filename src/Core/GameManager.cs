@@ -162,6 +162,43 @@ public partial class GameManager : Node
         // (position sous le loadout, pas de chevauchement). Aucun effet sans le flag.
         if (DebugHooks.ForceBuff)
             Callable.From(ApplyBuffDebugHook).CallDeferred();
+
+        // Perk de départ équipé (débloqué via les Défis, choisi au Hub) : greffe offerte / arme
+        // supplémentaire / +1 emplacement de greffe. Différé pour que le GraftManager du joueur soit
+        // prêt (comme le hook --force-graft). Sans effet si aucun perk équipé.
+        if (!string.IsNullOrEmpty(MetaProgressionSystem.Instance?.Meta.EquippedPerk))
+            Callable.From(ApplyStartingPerkHook).CallDeferred();
+    }
+
+    /// <summary>
+    /// Applique le perk de départ équipé (MetaSaveData.EquippedPerk) au début de la run. Défensif :
+    /// n'applique que si le perk est réellement débloqué (garde contre une sauvegarde éditée).
+    /// </summary>
+    private void ApplyStartingPerkHook()
+    {
+        var meta = MetaProgressionSystem.Instance;
+        if (meta == null) return;
+        string perk = meta.Meta.EquippedPerk;
+        if (perk.Length == 0 || !meta.Meta.UnlockedPerks.Contains(perk)) return;
+
+        switch (perk)
+        {
+            case "start_graft_swarm":
+                AssimilationSystem.Instance?.GrantStartingGraft("swarm_symbiote");
+                break;
+            case "start_weapon_glaive":
+                var inv = InventorySystem.Instance;
+                if (inv != null && !inv.WeaponLevels.ContainsKey("glaive"))
+                {
+                    inv.AddOrUpgradeWeapon("glaive");
+                    inv.RefreshWeaponDamages();
+                }
+                break;
+            case "start_extra_slot":
+                AssimilationSystem.Instance?.AddBonusSlots(1);
+                break;
+        }
+        GD.Print($"[GameManager] Perk de départ appliqué : {perk}");
     }
 
     /// <summary>

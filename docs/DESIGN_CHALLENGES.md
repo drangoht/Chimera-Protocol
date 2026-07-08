@@ -83,6 +83,13 @@ détail complet sur l'écran Défis du lot 2). SFX `sfx_core_collect`.
    mappée par récompense. Bouton « Défis » ajouté au MainMenu (VBox agrandi à 705). Loc `MENU_CHALLENGES`/
    `CHALLENGES_*`/`CHAL_STATUS_*`/`CHAL_REWARD_*` EN/FR/ES. **Piège rencontré** : après édition d'`ui.csv`,
    relancer `godot --headless --import` (sinon clés brutes — cf. PITFALLS).
-3. Perks de départ : UI d'équipement au Hub + application au démarrage de run.
+3. **Perks de départ** (✅ 2026-07-08) — `MetaSaveData.EquippedPerk` (un seul perk équipé à la fois) ;
+   registre `src/Systems/StartingPerks.cs` (id/nom/desc/icône) ; section « Perk de départ » au Hub
+   (`HubScreen.BuildPerkSelector` : chip « Aucun » + un chip par perk débloqué, sélection or, persistée,
+   intégrée à la chaîne de focus, masquée si aucun perk débloqué) ; application au run start via
+   `GameManager.ApplyStartingPerkHook` (différé, défensif : perk doit être débloqué) →
+   `start_graft_swarm` = `AssimilationSystem.GrantStartingGraft("swarm_symbiote")`, `start_weapon_glaive`
+   = glaive en 2e arme, `start_extra_slot` = `AssimilationSystem.AddBonusSlots(1)`. Loc `HUB_PERKS`/
+   `HUB_PERK_NONE`/`PERK_*` EN/FR/ES. Vérifié : boot Game.tscn applique bien le perk (glaive + greffe).
 4. Cosmétiques / titres : sélection + application (teinte joueur / titre affiché).
 5. Équilibrage seuils + doc + build/ZIP + publication itch.
