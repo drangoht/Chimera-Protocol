@@ -125,6 +125,73 @@ descriptions) et un écran **Chimère** (5 greffes + 2 fusions d'Assimilation, e
 
 ---
 
+## 3b. Description longue — version anglaise (HTML prêt à coller sur itch.io)
+
+> Version anglaise réellement publiée sur la page itch, nettoyée le 2026-07-08 (balises `<strong>`
+> orphelines supprimées, passages tronqués reconstitués, nom du boss final corrigé en « Rusted
+> Core »). Contrepartie EN de la section 3 ci-dessus. À garder en phase avec la version FR.
+
+```html
+<h3>The pitch</h3>
+<p>In a world where magic and machine merged into a corruption called the <strong>Living Rust</strong>, you are a <strong>Walker</strong> sent on an extraction mission into a fallen Sanctuary. Every run is a descent: the hordes thicken, time runs short, and <strong>a final boss eventually emerges</strong>. Surviving is no longer enough &mdash; you have to bring it down to extract.</p>
+<p><strong>Chimera Protocol</strong> takes the addictive Vampire Survivors loop (swarms, snowballing power, fast level-ups) and adds two hooks of its own. First, <strong>weapons that truly transform</strong>: when a weapon reaches its peak and meets the right passive module, it <strong>fuses</strong> into an evolved form &mdash; visually and mechanically different. Second, and this is the game's core idea: <strong>don't just kill the monsters &mdash; become them</strong>. Every kill fills an assimilation gauge tied to that enemy's archetype; fill it and you can <strong>graft</strong> a piece of the creature onto your own body. Your build doesn't just grow: it mutates, literally.</p>
+
+<h3>Gameplay loop</h3>
+<ul>
+<li><strong>Top-down survivor roguelite</strong> &mdash; move, kite the swarms, your weapons fire on their own.</li>
+<li><strong>Dense bullet-heaven swarms</strong> &mdash; up to 300 enemies on screen, batch and wave spawning, with i-frames that make the hordes playable instead of punishing.</li>
+<li><strong>3-card level-ups</strong> &mdash; each level, pick one of 3 cards (new weapon, passive module, or fusion) and heal 25% of your max HP.</li>
+<li><strong>Fusions that transform the weapon</strong> &mdash; max out a weapon while owning its required passive to unlock its evolved form. The Plasma Blade becomes a continuous fusion ring; the Impulse Cannon becomes a piercing rail; and more.</li>
+<li><strong>Assimilation: become the chimera</strong> &mdash; every kill fills its archetype's gauge; a full gauge offers a <strong>graft</strong> (limited, replaceable slots). Two compatible grafts can <strong>fuse</strong> into a stronger form that frees up a slot &mdash; your own body is a third build axis, alongside levels and meta-upgrades.</li>
+<li><strong>Endless-survival end-game</strong> &mdash; the timer counts down to the <strong>end-of-level boss</strong>. When it hits zero, the difficulty escalates <strong>hard</strong>: massive waves, mini-bosses and <strong>bosses on a loop</strong>. Beating the boss <strong>completes the level</strong> (unlocking the next) but the run keeps going &mdash; you survive as long as you can. Your <strong>survival time is the level's high score</strong> (with the difficulty it was set on).</li>
+</ul>
+
+<h3>Highlights</h3>
+<ul>
+<li><strong>A third progression axis: Assimilation.</strong> <em>"Don't kill the monsters. Become them."</em> Every enemy archetype (Swarm, Drone, Sentinel, Colossus) has its own gauge, filled by your kills; a full gauge offers a graft from a pool of <strong>5</strong> (Symbiotic Swarm, Erratic Servos, Aiming Eye, Grafted Carapace, Stalker's Wave). <strong>3 slots</strong> by default, up to <strong>5</strong> through the Hub. Carry the right pair of grafts long enough and they <strong>fuse</strong> into an epic form that frees a slot &mdash; <strong>Armored Charge</strong> (your dash becomes an impact charge) or <strong>Turret Hive</strong> (your swarms become 4 auto-turrets covering 360&deg;). A new <strong>Chimera</strong> codex screen on the main menu explains it all.</li>
+<li><strong>4 playable characters</strong>, each with their own stats, aura and signature weapon: <strong>Chimera</strong> (balanced cyborg, Impulse Cannon), <strong>Titan-Guardian</strong> (heavy robot, Drone Swarm), <strong>Wanderer</strong> (mobile human, Plasma Blade) and <strong>Vector</strong> (precision cyborg, <strong>Vector Lance</strong> &mdash; the only <em>aimed</em> starting weapon: you aim it yourself with the mouse or right stick, with an on-screen reticle, and the bolt pierces straight through every enemy in its path).</li>
+<li><strong>5 biomes with gameplay effects</strong> (not just cosmetic):
+  <ul>
+  <li><em>Rusted Sanctuary</em> &mdash; neutral ground to learn the loop.</li>
+  <li><em>Aether Wastes</em> &mdash; <strong>+20% XP</strong>, faster snowball.</li>
+  <li><em>Furnace</em> &mdash; <strong>enemies +18% speed</strong>, for the reckless.</li>
+  <li><em>Cryogenic Frost</em> &mdash; <strong>enemies &minus;18% speed</strong>, room to kite and aim.</li>
+  <li><em>Neon Sector</em> &mdash; an overclocked data sector: <strong>enemies +10% faster but +15% XP</strong> (risk vs reward).</li>
+  </ul>
+</li>
+<li><strong>A build-craft arsenal &mdash; 12 weapons, 4 passives and 9 fusions</strong> to combine. Including a boomerang blade, homing missiles, a slowing cryo beam, a burning flame cone, an aimed vector lance, and an epic gravity-well singularity.</li>
+<li><strong>A dedicated fauna per biome</strong> &mdash; each of the 5 biomes has its own creatures: rusted crawlers in the Sanctuary, spectral wraiths in the Aether Wastes, molten colossi in the Furnace, crystalline titans in the Frost, holographic glitches in the Neon Sector. <strong>28 base enemies, each with its own sprite.</strong></li>
+<li><strong>Temporary power-ups</strong> &mdash; pick up timed buffs mid-run: Overclock (fire rate), Berserk (damage), Aegis (invulnerability), Celerity (speed). No permanent power-creep.</li>
+<li><strong>Level progression</strong> &mdash; 5 levels unlock one after another (beat a level to unlock the next); each level tracks its <strong>best survival time + difficulty</strong>. A <strong>DEFEATED</strong> badge marks cleared levels.</li>
+<li><strong>Weapon discovery</strong> &mdash; undiscovered weapons appear as <strong>???</strong> until you find them in a run.</li>
+<li><strong>Reset everything</strong> &mdash; a one-click option to wipe all progress (Echoes, unlocks, records, discoveries) back to a fresh start.</li>
+<li><strong>Adjustable difficulty</strong> &mdash; Easy / Normal / Hard (damage, HP and spawn rate scale accordingly).</li>
+<li><strong>An escalating bestiary</strong> &mdash; 28 base enemies spread across the biomes, with <strong>elites</strong> carrying dangerous affixes (Armored, Regenerating, Explosive, Frenzied, Vampiric), 3 mini-bosses (Aether Revenant, Rust Stalker, Master Sentinel) and 1 final boss (the <strong>Rusted Core</strong>).</li>
+<li><strong>Meta-progression</strong> &mdash; Aether Echoes earned in runs buy permanent upgrades at the Hub.</li>
+<li><strong>Skippable narrative intro</strong> &mdash; the lore told in 5 beats on launch, skippable at any time.</li>
+<li><strong>Keyboard or gamepad</strong> &mdash; arrow keys, ZQSD or your own layout: <strong>movement keys are fully rebindable</strong> in the Options, plus keyboard + gamepad navigation on every menu.</li>
+<li><strong>Cyberpunk / CRT aesthetic</strong> &mdash; pseudo-3D shaded pixel art (fixed direction for depth), neon, scanlines, per-biome atmosphere (drifting fog, light shafts, parallax dust), a minimal Cyberpunk-2077-style HUD tinted per biome, screen shake, bloom and chromatic aberration on fusions.</li>
+<li><strong>Built-in Codex</strong> &mdash; three screens browsable from the main menu: a Bestiary (each enemy's sprite, role and description), an Arsenal (12 weapons + 4 passives) and a Chimera screen (5 grafts + 2 fusions, effect and requirements).</li>
+<li><strong>Localized in English, French and Spanish.</strong></li>
+</ul>
+
+<h3>Setting</h3>
+<blockquote><em>The Convergence changed everything.</em></blockquote>
+<p>When magic and machine intertwined, they birthed the <strong>Living Rust</strong>: a half-organic, half-mechanical corruption that devours the world and reanimates its husks. The <strong>Sanctuaries</strong>, last bastions, still hold <strong>Aether Cores</strong> &mdash; the only hope of pushing the Rust back. You are a <strong>Walker</strong>: a man/machine/magic fused fighter sent to extract from a fallen Sanctuary. Survive the Rust tides, harvest the Cores, and bring down what guards them before you extract. <em>"One day, it will be you."</em></p>
+
+<h3>System requirements</h3>
+<ul>
+<li>OS: Windows 10 / 11 (64-bit)</li>
+<li>Architecture: x86_64</li>
+<li>Runtime: none to install &mdash; .NET 8 is embedded in the build</li>
+<li>Engine: Godot 4.7 .NET (bundled in the .exe)</li>
+<li>Controls: keyboard or gamepad</li>
+</ul>
+<p>The download contains <code>ChimeraProtocol.exe</code> AND the <code>data_ChimeraProtocol_windows_x86_64/</code> runtime folder &mdash; both are required. They are bundled together in the provided ZIP.</p>
+```
+
+---
+
 ## 4. Univers
 
 > *La Convergence a tout changé.* Quand la magie et la machine se sont mêlées, elles ont engendré
