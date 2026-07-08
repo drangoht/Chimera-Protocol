@@ -1,0 +1,99 @@
+{
+  "_comment": "challenges.json — Chimera Protocol. Source de vérité du système de Défis / Succès. Chargé par ChallengeSystem au runtime (parsé par la couche pure ChallengeTable). Évalué à la fin de chaque run (RunStatsTracker.EndRun). Modifiable sans recompiler. Voir docs/DESIGN_CHALLENGES.md.",
+  "_comment_condition_types": "survive_seconds | kills_in_run | cores_in_run | grafts_in_run | fusion_in_run | complete_level | complete_biome(param=biomeId) | complete_difficulty(value=rang 0-2) | lifetime_kills | lifetime_runs | biomes_completed. Chaque défi se débloque UNE fois puis verse sa récompense.",
+  "_comment_reward_types": "echoes(value) octroyé immédiatement (Lot 1) ; perk(id) / cosmetic(id) enregistrés comme débloqués, équipables via les lots 3/4.",
+
+  "challenges": [
+    {
+      "id": "first_blood",
+      "nameKey": "CHAL_FIRST_BLOOD_NAME", "descKey": "CHAL_FIRST_BLOOD_DESC",
+      "category": "combat",
+      "condition": { "type": "kills_in_run", "value": 100 },
+      "reward": { "type": "echoes", "value": 50 }
+    },
+    {
+      "id": "survivor_5min",
+      "nameKey": "CHAL_SURVIVOR_5_NAME", "descKey": "CHAL_SURVIVOR_5_DESC",
+      "category": "survival",
+      "condition": { "type": "survive_seconds", "value": 300 },
+      "reward": { "type": "echoes", "value": 60 }
+    },
+    {
+      "id": "survivor_13min",
+      "nameKey": "CHAL_SURVIVOR_13_NAME", "descKey": "CHAL_SURVIVOR_13_DESC",
+      "category": "survival",
+      "condition": { "type": "survive_seconds", "value": 780 },
+      "reward": { "type": "echoes", "value": 120 }
+    },
+    {
+      "id": "core_harvester",
+      "nameKey": "CHAL_CORE_HARVEST_NAME", "descKey": "CHAL_CORE_HARVEST_DESC",
+      "category": "combat",
+      "condition": { "type": "cores_in_run", "value": 15 },
+      "reward": { "type": "echoes", "value": 80 }
+    },
+    {
+      "id": "first_graft",
+      "nameKey": "CHAL_FIRST_GRAFT_NAME", "descKey": "CHAL_FIRST_GRAFT_DESC",
+      "category": "assimilation",
+      "condition": { "type": "grafts_in_run", "value": 1 },
+      "reward": { "type": "echoes", "value": 50 }
+    },
+    {
+      "id": "full_chimera",
+      "nameKey": "CHAL_FULL_CHIMERA_NAME", "descKey": "CHAL_FULL_CHIMERA_DESC",
+      "category": "assimilation",
+      "condition": { "type": "grafts_in_run", "value": 3 },
+      "reward": { "type": "perk", "id": "start_graft_swarm" }
+    },
+    {
+      "id": "forge_fusion",
+      "nameKey": "CHAL_FORGE_FUSION_NAME", "descKey": "CHAL_FORGE_FUSION_DESC",
+      "category": "assimilation",
+      "condition": { "type": "fusion_in_run" },
+      "reward": { "type": "cosmetic", "id": "title_chimera" }
+    },
+    {
+      "id": "first_clear",
+      "nameKey": "CHAL_FIRST_CLEAR_NAME", "descKey": "CHAL_FIRST_CLEAR_DESC",
+      "category": "mastery",
+      "condition": { "type": "complete_level" },
+      "reward": { "type": "echoes", "value": 100 }
+    },
+    {
+      "id": "clear_neon",
+      "nameKey": "CHAL_CLEAR_NEON_NAME", "descKey": "CHAL_CLEAR_NEON_DESC",
+      "category": "mastery",
+      "condition": { "type": "complete_biome", "param": "neon" },
+      "reward": { "type": "perk", "id": "start_weapon_glaive" }
+    },
+    {
+      "id": "clear_hard",
+      "nameKey": "CHAL_CLEAR_HARD_NAME", "descKey": "CHAL_CLEAR_HARD_DESC",
+      "category": "mastery",
+      "condition": { "type": "complete_difficulty", "value": 2 },
+      "reward": { "type": "cosmetic", "id": "title_apex" }
+    },
+    {
+      "id": "all_biomes",
+      "nameKey": "CHAL_ALL_BIOMES_NAME", "descKey": "CHAL_ALL_BIOMES_DESC",
+      "category": "mastery",
+      "condition": { "type": "biomes_completed", "value": 5 },
+      "reward": { "type": "perk", "id": "start_extra_slot" }
+    },
+    {
+      "id": "veteran",
+      "nameKey": "CHAL_VETERAN_NAME", "descKey": "CHAL_VETERAN_DESC",
+      "category": "survival",
+      "condition": { "type": "lifetime_runs", "value": 25 },
+      "reward": { "type": "echoes", "value": 150 }
+    },
+    {
+      "id": "exterminator",
+      "nameKey": "CHAL_EXTERMINATOR_NAME", "descKey": "CHAL_EXTERMINATOR_DESC",
+      "category": "combat",
+      "condition": { "type": "lifetime_kills", "value": 10000 },
+      "reward": { "type": "cosmetic", "id": "title_exterminator" }
+    }
+  ]
+}

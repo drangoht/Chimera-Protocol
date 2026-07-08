@@ -157,7 +157,14 @@ public partial class RunStatsTracker : Node
         bool newRecord = GameSettings.Instance?.RecordTime(biome, timeSecs,
             GameSettings.Instance.Difficulty) ?? false;
 
-        OpenEndScreen(outcome, timeSecs, echoes, overtimeBonus, newRecord, GameSettings.Instance?.BestTime(biome) ?? timeSecs);
+        // Défis / Succès : évalue la run, octroie les récompenses (Échos immédiats, perks/cosmétiques
+        // débloqués) et persiste. Doit passer APRÈS RecordCompletion (OnLevelBossDefeated) pour que les
+        // défis de complétion voient la complétion à jour. Tolérant à l'absence du système.
+        int difficultyRank = (int)(GameSettings.Instance?.Difficulty ?? GameSettings.GameDifficulty.Normal);
+        var newChallenges = ChallengeSystem.Instance?.EvaluateRunEnd(
+            timeSecs, KillCount, CoresCollected, LevelCompleted, biome, difficultyRank) ?? new();
+
+        OpenEndScreen(outcome, timeSecs, echoes, overtimeBonus, newRecord, GameSettings.Instance?.BestTime(biome) ?? timeSecs, newChallenges);
     }
 
     // ---------------------------------------------------------------------------
@@ -183,7 +190,8 @@ public partial class RunStatsTracker : Node
     // Écran de fin
     // ---------------------------------------------------------------------------
 
-    private void OpenEndScreen(string outcome, int timeSecs, int echoesEarned, int overtimeBonus, bool newRecord, int bestTime)
+    private void OpenEndScreen(string outcome, int timeSecs, int echoesEarned, int overtimeBonus, bool newRecord, int bestTime,
+        System.Collections.Generic.List<string> newChallenges)
     {
         if (_runEndScreenScene == null)
         {
@@ -204,6 +212,7 @@ public partial class RunStatsTracker : Node
         screen.PendingLevelCompleted = LevelCompleted;
         screen.PendingDifficultyKey  = GameSettings.DifficultyKey(
             GameSettings.Instance?.Difficulty ?? GameSettings.GameDifficulty.Normal);
+        screen.PendingNewChallenges  = newChallenges;
 
         // Ajout différé à la racine pour éviter les conflits avec le scene tree en cours de flush
         GetTree().Root.CallDeferred(Node.MethodName.AddChild, screen);

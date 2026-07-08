@@ -37,6 +37,16 @@ public partial class MetaProgressionSystem : Node
 
     public int CurrentEchoes => _saveData.Meta.CurrentEchoes;
 
+    /// <summary>Accès en lecture/écriture au bloc méta persistant (Échos, upgrades, défis, compteurs
+    /// cumulés). MetaProgressionSystem est le PROPRIÉTAIRE canonique de <c>save.json</c> en mémoire —
+    /// les autres systèmes (ChallengeSystem) mutent CE bloc puis appellent <see cref="PersistMeta"/>,
+    /// jamais leur propre copie de SaveData (qui écraserait les Échos).</summary>
+    public MetaSaveData Meta => _saveData.Meta;
+
+    /// <summary>Persiste l'état méta courant (unique point d'écriture partagé). À appeler après avoir
+    /// muté <see cref="Meta"/> depuis un autre système.</summary>
+    public void PersistMeta() => SaveManager.Instance.Save(_saveData);
+
     // ---------------------------------------------------------------------------
     // Cycle de vie
     // ---------------------------------------------------------------------------

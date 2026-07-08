@@ -20,6 +20,8 @@ public partial class RunEndScreen : CanvasLayer
     public bool   PendingNewRecord      { get; set; } = false;
     public bool   PendingLevelCompleted { get; set; } = false;
     public string PendingDifficultyKey  { get; set; } = "DIFF_NORMAL";
+    /// <summary>Ids des défis nouvellement accomplis lors de cette run (affichés en fin d'écran).</summary>
+    public System.Collections.Generic.List<string> PendingNewChallenges { get; set; } = new();
 
     private Label     _outcomeLabel  = null!;
     private Label     _timeLabel     = null!;
@@ -178,10 +180,45 @@ public partial class RunEndScreen : CanvasLayer
         {
             _totalLabel.Text      = Loc.T("RUNEND_TOTAL", echoesEarned);
             _totalLabel.Visible   = true;
+            ShowChallengeLines();
             _hubButton.Visible    = true;
             _replayButton.Visible = true;
             _replayButton.GrabFocus();
         }));
+    }
+
+    /// <summary>
+    /// Affiche une ligne dorée résumant les défis nouvellement accomplis (dans le créneau entre le
+    /// total et les boutons). Détail complet sur l'écran Défis. Rien si aucun défi débloqué.
+    /// </summary>
+    private void ShowChallengeLines()
+    {
+        if (PendingNewChallenges == null || PendingNewChallenges.Count == 0) return;
+
+        var names = new System.Collections.Generic.List<string>();
+        foreach (var id in PendingNewChallenges)
+        {
+            var def = ChallengeSystem.Instance?.FindDef(id);
+            names.Add(def != null ? Loc.T(def.NameKey) : id);
+        }
+
+        string shown;
+        if (names.Count <= 2)
+            shown = string.Join("  ·  ", names);
+        else
+            shown = $"{names[0]}  ·  {names[1]}  {Loc.T("CHAL_AND_MORE", names.Count - 2)}";
+
+        var line = new Label
+        {
+            HorizontalAlignment = HorizontalAlignment.Center,
+            Text = $"★ {Loc.T("CHAL_UNLOCKED_BANNER")} : {shown}",
+            AnchorLeft = 0.5f, AnchorRight = 0.5f,
+            OffsetLeft = -450f, OffsetRight = 450f, OffsetTop = 485f, OffsetBottom = 513f,
+        };
+        line.AddThemeFontSizeOverride("font_size", 16);
+        line.AddThemeColorOverride("font_color", new Color(1f, 0.8f, 0.27f));  // or
+        _totalLabel.GetParent().AddChild(line);
+        AudioSystem.Instance?.PlaySfx("sfx_core_collect");
     }
 
     private static void AnimateCountup(Tween tween, Label label, string labelText, int targetValue, double duration)

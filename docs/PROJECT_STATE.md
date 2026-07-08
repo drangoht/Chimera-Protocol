@@ -33,6 +33,22 @@
   `maxSimultaneous:1` et laissait plusieurs boss s'empiler en overtime, cause principale du ressenti
   « impossible » ; TTK mesuré ~36-40 s sur build de référence, cible ~43-61 s build moyen, 1.11.4).
 
+### Défis / Succès — **Lot 1 socle** (✅ 2026-07-08, non publié)
+
+4e levier de rétention (après arsenal / Hub / Assimilation). Objectifs explicites évalués à la fin de
+run, récompensés en Échos (immédiat) ou en perks/cosmétiques débloqués (équipables aux lots 3-4). Cf.
+`docs/DESIGN_CHALLENGES.md`.
+- **`ChallengeTable`** (`src/Core/Rules/`, logique pure — **+16 tests**, suite à **140**) : parse
+  `data/challenges.json`, `ChallengeContext` (instantané plat fin de run), `IsMet`/`NewlyCompleted`.
+- **`ChallengeSystem`** (autoload) : agrège le contexte (RunStatsTracker + AssimilationSystem +
+  GameSettings + compteurs cumulés), octroie les récompenses, émet `ChallengeUnlocked`. **Ne charge
+  jamais sa propre SaveData** — mute `MetaProgressionSystem.Meta` puis `PersistMeta()` (piège save.json).
+- **Persistance** : `MetaSaveData` étendu (`UnlockedChallenges`/`UnlockedPerks`/`UnlockedCosmetics`/
+  `LifetimeKills`/`LifetimeRuns`). Hook dans `RunStatsTracker.EndRun`. `RunEndScreen` affiche une ligne
+  dorée « ★ Défi accompli ». **13 défis** (combat/survie/assimilation/maîtrise), loc `CHAL_*` EN/FR/ES.
+- **Reste** : lot 2 écran Défis · lot 3 perks de départ (équip Hub + application) · lot 4 cosmétiques/
+  titres · lot 5 équilibrage/publication.
+
 ### Système d'Assimilation / Greffes — **Phase A + Phase B volet 1** (✅ publié 1.12.0, 2026-07-07)
 
 Troisième axe de progression (« deviens la chimère »), cf. `docs/DESIGN_ASSIMILATION.md` Partie II.

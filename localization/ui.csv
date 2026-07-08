@@ -346,3 +346,31 @@ BIOME_AFFINITY_AETHER,Resonant affinity — +20% graft range,Affinité Résonant
 BIOME_AFFINITY_FOURNAISE,Ardent affinity — grafts set enemies ablaze,Affinité Ardente — les greffes enflamment,Afinidad Ardiente — los injertos incendian
 BIOME_AFFINITY_GIVRE,Glacial affinity — grafts slow enemies,Affinité Glaciale — les greffes ralentissent,Afinidad Glacial — los injertos ralentizan
 BIOME_AFFINITY_NEON,Overcharged affinity — −18% graft cooldown,Affinité Surchargée — −18% de cooldown de greffe,Afinidad Sobrecargada — −18% de enfriamiento de injerto
+CHAL_UNLOCKED_BANNER,Challenge complete,Défi accompli,Desafío completado
+CHAL_AND_MORE,+{0} more,+{0} autres,+{0} más
+CHAL_FIRST_BLOOD_NAME,First Blood,Premier Sang,Primera Sangre
+CHAL_FIRST_BLOOD_DESC,Kill 100 enemies in a single run,Tue 100 ennemis en une seule run,Mata 100 enemigos en una sola partida
+CHAL_SURVIVOR_5_NAME,Field Tested,Éprouvé au combat,Probado en combate
+CHAL_SURVIVOR_5_DESC,Survive 5 minutes in a single run,Survis 5 minutes en une seule run,Sobrevive 5 minutos en una sola partida
+CHAL_SURVIVOR_13_NAME,The Long Watch,La Longue Veille,La Larga Vigilia
+CHAL_SURVIVOR_13_DESC,Survive 13 minutes in a single run,Survis 13 minutes en une seule run,Sobrevive 13 minutos en una sola partida
+CHAL_CORE_HARVEST_NAME,Core Harvester,Moissonneur de Noyaux,Cosechador de Núcleos
+CHAL_CORE_HARVEST_DESC,Collect 15 Aether Cores in a single run,Collecte 15 Noyaux d'Aether en une seule run,Recolecta 15 Núcleos de Éter en una sola partida
+CHAL_FIRST_GRAFT_NAME,First Mutation,Première Mutation,Primera Mutación
+CHAL_FIRST_GRAFT_DESC,Assimilate a graft in a run,Assimile une greffe en une run,Asimila un injerto en una partida
+CHAL_FULL_CHIMERA_NAME,Full Chimera,Pleine Chimère,Quimera Completa
+CHAL_FULL_CHIMERA_DESC,Equip 3 grafts at once in a single run,Équipe 3 greffes à la fois en une seule run,Equipa 3 injertos a la vez en una sola partida
+CHAL_FORGE_FUSION_NAME,Fusion Forged,Fusion Forgée,Fusión Forjada
+CHAL_FORGE_FUSION_DESC,Forge a graft fusion in a run,Forge une fusion de greffes en une run,Forja una fusión de injertos en una partida
+CHAL_FIRST_CLEAR_NAME,Sector Cleared,Secteur Nettoyé,Sector Despejado
+CHAL_FIRST_CLEAR_DESC,Defeat a level boss,Bats un boss de fin de niveau,Derrota a un jefe de nivel
+CHAL_CLEAR_NEON_NAME,Neon Conqueror,Conquérant Néon,Conquistador Neón
+CHAL_CLEAR_NEON_DESC,Clear the Neon Sector,Termine le Secteur Néon,Completa el Sector Neón
+CHAL_CLEAR_HARD_NAME,No Mercy,Sans Pitié,Sin Piedad
+CHAL_CLEAR_HARD_DESC,Clear a level on Hard difficulty,Termine un niveau en difficulté Difficile,Completa un nivel en dificultad Difícil
+CHAL_ALL_BIOMES_NAME,World Eater,Dévoreur de Mondes,Devorador de Mundos
+CHAL_ALL_BIOMES_DESC,Complete all 5 biomes,Termine les 5 biomes,Completa los 5 biomas
+CHAL_VETERAN_NAME,Veteran,Vétéran,Veterano
+CHAL_VETERAN_DESC,Play 25 runs,Joue 25 runs,Juega 25 partidas
+CHAL_EXTERMINATOR_NAME,Exterminator,Exterminateur,Exterminador
+CHAL_EXTERMINATOR_DESC,Kill 10000 enemies total,Tue 10000 ennemis au total,Mata 10000 enemigos en total
