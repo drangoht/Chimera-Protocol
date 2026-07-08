@@ -92,7 +92,8 @@
       "id": "exterminator",
       "nameKey": "CHAL_EXTERMINATOR_NAME", "descKey": "CHAL_EXTERMINATOR_DESC",
       "category": "combat",
-      "condition": { "type": "lifetime_kills", "value": 10000 },
+      "_comment_threshold": "Jalon 'a vie' prestige (titre) : 30000 = ~2-3 grosses runs overtime (une run marathon peut faire ~18000 kills). Volontairement au-dessus d'une seule run pour se meriter.",
+      "condition": { "type": "lifetime_kills", "value": 30000 },
       "reward": { "type": "cosmetic", "id": "title_exterminator" }
     }
   ]

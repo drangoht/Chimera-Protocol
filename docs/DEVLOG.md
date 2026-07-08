@@ -4,6 +4,46 @@
 > `release-manager`). Entrées en ordre décroissant (la plus récente en haut). Ton orienté
 > joueur, EN puis FR (audience itch surtout anglophone).
 
+## v1.15.0 — Challenges & rewards (2026-07-08)
+
+**New — a 4th way to grow**
+- **Challenges.** 13 in-game goals across combat, survival, assimilation and mastery — kill 100 enemies,
+  survive 13 minutes, forge a fusion, clear a biome, and more. They're checked automatically at the end of
+  every run.
+- **Rewards you keep.** Completing a challenge grants **Echoes**, unlocks a **starting perk** (begin a run
+  with a free graft, a second weapon, or an extra graft slot), or a cosmetic **title**.
+- **New Challenges screen** shows every goal, your progress (X / N), and its reward. Equip your perk and
+  title from the **Hub**; your title shows on the main menu.
+
+**Menu cleanup**
+- The main menu is tidier: Bestiary, Arsenal, Chimera and Challenges now live under a single **Codex**
+  sub-menu, with a new **Perks** page describing every starting perk.
+- Language selection moved to **flags** in the top-right corner.
+
+**Fix**
+- Nova Strike now shows its cooldown on its HUD graft icon (like the other dash grafts).
+
+---
+
+**Nouveau — une 4e façon de progresser**
+- **Défis.** 13 objectifs en jeu (combat, survie, assimilation, maîtrise) — tue 100 ennemis, survis 13
+  minutes, forge une fusion, termine un biome… Validés automatiquement à la fin de chaque run.
+- **Des récompenses qui restent.** Accomplir un défi rapporte des **Échos**, débloque un **perk de départ**
+  (commencer avec une greffe offerte, une seconde arme, ou un emplacement de greffe en plus), ou un **titre**
+  cosmétique.
+- **Nouvel écran Défis** : tous les objectifs, ta progression (X / N) et leur récompense. Équipe ton perk
+  et ton titre au **Hub** ; ton titre s'affiche sur le menu principal.
+
+**Ménage dans le menu**
+- Menu principal plus clair : Bestiaire, Arsenal, Chimère et Défis sont désormais sous un sous-menu
+  **Codex**, avec une nouvelle page **Perks** décrivant chaque perk de départ.
+- Le choix de la langue passe en **drapeaux** en haut à droite.
+
+**Correctif**
+- La Frappe Nova affiche enfin sa recharge sur son icône de greffe au HUD (comme les autres greffes de dash).
+
+---
+
 ## v1.14.2 — HUD fix: buff bar no longer overlaps weapons (2026-07-07)
 
 **Fix**
