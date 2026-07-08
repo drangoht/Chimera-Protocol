@@ -2,7 +2,7 @@ using Godot;
 
 /// <summary>
 /// Orbe d'XP lâchée à la mort d'un ennemi.
-/// - Si le joueur est à moins de 80 px, l'orbe se déplace vers lui à 300 px/s.
+/// - Si le joueur est à moins de 100 px, l'orbe se déplace vers lui à 300 px/s.
 /// - Au contact (BodyEntered), ajoute la valeur à XpSystem et se détruit.
 /// - Trail GPUParticles2D actif pendant l'aspiration magnétique.
 /// - AnimationPlayer "pulse" modulate.a 0.7→1.0 en boucle hors aspiration.
@@ -12,7 +12,7 @@ public partial class XpOrb : Area2D
     public int Value   { get; set; } = 2;
     public int OrbTier { get; set; } = 0; // 0=T1 vert, 1=T2 cyan, 2=T3 violet, 3=T4 or
 
-    private const float MagnetRadius = 80f;
+    private const float MagnetRadius = 100f;
     private const float MagnetSpeed  = 300f;
 
     /// <summary>Forcé par le pickup Aimant : l'orbe est attirée vers le joueur à toute distance.</summary>

@@ -218,7 +218,8 @@ public partial class RunEndScreen : CanvasLayer
         line.AddThemeFontSizeOverride("font_size", 16);
         line.AddThemeColorOverride("font_color", new Color(1f, 0.8f, 0.27f));  // or
         _totalLabel.GetParent().AddChild(line);
-        AudioSystem.Instance?.PlaySfx("sfx_core_collect");
+        // Son valorisant distinct de la collecte d'orbe : un défi débloqué est un accomplissement.
+        AudioSystem.Instance?.PlaySfx("sfx_fusion_evolve");
     }
 
     private static void AnimateCountup(Tween tween, Label label, string labelText, int targetValue, double duration)

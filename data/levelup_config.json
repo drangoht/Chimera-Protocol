@@ -140,9 +140,9 @@
       "corrupted_sentinel": 20,
       "grafted_colossus": 60
     },
-    "magnetRadiusPx": 80,
+    "magnetRadiusPx": 100,
     "magnetSpeedPxPerSec": 300,
-    "magnetNote": "Orbes dans un rayon de 80 px aspirees automatiquement. Au-dela, le joueur doit les toucher physiquement."
+    "magnetNote": "Orbes dans un rayon de 100 px aspirees automatiquement. Au-dela, le joueur doit les toucher physiquement."
   },
   "rarityWeights": {
     "common": {

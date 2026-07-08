@@ -12,6 +12,12 @@ public partial class ScreenShake : Node
     /// <summary>Réglage Options : si false, Shake() ne fait rien (accessibilité).</summary>
     public static bool Enabled = true;
 
+    /// <summary>Facteur global appliqué à toutes les amplitudes (réduit le tremblement d'ensemble).</summary>
+    private const float GlobalScale = 0.55f;
+
+    /// <summary>Plafond d'amplitude (px) : évite que la caméra sorte de l'arène et révèle le bord.</summary>
+    private const float MaxAmplitude = 9f;
+
     private Camera2D? _camera;
     private Tween?    _shakeTween;
 
@@ -30,6 +36,7 @@ public partial class ScreenShake : Node
     public void Shake(float amplitude, float duration)
     {
         if (_camera is null || !Enabled) return;
+        amplitude = Mathf.Min(amplitude * GlobalScale, MaxAmplitude);
         _shakeTween?.Kill();
         _shakeTween = CreateTween();
         _shakeTween.SetTrans(Tween.TransitionType.Sine);
