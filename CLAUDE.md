@@ -13,14 +13,14 @@ cyborgs, robots), inspiré de Vampire Survivors et Everything is Crab.
 - **Avant de coder** dans un domaine (armes, ennemis, UI/focus, VFX, scènes, assets, tests headless) → lire **`docs/PITFALLS.md`** (pièges non-évidents Godot/C# + checklists de câblage). Y ajouter tout nouveau piège découvert.
 - **État d'implémentation détaillé & version courante → `docs/PROJECT_STATE.md`** (évolutif). Résumé de phase ci-dessous.
 
-**Phase actuelle : libre.** Dernière livraison majeure : **Assimilation en ligne** — 3e axe de
-progression (« Ne tue pas les monstres. Deviens-les. ») publié pour la première fois : 5 greffes,
-2 fusions (Charge Blindée, Ruche de Tourelles), nouvel écran Codex **Chimère**, lisibilité HUD des
-greffes, 2026-07-07. Détail chiffré : `docs/DESIGN_ASSIMILATION.md`. Version publiée itch : **1.14.0**
-(**Phase B Assimilation terminée** : silhouette-chimère §19 — le corps change selon les greffes ; 3e
-fusion **Frappe Nova** §15.8 — dash-blink + nova ; **affinités de biome** §21 — la greffe capture le
-biome où tu l'assimiles, Fournaise brûle / Givre gèle / Néon accélère / etc.). Détail dans
-`docs/PROJECT_STATE.md`.
+**Phase actuelle : libre.** Dernière livraison majeure : **Défis & Récompenses** — 4e levier de
+rétention (après arsenal / Hub / Assimilation), publié **1.15.0** le 2026-07-08. 13 défis évalués en fin
+de run → Échos, **perks de départ** (greffe offerte / arme sup / +1 slot) ou **titres** cosmétiques.
+Nouvel écran **Défis** (progression X/N), sélection perk/titre au Hub, flair du titre sur le menu. Menu
+principal réorganisé (sous-menu **Codex** regroupant Bestiaire/Arsenal/Chimère/Défis/Perks) + sélecteur
+de langue à **drapeaux**. Correctif : cooldown de la Frappe Nova visible au HUD. Détail :
+`docs/DESIGN_CHALLENGES.md`. Précédemment : **Assimilation** (Phase A+B, 1.12.0→1.14.0,
+`docs/DESIGN_ASSIMILATION.md`). Détail dans `docs/PROJECT_STATE.md`.
 
 ## Équipe d'agents
 
