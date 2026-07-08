@@ -21,8 +21,10 @@ public class MetaSaveData
     public List<string> UnlockedPerks { get; set; } = new();
     /// <summary>Perk de départ actuellement équipé (appliqué au début de chaque run). Vide = aucun.</summary>
     public string EquippedPerk { get; set; } = "";
-    /// <summary>Ids des cosmétiques / titres débloqués par un défi (sélectionnables — lot 4).</summary>
+    /// <summary>Ids des cosmétiques / titres débloqués par un défi (sélectionnables).</summary>
     public List<string> UnlockedCosmetics { get; set; } = new();
+    /// <summary>Titre cosmétique actuellement équipé (affiché sur le menu principal). Vide = aucun.</summary>
+    public string EquippedCosmetic { get; set; } = "";
 
     // ── Compteurs cumulés (pour les défis à condition "lifetime_*") ─────────────
     public long LifetimeKills { get; set; } = 0;

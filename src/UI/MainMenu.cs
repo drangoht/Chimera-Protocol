@@ -180,6 +180,7 @@ public partial class MainMenu : Control
         _chimeraButton.Text  = TextOr("MENU_CHIMERA", "Chimère");
         _challengesButton.Text = TextOr("MENU_CHALLENGES", "Défis");
         _optionsButton.Text  = Loc.T("MENU_OPTIONS");
+        ApplyTitleFlair();
         _quitButton.Text     = Loc.T("MENU_QUIT");
     }
 
@@ -313,6 +314,21 @@ public partial class MainMenu : Control
     {
         AudioSystem.Instance?.PlaySfx("sfx_ui_button");
         TransitionTo("res://scenes/ui/ChallengesScreen.tscn");
+    }
+
+    /// <summary>Affiche le titre cosmétique équipé (débloqué via les Défis, choisi au Hub) sous le logo.
+    /// Masqué si aucun titre équipé ou si le nœud est absent (robustesse).</summary>
+    private void ApplyTitleFlair()
+    {
+        var flair = GetNodeOrNull<Label>("TitleFlair");
+        if (flair == null) return;
+
+        string id = MetaProgressionSystem.Instance?.Meta.EquippedCosmetic ?? "";
+        var def = id.Length > 0 ? Titles.ById(id) : null;
+        if (def == null) { flair.Visible = false; return; }
+
+        flair.Text    = $"— {Loc.T(def.NameKey)} —";
+        flair.Visible = true;
     }
 
     /// <summary>Loc.T avec repli si la clé n'est pas encore traduite (nouvelle clé de menu).</summary>

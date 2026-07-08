@@ -91,5 +91,10 @@ détail complet sur l'écran Défis du lot 2). SFX `sfx_core_collect`.
    `start_graft_swarm` = `AssimilationSystem.GrantStartingGraft("swarm_symbiote")`, `start_weapon_glaive`
    = glaive en 2e arme, `start_extra_slot` = `AssimilationSystem.AddBonusSlots(1)`. Loc `HUB_PERKS`/
    `HUB_PERK_NONE`/`PERK_*` EN/FR/ES. Vérifié : boot Game.tscn applique bien le perk (glaive + greffe).
-4. Cosmétiques / titres : sélection + application (teinte joueur / titre affiché).
+4. **Cosmétiques / titres** (✅ 2026-07-08) — `MetaSaveData.EquippedCosmetic` (un seul titre équipé) ;
+   registre `src/Systems/Titles.cs` (3 titres : La Chimère / Prédateur Alpha / Exterminateur) ; section
+   « Titre » au Hub (`HubScreen.BuildTitleSelector`, même infra de chips générique que les perks —
+   `BuildChipSection`/`MakeChip`/`RefreshChips`, masquée si aucun titre débloqué) ; affichage sous le logo
+   du MainMenu (`MainMenu.ApplyTitleFlair`, nœud `TitleFlair`, masqué si aucun titre). Aucun effet gameplay.
+   Loc `HUB_TITLES`/`TITLE_*` EN/FR/ES. Vérifié visuellement (Hub 2 sections + flair menu).
 5. Équilibrage seuils + doc + build/ZIP + publication itch.
