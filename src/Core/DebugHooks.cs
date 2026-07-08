@@ -108,6 +108,24 @@ public static class DebugHooks
         }
     }
 
+    private static bool? _forceBuff;
+
+    /// <summary>
+    /// Vrai si lancé avec <c>--force-buff</c> : équipe d'office une 2e arme et applique deux power-ups
+    /// temporaires (Overclock + Berserk) de durée quasi-infinie dès le début de la run, pour valider
+    /// visuellement la BuffBar HUD (position sous le loadout d'armes, absence de chevauchement) sans
+    /// attendre les fenêtres de spawn naturelles. Aucun effet en build normal.
+    /// </summary>
+    public static bool ForceBuff
+    {
+        get
+        {
+            if (_forceBuff == null)
+                _forceBuff = HasFlag("--force-buff");
+            return _forceBuff.Value;
+        }
+    }
+
     private static bool HasFlag(string flag)
     {
         foreach (var arg in OS.GetCmdlineArgs())

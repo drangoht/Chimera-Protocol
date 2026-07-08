@@ -157,6 +157,31 @@ public partial class GameManager : Node
         // visuellement les props de silhouette (Phase B). Aucun effet sans le flag.
         if (!string.IsNullOrEmpty(DebugHooks.ForcedGraft))
             Callable.From(ApplyGraftDebugHook).CallDeferred();
+
+        // Hook --force-buff : 2e arme + 2 power-ups quasi-permanents pour valider la BuffBar HUD
+        // (position sous le loadout, pas de chevauchement). Aucun effet sans le flag.
+        if (DebugHooks.ForceBuff)
+            Callable.From(ApplyBuffDebugHook).CallDeferred();
+    }
+
+    /// <summary>
+    /// Hook --force-buff : équipe une 2e arme (scatter_volley) et applique Overclock + Berserk avec une
+    /// durée quasi-infinie pour que la BuffBar reste visible en même temps que le loadout d'armes.
+    /// N'est appelé que si <see cref="DebugHooks.ForceBuff"/> est vrai.
+    /// </summary>
+    private void ApplyBuffDebugHook()
+    {
+        var player = PlayerInstance;
+        var inv = InventorySystem.Instance;
+        if (player == null || inv == null) return;
+
+        if (!inv.WeaponLevels.ContainsKey("scatter_volley"))
+            inv.AddOrUpgradeWeapon("scatter_volley");
+
+        const float LongDuration = 9999f;
+        player.ApplyPowerUp(PowerUpType.Overclock, LongDuration);
+        player.ApplyPowerUp(PowerUpType.Berserk,   LongDuration);
+        GD.Print("[GameManager] --force-buff : 2e arme + Overclock/Berserk appliqués (BuffBar de test).");
     }
 
     /// <summary>
