@@ -29,7 +29,7 @@ public static class StartingPerks
         new("start_weapon_glaive", "PERK_WEAPON_GLAIVE_NAME", "PERK_WEAPON_GLAIVE_DESC",
             "res://assets/sprites/ui/ui_icon_glaive.png"),
         new("start_extra_slot", "PERK_EXTRA_SLOT_NAME", "PERK_EXTRA_SLOT_DESC",
-            "res://assets/sprites/ui/ui_icon_noyau.png"),
+            "res://assets/sprites/ui/ui_icon_extra_slot.png"),
     };
 
     public static PerkDef? ById(string id)

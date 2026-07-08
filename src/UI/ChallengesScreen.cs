@@ -17,6 +17,9 @@ public partial class ChallengesScreen : CodexScreenBase
     private static readonly Color Dim  = new(0.55f, 0.57f, 0.66f);
 
     private const string NoyauIcon = "res://assets/sprites/ui/ui_icon_noyau.png";
+    private const string ExtraSlotIcon = "res://assets/sprites/ui/ui_icon_extra_slot.png";
+    private const string TitleIcon = "res://assets/sprites/ui/ui_icon_title.png";
+    private const string EchoIcon = "res://assets/sprites/ui/ui_icon_echo.png";
 
     protected override string ScreenTitle => TFallback("CHALLENGES_TITLE", "DÉFIS");
     protected override Color  TitleAccent => Gold;
@@ -65,19 +68,26 @@ public partial class ChallengesScreen : CodexScreenBase
         _                                  => Loc.T("CHAL_REWARD_ECHOES", def.RewardEchoes),
     };
 
-    /// <summary>Icône illustrant la récompense : quelques perks pointent vers leur asset réel,
-    /// sinon repli sur l'icône de Noyau (toujours présente).</summary>
+    /// <summary>Icône illustrant la récompense : perks connus pointent vers leur asset réel,
+    /// titres cosmétiques vers l'icône dédiée, Échos vers l'icône de monnaie méta ; sinon repli
+    /// sur l'icône de Noyau (toujours présente).</summary>
     private static string RewardIcon(ChallengeTable.ChallengeDef def)
     {
-        if (def.RewardType == ChallengeTable.RewardKind.Perk)
+        switch (def.RewardType)
         {
-            switch (def.RewardId)
-            {
-                case "start_graft_swarm":   return "res://assets/sprites/grafts/swarm_symbiote_icon.png";
-                case "start_weapon_glaive": return Codex.IconPath("glaive") ?? NoyauIcon;
-            }
+            case ChallengeTable.RewardKind.Perk:
+                switch (def.RewardId)
+                {
+                    case "start_graft_swarm":   return "res://assets/sprites/grafts/swarm_symbiote_icon.png";
+                    case "start_weapon_glaive": return Codex.IconPath("glaive") ?? NoyauIcon;
+                    case "start_extra_slot":    return ExtraSlotIcon;
+                }
+                return NoyauIcon;
+            case ChallengeTable.RewardKind.Cosmetic:
+                return TitleIcon;
+            default: // RewardKind.Echoes
+                return EchoIcon;
         }
-        return NoyauIcon;
     }
 
     /// <summary>Loc.T avec repli FR si la clé n'est pas encore traduite.</summary>
