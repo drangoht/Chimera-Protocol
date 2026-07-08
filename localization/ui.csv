@@ -374,3 +374,12 @@ CHAL_VETERAN_NAME,Veteran,Vétéran,Veterano
 CHAL_VETERAN_DESC,Play 25 runs,Joue 25 runs,Juega 25 partidas
 CHAL_EXTERMINATOR_NAME,Exterminator,Exterminateur,Exterminador
 CHAL_EXTERMINATOR_DESC,Kill 10000 enemies total,Tue 10000 ennemis au total,Mata 10000 enemigos en total
+MENU_CHALLENGES,Challenges,Défis,Desafíos
+CHALLENGES_TITLE,CHALLENGES,DÉFIS,DESAFÍOS
+CHALLENGES_INTRO,Complete objectives in-game to earn Echoes and unlock starting perks and titles. Each challenge is validated at the end of a run.,Accomplis des objectifs en jeu pour gagner des Échos et débloquer des perks de départ et des titres. Chaque défi se valide en fin de run.,Completa objetivos en el juego para ganar Ecos y desbloquear ventajas iniciales y títulos. Cada desafío se valida al final de una partida.
+CHALLENGES_PROGRESS,Completed: {0} / {1},Accomplis : {0} / {1},Completados: {0} / {1}
+CHAL_STATUS_DONE,✓ Completed,✓ Accompli,✓ Completado
+CHAL_STATUS_TODO,To do,À accomplir,Por hacer
+CHAL_REWARD_ECHOES,Reward: +{0} Echoes,Récompense : +{0} Échos,Recompensa: +{0} Ecos
+CHAL_REWARD_PERK,Reward: starting perk,Récompense : perk de départ,Recompensa: ventaja inicial
+CHAL_REWARD_COSMETIC,Reward: title,Récompense : titre,Recompensa: título

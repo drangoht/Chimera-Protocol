@@ -10,6 +10,7 @@ public partial class MainMenu : Control
     private Button    _bestiaryButton = null!;
     private Button    _arsenalButton  = null!;
     private Button    _chimeraButton  = null!;
+    private Button    _challengesButton = null!;
     private Button    _optionsButton  = null!;
     private Button    _quitButton     = null!;
     private ColorRect _fadeOverlay    = null!;
@@ -31,6 +32,7 @@ public partial class MainMenu : Control
         _bestiaryButton = GetNode<Button>("VBox/BestiaryButton");
         _arsenalButton  = GetNode<Button>("VBox/ArsenalButton");
         _chimeraButton  = GetNode<Button>("VBox/ChimeraButton");
+        _challengesButton = GetNode<Button>("VBox/ChallengesButton");
         _optionsButton  = GetNode<Button>("VBox/OptionsButton");
         _quitButton     = GetNode<Button>("VBox/QuitButton");
         _fadeOverlay    = GetNode<ColorRect>("FadeOverlay");
@@ -39,6 +41,7 @@ public partial class MainMenu : Control
         StyleMenuButton(_bestiaryButton);
         StyleMenuButton(_arsenalButton);
         StyleMenuButton(_chimeraButton);
+        StyleMenuButton(_challengesButton);
         StyleMenuButton(_optionsButton);
 
         // --- Signaux boutons ---
@@ -47,6 +50,7 @@ public partial class MainMenu : Control
         _bestiaryButton.Pressed += OnBestiaryPressed;
         _arsenalButton.Pressed  += OnArsenalPressed;
         _chimeraButton.Pressed  += OnChimeraPressed;
+        _challengesButton.Pressed += OnChallengesPressed;
         _optionsButton.Pressed  += OnOptionsPressed;
         _quitButton.Pressed     += OnQuitPressed;
 
@@ -56,6 +60,7 @@ public partial class MainMenu : Control
         ConnectHoverEffects(_bestiaryButton);
         ConnectHoverEffects(_arsenalButton);
         ConnectHoverEffects(_chimeraButton);
+        ConnectHoverEffects(_challengesButton);
         ConnectHoverEffects(_optionsButton);
         ConnectHoverEffects(_quitButton);
 
@@ -173,6 +178,7 @@ public partial class MainMenu : Control
         _bestiaryButton.Text = Loc.T("MENU_BESTIARY");
         _arsenalButton.Text  = Loc.T("MENU_ARSENAL");
         _chimeraButton.Text  = TextOr("MENU_CHIMERA", "Chimère");
+        _challengesButton.Text = TextOr("MENU_CHALLENGES", "Défis");
         _optionsButton.Text  = Loc.T("MENU_OPTIONS");
         _quitButton.Text     = Loc.T("MENU_QUIT");
     }
@@ -303,6 +309,12 @@ public partial class MainMenu : Control
         TransitionTo("res://scenes/ui/ChimeraCodexScreen.tscn");
     }
 
+    private void OnChallengesPressed()
+    {
+        AudioSystem.Instance?.PlaySfx("sfx_ui_button");
+        TransitionTo("res://scenes/ui/ChallengesScreen.tscn");
+    }
+
     /// <summary>Loc.T avec repli si la clé n'est pas encore traduite (nouvelle clé de menu).</summary>
     private static string TextOr(string key, string fallback)
     {
@@ -360,6 +372,7 @@ public partial class MainMenu : Control
         _bestiaryButton.Disabled = true;
         _arsenalButton.Disabled  = true;
         _chimeraButton.Disabled  = true;
+        _challengesButton.Disabled = true;
         _optionsButton.Disabled  = true;
         _quitButton.Disabled     = true;
 

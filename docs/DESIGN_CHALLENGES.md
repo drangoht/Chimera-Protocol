@@ -77,7 +77,12 @@ détail complet sur l'écran Défis du lot 2). SFX `sfx_core_collect`.
 
 1. **Socle** (✅ 2026-07-08) — couche pure + data + persistance + autoload + hook fin de run + toast.
    Récompense `echoes` active ; perks/cosmétiques enregistrés.
-2. Écran Défis (`ChallengesScreen`, sous-classe `CodexScreenBase`) + bouton menu.
+2. **Écran Défis** (✅ 2026-07-08) — `ChallengesScreen` sous-classe `CodexScreenBase` : liste tous les
+   défis (aucun masqué — l'objectif reste visible), statut accompli (or) / à faire (gris) dans
+   accent+tag, objectif + récompense composés dans la description, progression `X/N` en intro, icône
+   mappée par récompense. Bouton « Défis » ajouté au MainMenu (VBox agrandi à 705). Loc `MENU_CHALLENGES`/
+   `CHALLENGES_*`/`CHAL_STATUS_*`/`CHAL_REWARD_*` EN/FR/ES. **Piège rencontré** : après édition d'`ui.csv`,
+   relancer `godot --headless --import` (sinon clés brutes — cf. PITFALLS).
 3. Perks de départ : UI d'équipement au Hub + application au démarrage de run.
 4. Cosmétiques / titres : sélection + application (teinte joueur / titre affiché).
 5. Équilibrage seuils + doc + build/ZIP + publication itch.

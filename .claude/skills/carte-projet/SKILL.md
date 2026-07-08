@@ -67,6 +67,9 @@ docs/DESIGN_ASSIMILATION.md §11-21) · **ChallengeTable** (Défis/succès : par
 greffes, UI construite en code) · **`ChimeraCodexScreen`** (codex explicatif des greffes/fusions —
 sous-classe `CodexScreenBase`, entrées dérivées de `AssimilationSystem.Config` ; accessible depuis le
 bouton « Chimère » du MainMenu ; `CodexScreenBase.IntroText` = paragraphe d'intro optionnel) ·
+**`ChallengesScreen`** (écran Défis/succès — sous-classe `CodexScreenBase`, entrées dérivées de
+`ChallengeSystem.Defs`, statut accompli/à faire encodé dans accent+tag, objectif+récompense composés
+dans la description ; bouton « Défis » du MainMenu ; cf. docs/DESIGN_CHALLENGES.md) ·
 **`ModalQueue`** (statique — coordonne LevelUpScreen +
 AssimilationScreen : un SEUL `Paused`, level-up prioritaire ; jamais affichés simultanément) ·
 `RunEndScreen` · `IntroScreen`
