@@ -63,6 +63,14 @@ docs/DESIGN_ASSIMILATION.md §11-21) · **ChallengeTable** (Défis/succès : par
 - Intégrations : **`DiscordPresence`** (autoload, NuGet `DiscordRichPresence` — statut « joue à Chimera Protocol », clés art `chimera`/`chimera_small`, tolérant à l'absence de Discord ; `SetInMenus`/`SetInRun` appelés par MainMenu/GameManager), **`VersionStamp`** (autoload, overlay `v<ver>-<sha>` bas-droite) ; **`BuildInfo`** (`src/Core/`, `GitSha` auto-généré par `tools/gen_build_info.ps1`, version lue de project.godot)
 
 ## §UI — `src/UI/` (écrans Control)
+
+**Avant de styliser quoi que ce soit** : `UiPalette` (toutes les couleurs — n'écrire aucune teinte
+en dur) et `UiStyle` (fabrique unique des cadres : `ButtonFrame`/`CardFrame`/`PopupFrame` sur
+textures 9-slice de `assets/sprites/ui/frames/`, `ScreenPanel`/`Separator`/`ScreenTitleUnderline`
+en pur code, `AttachFocusPulse` pour la pulsation de focus). Parti pris et specs →
+`docs/ART_BRIEF_UI_FRAMES.md`. Assets régénérables via `tools/generate_ui_frames.py`.
+Les `.tscn` ne portent plus de `StyleBoxFlat` : un `theme_override_styles/*` en scène écrase
+l'override runtime et rendrait le style invisible (`tools/strip_tscn_styleboxes.py` les retire).
 `MainMenu` (+ **bandeau MAJ** → §MAJ ; 5 entrées : Jouer/Hub/**Codex**/Options/Quitter — les écrans info sont sous le sous-menu Codex ; sélecteur de langue = drapeaux `flag_{fr,en,es}.png` en haut à droite ; flair du titre équipé sous le logo via `ApplyTitleFlair`) · `CharacterSelectScreen` · `LevelSelectScreen` ·
 `HubScreen` · `BestiaryScreen` / `ArsenalScreen` / `CodexScreenBase` (+ `Codex`) ·
 `OptionsScreen` · `PauseScreen` · `LevelUpScreen` · **`AssimilationScreen`** (écran modal des

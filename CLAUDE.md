@@ -53,6 +53,7 @@ l'agent compétent (ordre de lancement : `GUIDE-CLAUDE-CODE.md`).
 - Localisation EN/FR/ES : `localization/ui.csv` → `Loc.T("CLÉ")`.
 - Performance cible : 200–300 entités simultanées ; I-frames joueur 0.45 s (CRITIQUE pour les nuées).
 - Palette UI : fond `#1A1A2E`, cyan `#44FFEE`, violet `#AA44FF`, or `#FFCC44`, blanc cassé `#D9D9F2`. Police : Share Tech Mono (AA on, `ui_theme.tres`, size 16) ; VT323 en réserve (AA off).
+- **Cadres & couleurs d'UI** : toujours via `src/UI/UiPalette.cs` (couleurs) et `src/UI/UiStyle.cs` (fabrique des cadres « plaque blindée » — chanfreins, bevel, rivets, focus pulsé). Jamais de `StyleBoxFlat` ad hoc ni de couleur en dur, ni dans le C# ni dans les `.tscn`. Parti pris → `docs/ART_BRIEF_UI_FRAMES.md` ; assets → `tools/generate_ui_frames.py`.
 - Python : `C:\Users\drang\AppData\Local\Programs\Python\Python313\python.exe` (pas dans le PATH).
 
 ## Pièges critiques → `docs/PITFALLS.md`

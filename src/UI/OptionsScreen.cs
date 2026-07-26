@@ -47,7 +47,10 @@ public partial class OptionsScreen : Control
 
         // Panneau de fond (ART_BRIEF_UI_FRAMES §3.3) : l'écran n'avait aucun contenant, les
         // réglages flottaient directement sur le fond. Le panneau leur donne une matière.
-        var panel = new PanelContainer { SizeFlagsVertical = SizeFlags.ShrinkCenter };
+        // ShrinkBegin, pas ShrinkCenter : le contenu des options dépasse la hauteur de l'écran,
+        // et un centrage vertical dans le ScrollContainer faisait démarrer la vue au milieu de la
+        // liste — on ouvrait l'écran sur la section « Contrôles », le début hors champ.
+        var panel = new PanelContainer { SizeFlagsVertical = SizeFlags.ShrinkBegin };
         panel.AddThemeStyleboxOverride("panel", UiStyle.ScreenPanel());
         hcenter.AddChild(panel);
 
@@ -95,7 +98,24 @@ public partial class OptionsScreen : Control
         AddChild(_fade);
         var t = CreateTween();
         t.TweenProperty(_fade, "color:a", 0f, 0.4);
-        t.TweenCallback(Callable.From(() => back.GrabFocus()));
+        // Le focus va au PREMIER réglage, pas au bouton Retour : avec FollowFocus, focaliser un
+        // contrôle situé tout en bas fait défiler la liste dès l'ouverture et l'écran s'affichait
+        // au milieu de la section « Contrôles », son début hors champ. Repli sur Retour si aucun
+        // réglage n'est focalisable.
+        t.TweenCallback(Callable.From(() => (FirstFocusable(vbox) ?? back).GrabFocus()));
+    }
+
+    /// <summary>Premier contrôle réellement focalisable de l'arbre, en profondeur d'abord.</summary>
+    private static Control? FirstFocusable(Node root)
+    {
+        foreach (var child in root.GetChildren())
+        {
+            if (child is Control c && c.FocusMode != Control.FocusModeEnum.None && c.Visible)
+                return c;
+            if (child is Node node && FirstFocusable(node) is { } found)
+                return found;
+        }
+        return null;
     }
 
     private void AddSlider(VBoxContainer parent, string label, float value, System.Action<float> onChange)

@@ -58,3 +58,6 @@ test-output.txt
 docs/ui_before_*.png
 docs/ui_after_*.png
 docs/ui_sheet_*.png
+docs/ui_fix_*.png
+docs/ui_step*.png
+docs/verif_*.png

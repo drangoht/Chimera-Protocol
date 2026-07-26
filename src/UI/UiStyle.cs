@@ -173,7 +173,14 @@ public static class UiStyle
     private const int ButtonMargin = 16;
     /// <summary>…sauf en bas, où l'on étire plus loin dans le fill plat pour obtenir le bord
     /// « soudé » du §3.1 sans dessiner un seul pixel de plus.</summary>
-    private const int ButtonWeldBottom = 22;
+    /// <remarks>
+    /// Le brief propose 22 px. Ramené à 18 après essai à l'écran : 16 + 22 = 38 px de marges
+    /// verticales incompressibles, or les boutons de remappage de touches ou d'achat font 40 px
+    /// de haut — il ne restait que 2 px de zone étirable et la plaque paraissait écrasée, avec
+    /// tout le poids en bas. À 18, il reste 6 px et l'asymétrie « monté depuis le bas » se lit
+    /// encore. Les grands boutons (48 px et plus) ne voyaient pas la différence.
+    /// </remarks>
+    private const int ButtonWeldBottom = 18;
 
     private const int PopupMargin    = 20;
     private const int PopupWeldTop   = 28;
