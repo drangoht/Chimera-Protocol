@@ -13,13 +13,17 @@ cyborgs, robots), inspiré de Vampire Survivors et Everything is Crab.
 - **Avant de coder** dans un domaine (armes, ennemis, UI/focus, VFX, scènes, assets, tests headless) → lire **`docs/PITFALLS.md`** (pièges non-évidents Godot/C# + checklists de câblage). Y ajouter tout nouveau piège découvert.
 - **État d'implémentation détaillé & version courante → `docs/PROJECT_STATE.md`** (évolutif). Résumé de phase ci-dessous.
 
-**Phase actuelle : libre.** Dernière livraison majeure : **Défis & Récompenses** — 4e levier de
-rétention (après arsenal / Hub / Assimilation), publié **1.15.0** le 2026-07-08. 13 défis évalués en fin
-de run → Échos, **perks de départ** (greffe offerte / arme sup / +1 slot) ou **titres** cosmétiques.
-Nouvel écran **Défis** (progression X/N), sélection perk/titre au Hub, flair du titre sur le menu. Menu
-principal réorganisé (sous-menu **Codex** regroupant Bestiaire/Arsenal/Chimère/Défis/Perks) + sélecteur
-de langue à **drapeaux**. Correctif : cooldown de la Frappe Nova visible au HUD. Détail :
-`docs/DESIGN_CHALLENGES.md`. Précédemment : **Assimilation** (Phase A+B, 1.12.0→1.14.0,
+**Phase actuelle : libre.** Dernière livraison majeure : refonte des **cadres d'UI « plaque
+blindée »** (chanfreins, bevel, rivets, focus pulsé — `docs/ART_BRIEF_UI_FRAMES.md`) étendue aux
+modales / level-up / écrans de sélection puis aux curseurs, interrupteurs et menus déroulants +
+correctif audio (la musique ne se coupe plus à l'ouverture d'une popup), publié **1.16.0** le
+2026-07-26. Précédemment : **Défis & Récompenses** — 4e levier de rétention (après arsenal / Hub /
+Assimilation), publié **1.15.0** le 2026-07-08. 13 défis évalués en fin de run → Échos, **perks de
+départ** (greffe offerte / arme sup / +1 slot) ou **titres** cosmétiques. Nouvel écran **Défis**
+(progression X/N), sélection perk/titre au Hub, flair du titre sur le menu. Menu principal réorganisé
+(sous-menu **Codex** regroupant Bestiaire/Arsenal/Chimère/Défis/Perks) + sélecteur de langue à
+**drapeaux**. Correctif : cooldown de la Frappe Nova visible au HUD. Détail :
+`docs/DESIGN_CHALLENGES.md`. Avant ça : **Assimilation** (Phase A+B, 1.12.0→1.14.0,
 `docs/DESIGN_ASSIMILATION.md`). Détail dans `docs/PROJECT_STATE.md`.
 
 ## Équipe d'agents

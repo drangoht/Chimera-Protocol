@@ -5,7 +5,7 @@
 > `CLAUDE.md` ; le design complet dans `docs/GDD.md` ; la carte du code dans `/carte-projet`.
 
 - Pile technique : **Godot 4.7 .NET (C# / .NET 8 / GodotSharp)**
-- **Refonte des cadres d'UI — « plaque blindée » (2026-07-26, non publié).** Les cadres de
+- **Refonte des cadres d'UI — « plaque blindée » (PUBLIÉE 1.16.0, 2026-07-26).** Les cadres de
   boutons, cartes et popups recopiaient tous la même recette `StyleBoxFlat` (bordure uniforme +
   `corner_radius` arrondi, rayons 3/4/6/8/10 sans règle) sur ~300 sites : aucune identité, et
   l'arrondi anti-aliasé jurait avec le rendu `Nearest` des sprites. Désormais : coins chanfreinés
@@ -17,10 +17,17 @@
   concurrents) et `src/UI/UiStyle.cs` (fabrique unique). 19 textures 9-slice dans
   `assets/sprites/ui/frames/`, régénérables par `tools/generate_ui_frames.py`. 21 `StyleBoxFlat`
   inline purgées de 4 scènes (`tools/strip_tscn_styleboxes.py`) — les laisser aurait rendu le
-  nouveau style invisible. Parti pris et specs chiffrées : `docs/ART_BRIEF_UI_FRAMES.md`.
-  Hors périmètre assumé : le HUD in-game, les puces de buff (couleur dynamique par buff), les
-  drapeaux de langue (44×30 px, trop petits pour la plaque), et les sliders/toggles d'Options qui
-  restent au thème Godot par défaut.
+  nouveau style invisible. Étendue ensuite aux modales, à l'écran de level-up et aux écrans de
+  sélection, puis aux **sliders/toggles/dropdowns d'Options** (rail creusé + poignée en plaque pour
+  les curseurs, lecture par position du pavé pour les interrupteurs, `PopupMenu` câblé via
+  `ApplyDropdownFrames` pour les listes déroulantes) — `tools/generate_ui_widgets.py`,
+  `UiStyle.ApplySliderStyles`/`ApplyToggleStyles`/`ApplyPopupMenuStyles`. Parti pris et specs
+  chiffrées : `docs/ART_BRIEF_UI_FRAMES.md`. Hors périmètre assumé : le HUD in-game, les puces de
+  buff (couleur dynamique par buff), les drapeaux de langue (44×30 px, trop petits pour la plaque).
+- **Fix audio (1.16.0)** : `AudioSystem` héritait du `ProcessMode` Pausable de la racine — musique et
+  pool SFX se coupaient dès qu'une modale mettait le jeu en pause (level-up, pause, Assimilation, fin
+  de run). `ProcessMode = Always` sur l'autoload corrige le problème et fait sonner les SFX d'UI dans
+  les menus pausés (`src/Systems/AudioSystem.cs`).
 - **Phase actuelle : libre** — dernière livraison majeure : **Assimilation en ligne (1.12.0,
   2026-07-07)** — 3e axe de progression publié pour la première fois (Phase A + Phase B volet 1 +
   écran Codex Chimère, tout ce qui suit était encore « non publié » à la sortie de 1.11.4) : 5

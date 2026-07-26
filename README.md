@@ -8,6 +8,12 @@ Dans un monde ravagé par **la Rouille Vivante** (corruption mi-organique, mi-m�
 
 ## État du projet
 
+**Cadres d'UI « plaque blindée »** *(2026-07-26, v1.16.0)* — le style de cadre biseauté (chanfreins,
+bevel, rivets, focus pulsé) déjà utilisé sur boutons/cartes/popups s'étend aux modales, à l'écran de
+level-up, aux écrans de sélection, ainsi qu'aux **curseurs, interrupteurs et menus déroulants**
+d'Options (derniers contrôles restés au thème Godot par défaut). Correctif : la musique et les SFX
+d'UI ne se coupent plus à l'ouverture d'une popup (level-up, pause, Assimilation, fin de run).
+
 **Défis & Récompenses** *(2026-07-08, v1.15.0)* — 4e levier de rétention : accomplis des **défis** en jeu (100 kills, survivre 13 min, forger une fusion, terminer un biome…) pour gagner des Échos et débloquer des **perks de départ** (greffe offerte, arme supplémentaire, +1 emplacement) et des **titres** cosmétiques. Nouvel écran **Défis** + section « Perk / Titre » au Hub. Le menu principal est réorganisé (sous-menu **Codex** regroupant Bestiaire/Arsenal/Chimère/Défis/Perks) et le sélecteur de langue passe en **drapeaux** en haut à droite.
 
 **Assimilation** *(2026-07-07, v1.14.0)* — 3e axe de progression : tue des ennemis pour remplir une jauge d'archétype, deviens la chimère en assimilant leurs greffes, puis fusionne 2 greffes (**3 fusions** : Charge Blindée, Ruche de Tourelles, **Frappe Nova**) en une forme évoluée. La **silhouette du joueur change visuellement** selon les greffes/fusions (carapace, servos, œil, onde, proue de charge, cœur de ruche). **Affinités de biome** : où tu assimiles compte — Fournaise brûle, Givre gèle, Néon accélère…
