@@ -1,0 +1,8 @@
+A|attendu=OK|{"tool_name":"Bash","tool_input":{"command":"git commit -F - <<'EOF'\nchore: guardrails\n\n- refuse git clean -f et les suppressions recursives hors projet\n- refuse git reset --hard et git push --force\nEOF"}}
+B|attendu=OK|{"tool_name":"Bash","tool_input":{"command":"git commit -m \"doc: expliquer pourquoi git reset --hard est interdit\""}}
+C|attendu=DENY|{"tool_name":"Bash","tool_input":{"command":"git commit -m \"wip\" && git reset --hard HEAD~3"}}
+D|attendu=DENY|{"tool_name":"Bash","tool_input":{"command":"git commit -F - <<'EOF'\nmsg\nEOF\nrm -rf C:/CODE/PROJETS"}}
+E|attendu=DENY|{"tool_name":"PowerShell","tool_input":{"command":"git push --force"}}
+F|attendu=OK|{"tool_name":"PowerShell","tool_input":{"command":"git status"}}
+G|attendu=OK|{"tool_name":"PowerShell","tool_input":{"command":"Remove-Item build/staging -Recurse -Force"}}
+H|attendu=DENY|{"tool_name":"Bash","tool_input":{"command":"rm -rf /c/Users/drang/Documents"}}

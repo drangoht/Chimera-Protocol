@@ -1,0 +1,63 @@
+{
+  "permissions": {
+    "deny": [
+      "Edit(./build/**)",
+      "Edit(./.godot/**)",
+      "Edit(./**/bin/**)",
+      "Edit(./**/obj/**)",
+      "Read(./*.keystore)",
+      "Read(./*.pem)"
+    ],
+    "ask": [
+      "PowerShell(butler *)",
+      "Bash(butler *)",
+      "PowerShell(*release_itch*)",
+      "Bash(*release_itch*)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|PowerShell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell",
+            "args": [
+              "-NoProfile",
+              "-ExecutionPolicy",
+              "Bypass",
+              "-File",
+              ".claude/hooks/guard.ps1"
+            ],
+            "timeout": 15,
+            "statusMessage": "Verification des garde-fous..."
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell",
+            "args": [
+              "-NoProfile",
+              "-ExecutionPolicy",
+              "Bypass",
+              "-File",
+              ".claude/hooks/run-rules-tests.ps1"
+            ],
+            "timeout": 300,
+            "async": true,
+            "asyncRewake": true,
+            "statusMessage": "Tests unitaires (regles)...",
+            "rewakeSummary": "Tests unitaires en echec"
+          }
+        ]
+      }
+    ]
+  }
+}
