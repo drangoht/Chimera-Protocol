@@ -21,7 +21,7 @@ import time
 import pyautogui
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from window_capture import capture_window, wait_for_window  # noqa: E402
+from window_capture import capture_window, wait_for_window_by_pid  # noqa: E402
 
 pyautogui.FAILSAFE = False
 
@@ -34,9 +34,12 @@ proc = subprocess.Popen(
     [GODOT, "--path", PROJ, "--rendering-driver", "d3d12", "res://scenes/Game.tscn"]
 )
 try:
-    hwnd = wait_for_window("Chimera", timeout=25.0)
+    # Ciblage PAR PID : ce script envoie des touches ET des clics au centre de la fenetre
+    # ciblee pendant toute sa duree. Vise par titre, "Chimera" pouvait designer un navigateur
+    # ouvert sur la page itch du jeu -- le script cliquait alors dans cette page.
+    hwnd = wait_for_window_by_pid(proc.pid, timeout=25.0)
     if not hwnd:
-        print("Fenetre introuvable")
+        print("Fenetre du jeu (PID) introuvable")
         sys.exit(1)
 
     import win32gui

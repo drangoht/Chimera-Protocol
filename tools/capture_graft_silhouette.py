@@ -15,35 +15,13 @@ import time
 
 import pyautogui
 import win32gui
-import win32process
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from window_capture import capture_window  # noqa: E402
+# Le ciblage par PID vit desormais dans window_capture (partage avec screenshot_scene.py et
+# capture_assimilation.py, qui souffraient du meme piege de recherche par titre).
+from window_capture import capture_window, wait_for_window_by_pid  # noqa: E402
 
 pyautogui.FAILSAFE = False
-
-
-def wait_for_pid_window(pid, timeout=25.0, min_width=400):
-    """Cible la fenetre appartenant AU process Godot lance (par PID) : evite d'attraper une
-    autre fenetre titree 'Chimera' (navigateur/editeur affichant le devlog)."""
-    t0 = time.time()
-    while time.time() - t0 < timeout:
-        found = []
-
-        def _enum(hwnd, _):
-            if not win32gui.IsWindowVisible(hwnd):
-                return
-            _, wpid = win32process.GetWindowThreadProcessId(hwnd)
-            if wpid == pid:
-                l, t, r, b = win32gui.GetWindowRect(hwnd)
-                if (r - l) > min_width:
-                    found.append(hwnd)
-
-        win32gui.EnumWindows(_enum, None)
-        if found:
-            return found[0]
-        time.sleep(0.3)
-    return None
 
 GODOT = r"C:\CODE\JEUX\Godot_v4.7-stable_mono_win64\Godot_v4.7-stable_mono_win64.exe"
 PROJ = r"C:\CODE\JEUX\chimera-protocol"
@@ -59,7 +37,7 @@ proc = subprocess.Popen(
     [GODOT, "--path", PROJ, "--rendering-driver", "d3d12", "res://scenes/Game.tscn", "--", flag]
 )
 try:
-    hwnd = wait_for_pid_window(proc.pid, timeout=25.0)
+    hwnd = wait_for_window_by_pid(proc.pid, timeout=25.0)
     if not hwnd:
         print("Fenetre du jeu (PID) introuvable")
         sys.exit(1)

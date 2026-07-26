@@ -24,7 +24,7 @@ import time
 import pyautogui
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from window_capture import capture_window, wait_for_window  # noqa: E402
+from window_capture import capture_window, wait_for_window_by_pid  # noqa: E402
 
 pyautogui.FAILSAFE = False
 
@@ -40,10 +40,9 @@ cmd = [GODOT, "--path", PROJ, "--rendering-driver", "d3d12", SCENE] + EXTRA_ARGS
 proc = subprocess.Popen(cmd)
 time.sleep(WAIT)
 
-hwnd = wait_for_window("Chimera", timeout=15.0)
-if hwnd is None:
-    # Repli : n'importe quelle fenetre Godot suffisamment large.
-    hwnd = wait_for_window("Godot", timeout=5.0)
+# Ciblage PAR PID et non par titre : "Chimera" match aussi un navigateur ouvert sur la page
+# itch du jeu, et on capturait alors le navigateur (en lui envoyant clics et touches).
+hwnd = wait_for_window_by_pid(proc.pid, timeout=20.0)
 
 if hwnd:
     import win32gui
@@ -80,8 +79,11 @@ if hwnd:
 
     img = capture_window(hwnd, client_only=CLIENT_ONLY)
 else:
-    print("WINDOW NOT FOUND (PrintWindow) -- fallback plein ecran")
-    img = pyautogui.screenshot()
+    # Pas de repli plein ecran : il produisait une capture du BUREAU en annoncant "SAVED",
+    # donc un jeu de captures muet-mais-faux. Mieux vaut echouer bruyamment.
+    print("WINDOW NOT FOUND (PID) -- aucune capture ecrite")
+    proc.terminate()
+    sys.exit(1)
 
 os.makedirs(os.path.dirname(OUT), exist_ok=True)
 img.save(OUT)

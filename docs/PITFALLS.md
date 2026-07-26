@@ -189,8 +189,21 @@ Tout nouveau chemin de sortie de run doit l'appeler aussi.
   le mettre à z=+1 pour qu'il déborde et lise). **Teinte** : `def.Tint` est un MULTIPLICATEUR (canaux
   &gt; 1 possibles) → passer par `BaseColorFromTint` (normalise en couleur de matière) avant d'ombrer
   via `Shade(color, Face)` (dérivation HSV du brief pseudo-3D, PAS de noir/blanc pur). Flag debug
-  `--force-graft=<id|all>` ; capture par **PID** (`tools/capture_graft_silhouette.py`) car
-  `find_window("Chimera")` attrape un navigateur/éditeur titré « Chimera » (devlog) au lieu du jeu.
+  `--force-graft=<id|all>` ; capture par **PID** (`tools/capture_graft_silhouette.py`) — cf. §Captures.
+
+## Captures d'écran (outils `tools/`)
+- **Cibler la fenêtre par PID, jamais par titre.** `find_window("Chimera")` renvoie la **première**
+  fenêtre visible dont le titre contient la sous-chaîne — un navigateur ouvert sur la page itch du jeu
+  (« New devlog for Chimera Protocol… ») match avant Godot. Conséquences observées : toute une série de
+  captures « d'UI » montrant en fait le navigateur, et — pire — `capture_assimilation.py`, qui envoie
+  touches et clics au centre de la fenêtre ciblée pendant des dizaines de secondes, tapant **dans la
+  page web**. Utiliser `wait_for_window_by_pid(proc.pid)` de `tools/window_capture.py` dès qu'on lance
+  le process Godot soi-même (`find_window` par titre n'est plus qu'un repli pour un process externe).
+- **Pas de repli plein écran silencieux.** Un `pyautogui.screenshot()` de secours écrit une capture du
+  **bureau** en annonçant `SAVED` : le script sort en succès et le jeu de captures est faux sans que
+  rien ne le signale. Échouer bruyamment (`sys.exit(1)`) est la bonne réponse.
+- Vérifier une capture avant de s'en servir : le tampon `v<version>-<sha>` (autoload `VersionStamp`)
+  en bas à droite prouve que l'image vient bien du jeu, et de la bonne build.
 
 ## Tests headless
 - `LevelUpScreen` met l'arbre EN PAUSE → gèle le serveur physique en headless (neutraliser l'XP de départ pour tester le gameplay)

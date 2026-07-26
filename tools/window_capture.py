@@ -6,8 +6,15 @@ fenetre Godot est cachee derriere une autre application (ex. Steam plein ecran),
 qu'elle n'est pas minimisee. Voir docs/TEST_REPORT.md (note game-tester 2026-07-02).
 
 API :
+    find_window_by_pid(pid) -> hwnd | None      <-- A PRIVILEGIER (cf. ci-dessous)
+    wait_for_window_by_pid(pid) -> hwnd | None
     find_window(title_substr) -> hwnd | None
     capture_window(hwnd, client_only=True) -> PIL.Image.Image
+
+PIEGE : la recherche PAR TITRE attrape n'importe quelle fenetre contenant la sous-chaine,
+navigateur compris (un onglet "... Chimera Protocol ..." sur itch.io match "Chimera"). Les
+captures partaient alors sur le navigateur, et les scripts qui envoient touches/clics tapaient
+dedans. Des qu'on lance soi-meme le process Godot, cibler `find_window_by_pid(proc.pid)`.
 
 `client_only=True` recadre sur la zone client uniquement (sans barre de titre/bordures) --
 c'est ce qui donne des captures exactement 1280x720 pour un viewport Godot 1280x720.
@@ -18,6 +25,7 @@ import ctypes
 import time
 
 import win32gui
+import win32process
 import win32ui
 from PIL import Image
 
@@ -36,6 +44,37 @@ except Exception:
             ctypes.windll.user32.SetProcessDPIAware()
         except Exception:
             pass
+
+
+def find_window_by_pid(pid, min_width=400):
+    """Retourne le hwnd d'une fenetre visible appartenant AU process `pid`.
+
+    A privilegier sur find_window() des qu'on a lance le process soi-meme : le titre
+    "Chimera" match aussi un navigateur ouvert sur la page itch du jeu."""
+    matches = []
+
+    def _enum(hwnd, _):
+        if not win32gui.IsWindowVisible(hwnd):
+            return
+        _, wpid = win32process.GetWindowThreadProcessId(hwnd)
+        if wpid == pid:
+            l, t, r, b = win32gui.GetWindowRect(hwnd)
+            if (r - l) > min_width:
+                matches.append(hwnd)
+
+    win32gui.EnumWindows(_enum, None)
+    return matches[0] if matches else None
+
+
+def wait_for_window_by_pid(pid, timeout=25.0, min_width=400):
+    """Attend jusqu'a `timeout` s que le process `pid` ouvre une fenetre."""
+    t0 = time.time()
+    while time.time() - t0 < timeout:
+        hwnd = find_window_by_pid(pid, min_width=min_width)
+        if hwnd:
+            return hwnd
+        time.sleep(0.3)
+    return None
 
 
 def find_window(title_substr, min_width=400):
