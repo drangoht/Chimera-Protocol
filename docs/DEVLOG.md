@@ -4,6 +4,43 @@
 > `release-manager`). Entrées en ordre décroissant (la plus récente en haut). Ton orienté
 > joueur, EN puis FR (audience itch surtout anglophone).
 
+## v1.16.0 — Armored-plate UI, everywhere (2026-07-26)
+
+**New — the armored-plate frame treatment, extended**
+- **Modals, level-up and selection screens** now wear the same beveled "armored plate" frame as the
+  rest of the UI (chamfers, bevel, rivets, pulsed focus) — no more plain default panels breaking
+  immersion mid-run.
+- **Sliders, toggles and dropdowns** join the style: grooved rail with an accent-filled bar and a
+  steel-plate grabber for sliders; toggles that read by the position of the pad, not just color, so
+  state is never colorblind-ambiguous; dropdown popups now inherit the same frame automatically.
+- Assorted frame polish: compact frames for small widgets (denser Hub), balanced short frames, dropdown
+  arrow no longer sitting on the frame's edge.
+
+**Fix**
+- **Music no longer cuts out when a popup opens.** Level-up, pause, Assimilation and end-of-run screens
+  were silencing the soundtrack (and UI SFX) because the audio player was paused along with the game.
+  Music — and menu sounds — now keep playing under any modal.
+
+---
+
+**Nouveau — le style "plaque blindée" s'étend à toute l'UI**
+- **Modales, écran de level-up et écrans de sélection** portent désormais le même cadre biseauté
+  "plaque blindée" (chanfreins, bevel, rivets, focus pulsé) que le reste de l'interface — plus de
+  panneaux Godot par défaut qui cassent l'immersion en pleine partie.
+- **Curseurs, interrupteurs et menus déroulants** rejoignent la charte : rail creusé avec barre remplie
+  à l'accent et poignée en plaque d'acier pour les curseurs ; interrupteurs qui se lisent à la
+  *position* du pavé, pas seulement à la couleur, donc l'état reste lisible même en cas de
+  daltonisme ; les menus déroulants héritent désormais automatiquement du même cadre.
+- Fignolages divers : cadres compacts pour les petits éléments (Hub plus dense), équilibrage des
+  cadres courts, flèche des listes déroulantes qui ne chevauche plus le liseré du cadre.
+
+**Correctif**
+- **La musique ne se coupe plus à l'ouverture d'une popup.** Level-up, pause, Assimilation et fin de
+  run mettaient en pause la bande-son (et les SFX d'UI) en même temps que le jeu. Musique et sons de
+  menu continuent désormais de jouer sous n'importe quelle modale.
+
+---
+
 ## v1.15.0 — Challenges & rewards (2026-07-08)
 
 **New — a 4th way to grow**
