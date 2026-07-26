@@ -78,6 +78,12 @@ public partial class AudioSystem : Node
     {
         Instance = this;
 
+        // CRITIQUE : sans ce mode, l'autoload herite du mode Pausable de la racine et TOUS ses
+        // AudioStreamPlayer enfants (musique + pool SFX) sont suspendus des que GetTree().Paused
+        // passe a true — la musique se coupait donc a chaque modale (level-up, pause, Assimilation,
+        // fin de run). Always fait aussi sonner les SFX d'UI dans les menus pauses.
+        ProcessMode = ProcessModeEnum.Always;
+
         // Canal musique principal
         _musicPlayer           = new AudioStreamPlayer();
         _musicPlayer.Name      = "MusicPlayer";
