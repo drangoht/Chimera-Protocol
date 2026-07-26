@@ -1,0 +1,85 @@
+name: Tests unitaires
+
+# Les tests couvrent src/Core/Rules/ — de la logique pure sans dependance Godot,
+# compilee directement dans l'assembly de test (voir tests/ChimeraProtocol.Tests.csproj).
+# Aucun moteur ni export n'est necessaire : un runner Linux suffit.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# Une PR qui recoit plusieurs pushes n'occupe qu'un runner : les runs precedents
+# sont annules.
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: xUnit (net8.0)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Recuperer le depot
+        uses: actions/checkout@v4
+
+      - name: Installer le SDK .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Cache des paquets NuGet
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('tests/ChimeraProtocol.Tests.csproj') }}
+          restore-keys: nuget-${{ runner.os }}-
+
+      - name: Restaurer les dependances
+        run: dotnet restore tests/ChimeraProtocol.Tests.csproj
+
+      - name: Compiler
+        run: dotnet build tests/ChimeraProtocol.Tests.csproj --configuration Release --no-restore
+
+      - name: Executer les tests
+        run: |
+          set -o pipefail
+          dotnet test tests/ChimeraProtocol.Tests.csproj \
+            --configuration Release \
+            --no-build \
+            --logger "console;verbosity=normal" \
+            --logger "trx;LogFileName=results.trx" \
+            --results-directory TestResults \
+            | tee test-output.txt
+
+      - name: Resume
+        if: always()
+        run: |
+          {
+            echo "### Tests unitaires"
+            echo ""
+            if grep -qE '^\s*(Passed!|Reussi!)' test-output.txt 2>/dev/null; then
+              echo '```'
+              grep -E '^\s*(Passed!|Failed!|Reussi!|Echec)' test-output.txt
+              echo '```'
+            else
+              echo "Echec — voir le journal du job et l'artefact \`test-results\`."
+              echo ""
+              echo '```'
+              grep -E '^\s*(Failed|Echec|error)' test-output.txt | head -30 || true
+              echo '```'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Publier les resultats en cas d'echec
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: TestResults/
+          retention-days: 14

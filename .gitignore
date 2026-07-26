@@ -48,3 +48,7 @@ docs/hud_style_zoom.png
 docs/levelselect_badge.png
 docs/options2.png
 tests/*.uid
+
+# Artefacts de tests (dotnet test / CI)
+TestResults/
+test-output.txt
