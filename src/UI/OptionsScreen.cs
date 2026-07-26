@@ -159,7 +159,7 @@ public partial class OptionsScreen : Control
         row.AddChild(lbl);
 
         var opt = new OptionButton { CustomMinimumSize = new Vector2(180, 0) };
-        StyleButton(opt);          // sans ça, le seul contrôle de l'écran resté au thème Godot par défaut
+        UiStyle.ApplyDropdownFrames(opt);   // liste déroulante : la flèche doit rester en deçà du liseré
         opt.AddItem(Loc.T("DIFF_EASY"));
         opt.AddItem(Loc.T("DIFF_NORMAL"));
         opt.AddItem(Loc.T("DIFF_HARD"));
@@ -180,7 +180,7 @@ public partial class OptionsScreen : Control
         row.AddChild(lbl);
 
         var opt = new OptionButton { CustomMinimumSize = new Vector2(180, 0) };
-        StyleButton(opt);
+        UiStyle.ApplyDropdownFrames(opt);
         foreach (var l in GameSettings.Languages) opt.AddItem(l.ToUpper());
         opt.Selected = System.Math.Max(0, System.Array.IndexOf(GameSettings.Languages, current));
         opt.ItemSelected += idx =>

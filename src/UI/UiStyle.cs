@@ -235,6 +235,34 @@ public static class UiStyle
         BuildTextureBox("ui_frame_card_disabled", ButtonMargin, ButtonMargin, ButtonMargin, ButtonWeldBottom);
 
     /// <summary>
+    /// Applique le cadre de bouton à une liste déroulante, en repoussant sa flèche à l'intérieur
+    /// du liseré.
+    /// </summary>
+    /// <remarks>
+    /// Godot dessine la flèche d'un <see cref="OptionButton"/> à
+    /// <c>largeur − flèche − marge_droite_du_stylebox − arrow_margin</c>. Avec la bande de 16 px
+    /// du cadre, elle tombait donc pile sur le liseré accent, qui court de 12 à 16 px du bord —
+    /// la flèche paraissait posée dessus. On ajoute la marge nécessaire pour la ramener dans la
+    /// zone de contenu.
+    /// </remarks>
+    public static void ApplyDropdownFrames(OptionButton dropdown, FrameAccent accent = FrameAccent.Cyan)
+    {
+        dropdown.AddThemeStyleboxOverride("normal",   ButtonFrame(accent));
+        dropdown.AddThemeStyleboxOverride("hover",    ButtonFrame(accent, FrameState.Hover));
+        dropdown.AddThemeStyleboxOverride("pressed",  ButtonFrame(accent, FrameState.Pressed));
+        dropdown.AddThemeStyleboxOverride("focus",    ButtonFrame(FrameAccent.Violet, focus: true));
+        dropdown.AddThemeStyleboxOverride("disabled", ButtonFrameDisabled());
+        dropdown.AddThemeConstantOverride("arrow_margin", DropdownArrowMargin);
+        AttachFocusPulse(dropdown);
+    }
+
+    /// <summary>
+    /// Marge de la flèche, comptée depuis le bord droit du contrôle. Doit dépasser la bande du
+    /// cadre (16 px) pour que la flèche passe en deçà du liseré, qui court de 12 à 16 px du bord.
+    /// </summary>
+    private const int DropdownArrowMargin = 24;
+
+    /// <summary>
     /// Cadre compact, pour les éléments trop petits pour l'anatomie complète de la plaque :
     /// puces de perk/titre, boutons de drapeau, badges. La bande de 16 px d'un cadre 9-slice y
     /// laisserait le texte sous le liseré (le contenu commence avant lui) et le chanfrein
