@@ -221,18 +221,9 @@ public partial class MainMenu : Control
         for (int i = 0; i < _langButtons.Count && i < GameSettings.Languages.Length; i++)
         {
             bool active = string.Equals(GameSettings.Languages[i], current, System.StringComparison.OrdinalIgnoreCase);
-            // Ces boutons font 44×30 px : trop petits pour la plaque 9-slice (32 px de marge
-            // horizontale + 38 px verticale l'écraseraient), et le brief exclut les rivets
-            // en dessous de 64 px (§3.1). On garde donc un cadre plat — mais à angle droit,
-            // comme le reste de la charte, plus aucun arrondi.
-            var style = new StyleBoxFlat
-            {
-                BgColor      = UiPalette.Steel.Alpha(active ? 0.95f : 0.5f),
-                AntiAliasing = false,
-                BorderColor  = active ? UiPalette.Gold : UiPalette.Dim.Alpha(0.7f),
-            };
-            style.SetBorderWidthAll(active ? 3 : 1);
-            style.SetCornerRadiusAll(0);
+            // 44×30 px : trop petit pour la plaque 9-slice, d'où le cadre compact (§3.1 exclut
+            // déjà les rivets en dessous de 64 px). La langue active se lit à l'or.
+            var style = UiStyle.CompactFrame(active ? UiPalette.Gold : UiPalette.Dim, active);
             style.SetContentMarginAll(3);
             _langButtons[i].AddThemeStyleboxOverride("normal", style);
         }

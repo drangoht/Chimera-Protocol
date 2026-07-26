@@ -241,8 +241,10 @@ public partial class HubScreen : Control
         header.AddThemeFontSizeOverride("font_size", 18);
         header.AddThemeColorOverride("font_color", PerkAccent);
         section.AddChild(header);
-        // Règle du brief §3.6 : tout titre de section est systématiquement suivi du séparateur.
-        section.AddChild(UiStyle.Separator(PerkAccent));
+        // Écart assumé au §3.6 (« tout titre de section est suivi du séparateur ») : appliqué ici,
+        // il ajoutait deux séparateurs de 8 px dans la moitié basse de l'écran et faisait perdre
+        // deux lignes d'améliorations à la liste, qui est le contenu principal du Hub. Ces deux
+        // en-têtes sont déjà nettement identifiés par leur couleur d'accent et leur taille.
 
         var row = new HBoxContainer();
         row.AddThemeConstantOverride("separation", 8);
@@ -291,23 +293,15 @@ public partial class HubScreen : Control
     /// </summary>
     private static void ApplyChipStyle(Button btn, bool selected)
     {
-        var accent = selected ? UiStyle.FrameAccent.Gold : UiStyle.FrameAccent.Violet;
+        // Cadre compact : ces puces font 30 à 40 px de haut, la plaque 9-slice y placerait le
+        // texte sous son liseré. La sélection est portée par l'accent — or (équipé) contre violet
+        // (disponible) — et non plus par une épaisseur de bordure, invisible au premier regard.
+        var accent = selected ? UiPalette.Gold : PerkAccent;
 
-        var normal = UiStyle.ButtonFrame(accent);
-        normal.SetContentMarginAll(8);
-        btn.AddThemeStyleboxOverride("normal", normal);
-
-        var hover = UiStyle.ButtonFrame(accent, UiStyle.FrameState.Hover);
-        hover.SetContentMarginAll(8);
-        btn.AddThemeStyleboxOverride("hover", hover);
-
-        var pressed = UiStyle.ButtonFrame(accent, UiStyle.FrameState.Pressed);
-        pressed.SetContentMarginAll(8);
-        btn.AddThemeStyleboxOverride("pressed", pressed);
-
-        var focus = UiStyle.ButtonFrame(accent, focus: true);
-        focus.SetContentMarginAll(8);
-        btn.AddThemeStyleboxOverride("focus", focus);
+        btn.AddThemeStyleboxOverride("normal",  UiStyle.CompactFrame(accent, selected));
+        btn.AddThemeStyleboxOverride("hover",   UiStyle.CompactFrame(accent, selected: true));
+        btn.AddThemeStyleboxOverride("pressed", UiStyle.CompactFrame(accent, selected: true));
+        btn.AddThemeStyleboxOverride("focus",   UiStyle.CompactFrame(UiPalette.Violet, selected: true));
     }
 
     private void OnPerkChipPressed(string perkId)

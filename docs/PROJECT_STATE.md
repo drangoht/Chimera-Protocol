@@ -5,6 +5,22 @@
 > `CLAUDE.md` ; le design complet dans `docs/GDD.md` ; la carte du code dans `/carte-projet`.
 
 - Pile technique : **Godot 4.7 .NET (C# / .NET 8 / GodotSharp)**
+- **Refonte des cadres d'UI — « plaque blindée » (2026-07-26, non publié).** Les cadres de
+  boutons, cartes et popups recopiaient tous la même recette `StyleBoxFlat` (bordure uniforme +
+  `corner_radius` arrondi, rayons 3/4/6/8/10 sans règle) sur ~300 sites : aucune identité, et
+  l'arrondi anti-aliasé jurait avec le rendu `Nearest` des sprites. Désormais : coins chanfreinés
+  (jamais arrondis), bevel reprenant la direction de lumière des sprites (`LIGHT_DIR` haut-gauche
+  via `pseudo3d_lib.shade()`), rivets d'angle, bord « soudé » asymétrique, et un focus signalé par
+  trois signaux cumulés — débordement de forme, liseré allumé, pulsation — au lieu d'un passage de
+  bordure de 2 à 3 px. Socle : `src/UI/UiPalette.cs` (palette unique — la charte n'existait que
+  dans la doc, le cyan était réécrit dans 8 blocs et ~20 littéraux, avec deux « fonds officiels »
+  concurrents) et `src/UI/UiStyle.cs` (fabrique unique). 19 textures 9-slice dans
+  `assets/sprites/ui/frames/`, régénérables par `tools/generate_ui_frames.py`. 21 `StyleBoxFlat`
+  inline purgées de 4 scènes (`tools/strip_tscn_styleboxes.py`) — les laisser aurait rendu le
+  nouveau style invisible. Parti pris et specs chiffrées : `docs/ART_BRIEF_UI_FRAMES.md`.
+  Hors périmètre assumé : le HUD in-game, les puces de buff (couleur dynamique par buff), les
+  drapeaux de langue (44×30 px, trop petits pour la plaque), et les sliders/toggles d'Options qui
+  restent au thème Godot par défaut.
 - **Phase actuelle : libre** — dernière livraison majeure : **Assimilation en ligne (1.12.0,
   2026-07-07)** — 3e axe de progression publié pour la première fois (Phase A + Phase B volet 1 +
   écran Codex Chimère, tout ce qui suit était encore « non publié » à la sortie de 1.11.4) : 5

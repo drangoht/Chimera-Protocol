@@ -235,6 +235,27 @@ public static class UiStyle
         BuildTextureBox("ui_frame_card_disabled", ButtonMargin, ButtonMargin, ButtonMargin, ButtonWeldBottom);
 
     /// <summary>
+    /// Cadre compact, pour les éléments trop petits pour l'anatomie complète de la plaque :
+    /// puces de perk/titre, boutons de drapeau, badges. La bande de 16 px d'un cadre 9-slice y
+    /// laisserait le texte sous le liseré (le contenu commence avant lui) et le chanfrein
+    /// deviendrait du bruit — le brief exclut d'ailleurs les rivets en dessous de 64 px (§3.1).
+    /// On garde donc l'angle droit et le bevel de la charte, sans la texture.
+    /// </summary>
+    public static StyleBoxFlat CompactFrame(Color accent, bool selected = false)
+    {
+        var box = new StyleBoxFlat
+        {
+            BgColor      = UiPalette.Steel.Alpha(selected ? 0.95f : 0.75f),
+            AntiAliasing = false,
+            BorderColor  = selected ? accent : accent.Alpha(0.55f),
+        };
+        box.SetCornerRadiusAll(0);
+        box.SetBorderWidthAll(selected ? 2 : 1);
+        box.SetContentMarginAll(8);
+        return box;
+    }
+
+    /// <summary>
     /// Cadre de carte dont le liseré porte une <b>couleur de catégorie</b> libre plutôt qu'une
     /// rareté — cas explicitement prévu par le §3.5 (« couleur de catégorie » pour les chips) et
     /// seul cas possible pour les entrées de codex, les biomes et les personnages, dont l'accent
