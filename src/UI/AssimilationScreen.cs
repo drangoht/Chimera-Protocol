@@ -77,9 +77,20 @@ public partial class AssimilationScreen : CanvasLayer
             OffsetLeft = -220, OffsetRight = 220, OffsetTop = -206, OffsetBottom = 44,
             GrowHorizontal = Control.GrowDirection.Both,
         };
-        var cardStyle = new StyleBoxFlat { BgColor = new Color(0.10f, 0.05f, 0.12f, 0.95f) };
-        cardStyle.SetBorderWidthAll(3); cardStyle.BorderColor = Magenta; cardStyle.SetCornerRadiusAll(10);
-        card.AddThemeStyleboxOverride("panel", cardStyle);
+        // Cadre de modale (§3.4). Le violet Aether est l'accent de cette famille ; la teinte
+        // magenta propre aux greffes reste portée par l'icône, le titre et le tag de rareté.
+        var shadow = new Panel
+        {
+            AnchorLeft = 0.5f, AnchorRight = 0.5f, AnchorTop = 0.5f, AnchorBottom = 0.5f,
+            OffsetLeft = -220 + UiStyle.PopupShadowOffset.X, OffsetRight = 220 + UiStyle.PopupShadowOffset.X,
+            OffsetTop  = -206 + UiStyle.PopupShadowOffset.Y, OffsetBottom = 44 + UiStyle.PopupShadowOffset.Y,
+            GrowHorizontal = Control.GrowDirection.Both,
+            MouseFilter    = Control.MouseFilterEnum.Ignore,
+        };
+        shadow.AddThemeStyleboxOverride("panel", UiStyle.PopupHardShadow());
+        _root.AddChild(shadow);
+
+        card.AddThemeStyleboxOverride("panel", UiStyle.PopupFrame());
         _root.AddChild(card);
 
         _icon = new TextureRect
@@ -333,18 +344,18 @@ public partial class AssimilationScreen : CanvasLayer
     private static Button MakeButton(Color accent)
     {
         var btn = new Button { CustomMinimumSize = new Vector2(200, 48) };
-        var normal = new StyleBoxFlat { BgColor = new Color(0.06f, 0.04f, 0.10f, 0.92f) };
-        normal.SetBorderWidthAll(2); normal.BorderColor = accent * new Color(1, 1, 1, 0.85f); normal.SetCornerRadiusAll(6);
-        btn.AddThemeStyleboxOverride("normal", normal);
 
-        var hover = new StyleBoxFlat { BgColor = new Color(0.12f, 0.07f, 0.18f, 0.96f) };
-        hover.SetBorderWidthAll(3); hover.BorderColor = accent; hover.SetCornerRadiusAll(6);
-        btn.AddThemeStyleboxOverride("hover", hover);
-        btn.AddThemeStyleboxOverride("pressed", hover);
-        btn.AddThemeStyleboxOverride("focus", hover);
+        // L'accent d'appel (assimiler / refuser / garder) est ramené à la famille de cadre la
+        // plus proche : magenta → violet, rouille → ambre.
+        var frame = UiStyle.NearestAccent(accent);
+        btn.AddThemeStyleboxOverride("normal",  UiStyle.ButtonFrame(frame));
+        btn.AddThemeStyleboxOverride("hover",   UiStyle.ButtonFrame(frame, UiStyle.FrameState.Hover));
+        btn.AddThemeStyleboxOverride("pressed", UiStyle.ButtonFrame(frame, UiStyle.FrameState.Pressed));
+        btn.AddThemeStyleboxOverride("focus",   UiStyle.ButtonFrame(frame, focus: true));
+        UiStyle.AttachFocusPulse(btn);
 
         btn.AddThemeFontSizeOverride("font_size", 18);
-        btn.AddThemeColorOverride("font_color", new Color(0.9f, 0.88f, 0.96f));
+        btn.AddThemeColorOverride("font_color", UiPalette.OffWhite);
         return btn;
     }
 }

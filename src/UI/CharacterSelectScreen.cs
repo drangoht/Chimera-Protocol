@@ -73,8 +73,9 @@ public partial class CharacterSelectScreen : Control
     private (Control, Button) BuildCard(CharacterDef c)
     {
         var panel = new PanelContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
-        var style = new StyleBoxFlat { BgColor = new Color(0.09f, 0.09f, 0.16f, 0.95f) };
-        style.SetBorderWidthAll(2); style.BorderColor = c.Tint; style.SetCornerRadiusAll(6);
+        // Carte de personnage : cadre « plaque », la teinte du perso restant portée par le
+        // portrait, son nom et ses stats.
+        var style = UiStyle.CardFrame(UiStyle.CardRarity.Rare);
         style.SetContentMarginAll(10);
         panel.AddThemeStyleboxOverride("panel", style);
 
@@ -137,15 +138,13 @@ public partial class CharacterSelectScreen : Control
 
     private void StyleButton(Button btn, Color accent)
     {
-        var normal = new StyleBoxFlat { BgColor = new Color(0.1f, 0.1f, 0.2f, 0.95f) };
-        normal.SetBorderWidthAll(2); normal.BorderColor = accent; normal.SetCornerRadiusAll(6);
-        var hover = new StyleBoxFlat { BgColor = new Color(0.18f, 0.14f, 0.32f, 0.98f) };
-        hover.SetBorderWidthAll(3); hover.BorderColor = Violet; hover.SetCornerRadiusAll(6);
-        btn.AddThemeStyleboxOverride("normal", normal);
-        btn.AddThemeStyleboxOverride("hover", hover);
-        btn.AddThemeStyleboxOverride("pressed", hover);
-        btn.AddThemeStyleboxOverride("focus", hover);
-        btn.AddThemeColorOverride("font_color", Text);
+        var frame = UiStyle.NearestAccent(accent);
+        btn.AddThemeStyleboxOverride("normal",  UiStyle.ButtonFrame(frame));
+        btn.AddThemeStyleboxOverride("hover",   UiStyle.ButtonFrame(frame, UiStyle.FrameState.Hover));
+        btn.AddThemeStyleboxOverride("pressed", UiStyle.ButtonFrame(frame, UiStyle.FrameState.Pressed));
+        btn.AddThemeStyleboxOverride("focus",   UiStyle.ButtonFrame(UiStyle.FrameAccent.Violet, focus: true));
+        UiStyle.AttachFocusPulse(btn);
+        btn.AddThemeColorOverride("font_color", UiPalette.OffWhite);
     }
 
     private void Select(string charId)

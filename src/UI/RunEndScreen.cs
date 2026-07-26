@@ -236,16 +236,19 @@ public partial class RunEndScreen : CanvasLayer
     // Hover effects (souris + focus clavier/manette)
     // ---------------------------------------------------------------------------
 
-    private void ConnectHoverEffects(Button btn)
+    /// <summary>
+    /// Applique le cadre « plaque blindée » et branche les effets de survol/focus. Les 6
+    /// StyleBoxFlat que portait le <c>.tscn</c> ont été retirées : tout vient de UiStyle.
+    /// </summary>
+    private void ConnectHoverEffects(Button btn, UiStyle.FrameAccent accent = UiStyle.FrameAccent.Cyan)
     {
         btn.PivotOffset = btn.CustomMinimumSize / 2f;
 
-        var focusStyle = new StyleBoxFlat();
-        focusStyle.BgColor = new Color(0.1f, 0.1f, 0.25f, 0.95f);
-        focusStyle.SetBorderWidthAll(3);
-        focusStyle.BorderColor = new Color(0.667f, 0.267f, 1f, 1f);
-        focusStyle.SetCornerRadiusAll(4);
-        btn.AddThemeStyleboxOverride("focus", focusStyle);
+        btn.AddThemeStyleboxOverride("normal",  UiStyle.ButtonFrame(accent));
+        btn.AddThemeStyleboxOverride("hover",   UiStyle.ButtonFrame(accent, UiStyle.FrameState.Hover));
+        btn.AddThemeStyleboxOverride("pressed", UiStyle.ButtonFrame(accent, UiStyle.FrameState.Pressed));
+        btn.AddThemeStyleboxOverride("focus",   UiStyle.ButtonFrame(UiStyle.FrameAccent.Violet, focus: true));
+        UiStyle.AttachFocusPulse(btn);
 
         btn.MouseEntered += () => OnBtnEntered(btn);
         btn.MouseExited  += () => OnBtnExited(btn);

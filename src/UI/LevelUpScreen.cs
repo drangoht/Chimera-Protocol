@@ -164,14 +164,24 @@ public partial class LevelUpScreen : CanvasLayer
         body.Text = $"[{RarityLabel(rarity)}]\n{displayName}\n\n{description}";
         btn.Text  = "";
 
-        // Couleur du bouton selon rareté
-        var stylebox = new StyleBoxFlat();
-        stylebox.BgColor    = RarityColor(rarity) * new Color(1, 1, 1, 0.25f);
-        stylebox.BorderColor = RarityColor(rarity);
-        stylebox.SetBorderWidthAll(2);
-        stylebox.SetCornerRadiusAll(8);
-        btn.AddThemeStyleboxOverride("normal", stylebox);
+        // Cadre « plaque » dont le liseré porte la rareté (ART_BRIEF_UI_FRAMES §3.5). Les trois
+        // états viennent de la même texture ; le hover, qui était une sub_resource du .tscn
+        // dupliquée trois fois à l'identique, est désormais produit ici.
+        var frame = FrameRarity(rarity);
+        btn.AddThemeStyleboxOverride("normal",  UiStyle.CardFrame(frame));
+        btn.AddThemeStyleboxOverride("hover",   UiStyle.CardFrame(frame, UiStyle.FrameState.Hover));
+        btn.AddThemeStyleboxOverride("pressed", UiStyle.CardFrame(frame, UiStyle.FrameState.Pressed));
+        btn.AddThemeStyleboxOverride("focus",   UiStyle.CardFrame(frame, focus: true));
+        UiStyle.AttachFocusPulse(btn);
     }
+
+    /// <summary>Traduit la rareté d'une carte en famille de cadre.</summary>
+    private static UiStyle.CardRarity FrameRarity(string rarity) => rarity switch
+    {
+        "epic" => UiStyle.CardRarity.Epic,
+        "rare" => UiStyle.CardRarity.Rare,
+        _      => UiStyle.CardRarity.Common,
+    };
 
     private void OnCardChosen(int index)
     {
@@ -247,15 +257,13 @@ public partial class LevelUpScreen : CanvasLayer
     {
         var btn = new Button { Text = text, CustomMinimumSize = new Vector2(200, 48) };
 
-        var normal = new StyleBoxFlat { BgColor = new Color(0.05f, 0.05f, 0.12f, 0.9f) };
-        normal.SetBorderWidthAll(2); normal.BorderColor = accent * new Color(1, 1, 1, 0.8f); normal.SetCornerRadiusAll(6);
-        btn.AddThemeStyleboxOverride("normal", normal);
-
-        var hover = new StyleBoxFlat { BgColor = new Color(0.1f, 0.1f, 0.22f, 0.95f) };
-        hover.SetBorderWidthAll(3); hover.BorderColor = accent; hover.SetCornerRadiusAll(6);
-        btn.AddThemeStyleboxOverride("hover", hover);
-        btn.AddThemeStyleboxOverride("pressed", hover);
-        btn.AddThemeStyleboxOverride("focus", hover);
+        var frame = UiStyle.NearestAccent(accent);
+        btn.AddThemeStyleboxOverride("normal",   UiStyle.ButtonFrame(frame));
+        btn.AddThemeStyleboxOverride("hover",    UiStyle.ButtonFrame(frame, UiStyle.FrameState.Hover));
+        btn.AddThemeStyleboxOverride("pressed",  UiStyle.ButtonFrame(frame, UiStyle.FrameState.Pressed));
+        btn.AddThemeStyleboxOverride("focus",    UiStyle.ButtonFrame(frame, focus: true));
+        btn.AddThemeStyleboxOverride("disabled", UiStyle.ButtonFrameDisabled());
+        UiStyle.AttachFocusPulse(btn);
 
         btn.AddThemeFontSizeOverride("font_size", 18);
         btn.AddThemeColorOverride("font_color", new Color(0.85f, 0.85f, 0.95f));
@@ -361,13 +369,8 @@ public partial class LevelUpScreen : CanvasLayer
 
     private void ConnectCardHover(Button btn)
     {
-        var focusStyle = new StyleBoxFlat();
-        focusStyle.BgColor = new Color(0.15f, 0.1f, 0.3f, 0.4f);
-        focusStyle.SetBorderWidthAll(3);
-        focusStyle.BorderColor = new Color(0.667f, 0.267f, 1f, 1f);
-        focusStyle.SetCornerRadiusAll(8);
-        btn.AddThemeStyleboxOverride("focus", focusStyle);
-
+        // Le cadre de focus est posé par StyleCard, avec la rareté de la carte : le rappeler ici
+        // l'écraserait par un violet générique et ferait perdre l'information de rareté.
         btn.MouseEntered  += () => OnCardEntered(btn);
         btn.MouseExited   += () => OnCardExited(btn);
         btn.FocusEntered  += () => OnCardEntered(btn);

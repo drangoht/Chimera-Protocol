@@ -52,15 +52,17 @@ public partial class PauseScreen : CanvasLayer
         center.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
         AddChild(center);
 
-        // Panel principal
+        // Panel principal — cadre de modale (§3.4) : bande épaisse, bord soudé en haut,
+        // et son ombre portée dure posée AVANT lui pour qu'elle passe dessous.
+        var shadow = new PanelContainer { CustomMinimumSize = new Vector2(920f, 0f) };
+        shadow.AddThemeStyleboxOverride("panel", UiStyle.PopupHardShadow());
+        shadow.Position = UiStyle.PopupShadowOffset;
+        shadow.MouseFilter = Control.MouseFilterEnum.Ignore;
+        center.AddChild(shadow);
+
         var panel = new PanelContainer();
         panel.CustomMinimumSize = new Vector2(920f, 0f);
-        var panelStyle = new StyleBoxFlat();
-        panelStyle.BgColor = UiPalette.Bg;
-        panelStyle.SetBorderWidthAll(2);
-        panelStyle.BorderColor = UiPalette.Violet;
-        panelStyle.SetCornerRadiusAll(6);
-        panel.AddThemeStyleboxOverride("panel", panelStyle);
+        panel.AddThemeStyleboxOverride("panel", UiStyle.PopupFrame());
         center.AddChild(panel);
 
         var margin = new MarginContainer();
@@ -438,22 +440,11 @@ public partial class PauseScreen : CanvasLayer
         btn.SizeFlagsHorizontal  = Control.SizeFlags.ShrinkCenter;
         btn.AddThemeFontSizeOverride("font_size", 16);
 
-        var normal = new StyleBoxFlat();
-        normal.BgColor = new Color(0.08f, 0.06f, 0.2f);
-        normal.SetBorderWidthAll(2);
-        normal.BorderColor = UiPalette.Cyan;
-        normal.SetCornerRadiusAll(4);
-
-        var hover = new StyleBoxFlat();
-        hover.BgColor = new Color(0.12f, 0.08f, 0.25f);
-        hover.SetBorderWidthAll(3);
-        hover.BorderColor = UiPalette.Violet;
-        hover.SetCornerRadiusAll(4);
-
-        btn.AddThemeStyleboxOverride("normal",  normal);
-        btn.AddThemeStyleboxOverride("hover",   hover);
-        btn.AddThemeStyleboxOverride("pressed", hover);
-        btn.AddThemeStyleboxOverride("focus",   hover);
+        btn.AddThemeStyleboxOverride("normal",  UiStyle.ButtonFrame(UiStyle.FrameAccent.Cyan));
+        btn.AddThemeStyleboxOverride("hover",   UiStyle.ButtonFrame(UiStyle.FrameAccent.Cyan, UiStyle.FrameState.Hover));
+        btn.AddThemeStyleboxOverride("pressed", UiStyle.ButtonFrame(UiStyle.FrameAccent.Cyan, UiStyle.FrameState.Pressed));
+        btn.AddThemeStyleboxOverride("focus",   UiStyle.ButtonFrame(UiStyle.FrameAccent.Violet, focus: true));
+        UiStyle.AttachFocusPulse(btn);
         return btn;
     }
 }
