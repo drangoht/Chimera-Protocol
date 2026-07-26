@@ -205,6 +205,33 @@ Tout nouveau chemin de sortie de run doit l'appeler aussi.
 - Vérifier une capture avant de s'en servir : le tampon `v<version>-<sha>` (autoload `VersionStamp`)
   en bas à droite prouve que l'image vient bien du jeu, et de la bonne build.
 
+## Capture vidéo / trailer (`tools/record_trailer.py` + `tools/build_trailer.py`)
+- **Movie Maker Godot (`--write-movie out.avi`) plutôt qu'un enregistreur d'écran** : rendu à
+  framerate fixe (60 fps, `editor/movie_writer/fps`), aucun frame drop même quand la scène rame, et
+  l'audio du jeu est écrit dans le même AVI (MJPEG vidéo + PCM 48 kHz).
+- **La sortie fait la taille du VIEWPORT, pas de la fenêtre.** `--resolution 2560x1440` agrandit la
+  fenêtre mais le film reste en 1280×720 (`window/size/viewport_*`). Passer en 1440p se fait au
+  montage par un upscale **×2 en `flags=neighbor`** — facteur entier, donc pixel art net ; viser
+  1080p imposerait un ×1,5 qui bave.
+- **Le temps du jeu n'est pas le temps réel** en mode film : selon la charge, 300 s de pilotage
+  PyAutoGUI ont donné 220–236 s de vidéo. Toute timeline d'inputs doit donc être tolérante
+  (mouvements longs, validations répétées) — aucune action à la frame près, le découpage fin se
+  fait au montage.
+- **Fermer par `WM_CLOSE`, jamais par `terminate()`** : le MovieWriter doit finaliser l'index de
+  l'AVI, sinon le fichier est illisible ou tronqué.
+- Le flag `--trailer` (`DebugHooks.TrailerMode`) masque le tampon `VersionStamp` et l'invite
+  « appuyer pour passer » de l'intro — sinon elles s'incrustent dans toutes les prises.
+- **La 1re minute d'une run ne montre rien** (nuée clairsemée, armes niveau 1). Le spectacle est en
+  mid/late game : prévoir des prises de 4–5 min et ne garder que la fin.
+- Traverser les menus au clavier dérive vite (une prise « menu » a fini dans Options) : lancer
+  **directement** la scène de l'écran voulu (`res://scenes/ui/BestiaryScreen.tscn`…).
+- Repérer les points de coupe sur des planches-contact (`fps=1,tile=6x5`) **et vérifier le clip
+  extrait** : un écran modal ne dure que ~2 s, une erreur de lecture de la planche fait tomber le
+  plan sur le level-up suivant.
+- Mixage : l'audio des rushes porte déjà la musique du jeu. Empiler une 2e musique à volume plein
+  donne deux thèmes qui se battent → garder les plans à ~0,16 (texture des impacts) sous une piste
+  musicale continue, puis `loudnorm=I=-14:TP=-1.5` (la somme brute sortait à −8 LUFS, écrêtée).
+
 ## Tests headless
 - `LevelUpScreen` met l'arbre EN PAUSE → gèle le serveur physique en headless (neutraliser l'XP de départ pour tester le gameplay)
 - `Area2D` ne détecte un corps que via vrai mouvement physique (`MoveAndSlide`) — pas un téléport ni un `Tween`

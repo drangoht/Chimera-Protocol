@@ -115,6 +115,11 @@ Fusions : `FusionBlade`, `RailOvercharged`, `OrbitalSwarm`, `OverloadAegis`,
 - Sprites : `pseudo3d_lib.py` (⚠ toujours dériver ombre/highlight via ce lib), `generate_*` (sprites/icônes/tiles/vfx)
 - Audio : `generate_music_synth.py`, `generate_audio_v2.py`, `integrate_kenney_audio.py`
 - Captures : `screenshot_*.py`, `capture_*.py`, `window_capture.py`
+- **Trailer vidéo** : `record_trailer.py` (capture les rushes via le Movie Maker Godot `--write-movie`
+  + pilotage PyAutoGUI ; table de prises `TAKES`) puis `build_trailer.py` (montage : EDL de plans,
+  upscale ×2 nearest en 1440p, cartons de texte, musique + `loudnorm`, sortie `trailer/*.mp4`).
+  Flag jeu `--trailer` = `DebugHooks.TrailerMode` (masque VersionStamp + invite d'intro).
+  Pièges → `docs/PITFALLS.md` §Capture vidéo. Sorties ignorées par git (`trailer/`).
 - Tests/équilibrage : `boss_ttk_test.py`, `test_balance_v2.py`, `test_ui_keyboard.py`, `smoketest_exe.py`
 - Release : **`release_itch.ps1`** (export → butler push → régénère & push `version.json`) — workflow complet via le skill **`/publier-itch`**
 - Python : `C:\Users\drang\AppData\Local\Programs\Python\Python313\python.exe`

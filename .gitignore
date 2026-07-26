@@ -49,6 +49,10 @@ docs/levelselect_badge.png
 docs/options2.png
 tests/*.uid
 
+# Trailer video : rushes AVI du Movie Maker Godot (plusieurs Go), plans intermediaires et
+# mp4 final. Tout est regenerable via tools/record_trailer.py puis tools/build_trailer.py.
+trailer/
+
 # Artefacts de tests (dotnet test / CI)
 TestResults/
 test-output.txt

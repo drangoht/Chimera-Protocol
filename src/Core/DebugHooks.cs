@@ -126,6 +126,24 @@ public static class DebugHooks
         }
     }
 
+    private static bool? _trailerMode;
+
+    /// <summary>
+    /// Vrai si lancé avec <c>--trailer</c> : masque les surcouches de développement qui pollueraient
+    /// une capture vidéo promotionnelle — tampon de version (<see cref="VersionStamp"/>) et invite
+    /// « appuyer pour passer » de la cinématique d'intro. N'affecte QUE de l'affichage annexe :
+    /// aucun impact sur le gameplay. Utilisé par <c>tools/record_trailer.py</c>.
+    /// </summary>
+    public static bool TrailerMode
+    {
+        get
+        {
+            if (_trailerMode == null)
+                _trailerMode = HasFlag("--trailer");
+            return _trailerMode.Value;
+        }
+    }
+
     private static bool HasFlag(string flag)
     {
         foreach (var arg in OS.GetCmdlineArgs())

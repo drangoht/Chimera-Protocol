@@ -130,6 +130,7 @@ public partial class IntroScreen : Control
         hint.OffsetLeft = hint.OffsetRight = hint.OffsetTop = hint.OffsetBottom = 0;
         hint.AddThemeFontSizeOverride("font_size", 13);
         hint.AddThemeColorOverride("font_color", Cyan);
+        hint.Visible = !DebugHooks.TrailerMode;   // capture vidéo : pas d'invite en surimpression
         AddChild(hint);
 
         // Flash blanc (reveal de titre) — sous le fade de fermeture

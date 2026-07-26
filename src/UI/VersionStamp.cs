@@ -12,6 +12,10 @@ public partial class VersionStamp : Node
 
     public override void _Ready()
     {
+        // Capture vidéo promotionnelle : pas de tampon de build en surimpression.
+        if (DebugHooks.TrailerMode)
+            return;
+
         var layer = new CanvasLayer { Layer = 128 };
         AddChild(layer);
 
