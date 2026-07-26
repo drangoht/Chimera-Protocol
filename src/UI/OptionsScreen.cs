@@ -134,6 +134,7 @@ public partial class OptionsScreen : Control
             CustomMinimumSize = new Vector2(240, 0),
             SizeFlagsVertical = SizeFlags.ShrinkCenter,
         };
+        UiStyle.ApplySliderStyles(slider);
         row.AddChild(slider);
 
         var val = new Label { Text = $"{value * 100:0} %", CustomMinimumSize = new Vector2(56, 0),
@@ -202,6 +203,7 @@ public partial class OptionsScreen : Control
         row.AddChild(lbl);
 
         var check = new CheckButton { ButtonPressed = value };
+        UiStyle.ApplyToggleStyles(check);
         check.Toggled += pressed => onChange(pressed);
         row.AddChild(check);
         parent.AddChild(row);

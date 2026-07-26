@@ -254,6 +254,8 @@ public static class UiStyle
         dropdown.AddThemeStyleboxOverride("disabled", ButtonFrameDisabled());
         dropdown.AddThemeConstantOverride("arrow_margin", DropdownArrowMargin);
         AttachFocusPulse(dropdown);
+        // Le menu déroulant est un contrôle distinct : styliser le bouton ne l'atteint pas.
+        ApplyPopupMenuStyles(dropdown.GetPopup(), AccentColor(accent));
     }
 
     /// <summary>
@@ -261,6 +263,107 @@ public static class UiStyle
     /// cadre (16 px) pour que la flèche passe en deçà du liseré, qui court de 12 à 16 px du bord.
     /// </summary>
     private const int DropdownArrowMargin = 24;
+
+    /// <summary>
+    /// Habille un curseur : rail creusé, partie remplie à l'accent, et poignée en petite plaque
+    /// d'acier. Sans ça, <see cref="HSlider"/> garde la barre et la pastille grises de Godot,
+    /// qui n'appartiennent à aucune charte.
+    /// </summary>
+    public static void ApplySliderStyles(HSlider slider, Color? accent = null)
+    {
+        var tint = accent ?? UiPalette.Cyan;
+
+        var rail = new StyleBoxFlat { BgColor = UiPalette.Bg.Darken(0.3f), AntiAliasing = false };
+        rail.SetCornerRadiusAll(0);
+        rail.SetContentMarginAll(0);
+        rail.SetBorderWidthAll(1);
+        rail.BorderColor = UiPalette.SteelHighlight;
+        rail.SetExpandMarginAll(2);
+        slider.AddThemeStyleboxOverride("slider", rail);
+
+        var filled = new StyleBoxFlat { BgColor = tint.Alpha(0.55f), AntiAliasing = false };
+        filled.SetCornerRadiusAll(0);
+        filled.SetExpandMarginAll(2);
+        slider.AddThemeStyleboxOverride("grabber_area", filled);
+
+        var filledHot = new StyleBoxFlat { BgColor = tint.Alpha(0.85f), AntiAliasing = false };
+        filledHot.SetCornerRadiusAll(0);
+        filledHot.SetExpandMarginAll(2);
+        slider.AddThemeStyleboxOverride("grabber_area_highlight", filledHot);
+
+        LoadIcon("ui_slider_grabber", out var grabber);
+        LoadIcon("ui_slider_grabber_focus", out var grabberHot);
+        if (grabber is not null)
+        {
+            slider.AddThemeIconOverride("grabber", grabber);
+            slider.AddThemeIconOverride("grabber_highlight", grabberHot ?? grabber);
+            slider.AddThemeIconOverride("grabber_disabled", grabber);
+        }
+    }
+
+    /// <summary>
+    /// Habille un interrupteur. L'état se lit à la fois à la <b>position</b> du pavé et à la
+    /// couleur du liseré — jamais à la couleur seule.
+    /// </summary>
+    public static void ApplyToggleStyles(CheckButton toggle)
+    {
+        LoadIcon("ui_toggle_on", out var on);
+        LoadIcon("ui_toggle_off", out var off);
+        if (on is null || off is null) return;
+
+        foreach (var slot in new[] { "checked", "checked_disabled", "checked_mirrored" })
+            toggle.AddThemeIconOverride(slot, on);
+        foreach (var slot in new[] { "unchecked", "unchecked_disabled", "unchecked_mirrored" })
+            toggle.AddThemeIconOverride(slot, off);
+
+        // Le fond d'un CheckButton doit rester nu : l'icône porte tout le signal.
+        toggle.AddThemeStyleboxOverride("normal",  new StyleBoxEmpty());
+        toggle.AddThemeStyleboxOverride("hover",   new StyleBoxEmpty());
+        toggle.AddThemeStyleboxOverride("pressed", new StyleBoxEmpty());
+        toggle.AddThemeStyleboxOverride("focus",   FocusOutline());
+    }
+
+    /// <summary>
+    /// Habille le menu qui s'ouvre sous une liste déroulante — un <see cref="PopupMenu"/> est un
+    /// contrôle distinct du bouton, que styliser ce dernier ne touche pas.
+    /// </summary>
+    public static void ApplyPopupMenuStyles(PopupMenu menu, Color? accent = null)
+    {
+        var tint = accent ?? UiPalette.Cyan;
+
+        var panel = new StyleBoxFlat { BgColor = UiPalette.Bg.Alpha(0.98f), AntiAliasing = false };
+        panel.SetCornerRadiusAll(0);
+        panel.SetBorderWidthAll(1);
+        panel.BorderColor = tint.Alpha(0.7f);
+        panel.SetContentMarginAll(6);
+        menu.AddThemeStyleboxOverride("panel", panel);
+
+        var hover = new StyleBoxFlat { BgColor = tint.Alpha(0.22f), AntiAliasing = false };
+        hover.SetCornerRadiusAll(0);
+        menu.AddThemeStyleboxOverride("hover", hover);
+
+        menu.AddThemeColorOverride("font_color", UiPalette.OffWhite);
+        menu.AddThemeColorOverride("font_hover_color", tint);
+        menu.AddThemeColorOverride("font_separator_color", UiPalette.SteelHighlight);
+    }
+
+    /// <summary>Contour de focus léger, pour les contrôles sans cadre propre (interrupteurs).</summary>
+    private static StyleBoxFlat FocusOutline()
+    {
+        var box = new StyleBoxFlat { BgColor = Colors.Transparent, AntiAliasing = false };
+        box.SetCornerRadiusAll(0);
+        box.SetBorderWidthAll(2);
+        box.BorderColor = UiPalette.Violet;
+        return box;
+    }
+
+    private static void LoadIcon(string file, out Texture2D? texture)
+    {
+        var path = FramesDir + file + ".png";
+        texture = ResourceLoader.Exists(path) ? GD.Load<Texture2D>(path) : null;
+        if (texture is null)
+            GD.PushWarning($"UiStyle : widget introuvable ({path}) — régénérer via tools/generate_ui_widgets.py");
+    }
 
     /// <summary>
     /// Cadre compact, pour les éléments trop petits pour l'anatomie complète de la plaque :
@@ -431,6 +534,15 @@ public static class UiStyle
 
         return box;
     }
+
+    /// <summary>Couleur de la palette correspondant à une famille de cadre.</summary>
+    public static Color AccentColor(FrameAccent accent) => accent switch
+    {
+        FrameAccent.Violet => UiPalette.Violet,
+        FrameAccent.Gold   => UiPalette.Gold,
+        FrameAccent.Danger => UiPalette.Amber,
+        _                  => UiPalette.Cyan,
+    };
 
     private static string Slug(FrameAccent accent) => accent switch
     {
