@@ -552,6 +552,14 @@ toutes les décisions visuelles (cf. brief détaillé dans l'agent `directeur-ar
 > ombre portée elliptique au sol), via une bibliothèque PIL partagée `tools/pseudo3d_lib.py`.
 > Ne change ni la résolution (32×32, 48×48 Colosse), ni la palette, ni le nombre de frames :
 > c'est une couche de rendu, pas une nouvelle politique de production.
+>
+> **Refonte des cadres d'UI (2026-07-26) : `docs/ART_BRIEF_UI_FRAMES.md`** — langage "plaque
+> blindée octogonale" pour boutons/cartes/popups (chanfreins 4 coins, bevel HSV réutilisant
+> `LIGHT_DIR`, rivets d'angle, liseré vivant pulsé réservé au focus) via textures 9-slice
+> générées par `tools/generate_ui_frames.py` (à créer, réutilise `pseudo3d_lib.shade()`) ;
+> panneaux de fond et séparateurs restent en `StyleBoxFlat`/`ColorRect` pur (angle droit,
+> bordures par côté). Remplace la recette `StyleBoxFlat` uniforme (coin rond + bordure plate)
+> en place depuis Phase 2, jugée trop générique.
 
 **Décisions actées par `directeur-artistique` (2026-06-19) :**
 
