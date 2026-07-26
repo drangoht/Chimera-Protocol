@@ -7,11 +7,11 @@ using Godot;
 /// </summary>
 public partial class LevelSelectScreen : Control
 {
-    private static readonly Color Bg     = new(0.06f, 0.06f, 0.11f);
-    private static readonly Color Cyan   = new(0.267f, 1f, 0.933f);
-    private static readonly Color Violet = new(0.667f, 0.267f, 1f);
-    private static readonly Color Text   = new(0.85f, 0.85f, 0.95f);
-    private static readonly Color Dim    = new(0.6f, 0.62f, 0.72f);
+    private static readonly Color Bg     = UiPalette.BgDeep;
+    private static readonly Color Cyan   = UiPalette.Cyan;
+    private static readonly Color Violet = UiPalette.Violet;
+    private static readonly Color Text   = UiPalette.OffWhite;
+    private static readonly Color Dim    = UiPalette.Dim;
 
     private ColorRect _fade   = null!;
     private bool      _leaving = false;
@@ -85,11 +85,13 @@ public partial class LevelSelectScreen : Control
         bool unlocked  = GameSettings.Instance?.IsUnlocked(id) ?? true;
         bool completed = GameSettings.Instance?.HasCompletedAny(id) == true;
 
+        // Carte du §3.5 : plaque chanfreinée 9-slice, liseré à l'accent du biome. Niveau non
+        // débloqué → plaque d'acier éteinte (le liseré de catégorie est une information de biome
+        // qu'on ne révèle pas tant qu'il est verrouillé).
         var panel = new PanelContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
-        var style = new StyleBoxFlat { BgColor = new Color(0.09f, 0.09f, 0.16f, 0.95f) };
-        style.SetBorderWidthAll(2); style.BorderColor = unlocked ? accent : Dim; style.SetCornerRadiusAll(6);
-        style.SetContentMarginAll(10);
-        panel.AddThemeStyleboxOverride("panel", style);
+        panel.AddThemeStyleboxOverride("panel", unlocked
+            ? UiStyle.CardFrame(accent)
+            : UiStyle.CardFrameDisabled());
         if (!unlocked) panel.Modulate = new Color(1f, 1f, 1f, 0.45f);   // carte grisée si verrouillée
 
         var hb = new HBoxContainer();
@@ -103,11 +105,10 @@ public partial class LevelSelectScreen : Control
             TextureFilter     = TextureFilterEnum.Nearest,
             CustomMinimumSize = new Vector2(96, 96),
         };
-        // Cadre accent autour de l'aperçu
-        var prevWrap = new PanelContainer();
-        var ps = new StyleBoxFlat { BgColor = new Color(0, 0, 0, 0) };
-        ps.SetBorderWidthAll(2); ps.BorderColor = accent;
-        prevWrap.AddThemeStyleboxOverride("panel", ps);
+        // Cadre accent autour de l'aperçu : même plaque que la carte (§3.5), en hublot. Instance
+        // distincte de celle du panneau — Godot lie les StyleBox partagées.
+        var prevWrap = new PanelContainer { SizeFlagsVertical = SizeFlags.ShrinkCenter };
+        prevWrap.AddThemeStyleboxOverride("panel", UiStyle.CardFrame(accent));
         prevWrap.AddChild(prev);
         hb.AddChild(prevWrap);
 

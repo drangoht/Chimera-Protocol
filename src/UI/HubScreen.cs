@@ -41,6 +41,7 @@ public partial class HubScreen : Control
         GetNode<Label>("VBox/TitleLabel").Text = Loc.T("HUB_TITLE");
         _backButton.Text = Loc.T("COMMON_BACK");
 
+        StyleStaticSeparators();
         BuildUpgradesList();
         BuildPerkSelector();
         BuildTitleSelector();
@@ -61,6 +62,41 @@ public partial class HubScreen : Control
              .SetEase(Tween.EaseType.In)
              .SetTrans(Tween.TransitionType.Quad);
         tween.TweenCallback(Callable.From(() => _backButton.GrabFocus()));
+    }
+
+    // ---------------------------------------------------------------------------
+    // Habillage des séparateurs de la scène (ART_BRIEF_UI_FRAMES §3.6)
+    // ---------------------------------------------------------------------------
+
+    /// <summary>Pose le soulignement gravé sous le titre d'écran et remplace les
+    /// <c>HSeparator</c> natifs du <c>.tscn</c> (gris neutre du thème) par le séparateur maison.</summary>
+    private void StyleStaticSeparators()
+    {
+        var vbox  = GetNode<VBoxContainer>("VBox");
+        var title = GetNode<Label>("VBox/TitleLabel");
+
+        var underline = UiStyle.ScreenTitleUnderline(UiPalette.Cyan);
+        vbox.AddChild(underline);
+        vbox.MoveChild(underline, title.GetIndex() + 1);
+
+        ReplaceSeparator(vbox, "Separator");
+        ReplaceSeparator(vbox, "Separator2");
+    }
+
+    /// <summary>Substitue en place (même index dans le VBox) un <c>HSeparator</c> par
+    /// <see cref="UiStyle.Separator"/>.</summary>
+    private static void ReplaceSeparator(VBoxContainer parent, string nodeName)
+    {
+        var old = parent.GetNodeOrNull<Control>(nodeName);
+        if (old == null) return;
+
+        int index = old.GetIndex();
+        parent.RemoveChild(old);
+        old.QueueFree();
+
+        var sep = UiStyle.Separator(UiPalette.Cyan);
+        parent.AddChild(sep);
+        parent.MoveChild(sep, index);
     }
 
     // ---------------------------------------------------------------------------
@@ -111,30 +147,14 @@ public partial class HubScreen : Control
                 CustomMinimumSize = new Vector2(100, 0),
             };
 
-            // Style du bouton Acheter
-            var buyStyleNormal = new StyleBoxFlat();
-            buyStyleNormal.BgColor = new Color(0.05f, 0.05f, 0.12f, 0.9f);
-            buyStyleNormal.SetBorderWidthAll(1);
-            buyStyleNormal.BorderColor = new Color(0.267f, 1f, 0.933f, 0.7f);
-            buyStyleNormal.SetCornerRadiusAll(3);
-            buyButton.AddThemeStyleboxOverride("normal", buyStyleNormal);
-
-            var buyStyleHover = new StyleBoxFlat();
-            buyStyleHover.BgColor = new Color(0.1f, 0.1f, 0.25f, 0.95f);
-            buyStyleHover.SetBorderWidthAll(2);
-            buyStyleHover.BorderColor = new Color(0.667f, 0.267f, 1f, 1f);
-            buyStyleHover.SetCornerRadiusAll(3);
-            buyButton.AddThemeStyleboxOverride("hover", buyStyleHover);
-
-            var buyStylePressed = new StyleBoxFlat();
-            buyStylePressed.BgColor = new Color(0.03f, 0.03f, 0.08f, 1f);
-            buyStylePressed.SetBorderWidthAll(2);
-            buyStylePressed.BorderColor = new Color(0.667f, 0.267f, 1f, 1f);
-            buyStylePressed.SetCornerRadiusAll(3);
-            buyButton.AddThemeStyleboxOverride("pressed", buyStylePressed);
+            // Acheter dépense des Échos : accent or, même sémantique que le coût affiché à côté.
+            buyButton.AddThemeStyleboxOverride("normal",   UiStyle.ButtonFrame(UiStyle.FrameAccent.Gold));
+            buyButton.AddThemeStyleboxOverride("hover",    UiStyle.ButtonFrame(UiStyle.FrameAccent.Gold, UiStyle.FrameState.Hover));
+            buyButton.AddThemeStyleboxOverride("pressed",  UiStyle.ButtonFrame(UiStyle.FrameAccent.Gold, UiStyle.FrameState.Pressed));
+            buyButton.AddThemeStyleboxOverride("disabled", UiStyle.ButtonFrameDisabled());
 
             buyButton.AddThemeFontSizeOverride("font_size", 15);
-            buyButton.AddThemeColorOverride("font_color", new Color(0.85f, 0.85f, 0.95f));
+            buyButton.AddThemeColorOverride("font_color", UiPalette.OffWhite);
 
             string capturedId = def.Id;
             buyButton.Pressed += () => OnBuyPressed(capturedId);
@@ -149,14 +169,12 @@ public partial class HubScreen : Control
             row.AddChild(costLabel);
             row.AddChild(buyButton);
 
-            // Encapsule le row dans un PanelContainer stylé
+            // Encapsule le row dans un PanelContainer stylé (ART_BRIEF_UI_FRAMES §3.3).
+            // Variante « sunken » : le fond du Hub est déjà #1A1A2E, le fill nominal du §3.3
+            // s'y composite à l'identique et le panneau disparaîtrait. Marge 8 px (au lieu de
+            // 16) pour ne pas doubler la hauteur des 18 rangées de la liste.
             var panel = new PanelContainer();
-            var panelStyle = new StyleBoxFlat();
-            panelStyle.BgColor = new Color(0.08f, 0.08f, 0.18f, 0.7f);
-            panelStyle.SetBorderWidthAll(1);
-            panelStyle.BorderColor = new Color(0.267f, 1f, 0.933f, 0.2f);
-            panelStyle.SetCornerRadiusAll(3);
-            panel.AddThemeStyleboxOverride("panel", panelStyle);
+            panel.AddThemeStyleboxOverride("panel", UiStyle.ScreenPanelSunken(8));
             panel.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
             panel.AddChild(row);
 
@@ -223,6 +241,8 @@ public partial class HubScreen : Control
         header.AddThemeFontSizeOverride("font_size", 18);
         header.AddThemeColorOverride("font_color", PerkAccent);
         section.AddChild(header);
+        // Règle du brief §3.6 : tout titre de section est systématiquement suivi du séparateur.
+        section.AddChild(UiStyle.Separator(PerkAccent));
 
         var row = new HBoxContainer();
         row.AddThemeConstantOverride("separation", 8);
@@ -264,24 +284,29 @@ public partial class HubScreen : Control
             ApplyChipStyle(chip, chip.GetMeta("chipId").AsString() == equipped);
     }
 
+    /// <summary>
+    /// Cadre d'une puce de perk/titre. La sélection est encodée par l'accent — or (la puce
+    /// équipée, même sémantique que les Échos) contre violet (les puces disponibles) — et non
+    /// plus par une épaisseur de bordure, invisible au premier coup d'œil.
+    /// </summary>
     private static void ApplyChipStyle(Button btn, bool selected)
     {
-        Color border = selected ? new Color(1f, 0.8f, 0.267f) : new Color(PerkAccent.R, PerkAccent.G, PerkAccent.B, 0.55f);
-        float bgA    = selected ? 0.95f : 0.85f;
-        Color bg     = selected ? new Color(0.12f, 0.09f, 0.04f, bgA) : new Color(0.08f, 0.08f, 0.16f, bgA);
+        var accent = selected ? UiStyle.FrameAccent.Gold : UiStyle.FrameAccent.Violet;
 
-        var normal = new StyleBoxFlat { BgColor = bg };
-        normal.SetBorderWidthAll(selected ? 3 : 1); normal.BorderColor = border; normal.SetCornerRadiusAll(4);
+        var normal = UiStyle.ButtonFrame(accent);
         normal.SetContentMarginAll(8);
         btn.AddThemeStyleboxOverride("normal", normal);
 
-        var hover = new StyleBoxFlat { BgColor = new Color(0.12f, 0.12f, 0.22f, 0.95f) };
-        hover.SetBorderWidthAll(3); hover.BorderColor = border; hover.SetCornerRadiusAll(4); hover.SetContentMarginAll(8);
+        var hover = UiStyle.ButtonFrame(accent, UiStyle.FrameState.Hover);
+        hover.SetContentMarginAll(8);
         btn.AddThemeStyleboxOverride("hover", hover);
-        btn.AddThemeStyleboxOverride("pressed", hover);
 
-        var focus = new StyleBoxFlat { BgColor = hover.BgColor };
-        focus.SetBorderWidthAll(3); focus.BorderColor = new Color(1f, 0.8f, 0.267f); focus.SetCornerRadiusAll(4); focus.SetContentMarginAll(8);
+        var pressed = UiStyle.ButtonFrame(accent, UiStyle.FrameState.Pressed);
+        pressed.SetContentMarginAll(8);
+        btn.AddThemeStyleboxOverride("pressed", pressed);
+
+        var focus = UiStyle.ButtonFrame(accent, focus: true);
+        focus.SetContentMarginAll(8);
         btn.AddThemeStyleboxOverride("focus", focus);
     }
 
@@ -311,22 +336,15 @@ public partial class HubScreen : Control
             CustomMinimumSize = new Vector2(0, 40),
         };
 
-        // Bordure orange « attention » pour distinguer cette action des achats.
-        var normal = new StyleBoxFlat { BgColor = new Color(0.05f, 0.05f, 0.12f, 0.9f) };
-        normal.SetBorderWidthAll(1); normal.BorderColor = new Color(1f, 0.55f, 0.2f, 0.7f); normal.SetCornerRadiusAll(3);
-        _resetButton.AddThemeStyleboxOverride("normal", normal);
-
-        var hover = new StyleBoxFlat { BgColor = new Color(0.12f, 0.08f, 0.05f, 0.95f) };
-        hover.SetBorderWidthAll(2); hover.BorderColor = new Color(1f, 0.55f, 0.2f, 1f); hover.SetCornerRadiusAll(3);
-        _resetButton.AddThemeStyleboxOverride("hover", hover);
-        _resetButton.AddThemeStyleboxOverride("pressed", hover);
-
-        var focus = new StyleBoxFlat { BgColor = new Color(0.12f, 0.08f, 0.05f, 0.95f) };
-        focus.SetBorderWidthAll(3); focus.BorderColor = new Color(1f, 0.55f, 0.2f, 1f); focus.SetCornerRadiusAll(4);
-        _resetButton.AddThemeStyleboxOverride("focus", focus);
+        // Accent ambre « attention » : distingue cette action destructrice des achats (or vif),
+        // sans introduire de rouge/orange hors charte (ART_BRIEF_UI_FRAMES §3.0).
+        _resetButton.AddThemeStyleboxOverride("normal",  UiStyle.ButtonFrame(UiStyle.FrameAccent.Danger));
+        _resetButton.AddThemeStyleboxOverride("hover",   UiStyle.ButtonFrame(UiStyle.FrameAccent.Danger, UiStyle.FrameState.Hover));
+        _resetButton.AddThemeStyleboxOverride("pressed", UiStyle.ButtonFrame(UiStyle.FrameAccent.Danger, UiStyle.FrameState.Pressed));
+        _resetButton.AddThemeStyleboxOverride("focus",   UiStyle.ButtonFrame(UiStyle.FrameAccent.Danger, focus: true));
 
         _resetButton.AddThemeFontSizeOverride("font_size", 16);
-        _resetButton.AddThemeColorOverride("font_color", new Color(1f, 0.7f, 0.4f));
+        _resetButton.AddThemeColorOverride("font_color", UiPalette.Gold.Lighten(0.2f));
         _resetButton.Pressed += OnResetPressed;
         ConnectHoverEffects(_resetButton, 1.02f);
 
@@ -454,16 +472,15 @@ public partial class HubScreen : Control
     // Hover effects (souris + focus clavier/manette)
     // ---------------------------------------------------------------------------
 
-    private void ConnectHoverEffects(Button btn, float targetScale)
+    /// <param name="focusAccent">Accent du cadre de focus, ou <c>null</c> quand l'appelant pose
+    /// lui-même son focus (puces, bouton de réinitialisation) — sans quoi on l'écraserait ici.</param>
+    private void ConnectHoverEffects(Button btn, float targetScale, UiStyle.FrameAccent? focusAccent = UiStyle.FrameAccent.Violet)
     {
         btn.PivotOffset = btn.CustomMinimumSize / 2f;
 
-        var focusStyle = new StyleBoxFlat();
-        focusStyle.BgColor = new Color(0.1f, 0.1f, 0.25f, 0.95f);
-        focusStyle.SetBorderWidthAll(3);
-        focusStyle.BorderColor = new Color(0.667f, 0.267f, 1f, 1f);
-        focusStyle.SetCornerRadiusAll(4);
-        btn.AddThemeStyleboxOverride("focus", focusStyle);
+        if (focusAccent.HasValue)
+            btn.AddThemeStyleboxOverride("focus", UiStyle.ButtonFrame(focusAccent.Value, focus: true));
+        UiStyle.AttachFocusPulse(btn);
 
         btn.MouseEntered += () => OnBtnEntered(btn, targetScale);
         btn.MouseExited  += () => OnBtnExited(btn);

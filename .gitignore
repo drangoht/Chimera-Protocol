@@ -52,3 +52,9 @@ tests/*.uid
 # Artefacts de tests (dotnet test / CI)
 TestResults/
 test-output.txt
+
+# Captures de travail pour comparer l'UI avant/apres (regenerables via
+# tools/capture_ui_set.py). Seule une planche-contact retenue est commitee, au cas par cas.
+docs/ui_before_*.png
+docs/ui_after_*.png
+docs/ui_sheet_*.png

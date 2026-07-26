@@ -9,10 +9,9 @@ using System.Collections.Generic;
 /// </summary>
 public partial class OptionsScreen : Control
 {
-    private static readonly Color Bg     = new(0.06f, 0.06f, 0.11f);
-    private static readonly Color Cyan   = new(0.267f, 1f, 0.933f);
-    private static readonly Color Violet = new(0.667f, 0.267f, 1f);
-    private static readonly Color Text   = new(0.85f, 0.85f, 0.95f);
+    private static readonly Color Bg   = UiPalette.BgDeep;
+    private static readonly Color Cyan = UiPalette.Cyan;
+    private static readonly Color Text = UiPalette.OffWhite;
 
     private ColorRect _fade  = null!;
     private bool      _leaving = false;
@@ -46,9 +45,15 @@ public partial class OptionsScreen : Control
                                           Alignment = BoxContainer.AlignmentMode.Center };
         scroll.AddChild(hcenter);
 
+        // Panneau de fond (ART_BRIEF_UI_FRAMES §3.3) : l'écran n'avait aucun contenant, les
+        // réglages flottaient directement sur le fond. Le panneau leur donne une matière.
+        var panel = new PanelContainer { SizeFlagsVertical = SizeFlags.ShrinkCenter };
+        panel.AddThemeStyleboxOverride("panel", UiStyle.ScreenPanel());
+        hcenter.AddChild(panel);
+
         var vbox = new VBoxContainer { CustomMinimumSize = new Vector2(560, 0) };
         vbox.AddThemeConstantOverride("separation", 18);
-        hcenter.AddChild(vbox);
+        panel.AddChild(vbox);
 
         var title = new Label
         {
@@ -58,7 +63,7 @@ public partial class OptionsScreen : Control
         title.AddThemeFontSizeOverride("font_size", 34);
         title.AddThemeColorOverride("font_color", Cyan);
         vbox.AddChild(title);
-        vbox.AddChild(new HSeparator());
+        vbox.AddChild(UiStyle.ScreenTitleUnderline(UiPalette.Cyan));
 
         var s = GameSettings.Instance;
         AddSlider(vbox, Loc.T("OPTIONS_MASTER"), s?.Master ?? 1f, v => GameSettings.Instance?.SetMaster(v));
@@ -69,12 +74,12 @@ public partial class OptionsScreen : Control
         AddDifficulty(vbox, s?.Difficulty ?? GameSettings.GameDifficulty.Normal);
         AddLanguage(vbox, s?.Language ?? "en");
 
-        vbox.AddChild(new HSeparator());
+        vbox.AddChild(UiStyle.Separator(UiPalette.Cyan));
         AddControls(vbox);
 
-        vbox.AddChild(new HSeparator());
+        vbox.AddChild(UiStyle.Separator(UiPalette.Cyan));
         AddResetButton(vbox);
-        vbox.AddChild(new HSeparator());
+        vbox.AddChild(UiStyle.Separator(UiPalette.Cyan));
 
         var back = new Button { Text = Loc.T("COMMON_BACK"), CustomMinimumSize = new Vector2(200, 48) };
         StyleButton(back);
@@ -134,6 +139,7 @@ public partial class OptionsScreen : Control
         row.AddChild(lbl);
 
         var opt = new OptionButton { CustomMinimumSize = new Vector2(180, 0) };
+        StyleButton(opt);          // sans ça, le seul contrôle de l'écran resté au thème Godot par défaut
         opt.AddItem(Loc.T("DIFF_EASY"));
         opt.AddItem(Loc.T("DIFF_NORMAL"));
         opt.AddItem(Loc.T("DIFF_HARD"));
@@ -154,6 +160,7 @@ public partial class OptionsScreen : Control
         row.AddChild(lbl);
 
         var opt = new OptionButton { CustomMinimumSize = new Vector2(180, 0) };
+        StyleButton(opt);
         foreach (var l in GameSettings.Languages) opt.AddItem(l.ToUpper());
         opt.Selected = System.Math.Max(0, System.Array.IndexOf(GameSettings.Languages, current));
         opt.ItemSelected += idx =>
@@ -212,6 +219,8 @@ public partial class OptionsScreen : Control
         header.AddThemeFontSizeOverride("font_size", 22);
         header.AddThemeColorOverride("font_color", Cyan);
         parent.AddChild(header);
+        // Règle du brief §3.6 : tout titre de section est systématiquement suivi du séparateur.
+        parent.AddChild(UiStyle.Separator(UiPalette.Cyan));
 
         foreach (var (action, labelKey) in MoveRows)
             AddRebindRow(parent, action, labelKey);
@@ -270,13 +279,15 @@ public partial class OptionsScreen : Control
     }
 
     // ── Réinitialisation totale (état initial du jeu, Échos inclus) ───────────
-    private static readonly Color Danger = new(1f, 0.35f, 0.35f);
+    private static readonly Color Danger = UiPalette.Danger;
 
     private void AddResetButton(VBoxContainer parent)
     {
         _resetButton = new Button { Text = Loc.T("OPTIONS_RESET"), CustomMinimumSize = new Vector2(380, 44) };
-        StyleButton(_resetButton);
-        _resetButton.AddThemeColorOverride("font_color", Danger);   // rouge = action destructrice
+        // Accent ambre sourd (§3.0) : l'action destructrice se distingue du reste par le liseré,
+        // pas seulement par la couleur du texte.
+        StyleButton(_resetButton, UiStyle.FrameAccent.Danger);
+        _resetButton.AddThemeColorOverride("font_color", Danger);   // action destructrice
         _resetButton.Pressed += OnResetPressed;
         var wrap = new CenterContainer();
         wrap.AddChild(_resetButton);
@@ -304,16 +315,12 @@ public partial class OptionsScreen : Control
         _resetButton.Disabled = true;
     }
 
-    private void StyleButton(Button btn)
+    /// <summary>Cadre « plaque blindée » du §3.2 + couleur de texte de l'écran. Toute la recette de
+    /// StyleBox vit dans <see cref="UiStyle.ApplyButtonFrames(Button, UiStyle.FrameAccent)"/> —
+    /// ici on ne fait que choisir l'accent de catégorie.</summary>
+    private static void StyleButton(Button btn, UiStyle.FrameAccent accent = UiStyle.FrameAccent.Cyan)
     {
-        var normal = new StyleBoxFlat { BgColor = new Color(0.1f, 0.1f, 0.2f, 0.9f) };
-        normal.SetBorderWidthAll(2); normal.BorderColor = Cyan; normal.SetCornerRadiusAll(6);
-        var hover = new StyleBoxFlat { BgColor = new Color(0.16f, 0.12f, 0.3f, 0.95f) };
-        hover.SetBorderWidthAll(3); hover.BorderColor = Violet; hover.SetCornerRadiusAll(6);
-        btn.AddThemeStyleboxOverride("normal", normal);
-        btn.AddThemeStyleboxOverride("hover", hover);
-        btn.AddThemeStyleboxOverride("pressed", hover);
-        btn.AddThemeStyleboxOverride("focus", hover);
+        UiStyle.ApplyButtonFrames(btn, accent);
         btn.AddThemeColorOverride("font_color", Text);
     }
 

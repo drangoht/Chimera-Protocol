@@ -24,9 +24,8 @@ public abstract partial class CodexScreenBase : Control
     private Button         _backButton = null!;
     private ScrollContainer _scroll = null!;
 
-    private static readonly Color BgColor   = new(0.06f, 0.06f, 0.11f, 1f);
-    private static readonly Color PanelBg   = new(0.10f, 0.10f, 0.18f, 0.92f);
-    private static readonly Color TextColor = new(0.85f, 0.85f, 0.95f, 1f);
+    private static readonly Color BgColor   = UiPalette.BgDeep;
+    private static readonly Color TextColor = UiPalette.OffWhite;
 
     public override void _Ready()
     {
@@ -70,12 +69,8 @@ public abstract partial class CodexScreenBase : Control
         title.AddThemeColorOverride("font_color", TitleAccent);
         root.AddChild(title);
 
-        var sep = new ColorRect
-        {
-            Color = new Color(TitleAccent.R, TitleAccent.G, TitleAccent.B, 0.4f),
-            CustomMinimumSize = new Vector2(0, 2),
-        };
-        root.AddChild(sep);
+        // Soulignement « gravé » du titre d'écran (ART_BRIEF_UI_FRAMES §3.6)
+        root.AddChild(UiStyle.ScreenTitleUnderline(TitleAccent));
 
         // Paragraphe d'introduction (écrans « système » : Chimère…). Absent pour Bestiaire/Arsenal.
         if (IntroText is { Length: > 0 } intro)
@@ -124,20 +119,21 @@ public abstract partial class CodexScreenBase : Control
         AddChild(_fade);
     }
 
-    private static readonly Color LockGrey = new(0.5f, 0.52f, 0.6f);
+    private static readonly Color LockGrey = UiPalette.Dim;
 
     private Control BuildRow(CodexEntry e)
     {
         bool locked = IsEntryLocked(e);
         Color accent = locked ? LockGrey : e.Accent;
 
+        // Rangée = carte du §3.5 (plaque chanfreinée 9-slice, bord soudé en bas). Le liseré porte
+        // l'accent de catégorie de l'entrée — c'est lui qui rend la famille lisible d'un coup d'œil
+        // dans une liste de 28 lignes. Entrée non découverte : plaque d'acier éteinte, aucun accent
+        // à révéler (le nom, le tag et la vignette sont déjà masqués plus bas).
         var panel = new PanelContainer();
-        var style = new StyleBoxFlat { BgColor = PanelBg };
-        style.SetBorderWidthAll(2);
-        style.BorderColor = new Color(accent.R, accent.G, accent.B, 0.6f);
-        style.SetCornerRadiusAll(6);
-        style.SetContentMarginAll(12);
-        panel.AddThemeStyleboxOverride("panel", style);
+        panel.AddThemeStyleboxOverride("panel", locked
+            ? UiStyle.CardFrameDisabled()
+            : UiStyle.CardFrame(accent));
 
         var hbox = new HBoxContainer();
         hbox.AddThemeConstantOverride("separation", 18);
@@ -196,7 +192,9 @@ public abstract partial class CodexScreenBase : Control
     }
 
     // ── Bouton stylé (cohérent avec le menu) ──────────────────────────────────
-    private Button MakeButton(string text)
+    /// <summary>Bouton « plaque blindée » du §3.2 — cadres et pulsation de focus centralisés
+    /// dans <see cref="UiStyle.ApplyButtonFrames(Button, UiStyle.FrameAccent)"/>.</summary>
+    private static Button MakeButton(string text)
     {
         var btn = new Button
         {
@@ -204,21 +202,9 @@ public abstract partial class CodexScreenBase : Control
             CustomMinimumSize = new Vector2(280, 52),
         };
         btn.AddThemeFontSizeOverride("font_size", 22);
-        btn.AddThemeColorOverride("font_color", new Color(0.8f, 0.8f, 1f));
-        btn.AddThemeStyleboxOverride("normal",  MakeBtnStyle(2, new Color(0.267f, 1f, 0.933f, 0.8f), 0.85f));
-        btn.AddThemeStyleboxOverride("hover",   MakeBtnStyle(3, new Color(0.667f, 0.267f, 1f), 0.95f));
-        btn.AddThemeStyleboxOverride("pressed", MakeBtnStyle(3, new Color(0.667f, 0.267f, 1f), 1f));
-        btn.AddThemeStyleboxOverride("focus",   MakeBtnStyle(3, new Color(0.667f, 0.267f, 1f), 0.95f));
+        btn.AddThemeColorOverride("font_color", UiPalette.OffWhite);
+        UiStyle.ApplyButtonFrames(btn);
         return btn;
-    }
-
-    private static StyleBoxFlat MakeBtnStyle(int border, Color borderCol, float bgA)
-    {
-        var s = new StyleBoxFlat { BgColor = new Color(0.08f, 0.08f, 0.16f, bgA) };
-        s.SetBorderWidthAll(border);
-        s.BorderColor = borderCol;
-        s.SetCornerRadiusAll(4);
-        return s;
     }
 
     private void ConnectHover(Button btn)

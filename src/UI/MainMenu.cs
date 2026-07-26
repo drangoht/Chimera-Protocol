@@ -31,9 +31,15 @@ public partial class MainMenu : Control
         _quitButton     = GetNode<Button>("VBox/QuitButton");
         _fadeOverlay    = GetNode<ColorRect>("FadeOverlay");
 
-        // Les boutons Codex/Options sont ajoutés sans styleboxes dans le .tscn — stylés ici.
+        // Les cinq boutons sont stylés ici, plus dans le .tscn : les 9 sub_resources StyleBoxFlat
+        // qui s'y trouvaient (3 par bouton, aux valeurs strictement identiques) sont supprimées,
+        // au profit de la fabrique unique UiStyle. « Quitter » prend l'accent danger — sortir du
+        // jeu est la seule action irréversible du menu.
+        StyleMenuButton(_playButton);
+        StyleMenuButton(_hubButton);
         StyleMenuButton(_codexButton);
         StyleMenuButton(_optionsButton);
+        StyleMenuButton(_quitButton, UiStyle.FrameAccent.Danger);
 
         // --- Signaux boutons ---
         _playButton.Pressed     += OnPlayPressed;
@@ -117,10 +123,9 @@ public partial class MainMenu : Control
             OffsetTop = 12f,
             MouseFilter = MouseFilterEnum.Pass,
         };
-        var style = new StyleBoxFlat { BgColor = new Color(0.05f, 0.05f, 0.12f, 0.95f) };
-        style.SetBorderWidthAll(2);
-        style.BorderColor = new Color(1f, 0.8f, 0.267f); // or #FFCC44
-        style.SetCornerRadiusAll(4);
+        // Plaque or : le bandeau annonce une valeur (nouvelle version disponible), même
+        // sémantique de couleur que les Échos et les coûts.
+        var style = UiStyle.ButtonFrame(UiStyle.FrameAccent.Gold);
         style.SetContentMarginAll(10);
         panel.AddThemeStyleboxOverride("panel", style);
 
@@ -216,10 +221,19 @@ public partial class MainMenu : Control
         for (int i = 0; i < _langButtons.Count && i < GameSettings.Languages.Length; i++)
         {
             bool active = string.Equals(GameSettings.Languages[i], current, System.StringComparison.OrdinalIgnoreCase);
-            var style = new StyleBoxFlat { BgColor = new Color(0.08f, 0.08f, 0.16f, active ? 0.95f : 0.5f) };
+            // Ces boutons font 44×30 px : trop petits pour la plaque 9-slice (32 px de marge
+            // horizontale + 38 px verticale l'écraseraient), et le brief exclut les rivets
+            // en dessous de 64 px (§3.1). On garde donc un cadre plat — mais à angle droit,
+            // comme le reste de la charte, plus aucun arrondi.
+            var style = new StyleBoxFlat
+            {
+                BgColor      = UiPalette.Steel.Alpha(active ? 0.95f : 0.5f),
+                AntiAliasing = false,
+                BorderColor  = active ? UiPalette.Gold : UiPalette.Dim.Alpha(0.7f),
+            };
             style.SetBorderWidthAll(active ? 3 : 1);
-            style.BorderColor = active ? new Color(1f, 0.8f, 0.267f) : new Color(0.5f, 0.5f, 0.6f, 0.7f);
-            style.SetCornerRadiusAll(3); style.SetContentMarginAll(3);
+            style.SetCornerRadiusAll(0);
+            style.SetContentMarginAll(3);
             _langButtons[i].AddThemeStyleboxOverride("normal", style);
         }
     }
@@ -232,12 +246,10 @@ public partial class MainMenu : Control
     {
         btn.PivotOffset = btn.CustomMinimumSize / 2f;
 
-        var focusStyle = new StyleBoxFlat();
-        focusStyle.BgColor = new Color(0.1f, 0.1f, 0.25f, 0.95f);
-        focusStyle.SetBorderWidthAll(3);
-        focusStyle.BorderColor = new Color(0.667f, 0.267f, 1f, 1f);
-        focusStyle.SetCornerRadiusAll(4);
-        btn.AddThemeStyleboxOverride("focus", focusStyle);
+        // Focus : liseré « allumé » + débordement de forme (§3.2). Le 3e signal — la pulsation —
+        // est branché par AttachFocusPulse, pour que le focus ne repose jamais sur la seule teinte.
+        btn.AddThemeStyleboxOverride("focus", UiStyle.ButtonFrame(UiStyle.FrameAccent.Violet, focus: true));
+        UiStyle.AttachFocusPulse(btn);
 
         btn.MouseEntered += () => OnButtonMouseEntered(btn);
         btn.MouseExited  += () => OnButtonMouseExited(btn);
@@ -325,21 +337,16 @@ public partial class MainMenu : Control
         TransitionTo("res://scenes/ui/OptionsScreen.tscn");
     }
 
-    /// <summary>Applique les 3 styleboxes (normal/hover/pressed) cohérentes avec les autres boutons.</summary>
-    private static void StyleMenuButton(Button btn)
+    /// <summary>
+    /// Applique le cadre « plaque blindée » (ART_BRIEF_UI_FRAMES §3.2) à un bouton de menu :
+    /// même texture 9-slice pour les trois états, seule la modulation change.
+    /// </summary>
+    private static void StyleMenuButton(Button btn, UiStyle.FrameAccent accent = UiStyle.FrameAccent.Cyan)
     {
-        btn.AddThemeStyleboxOverride("normal",  BtnStyle(2, new Color(0.267f, 1f, 0.933f, 0.8f), 0.85f));
-        btn.AddThemeStyleboxOverride("hover",   BtnStyle(3, new Color(0.667f, 0.267f, 1f), 0.95f));
-        btn.AddThemeStyleboxOverride("pressed", BtnStyle(3, new Color(0.667f, 0.267f, 1f), 1f));
-    }
-
-    private static StyleBoxFlat BtnStyle(int border, Color borderCol, float bgA)
-    {
-        var s = new StyleBoxFlat { BgColor = new Color(0.05f, 0.05f, 0.12f, bgA) };
-        s.SetBorderWidthAll(border);
-        s.BorderColor = borderCol;
-        s.SetCornerRadiusAll(4);
-        return s;
+        btn.AddThemeStyleboxOverride("normal",   UiStyle.ButtonFrame(accent));
+        btn.AddThemeStyleboxOverride("hover",    UiStyle.ButtonFrame(accent, UiStyle.FrameState.Hover));
+        btn.AddThemeStyleboxOverride("pressed",  UiStyle.ButtonFrame(accent, UiStyle.FrameState.Pressed));
+        btn.AddThemeStyleboxOverride("disabled", UiStyle.ButtonFrameDisabled());
     }
 
     private void OnQuitPressed()

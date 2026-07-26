@@ -9,8 +9,8 @@ using System.Collections.Generic;
 /// </summary>
 public partial class CodexMenuScreen : Control
 {
-    private static readonly Color Accent = new(0.267f, 1f, 0.933f);   // cyan
-    private static readonly Color BgColor = new(0.06f, 0.06f, 0.11f, 1f);
+    private static readonly Color Accent  = UiPalette.Cyan;
+    private static readonly Color BgColor = UiPalette.BgDeep;
 
     private ColorRect _fade = null!;
     private readonly List<Button> _buttons = new();
@@ -86,23 +86,13 @@ public partial class CodexMenuScreen : Control
     {
         var btn = new Button { Text = text, CustomMinimumSize = new Vector2(280, 52) };
         btn.AddThemeFontSizeOverride("font_size", 20);
-        btn.AddThemeColorOverride("font_color", new Color(0.8f, 0.8f, 1f));
-        btn.AddThemeStyleboxOverride("normal",  BtnStyle(2, new Color(0.267f, 1f, 0.933f, 0.8f), 0.85f));
-        btn.AddThemeStyleboxOverride("hover",   BtnStyle(3, new Color(0.667f, 0.267f, 1f), 0.95f));
-        btn.AddThemeStyleboxOverride("pressed", BtnStyle(3, new Color(0.667f, 0.267f, 1f), 1f));
-        btn.AddThemeStyleboxOverride("focus",   BtnStyle(3, new Color(0.667f, 0.267f, 1f), 0.95f));
+        btn.AddThemeColorOverride("font_color", UiPalette.OffWhite);
+        UiStyle.ApplyButtonFrames(btn);   // §3.2 — cadres + pulsation de focus (fabrique unique)
         btn.MouseEntered += () => { AudioSystem.Instance?.PlaySfx("sfx_ui_button"); Hover(btn, true); };
         btn.FocusEntered += () => Hover(btn, true);
         btn.MouseExited  += () => Hover(btn, false);
         btn.FocusExited  += () => Hover(btn, false);
         return btn;
-    }
-
-    private static StyleBoxFlat BtnStyle(int border, Color borderCol, float bgA)
-    {
-        var s = new StyleBoxFlat { BgColor = new Color(0.08f, 0.08f, 0.16f, bgA) };
-        s.SetBorderWidthAll(border); s.BorderColor = borderCol; s.SetCornerRadiusAll(4);
-        return s;
     }
 
     private void Hover(Button btn, bool on)

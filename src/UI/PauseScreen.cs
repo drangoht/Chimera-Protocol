@@ -8,13 +8,8 @@ using Godot;
 public partial class PauseScreen : CanvasLayer
 {
     // ── Palette ───────────────────────────────────────────────────────────────
-    private static readonly Color _bgPanel    = new(0.102f, 0.102f, 0.18f,  1f);
-    private static readonly Color _cyan       = new(0.267f, 1f,    0.933f,  1f);
-    private static readonly Color _violet     = new(0.667f, 0.267f, 1f,    1f);
-    private static readonly Color _gold       = new(1f,     0.8f,  0.267f,  1f);
-    private static readonly Color _offWhite   = new(0.85f,  0.85f, 0.95f,   1f);
-    private static readonly Color _grey       = new(0.55f,  0.55f, 0.65f,   1f);
-    private static readonly Color _green      = new(0.3f,   1f,    0.5f,    1f);
+    // Aucune couleur locale : cet écran reprenait à l'identique 7 teintes de la charte
+    // (avec des arrondis divergents). Tout passe désormais par UiPalette.
 
     // ── Noms affichés ─────────────────────────────────────────────────────────
     private static readonly System.Collections.Generic.Dictionary<string, string> WeaponNames = new()
@@ -61,9 +56,9 @@ public partial class PauseScreen : CanvasLayer
         var panel = new PanelContainer();
         panel.CustomMinimumSize = new Vector2(920f, 0f);
         var panelStyle = new StyleBoxFlat();
-        panelStyle.BgColor = _bgPanel;
+        panelStyle.BgColor = UiPalette.Bg;
         panelStyle.SetBorderWidthAll(2);
-        panelStyle.BorderColor = _violet;
+        panelStyle.BorderColor = UiPalette.Violet;
         panelStyle.SetCornerRadiusAll(6);
         panel.AddThemeStyleboxOverride("panel", panelStyle);
         center.AddChild(panel);
@@ -80,8 +75,8 @@ public partial class PauseScreen : CanvasLayer
         margin.AddChild(root);
 
         // Titre
-        root.AddChild(Lbl("⏸  " + Loc.T("PAUSE_TITLE"), 26, _cyan, center: true));
-        root.AddChild(Sep(_violet));
+        root.AddChild(Lbl("⏸  " + Loc.T("PAUSE_TITLE"), 26, UiPalette.Cyan, center: true));
+        root.AddChild(Sep(UiPalette.Violet));
 
         // Corps 2 colonnes
         var cols = new HBoxContainer();
@@ -90,7 +85,7 @@ public partial class PauseScreen : CanvasLayer
 
         var left  = NewCol(cols);
         var vsep  = new VSeparator();
-        vsep.AddThemeColorOverride("color", _violet);
+        vsep.AddThemeColorOverride("color", UiPalette.Violet);
         cols.AddChild(vsep);
         var right = NewCol(cols);
 
@@ -100,7 +95,7 @@ public partial class PauseScreen : CanvasLayer
         BuildGraftsSection(right);
 
         // Boutons : reprendre + quitter la partie
-        root.AddChild(Sep(_violet));
+        root.AddChild(Sep(UiPalette.Violet));
         var btn = MakeButton("▶  " + Loc.T("PAUSE_RESUME"));
         btn.Pressed += Close;
         root.AddChild(btn);
@@ -162,11 +157,11 @@ public partial class PauseScreen : CanvasLayer
         StatRow(grid, Loc.T("PAUSE_HP"),         $"{(int)s.CurrentHp} / {(int)s.MaxHp}", hpColor);
         StatRow(grid, Loc.T("PAUSE_SPEED"),      $"{(int)s.Speed} px/s");
         StatRow(grid, Loc.T("PAUSE_DMG_MULT"),   $"×{s.DamageMultiplier:F2}",
-                      s.DamageMultiplier > 1f ? _gold : _offWhite);
+                      s.DamageMultiplier > 1f ? UiPalette.Gold : UiPalette.OffWhite);
         StatRow(grid, Loc.T("PAUSE_DMG_REDUC"),  $"{(int)(s.DamageReduction * 100)} %",
-                      s.DamageReduction > 0f ? _green : _offWhite);
+                      s.DamageReduction > 0f ? UiPalette.Success : UiPalette.OffWhite);
         StatRow(grid, Loc.T("PAUSE_CD_REDUC"),   $"{(int)(s.CooldownReduction * 100)} %",
-                      s.CooldownReduction > 0f ? _gold : _offWhite);
+                      s.CooldownReduction > 0f ? UiPalette.Gold : UiPalette.OffWhite);
     }
 
     // ── Section INVENTAIRE ────────────────────────────────────────────────────
@@ -182,7 +177,7 @@ public partial class PauseScreen : CanvasLayer
 
         if (inv.WeaponLevels.Count == 0)
         {
-            col.AddChild(Lbl(Loc.T("PAUSE_NONE"), 13, _grey));
+            col.AddChild(Lbl(Loc.T("PAUSE_NONE"), 13, UiPalette.Dim));
         }
         else
         {
@@ -197,15 +192,15 @@ public partial class PauseScreen : CanvasLayer
                 var nameRow = new HBoxContainer();
                 nameRow.AddThemeConstantOverride("separation", 8);
                 col.AddChild(nameRow);
-                nameRow.AddChild(Lbl(prefix + name, 15, isFusion ? _violet : _gold));
-                nameRow.AddChild(Lbl($"Niv. {lvl}/{maxLvl}", 13, _grey));
+                nameRow.AddChild(Lbl(prefix + name, 15, isFusion ? UiPalette.Violet : UiPalette.Gold));
+                nameRow.AddChild(Lbl($"Niv. {lvl}/{maxLvl}", 13, UiPalette.Dim));
 
                 // Stats spécifiques selon le type d'arme
                 WeaponBase? wb = FindWeaponNode(id, player);
                 if (wb != null)
                 {
                     var details = WeaponDetails(wb);
-                    col.AddChild(Lbl("    " + details, 12, _offWhite));
+                    col.AddChild(Lbl("    " + details, 12, UiPalette.OffWhite));
                 }
             }
         }
@@ -220,7 +215,7 @@ public partial class PauseScreen : CanvasLayer
             {
                 int maxLvl = inv.GetPassiveMaxLevel(id);
                 string pname = PassiveNames.GetValueOrDefault(id, id);
-                StatRow(grid, pname, $"Niv. {lvl}/{maxLvl}", _gold);
+                StatRow(grid, pname, $"Niv. {lvl}/{maxLvl}", UiPalette.Gold);
             }
         }
     }
@@ -239,11 +234,11 @@ public partial class PauseScreen : CanvasLayer
         header.AddThemeConstantOverride("separation", 8);
         col.AddChild(header);
         header.AddChild(SectionLbl(Loc.T("PAUSE_GRAFTS")));
-        header.AddChild(Lbl($"{sys.EquippedGrafts.Count}/{sys.SlotCount}", 13, _grey));
+        header.AddChild(Lbl($"{sys.EquippedGrafts.Count}/{sys.SlotCount}", 13, UiPalette.Dim));
 
         if (sys.EquippedGrafts.Count == 0)
         {
-            col.AddChild(Lbl(Loc.T("PAUSE_NONE"), 13, _grey));
+            col.AddChild(Lbl(Loc.T("PAUSE_NONE"), 13, UiPalette.Dim));
             return;
         }
 
@@ -261,9 +256,9 @@ public partial class PauseScreen : CanvasLayer
             nameRow.AddThemeConstantOverride("separation", 8);
             col.AddChild(nameRow);
             nameRow.AddChild(Lbl("◆ " + name, 15, color));
-            nameRow.AddChild(Lbl(GraftRarityLabel(def.Rarity), 12, _grey));
+            nameRow.AddChild(Lbl(GraftRarityLabel(def.Rarity), 12, UiPalette.Dim));
 
-            var descLbl = Lbl("    " + desc, 12, _offWhite);
+            var descLbl = Lbl("    " + desc, 12, UiPalette.OffWhite);
             descLbl.AutowrapMode = TextServer.AutowrapMode.WordSmart;
             descLbl.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
             descLbl.CustomMinimumSize = new Vector2(420f, 0f);
@@ -273,9 +268,9 @@ public partial class PauseScreen : CanvasLayer
 
     private static Color GraftRarityColor(string rarity) => rarity switch
     {
-        "rare" => _cyan,
-        "epic" => _violet,
-        _      => _offWhite,
+        "rare" => UiPalette.Cyan,
+        "epic" => UiPalette.Violet,
+        _      => UiPalette.OffWhite,
     };
 
     private static string GraftRarityLabel(string rarity) => rarity switch
@@ -390,7 +385,7 @@ public partial class PauseScreen : CanvasLayer
     {
         var l = new Label { Text = text };
         l.AddThemeFontSizeOverride("font_size", 15);
-        l.AddThemeColorOverride("font_color", _violet);
+        l.AddThemeColorOverride("font_color", UiPalette.Violet);
         return l;
     }
 
@@ -425,13 +420,13 @@ public partial class PauseScreen : CanvasLayer
     {
         var k = new Label { Text = key };
         k.AddThemeFontSizeOverride("font_size", 13);
-        k.AddThemeColorOverride("font_color", _grey);
+        k.AddThemeColorOverride("font_color", UiPalette.Dim);
         k.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
         grid.AddChild(k);
 
         var v = new Label { Text = value };
         v.AddThemeFontSizeOverride("font_size", 13);
-        v.AddThemeColorOverride("font_color", color ?? _offWhite);
+        v.AddThemeColorOverride("font_color", color ?? UiPalette.OffWhite);
         v.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
         grid.AddChild(v);
     }
@@ -446,13 +441,13 @@ public partial class PauseScreen : CanvasLayer
         var normal = new StyleBoxFlat();
         normal.BgColor = new Color(0.08f, 0.06f, 0.2f);
         normal.SetBorderWidthAll(2);
-        normal.BorderColor = _cyan;
+        normal.BorderColor = UiPalette.Cyan;
         normal.SetCornerRadiusAll(4);
 
         var hover = new StyleBoxFlat();
         hover.BgColor = new Color(0.12f, 0.08f, 0.25f);
         hover.SetBorderWidthAll(3);
-        hover.BorderColor = _violet;
+        hover.BorderColor = UiPalette.Violet;
         hover.SetCornerRadiusAll(4);
 
         btn.AddThemeStyleboxOverride("normal",  normal);
