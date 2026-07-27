@@ -7,12 +7,21 @@
 de `docs/AUDIO_AI_PROMPTS.md`, puis traitees par `tools/import_ai_music.py` (bouclage, calage de
 loudness EBU R128, encodage OGG). Direction : metal industriel / synth-metal.
 
-> **LICENCE — A VERIFIER AVANT TOUTE PUBLICATION.** Les droits commerciaux sur les morceaux Suno
-> dependent du **plan d'abonnement actif au moment de la generation** : le plan gratuit est
-> reserve a un usage non commercial, les plans payants accordent des droits commerciaux.
-> Chimera Protocol etant distribue sur itch.io, **relire les CGU Suno et consigner ici le plan
-> utilise, avec la date**, avant la premiere release integrant ces pistes.
-> Plan utilise : *a renseigner*. CGU relues le : *a renseigner*.
+> **LICENCE — PLAN SUNO GRATUIT (usage non commercial).**
+> Plan utilise : **gratuit**. Consigne le : **2026-07-27** (release 1.17.0).
+>
+> Les droits commerciaux sur les morceaux Suno dependent du **plan d'abonnement actif au moment de
+> la generation** : les plans payants les accordent, le plan gratuit **reserve les pistes a un usage
+> non commercial**. Ces 14 pistes ont ete generees sous plan gratuit.
+>
+> Chimera Protocol est distribue **gratuitement** sur itch.io (aucun prix, aucun paiement optionnel
+> requis, pas de publicite) — la 1.17.0 est publiee sur cette base. **Consequences a retenir :**
+> - **Ne pas monetiser le jeu** (prix, dons contre le jeu, cle Steam payante, bundle payant) sans
+>   avoir d'abord regenere ces pistes sous un plan payant ou bascule sur la bande-son de secours.
+> - **Monetisation video** (trailer YouTube monetise, partenariats) : meme reserve.
+> - **Filet de securite** : `python tools/generate_music_v3.py` regenere une bande-son complete
+>   synthetisee par le depot, propriete du projet, sans aucune contrainte de licence. C'est la
+>   sortie de secours si le statut commercial change.
 
 Les 3 stingers (`death`, `victory`, `levelup`) restent **synthetises par le depot**
 (`tools/generate_music_v3.py`) — propriete du projet, aucune contrainte de licence.
@@ -198,8 +207,9 @@ les URLs Kenney documentees ci-dessus).
 **Statut actuel : 14 musiques generees sur Suno + 3 stingers synthetises + 24 SFX Kenney CC0.**
 
 ### Points ouverts
-- **Licence Suno (bloquant pour la publication)** : renseigner le plan d'abonnement et la date de
-  relecture des CGU dans l'encadre en tete de ce document, avant la premiere release.
+- **Licence Suno — plan gratuit, jeu gratuit** (cf. encadre en tete) : statut acte pour la 1.17.0.
+  Reste ouvert **si le jeu devient payant** : regenerer les pistes sous plan Suno payant, ou
+  revenir a la bande-son synthetisee par le depot.
 - **Longueur des boucles** : quatre pistes bouclent sous 45 s (`givre_calm` 29.6 s,
   `fournaise_combat` 27.4 s, `sanctuaire_calm` et `aether_calm` 40.3 s) parce que les morceaux
   generes evoluent trop pour offrir un raccord propre plus tard. A retravailler soit en relancant

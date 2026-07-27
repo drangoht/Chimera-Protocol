@@ -8,7 +8,7 @@ Dans un monde ravagé par **la Rouille Vivante** (corruption mi-organique, mi-m�
 
 ## État du projet
 
-**Bande-son metal & musique adaptative** *(2026-07-27, non publiée)* — la bande-son chiptune est
+**Bande-son metal & musique adaptative** *(2026-07-27, v1.17.0)* — la bande-son chiptune est
 entièrement remplacée par du **metal industriel** : guitares down-tuned, batterie qui cogne, basse
 saturée, avec des synthés analogiques et des **chœurs sans paroles** par-dessus. Chaque biome a sa
 tonalité, son tempo et son riff — du groove glacial du Givre (130 BPM) au thrash de la Fournaise

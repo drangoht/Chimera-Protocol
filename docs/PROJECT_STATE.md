@@ -5,7 +5,7 @@
 > `CLAUDE.md` ; le design complet dans `docs/GDD.md` ; la carte du code dans `/carte-projet`.
 
 - Pile technique : **Godot 4.7 .NET (C# / .NET 8 / GodotSharp)**
-- **Bande-son metal industriel & musique adaptative (2026-07-27, NON PUBLIÉE).** Le jeu tournait
+- **Bande-son metal industriel & musique adaptative (PUBLIÉE 1.17.0, 2026-07-27).** Le jeu tournait
   sur des placeholders chiptune CC0 (Juhani Junkala) enchaînés par bascules de piste à 5 et 10 min
   de run. Une première refonte l'a remplacé par 26 pistes synthétisées par le dépôt (ambiance
   Blade Runner / Vangelis, 4 stems synchronisés par biome) — **écoutée puis écartée le même jour :
@@ -14,8 +14,10 @@
   (guitares down-tuned + batterie live au premier plan, synthés et chœurs sans paroles au service
   du riff — Mick Gordon, Carpenter Brut). Tempos 112 à 176 BPM. Prompts par piste :
   `docs/AUDIO_AI_PROMPTS.md`. Les 3 stingers (mort/victoire/level-up) restent synthétisés par le
-  dépôt. **Licence Suno à confirmer avant publication** (plan d'abonnement) —
-  `assets/audio/CREDITS.md`.
+  dépôt. **Licence Suno : pistes générées sous plan gratuit = usage non commercial.** Le jeu étant
+  distribué gratuitement sur itch.io, la 1.17.0 sort sur cette base ; **monétiser le jeu (ou une
+  vidéo) imposerait de regénérer les pistes sous plan payant** ou de revenir à la bande-son
+  synthétisée par le dépôt — `assets/audio/CREDITS.md`.
   **Pipeline d'intégration** : `tools/import_ai_music.py` prend les MP3 déposés dans `music_ai/`
   et fait ce qu'aucun générateur ne fait — détection du meilleur point de boucle par corrélation
   FFT (en écartant les baisses d'énergie, pour ne jamais boucler sur une outro), fondu de raccord,

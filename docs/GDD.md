@@ -1940,5 +1940,7 @@ musique reteintée :
 Les 14 pistes sont **générées sur Suno** à partir des prompts de `docs/AUDIO_AI_PROMPTS.md` (source
 de vérité de la direction sonore), puis intégrées par `tools/import_ai_music.py` — qui fabrique le
 point de boucle, harmonise le loudness et encode en OGG. Les 3 stingers restent synthétisés par le
-dépôt. **La licence Suno doit être confirmée avant publication** (`assets/audio/CREDITS.md`).
+dépôt. **Licence Suno : plan gratuit — usage non commercial**, acté à la 1.17.0 pour un jeu
+distribué gratuitement ; toute monétisation imposerait de regénérer sous plan payant ou de revenir à
+la bande-son synthétisée par le dépôt (`assets/audio/CREDITS.md`).
 Câblage et pièges techniques : `docs/PITFALLS.md`.

@@ -14,10 +14,11 @@ cyborgs, robots), inspiré de Vampire Survivors et Everything is Crab.
 - **État d'implémentation détaillé & version courante → `docs/PROJECT_STATE.md`** (évolutif). Résumé de phase ci-dessous.
 
 **Phase actuelle : libre.** Dernière livraison majeure : **bande-son metal industriel & musique
-adaptative** (2026-07-27, non publiée). Les 14 musiques sont **générées sur Suno** à partir des
+adaptative**, publiée **1.17.0** le 2026-07-27. Les 14 musiques sont **générées sur Suno** à partir des
 prompts de `docs/AUDIO_AI_PROMPTS.md` (source de vérité de la direction sonore) — metal industriel
 / synth-metal : guitares down-tuned et batterie live au premier plan, synthés et chœurs sans
-paroles au service du riff, 112 à 176 BPM. **Licence Suno à confirmer avant publication**
+paroles au service du riff, 112 à 176 BPM. **Licence Suno : plan gratuit = usage non commercial**,
+acté pour un jeu distribué gratuitement — monétiser imposerait de regénérer sous plan payant
 (`assets/audio/CREDITS.md`). Intégration : déposer les fichiers dans `music_ai/` puis
 `python tools/import_ai_music.py` (bouclage, loudness, encodage). Pendant une run,
 `MusicDirector` alterne **deux versions du même morceau par biome** (`calm` couplet / `combat`
@@ -68,7 +69,8 @@ l'agent compétent (ordre de lancement : `GUIDE-CLAUDE-CODE.md`).
   dans `music_ai/`, puis `python tools/import_ai_music.py [--only <id>] [--keep-preview]` et
   `godot --headless --import`. Contrôle : `tools/check_music_assets.gd`. Bande-son de secours
   synthétisée (sans contrainte de licence) : `tools/generate_music_v3.py`, `docs/ART_BRIEF_AUDIO.md`.
-  SFX = WAV Kenney CC0. Crédits et **licence Suno à confirmer** : `assets/audio/CREDITS.md`.
+  SFX = WAV Kenney CC0. Crédits et **licence Suno (plan gratuit, non commercial)** :
+  `assets/audio/CREDITS.md`.
 - Localisation EN/FR/ES : `localization/ui.csv` → `Loc.T("CLÉ")`.
 - Performance cible : 200–300 entités simultanées ; I-frames joueur 0.45 s (CRITIQUE pour les nuées).
 - Palette UI : fond `#1A1A2E`, cyan `#44FFEE`, violet `#AA44FF`, or `#FFCC44`, blanc cassé `#D9D9F2`. Police : Share Tech Mono (AA on, `ui_theme.tres`, size 16) ; VT323 en réserve (AA off).

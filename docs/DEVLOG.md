@@ -4,6 +4,64 @@
 > `release-manager`). Entrées en ordre décroissant (la plus récente en haut). Ton orienté
 > joueur, EN puis FR (audience itch surtout anglophone).
 
+## v1.17.0 — Industrial metal soundtrack & adaptive music (2026-07-27)
+
+**New — a full metal soundtrack**
+- **14 brand-new tracks** replace the old ambient score: down-tuned guitars and live drums up front,
+  analog synths and wordless choirs serving the riff, 112 to 176 BPM. Main theme, the Enclave, intro
+  cinematic, one track per biome and a boss theme.
+- **Every biome has its own identity**: Sanctuary in C minor at 140, Aether in Phrygian dominant at
+  152, Frost as a half-time groove at 130, Furnace at a punishing 176, Neon in Mixolydian at 160.
+
+**New — the music reacts to your run**
+- Each biome ships **two versions of the same track** — a restrained *verse* and a wide-open
+  *chorus*. The game reads what is happening on screen (enemy density, time survived, how close to
+  death you are) and **crossfades** between them. No cuts, no loops restarting: the track opens up
+  when a swarm closes in and settles back down once you break through.
+- **Bosses get their own theme**, common to all biomes, fading in as the fight starts.
+- Intensity rises fast and falls back slowly on purpose: a wave dying in two seconds won't drop the
+  music straight away, so it never pumps between waves.
+
+**Fix — you can hear your weapons again**
+- **Separate SFX and Music buses**, with the music **ducking under the sound effects** (sidechain
+  compressor). Gunfire, XP pickups and UI clicks now cut through a wall of guitars instead of being
+  masked by it — without turning the soundtrack into background noise.
+- Music level rebalanced across the whole game, and three sound effects that sat too low were
+  brought back up.
+
+*Soundtrack generated with [Suno](https://suno.com) and processed in-repo (looping, loudness,
+encoding). Sound effects: Kenney CC0.*
+
+---
+
+**Nouveau — une vraie bande-son metal**
+- **14 morceaux inédits** remplacent l'ancienne partition d'ambiance : guitares down-tuned et
+  batterie live au premier plan, synthés analogiques et chœurs sans paroles au service du riff, de
+  112 à 176 BPM. Thème principal, l'Enclave, cinématique d'intro, un morceau par biome et un thème
+  de boss.
+- **Chaque biome a son identité** : Sanctuaire en do mineur à 140, Aether en phrygien dominant à
+  152, Givre en groove half-time à 130, Fournaise à 176 sans répit, Néon en mixolydien à 160.
+
+**Nouveau — la musique réagit à votre partie**
+- Chaque biome embarque **deux versions du même morceau** — un *couplet* en retenue et un *refrain*
+  tout ouvert. Le jeu lit ce qui se passe à l'écran (densité d'ennemis, temps de survie, proximité
+  de la mort) et **fond l'un dans l'autre**. Aucune coupure, aucune boucle qui repart : le morceau
+  s'ouvre quand la nuée se referme sur vous, et redescend une fois la percée faite.
+- **Les boss ont leur propre thème**, commun à tous les biomes, qui monte à l'engagement du combat.
+- L'intensité monte vite et redescend lentement, volontairement : une vague qui meurt en deux
+  secondes ne fait pas retomber la musique aussitôt, donc elle ne pompe jamais entre deux vagues.
+
+**Correctif — on entend de nouveau ses armes**
+- **Bus SFX et Musique séparés**, la musique **s'efface sous les effets** (compresseur en
+  sidechain). Tirs, ramassages d'XP et clics d'interface percent désormais le mur de guitares au
+  lieu d'être masqués par lui — sans reléguer la bande-son au rang de bruit de fond.
+- Niveau musical rééquilibré sur tout le jeu, et trois effets sonores trop en retrait remontés.
+
+*Bande-son générée avec [Suno](https://suno.com) puis traitée par le dépôt (bouclage, loudness,
+encodage). Effets sonores : Kenney CC0.*
+
+---
+
 ## v1.16.0 — Armored-plate UI, everywhere (2026-07-26)
 
 **New — the armored-plate frame treatment, extended**
