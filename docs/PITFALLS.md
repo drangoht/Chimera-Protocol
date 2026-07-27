@@ -164,6 +164,17 @@ Tout nouveau chemin de sortie de run doit l'appeler aussi.
 - **À qualité de raccord égale, prendre la boucle la plus longue** (`--loop-tolerance`) : le
   meilleur score absolu tombe souvent sur le premier retour du riff et jetterait les deux tiers du
   morceau. Le joueur entend la répétition bien avant d'entendre une couture.
+- **Trois bus audio, pas un seul** (`default_bus_layout.tres`) : `Master`, `SFX`, `Music`. Le bus
+  `Music` porte un **compresseur en sidechain sur `SFX`** — dès qu'un effet joue, la musique
+  s'efface de quelques dB et remonte en 200 ms. Sans ce ducking, un tir de 0,2 s reste inaudible
+  sous un mur de guitares **même à niveau égal** : c'est du masquage spectral, pas un problème de
+  volume, et le baisser davantage ne ferait que rendre la musique timide à son tour.
+  **L'ordre des bus compte** : celui utilisé comme sidechain (`SFX`, index 1) doit être déclaré
+  AVANT celui qui l'écoute (`Music`, index 2). Vérification runtime : script headless sur
+  `AudioServer.get_bus_effect(i, j).sidechain` — une référence non résolue ne lève aucune erreur,
+  le son part simplement sans ducking.
+- **Un `Bus` inconnu sur un `AudioStreamPlayer` ne fait pas échouer le jeu** : Godot retombe
+  silencieusement sur Master. Après tout renommage de bus, revérifier au runtime.
 - **La musique de jeu se cale BEAUCOUP plus bas que la musique d'écoute.** Les pistes sont du
   metal très compressé : leur RMS reste haut en permanence, alors que les SFX sont des transitoires
   courts (ramassage d'XP ≈ -30 dB RMS). À -16 LUFS — le niveau habituel d'une musique de jeu — la

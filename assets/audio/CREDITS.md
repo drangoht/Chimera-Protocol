@@ -23,9 +23,17 @@ bande-son reste **regenerable a l'identique** par `python tools/generate_music_v
 filet de securite sans contrainte de licence. Elle-meme avait remplace des placeholders chiptune
 CC0 (Juhani Junkala) et une intro CC0 (SRG774).
 
-**SFX (24 fichiers) : ASSETS KENNEY CC0 — integres le 2026-06-22** (inchanges)
+**SFX (24 fichiers) : ASSETS KENNEY CC0 — integres le 2026-06-22**
 Convertis depuis les packs Kenney.nl (OGG -> WAV 44100 Hz 16-bit mono via ffmpeg 8.1.1).
 Licence : CC0 / Domaine public — utilisation commerciale libre, aucune attribution obligatoire.
+Retouche du 2026-07-27 : trois SFX dont la crete etait en retrait ont ete remontes a -1 dBFS
+(`sfx_weapon_impulse_shoot` +4.7 dB, `sfx_xp_collect` +2.0, `sfx_ui_button` +1.9) — simple gain,
+aucune compression. Regenerables via `tools/integrate_kenney_audio.py`.
+
+**MIXAGE : trois bus audio** (`default_bus_layout.tres`) — `Master`, `SFX`, `Music`. Le bus
+`Music` porte un compresseur en **sidechain sur `SFX`** (seuil -16 dB, ratio 4, release 200 ms) :
+la musique s'efface d'elle-meme sous les effets. C'est ce qui rend les tirs audibles sans avoir a
+ecraser la bande-son — a niveau egal, un transitoire de 0,2 s reste masque par un mur de guitares.
 
 ---
 

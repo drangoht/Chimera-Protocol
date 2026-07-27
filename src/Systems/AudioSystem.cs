@@ -24,6 +24,12 @@ public partial class AudioSystem : Node
     private const string SfxBasePath   = "res://assets/audio/sfx/";
     private const int    SfxPoolSize   = 8;
 
+    // Bus declares dans default_bus_layout.tres. Le bus Music porte un compresseur
+    // en sidechain sur le bus SFX : la musique s'efface d'elle-meme sous les effets,
+    // ce qui evite d'avoir a l'ecraser en permanence pour que les tirs s'entendent.
+    public const string  MusicBus      = "Music";
+    public const string  SfxBus        = "SFX";
+
     // -------------------------------------------------------------------------
     // Nœuds audio
     // -------------------------------------------------------------------------
@@ -87,7 +93,7 @@ public partial class AudioSystem : Node
         // Canal musique principal
         _musicPlayer           = new AudioStreamPlayer();
         _musicPlayer.Name      = "MusicPlayer";
-        _musicPlayer.Bus       = "Master";
+        _musicPlayer.Bus       = MusicBus;
         _musicPlayer.VolumeDb  = LinearToDb(_musicVolume);
         AddChild(_musicPlayer);
         // Les WAV importes ont loop_mode=0 (Godot 4.7 reinitialise loop_end=-1) : la piste
@@ -98,7 +104,7 @@ public partial class AudioSystem : Node
         // Canal musique pour le fondu sortant
         _musicFadeOut          = new AudioStreamPlayer();
         _musicFadeOut.Name     = "MusicFadeOut";
-        _musicFadeOut.Bus      = "Master";
+        _musicFadeOut.Bus      = MusicBus;
         _musicFadeOut.VolumeDb = LinearToDb(_musicVolume);
         AddChild(_musicFadeOut);
 
@@ -107,7 +113,7 @@ public partial class AudioSystem : Node
         {
             var player      = new AudioStreamPlayer();
             player.Name     = $"SfxPool_{i}";
-            player.Bus      = "Master";
+            player.Bus      = SfxBus;
             _sfxPool[i]     = player;
             AddChild(player);
         }

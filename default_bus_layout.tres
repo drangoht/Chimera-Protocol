@@ -1,0 +1,43 @@
+; Routage audio du jeu — Master / SFX / Music.
+;
+; La musique est du metal très compressé : son RMS reste haut en permanence et
+; occupe le même médium que les SFX, qui sont des transitoires de 0,1 à 0,7 s.
+; Baisser la musique ne suffit pas — à niveau égal, un tir de 0,2 s reste masqué
+; par un mur de guitares. Le bus Music porte donc un compresseur en **sidechain**
+; sur le bus SFX : dès qu'un effet joue, la musique s'efface de quelques dB et
+; remonte en 200 ms. C'est ce qui rend les tirs audibles sans rendre la musique
+; timide.
+;
+; L'ordre des bus compte : le bus utilisé comme sidechain doit être déclaré AVANT
+; celui qui l'écoute, sinon la référence n'est pas résolue au chargement.
+
+[gd_resource type="AudioBusLayout" load_steps=2 format=3]
+
+[sub_resource type="AudioEffectCompressor" id="AudioEffectCompressor_duck"]
+threshold = -16.0
+ratio = 4.0
+attack_us = 20.0
+release_ms = 200.0
+sidechain = &"SFX"
+
+[resource]
+bus/0/name = &"Master"
+bus/0/solo = false
+bus/0/mute = false
+bus/0/bypass_fx = false
+bus/0/volume_db = 0.0
+bus/0/send = &""
+bus/1/name = &"SFX"
+bus/1/solo = false
+bus/1/mute = false
+bus/1/bypass_fx = false
+bus/1/volume_db = 0.0
+bus/1/send = &"Master"
+bus/2/name = &"Music"
+bus/2/solo = false
+bus/2/mute = false
+bus/2/bypass_fx = false
+bus/2/volume_db = 0.0
+bus/2/send = &"Master"
+bus/2/effect/0/effect = SubResource("AudioEffectCompressor_duck")
+bus/2/effect/0/enabled = true

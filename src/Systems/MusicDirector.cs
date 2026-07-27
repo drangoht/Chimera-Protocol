@@ -86,7 +86,7 @@ public partial class MusicDirector : Node
             var p = new AudioStreamPlayer
             {
                 Name = $"Layer_{layer}",
-                Bus = "Master",
+                Bus = AudioSystem.MusicBus,
                 VolumeDb = MusicIntensity.Silence,
             };
             AddChild(p);
