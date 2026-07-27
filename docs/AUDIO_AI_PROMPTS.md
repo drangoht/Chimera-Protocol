@@ -193,13 +193,13 @@ Minimum 95 seconds. Fully instrumental, no vocals, no lyrics.
 > Ruines d'un centre technologique à échelle humaine. **C'est le biome de référence** — à générer
 > en premier, il donne le ton de tous les autres. Riff carré, tempo qui pousse sans s'affoler.
 
-**Couplet — court :**
+**`sanctuaire_calm` — couplet, prompt court :**
 ```
 industrial metal verse, palm-muted drop-C guitar riff, tight driving drums, analog synth bass,
 distant wordless choir, cold ruined sci-fi hall, C minor, 140 BPM, instrumental
 ```
 
-**Couplet — long :**
+**`sanctuaire_calm` — couplet, prompt long :**
 ```
 Industrial metal for exploring the ruins of an abandoned technological sanctuary. A palm-muted,
 down-tuned guitar riff in drop C chugs steadily under a driving drum groove — kick and snare tight
@@ -210,13 +210,13 @@ punctuate the bars. Medium hall reverb, human-scale ruins. C natural minor, 140 
 controlled, always moving forward. Fully instrumental, no vocals.
 ```
 
-**Refrain — court :**
+**`sanctuaire_combat` — refrain, prompt court :**
 ```
 heavy industrial metal chorus, full distorted drop-C guitars, double kick drums, crashing cymbals,
 soaring wordless choir, relentless momentum, C minor, 140 BPM, instrumental
 ```
 
-**Refrain — long :**
+**`sanctuaire_combat` — refrain, prompt long :**
 ```
 Same key, tempo, riff and chord progression as the verse version (C minor – A flat – E flat –
 B flat, C natural minor, 140 BPM), now at full power. The guitars open from palm-muted chugs into
@@ -234,13 +234,13 @@ instrumental, no vocals.
 > une seconde mineure) donne la couleur « magie exotique » — c'est le riff oriental-metal du jeu.
 > Le frottement Ré→Mi bémol ne se résout jamais : c'est le motif de la corruption.
 
-**Couplet — court :**
+**`aether_calm` — couplet, prompt court :**
 ```
 exotic industrial metal verse, phrygian dominant guitar riff, detuned bells, granular shimmer,
 warped wordless choir, cathedral reverb, D phrygian dominant, 152 BPM, instrumental
 ```
 
-**Couplet — long :**
+**`aether_calm` — couplet, prompt long :**
 ```
 Exotic, unsettling industrial metal for ruins saturated with corrupted magical energy. Built on
 D phrygian dominant — a major third over a flattened second, an ancient, snake-charmer colour
@@ -252,13 +252,13 @@ chords move D – E flat – G minor – A7. Enormous cathedral reverb, but a co
 Fully instrumental, no vocals.
 ```
 
-**Refrain — court :**
+**`aether_combat` — refrain, prompt court :**
 ```
 aggressive exotic metal chorus, twin harmonized phrygian dominant guitars, blast-adjacent double
 kick, resonant detuned bells, warped wordless choir, D phrygian dominant, 152 BPM, instrumental
 ```
 
-**Refrain — long :**
+**`aether_combat` — refrain, prompt long :**
 ```
 Same key, tempo, riff and progression as the verse version (D phrygian dominant, D – E flat –
 G minor – A7, 152 BPM), now unleashed. Twin harmonized guitars hammer the exotic major third
@@ -277,13 +277,13 @@ speed. Fully instrumental, no vocals.
 > doubles-croches par-dessous — lourd, jamais mou. La glace absorbe les aigus : réverbération
 > longue mais **étouffée**, jamais brillante.
 
-**Couplet — court :**
+**`givre_calm` — couplet, prompt court :**
 ```
 glacial sludge metal verse, half-time heavy drums, down-tuned crushing guitar riff, sixteenth-note
 hi-hat, frozen wordless choir, muffled long reverb, A dorian, 130 BPM, instrumental
 ```
 
-**Couplet — long :**
+**`givre_calm` — couplet, prompt long :**
 ```
 Glacial sludge metal for a cryogenic ruin. A heavy half-time drum groove: the kick and snare land
 hard and wide apart, giving enormous weight, while sixteenth-note hi-hat and a down-tuned guitar
@@ -294,13 +294,13 @@ wordless choir holding frozen chords. The reverb is very long, four seconds or m
 and glassy: the ice swallows the high frequencies. 130 BPM. Fully instrumental, no vocals.
 ```
 
-**Refrain — court :**
+**`givre_combat` — refrain, prompt court :**
 ```
 crushing glacial metal chorus, full down-tuned guitar wall, double kick under half-time snare,
 crystalline percussion, thick frozen wordless choir, glassy muffled reverb, A dorian, 130 BPM
 ```
 
-**Refrain — long :**
+**`givre_combat` — refrain, prompt long :**
 ```
 Same key, tempo, riff and progression as the verse version (A dorian, A minor – D – G – E minor,
 130 BPM). The danger here grows in weight and thickness more than in speed: the snare stays
@@ -317,13 +317,13 @@ menace — an avalanche, not a chase. Fully instrumental, no vocals.
 > Chaleur infernale qui surexcite la Rouille. **La piste la plus rapide et la plus violente du
 > jeu** — thrash metal. Réverbération courte : l'agressivité a besoin de son direct.
 
-**Couplet — court :**
+**`fournaise_calm` — couplet, prompt court :**
 ```
 thrash metal verse, fast down-picked drop-G guitar riff, d-beat drums, crackling ember texture,
 distorted wordless choir, dry tight mix, G phrygian, 176 BPM, instrumental
 ```
 
-**Couplet — long :**
+**`fournaise_calm` — couplet, prompt long :**
 ```
 Fast, oppressive thrash metal for a furnace-hot ruin. A relentless down-picked guitar riff in
 drop G grinds the minor second A flat against G — that interval is the signature of the biome.
@@ -334,13 +334,13 @@ A flat – C minor – A flat, key of G phrygian. Short, tight, dry reverb — t
 airless, not cavernous. 176 BPM. Fully instrumental, no vocals.
 ```
 
-**Refrain — court :**
+**`fournaise_combat` — refrain, prompt court :**
 ```
 brutal thrash metal chorus, full-speed tremolo drop-G guitars, double kick blast, syncopated anvil
 hits, burning distorted wordless choir, dry and in your face, G phrygian, 176 BPM, instrumental
 ```
 
-**Refrain — long :**
+**`fournaise_combat` — refrain, prompt long :**
 ```
 Same key, tempo, riff and progression as the verse version (G phrygian, G minor – A flat –
 C minor – A flat, 176 BPM) — the fastest and densest track in the game. Tremolo-picked down-tuned
@@ -358,13 +358,13 @@ everything hitting the listener directly. Fully instrumental, no vocals.
 > et guitare, batterie électronique tranchante, espace de club/data-center et non de cathédrale.
 > Le chœur y sonne volontairement comme **des données**, pas comme une voix qui se dissout.
 
-**Couplet — court :**
+**`neon_calm` — couplet, prompt court :**
 ```
 darksynth punk verse, motorik four-on-the-floor kick, tight sixteenth synth bass, clean chorused
 guitar riff, vocoded wordless choir, bright plate reverb, E mixolydian, 160 BPM, instrumental
 ```
 
-**Couplet — long :**
+**`neon_calm` — couplet, prompt long :**
 ```
 Fast, glossy darksynth with a punk edge, for an overclocked data sector. A strict four-on-the-floor
 electronic kick under a tight sixteenth-note analog synth bassline, with a clean chorused guitar
@@ -375,13 +375,13 @@ like data rather than like human voices. Short bright plate reverb with crisp ea
 club or a server room, never a cathedral. 160 BPM. Fully instrumental, no vocals.
 ```
 
-**Refrain — court :**
+**`neon_combat` — refrain, prompt court :**
 ```
 Carpenter Brut style darksynth metal chorus, distorted guitar over pounding four-on-the-floor,
 dense sixteenth arpeggio, hard synth bass, vocoded choir, E mixolydian, 160 BPM, instrumental
 ```
 
-**Refrain — long :**
+**`neon_combat` — refrain, prompt long :**
 ```
 Same key, tempo, riff and progression as the verse version (E mixolydian, E – D – A – E, 160 BPM),
 now pounding in full Carpenter Brut mode. Distorted electric guitars slam power chords over an
