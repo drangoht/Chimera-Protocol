@@ -164,6 +164,14 @@ Tout nouveau chemin de sortie de run doit l'appeler aussi.
 - **À qualité de raccord égale, prendre la boucle la plus longue** (`--loop-tolerance`) : le
   meilleur score absolu tombe souvent sur le premier retour du riff et jetterait les deux tiers du
   morceau. Le joueur entend la répétition bien avant d'entendre une couture.
+- **« On n'entend pas les SFX » : vérifier `user://settings.cfg` AVANT de toucher au mixage.**
+  Les volumes sont persistés (`[audio] master/music/sfx`) et survivent à toute réinstallation.
+  Un `sfx=0.0` laissé là — curseur déplacé à la main, ou script de test PyAutoGUI passé dans les
+  Options — rend le jeu totalement muet côté effets, sans le moindre message : `PlaySfx` charge le
+  stream, appelle `Play()`, `Playing` vaut `true`… à -80 dB. Vu réellement le 2026-07-27, après
+  deux corrections de mixage inutiles.
+  Chemin : `%APPDATA%\Godot\app_userdata\Chimera Protocol\settings.cfg`.
+  Diagnostic en une ligne : logger `_sfxVolume` et `player.VolumeDb` dans `PlaySfx`.
 - **Trois bus audio, pas un seul** (`default_bus_layout.tres`) : `Master`, `SFX`, `Music`. Le bus
   `Music` porte un **compresseur en sidechain sur `SFX`** — dès qu'un effet joue, la musique
   s'efface de quelques dB et remonte en 200 ms. Sans ce ducking, un tir de 0,2 s reste inaudible
