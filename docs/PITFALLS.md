@@ -164,6 +164,15 @@ Tout nouveau chemin de sortie de run doit l'appeler aussi.
 - **À qualité de raccord égale, prendre la boucle la plus longue** (`--loop-tolerance`) : le
   meilleur score absolu tombe souvent sur le premier retour du riff et jetterait les deux tiers du
   morceau. Le joueur entend la répétition bien avant d'entendre une couture.
+- **La musique de jeu se cale BEAUCOUP plus bas que la musique d'écoute.** Les pistes sont du
+  metal très compressé : leur RMS reste haut en permanence, alors que les SFX sont des transitoires
+  courts (ramassage d'XP ≈ -30 dB RMS). À -16 LUFS — le niveau habituel d'une musique de jeu — la
+  bande-son couvrait purement et simplement les SFX. Cible retenue : **-22 LUFS** (`MUSIC_LUFS`),
+  -23 menu/hub, -21 intro.
+- **Ne pas utiliser `loudnorm` de ffmpeg pour caler une piste déjà masterisée.** En une passe il
+  travaille en mode **dynamique** : il recompresse et limite un master déjà fini, et rate sa cible
+  (-14,3 LUFS mesurés pour -16 demandés). `apply_loudness` mesure avec `ebur128` puis applique un
+  **gain constant** — exact, et la dynamique reste intacte.
 - **`godot --headless --import` peut rester bloqué sans rien écrire** (0 % CPU, sortie vide) :
   tuer le process et relancer suffit. Ne pas passer sa sortie dans un pipeline qui la tronque
   (`| Select-Object -First n` ferme le pipe et tue Godot en cours d'import).

@@ -116,6 +116,10 @@ synthes analogiques et chœurs sans paroles au service du riff.
 
 ### Stingers — synthetises par le depot (pas Suno)
 
+> **Non cables** : aucun `music_stinger_*` n'est reference dans le code — ils ne jouent jamais.
+> Les moments concernes utilisent des SFX Kenney (`sfx_levelup`, `sfx_ui_death`, `sfx_ui_victory`).
+> A cabler ou a supprimer.
+
 | Fichier | Duree | Tonalite | Role |
 |---|---|---|---|
 | `music_stinger_death.ogg` | 4.6 s | glissando descendant | Dissolution, sans resolution harmonique |
@@ -138,9 +142,16 @@ n'en rend qu'une audible a la fois et bascule par fondu croise selon l'intensite
 | `neon` | Mi Mixolydien | 160 | 42.3 s | 186.6 s |
 | `boss` (commun) | Do mineur chromatique | 150 | 72.3 s | — |
 
-Export : OGG Vorbis q6, 44100 Hz stereo, -16 LUFS (-17/-18 pour intro/menu/hub), -1.5 dBTP.
-Une seule piste etant audible a la fois, le headroom de sommation des anciens stems (-20 LUFS,
--6 dBTP) n'a plus lieu d'etre.
+Export : OGG Vorbis q6, 44100 Hz stereo, -1.5 dBTP. Loudness **-22 LUFS** pour les pistes de run
+(-23 menu/hub, -21 intro) — volontairement bas pour de la musique : ce metal est tres compresse et
+son RMS reste haut en permanence, alors que les SFX du jeu sont des transitoires courts (un
+ramassage d'XP tourne autour de -30 dB RMS). A -16 LUFS, premier niveau essaye, la bande-son
+couvrait purement et simplement les SFX.
+
+Le calage se fait par **mesure puis gain constant** (`apply_loudness`), pas par le filtre
+`loudnorm` de ffmpeg : en une passe celui-ci travaille en mode dynamique, donc il recompresse un
+master deja fini et rate sa cible (-14.3 mesure pour -16 demande). Pour changer le niveau general
+de la musique : `MUSIC_LUFS` dans `tools/import_ai_music.py`, puis relancer l'import.
 
 ### Reintegration depuis les sources Suno
 

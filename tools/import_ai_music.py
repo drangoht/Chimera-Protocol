@@ -28,6 +28,7 @@ from __future__ import annotations
 import argparse
 import glob
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -49,12 +50,25 @@ SOURCE_EXTS = (".mp3", ".wav", ".ogg", ".flac", ".m4a", ".aac", ".opus", ".wma")
 # Durée de la cinématique d'intro (IntroScreen) — la piste est calée dessus.
 INTRO_LENGTH_SEC = 94.0
 
+# Loudness cible des pistes de run.
+#
+# Volontairement BAS pour de la musique : ces morceaux sont du metal très
+# compressé, dont le RMS reste haut en permanence, là où les SFX du jeu sont des
+# transitoires courts (un ramassage d'XP tourne autour de -30 dB RMS). À -16 LUFS
+# — le niveau habituel d'une musique de jeu — la bande-son couvrait purement et
+# simplement les SFX. Mesuré en jeu, `-22` laisse les effets passer devant sans
+# rendre la musique timide.
+MUSIC_LUFS = -22.0
+
+# Marge de crête à l'encodage.
+TRUE_PEAK_DB = -1.5
+
 
 class Track:
     """Une piste attendue : son identifiant de dépôt et son nom final en jeu."""
 
     def __init__(self, key: str, target: str, loop: bool = True,
-                 lufs: float = -16.0, fixed_length: float | None = None,
+                 lufs: float = MUSIC_LUFS, fixed_length: float | None = None,
                  note: str = ""):
         self.key = key                    # nom du fichier déposé (sans extension)
         self.target = target              # nom final dans assets/audio/music/
@@ -65,9 +79,9 @@ class Track:
 
 
 TRACKS: list[Track] = [
-    Track("menu", "music_menu", lufs=-18.0, note="thème principal, doux"),
-    Track("hub", "music_hub", lufs=-18.0, note="l'enclave"),
-    Track("intro", "music_intro", loop=False, lufs=-17.0,
+    Track("menu", "music_menu", lufs=-23.0, note="thème principal"),
+    Track("hub", "music_hub", lufs=-23.0, note="l'enclave"),
+    Track("intro", "music_intro", loop=False, lufs=-21.0,
           fixed_length=INTRO_LENGTH_SEC, note="cinématique, non bouclée"),
 ]
 for _b in BIOMES:
@@ -94,6 +108,47 @@ def decode(path: str, sr: int = S.SR) -> np.ndarray:
         with wave.open(wav, "rb") as f:
             raw = np.frombuffer(f.readframes(f.getnframes()), dtype="<i2")
     return raw.reshape(-1, 2).astype(np.float64) / 32768.0
+
+
+def measure_lufs(path: str) -> float | None:
+    """Loudness intégré (EBU R128) d'un fichier, via le filtre `ebur128` de ffmpeg."""
+    out = subprocess.run(
+        ["ffmpeg", "-hide_banner", "-nostats", "-i", path,
+         "-af", "ebur128", "-f", "null", "-"],
+        capture_output=True, text=True).stderr
+
+    # Le résumé de fin réécrit "I:" une dernière fois — c'est celui-là qui compte.
+    matches = re.findall(r"I:\s*(-?\d+\.?\d*)\s*LUFS", out)
+    return float(matches[-1]) if matches else None
+
+
+def apply_loudness(x: np.ndarray, target_lufs: float, sr: int = S.SR) -> np.ndarray:
+    """
+    Cale le loudness d'un signal sur une cible, par un gain CONSTANT.
+
+    On ne passe pas par le filtre `loudnorm` de ffmpeg : en une passe il travaille
+    en mode dynamique, donc il compresse et limite — sur un morceau déjà masterisé
+    c'est une seconde compression non désirée, et la cible est ratée de plus d'un
+    dB (mesuré : -14.3 pour -16 demandé). Mesurer puis appliquer un gain fixe est
+    exact et laisse la dynamique du morceau intacte.
+    """
+    with tempfile.TemporaryDirectory() as tmp:
+        probe = S.write_wav(os.path.join(tmp, "probe.wav"), x, sr, bits=16)
+        measured = measure_lufs(probe)
+
+    if measured is None:
+        return x
+
+    x = x * S.db2lin(target_lufs - measured)
+
+    # Le gain peut faire dépasser la marge de crête : on redescend le tout plutôt
+    # que d'écrêter (un limiteur ici recompresserait le master).
+    ceiling = S.db2lin(TRUE_PEAK_DB)
+    peak = float(np.max(np.abs(x)))
+    if peak > ceiling:
+        x = x * (ceiling / peak)
+
+    return x
 
 
 def find_source(key: str) -> str | None:
@@ -270,19 +325,18 @@ def process(track: Track, out_dir: str, crossfade: float, min_loop: float,
                                 loop_tolerance=loop_tolerance)
         info = f"boucle {loop_sec:.1f}s"
 
-    # Pas de normalisation crête agressive ni de limiteur : la piste est déjà
-    # mixée et masterisée par le générateur. On ne touche qu'au loudness global,
-    # pour que toutes les pistes du jeu se répondent au même niveau.
-    peak = float(np.max(np.abs(x)))
-    if peak > 0.999:
-        x = x * (0.99 / peak)
+    # Pas de limiteur ni de compression : la piste est déjà mixée et masterisée
+    # par le générateur. On ne touche qu'au niveau global, pour que toutes les
+    # pistes du jeu se répondent — et laissent la place aux SFX.
+    x = apply_loudness(x, track.lufs)
 
     wav = S.write_wav(os.path.join(out_dir, track.target + ".wav"), x, bits=24)
     ogg = S.to_ogg(wav, os.path.join(out_dir, track.target + ".ogg"),
-                   quality=quality, loudnorm_lufs=track.lufs, true_peak=-1.5)
+                   quality=quality, loudnorm_lufs=None)
 
     print(f"  {track.key:20s} -> {track.target}.ogg   "
-          f"({raw_sec:.0f}s source, {info}, {os.path.getsize(ogg) // 1024} Ko)")
+          f"({raw_sec:.0f}s source, {info}, {track.lufs:.0f} LUFS, "
+          f"{os.path.getsize(ogg) // 1024} Ko)")
     return ogg
 
 
