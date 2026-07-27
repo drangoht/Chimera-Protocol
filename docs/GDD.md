@@ -1867,3 +1867,78 @@ moteur : réutilise entièrement le pipeline perso existant (`GameManager` pose 
 `InventorySystem.AddOrUpgradeWeapon("vector_lance")`). Clés loc `CHAR_VECTEUR_NAME/TAG/DESC` (EN/FR/ES).
 Fantasme : récompenser la visée maîtrisée plutôt que l'auto-tir — le seul perso dont l'arme de base « vise
 à la main ».
+
+---
+
+## 27. Musique adaptative (implémenté 2026-07-27)
+
+Remplace le système précédent (3 pistes chiptune enchaînées par bascules à 5 min et 10 min de run),
+dont les deux défauts étaient audibles : la coupure au changement de piste, et une intensité indexée
+sur le **chrono** plutôt que sur ce que vit le joueur — la musique restait calme sous une nuée à
+4 minutes, et restait intense pendant une accalmie à 11 minutes.
+
+> **Historique.** Une première version de ce système jouait 4 stems synchronisés par biome
+> (`bed`/`pulse`/`lead`/`boss`) sur une bande-son synthétisée par le dépôt, ambiance Vangelis. Elle
+> a été écartée après écoute : trop lente pour le rythme du jeu. Elle reste régénérable
+> (`tools/generate_music_v3.py`, `docs/ART_BRIEF_AUDIO.md`) et sert de filet de sécurité sans
+> contrainte de licence.
+
+### 27.1 Principe
+
+Chaque biome fournit **deux versions du même morceau** — même tonalité, même tempo, même riff — plus
+un **thème de boss commun** aux cinq biomes :
+
+| Piste | Contenu | Joue quand |
+|---|---|---|
+| `calm` | Le couplet : riff en retenue (palm-mute), batterie fermée | par défaut |
+| `combat` | Le refrain : guitares pleines, cymbales, double pédale | intensité >= 0,42 |
+| `boss` (commun) | Riff le plus lourd du jeu, breakdowns half-time | présence d'un boss/mini-boss |
+
+**Une seule piste est audible à la fois**, la bascule se faisant par **fondu croisé** de 3 s (2 s
+pour le boss). C'est la contrainte imposée par la production : ces morceaux sont des générations
+indépendantes, donc pas synchronisées à l'échantillon — les superposer donnerait deux batteries
+décalées. Le fondu se fait **à puissance constante** (et non en amplitude linéaire), sans quoi le
+volume creuserait un trou audible au milieu de chaque croisement.
+
+Deux garde-fous empêchent la musique de battre d'une piste à l'autre :
+
+- **hystérésis** — on passe au refrain à 0,42 d'intensité, on ne revient au couplet qu'en dessous
+  de 0,26 ;
+- **durée de maintien** — une piste garde la main au moins 10 s. Seul le boss court-circuite ce
+  délai : c'est un événement, pas une tendance. Son thème démarre toujours à son premier temps.
+
+### 27.2 Calcul de l'intensité (`src/Core/Rules/MusicIntensity.cs`)
+
+`intensité = 0,50 × √(ennemis/55) + 0,30 × (temps/720 s) + 0,20 × (1 − PV/PVmax)`, borné à [0,1].
+
+- **Racine sur la densité d'ennemis** : passer de 0 à 10 ennemis doit s'entendre, passer de 40 à 50
+  presque pas. C'est la composante dominante — c'est ce que le joueur ressent immédiatement.
+- **Le temps** garantit une montée de fond même pendant une accalmie tardive.
+- **Les PV** font monter la tension quand le joueur est en danger, sans tricher sur la difficulté.
+- **Lissage asymétrique** : 0,55/s en montée, 0,18/s en descente. Une vague qui meurt en 2 s ne doit
+  pas faire retomber la musique aussitôt.
+
+La détection du boss est automatique (`EnemyBase.AssimIsBoss`/`AssimIsMiniBoss`), donc valable quel
+que soit le chemin d'apparition — vague d'overtime comme hook `--debug-boss`.
+
+### 27.3 Identité par biome
+
+Le tempo, le mode et la rythmique changent d'identité d'un biome à l'autre — ce n'est pas la même
+musique reteintée :
+
+| Biome | Tonalité / Mode | BPM | Parti pris rythmique |
+|---|---|---|---|
+| Sanctuaire | Do mineur | 140 | Riff carré, référence neutre du jeu |
+| Friche d'Aether | Ré Phrygien dominant | 152 | Riff exotique, frottement I→bII non résolu |
+| Givre Cryogénique | La Dorien | 130 | Groove **half-time** : lourd et large, jamais mou |
+| Fournaise | Sol Phrygien | 176 | Le plus rapide : thrash, d-beat, reverb courte |
+| Secteur Néon | Mi Mixolydien | 160 | Four-on-the-floor ininterrompu, percussions numériques |
+| Boss (commun) | Do mineur chromatique | 150 | Le plus lourd ; alterne blast et breakdowns |
+
+### 27.4 Production
+
+Les 14 pistes sont **générées sur Suno** à partir des prompts de `docs/AUDIO_AI_PROMPTS.md` (source
+de vérité de la direction sonore), puis intégrées par `tools/import_ai_music.py` — qui fabrique le
+point de boucle, harmonise le loudness et encode en OGG. Les 3 stingers restent synthétisés par le
+dépôt. **La licence Suno doit être confirmée avant publication** (`assets/audio/CREDITS.md`).
+Câblage et pièges techniques : `docs/PITFALLS.md`.

@@ -8,6 +8,16 @@ Dans un monde ravagé par **la Rouille Vivante** (corruption mi-organique, mi-m�
 
 ## État du projet
 
+**Bande-son metal & musique adaptative** *(2026-07-27, non publiée)* — la bande-son chiptune est
+entièrement remplacée par du **metal industriel** : guitares down-tuned, batterie qui cogne, basse
+saturée, avec des synthés analogiques et des **chœurs sans paroles** par-dessus. Chaque biome a sa
+tonalité, son tempo et son riff — du groove glacial du Givre (130 BPM) au thrash de la Fournaise
+(176 BPM) — le menu porte un thème sombre et tendu, et la cinématique d'intro sa pièce dédiée.
+Surtout, la musique de combat est **adaptative** : chaque biome existe en deux versions du même
+morceau, couplet et refrain, et le jeu passe de l'une à l'autre en fondu selon l'action — densité
+d'ennemis, temps de survie, points de vie — avant de basculer sur le **thème de boss** quand un
+colosse débarque.
+
 **Cadres d'UI « plaque blindée »** *(2026-07-26, v1.16.0)* — le style de cadre biseauté (chanfreins,
 bevel, rivets, focus pulsé) déjà utilisé sur boutons/cartes/popups s'étend aux modales, à l'écran de
 level-up, aux écrans de sélection, ainsi qu'aux **curseurs, interrupteurs et menus déroulants**
@@ -28,7 +38,7 @@ d'UI ne se coupent plus à l'ouverture d'une popup (level-up, pause, Assimilatio
 | Phase 2 — Gameplay core | ✅ Terminé | 4 ennemis, 4 armes, 4 passifs, 2 fusions, XP/level-up, Échos d'Aether, Hub, sauvegarde |
 | Phase 3 — Contenu & polish | ✅ Terminé | Sprites pixel art, audio synthétique CC0, arène graphique, menu principal, UI complète, FusionFlash |
 | Phase 4 — Arène + VFX | ✅ Terminé | Arène 1920×1216, obstacles A–D, lueur geysers, death burst, XpOrb trail/pulse, impact burst, ambiants Aether |
-| Phase 5 — Navigation & audio | ✅ Terminé | Navigation clavier/manette complète, bande-son CC0 définitive (31 fichiers : 24 SFX Kenney + 5 musiques Junkala) |
+| Phase 5 — Navigation & audio | ✅ Terminé | Navigation clavier/manette complète, **bande-son metal industriel** (14 musiques, chaque biome en couplet/refrain adaptatif + thème de boss) + 24 SFX Kenney CC0 |
 | Équilibrage MVP | ✅ Validé | 0 crash sur 3 runs (~25 min), XP ennemis différenciés par tiers |
 | Polish visuel — base | ✅ Livré | Fond arène assombri, PointLight2D joueur/projectiles, notifications armes équipées avec flash coloré |
 | Polish visuel — next-level | ✅ Livré | 4 shaders GLSL, screen shake, vignette dynamique (suit le joueur), grille holographique sol, shockwave Colosse, hit stop, trail joueur, chromatic aberration fusion, VFX armes (PlasmaBlade arc flash, muzzle flash, trails balles, OverloadField, drones lumineux) |

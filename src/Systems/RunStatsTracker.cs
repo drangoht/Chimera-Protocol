@@ -45,8 +45,24 @@ public partial class RunStatsTracker : Node
 
         _runEndScreenScene ??= GD.Load<PackedScene>("res://scenes/ui/RunEndScreen.tscn");
 
-        // Demarre la musique de run (debut de run = piste legere)
-        AudioSystem.Instance?.PlayMusic("music_run_intro");
+        // Différé d'une frame : `GameManager.CurrentBiomeId` est posé par
+        // GroundRenderer._Ready et l'ordre des _Ready entre nœuds frères n'est pas
+        // garanti — sans ce report, le biome peut être encore vide ici et la
+        // musique adaptative retomberait sur le fallback à chaque run.
+        Callable.From(StartRunMusic).CallDeferred();
+    }
+
+    /// <summary>
+    /// Démarre la musique adaptative du biome courant (<see cref="MusicDirector"/>) :
+    /// 4 couches synchronisées dont seuls les volumes suivent l'action, au lieu des
+    /// bascules de piste par paliers de temps d'avant la 1.17.
+    /// </summary>
+    private void StartRunMusic()
+    {
+        string biome = GameManager.Instance?.CurrentBiomeId ?? "";
+        if (biome.Length == 0 || MusicDirector.Instance?.PlayBiome(biome, 2.0f) != true)
+            GD.PrintErr($"[RunStatsTracker] Pas de musique de run : stems absents pour " +
+                        $"le biome '{biome}' (régénérer via tools/generate_music_v3.py).");
     }
 
     private void LoadRunDuration()
@@ -62,22 +78,14 @@ public partial class RunStatsTracker : Node
             _runDurationSeconds = prop.GetInt32();
     }
 
-    // Seuils de changement de piste musicale (en secondes ecoules depuis le debut)
-    // GDD §7 : difficulte montante => intensite musicale croissante
-    private const float MidThresholdSec     = 300f; // 5:00 — Sentinelles entrent, tension montante
-    private const float IntenseThresholdSec = 600f; // 10:00 — Colosses presents, chaos maximal
-
-    private bool _musicMidPlaying     = false;
-    private bool _musicIntensePlaying = false;
-
     public override void _Process(double delta)
     {
         if (RunEnded) return;
 
         ElapsedSeconds += (float)delta;
 
-        // Progression de l'intensite musicale selon le temps ecoule
-        UpdateRunMusicIntensity();
+        // (L'intensité musicale n'est plus pilotée ici : MusicDirector échantillonne
+        // lui-même l'état de la run — ennemis à l'écran, temps, PV, boss.)
 
         // Le timer ne termine plus la run : à 0 (fin du temps imparti), on entre en OVERTIME
         // (escalade brutale gérée par EnemySpawner). La run se termine à la mort du joueur ;
@@ -104,20 +112,6 @@ public partial class RunStatsTracker : Node
 
         Banner.Show(GetTree(), Loc.T("LEVEL_COMPLETE"), new Color(1f, 0.85f, 0.3f));
         AudioSystem.Instance?.PlaySfx("sfx_core_collect");
-    }
-
-    private void UpdateRunMusicIntensity()
-    {
-        if (!_musicIntensePlaying && ElapsedSeconds >= IntenseThresholdSec)
-        {
-            _musicIntensePlaying = true;
-            AudioSystem.Instance?.PlayMusic("music_run_intense", fadeInSec: 2.0f);
-        }
-        else if (!_musicMidPlaying && !_musicIntensePlaying && ElapsedSeconds >= MidThresholdSec)
-        {
-            _musicMidPlaying = true;
-            AudioSystem.Instance?.PlayMusic("music_run_mid", fadeInSec: 2.0f);
-        }
     }
 
     // ---------------------------------------------------------------------------

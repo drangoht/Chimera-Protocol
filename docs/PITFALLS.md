@@ -121,6 +121,70 @@ Tout nouveau chemin de sortie de run doit l'appeler aussi.
 - Musique WAV : `loop_mode=0` par défaut dans Godot 4.7 → reboucler via signal `Finished` dans `AudioSystem`
 - `AudioSystem.LoadMusic()` tente `.ogg` en priorité, puis `.wav` fallback
 
+## Musique adaptative (pistes alternées) — `MusicDirector`
+- **Ne JAMAIS superposer `calm` et `combat` en permanence.** Ce sont deux générations Suno
+  distinctes du même morceau : même tempo *nominal*, mais pas la même horloge ni la même phase.
+  Les mélanger donne deux batteries décalées. Une seule piste est audible à la fois, la bascule
+  se fait par fondu croisé (`MusicIntensity.Select` + `Approach`). C'est ce qui distingue cette
+  architecture de l'ancienne à 4 stems synchronisés (bed/pulse/lead/boss), abandonnée avec la
+  bande-son Vangelis.
+- **Le fondu croisé se fait à puissance constante, pas en amplitude linéaire.** Deux morceaux
+  décorrélés voient leurs *puissances* s'additionner : croiser leurs amplitudes linéairement
+  creuse un trou de volume audible au milieu. `MusicIntensity.WeightToDb` applique 10·log₁₀
+  (racine de l'amplitude) et non 20·log₁₀.
+- **Hystérésis obligatoire sur le choix de piste.** Avec un seuil unique, une intensité qui
+  oscille autour de la valeur pivot fait basculer les pistes en permanence. Deux seuils
+  (`CombatEnter` 0.42 / `CombatExit` 0.26) **plus** une durée de maintien minimale
+  (`MinHoldSec`, 10 s) — le boss seul court-circuite ce délai, c'est un événement, pas une tendance.
+- **Le thème de boss démarre à son premier temps.** Il n'est pas lancé avec les deux autres au
+  début de la run : il est `Play()` au moment de la bascule et `Stop()` quand son poids retombe à
+  zéro. Le laisser tourner en fond ferait entrer le boss au milieu de son propre morceau.
+- **Le bouclage doit être NATIF, pas manuel.** Les `.ogg` sont importés avec `loop=false` :
+  `MusicDirector.LoadTrack` force `((AudioStreamOggVorbis)stream).Loop = true` sur la ressource.
+  Reboucler via le signal `Finished` (comme `AudioSystem` le fait pour les WAV) laisserait un
+  blanc à chaque tour.
+- **`ProcessMode = Always` obligatoire** (même raison que `AudioSystem`) : sans lui la musique se
+  tait à l'ouverture de la moindre modale.
+- **Une piste simple et la musique de run ne coexistent jamais** : `AudioSystem.PlayMusic` coupe le
+  `MusicDirector`. C'est le point d'intégration unique — ne pas ajouter d'appels `Stop()` dans
+  chaque écran. Corollaire : l'ancien système à paliers de `RunStatsTracker` ne doit tourner **que**
+  si les pistes sont absentes (`_legacyMusic`), sinon son `PlayMusic` tuerait l'adaptatif en pleine run.
+- **`calm` ET `combat` sont requis** pour qu'un biome démarre : s'il en manque un seul, `PlayBiome`
+  refuse le biome entier et retombe sur la musique simple. Le thème de boss, lui, est facultatif.
+
+## Intégration de musique générée par IA (`tools/import_ai_music.py`)
+- **Un morceau généré n'est pas une boucle.** Il a une intro, une outro et un fade : le script
+  cherche le meilleur point de raccord par corrélation, coupe là, et fond la suite sur le début.
+- **Ne jamais boucler sur une baisse d'énergie.** Les générateurs terminent sur une outro qui
+  retombe ; un raccord qui y tombe fait chuter le morceau à chaque tour. Le script écarte les
+  candidats dont l'énergie locale est sous 70 % de la médiane.
+- **Corrélation et enveloppe par FFT / somme cumulée, jamais `np.correlate` ou `np.convolve`.**
+  En direct, c'est O(n·w) : plus de 10¹² opérations pour trois minutes d'audio contre une fenêtre
+  de trois secondes — le script ne finit jamais.
+- **À qualité de raccord égale, prendre la boucle la plus longue** (`--loop-tolerance`) : le
+  meilleur score absolu tombe souvent sur le premier retour du riff et jetterait les deux tiers du
+  morceau. Le joueur entend la répétition bien avant d'entendre une couture.
+- **`godot --headless --import` peut rester bloqué sans rien écrire** (0 % CPU, sortie vide) :
+  tuer le process et relancer suffit. Ne pas passer sa sortie dans un pipeline qui la tronque
+  (`| Select-Object -First n` ferme le pipe et tue Godot en cours d'import).
+
+## Génération audio (`tools/synth_lib.py`, `generate_music_v3.py`)
+- **`loudnorm` de ffmpeg travaille en interne à 192 kHz et sort à ce taux** si on ne passe pas
+  `-ar 44100` : fichiers 4,35× trop gros et lus au ralenti par tout ce qui suppose 44,1 kHz.
+  Toujours forcer le taux d'échantillonnage *après* le filtre.
+- **Une IR de réverbération se normalise en énergie (norme L2), pas en crête** : normalisée en
+  crête, une IR de bruit de 4 s multiplie le signal par ~30. `reverb()` recale en plus le wet sur
+  le RMS du dry, sans quoi le paramètre `mix` ne veut pas dire la même chose d'une salle à l'autre.
+- **Les stems s'exportent à -20 LUFS / -6 dBTP** (`STEM_LUFS`, `STEM_TRUE_PEAK`), pas au niveau
+  d'une piste finale : la somme des 4 couches à pleine intensité écrête sinon (+1,2 dBFS mesuré).
+  Les rapports entre couches sont décidés en jeu par `MusicIntensity`, pas gravés dans les fichiers.
+- **`np.isscalar` et non `isinstance(x, (int, float))`** pour accepter une note : les tirages
+  `numpy` produisent des `np.int64` qui ne sont ni `int` ni itérables.
+- Contrôle qualité sans écouter : `tools/analyze_music.py --dir … --biome <id>` (niveaux,
+  hiérarchie fréquentielle, raccord de boucle, écrêtage de la somme des stems). Le `raccord` d'une
+  couche **rythmique** est normalement très négatif (la boucle finit sur un silence) — ce n'est un
+  défaut que sur `bed`, qui doit tenir sa note d'un bout à l'autre.
+
 ## Assimilation / greffes (écrans modaux, routage, effets)
 - **Deux écrans modaux qui togglent `GetTree().Paused` se marchent dessus** (LevelUpScreen +
   AssimilationScreen) → passer par **`ModalQueue`** (statique, `src/UI/`) : chaque écran *soumet*

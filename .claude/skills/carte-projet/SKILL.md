@@ -36,7 +36,8 @@ docs/              GDD.md + briefs/plans — voir §Docs
 
 ## Singletons AutoLoad (project.godot)
 `GameManager` · `XpSystem` · `InventorySystem` · `LevelUpSystem` · **`AssimilationSystem`** ·
-`SaveManager` · `MetaProgressionSystem` · **`ChallengeSystem`** · `AudioSystem` · `ScreenShake` · `GameSettings` ·
+`SaveManager` · `MetaProgressionSystem` · **`ChallengeSystem`** · `AudioSystem` ·
+**`MusicDirector`** · `ScreenShake` · `GameSettings` ·
 `DiscordPresence` · `VersionStamp` · `FusionFlash` (scène). Accès partout via `NomSystem.Instance`.
 
 ## §Rules — `src/Core/Rules/` (logique pure, testée)
@@ -48,7 +49,10 @@ fréquence + tirage + `EliteModifiers`, cf. GDD §22) · **GraftTable** (Assimil
 `grafts.json`, routage kill→jauge `RouteKill`, seuils `EffectiveThreshold`/`DeclinedThreshold`,
 `SlotCount`, **`BiomeAffinity`/`GetAffinity`** = affinités de greffe par biome §21 ; cf.
 docs/DESIGN_ASSIMILATION.md §11-21) · **ChallengeTable** (Défis/succès : parse `challenges.json`,
-`ChallengeContext` fin de run, `IsMet`/`NewlyCompleted` ; cf. docs/DESIGN_CHALLENGES.md). Les nœuds délèguent ici (SRP).
+`ChallengeContext` fin de run, `IsMet`/`NewlyCompleted` ; cf. docs/DESIGN_CHALLENGES.md) ·
+**`MusicIntensity`** (musique adaptative : `Compute` = intensité 0-1 depuis ennemis/temps/PV,
+`Smooth` = lissage asymétrique montée/descente, `GainDb(MusicStem, …)` = niveau de chaque couche ;
+enum `MusicStem` Bed/Pulse/Lead/Boss). Les nœuds délèguent ici (SRP).
 
 ## §Systems — `src/Systems/`
 - Spawn : `EnemySpawner` (+ `EnemySpawnData`), `PowerUpSpawner` (+ `PowerUp`), `MagnetSpawner`, `AetherCoreSpawner`
@@ -59,6 +63,7 @@ docs/DESIGN_ASSIMILATION.md §11-21) · **ChallengeTable** (Défis/succès : par
 - **Assimilation (greffes)** : `AssimilationSystem` (autoload — jauges par archétype, slots équipés, pause/reprise de jauge, émet `GaugeFilled` ; délègue les chiffres à `GraftTable`) ; effets côté Player → `GraftManager` (§Entities) ; écran → `AssimilationScreen` (§UI). Data → `grafts.json`. Meta : `graft_slots`/`graft_metabolism`. Action d'entrée `dash` (InputRemap). Cf. docs/DESIGN_ASSIMILATION.md.
 - Biome/arène : `BiomeAtmosphere`, `BiomeObstacles`, `FloorFeatures`, `GroundRenderer`, `DeepMotifShape`, `VignetteFollow`
 - Divers : `AudioSystem`, `GameSettings` (audio/affichage/diff/langue + **touches move_* rebindables**), `Loc`, `FusionFlash`, `ScreenShake`, `RunStatsTracker`
+- **Musique adaptative** : `MusicDirector` (autoload — alterne `music_run_<biome>_{calm,combat}.ogg` + `music_run_boss.ogg` commun, **une seule audible à la fois**, fondu croisé à puissance constante ; détecte le boss tout seul via `EnemyBase.AssimIsBoss/AssimIsMiniBoss`). Logique pure → `MusicIntensity` (§Rules : `Select` avec hystérésis, `Approach`, `WeightToDb`). Démarré par `RunStatsTracker` (différé d'une frame : `CurrentBiomeId` est posé par `GroundRenderer._Ready`). `AudioSystem.PlayMusic` le coupe — les deux ne coexistent jamais. Direction sonore → `docs/AUDIO_AI_PROMPTS.md` ; pièges → `docs/PITFALLS.md`
 - Input : **`InputRemap`** (statique) — actions `move_up/down/left/right` (défaut ZQSD + flèches + manette), séparées des `ui_*` menu ; le Player lit `Input.GetVector(move_*)`, remap via l'écran Options, persisté dans `GameSettings`. Action **`dash`** (Maj gauche / RB, `EnsureExtraActions()` au boot via GameManager) pour la greffe Servos Erratiques
 - Intégrations : **`DiscordPresence`** (autoload, NuGet `DiscordRichPresence` — statut « joue à Chimera Protocol », clés art `chimera`/`chimera_small`, tolérant à l'absence de Discord ; `SetInMenus`/`SetInRun` appelés par MainMenu/GameManager), **`VersionStamp`** (autoload, overlay `v<ver>-<sha>` bas-droite) ; **`BuildInfo`** (`src/Core/`, `GitSha` auto-généré par `tools/gen_build_info.ps1`, version lue de project.godot)
 
@@ -113,7 +118,18 @@ Fusions : `FusionBlade`, `RailOvercharged`, `OrbitalSwarm`, `OverloadAegis`,
 
 ## §Outils — `tools/`
 - Sprites : `pseudo3d_lib.py` (⚠ toujours dériver ombre/highlight via ce lib), `generate_*` (sprites/icônes/tiles/vfx)
-- Audio : `generate_music_synth.py`, `generate_audio_v2.py`, `integrate_kenney_audio.py`
+- **Audio / musique** : `synth_lib.py` (moteur DSP : oscillateurs anti-aliasés, filtres résonants,
+  formants vocaux, reverb à convolution, mixage, export OGG) + `synth_instruments.py` (timbres :
+  nappe CS-80, chœur, basse, arpège, percussions métalliques) + **`generate_music_v3.py`**
+  (partitions des 26 pistes — `--only <id>`, `--preview`, `--list`). **Ces outils produisent la
+  bande-son de SECOURS** (synthétisée, sans contrainte de licence), plus celle jouée en jeu.
+- **Musique en jeu (générée sur Suno)** : **`import_ai_music.py`** — prend les fichiers déposés
+  dans `music_ai/` et les installe dans `assets/audio/music/` (détection du point de boucle par
+  corrélation FFT, fondu de raccord, loudness EBU R128, encodage OGG). `--list`, `--only <id>`,
+  `--keep-preview` (écouter avant d'installer), `--loop-tolerance` (boucles plus longues).
+  Prompts source : `docs/AUDIO_AI_PROMPTS.md`. Contrôle : `check_music_assets.gd` (headless Godot :
+  existence, chargement réel, boucles courtes). Legacy : `generate_music_synth.py`,
+  `preview_adaptive_mix.py` (mix en couches de la BO synthétisée), `integrate_kenney_audio.py` (SFX)
 - Captures : `screenshot_*.py`, `capture_*.py`, `window_capture.py`
 - **Trailer vidéo** : `record_trailer.py` (capture les rushes via le Movie Maker Godot `--write-movie`
   + pilotage PyAutoGUI ; table de prises `TAKES`) puis `build_trailer.py` (montage : EDL de plans,
@@ -126,6 +142,9 @@ Fusions : `FusionBlade`, `RailOvercharged`, `OrbitalSwarm`, `OverloadAegis`,
 
 ## §Docs — `docs/`
 `GDD.md` (référence design) · `RELEASE.md` · `EXPANSION_PLAN.md` ·
+**`AUDIO_AI_PROMPTS.md`** (direction sonore EN VIGUEUR : metal industriel, prompt Suno + tonalité/
+BPM de chaque piste) · `ART_BRIEF_AUDIO.md` (bande-son synthétisée de secours : palette
+instrumentale, progressions, architecture en stems, mixage, bouclage) ·
 `LEVEL_PROGRESSION_PLAN.md` · `ART_BRIEF_PSEUDO3D.md` · `STYLE_GUIDE.md` ·
 `NARRATIVE.md` · `TEST_REPORT.md` (bugs game-tester) · pages store itch.
 

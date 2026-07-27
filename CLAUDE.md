@@ -13,11 +13,21 @@ cyborgs, robots), inspiré de Vampire Survivors et Everything is Crab.
 - **Avant de coder** dans un domaine (armes, ennemis, UI/focus, VFX, scènes, assets, tests headless) → lire **`docs/PITFALLS.md`** (pièges non-évidents Godot/C# + checklists de câblage). Y ajouter tout nouveau piège découvert.
 - **État d'implémentation détaillé & version courante → `docs/PROJECT_STATE.md`** (évolutif). Résumé de phase ci-dessous.
 
-**Phase actuelle : libre.** Dernière livraison majeure : refonte des **cadres d'UI « plaque
-blindée »** (chanfreins, bevel, rivets, focus pulsé — `docs/ART_BRIEF_UI_FRAMES.md`) étendue aux
-modales / level-up / écrans de sélection puis aux curseurs, interrupteurs et menus déroulants +
-correctif audio (la musique ne se coupe plus à l'ouverture d'une popup), publié **1.16.0** le
-2026-07-26. Précédemment : **Défis & Récompenses** — 4e levier de rétention (après arsenal / Hub /
+**Phase actuelle : libre.** Dernière livraison majeure : **bande-son metal industriel & musique
+adaptative** (2026-07-27, non publiée). Les 14 musiques sont **générées sur Suno** à partir des
+prompts de `docs/AUDIO_AI_PROMPTS.md` (source de vérité de la direction sonore) — metal industriel
+/ synth-metal : guitares down-tuned et batterie live au premier plan, synthés et chœurs sans
+paroles au service du riff, 112 à 176 BPM. **Licence Suno à confirmer avant publication**
+(`assets/audio/CREDITS.md`). Intégration : déposer les fichiers dans `music_ai/` puis
+`python tools/import_ai_music.py` (bouclage, loudness, encodage). Pendant une run,
+`MusicDirector` alterne **deux versions du même morceau par biome** (`calm` couplet / `combat`
+refrain) + un thème de **boss commun**, par fondu croisé selon l'intensité de l'action — jamais
+en superposition, ces pistes ne sont pas synchronisées entre elles. La bande-son synthétisée par
+le dépôt (`tools/generate_music_v3.py`, ambiance Vangelis, `docs/ART_BRIEF_AUDIO.md`) reste
+régénérable et sert de filet de sécurité sans contrainte de licence. Avant ça : refonte des **cadres d'UI
+« plaque blindée »** (chanfreins, bevel, rivets, focus pulsé — `docs/ART_BRIEF_UI_FRAMES.md`)
+étendue aux modales / level-up / écrans de sélection puis aux curseurs, interrupteurs et menus
+déroulants + correctif audio, publié **1.16.0** le 2026-07-26. Précédemment : **Défis & Récompenses** — 4e levier de rétention (après arsenal / Hub /
 Assimilation), publié **1.15.0** le 2026-07-08. 13 défis évalués en fin de run → Échos, **perks de
 départ** (greffe offerte / arme sup / +1 slot) ou **titres** cosmétiques. Nouvel écran **Défis**
 (progression X/N), sélection perk/titre au Hub, flair du titre sur le menu. Menu principal réorganisé
@@ -49,11 +59,16 @@ l'agent compétent (ordre de lancement : `GUIDE-CLAUDE-CODE.md`).
 - Style de code : PascalCase classes/méthodes, `_camelCase` champs privés, `readonly` par défaut.
 - Architecture : `src/` (logique C#) / `scenes/` (.tscn) / `assets/` (raw) / `data/` (JSON tuning modifiable sans recompiler).
 - **Logique pure testable** : `src/Core/Rules/` (classes statiques sans dépendance Godot — `XpCurve`, `EnemyScaling`, `EliteAffixTable`…). Les nœuds y délèguent (SRP).
-- **Tests unitaires** : xUnit, `dotnet test tests/ChimeraProtocol.Tests.csproj`. **119 tests**.
-- Singletons (AutoLoad) : `GameManager`, `XpSystem`, `InventorySystem`, `LevelUpSystem`, `SaveManager`, `MetaProgressionSystem`, `ChallengeSystem` (défis/succès, `docs/DESIGN_CHALLENGES.md`), `AudioSystem`, `FusionFlash`, `ScreenShake`, `GameSettings`, `DiscordPresence` (Rich Presence), `VersionStamp` (tampon `v<ver>-<sha>` bas-droite).
+- **Tests unitaires** : xUnit, `dotnet test tests/ChimeraProtocol.Tests.csproj`. **167 tests**.
+- Singletons (AutoLoad) : `GameManager`, `XpSystem`, `InventorySystem`, `LevelUpSystem`, `SaveManager`, `MetaProgressionSystem`, `ChallengeSystem` (défis/succès, `docs/DESIGN_CHALLENGES.md`), `AudioSystem`, `MusicDirector` (musique adaptative : calm/combat/boss en fondu croisé), `FusionFlash`, `ScreenShake`, `GameSettings`, `DiscordPresence` (Rich Presence), `VersionStamp` (tampon `v<ver>-<sha>` bas-droite).
 - Sauvegarde : `user://save.json` (méta/Échos) + `user://settings.cfg` (préférences, high scores, complétions, armes découvertes).
 - Sprites : PNG transparent, grille 32×32 px (Colosse 48×48 — exception), `texture_filter = Nearest` global. Style **pseudo-3D avec ombres** (`docs/ART_BRIEF_PSEUDO3D.md`) via `tools/pseudo3d_lib.py` — toujours dériver shadow/highlight avec `shade()`/`shade_sprite()`/`shade_tile()`/`shade_icon()`, jamais des couleurs plates ad hoc.
-- Audio : OGG musique (fallback WAV), WAV ou OGG SFX. Sources CC0 dans `assets/audio/CREDITS.md`.
+- **Audio** : musique **générée sur Suno** (prompts : `docs/AUDIO_AI_PROMPTS.md`) — jamais éditer
+  un `.ogg` de `assets/audio/music/` à la main. Pour en remplacer une : regénérer sur Suno, déposer
+  dans `music_ai/`, puis `python tools/import_ai_music.py [--only <id>] [--keep-preview]` et
+  `godot --headless --import`. Contrôle : `tools/check_music_assets.gd`. Bande-son de secours
+  synthétisée (sans contrainte de licence) : `tools/generate_music_v3.py`, `docs/ART_BRIEF_AUDIO.md`.
+  SFX = WAV Kenney CC0. Crédits et **licence Suno à confirmer** : `assets/audio/CREDITS.md`.
 - Localisation EN/FR/ES : `localization/ui.csv` → `Loc.T("CLÉ")`.
 - Performance cible : 200–300 entités simultanées ; I-frames joueur 0.45 s (CRITIQUE pour les nuées).
 - Palette UI : fond `#1A1A2E`, cyan `#44FFEE`, violet `#AA44FF`, or `#FFCC44`, blanc cassé `#D9D9F2`. Police : Share Tech Mono (AA on, `ui_theme.tres`, size 16) ; VT323 en réserve (AA off).

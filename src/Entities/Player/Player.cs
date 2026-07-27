@@ -688,9 +688,10 @@ public partial class Player : CharacterBody2D
             _sprite.Modulate = Colors.White;
         }
 
-        // SFX et arret musique a la mort
+        // SFX et arret musique a la mort (les deux canaux : piste simple et couches adaptatives)
         AudioSystem.Instance?.PlaySfx("sfx_player_die");
         AudioSystem.Instance?.StopMusic(fadeOutSec: 1.0f);
+        MusicDirector.Instance?.Stop(fadeOutSec: 1.0f);
 
         RunStatsTracker.Instance?.EndRun("death");
     }

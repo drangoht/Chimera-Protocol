@@ -65,3 +65,16 @@ docs/ui_sheet_*.png
 docs/ui_fix_*.png
 docs/ui_step*.png
 docs/verif_*.png
+
+# Boite d'entree des musiques generees par IA (sources brutes mp3/wav, lourdes et
+# regenerables depuis les prompts de docs/AUDIO_AI_PROMPTS.md). Seuls les OGG finaux
+# installes par tools/import_ai_music.py dans assets/audio/music/ sont versionnes.
+music_ai/*
+!music_ai/LISEZ-MOI.md
+
+# Scratch du chantier audio (mesures, logs de vumetre, scripts jetables) et cache Python
+tools/__pycache__/
+tools/_tmp_*.py
+docs/_log_*.txt
+docs/_meter_*.csv
+docs/_meter_*.csv.import

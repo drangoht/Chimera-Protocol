@@ -5,6 +5,38 @@
 > `CLAUDE.md` ; le design complet dans `docs/GDD.md` ; la carte du code dans `/carte-projet`.
 
 - Pile technique : **Godot 4.7 .NET (C# / .NET 8 / GodotSharp)**
+- **Bande-son metal industriel & musique adaptative (2026-07-27, NON PUBLIÉE).** Le jeu tournait
+  sur des placeholders chiptune CC0 (Juhani Junkala) enchaînés par bascules de piste à 5 et 10 min
+  de run. Une première refonte l'a remplacé par 26 pistes synthétisées par le dépôt (ambiance
+  Blade Runner / Vangelis, 4 stems synchronisés par biome) — **écoutée puis écartée le même jour :
+  trop lente et trop contemplative** pour un jeu où l'écran se remplit de monstres.
+  **Bande-son en vigueur : 14 pistes générées sur Suno**, direction metal industriel / synth-metal
+  (guitares down-tuned + batterie live au premier plan, synthés et chœurs sans paroles au service
+  du riff — Mick Gordon, Carpenter Brut). Tempos 112 à 176 BPM. Prompts par piste :
+  `docs/AUDIO_AI_PROMPTS.md`. Les 3 stingers (mort/victoire/level-up) restent synthétisés par le
+  dépôt. **Licence Suno à confirmer avant publication** (plan d'abonnement) —
+  `assets/audio/CREDITS.md`.
+  **Pipeline d'intégration** : `tools/import_ai_music.py` prend les MP3 déposés dans `music_ai/`
+  et fait ce qu'aucun générateur ne fait — détection du meilleur point de boucle par corrélation
+  FFT (en écartant les baisses d'énergie, pour ne jamais boucler sur une outro), fondu de raccord,
+  calage EBU R128, encodage OGG et nommage attendu par le moteur.
+  **Musique adaptative** : chaque biome fournit deux versions du même morceau — `calm` (couplet,
+  riff en retenue) et `combat` (refrain, tout ouvert) — plus `music_run_boss.ogg` commun aux cinq
+  biomes. Les pistes étant des générations indépendantes (donc non synchronisées), `MusicDirector`
+  (autoload) n'en rend **qu'une audible à la fois** et bascule par **fondu croisé à puissance
+  constante** (3 s ; 2 s pour le boss). L'intensité (0-1) est calculée par la logique pure
+  `MusicIntensity` depuis les ennemis à l'écran (poids 0,5, en racine : les premiers ennemis
+  comptent le plus), le temps écoulé (0,3) et les PV du joueur (0,2), lissée 3× plus lentement en
+  descente qu'en montée. Le choix de piste est protégé par une **hystérésis** (entrée 0,42 /
+  sortie 0,26) et une durée de maintien de 10 s — sans quoi une intensité qui oscille ferait
+  battre les pistes ; le boss court-circuite ce délai et démarre à son premier temps.
+  Tonalités/tempos par biome : Sanctuaire Do min 140 BPM · Aether Ré phrygien dominant 152 ·
+  Givre La dorien 130 (groove half-time) · Fournaise Sol phrygien 176 · Néon Mi mixolydien 160 ·
+  boss Do min chromatique 150. Contrôle : `tools/check_music_assets.gd` (headless). Pièges
+  (superposition interdite, fondu à puissance constante, hystérésis) : `docs/PITFALLS.md`.
+  28 tests unitaires dédiés (167 au total). La bande-son synthétisée reste **régénérable** par
+  `tools/generate_music_v3.py` et sert de filet de sécurité sans contrainte de licence
+  (`docs/ART_BRIEF_AUDIO.md`).
 - **Refonte des cadres d'UI — « plaque blindée » (PUBLIÉE 1.16.0, 2026-07-26).** Les cadres de
   boutons, cartes et popups recopiaient tous la même recette `StyleBoxFlat` (bordure uniforme +
   `corner_radius` arrondi, rayons 3/4/6/8/10 sans règle) sur ~300 sites : aucune identité, et

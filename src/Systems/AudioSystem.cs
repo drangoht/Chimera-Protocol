@@ -136,6 +136,13 @@ public partial class AudioSystem : Node
     /// <param name="fadeInSec">Duree du fondu d'entree en secondes.</param>
     public void PlayMusic(string trackId, float fadeInSec = 0.5f)
     {
+        // Une piste simple et les couches adaptatives ne coexistent jamais : tout
+        // ecran qui demande sa propre musique (menus, hub, intro) coupe le
+        // MusicDirector. C'est le point d'integration unique, ce qui evite d'avoir
+        // a le stopper dans chaque ecran.
+        if (MusicDirector.Instance?.IsActive == true)
+            MusicDirector.Instance.Stop(fadeInSec);
+
         if (CurrentTrackId == trackId) return;
 
         var stream = LoadMusic(trackId);
