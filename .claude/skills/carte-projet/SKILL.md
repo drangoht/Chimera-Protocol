@@ -133,7 +133,10 @@ Fusions : `FusionBlade`, `RailOvercharged`, `OrbitalSwarm`, `OverloadAegis`,
 - Captures : `screenshot_*.py`, `capture_*.py`, `window_capture.py`
 - **Trailer vidéo** : `record_trailer.py` (capture les rushes via le Movie Maker Godot `--write-movie`
   + pilotage PyAutoGUI ; table de prises `TAKES`) puis `build_trailer.py` (montage : EDL de plans,
-  upscale ×2 nearest en 1440p, cartons de texte, musique + `loudnorm`, sortie `trailer/*.mp4`).
+  upscale ×2 nearest en 1440p, cartons de texte, musique `MUSIC_EDL` + `loudnorm`, sortie
+  `trailer/*.mp4`). Entre les deux : `trailer_sheets.py` (planches-contact horodatées, `--range` /
+  `--step` — **obligatoire après chaque recapture**, les timecodes de l'EDL ne survivent pas aux
+  runs randomisées).
   Flag jeu `--trailer` = `DebugHooks.TrailerMode` (masque VersionStamp + invite d'intro).
   Pièges → `docs/PITFALLS.md` §Capture vidéo. Sorties ignorées par git (`trailer/`).
 - Tests/équilibrage : `boss_ttk_test.py`, `test_balance_v2.py`, `test_ui_keyboard.py`, `smoketest_exe.py`
