@@ -5,7 +5,7 @@ Pipeline en trois passes (plus simple a debugger qu'un unique filter_complex a 2
                  (1280x720 -> 2560x1440 : facteur ENTIER, donc pixel art net ; un 1080p
                  imposerait un x1.5 non entier et baverait), texte incruste si demande.
   2. CONCAT      concatenation par le demuxer `concat`.
-  3. MIXAGE      musique du jeu continue (intro -> crossfade -> theme intense) par-dessus
+  3. MIXAGE      trois morceaux de la bande-son enchaines en fondu (cf. MUSIC_EDL) par-dessus
                  l'audio des plans garde tres bas (texture des impacts sans empiler deux
                  musiques differentes), puis encodage final H.264 pour YouTube.
 
@@ -28,8 +28,6 @@ CLIPS = os.path.join(PROJ, "trailer", "clips")
 TXT = os.path.join(PROJ, "trailer", "txt")
 OUT = os.path.join(PROJ, "trailer", "ChimeraProtocol_trailer_1440p.mp4")
 
-MUSIC_INTRO = "assets/audio/music/music_intro.ogg"
-MUSIC_MAIN = "assets/audio/music/music_run_intense.wav"
 FONT = "assets/fonts/ShareTechMono.ttf"
 
 CYAN = "0x44FFEE"
@@ -37,13 +35,21 @@ GOLD = "0xFFCC44"
 WHITE = "0xD9D9F2"
 
 # Volume de l'audio des plans dans le mix final. Bas VOLONTAIREMENT : chaque rush porte deja
-# la musique du jeu, et deux musiques differentes superposees a volume egal se battent.
-CLIP_GAIN = 0.16
+# la musique du jeu, et deux musiques differentes superposees a volume egal se battent. Depuis
+# le passage au metal (1.17.0) les deux sont rythmiques, donc encore plus bas qu'avant : ce qui
+# doit rester, ce sont les transitoires (tirs, explosions, ramassages), pas le fond musical.
+CLIP_GAIN = 0.12
 
 # ---------------------------------------------------------------------------
 # EDL — (source, debut_s, duree_s, texte|None, couleur)
-#   Repere sur les planches-contact de trailer/raw/sheet_*.png.
+#   Repere sur les planches-contact de trailer/raw/sheet_*.png (`tools/trailer_sheets.py`).
 #   Rythme : plans longs a l'ouverture (narration), de plus en plus courts a l'escalade.
+#
+#   ATTENTION : ces timecodes ne survivent PAS a une recapture. Les runs sont randomisees,
+#   donc apres `tools/record_trailer.py` il faut regenerer les planches et re-caler chaque
+#   plan -- surtout les modales (level-up, assimilation, fusion) qui ne durent que ~2 s et
+#   dont un plan mal cale ne montrerait qu'un ecran de menu fige.
+#   Dernier recalage : 2026-07-27 (rushes de la 1.17.0, bande-son metal).
 # ---------------------------------------------------------------------------
 EDL = [
     # -- Cold open : 1,6 s d'action AVANT la narration. Sans ce hook, les 10 premieres
@@ -56,25 +62,31 @@ EDL = [
     ("intro",          21.8, 3.0, None, None),
 
     # -- B. Le jeu : les biomes (~14 s)
-    ("gp_sanctuaire",  12.0, 3.0, "SURVIVEZ À LA NUÉE", CYAN),
-    ("long_neon",     183.0, 2.8, None, None),
-    ("gp_givre",       30.0, 2.6, None, None),
-    ("long_fournaise",176.0, 2.8, None, None),
-    ("gp_aether",      28.0, 2.6, None, None),
+    ("gp_sanctuaire",  39.0, 3.0, "SURVIVEZ À LA NUÉE", CYAN),
+    ("long_neon",     195.0, 2.8, None, None),
+    ("gp_givre",       39.5, 2.6, None, None),
+    # 177.2 et pas 176 : la fusion Frappe Nova est reproposee puis rejetee en boucle dans ce
+    # rush (175-176, 187, 195...), et une modale au milieu d'une sequence de biomes casse la
+    # lecture. Fenetre propre : 177-180.
+    ("long_fournaise",177.2, 2.8, None, None),
+    ("gp_aether",      14.0, 2.6, None, None),
 
-    # -- C. Progression : level-up / assimilation / fusion (~9 s)
+    # -- C. Progression : assimilation / fusion (~9 s)
     #    Bornes serrees : ces deux ecrans modaux ne durent qu'environ 2 s chacun a l'ecran.
-    ("long_fournaise",153.7, 2.2, "ARRACHEZ LEURS ORGANES", GOLD),
-    ("long_fournaise",162.9, 2.4, "DEVENEZ LA CHIMÈRE", GOLD),
-    ("long_neon",     192.4, 2.6, None, None),
+    #    Le plan de fusion enchaine volontairement sur le flash blanc de FusionFlash : la
+    #    modale, la validation, puis la forme evoluee -- « devenez la chimere » en un plan.
+    ("long_fournaise", 18.9, 2.2, "ARRACHEZ LEURS ORGANES", GOLD),
+    ("long_neon",      76.9, 2.4, "DEVENEZ LA CHIMÈRE", GOLD),
+    ("long_neon",     208.0, 2.6, None, None),
 
     # -- D. Escalade : late game + boss (~15 s)
     ("long_fournaise",160.0, 2.4, None, None),
-    ("long_neon",     208.0, 2.4, None, None),
-    ("long_fournaise",170.5, 2.4, None, None),
-    ("long_neon",     214.0, 2.2, None, None),
-    ("boss_tank",       9.0, 2.6, "AFFRONTEZ LA ROUILLE VIVANTE", CYAN),
-    ("boss_tank",      33.0, 2.6, None, None),
+    ("long_neon",     213.8, 2.4, None, None),
+    ("long_fournaise",230.0, 2.4, None, None),
+    ("long_neon",     246.0, 2.2, None, None),
+    #    Le boss tue le joueur a 21 s dans ce rush : tout doit tenir avant.
+    ("boss_tank",      11.8, 2.6, "AFFRONTEZ LA ROUILLE VIVANTE", CYAN),
+    ("boss_tank",      17.4, 2.6, None, None),
 
     # -- E. Meta / menus (~12 s)
     ("charsel",         3.2, 2.2, "4 PERSONNAGES · 12 ARMES · 9 FUSIONS", CYAN),
@@ -85,12 +97,33 @@ EDL = [
     ("hub",             5.0, 2.1, None, None),
 
     # -- F. Final (~11 s)
-    ("long_fournaise",178.0, 2.4, None, None),
-    ("long_neon",     203.0, 2.3, None, None),
-    ("intro",          33.2, 6.4, "DISPONIBLE SUR ITCH.IO|drangoht.itch.io/chimera-protocol", GOLD),
+    ("long_fournaise",235.2, 2.4, None, None),
+    ("long_neon",     265.0, 2.3, None, None),
+    ("intro",          34.2, 6.4, "DISPONIBLE SUR ITCH.IO|drangoht.itch.io/chimera-protocol", GOLD),
 ]
 
 TOTAL = sum(e[2] for e in EDL)
+
+# ---------------------------------------------------------------------------
+# EDL MUSICALE — (piste, t_entree_s)
+#   Trois morceaux de la bande-son du jeu (metal industriel, 1.17.0) enchaines par
+#   fondu croise de XFADE. Les bornes sont calees sur la structure du montage :
+#     0.0   theme principal      — cold open + narration de la cinematique
+#    10.6   run neon (refrain)   — entree du gameplay, 160 BPM
+#    41.0   theme de boss        — arrivee du boss, tenu jusqu'au carton final
+#
+#   Choix des pistes : PAS `music_intro.ogg` ici, alors que c'est la musique qui joue sur les
+#   plans de cinematique -- la meme piste jouee deux fois avec un decalage donne un doublage
+#   sale. Meme raison pour les biomes : les plans de gameplay viennent surtout de neon et
+#   fournaise, et l'audio des rushes est justement attenue a CLIP_GAIN.
+# ---------------------------------------------------------------------------
+MUSIC_EDL = [
+    ("assets/audio/music/music_menu.ogg",             0.0),
+    ("assets/audio/music/music_run_neon_combat.ogg", 10.6),
+    ("assets/audio/music/music_run_boss.ogg",        41.0),
+]
+
+XFADE = 1.6
 
 
 def run(args, **kw):
@@ -174,16 +207,23 @@ def concat():
 
 def finalize(concat_mp4):
     """Musique continue + audio des plans, fondus d'ouverture/fermeture, encodage YouTube."""
-    xfade = 1.6
-    intro_len = 11.4                      # les 3 plans de cinematique
-    main_len = TOTAL - intro_len + xfade
+    # Chaine de fondus croises : chaque morceau est coupe a la duree qui le mene jusqu'a
+    # l'entree du suivant, PLUS le recouvrement du fondu (acrossfade consomme XFADE de la
+    # fin du precedent, donc sans cette marge le fondu mordrait sur la section utile).
+    segs = []
+    for i, (path, start) in enumerate(MUSIC_EDL):
+        end = MUSIC_EDL[i + 1][1] if i + 1 < len(MUSIC_EDL) else TOTAL
+        segs.append(f"[{i + 1}:a]atrim=0:{end - start + XFADE},asetpts=PTS-STARTPTS[m{i}];")
+
+    chain = ""
+    prev = "[m0]"
+    for i in range(1, len(MUSIC_EDL)):
+        out = "[mus]" if i == len(MUSIC_EDL) - 1 else f"[x{i}]"
+        chain += f"{prev}[m{i}]acrossfade=d={XFADE}:c1=tri:c2=tri{out};"
+        prev = out
 
     filt = (
-        # Musique 1 : theme d'intro (celui qui joue deja sur les plans de cinematique).
-        f"[1:a]atrim=0:{intro_len + xfade},asetpts=PTS-STARTPTS[m1];"
-        # Musique 2 : theme de run intense, cale sur l'entree du gameplay.
-        f"[2:a]atrim=0:{main_len},asetpts=PTS-STARTPTS,afade=t=in:d=1.0[m2];"
-        f"[m1][m2]acrossfade=d={xfade}:c1=tri:c2=tri[mus];"
+        "".join(segs) + chain +
         f"[mus]volume=0.95,afade=t=out:st={TOTAL - 2.6}:d=2.6[musf];"
         # Audio des plans (deja attenue a l'extraction) + musique.
         f"[0:a]volume=1.0[clips];"
@@ -196,9 +236,16 @@ def finalize(concat_mp4):
         f"[0:v]fade=t=in:st=0:d=0.8,fade=t=out:st={TOTAL - 1.8}:d=1.8[vout]"
     )
 
+    inputs = ["-i", concat_mp4]
+    for path, _start in MUSIC_EDL:
+        full = os.path.join(PROJ, path)
+        if not os.path.exists(full):
+            raise SystemExit(f"Musique manquante : {path}")
+        inputs += ["-i", path]
+
     run([
         "ffmpeg", "-v", "error", "-y",
-        "-i", concat_mp4, "-i", MUSIC_INTRO, "-i", MUSIC_MAIN,
+        *inputs,
         "-filter_complex", filt,
         "-map", "[vout]", "-map", "[aout]",
         "-c:v", "libx264", "-crf", "16", "-preset", "slow",

@@ -317,12 +317,24 @@ Tout nouveau chemin de sortie de run doit l'appeler aussi.
   mid/late game : prévoir des prises de 4–5 min et ne garder que la fin.
 - Traverser les menus au clavier dérive vite (une prise « menu » a fini dans Options) : lancer
   **directement** la scène de l'écran voulu (`res://scenes/ui/BestiaryScreen.tscn`…).
-- Repérer les points de coupe sur des planches-contact (`fps=1,tile=6x5`) **et vérifier le clip
-  extrait** : un écran modal ne dure que ~2 s, une erreur de lecture de la planche fait tomber le
-  plan sur le level-up suivant.
+- Repérer les points de coupe sur des planches-contact (`tools/trailer_sheets.py`) **et vérifier le
+  clip extrait** : un écran modal ne dure que ~2 s, une erreur de lecture de la planche fait tomber
+  le plan sur le level-up suivant.
+- **Les timecodes de l'EDL ne survivent pas à une recapture.** Les runs sont randomisées : après un
+  passage de `record_trailer.py`, chaque plan est à recaler sur de nouvelles planches, et une prise
+  qui marchait peut échouer (le joueur est mort à 21 s dans le `boss_tank` de la 1.17.0, la fin du
+  rush étant l'écran de Hub). Vérifier chaque source avant de monter.
+- **Une planche au pas de 5 s ne voit pas les modales** (≈2 s à l'écran) : elle en rate, et surtout
+  elle en cache — un plan « gameplay » calé entre deux vignettes propres peut tomber en plein écran
+  de fusion. Repasser à `--step 1` (voire 0,5) sur la fenêtre retenue, ou vérifier le montage final
+  par une planche du MP4.
 - Mixage : l'audio des rushes porte déjà la musique du jeu. Empiler une 2e musique à volume plein
-  donne deux thèmes qui se battent → garder les plans à ~0,16 (texture des impacts) sous une piste
-  musicale continue, puis `loudnorm=I=-14:TP=-1.5` (la somme brute sortait à −8 LUFS, écrêtée).
+  donne deux thèmes qui se battent → garder les plans bas (`CLIP_GAIN`, 0,12 depuis la bande-son
+  metal : deux musiques rythmiques se battent plus que deux nappes) sous une piste musicale
+  continue, puis `loudnorm=I=-14:TP=-1.5` (la somme brute sortait à −8 LUFS, écrêtée).
+- **Ne pas remettre en musique de montage la piste qui joue déjà dans les plans** (`music_intro`
+  sur les plans de cinématique) : la même piste jouée deux fois avec un décalage donne un doublage
+  sale. Choisir des morceaux absents — ou quasi absents — des rushes retenus (`MUSIC_EDL`).
 
 ## Tests headless
 - `LevelUpScreen` met l'arbre EN PAUSE → gèle le serveur physique en headless (neutraliser l'XP de départ pour tester le gameplay)
