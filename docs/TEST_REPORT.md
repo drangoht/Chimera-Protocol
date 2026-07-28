@@ -42,8 +42,28 @@ combat trivial une fois les fusions réparées.
 donc le TTK varie de ~10 à ~60 s à PV constants. Aucun réglage de PV ne satisfait les deux extrêmes ;
 c'est le rôle du boss d'être un test de build, mais l'amplitude mérite un arbitrage de design.
 
-**Reste à mesurer :** le facteur humain post-correctif (le banc joue immobile et invulnérable, toutes
-armes à portée en permanence — c'est une borne basse de TTK).
+**Mesuré depuis (run complète jouée, Fournaise, 2026-07-28)** — trois combats dans la même run, le
+boss de fin puis ses deux réapparitions d'overtime :
+
+| # | Moment | Niveau | DPS | PV | TTK |
+|---|---|---|---|---|---|
+| 1 | boss de fin (~13 min) | 126 | 617 | 27 304 | **44,2 s** |
+| 2 | overtime +45 s | 135 | 1381 | 30 872 | 22,4 s |
+| 3 | overtime +105 s | 144 | 2322 | 34 321 | 14,8 s |
+
+- **Le facteur humain n'existe pas** : 617 DPS joué, dans la fourchette du banc immobile (368-858).
+  Le correctif des fusions tient — les trois fusions du build ont atteint le niveau max (L20).
+- **Le joueur monte bien plus haut que le banc** : niveau 126 contre 66-84 en `--auto-play` (un
+  humain se déplace pour ramasser l'XP).
+- **La puissance explose en overtime** : DPS ×3,8 en deux minutes, tous les passifs au plafond L20.
+  Le boss d'overtime tombe en 14,8 s malgré +26 % de PV.
+
+**Décision :** `rusted_core.maxHp` **12000 → 8000**, calibré sur ce relevé (≈ 23 s Sanctuaire /
+29 s Fournaise / 32 s Néon à 617 DPS). Les dégâts du boss ne bougent pas : le joueur a survécu au
+combat sans difficulté avec `reinforced_plating` L20.
+
+**Ouvert :** la courbe de puissance dépasse celle du contenu une fois l'arbre de cartes épuisé (tous
+les passifs L20 dès l'overtime) — sujet de design distinct du TTK.
 
 ---
 

@@ -1610,6 +1610,11 @@ Justification design :
 
 ### 20.3 Valeurs retenues (`data/enemies.json`)
 
+> ⚠ **Tableau historique (2026-06-28).** Les valeurs runtime ont évolué depuis — source de vérité :
+> `data/enemies.json` (`rusted_core`) et son `tuningNote`. Au 2026-07-28 : `maxHp` **8000**,
+> `damagePerProjectile` 34, `hpScalingPerMinute` 0,06, `damageScalingPerMinute` 0,08. Le calibrage
+> ci-dessous partait d'un DPS *théorique* ; il est remplacé par la mesure de §20.6.
+
 | Champ | Avant | Après | Raison |
 |---|---|---|---|
 | `maxHp` | 1600 | **12000** | Atteint ~20 000 PV effectifs en Normal à 13 min |
@@ -1668,6 +1673,20 @@ outillée, plus estimée :
   celui d'un joueur qui esquive est nécessairement supérieur. Le jeu se ferme dès le relevé écrit.
 - **Mesure de référence** = un humain, build joué, sans `--invuln`. Le bot `boss_ttk_test.py` kite en
   cercle et ne vaut pas validation d'équilibrage.
+
+**Première mesure jouée de bout en bout (2026-07-28, Fournaise, run complète)** : niveau **126** au
+boss, 3 fusions au niveau max, `reinforced_plating` L20 → **617 DPS effectifs**, TTK **44,2 s** à
+12000 PV de base. D'où le passage à **8000** (≈ 23 s Sanctuaire / 29 s Fournaise / 32 s Néon pour ce
+build). Deux constats de méthode :
+
+- **Le « facteur humain » est négligeable** : 617 DPS joué contre 368-858 au banc immobile. Un joueur
+  en mouvement ne perd pas de DPS de façon décisive — il ramasse en revanche beaucoup plus d'XP que
+  le banc (niveau 126 contre 66-84).
+- **La puissance explose en overtime** : sur la même run, les deux boss suivants sont tombés à
+  **1381** puis **2322 DPS** (niveaux 135 et 144, tous les passifs au plafond L20) — le DPS quadruple
+  en deux minutes. Le boss d'overtime, censé être une escalade, devient donc trivial (14,8 s malgré
+  +26 % de PV). À arbitrer séparément : la courbe de puissance du joueur dépasse largement celle du
+  contenu une fois l'arbre de cartes épuisé.
 
 ## 21. Faune par biome — 20 nouveaux ennemis basiques (conçu 2026-07-02)
 

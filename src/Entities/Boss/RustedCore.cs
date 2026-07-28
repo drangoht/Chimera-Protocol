@@ -78,7 +78,7 @@ public partial class RustedCore : EnemyBase
         // NB : ces valeurs sont écrasées par EnemySpawner.ApplyScaling() qui lit data/enemies.json
         // (source de vérité du tuning) juste après _Ready. On les garde alignées sur le JSON pour
         // documenter l'intention et éviter la dérive.
-        MaxHp   = 12000f;
+        MaxHp   = 8000f;
         Speed   = 46f;
         Damage  = 34f;
         XpValue = 500;
