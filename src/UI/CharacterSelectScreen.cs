@@ -76,7 +76,15 @@ public partial class CharacterSelectScreen : Control
         // Carte de personnage : cadre « plaque », la teinte du perso restant portée par le
         // portrait, son nom et ses stats.
         var style = UiStyle.CardFrame(UiStyle.CardRarity.Rare);
-        style.SetContentMarginAll(10);
+        // Marges LATÉRALES à 16 = largeur de la bande du cadre « plaque blindée »
+        // (UiStyle.PanelContentMargin). En dessous, le contenu déborde SUR le liseré d'accent
+        // (qui court de 12 à 16 px du bord) : à 10, le bouton « Choisir » paraissait collé à la
+        // bordure. Les marges HAUT/BAS restent à 10 : les monter aussi rendrait les quatre cartes
+        // trop hautes pour l'écran, et la dernière serait encore plus rognée par le ScrollContainer.
+        style.SetContentMargin(Side.Left,   UiStyle.PanelContentMargin);
+        style.SetContentMargin(Side.Right,  UiStyle.PanelContentMargin);
+        style.SetContentMargin(Side.Top,    10);
+        style.SetContentMargin(Side.Bottom, 10);
         panel.AddThemeStyleboxOverride("panel", style);
 
         var hb = new HBoxContainer();
