@@ -1944,3 +1944,91 @@ dépôt. **Licence Suno : plan gratuit — usage non commercial**, acté à la 1
 distribué gratuitement ; toute monétisation imposerait de regénérer sous plan payant ou de revenir à
 la bande-son synthétisée par le dépôt (`assets/audio/CREDITS.md`).
 Câblage et pièges techniques : `docs/PITFALLS.md`.
+
+## 28. Paliers de menace — la difficulté suit les niveaux débloqués (2026-07-28)
+
+### 28.1 Le problème
+
+Les niveaux se débloquent **en séquence** (`sanctuaire → aether → givre → fournaise → neon`, un
+boss de fin battu débloque le suivant) et, entre deux déblocages, le joueur dépense des Échos au
+**Hub** : PV (+150 à l'arbre complet, soit ×2,5), dégâts (+74 %), réduction de dégâts (23 %),
+régénération, vies de secours, slots de greffe, perks de départ… Or **tous les niveaux tournaient
+sur la même courbe de difficulté**. Conséquences :
+
+- le dernier niveau, atteint avec un personnage 2 à 3 fois plus fort, était **plus facile** que le
+  premier — la progression méta se retournait contre le jeu ;
+- **farmer le 1er niveau restait optimal** (mêmes Échos pour un risque bien moindre), ce qui
+  décourageait précisément la progression que le déblocage cherche à encourager.
+
+### 28.2 Le palier de menace
+
+Chaque niveau porte un **palier** = son index dans l'ordre de déblocage (`LevelThreat.Order`, source
+de vérité unique dont `GameSettings.LevelOrder` se sert). Le palier module 5 leviers, tous groupés
+dans les tables de `src/Core/Rules/LevelThreat.cs` (logique pure, testée) :
+
+| Palier | Niveau | PV basiques | Dégâts | Densité de spawn | Décalage de courbe | Échos |
+|---|---|---|---|---|---|---|
+| 0 | Sanctuaire Rouillé | ×1,00 | ×1,00 | ×1,00 | +0,0 min | ×1,00 |
+| 1 | Friche d'Aether | ×1,10 | ×1,10 | ×1,04 | +0,6 min | ×1,10 |
+| 2 | Givre Cryogénique | ×1,22 | ×1,20 | ×1,08 | +1,2 min | ×1,20 |
+| 3 | Fournaise | ×1,35 | ×1,32 | ×1,12 | +1,8 min | ×1,32 |
+| 4 | Secteur Néon | ×1,50 | ×1,45 | ×1,16 | +2,4 min | ×1,45 |
+
+Le palier est **multiplicatif avec le réglage de difficulté** du joueur (`DifficultyTuning`,
+Facile/Normal/Difficile) : deux axes indépendants — le palier vient du **niveau joué**, la difficulté
+du **réglage**. Il se cumule aussi avec l'escalade d'overtime, qui reste inchangée.
+
+**Effet net** (Nuée de Rouille, `hpScalingPerMinute=0.14`) : au Néon un ennemi basique a ~×1,9 PV et
+~×1,75 dégâts par rapport au Sanctuaire au même instant de run. C'est calibré sur la marge que
+l'arbre du Hub complet donne au joueur (PV ×2,2 avant réduction de dégâts, DPS ×1,74) : le joueur
+équipé reste **plus fort qu'à ses débuts**, mais le dernier niveau redevient un test.
+
+### 28.3 Deux temps de référence (le décalage n'accélère pas la densité)
+
+`EnemySpawner._Process` distingue désormais :
+
+- **`tDensity`** = temps réel (+ overtime) → cadence de spawn, taille des lots et des vagues, cap
+  simultané. La densité d'un haut palier vient **uniquement** de `LevelThreat.SpawnMult` ;
+- **`tStat`** = `tDensity + TimeOffsetMinutes(palier)` → scaling PV/dégâts, **variété** d'ennemis
+  tirables (`spawnStartMinute`) et fréquence d'affixes d'élite.
+
+Sans cette séparation, un décalage de +2,4 min ferait démarrer le Néon à la densité du mid-game :
+l'écran serait plein dès la 10ᵉ seconde. Là, le haut palier envoie **des ennemis plus dangereux et
+plus variés tôt**, sans transformer les premières secondes en mur.
+
+### 28.4 Les champions encaissent moins (`ChampionHpSoftening = 0.55`)
+
+Les mini-boss et le boss de fin ne reçoivent que **55 % du bonus de PV** du palier (les dégâts, eux,
+montent au taux plein : ce sont des menaces, pas des éponges). Raison : **battre le boss est la
+condition de déblocage du niveau suivant**. Au taux plein, le palier se transformerait en mur et
+bloquerait la progression au lieu de la doser. Le Noyau Rouillé passe ainsi de 21 360 PV
+(Sanctuaire, 13 min) à 29 437 PV au Néon (+38 %), là où les basiques prennent +90 %. Cohérent avec
+le choix existant de laisser les champions sur le scaling **linéaire** (§23.3).
+
+### 28.5 Récompense : le palier paie
+
+Le multiplicateur d'Échos (`LevelThreat.EchoMult`, ×1,00 → ×1,45) est appliqué **composante par
+composante** dans `EchoFormula` via `ApplyTier` (troncature). Ce découpage est un contrat avec
+`RunEndScreen`, qui anime les composantes une par une en appliquant *exactement* la même opération :
+la somme affichée tombe donc pile sur le total crédité. Le plafond de surcharge (overtime, 100)
+s'applique **avant** le palier — c'est un plafond de design sur la durée de survie, que le palier
+récompense ensuite comme les autres composantes.
+
+Résultat : monter d'un palier est désormais le chemin le plus rentable, et le farm du 1er niveau
+n'est plus optimal.
+
+### 28.6 Lisibilité
+
+- **Écran de sélection de niveau** : chaque carte affiche `Menace ★★★ · Échos ×1,20`. Le contrat est
+  lu **avant** de lancer la run — le joueur choisit son risque en connaissance de cause.
+- **Écran de fin de run** : la ligne de survie rappelle `Menace ★★★ ×1,20` dès le palier 1, ce qui
+  explique des composantes d'Échos plus grosses qu'au 1er niveau.
+- Seul le glyphe **★** est utilisé (pas ☆) : il est garanti dans Share Tech Mono, l'étoile vide non.
+
+### 28.7 Ce qui a été écarté
+
+**Difficulté indexée sur la puissance méta réelle** (Échos dépensés / niveaux d'upgrades achetés)
+plutôt que sur le niveau joué. Rejeté : c'est du *rubber banding*. Acheter une amélioration au Hub
+rendrait mécaniquement le jeu plus dur, annulant la récompense — le joueur paierait pour ne rien
+gagner. Le palier par niveau garde la relation lisible « niveau plus avancé = plus dur = paie plus »,
+et laisse la puissance méta se ressentir pleinement quand on rejoue un niveau déjà maîtrisé.

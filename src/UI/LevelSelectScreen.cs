@@ -80,6 +80,14 @@ public partial class LevelSelectScreen : Control
         t.TweenCallback(Callable.From(() => (_firstPlay ?? back).GrabFocus()));
     }
 
+    /// <summary>
+    /// Jauge de menace du palier, en étoiles (palier 0 → ★, palier 4 → ★★★★★). Seul le glyphe plein
+    /// est utilisé : ☆ n'est pas garanti dans Share Tech Mono, ★ l'est (déjà employé sur cet écran et
+    /// à la fin de run). Partagée avec <see cref="RunEndScreen"/>.
+    /// </summary>
+    public static string ThreatStars(int tier)
+        => new('★', Mathf.Clamp(tier + 1, 1, LevelThreat.MaxTier + 1));
+
     private Control BuildCard(string id, string name, string effect, string desc, Color accent, string preview)
     {
         bool unlocked  = GameSettings.Instance?.IsUnlocked(id) ?? true;
@@ -149,10 +157,19 @@ public partial class LevelSelectScreen : Control
         var lblEffect = new Label { Text = effect };
         lblEffect.AddThemeFontSizeOverride("font_size", 14);
         lblEffect.AddThemeColorOverride("font_color", Cyan);
+        // Palier de menace : contrat lisible avant de lancer la run — les niveaux tardifs sont plus
+        // durs (le Hub a rendu le joueur plus fort) mais paient plus d'Échos (cf. LevelThreat).
+        int tier = LevelThreat.TierOf(id);
+        var lblThreat = new Label
+        {
+            Text = $"{Loc.T("LEVELSEL_THREAT")} {ThreatStars(tier)}   ·   {Loc.T("LEVELSEL_ECHO_MULT", $"{LevelThreat.EchoMult(tier):0.00}")}",
+        };
+        lblThreat.AddThemeFontSizeOverride("font_size", 14);
+        lblThreat.AddThemeColorOverride("font_color", new Color(1f, 0.8f, 0.27f));   // or : récompense
         var lblDesc = new Label { Text = desc, AutowrapMode = TextServer.AutowrapMode.WordSmart };
         lblDesc.AddThemeFontSizeOverride("font_size", 14);
         lblDesc.AddThemeColorOverride("font_color", Dim);
-        vb.AddChild(nameRow); vb.AddChild(lblEffect); vb.AddChild(lblDesc);
+        vb.AddChild(nameRow); vb.AddChild(lblEffect); vb.AddChild(lblThreat); vb.AddChild(lblDesc);
         hb.AddChild(vb);
 
         var play = new Button

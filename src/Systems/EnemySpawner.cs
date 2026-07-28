@@ -10,6 +10,9 @@ using System.Text.Json;
 /// - vagues       = toutes les 25 s, un essaim de (16 + t_minutes*5) ennemis d'un coup
 /// Filtre les ennemis selon spawnStartMinute, tire selon spawnWeight.
 /// Applique le scaling HP/dommages avant de relâcher l'ennemi dans la scène.
+/// Trois axes multiplicatifs par-dessus la courbe temporelle : le réglage de difficulté du joueur
+/// (<see cref="DifficultyTuning"/>), le palier de menace du NIVEAU joué (<see cref="LevelThreat"/>,
+/// cf. GDD §28) et l'escalade d'overtime.
 /// </summary>
 public partial class EnemySpawner : Node
 {
@@ -31,6 +34,14 @@ public partial class EnemySpawner : Node
     // Upgrade meta "overtime_stabilizer" : amortit la pente de scaling en overtime uniquement
     // (0 à -15%, 3 niveaux de -5%). Lu une fois au _Ready — n'affecte pas la difficulté standard.
     private float _overtimeStabilizerFactor = 1f;
+
+    /// <summary>
+    /// Palier de menace du niveau joué (index dans <see cref="LevelThreat.Order"/>) : plus le joueur
+    /// avance dans les niveaux débloqués, plus il est équipé par le Hub — les ennemis montent avec lui
+    /// (PV/dégâts/densité/variété, cf. GDD §28). Résolu à la demande car `GameManager.CurrentBiomeId`
+    /// est posé par GroundRenderer._Ready et l'ordre des _Ready entre nœuds frères n'est pas garanti.
+    /// </summary>
+    private int ThreatTier => LevelThreat.TierOf(GameManager.Instance?.CurrentBiomeId);
 
     // Données de spawn chargées depuis enemies.json
     private readonly List<EnemySpawnData> _enemyPool = new();
@@ -121,14 +132,21 @@ public partial class EnemySpawner : Node
         float otMin   = overtime ? tracker!.OvertimeSeconds / 60f : 0f;
         // overtime_stabilizer : amortit UNIQUEMENT la composante de temps overtime (pas tMinutes).
         float otMinEffectif = otMin * _overtimeStabilizerFactor;
-        float tEff    = tMinutes + otMinEffectif * 4f;
+        // Deux temps de référence distincts (cf. LevelThreat.TimeOffsetMinutes) :
+        //  - tDensity : cadence, taille des lots/vagues et cap simultané → temps réel (+ overtime).
+        //    La densité d'un haut palier vient de LevelThreat.SpawnMult, PAS du décalage, sinon les
+        //    premières secondes du dernier niveau basculeraient d'un coup en mid-game.
+        //  - tStat    : scaling PV/dégâts, variété d'ennemis tirables et fréquence d'élite → décalé
+        //    par le palier de menace du niveau (on démarre plus avancé sur la courbe).
+        float tDensity  = tMinutes + otMinEffectif * 4f;
+        float tStat     = tDensity + LevelThreat.TimeOffsetMinutes(ThreatTier);
         float waveReset = overtime ? Mathf.Max(8f, 18f - otMinEffectif * 2f) : 25f;
 
-        float spawnInterval = SpawnCurve.SpawnInterval(tEff);
+        float spawnInterval = SpawnCurve.SpawnInterval(tDensity);
         _timer -= (float)delta;
         if (_timer <= 0f)
         {
-            TrySpawnBatch(tEff, SpawnCurve.BatchCount(tEff));
+            TrySpawnBatch(tDensity, tStat, SpawnCurve.BatchCount(tDensity));
             _timer = spawnInterval;
         }
 
@@ -136,8 +154,7 @@ public partial class EnemySpawner : Node
         _waveTimer -= (float)delta;
         if (_waveTimer <= 0f)
         {
-            float spawnMult = GameSettings.Instance?.SpawnMult ?? 1f;
-            TrySpawnBatch(tEff, SpawnCurve.WaveSize(tEff, spawnMult));
+            TrySpawnBatch(tDensity, tStat, SpawnCurve.WaveSize(tDensity, TotalSpawnMult));
             _waveTimer = waveReset;
         }
 
@@ -147,14 +164,14 @@ public partial class EnemySpawner : Node
             _eliteTimer -= (float)delta;
             if (_eliteTimer <= 0f)
             {
-                SpawnOvertimeElite(tEff);
+                SpawnOvertimeElite(tStat);
                 _eliteTimer = Mathf.Max(5f, 14f - otMinEffectif * 1.5f);
             }
 
             _bossTimer -= (float)delta;
             if (_bossTimer <= 0f)
             {
-                SpawnOvertimeBoss(tEff);
+                SpawnOvertimeBoss(tStat);
                 _bossTimer = Mathf.Max(28f, 50f - otMinEffectif * 2f);
             }
         }
@@ -193,24 +210,30 @@ public partial class EnemySpawner : Node
     // Spawn
     // -------------------------------------------------------------------------
 
-    private int CurrentMaxEnemies(float tMinutes)
-        => SpawnCurve.MaxEnemies(tMinutes, GameSettings.Instance?.SpawnMult ?? 1f);
+    /// <summary>Densité de spawn : réglage de difficulté du joueur × palier de menace du niveau.</summary>
+    private float TotalSpawnMult
+        => (GameSettings.Instance?.SpawnMult ?? 1f) * LevelThreat.SpawnMult(ThreatTier);
 
-    private void TrySpawnBatch(float tMinutes, int count)
+    private int CurrentMaxEnemies(float tDensity)
+        => SpawnCurve.MaxEnemies(tDensity, TotalSpawnMult);
+
+    /// <param name="tDensity">Temps de référence de la densité (cap simultané).</param>
+    /// <param name="tStat">Temps de référence du scaling et du tirage (décalé par le palier).</param>
+    private void TrySpawnBatch(float tDensity, float tStat, int count)
     {
-        int maxEnemies = CurrentMaxEnemies(tMinutes);
+        int maxEnemies = CurrentMaxEnemies(tDensity);
         int alive = GetTree().GetNodesInGroup(Constants.GroupEnemies).Count;
         int room  = maxEnemies - alive;
         if (room <= 0) return;
         count = Mathf.Min(count, room);
 
-        var available = GetAvailableEnemies(tMinutes);
+        var available = GetAvailableEnemies(tStat);
         if (available.Count == 0) return;
 
         for (int i = 0; i < count; i++)
         {
             var chosen = WeightedRandom(available);
-            SpawnEnemy(chosen, tMinutes);
+            SpawnEnemy(chosen, tStat);
         }
     }
 
@@ -260,13 +283,18 @@ public partial class EnemySpawner : Node
 
         // Application du scaling temporel APRÈS _Ready (qui a déjà initialisé _currentHp).
         // On utilise ApplyScaling pour synchroniser _currentHp avec le MaxHp scalé.
-        float hpMult  = GameSettings.Instance?.EnemyHpMult ?? 1f;
-        float dmgMult = GameSettings.Instance?.EnemyDamageMult ?? 1f;
+        // Palier de menace du niveau : multiplicatif avec le réglage de difficulté du joueur. Les PV
+        // des champions (mini-boss/boss de fin) ne reçoivent qu'une fraction du bonus — battre le boss
+        // est la condition de déblocage du niveau suivant (cf. LevelThreat.ChampionHpSoftening).
+        int   tier    = ThreatTier;
+        float hpMult  = (GameSettings.Instance?.EnemyHpMult ?? 1f);
+        float dmgMult = (GameSettings.Instance?.EnemyDamageMult ?? 1f) * LevelThreat.EnemyDamageMult(tier);
         // La courbe non-linéaire (early grace + accélération late) cible les ennemis BASIQUES —
         // c'est là que le joueur devient « OP » en survivant. Les mini-boss (maxSimultaneous > 0) et
         // le boss de fin sont des gates de survie calibrés séparément (TTK, cf. GDD §17/§18/§20) :
         // ils gardent le scaling LINÉAIRE historique pour ne pas fausser leur fenêtre de victoire.
         bool isChampion = data.MaxSimultaneous > 0 || BossIds.Contains(data.Id);
+        hpMult *= isChampion ? LevelThreat.ChampionHpMult(tier) : LevelThreat.EnemyHpMult(tier);
         float scaledHp = isChampion
             ? EnemyScaling.Scaled(data.MaxHp, tMinutes, data.HpScalingPerMinute, hpMult)
             : EnemyScaling.ScaledCurved(data.MaxHp, tMinutes, data.HpScalingPerMinute, hpMult);

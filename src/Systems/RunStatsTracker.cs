@@ -177,8 +177,12 @@ public partial class RunStatsTracker : Node
         return EchoFormula.CalculateDetailed(timeSecs, kills, cores,
             meta.EchoTimeDiv, meta.EchoKillDiv, meta.EchoCoreMult, meta.EchoBaseBonus,
             RunDurationSeconds, meta.EchoCapKills, meta.EchoCapCores,
-            meta.EchoOvertimeDampening, meta.EchoOvertimeBonusCap);
+            meta.EchoOvertimeDampening, meta.EchoOvertimeBonusCap,
+            LevelThreat.EchoMult(ThreatTier));
     }
+
+    /// <summary>Palier de menace du niveau joué (cf. <see cref="LevelThreat"/>, GDD §28).</summary>
+    public int ThreatTier => LevelThreat.TierOf(GameManager.Instance?.CurrentBiomeId);
 
     // ---------------------------------------------------------------------------
     // Écran de fin
@@ -206,6 +210,7 @@ public partial class RunStatsTracker : Node
         screen.PendingLevelCompleted = LevelCompleted;
         screen.PendingDifficultyKey  = GameSettings.DifficultyKey(
             GameSettings.Instance?.Difficulty ?? GameSettings.GameDifficulty.Normal);
+        screen.PendingThreatTier     = ThreatTier;
         screen.PendingNewChallenges  = newChallenges;
 
         // Ajout différé à la racine pour éviter les conflits avec le scene tree en cours de flush

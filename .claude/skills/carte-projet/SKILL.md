@@ -30,7 +30,7 @@ data/              JSON de tuning (modifiable sans recompiler) — voir §Data
 localization/      ui.csv (source) → ui.{en,fr,es}.translation ; clé via Loc.T("CLÉ")
 assets/            Raw (sprites PNG 32×32, audio OGG/WAV, themes)
 tools/             Générateurs de sprites/audio + captures + release — voir §Outils
-tests/             xUnit — ChimeraProtocol.Tests.csproj (119 tests). `dotnet test tests/...`
+tests/             xUnit — ChimeraProtocol.Tests.csproj (184 tests). `dotnet test tests/...`
 docs/              GDD.md + briefs/plans — voir §Docs
 ```
 
@@ -43,7 +43,11 @@ docs/              GDD.md + briefs/plans — voir §Docs
 ## §Rules — `src/Core/Rules/` (logique pure, testée)
 XpCurve · EnemyScaling (`Scaled` linéaire + `ScaledCurved`/`CurvedFactor` = courbe non-linéaire :
 early grace + accélération late, cf. difficulté) · SpawnCurve · WeaponLeveling · StatCaps · WeightedPicker ·
-EchoFormula · RarityWeights · CrowdControlCaps · DifficultyTuning · **VersionCompare**
+EchoFormula (+ `ApplyTier` = multiplicateur de palier appliqué composante par composante) ·
+**LevelThreat** (paliers de menace par NIVEAU : `Order` = ordre de déblocage — source de vérité de
+`GameSettings.LevelOrder` — et index = palier ; `EnemyHpMult`/`ChampionHpMult`/`EnemyDamageMult`/
+`SpawnMult`/`TimeOffsetMinutes`/`EchoMult`, cf. GDD §28) ·
+RarityWeights · CrowdControlCaps · DifficultyTuning · **VersionCompare**
 (comparaison sémantique pour le bandeau de MAJ) · **EliteAffixTable** (affixes d'élite :
 fréquence + tirage + `EliteModifiers`, cf. GDD §22) · **GraftTable** (Assimilation : parse
 `grafts.json`, routage kill→jauge `RouteKill`, seuils `EffectiveThreshold`/`DeclinedThreshold`,

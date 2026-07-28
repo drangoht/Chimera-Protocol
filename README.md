@@ -18,6 +18,13 @@ morceau, couplet et refrain, et le jeu passe de l'une à l'autre en fondu selon 
 d'ennemis, temps de survie, points de vie — avant de basculer sur le **thème de boss** quand un
 colosse débarque.
 
+**Paliers de menace** *(2026-07-28)* — les 5 niveaux se débloquent en séquence et le Hub te rend
+2 à 3 fois plus fort en chemin : chaque niveau porte désormais un **palier de menace** croissant
+(ennemis plus coriaces, plus dangereux, plus nombreux et plus variés tôt) **et paie plus d'Échos**
+(jusqu'à ×1,45 au Secteur Néon). Le contrat est affiché sur la carte du niveau — `Menace ★★★ ·
+Échos ×1,20` — avant de lancer la run. Finie l'anomalie où le dernier niveau était plus facile que
+le premier et où farmer le Sanctuaire restait optimal.
+
 **Cadres d'UI « plaque blindée »** *(2026-07-26, v1.16.0)* — le style de cadre biseauté (chanfreins,
 bevel, rivets, focus pulsé) déjà utilisé sur boutons/cartes/popups s'étend aux modales, à l'écran de
 level-up, aux écrans de sélection, ainsi qu'aux **curseurs, interrupteurs et menus déroulants**
@@ -30,6 +37,7 @@ d'UI ne se coupent plus à l'ouverture d'une popup (level-up, pause, Assimilatio
 
 | Phase | Statut | Contenu |
 |---|---|---|
+| **Paliers de menace** | ✅ Livré | La difficulté suit l'ordre de déblocage des niveaux : palier 0 (Sanctuaire) → 4 (Néon), qui module PV (×1,50), dégâts (×1,45), densité de spawn (×1,16), décalage de courbe (+2,4 min sur la variété/le scaling, jamais sur la cadence) et **récompense en Échos** (×1,45). Les champions n'encaissent que 55 % du bonus de PV (battre le boss débloque le niveau suivant). Logique pure testée (`LevelThreat`, +17 tests, 184 au total) — `docs/GDD.md` §28 |
 | **Défis & Récompenses** | ✅ Livré | 4e levier de rétention (après arsenal / Hub / Assimilation). **13 défis** (combat/survie/assimilation/maîtrise) évalués en fin de run → Échos, **perks de départ** (Départ Symbiotique, Panoplie Glaive, Emplacement Bonus) ou **titres** cosmétiques. Écran **Défis** (progression X/N) + sélection perk/titre au Hub + flair du titre sur le menu. Logique pure testée (`ChallengeTable`, +16 tests). Menu principal réorganisé (sous-menu **Codex**) + sélecteur de langue à drapeaux |
 | **Assimilation** | ✅ Livré | « Ne tue pas les monstres. Deviens-les. » — chaque kill remplit une jauge d'archétype (Nuée/Drone/Sentinelle/Colosse) ; jauge pleine → greffe proposée (5 disponibles : Nuée Symbiotique, Servos Erratiques, Œil de Visée, Carapace Greffée, Onde du Rôdeur), 3 emplacements de base (5 via méta-upgrades). 2 **fusions** (Charge Blindée, Ruche de Tourelles) combinent 2 greffes en 1 forme évoluée qui libère un emplacement. Nouvel écran Codex **Chimère** (menu principal). **Silhouette-chimère** (v1.13.0) : le corps du joueur accumule visuellement des props ombrés pseudo-3D selon les greffes/fusions portées |
 | **Affixes d'élite** | ✅ Livré | Élites façon Risk of Rain 2 / Diablo : n'importe quel ennemi basique peut recevoir 1 affixe parmi 5 — **Blindé** (encaisse), **Régénérant** (se soigne hors combat), **Explosif** (AoE à la mort), **Frénétique** (rapide/fragile), **Vampirique** (vole des PV). Rendu teinté + agrandi + halo pulsant, XP/drops relevés. Fréquence croissante plafonnée (3 %→28 %). Logique pure testée (`EliteAffixTable`, +12 tests) |

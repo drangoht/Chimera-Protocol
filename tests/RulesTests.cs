@@ -45,6 +45,113 @@ public class EchoFormulaTests
     [Fact]
     public void Calculate_DiviseurNulNeFaitPasCrasher()
         => Assert.Equal(10, EchoFormula.Calculate(0, 0, 0, 0, 0, 5, 10, 780, 520, 22, 0.15, 100));
+
+    // ── Palier de menace (multiplicateur de récompense du niveau) ─────────────
+
+    [Fact]
+    public void TierMult_ParDefautNeChangeRien()
+        => Assert.Equal(211, EchoFormula.Calculate(780, 520, 22, 20, 10, 5, 10, 780, 520, 22, 0.15, 100, 1.0));
+
+    [Fact]
+    public void TierMult_MajoreChaqueComposante()
+    {
+        // Run pile aux caps au dernier palier (×1.45) : composantes 39/52/110/10 (total 211 au
+        // palier 0) → 56 + 75 + 159 + 14 = 304.
+        Assert.Equal(304, EchoFormula.Calculate(780, 520, 22, 20, 10, 5, 10, 780, 520, 22, 0.15, 100, 1.45));
+    }
+
+    [Fact]
+    public void TierMult_SommeDesComposantesEgaleLeTotal()
+    {
+        // Contrat avec RunEndScreen : il anime les composantes une par une via ApplyTier et leur
+        // somme DOIT tomber sur le total crédité (sinon l'écran de fin ment au joueur).
+        const double mult = 1.32;
+        var (total, overtime) = EchoFormula.CalculateDetailed(1080, 920, 29, 20, 10, 5, 10, 780, 520, 22, 0.15, 100, mult);
+        int somme = EchoFormula.ApplyTier(780 / 20, mult)
+                  + EchoFormula.ApplyTier(520 / 10, mult)
+                  + EchoFormula.ApplyTier(22 * 5,   mult)
+                  + EchoFormula.ApplyTier(10,       mult)
+                  + overtime;
+        Assert.Equal(total, somme);
+    }
+
+    [Fact]
+    public void TierMult_NeContournePasLePlafondDeSurcharge()
+    {
+        // Le plafond overtime (100) s'applique avant le palier : 100 × 1.45 = 145, pas davantage
+        // quelle que soit la durée de survie.
+        var (_, overtime) = EchoFormula.CalculateDetailed(36000, 80000, 1000, 20, 10, 5, 10, 780, 520, 22, 0.15, 100, 1.45);
+        Assert.Equal(145, overtime);
+    }
+}
+
+public class LevelThreatTests
+{
+    [Theory]
+    [InlineData("sanctuaire", 0)]
+    [InlineData("aether", 1)]
+    [InlineData("givre", 2)]
+    [InlineData("fournaise", 3)]
+    [InlineData("neon", 4)]
+    [InlineData("biome_inconnu", 0)]   // id inconnu → palier neutre
+    [InlineData("", 0)]
+    [InlineData(null, 0)]              // hors run / biome pas encore posé
+    public void TierOf_SuitLOrdreDeDeblocage(string? biomeId, int expected)
+        => Assert.Equal(expected, LevelThreat.TierOf(biomeId));
+
+    [Fact]
+    public void Palier0_EstNeutre()
+    {
+        Assert.Equal(1f, LevelThreat.EnemyHpMult(0), 3);
+        Assert.Equal(1f, LevelThreat.ChampionHpMult(0), 3);
+        Assert.Equal(1f, LevelThreat.EnemyDamageMult(0), 3);
+        Assert.Equal(1f, LevelThreat.SpawnMult(0), 3);
+        Assert.Equal(0f, LevelThreat.TimeOffsetMinutes(0), 3);
+        Assert.Equal(1.0, LevelThreat.EchoMult(0), 3);
+    }
+
+    [Fact]
+    public void Multiplicateurs_CroissentAvecLePalier()
+    {
+        for (int t = 1; t <= LevelThreat.MaxTier; t++)
+        {
+            Assert.True(LevelThreat.EnemyHpMult(t)     > LevelThreat.EnemyHpMult(t - 1));
+            Assert.True(LevelThreat.EnemyDamageMult(t) > LevelThreat.EnemyDamageMult(t - 1));
+            Assert.True(LevelThreat.SpawnMult(t)       > LevelThreat.SpawnMult(t - 1));
+            Assert.True(LevelThreat.TimeOffsetMinutes(t) > LevelThreat.TimeOffsetMinutes(t - 1));
+            Assert.True(LevelThreat.EchoMult(t)        > LevelThreat.EchoMult(t - 1));
+        }
+    }
+
+    [Fact]
+    public void ChampionsEncaissentMoinsQueLesBasiques()
+    {
+        // Le boss est la condition de déblocage du niveau suivant : son bonus de PV est amorti,
+        // mais reste supérieur à 1 (il monte quand même avec le palier).
+        for (int t = 1; t <= LevelThreat.MaxTier; t++)
+        {
+            Assert.True(LevelThreat.ChampionHpMult(t) < LevelThreat.EnemyHpMult(t));
+            Assert.True(LevelThreat.ChampionHpMult(t) > 1f);
+        }
+    }
+
+    [Fact]
+    public void PalierHorsBornes_EstClampe()
+    {
+        Assert.Equal(LevelThreat.EnemyHpMult(0), LevelThreat.EnemyHpMult(-3), 3);
+        Assert.Equal(LevelThreat.EnemyHpMult(LevelThreat.MaxTier), LevelThreat.EnemyHpMult(99), 3);
+        Assert.Equal(LevelThreat.EchoMult(LevelThreat.MaxTier), LevelThreat.EchoMult(42), 3);
+    }
+
+    [Fact]
+    public void ProgressionRestePlafonnee()
+    {
+        // Garde-fou de design : un palier ne doit jamais doubler les stats (le joueur gagne en
+        // puissance via le Hub, il ne doit pas repartir de zéro à chaque niveau).
+        Assert.True(LevelThreat.EnemyHpMult(LevelThreat.MaxTier)     <= 1.6f);
+        Assert.True(LevelThreat.EnemyDamageMult(LevelThreat.MaxTier) <= 1.6f);
+        Assert.True(LevelThreat.SpawnMult(LevelThreat.MaxTier)       <= 1.25f);
+    }
 }
 
 public class EnemyScalingTests

@@ -60,7 +60,8 @@ l'agent compétent (ordre de lancement : `GUIDE-CLAUDE-CODE.md`).
 - Style de code : PascalCase classes/méthodes, `_camelCase` champs privés, `readonly` par défaut.
 - Architecture : `src/` (logique C#) / `scenes/` (.tscn) / `assets/` (raw) / `data/` (JSON tuning modifiable sans recompiler).
 - **Logique pure testable** : `src/Core/Rules/` (classes statiques sans dépendance Godot — `XpCurve`, `EnemyScaling`, `EliteAffixTable`…). Les nœuds y délèguent (SRP).
-- **Tests unitaires** : xUnit, `dotnet test tests/ChimeraProtocol.Tests.csproj`. **167 tests**.
+- **Tests unitaires** : xUnit, `dotnet test tests/ChimeraProtocol.Tests.csproj`. **184 tests**.
+- **Difficulté** : trois axes multiplicatifs — réglage du joueur (`DifficultyTuning`), **palier de menace du niveau joué** (`LevelThreat`, croît avec l'ordre de déblocage : PV/dégâts/densité/Échos, cf. `docs/GDD.md` §28) et escalade d'overtime.
 - Singletons (AutoLoad) : `GameManager`, `XpSystem`, `InventorySystem`, `LevelUpSystem`, `SaveManager`, `MetaProgressionSystem`, `ChallengeSystem` (défis/succès, `docs/DESIGN_CHALLENGES.md`), `AudioSystem`, `MusicDirector` (musique adaptative : calm/combat/boss en fondu croisé), `FusionFlash`, `ScreenShake`, `GameSettings`, `DiscordPresence` (Rich Presence), `VersionStamp` (tampon `v<ver>-<sha>` bas-droite).
 - Sauvegarde : `user://save.json` (méta/Échos) + `user://settings.cfg` (préférences, high scores, complétions, armes découvertes).
 - Sprites : PNG transparent, grille 32×32 px (Colosse 48×48 — exception), `texture_filter = Nearest` global. Style **pseudo-3D avec ombres** (`docs/ART_BRIEF_PSEUDO3D.md`) via `tools/pseudo3d_lib.py` — toujours dériver shadow/highlight avec `shade()`/`shade_sprite()`/`shade_tile()`/`shade_icon()`, jamais des couleurs plates ad hoc.

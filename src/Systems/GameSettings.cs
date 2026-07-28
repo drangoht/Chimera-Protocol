@@ -75,8 +75,9 @@ public partial class GameSettings : Node
 
     // ── Déblocage progressif des niveaux ──────────────────────────────────────
     /// <summary>Ordre de déblocage des niveaux (biomes). Le 1er est jouable d'office ;
-    /// chacun se débloque quand le précédent est complété (boss de fin de niveau battu).</summary>
-    public static readonly string[] LevelOrder = { "sanctuaire", "aether", "givre", "fournaise", "neon" };
+    /// chacun se débloque quand le précédent est complété (boss de fin de niveau battu).
+    /// Source de vérité : <see cref="LevelThreat.Order"/> (l'index y est aussi le palier de menace).</summary>
+    public static string[] LevelOrder => LevelThreat.Order;
 
     /// <summary>Le niveau est-il débloqué ? (1er niveau ou id inconnu = oui ; sinon précédent complété)</summary>
     public bool IsUnlocked(string biomeId)

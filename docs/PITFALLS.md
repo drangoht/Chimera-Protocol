@@ -79,6 +79,22 @@ les préserve. À `frost=0`, `mix(...,0)=texture` puis `* COLOR` = strictement i
 shader. (Limite connue, non bloquante : l'éclairage 2D d'un biome chaud — Fournaise — désature le bleu
 vers un gris froid ; le rendu reste lisible « gelé » mais moins bleu que dans un biome neutre.)
 
+## Paliers de menace / Échos (`LevelThreat`, `EchoFormula`)
+Trois pièges quand on touche à la difficulté par niveau ou à la formule d'Échos :
+1. **Le palier se résout à la demande, pas au `_Ready`.** `GameManager.CurrentBiomeId` est posé par
+   `GroundRenderer._Ready` et l'ordre des `_Ready` entre nœuds frères n'est **pas** garanti : le lire
+   dans `EnemySpawner._Ready` renverrait `""` (palier 0) une fois sur deux. D'où la propriété
+   `ThreatTier` recalculée à chaque usage (`Array.IndexOf` sur 5 entrées, coût nul).
+2. **`RunEndScreen` RECALCULE les composantes d'Échos** à partir des stats brutes, il ne reçoit que
+   le total. Tout multiplicateur ajouté dans `EchoFormula` doit donc être appliqué **à l'identique**
+   côté écran (helper partagé `EchoFormula.ApplyTier`, même troncature), sinon la somme animée ne
+   tombe plus sur le total crédité et l'écran de fin ment au joueur. Test de non-régression :
+   `EchoFormulaTests.TierMult_SommeDesComposantesEgaleLeTotal`.
+3. **Densité et scaling ont deux temps de référence distincts** dans `EnemySpawner._Process` :
+   `tDensity` (cadence/lots/vagues/cap) et `tStat` (PV/dégâts + `spawnStartMinute` + fréquence
+   d'élite, décalé par `LevelThreat.TimeOffsetMinutes`). Passer `tStat` aux fonctions de densité
+   ferait démarrer un haut palier à la densité du mid-game (écran plein en 10 s).
+
 ## VFX/projectiles parentés à la racine — purge à la sortie de run
 Les entités éphémères de gameplay (balles, flammes, death bursts, anneaux de choc, explosions
 d'élite…) sont parentées à `GetTree().Root`, PAS à la scène de jeu → `ChangeSceneToFile` ne les

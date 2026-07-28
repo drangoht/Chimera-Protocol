@@ -5,6 +5,24 @@
 > `CLAUDE.md` ; le design complet dans `docs/GDD.md` ; la carte du code dans `/carte-projet`.
 
 - Pile technique : **Godot 4.7 .NET (C# / .NET 8 / GodotSharp)**
+- **Paliers de menace — la difficulté suit les niveaux débloqués (✅ 2026-07-28, non publié).** Les 5
+  niveaux se débloquent en séquence et le Hub rend le joueur 2 à 3 fois plus fort entre-temps, mais
+  **tous tournaient sur la même courbe** : le dernier niveau était plus facile que le premier, et
+  farmer le Sanctuaire restait le meilleur ratio Échos/risque. Chaque niveau porte désormais un
+  **palier** (= son index dans l'ordre de déblocage) qui module PV, dégâts, densité de spawn,
+  décalage de courbe et **récompense en Échos** (×1,00 → ×1,45 du Sanctuaire au Néon). Tables dans
+  `src/Core/Rules/LevelThreat.cs` (logique pure, 6 tests dédiés) ; multiplicatif avec le réglage de
+  difficulté du joueur et avec l'escalade d'overtime. Trois précautions de design : (1)
+  `EnemySpawner` sépare `tDensity` (cadence/densité, temps réel) de `tStat` (scaling + variété +
+  élites, décalé par le palier) — sinon le Néon démarrerait à la densité du mid-game dès la 10ᵉ
+  seconde ; (2) les **champions** (mini-boss, boss de fin) ne prennent que 55 % du bonus de PV
+  (`ChampionHpSoftening`) car battre le boss est la condition de déblocage du niveau suivant — au
+  taux plein, le palier deviendrait un mur ; (3) le multiplicateur d'Échos s'applique **composante
+  par composante** (`EchoFormula.ApplyTier`), la même opération que fait `RunEndScreen`, pour que la
+  somme animée tombe pile sur le total crédité. Lisibilité : `Menace ★★★ · Échos ×1,20` sur les
+  cartes de sélection de niveau et sur la ligne de survie de l'écran de fin. Écarté : indexer la
+  difficulté sur la puissance méta réelle (rubber banding — acheter un upgrade rendrait le jeu plus
+  dur). Détail et chiffres : `docs/GDD.md` §28. **184 tests unitaires.**
 - **Bande-son metal industriel & musique adaptative (PUBLIÉE 1.17.0, 2026-07-27).** Le jeu tournait
   sur des placeholders chiptune CC0 (Juhani Junkala) enchaînés par bascules de piste à 5 et 10 min
   de run. Une première refonte l'a remplacé par 26 pistes synthétisées par le dépôt (ambiance

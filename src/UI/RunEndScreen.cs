@@ -20,6 +20,8 @@ public partial class RunEndScreen : CanvasLayer
     public bool   PendingNewRecord      { get; set; } = false;
     public bool   PendingLevelCompleted { get; set; } = false;
     public string PendingDifficultyKey  { get; set; } = "DIFF_NORMAL";
+    /// <summary>Palier de menace du niveau joué (cf. LevelThreat) : majore chaque composante d'Échos.</summary>
+    public int    PendingThreatTier     { get; set; } = 0;
     /// <summary>Ids des défis nouvellement accomplis lors de cette run (affichés en fin d'écran).</summary>
     public System.Collections.Generic.List<string> PendingNewChallenges { get; set; } = new();
 
@@ -77,13 +79,20 @@ public partial class RunEndScreen : CanvasLayer
 
     private static string Fmt(int secs) => $"{secs / 60:D2}:{secs % 60:D2}";
 
-    /// <summary>Ligne « temps survécu / record du niveau » sous le titre (or si nouveau record).</summary>
+    /// <summary>Ligne « temps survécu / record du niveau » sous le titre (or si nouveau record).
+    /// Rappelle le palier de menace du niveau quand il en porte un : c'est lui qui explique des
+    /// composantes d'Échos plus grosses qu'au 1er niveau.</summary>
     private void ShowSurvivalLine(int timeSecs)
     {
+        string tier = PendingThreatTier > 0
+            ? $"   •   {Loc.T("RUNEND_TIER")} {LevelSelectScreen.ThreatStars(PendingThreatTier)} ×{LevelThreat.EchoMult(PendingThreatTier):0.00}"
+            : "";
+
         var line = new Label
         {
             HorizontalAlignment = HorizontalAlignment.Center,
             Text = $"{Loc.T("RUNEND_SURVIVED")} : {Fmt(timeSecs)} ({Loc.T(PendingDifficultyKey)})   •   {Loc.T("RUNEND_BEST")} : {Fmt(PendingBestTime)}"
+                 + tier
                  + (PendingNewRecord ? $"   ★ {Loc.T("RUNEND_NEW_RECORD")}" : ""),
             AnchorLeft = 0.5f, AnchorRight = 0.5f,
             OffsetLeft = -400f, OffsetRight = 400f, OffsetTop = 145f, OffsetBottom = 175f,
@@ -127,9 +136,13 @@ public partial class RunEndScreen : CanvasLayer
         int capKills    = meta?.EchoCapKills ?? kills;
         int capCores    = meta?.EchoCapCores ?? cores;
 
-        int timeEchoes = Mathf.Min(timeSecs, capTimeSecs) / timeDiv;
-        int killEchoes = Mathf.Min(kills,    capKills)    / killDiv;
-        int coreEchoes = Mathf.Min(cores,    capCores)    * coreMult;
+        // Palier de menace : chaque composante est majorée EXACTEMENT comme dans EchoFormula
+        // (même helper, même troncature) pour que la somme animée tombe pile sur le total crédité.
+        double tierMult = LevelThreat.EchoMult(PendingThreatTier);
+        int timeEchoes = EchoFormula.ApplyTier(Mathf.Min(timeSecs, capTimeSecs) / timeDiv, tierMult);
+        int killEchoes = EchoFormula.ApplyTier(Mathf.Min(kills,    capKills)    / killDiv, tierMult);
+        int coreEchoes = EchoFormula.ApplyTier(Mathf.Min(cores,    capCores)    * coreMult, tierMult);
+        baseBonus      = EchoFormula.ApplyTier(baseBonus, tierMult);
 
         // Cache les labels pendant l'animation
         _timeLabel.Visible          = false;
