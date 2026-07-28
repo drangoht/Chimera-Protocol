@@ -97,6 +97,30 @@ Deux erreurs répétées dans `user://logs/godot.log`, **sans rapport avec le r�
   elle a démarré** — indispensable pour `death`, dont dépend le `QueueFree` (un sprite sans `death`
   aurait laissé l'ennemi mort à l'écran indéfiniment).
 
+### Banc de non-régression après correction (Fournaise, 16 min de jeu)
+
+`--auto-play --invuln --power-curve --timescale=3 --run-limit=960`. **Zéro erreur** dans le journal
+(contre 153 sur la session jouée précédente : 144 animations + 9 index négatifs). Les mini-boss
+d'élite reviennent en boucle toutes les 14 s en overtime, le chemin du drop de carte a donc été
+largement exercé sans lever une seule fois.
+
+Quatre combats de boss enchaînés dans la même run — c'est la démonstration que l'escalade tient :
+
+| combat | PV effectifs | DPS du joueur | TTK |
+|---|---|---|---|
+| boss de fin | 11 371 | 327 | 34,8 s |
+| overtime +1 | 12 867 | 455 | 28,3 s |
+| overtime +2 | 14 306 | 509 | 28,1 s |
+| overtime +3 | 15 698 | 604 | **26,0 s** |
+
+Le DPS du joueur double sur la période et les PV du boss suivent : le TTK reste dans 26-35 s au lieu
+de s'effondrer à 14,8 s comme avant correction. Le Capaciteur s'est arrêté à L7, comme dans la
+session jouée.
+
+*Note de banc* : le message `resources still in use at exit` en fin de processus vient de la sortie
+forcée (`--run-limit` → `GetTree().Quit()`), qui court-circuite la purge des VFX parentés à la
+racine. Sans effet en jeu — une fin de run normale passe par l'écran de fin.
+
 ### Recalibrage du boss en cascade
 
 `rusted_core.maxHp` **8000 → 5000** (4000 dans un premier temps, corrigé sur la session jouée
