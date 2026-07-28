@@ -132,6 +132,10 @@ qui change de **phase** avec ses PV et d'**incarnation** avec le biome.
      `--headless --debug-boss --invuln` (joueur immobile = **borne basse** du TTK, toutes les armes à
      portée en permanence). En headless + `--debug-boss`, le jeu **se ferme tout seul** dès le relevé
      écrit — sans quoi la run continuerait indéfiniment (survie sans fin).
+  5. **Une mesure ne vaut que si elle tourne SEULE sur la machine.** Deux instances en parallèle
+     saturent le CPU, les deltas s'allongent et les projectiles traversent le boss sans le toucher :
+     relevé constaté à **271 DPS / 108,8 s** au lieu de 628 DPS / 46,9 s sur le même biome, sans
+     aucune erreur console. Un DPS très bas dans un relevé est le symptôme à reconnaître.
 
 ## Paliers de menace / Échos (`LevelThreat`, `EchoFormula`)
 Trois pièges quand on touche à la difficulté par niveau ou à la formule d'Échos :

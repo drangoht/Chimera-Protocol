@@ -13,20 +13,26 @@ perk de départ équipé sur la save du poste), difficulté Normal, boss isolé 
 
 **Nature de la mesure : BORNE BASSE.** Le joueur reste immobile et invulnérable : toutes les armes,
 y compris la Lame Plasma (mêlée), restent à portée en permanence. Le DPS obtenu est le maximum
-atteignable par ce loadout — le TTK d'un joueur qui esquive ne peut qu'être **supérieur**. Deux
-passages sur Givre donnent 37,7 s / 660 DPS à l'identique : le banc est reproductible.
+atteignable par ce loadout — le TTK d'un joueur qui esquive ne peut qu'être **supérieur**.
 
-| Biome | Palier | PV effectifs | **TTK** | DPS moyen | Phase II | Phase III |
-|---|---|---|---|---|---|---|
-| Sanctuaire | 0 | 21 360 | **32,1 s** | 665 | 13,9 s | 23,0 s |
-| Aether | 1 | 22 991 | **37,7 s** | 609 | 15,3 s | 25,8 s |
-| Givre | 2 | 24 913 | **37,7 s** | 660 | 16,1 s | 26,5 s |
-| Fournaise | 3 | 27 017 | **44,1 s** | 613 | 21,7 s | 32,8 s |
-| Néon | 4 | 29 437 | **46,9 s** | 628 | 22,5 s | 34,6 s |
+**Dispersion :** deux passages par biome, campagne séquentielle (une seule instance à la fois). Le
+DPS varie de 494 à 690 d'un passage à l'autre (±17 % autour de ~610) alors que les PV sont fixes :
+selon le tirage de l'arène, le boss est plus ou moins souvent tenu à distance par un obstacle, ce qui
+prive le loadout de ses armes de courte portée. Le TTK d'un même biome varie donc de ~25 % — raison
+de plus pour ne jamais conclure sur un relevé isolé.
+
+| Biome | Palier | PV effectifs | **TTK (2 passages)** | DPS moyen |
+|---|---|---|---|---|
+| Sanctuaire | 0 | 21 360 | **32,2 / 38,6 s** | 664 / 553 |
+| Aether | 1 | 22 991 | **37,7 / 37,7 s** | 609 / 609 |
+| Givre | 2 | 24 913 | **40,7 / 50,4 s** | 612 / 494 |
+| Fournaise | 3 | 27 017 | **39,1 / 41,7 s** | 690 / 648 |
+| Néon | 4 | 29 437 | **42,7 / 47,5 s** | 690 / 620 |
 
 **Constat — le boss est trop long sur les cinq niveaux.** Cible GDD §20.2 : **20-30 s**, avec « > 45 s
-en combat dense = épuisant ». Même en borne basse, le premier niveau sort déjà de la fenêtre (+7 %) et
-le dernier atteint le seuil d'épuisement (46,9 s). Les deux causes sont additives :
+en combat dense = épuisant ». Même en borne basse, le meilleur relevé du premier niveau (32,2 s) sort
+déjà de la fenêtre, et les hauts paliers atteignent le seuil d'épuisement. Les deux causes sont
+additives :
 
 1. **Le DPS réel vaut ~62 % du DPS théorique** qui a servi au calibrage (§20.4 : 711 hors
    `thermal_core`, soit ~1031 avec ×1,45 ; mesuré : 609-665). L'écart, ce sont les projectiles qui

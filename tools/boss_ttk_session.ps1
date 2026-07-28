@@ -106,6 +106,15 @@ function Show-Report {
 function Start-Session {
     param([string]$BiomeId)
 
+    # Un second Godot en parallèle sature le CPU : les deltas s'allongent, les projectiles
+    # traversent le boss sans le toucher et le DPS mesuré s'effondre (relevé constaté à 271 DPS
+    # au lieu de 628 sur le même biome). Une mesure n'est valable que seule sur la machine.
+    $running = Get-Process -Name 'Godot*' -ErrorAction SilentlyContinue
+    if ($running) {
+        Write-Host 'ATTENTION : une autre instance de Godot tourne déjà — le relevé sera faussé.' -ForegroundColor Red
+        Write-Host '           Ferme-la avant de mesurer.' -ForegroundColor Red
+    }
+
     $userArgs = @("--biome=$BiomeId")
     if (-not $Real)  { $userArgs += '--debug-boss' }
     if ($Invuln)     { $userArgs += '--invuln' }
