@@ -2333,3 +2333,105 @@ Deux observations de la même session :
 - **Plafonner le multiplicateur de dégâts en dur.** Rejeté : c'est la stat de progression principale,
   un plafond dur y couperait net la sensation de montée en puissance. Les rendements décroissants
   suffisent.
+
+---
+
+## 31. Survie en overtime — l'escalade de densité se déversait sur les stats (2026-07-28)
+
+> Chantier ouvert par le point laissé « à surveiller » à la publication de la 1.22.0 : le testeur
+> meurt **1 minute après l'entrée en overtime**. Même outillage de mesure que le §30
+> (`PowerTelemetry` / `--power-curve`), lu cette fois sur la colonne `degats_subis_ps` d'une session
+> **jouée** — un banc `--auto-play` ne mesure pas la survie (le bot kite mal), et `--invuln` la met
+> à zéro par construction.
+
+### 31.1 Ce qui a été mesuré
+
+Session jouée du 2026-07-28, Fournaise (palier 3), difficulté Normal. Le joueur **remplit la
+condition de victoire** (Noyau Rouillé vaincu, TTK 18,7 s) puis continue en overtime :
+
+| moment | PV max | réduction dégâts | dégâts subis/s | indice de puissance |
+|---|---|---|---|---|
+| 10,8 min | 451 | 0,40 | 39 | 1057 |
+| 13,0 min (entrée en overtime) | **451** | **0,40** | 30 | 2436 |
+| +54 s d'overtime (**mort**) | **451** | **0,40** | **92,5** | 3112 |
+
+Deux courbes divergentes. L'**offense** continue de croître (indice ×1,3 en une minute) ; la
+**survie**, elle, est **triplement plafonnée** depuis la 10ᵉ minute — `reinforced_plating` à son
+**niveau maximum (20)**, réduction de dégâts au cap `StatCaps.MaxDamageReduction` (0,40) et vitesse
+au cap `StatCaps.MaxSpeed` (380). Le joueur n'a plus **aucun** levier de survie disponible pendant
+que les dégâts entrants triplent.
+
+Or l'économie d'Échos est explicitement dimensionnée sur des runs d'overtime de **5 à 10 minutes**
+(§9.2 : bonus de surcharge jusqu'à +100 Échos, « au-delà d'environ 5-10 minutes d'overtime, le bonus
+sature »). Une fenêtre de 54 s rend ce levier de méta-progression **inatteignable** — non par manque
+de skill, mais par construction.
+
+### 31.2 La cause : un seul accélérateur pour deux courbes
+
+`EnemySpawner` dérivait ses deux temps de référence l'un de l'autre :
+
+```
+tDensity = tMinutes + otMin × 4          // cadence, vagues, cap simultané
+tStat    = tDensity + offsetDePalier     // PV, dégâts, variété, élites  ← hérite du ×4
+```
+
+L'accélérateur ×4 est documenté comme servant la densité — « vagues plus rapprochées ». Sauf qu'à
+l'entrée en overtime, **tous les leviers de densité sont déjà saturés** : `SpawnCurve.MaxAlive`
+(300) est atteint depuis la 8ᵉ minute (déjà constaté au §30.1), `SpawnInterval` est à son plancher
+de 0,3 s depuis la 11ᵉ, `BatchCount` est clampé à 10 depuis la 4ᵉ. Le ×4 n'a donc **plus aucun effet
+sur le nombre d'ennemis à l'écran**. Son seul effet réel est de gonfler `tStat`, c'est-à-dire les PV
+et les dégâts — et il le fait à travers le terme quadratique de `EnemyScaling.CurvedFactor`, qui
+reçoit un temps **déjà multiplié par 4** et l'élève **au carré**.
+
+Facteur de dégâts entrants (Fournaise, `damageScalingPerMinute` 0,10), rapporté à l'entrée en overtime :
+
+| overtime écoulé | avant (×4 partagé) | après (découplé) |
+|---|---|---|
+| +2 min | ×1,9 | ×1,3 |
+| +5 min | ×4,5 | ×2,1 |
+| +10 min | **×10,9** | **×4,5** |
+
+Une menace quadratique non bornée face à une défense plafonnée ne laisse aucune fenêtre, quel que
+soit le skill du joueur.
+
+### 31.3 La règle : découpler densité et scaling
+
+**`OvertimeEscalation`** (logique pure, testée). Les deux temps de référence reçoivent désormais des
+accélérations distinctes :
+
+| courbe | accélération | ce qu'elle pilote |
+|---|---|---|
+| `DensityMinutes` | **×4** (inchangée) | cadence de lots, taille des vagues, cap simultané |
+| `StatMinutes` | **×1,5** | PV, dégâts, variété d'ennemis tirables, fréquence d'élite, champions d'overtime |
+
+`tStat` ne dérive plus de `tDensity` : il repart du temps réel. La densité conserve sa pente franche
+— sans effet pratique aujourd'hui, mais elle redeviendra juste le jour où le cap de 300 sera relevé.
+
+Le multiplicateur du Hub `overtime_stabilizer` (−5 %/niveau, max −15 %) s'applique **en amont**, sur
+les minutes d'overtime elles-mêmes : il amortit donc les deux courbes, comme avant.
+
+### 31.4 Cible de design
+
+1. **L'overtime doit tuer** — c'est un mode de score, pas un mode infini. L'escalade reste
+   strictement croissante et sans plafond.
+2. **La fenêtre de survie visée est de 5 à 10 minutes** pour un build de fin de run, cohérente avec
+   la saturation du bonus d'Échos (§9.2). Traduit en test : les dégâts entrants ne doivent pas
+   dépasser **×6 en dix minutes d'overtime** (×10,9 avant), ni descendre sous ×3 (sinon l'escalade
+   ne remplit plus son office).
+3. **Quand une défense est plafonnée, la menace correspondante ne peut pas être quadratique sans
+   borne.** Règle générale à opposer à toute future escalade.
+
+### 31.5 Ce qui a été écarté
+
+- **Relever les plafonds de survie** (`MaxDamageReduction`, niveau max de `reinforced_plating`).
+  Rejeté : les caps existent pour empêcher l'invulnérabilité, et les repousser rendrait la run
+  standard trop sûre pour corriger un problème qui n'existe qu'en overtime. Le §30 vient tout juste
+  d'établir qu'un plafond qui ne plafonne pas est un défaut, pas une solution.
+- **Détendre `reinforced_plating`** (piste initialement suspectée : l'amortissement du §30 l'a fait
+  passer de +500 à +251 PV à L20). Rejeté après mesure : le passif était **déjà à son niveau maximum**
+  et les 249 PV perdus ne représentent que ~2,7 s de survie supplémentaire aux dégâts constatés. Le
+  problème est la pente de la menace, pas la hauteur de la défense.
+- **Borner le terme quadratique de `EnemyScaling.CurvedFactor`.** Écarté comme correction principale :
+  il est calibré pour la run standard (0-13 min), où il fait exactement son travail — rattraper le
+  power-creep du build. Le corriger là reviendrait à traiter le symptôme loin de la cause. Reste
+  disponible si la mesure jouée montre que ×4,5 en dix minutes est encore trop raide.

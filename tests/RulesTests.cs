@@ -383,6 +383,69 @@ public class PassiveScalingTests
     }
 }
 
+public class OvertimeEscalationTests
+{
+    [Fact]
+    public void HorsOvertime_AucuneMinuteAjoutee()
+    {
+        Assert.Equal(0f, OvertimeEscalation.DensityMinutes(0f), 4);
+        Assert.Equal(0f, OvertimeEscalation.StatMinutes(0f), 4);
+    }
+
+    [Fact]
+    public void UnTempsNegatifNAjouteRien()
+    {
+        // Garde-fou : RunStatsTracker.OvertimeSeconds est déjà clampé, mais la règle ne doit jamais
+        // *retrancher* du temps de courbe si un appelant lui passe une valeur négative.
+        Assert.Equal(0f, OvertimeEscalation.DensityMinutes(-3f), 4);
+        Assert.Equal(0f, OvertimeEscalation.StatMinutes(-3f), 4);
+    }
+
+    [Fact]
+    public void LaDensiteConserveSonAccelerationHistorique()
+        => Assert.Equal(40f, OvertimeEscalation.DensityMinutes(10f), 4);
+
+    [Fact]
+    public void LeScalingMonteMoinsViteQueLaDensite()
+    {
+        // Le découplage EST la correction : partager une seule accélération déversait sur les PV et
+        // les dégâts un accélérateur calibré pour une densité déjà saturée (cf. GDD §31).
+        for (float ot = 0.5f; ot <= 15f; ot += 0.5f)
+            Assert.True(OvertimeEscalation.StatMinutes(ot) < OvertimeEscalation.DensityMinutes(ot));
+    }
+
+    [Fact]
+    public void LesDegatsEntrantsRestentDansLaFenetreDeSurvieVisee()
+    {
+        // Cas mesuré : Fournaise (palier 3), run de 13 min, damageScalingPerMinute = 0,10.
+        // L'économie d'Échos est dimensionnée sur 5 à 10 min d'overtime (GDD §9.2) ; la survie du
+        // joueur, elle, est TRIPLEMENT plafonnée en fin de run (plating L20, DR et vitesse aux caps).
+        // Une escalade au-delà de ~×6 en dix minutes rend cette fenêtre inatteignable — c'était le
+        // cas avant le découplage (×10,9).
+        const float perMinute = 0.10f;
+        float offset = LevelThreat.TimeOffsetMinutes(3);
+
+        float aLEntree = EnemyScaling.CurvedFactor(13f + offset, perMinute);
+        float aDixMinutes = EnemyScaling.CurvedFactor(
+            23f + OvertimeEscalation.StatMinutes(10f) + offset, perMinute);
+
+        float ratio = aDixMinutes / aLEntree;
+        Assert.True(ratio < 6f, $"l'overtime tue trop vite pour la fenêtre visée : ×{ratio:F2}");
+        // …mais l'overtime DOIT finir par tuer : c'est sa raison d'être, pas un mode infini.
+        Assert.True(ratio > 3f, $"l'overtime n'escalade plus assez : ×{ratio:F2}");
+    }
+
+    [Fact]
+    public void LEscaladeResteStrictementCroissante()
+    {
+        for (float ot = 0f; ot < 20f; ot += 0.5f)
+        {
+            Assert.True(OvertimeEscalation.StatMinutes(ot + 0.5f) > OvertimeEscalation.StatMinutes(ot));
+            Assert.True(OvertimeEscalation.DensityMinutes(ot + 0.5f) > OvertimeEscalation.DensityMinutes(ot));
+        }
+    }
+}
+
 public class CrowdControlCapsTests
 {
     [Theory]

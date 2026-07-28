@@ -187,7 +187,25 @@ Trois pièges quand on touche à la difficulté par niveau ou à la formule d'É
 3. **Densité et scaling ont deux temps de référence distincts** dans `EnemySpawner._Process` :
    `tDensity` (cadence/lots/vagues/cap) et `tStat` (PV/dégâts + `spawnStartMinute` + fréquence
    d'élite, décalé par `LevelThreat.TimeOffsetMinutes`). Passer `tStat` aux fonctions de densité
-   ferait démarrer un haut palier à la densité du mid-game (écran plein en 10 s).
+   ferait démarrer un haut palier à la densité du mid-game (écran plein en 10 s). **Et les deux ne
+   doivent pas dériver l'un de l'autre** : `tStat` se calculait comme `tDensity + offset`, si bien
+   que l'accélérateur d'overtime (×4) destiné à la densité se déversait **en entier** sur les PV et
+   les dégâts — via un terme quadratique, donc au carré. Chacun a désormais sa pente
+   (`OvertimeEscalation.DensityMinutes` / `StatMinutes`, cf. GDD §31).
+
+## Escalade d'overtime (`OvertimeEscalation`)
+- **Un accélérateur qui vise une courbe déjà saturée agit ailleurs, pas nulle part.** À l'entrée en
+  overtime, tous les leviers de densité sont à leur plafond depuis plusieurs minutes (`MaxAlive` 300
+  dès la 8ᵉ, `SpawnInterval` au plancher dès la 11ᵉ, `BatchCount` clampé dès la 4ᵉ). Le ×4 « pour
+  densifier » ne densifiait donc rien : il ne faisait que gonfler les stats. Avant de régler une
+  escalade, vérifier **ce qui est encore libre de bouger**.
+- **Quand une défense est plafonnée, la menace correspondante ne peut pas être quadratique sans
+  borne.** En fin de run la survie du joueur est *triplement* plafonnée (`reinforced_plating` L20,
+  `MaxDamageReduction`, `MaxSpeed`) : toute escalade non bornée en face ferme la fenêtre de survie,
+  quel que soit le skill. La fenêtre visée (5-10 min, §9.2) est encodée en test
+  (`OvertimeEscalationTests`), pas seulement écrite dans le GDD.
+- **`overtime_stabilizer` (Hub) s'applique en amont**, sur les minutes d'overtime elles-mêmes : il
+  amortit donc les deux courbes à la fois. Ne pas le réappliquer en aval.
 
 ## VFX/projectiles parentés à la racine — purge à la sortie de run
 Les entités éphémères de gameplay (balles, flammes, death bursts, anneaux de choc, explosions

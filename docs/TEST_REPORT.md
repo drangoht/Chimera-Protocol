@@ -4,6 +4,77 @@ Rapport de sessions de test. Chaque section correspond à une session de test di
 
 ---
 
+## Survie en overtime — l'escalade de densité se déversait sur les stats — 2026-07-28
+
+**Point traité :** celui laissé « à surveiller » à la publication de la 1.22.0 — le testeur meurt
+**1 minute après l'entrée en overtime**, alors que l'économie d'Échos est dimensionnée sur des runs
+d'overtime de **5 à 10 minutes** (GDD §9.2).
+
+### Mesure — session JOUÉE (Fournaise, palier 3, Normal)
+
+Relevé `PowerTelemetry`, colonne `degats_subis_ps` (la seule qui ait un sens ici : un banc `--invuln`
+la met à zéro, et le bot `--auto-play` ne se déplace pas). Le joueur remplit la condition de victoire
+— Noyau Rouillé vaincu, TTK 18,7 s — puis continue en overtime :
+
+| moment | PV max | réduc. dégâts | vitesse | dégâts subis/s | indice de puissance |
+|---|---|---|---|---|---|
+| 10,8 min | 451 | 0,40 | 380 | 39 | 1057 |
+| 13,0 min (entrée en overtime) | **451** | **0,40** | **380** | 30 | 2436 |
+| +54 s d'overtime (**mort**) | **451** | **0,40** | **380** | **92,5** | 3112 |
+
+Deux courbes divergentes : l'offense croît encore, la **survie est figée depuis la 10ᵉ minute** —
+`reinforced_plating` à son **niveau maximum (20)**, réduction de dégâts et vitesse aux **caps durs**
+`StatCaps`. Aucun levier de survie ne reste disponible pendant que les dégâts entrants triplent.
+
+### Cause
+
+`EnemySpawner` dérivait ses deux temps de référence l'un de l'autre : `tStat = tDensity + offset`.
+L'accélérateur d'overtime **×4**, documenté comme servant la densité, se déversait donc *en entier*
+sur les PV et les dégâts — à travers le terme **quadratique** de `EnemyScaling.CurvedFactor`, qui
+recevait un temps déjà multiplié par 4 et l'élevait au carré. Or à l'entrée en overtime **tous les
+leviers de densité sont saturés depuis plusieurs minutes** (cap de 300 dès la 8ᵉ minute — déjà
+constaté dans la session précédente de ce rapport —, intervalle de spawn au plancher dès la 11ᵉ,
+taille de lot clampée dès la 4ᵉ) : ce ×4 ne densifiait plus rien.
+
+### Correction (GDD §31)
+
+Règle pure **`OvertimeEscalation`** : `DensityMinutes` garde le ×4, `StatMinutes` passe à **×1,5**,
+et `tStat` ne dérive plus de `tDensity`. Dégâts entrants rapportés à l'entrée en overtime :
+
+| overtime écoulé | avant | après |
+|---|---|---|
+| +2 min | ×1,9 | ×1,3 |
+| +5 min | ×4,5 | ×2,1 |
+| +10 min | **×10,9** | **×4,5** |
+
+**237 tests** (6 ajoutés). La fenêtre visée est encodée en test (`OvertimeEscalationTests` : ni
+au-delà de ×6 en dix minutes, ni en deçà de ×3 — l'overtime doit continuer de tuer).
+
+### Vérification au banc (Fournaise, `--auto-play --invuln --timescale=3 --run-limit=1500`)
+
+Le banc **ne peut pas valider la survie** (bot immobile + `--invuln`), mais il valide ce que le
+découplage risquait de casser :
+
+| contrôle | attendu | mesuré |
+|---|---|---|
+| densité préservée | population au cap | **295-301 ennemis** en continu de la 13ᵉ à la 25ᵉ minute |
+| boss d'overtime tuable | TTK dans/près de 20-30 s | **23,1 à 42,7 s** sur 15 combats jusqu'à 25 min |
+| courbe de puissance | ×2,5 max (cible §30.6) | ×2,22 (indice 1829 → 4066 en 12 min d'overtime) |
+| stabilité | run complète | 25 min, aucune erreur, `bench_limit` atteint |
+
+Le boss d'overtime atteint ~11 300 PV **cinq minutes après** l'entrée en overtime, contre deux
+minutes avant la correction : le scaling monte toujours, deux fois et demie moins vite.
+
+### Reste à faire
+
+**Validation par une session jouée** — `tools/power_curve_session.ps1 -Biome fournaise`, en poussant
+l'overtime jusqu'à la mort. C'est la durée de survie après la bannière OVERTIME qui tranche, et elle
+n'est mesurable qu'en jouant. Cible : 5 à 10 minutes. Si la survie dépasse largement 10 minutes,
+c'est `StatAcceleration` qu'il faut relever (1,5 → 2) ; si elle reste sous 3 minutes, la piste
+suivante est le terme quadratique de `CurvedFactor` (GDD §31.5).
+
+---
+
 ## Courbe de puissance du joueur — instrumentation, diagnostic et correction — 2026-07-28
 
 **Point ouvert traité :** « la puissance du joueur explose en overtime, les boss d'overtime

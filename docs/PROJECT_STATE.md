@@ -5,6 +5,27 @@
 > `CLAUDE.md` ; le design complet dans `docs/GDD.md` ; la carte du code dans `/carte-projet`.
 
 - Pile technique : **Godot 4.7 .NET (C# / .NET 8 / GodotSharp)**
+- **Survie en overtime — escalade de densité découplée du scaling (2026-07-28, non publié).** Le point
+  laissé « à surveiller » à la publication de la 1.22.0 : le testeur meurt **1 minute après l'entrée
+  en overtime**, alors que l'économie d'Échos est dimensionnée sur des runs d'overtime de **5 à 10
+  minutes** (GDD §9.2, bonus de surcharge jusqu'à +100 Échos). Le levier de méta-progression était
+  donc inatteignable. **Mesure** (session jouée, Fournaise palier 3) : le joueur remplit la condition
+  de victoire (Noyau Rouillé vaincu, TTK 18,7 s) puis voit ses dégâts subis passer de **30/s à
+  92,5/s en 54 s** — pendant que sa survie est **triplement plafonnée** depuis la 10ᵉ minute
+  (`reinforced_plating` à son **niveau maximum 20**, réduction de dégâts au cap `StatCaps` 0,40,
+  vitesse au cap 380). Aucun levier de survie ne restait disponible. **Cause** : `EnemySpawner`
+  dérivait ses deux temps de référence l'un de l'autre (`tStat = tDensity + offset`), si bien que
+  l'accélérateur d'overtime **×4 destiné à la densité** se déversait *en entier* sur les PV et les
+  dégâts — via le terme **quadratique** de `EnemyScaling.CurvedFactor`, qui recevait donc un temps
+  déjà multiplié par 4 et l'élevait au carré. Or à l'entrée en overtime **tous les leviers de densité
+  sont saturés depuis plusieurs minutes** (cap de 300 dès la 8ᵉ, intervalle de spawn au plancher dès
+  la 11ᵉ, taille de lot clampée dès la 4ᵉ) : ce ×4 ne densifiait plus rien, il ne faisait que gonfler
+  les stats. **Correction** : règle pure **`OvertimeEscalation`** — la densité conserve son ×4
+  (`DensityMinutes`), le scaling passe à **×1,5** (`StatMinutes`) et `tStat` ne dérive plus de
+  `tDensity`. **Contre-mesure** (dégâts entrants rapportés à l'entrée en overtime) : ×1,9 → **×1,3**
+  à 2 min, ×4,5 → **×2,1** à 5 min, **×10,9 → ×4,5** à 10 min. La fenêtre visée (5-10 min) est
+  encodée en test, pas seulement écrite au GDD. Design : `docs/GDD.md` §31 ; pièges :
+  `docs/PITFALLS.md` §Escalade d'overtime. **237 tests unitaires.**
 - **Courbe de puissance du joueur assainie (PUBLIÉ 1.22.0, 2026-07-28).** Le point resté ouvert après
   la 1.21.0 (« la puissance explose en overtime ») est instruit et corrigé. Nouvel outil de mesure :
   **`PowerTelemetry`** (flag `--power-curve`, journal `user://power_curve.log` écrit au fil de l'eau)

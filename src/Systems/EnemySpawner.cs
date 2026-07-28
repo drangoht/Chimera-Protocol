@@ -143,8 +143,12 @@ public partial class EnemySpawner : Node
         //    premières secondes du dernier niveau basculeraient d'un coup en mid-game.
         //  - tStat    : scaling PV/dégâts, variété d'ennemis tirables et fréquence d'élite → décalé
         //    par le palier de menace du niveau (on démarre plus avancé sur la courbe).
-        float tDensity  = tMinutes + otMinEffectif * 4f;
-        float tStat     = tDensity + LevelThreat.TimeOffsetMinutes(ThreatTier);
+        // En overtime les deux reçoivent des accélérations DIFFÉRENTES (OvertimeEscalation) : tStat
+        // ne dérive plus de tDensity, sinon l'accélérateur destiné à la densité — déjà saturée à
+        // l'entrée en overtime — se déversait en entier sur les PV et les dégâts (cf. GDD §31).
+        float tDensity  = tMinutes + OvertimeEscalation.DensityMinutes(otMinEffectif);
+        float tStat     = tMinutes + OvertimeEscalation.StatMinutes(otMinEffectif)
+                        + LevelThreat.TimeOffsetMinutes(ThreatTier);
         float waveReset = overtime ? Mathf.Max(8f, 18f - otMinEffectif * 2f) : 25f;
 
         float spawnInterval = SpawnCurve.SpawnInterval(tDensity);

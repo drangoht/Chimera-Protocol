@@ -14,7 +14,22 @@ cyborgs, robots), inspiré de Vampire Survivors et Everything is Crab.
 - **État d'implémentation détaillé & version courante → `docs/PROJECT_STATE.md`** (évolutif). Résumé de phase ci-dessous.
 - **Synthétiser du volume** (relever/résumer/inventorier à partir de plusieurs gros fichiers : `data/*.json`, docs longues, logs, rapports de test) → déléguer au **MCP local** `mcp__local-llm__local_digest` / `local_map` (outils différés : `ToolSearch` d'abord) plutôt que d'enchaîner les `Read` : le serveur lit les fichiers côté LM Studio, seule la synthèse entre en contexte. Ne pas l'utiliser pour du code que l'on s'apprête à éditer — là, le contenu réel est nécessaire.
 
-**Phase actuelle : libre.** Dernière livraison : **courbe de puissance assainie**, publiée
+**Phase actuelle : survie en overtime corrigée (non publiée) → mid-boss par biome (B.3).** Le point
+laissé « à surveiller » en 1.22.0 est instruit : le testeur mourait **1 min après l'entrée en
+overtime**, quand l'économie d'Échos est dimensionnée sur **5-10 min** d'overtime (GDD §9.2) — ce
+levier de méta-progression était donc inatteignable. Cause : `EnemySpawner` dérivait ses deux temps
+de référence l'un de l'autre (`tStat = tDensity + offset`), si bien que l'accélérateur d'overtime
+**×4 destiné à la densité** se déversait *en entier* sur les PV et les dégâts, via un terme
+**quadratique** — alors que **tous les leviers de densité sont saturés** à l'entrée en overtime (cap
+de 300 dès la 8ᵉ min). En face, la survie du joueur est **triplement plafonnée** (`reinforced_plating`
+L20, DR 0,40, vitesse 380) : aucune fenêtre possible, quel que soit le skill. Corrigé →
+`OvertimeEscalation` (densité ×4 conservé, scaling **×1,5**, courbes découplées). Dégâts entrants à
+10 min d'overtime : **×10,9 → ×4,5**. Design → `docs/GDD.md` §31 ; pièges → `docs/PITFALLS.md`
+§Escalade d'overtime ; mesures → `docs/TEST_REPORT.md`. **237 tests.** **Reste** : validation par une
+**session jouée** (la survie n'est pas mesurable en banc — le bot `--auto-play` ne se déplace pas),
+puis publication. Ensuite : **mid-boss par biome** (`docs/EXPANSION_PLAN.md` B.3, dernier point non
+livré de la roadmap d'expansion).
+Avant ça : **courbe de puissance assainie**, publiée
 **1.22.0** le 2026-07-28. Le point ouvert de la 1.21.0 est
 corrigé : la puissance faisait **×6,42 en 12 min d'overtime** (mesure `PowerTelemetry`, nouveau flag
 **`--power-curve`** + `tools/power_curve_session.ps1`). Cause : les 4 passifs ne définissent que
@@ -94,7 +109,7 @@ l'agent compétent (ordre de lancement : `GUIDE-CLAUDE-CODE.md`).
 - Style de code : PascalCase classes/méthodes, `_camelCase` champs privés, `readonly` par défaut.
 - Architecture : `src/` (logique C#) / `scenes/` (.tscn) / `assets/` (raw) / `data/` (JSON tuning modifiable sans recompiler).
 - **Logique pure testable** : `src/Core/Rules/` (classes statiques sans dépendance Godot — `XpCurve`, `EnemyScaling`, `EliteAffixTable`…). Les nœuds y délèguent (SRP).
-- **Tests unitaires** : xUnit, `dotnet test tests/ChimeraProtocol.Tests.csproj`. **231 tests**.
+- **Tests unitaires** : xUnit, `dotnet test tests/ChimeraProtocol.Tests.csproj`. **237 tests**.
 - **Difficulté** : trois axes multiplicatifs — réglage du joueur (`DifficultyTuning`), **palier de menace du niveau joué** (`LevelThreat`, croît avec l'ordre de déblocage : PV/dégâts/densité/Échos, cf. `docs/GDD.md` §28) et escalade d'overtime.
 - Singletons (AutoLoad) : `GameManager`, `XpSystem`, `InventorySystem`, `LevelUpSystem`, `SaveManager`, `MetaProgressionSystem`, `ChallengeSystem` (défis/succès, `docs/DESIGN_CHALLENGES.md`), `AudioSystem`, `MusicDirector` (musique adaptative : calm/combat/boss en fondu croisé), `FusionFlash`, `ScreenShake`, `GameSettings`, `DiscordPresence` (Rich Presence), `VersionStamp` (tampon `v<ver>-<sha>` bas-droite).
 - Sauvegarde : `user://save.json` (méta/Échos) + `user://settings.cfg` (préférences, high scores, complétions, armes découvertes).
