@@ -185,6 +185,51 @@ public static class DebugHooks
         }
     }
 
+    private static bool? _autoPlay;
+
+    /// <summary>
+    /// Vrai si lancé avec <c>--auto-play</c> : les écrans modaux qui attendent un choix du joueur
+    /// (level-up, assimilation) se résolvent **tout seuls** — carte tirée au hasard parmi celles
+    /// proposées, greffe acceptée. Sans cela, une run headless se fige au premier level-up et il est
+    /// impossible de mesurer quoi que ce soit sur une run complète : le build d'un joueur au boss
+    /// (niveau atteint, armes, fusions, greffes) ne peut pas être simulé par un loadout figé.
+    /// Aucun effet en build normal.
+    /// </summary>
+    public static bool AutoPlay
+    {
+        get
+        {
+            if (_autoPlay == null)
+                _autoPlay = HasFlag("--auto-play");
+            return _autoPlay.Value;
+        }
+    }
+
+    private static bool _timeScaleRead;
+    private static float _timeScale;
+
+    /// <summary>
+    /// Facteur d'accélération du temps via <c>--timescale=&lt;x&gt;</c> (ex. <c>--timescale=3</c>),
+    /// 0 si absent. Permet de jouer les 13 minutes qui précèdent le boss en quelques minutes réelles
+    /// sur le banc. **Au-delà de ~4, les projectiles commencent à traverser leurs cibles** (deltas
+    /// trop grands) et toute mesure de DPS devient fausse.
+    /// </summary>
+    public static float TimeScale
+    {
+        get
+        {
+            if (!_timeScaleRead)
+            {
+                var raw = ValueFlag("--timescale=");
+                _timeScale = raw != null && float.TryParse(raw,
+                    System.Globalization.NumberStyles.Float,
+                    System.Globalization.CultureInfo.InvariantCulture, out var v) ? v : 0f;
+                _timeScaleRead = true;
+            }
+            return _timeScale;
+        }
+    }
+
     private static bool HasFlag(string flag)
     {
         foreach (var arg in OS.GetCmdlineArgs())

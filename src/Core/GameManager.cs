@@ -51,6 +51,15 @@ public partial class GameManager : Node
         Instance = this;
         EnsureGamepadUiBindings();
         InputRemap.EnsureExtraActions(); // action « dash » (greffe Servos Erratiques)
+
+        // Banc de mesure : --timescale=<x> accélère la run pour atteindre le boss (13 min) en
+        // quelques minutes réelles. Plafonné à 4 — au-delà, les deltas deviennent assez grands pour
+        // que les projectiles traversent leurs cibles et toute mesure de DPS est fausse.
+        if (DebugHooks.TimeScale > 0f)
+        {
+            Engine.TimeScale = Mathf.Clamp(DebugHooks.TimeScale, 0.25f, 4f);
+            GD.Print($"[GameManager] --timescale : temps du jeu ×{Engine.TimeScale}");
+        }
     }
 
     /// <summary>

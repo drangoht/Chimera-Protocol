@@ -205,7 +205,7 @@ public static class BossTelemetry
     /// </summary>
     private static void QuitIfHeadlessBench()
     {
-        if (!DebugHooks.BossDebug) return;
+        if (!DebugHooks.BossDebug && !DebugHooks.AutoPlay) return;
         if (DisplayServer.GetName() != "headless") return;
         (Engine.GetMainLoop() as SceneTree)?.Quit();
     }

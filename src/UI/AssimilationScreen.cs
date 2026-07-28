@@ -221,6 +221,7 @@ public partial class AssimilationScreen : CanvasLayer
             firstFocus = _assimilateBtn;
             var fbtn = firstFocus;
             Callable.From(() => { if (Visible && fbtn != null && IsInstanceValid(fbtn)) fbtn.GrabFocus(); }).CallDeferred();
+            if (DebugHooks.AutoPlay) Callable.From(OnAssimilate).CallDeferred();
             return;
         }
 
@@ -258,6 +259,12 @@ public partial class AssimilationScreen : CanvasLayer
         // GrabFocus différé (GaugeFilled peut venir d'un callback physique).
         var btn = firstFocus;
         Callable.From(() => { if (Visible && btn != null && IsInstanceValid(btn)) btn.GrabFocus(); }).CallDeferred();
+
+        // Banc automatisé (--auto-play) : le testeur simulé prend tout — assimile si un slot est
+        // libre, remplace la première greffe sinon. Sans ce hook, la run se fige dès qu'une jauge
+        // se remplit et n'atteint jamais le boss.
+        if (DebugHooks.AutoPlay)
+            Callable.From(free ? OnAssimilate : () => OnReplace(0)).CallDeferred();
     }
 
     private void OnAssimilate()

@@ -78,6 +78,19 @@ public partial class LevelUpScreen : CanvasLayer
 
         ApplyCards(cards);
         UpdateActionButtons();
+
+        // Banc automatisé (--auto-play) : tire une carte au hasard parmi celles proposées. Différé,
+        // pour que la présentation soit complète (et que ModalQueue ait fini son travail) avant de
+        // rendre la main. Sans ce hook, une run headless se fige ici au premier niveau.
+        if (DebugHooks.AutoPlay)
+            Callable.From(AutoPickCard).CallDeferred();
+    }
+
+    /// <summary>Choix automatique d'une carte (banc <c>--auto-play</c>) : tirage uniforme.</summary>
+    private void AutoPickCard()
+    {
+        if (!Visible || _currentCards.Count == 0) return;
+        OnCardChosen((int)(GD.Randi() % (uint)_currentCards.Count));
     }
 
     /// <summary>Remplit les 3 cartes avec le jeu fourni + scale-in. Réutilisé par le renouvellement.</summary>
