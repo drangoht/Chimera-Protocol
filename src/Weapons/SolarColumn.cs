@@ -55,7 +55,10 @@ public partial class SolarColumn : WeaponBase
             if (node is not EnemyBase e) continue;
             if (e.GlobalPosition.DistanceTo(GlobalPosition) > RadiusPx + 16f) continue;
             e.TakeDamage(Damage);
-            e.ApplyBurn(BurnDps, BurnDuration);
+            // La brûlure suit la mise à l'échelle de l'arme (niveau + multiplicateur de dégâts) :
+            // laissée à sa valeur de fiche, elle devenait négligeable en fin de run alors qu'elle
+            // représente la moitié de l'identité de la Colonne Solaire.
+            e.ApplyBurn(BurnDps * DamageScale, BurnDuration);
         }
 
         // Couronne de flammes (VFX) : un cône PyreFlame dans chaque direction.

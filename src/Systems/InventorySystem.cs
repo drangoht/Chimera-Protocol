@@ -174,6 +174,10 @@ public partial class InventorySystem : Node
     {
         if (WeaponsData == null) return;
 
+        // Les FUSIONS ne sont pas dans la section "weapons" : leurs stats vivent dans leur classe C#.
+        // Elles passaient donc à côté de tout ce pipeline — ni niveau, ni multiplicateur de dégâts.
+        if (AppliedFusions.Contains(weaponId)) { ApplyFusionStats(weaponId, level, node); return; }
+
         // Cherche l'arme dans le JSON
         foreach (var weapon in WeaponsData.RootElement.GetProperty("weapons").EnumerateArray())
         {
@@ -203,6 +207,40 @@ public partial class InventorySystem : Node
             break;
         }
     }
+
+    /// <summary>
+    /// Applique niveau + multiplicateur de dégâts à une FUSION. Sa valeur de fiche reste celle que sa
+    /// classe pose dans <c>_Ready</c> (chaque fusion a une mécanique propre : rafale perforante, aura
+    /// continue, essaim orbital — indescriptible dans le tableau de niveaux du JSON) ; on part donc de
+    /// <see cref="WeaponBase.BaseDamage"/> et on lui applique la même progression que les armes.
+    ///
+    /// Sans cela, une fusion gardait 22 de dégâts à vie quand l'arme qu'elle remplace en atteignait
+    /// ~112 au même stade (niveau extrapolé × Noyau Thermique × améliorations du Hub) : la carte de
+    /// fusion, présentée comme l'évolution ultime, divisait le DPS du joueur par 3 à 6.
+    ///
+    /// <paramref name="level"/> = 1 correspond aux valeurs d'origine ; au-delà, +10 %/niveau comme
+    /// pour une arme au-delà de ses niveaux définis (<see cref="WeaponLeveling"/>).
+    /// </summary>
+    private void ApplyFusionStats(string fusionId, int level, Node node)
+    {
+        if (node is not WeaponBase wb) return;
+
+        wb.CaptureBaseDamage();
+
+        var player = GameManager.Instance?.PlayerInstance;
+        float dmgMult = player?.Stats.DamageMultiplier ?? 1f;
+
+        wb.Damage = WeaponLeveling.ExtrapolatedDamage(wb.BaseDamage, level, FusionDefinedMax) * dmgMult;
+
+        // Réduction de recharge (Capaciteur + Hub) : appliquée depuis la cadence de fiche, jamais
+        // depuis la valeur courante — RefreshWeaponCooldowns repasse ici à chaque achat de passif et
+        // cumulerait sinon les réductions jusqu'à une cadence nulle.
+        wb.Cooldown = ApplyCooldownReduction(wb.BaseCooldown);
+    }
+
+    /// <summary>Niveau au-delà duquel les dégâts d'une fusion sont extrapolés (elle n'a qu'un palier
+    /// de stats, posé par sa classe).</summary>
+    private const int FusionDefinedMax = 1;
 
     private void ApplySpecializedStats(string weaponId, JsonElement lvlData, Node node, int level)
     {
@@ -413,6 +451,13 @@ public partial class InventorySystem : Node
 
             string replacesId = fusion.GetProperty("replaces").GetString()!;
 
+            // La fusion HÉRITE du niveau de l'arme qu'elle remplace. Repartir de 1 effaçait tous les
+            // niveaux investis — et comme l'arme de base disparaît du pool de cartes et que la fusion
+            // n'y entrait pas, la perte était définitive : accepter la carte « évolution » divisait
+            // durablement le DPS d'un build de fin de run (mesuré : 103 DPS tout fusionné contre 410
+            // avec une arme montée conservée, à niveau de joueur égal).
+            int inheritedLevel = Mathf.Max(1, WeaponLevels.GetValueOrDefault(replacesId, 1));
+
             // Retire l'arme de base
             if (_weaponNodes.TryGetValue(replacesId, out var oldNode))
             {
@@ -423,13 +468,13 @@ public partial class InventorySystem : Node
 
             // Instancie la fusion
             AppliedFusions.Add(fusionId);
-            WeaponLevels[fusionId] = 1;
+            WeaponLevels[fusionId] = inheritedLevel;
 
             var player = GameManager.Instance.PlayerInstance;
             if (player != null)
-                InstantiateWeapon(fusionId, 1, player);
+                InstantiateWeapon(fusionId, inheritedLevel, player);
 
-            GD.Print($"[InventorySystem] Fusion appliquée : {fusionId}");
+            GD.Print($"[InventorySystem] Fusion appliquée : {fusionId} (niveau hérité {inheritedLevel})");
             break;
         }
     }
@@ -444,8 +489,17 @@ public partial class InventorySystem : Node
         foreach (var w in WeaponsData.RootElement.GetProperty("weapons").EnumerateArray())
             if (w.GetProperty("id").GetString() == weaponId)
                 return w.GetProperty("maxLevel").GetInt32();
+
+        // Fusions : même plafond que les armes (elles montent désormais par cartes, cf. LevelUpSystem).
+        foreach (var f in WeaponsData.RootElement.GetProperty("fusions").EnumerateArray())
+            if (f.GetProperty("id").GetString() == weaponId)
+                return f.TryGetProperty("maxLevel", out var m) ? m.GetInt32() : FusionMaxLevel;
+
         return 5;
     }
+
+    /// <summary>Plafond de niveau d'une fusion, aligné sur celui des armes de base.</summary>
+    public const int FusionMaxLevel = 20;
 
     public int GetPassiveMaxLevel(string passiveId)
     {

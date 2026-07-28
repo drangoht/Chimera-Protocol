@@ -75,7 +75,10 @@ public partial class RailOvercharged : WeaponBase
         bullet.GlobalPosition = GlobalPosition;
         bullet.Direction      = dir;
         bullet.Speed          = BurstSpeed;
-        bullet.Damage         = BurstDamage;
+        // Damage (et non la constante) : c'est la valeur que l'InventorySystem a mise à l'échelle du
+        // niveau et du multiplicateur de dégâts du joueur. Lire BurstDamage ici figeait la fusion à
+        // ses 22 points de fiche pour toute la run.
+        bullet.Damage         = Damage;
         bullet.IsPiercing     = true; // perforation infinie
     }
 

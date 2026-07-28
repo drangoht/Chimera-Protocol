@@ -157,6 +157,18 @@ public partial class LevelUpSystem : Node
                 pool.Add(MakeFusionCard(id));
         }
 
+        // Fusions DÉJÀ appliquées : montent en niveau comme n'importe quelle arme. Sans elles dans le
+        // pool, une fusion restait figée à son niveau d'acquisition alors que l'arme de base, retirée
+        // du pool par IsReplacedByFusion, ne pouvait plus progresser non plus — le slot était mort
+        // pour le reste de la run.
+        foreach (var id in AllFusionIds)
+        {
+            if (!inv.AppliedFusions.Contains(id)) continue;
+            int lvl = inv.WeaponLevels.GetValueOrDefault(id, 0);
+            if (lvl == 0 || lvl >= inv.GetWeaponMaxLevel(id)) continue;
+            pool.Add(MakeWeaponCard(id, lvl + 1));
+        }
+
         return pool;
     }
 
@@ -320,6 +332,15 @@ public partial class LevelUpSystem : Node
             int maxLv = inv.GetWeaponMaxLevel(id);
             if (curLv >= maxLv) continue;
             if (curLv == 0 && inv.EquippedWeaponCount >= InventorySystem.MaxEquippedWeapons) continue;
+            available.Add(MakeWeaponCard(id, curLv + 1));
+        }
+
+        // Fusions équipées : montent comme des armes (cf. BuildPool).
+        foreach (var id in AllFusionIds)
+        {
+            if (!inv.AppliedFusions.Contains(id)) continue;
+            int curLv = inv.WeaponLevels.GetValueOrDefault(id, 0);
+            if (curLv == 0 || curLv >= inv.GetWeaponMaxLevel(id)) continue;
             available.Add(MakeWeaponCard(id, curLv + 1));
         }
 
