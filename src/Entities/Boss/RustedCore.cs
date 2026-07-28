@@ -316,7 +316,7 @@ public partial class RustedCore : EnemyBase
     private void FireRadialBurst()
     {
         if (_bulletScene == null) return;
-        _sprite?.Play("attack");
+        PlayAnim(_sprite, "attack");
         AudioSystem.Instance?.PlaySfx("sfx_weapon_sentinel_shoot");
         ScreenShake.Instance?.Shake(2.5f, 0.1f);
 
@@ -368,7 +368,7 @@ public partial class RustedCore : EnemyBase
     /// <summary>Sanctuaire — éventail resserré vers le joueur : punit la ligne droite.</summary>
     private void SignatureDirectedFan(Player player)
     {
-        _sprite?.Play("attack");
+        PlayAnim(_sprite, "attack");
         AudioSystem.Instance?.PlaySfx("sfx_weapon_sentinel_shoot");
 
         var toPlayer = (player.GlobalPosition - GlobalPosition).Normalized();
@@ -431,7 +431,7 @@ public partial class RustedCore : EnemyBase
     /// <summary>Fournaise — flaques de magma télégraphiées : réduit l'espace sûr.</summary>
     private void SignatureMagmaPools(Player player)
     {
-        _sprite?.Play("attack");
+        PlayAnim(_sprite, "attack");
         AudioSystem.Instance?.PlaySfx("sfx_weapon_sentinel_shoot");
         ScreenShake.Instance?.Shake(5f, 0.25f);
 

@@ -31,7 +31,7 @@ public partial class CorruptedDrone : EnemyBase
         if (_sprite != null)
         {
             _sprite.AnimationFinished += OnAnimationFinished;
-            _sprite.Play("move");
+            PlayAnim(_sprite, "move");
         }
     }
 
@@ -55,9 +55,9 @@ public partial class CorruptedDrone : EnemyBase
 
             // Lors d'une déviation importante, repasser en idle pour un frame (effet erratique)
             if (Mathf.Abs(angleRad) > Mathf.DegToRad(30f))
-                _sprite?.Play("idle");
+                PlayAnim(_sprite, "idle");
             else
-                _sprite?.Play("move");
+                PlayAnim(_sprite, "move");
         }
 
         Velocity = _currentDir * Speed;
@@ -86,9 +86,9 @@ public partial class CorruptedDrone : EnemyBase
         SpawnXpOrb();
         SpawnDeathBurst();
 
-        if (_sprite != null)
-            _sprite.Play("death");  // QueueFree déclenché par OnAnimationFinished
-        else
+        // Sans animation de mort (sprite data-driven qui ne l'expose pas), il faut libérer le
+        // nœud tout de suite : le QueueFree dépend sinon d'un AnimationFinished qui ne viendra pas.
+        if (!PlayAnim(_sprite, "death"))
             QueueFree();
     }
 

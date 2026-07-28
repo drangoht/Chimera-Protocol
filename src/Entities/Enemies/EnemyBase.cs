@@ -296,6 +296,27 @@ public partial class EnemyBase : CharacterBody2D
     }
 
     /// <summary>
+    /// Joue une animation <b>si le jeu de frames la possède</b>, et dit si elle a démarré.
+    ///
+    /// Les scènes archétype sont partagées par toute la faune data-driven (cf.
+    /// <c>EnemySpawner.ArchetypeScenePaths</c>) : le `SpriteFrames` posé au runtime par
+    /// <see cref="SetSpriteFrames"/> n'est pas celui de la scène, et rien ne garantit qu'il expose
+    /// la même liste d'animations. Les 5 golems `slow_hunter` n'ont ainsi ni `attack`, ce qui
+    /// noyait le journal sous « There is no animation with name 'attack' » — 144 occurrences sur une
+    /// seule session, à chaque coup porté au joueur.
+    ///
+    /// Le retour permet de traiter le cas des animations dont dépend une suite (`death` →
+    /// <c>QueueFree</c> via `AnimationFinished`) : sans lui, un sprite sans `death` laisserait
+    /// l'ennemi mort mais vivant à l'écran, pour toujours.
+    /// </summary>
+    protected static bool PlayAnim(AnimatedSprite2D? sprite, string anim)
+    {
+        if (sprite?.SpriteFrames == null || !sprite.SpriteFrames.HasAnimation(anim)) return false;
+        sprite.Play(anim);
+        return true;
+    }
+
+    /// <summary>
     /// Encaisse des dégâts. Virtuelle pour que le boss de fin puisse ignorer les PV perdus pendant
     /// sa surcharge de bascule de phase tout en conservant le retour visuel (GDD §29.4).
     /// </summary>

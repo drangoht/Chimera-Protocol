@@ -34,7 +34,7 @@ public partial class GraftedColossus : EnemyBase
         if (_sprite != null)
         {
             _sprite.AnimationFinished += OnAnimationFinished;
-            _sprite.Play("move");
+            PlayAnim(_sprite, "move");
         }
     }
 
@@ -45,7 +45,7 @@ public partial class GraftedColossus : EnemyBase
         if (_sprite.Animation == "attack")
         {
             // Retour au déplacement après la frappe
-            _sprite.Play("move");
+            PlayAnim(_sprite, "move");
         }
         else if (_sprite.Animation == "death")
         {
@@ -99,8 +99,9 @@ public partial class GraftedColossus : EnemyBase
                 ApplyLifesteal(reduced);   // affixe Vampirique (élite)
                 _meleeTimer = MeleeCooldown;
 
-                // Lancer l'animation attack à chaque frappe
-                _sprite?.Play("attack");
+                // Animation d'attaque — absente des sprites de faune slow_hunter (golems de
+                // biome), qui partagent cette scène : PlayAnim ne joue que si elle existe.
+                PlayAnim(_sprite, "attack");
             }
         }
     }
@@ -126,14 +127,11 @@ public partial class GraftedColossus : EnemyBase
         SpawnXpOrb();
 
         // Lancer l'animation death — OnAnimationFinished() spawne l'AetherCore et appelle QueueFree
-        if (_sprite != null)
+        // Ne pas appeler base.Die() quand l'animation part : QueueFree est géré en fin
+        // d'animation. Sans sprite OU sans animation « death » (frames data-driven), il faut faire
+        // le travail tout de suite — l'AnimationFinished ne viendra jamais.
+        if (!PlayAnim(_sprite, "death"))
         {
-            _sprite.Play("death");
-            // Ne pas appeler base.Die() : on gère QueueFree manuellement en fin d'animation
-        }
-        else
-        {
-            // Pas de sprite : spawn immédiat et destruction
             SpawnAetherCore(_cachedParent, _cachedDeathPos);
             QueueFree();
         }

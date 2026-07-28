@@ -16,7 +16,7 @@ public partial class RustSwarm : EnemyBase
         if (_sprite != null)
         {
             _sprite.AnimationFinished += OnAnimationFinished;
-            _sprite.Play("move");
+            PlayAnim(_sprite, "move");
         }
     }
 
@@ -54,9 +54,9 @@ public partial class RustSwarm : EnemyBase
         SpawnXpOrb();
         SpawnDeathBurst();
 
-        if (_sprite != null)
-            _sprite.Play("death");  // QueueFree déclenché par OnAnimationFinished
-        else
+        // Sans animation de mort (sprite data-driven qui ne l'expose pas), il faut libérer le
+        // nœud tout de suite : le QueueFree dépend sinon d'un AnimationFinished qui ne viendra pas.
+        if (!PlayAnim(_sprite, "death"))
             QueueFree();
     }
 

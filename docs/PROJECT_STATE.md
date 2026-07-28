@@ -28,8 +28,19 @@
   cascade : `rusted_core.maxHp` 8000 → 4000**, qui *resserre* la fenêtre de TTK (~21 s sans
   Capaciteur, ~29 s avec) au lieu de la déplacer. Design : `docs/GDD.md` §30 ; mesures :
   `docs/TEST_REPORT.md` ; pièges : `docs/PITFALLS.md` §Passifs. **231 tests unitaires.**
-  **Reste à faire** : confirmer le recalibrage par une **session jouée** — le ×0,50 est un calcul
-  analytique à build égal, pas une mesure de bout en bout.
+  **Session jouée de validation** (Fournaise, niveau 124, 488 DPS) : le Capaciteur **s'arrête de
+  lui-même à L7** (la carte quitte le pool au plafond, comportement visé), puissance **×1,33** sur la
+  première minute d'overtime contre ×3,8 en deux minutes avant, et TTK **18,7 s** à 4000 PV — sous la
+  fenêtre, d'où **`maxHp` porté à 5000** (~23 s pour ce build). Le calcul analytique sous-estimait le
+  DPS réel de 40 % : *ce boss ne se calibre que sur un TTK joué* (GDD §20.6). **Deux bugs corrigés au
+  passage**, relevés dans le journal de cette session et sans rapport avec l'équilibrage :
+  (1) `(int)GD.Randi() % n` est **négatif une fois sur deux** (le cast précède le modulo) — le shuffle
+  de `LevelUpSystem.BuildWeaponCards` levait, et la **récompense de mini-boss était perdue une fois
+  sur deux sans aucun signe à l'écran** (l'exception est avalée par le callback Godot) ;
+  (2) les 5 golems `slow_hunter` de la faune par biome n'exposent pas d'animation `attack` alors
+  qu'ils partagent la scène du Colosse — 144 erreurs par session, d'où `EnemyBase.PlayAnim` (ne joue
+  que si l'animation existe, et **renvoie si elle a démarré** : le `QueueFree` de `death` en dépend).
+  **Reste à faire** : publier.
 - **Fusions d'armes réparées + boss recalibré (PUBLIÉ 1.21.0, 2026-07-28).** Le principal
   déséquilibre du jeu : les **9 fusions d'armes divisaient le DPS de fin de run par 3 à 6**. Trois
   défauts cumulés — dégâts posés en dur par leur classe C# et jamais multipliés (`ApplyWeaponStats`

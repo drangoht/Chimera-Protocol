@@ -53,18 +53,62 @@ cumulée **−28 %** sur les 12 armes → **DPS ×0,50**. Les armes rapides (Can
 ne perdent **rien** — elles étaient déjà au plancher ; les armes lourdes retrouvent leur identité
 (Singularité : 0,15 s → 1,00 s).
 
+### Session JOUÉE de validation (Fournaise, 2026-07-28)
+
+Relevé par le testeur, run complète jusqu'à la mort en overtime :
+
+| | valeur |
+|---|---|
+| niveau au boss de fin | 124 |
+| build | 3 armes L20 + `fusion_blade` L20 · `thermal_core` L20, **`capacitor` L7**, `reinforced_plating` L20 |
+| DPS effectif contre le boss | **488** |
+| TTK à 4000 PV de base (9102 effectifs) | **18,7 s** |
+| puissance à l'entrée de l'overtime → mort (1,1 min) | 2436 → 3112, soit **×1,33** |
+
+Trois enseignements :
+
+1. **Le Capaciteur s'arrête de lui-même à L7** — la carte quitte le pool dès le plafond atteint,
+   exactement le comportement visé. Le testeur montait à L15-L20 auparavant, sans aucun gain.
+2. **La correction tient sur la durée** : ×1,33 sur la première minute d'overtime, contre ×3,8 en
+   deux minutes avant.
+3. **La projection analytique sous-estimait le DPS de 40 %** (310 estimés contre 488 mesurés) : à
+   4000 PV le TTK tombait à 18,7 s, sous la fenêtre. **`maxHp` porté à 5000** → ~23 s pour ce build,
+   ~26 s pour un build de banc à 425 DPS. *Ne jamais calibrer ce boss autrement que sur un TTK joué*
+   (GDD §20.6) — c'est la deuxième fois qu'un calcul théorique se trompe d'un facteur voisin.
+
+À surveiller sur les prochaines runs : le testeur est **mort une minute après l'entrée en
+overtime** (92,5 dégâts subis/s pour 451 PV max). C'est conforme au design — l'overtime est une
+escalade brutale et la run se termine à la mort — mais `reinforced_plating` a lui aussi été amorti
+(+251 PV au lieu de +500 à L20). Si les runs suivantes se terminent toutes aussi vite, c'est ce
+passif-là qu'il faudra détendre, pas la difficulté.
+
+### Bugs relevés dans le journal de cette session
+
+Deux erreurs répétées dans `user://logs/godot.log`, **sans rapport avec le rééquilibrage** :
+
+- **`ArgumentOutOfRangeException` dans `LevelUpSystem.BuildWeaponCards`** (9 occurrences) :
+  `(int)GD.Randi() % (i + 1)` donne un index **négatif une fois sur deux** (le cast d'un `uint`
+  précède le modulo). Conséquence de gameplay : la **récompense de mini-boss était perdue une fois
+  sur deux**, sans aucun signe à l'écran — l'exception est avalée par le callback Godot. Corrigé en
+  faisant le modulo en `uint`.
+- **`There is no animation with name 'attack'`** (144 occurrences) : les scènes archétype sont
+  partagées par la faune data-driven, et les 5 golems `slow_hunter` n'exposent pas d'animation
+  `attack`. Corrigé par `EnemyBase.PlayAnim`, qui ne joue que si l'animation existe et **renvoie si
+  elle a démarré** — indispensable pour `death`, dont dépend le `QueueFree` (un sprite sans `death`
+  aurait laissé l'ennemi mort à l'écran indéfiniment).
+
 ### Recalibrage du boss en cascade
 
-`rusted_core.maxHp` **8000 → 4000**. Projection de la fenêtre de TTK à la Fournaise (PV effectifs
-9 100) : **~21 s** pour un build qui n'a pas monté le Capaciteur (425 DPS mesurés au banc) et
+`rusted_core.maxHp` **8000 → 5000** (4000 dans un premier temps, corrigé sur la session jouée
+ci-dessus). Projection initiale de la fenêtre de TTK à la Fournaise (PV effectifs 9 100) : **~21 s** pour un build qui n'a pas monté le Capaciteur (425 DPS mesurés au banc) et
 **~29 s** pour un build qui l'a saturé (617 → ~310 DPS estimés). La fenêtre **se resserre** au lieu
 de se déplacer, là où l'écart allait de 14,8 s à 43 s.
 
-**À vérifier par une session jouée** (`tools/power_curve_session.ps1 -Biome fournaise`, puis
-`tools/boss_ttk_session.ps1 -ReportOnly`) : le « ×0,50 » du build optimisé est un calcul, pas une
-mesure. Le loadout figé de `--debug-boss` donne 9-11 s sur les trois biomes testés, mais il a
-toujours produit des TTK 2 à 3 fois plus courts que le jeu réel (13,8 s contre 29 s joué avant
-correction) — il ne vaut que comme test de non-régression.
+**Vérifié par la session jouée ci-dessus**, qui a corrigé la valeur : le « ×0,50 » projeté était
+trop pessimiste (488 DPS réels contre 310 estimés), d'où 5000 et non 4000. Le loadout figé de
+`--debug-boss` donne 9-11 s sur les trois biomes testés, mais il a toujours produit des TTK 2 à 3
+fois plus courts que le jeu réel (13,8 s contre 29 s joué avant correction) — il ne vaut que comme
+test de non-régression.
 
 ---
 

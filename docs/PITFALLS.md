@@ -154,6 +154,17 @@ qui change de **phase** avec ses PV et d'**incarnation** avec le biome.
   pas la progression : le multiplier par `WeaponBase.DamageScale`, sinon il devient négligeable en
   fin de run alors qu'il porte l'identité de l'arme.
 
+## Aléatoire — `GD.Randi()` est un `uint`
+- **`(int)GD.Randi() % n` est faux** : le cast donne un nombre **négatif une fois sur deux** (Randi couvre tout l'espace `uint`), et `négatif % n` reste négatif en C# → `IndexOutOfRange`. Toujours faire le modulo **avant** le cast : `(int)(GD.Randi() % (uint)n)`.
+- Vécu : le shuffle de `LevelUpSystem.BuildWeaponCards` plantait ainsi une fois sur deux — la récompense de mini-boss (une carte d'arme) était **perdue sans que rien ne le signale à l'écran**, l'exception étant avalée par le callback Godot. Seul le journal en gardait la trace.
+- Corollaire : une exception levée dans un `Callable.From(...)` **n'interrompt pas le jeu**, elle est journalisée puis ignorée. Un bug de gameplay peut donc vivre longtemps sans symptôme visible : relire `user://logs/godot.log` après une session de test fait partie du protocole.
+
+## Animations d'ennemis — le `SpriteFrames` n'est pas celui de la scène
+- Les scènes archétype (`EnemySpawner.ArchetypeScenePaths`) sont **partagées** par toute la faune data-driven : `SetSpriteFrames` remplace le jeu de frames au runtime, et rien ne garantit qu'il expose les mêmes animations. Les 5 golems `slow_hunter` n'ont **pas** d'animation `attack` → 144 erreurs `There is no animation with name 'attack'` sur une seule session.
+- **Dans une scène archétype, toujours passer par `EnemyBase.PlayAnim(sprite, nom)`**, jamais `sprite.Play(nom)`.
+- **Cas particulier de `death`** : le `QueueFree` est déclenché par `AnimationFinished`. Si l'animation n'existe pas, l'événement ne vient jamais et l'ennemi mort **reste à l'écran pour toujours**. D'où le retour booléen de `PlayAnim` : `if (!PlayAnim(_sprite, "death")) QueueFree();`.
+- En ajoutant un sprite de faune, viser la convention complète **idle / move / attack / death** — mais ne jamais s'y fier côté code.
+
 ## Passifs & plafonds de stats (`PassiveScaling`, `StatCaps`, `InventorySystem.ApplyPassiveDelta`)
 - **Les 4 passifs ne définissent que 3 niveaux pour un plafond de 20** : 17 niveaux sur 20 sont donc *extrapolés*. Toute valeur de fiche modifiée dans `data/weapons.json` se répercute **17 fois** — raisonner sur le cumul à L20 (`PassiveScaling.CumulativeBonus`), jamais sur le delta seul.
 - **L'extrapolation passe par `PassiveScaling.ExtrapolatedDelta`, jamais par le delta brut.** L'additif pur amenait `thermal_core` à ×4,00 et faisait franchir à `capacitor` **100 % de réduction de recharge dès son niveau 8**.

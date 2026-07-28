@@ -21,11 +21,15 @@ corrigé : la puissance faisait **×6,42 en 12 min d'overtime** (mesure `PowerTe
 borné** — `capacitor` atteignait **100 % de réduction de recharge dès L8**, mettant *toutes* les
 armes au plancher de 0,15 s (une arme lourde tirait aussi vite qu'un canon léger). Corrigé →
 `PassiveScaling` (rendements décroissants), `StatCaps.MaxCooldownReduction = 0,75`, passifs saturés
-retirés du pool de cartes. Ratio ramené à **×2,73**, DPS de fin de run **×0,50** à build égal, d'où
-`rusted_core.maxHp` **8000 → 4000** en cascade. Design → `docs/GDD.md` §30 ; pièges →
-`docs/PITFALLS.md` §Passifs ; mesures → `docs/TEST_REPORT.md`. **231 tests.**
-**Reste à faire** : confirmer le recalibrage par une session JOUÉE (le ×0,50 est un calcul, pas une
-mesure de bout en bout), puis publier.
+retirés du pool de cartes. Ratio ramené à **×2,73**, et **×1,33** sur la session jouée de validation
+(Fournaise, niveau 124 : le Capaciteur s'y arrête de lui-même à L7). Le TTK joué a fixé
+`rusted_core.maxHp` à **5000** — le 4000 calculé donnait 18,7 s, sous la fenêtre : *ce boss ne se
+calibre que sur un TTK joué*. Deux bugs trouvés dans le journal de cette session, sans rapport avec
+l'équilibrage : `(int)GD.Randi() % n` **négatif une fois sur deux** (la récompense de mini-boss était
+perdue une fois sur deux, silencieusement) et les sprites de faune `slow_hunter` sans animation
+`attack` (144 erreurs/session) → `EnemyBase.PlayAnim`. Design → `docs/GDD.md` §30 ; pièges →
+`docs/PITFALLS.md` (§Aléatoire, §Animations d'ennemis, §Passifs) ; mesures → `docs/TEST_REPORT.md`.
+**231 tests.** **Reste à faire** : publier.
 Avant ça : **fusions d'armes réparées + boss recalibré**,
 publiée **1.21.0** le 2026-07-28. Les 9 fusions **divisaient le DPS de fin de run par 3 à 6** (dégâts
 en dur jamais multipliés, retour au niveau 1, absentes de tout pool de cartes) : la carte la plus

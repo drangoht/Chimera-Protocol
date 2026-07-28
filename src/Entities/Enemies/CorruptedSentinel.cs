@@ -29,7 +29,7 @@ public partial class CorruptedSentinel : EnemyBase
         if (_sprite != null)
         {
             _sprite.AnimationFinished += OnAnimationFinished;
-            _sprite.Play("idle");
+            PlayAnim(_sprite, "idle");
         }
     }
 
@@ -37,7 +37,7 @@ public partial class CorruptedSentinel : EnemyBase
     {
         if (_sprite == null) return;
         if (_sprite.Animation == "attack" && !_isDead)
-            _sprite.Play("idle");
+            PlayAnim(_sprite, "idle");
         else if (_sprite.Animation == "death")
             QueueFree();
     }
@@ -54,14 +54,14 @@ public partial class CorruptedSentinel : EnemyBase
             Velocity = (-toPlayer + perp).Normalized() * Speed;
 
             if (_sprite != null && _sprite.Animation != "attack")
-                _sprite.Play("move");
+                PlayAnim(_sprite, "move");
         }
         else if (dist > AdvanceRange)
         {
             Velocity = toPlayer * Speed;
 
             if (_sprite != null && _sprite.Animation != "attack")
-                _sprite.Play("move");
+                PlayAnim(_sprite, "move");
         }
         else
         {
@@ -69,7 +69,7 @@ public partial class CorruptedSentinel : EnemyBase
             Velocity = Vector2.Zero;
 
             if (_sprite != null && _sprite.Animation != "attack")
-                _sprite.Play("idle");
+                PlayAnim(_sprite, "idle");
         }
 
         MoveAndSlide();
@@ -97,7 +97,7 @@ public partial class CorruptedSentinel : EnemyBase
         if (_bulletScene == null) return;
 
         // Lancer l'animation attack avant de spawner le projectile
-        _sprite?.Play("attack");
+        PlayAnim(_sprite, "attack");
 
         var bullet = _bulletScene.Instantiate<EnemyBullet>();
         bullet.Direction = (player.GlobalPosition - GlobalPosition).Normalized();
@@ -130,9 +130,9 @@ public partial class CorruptedSentinel : EnemyBase
         SpawnDeathBurst();
         ScreenShake.Instance?.Shake(3f, 0.12f);
 
-        if (_sprite != null)
-            _sprite.Play("death");  // QueueFree déclenché par OnAnimationFinished
-        else
+        // Sans animation de mort (sprite data-driven qui ne l'expose pas), il faut libérer le
+        // nœud tout de suite : le QueueFree dépend sinon d'un AnimationFinished qui ne viendra pas.
+        if (!PlayAnim(_sprite, "death"))
             QueueFree();
     }
 

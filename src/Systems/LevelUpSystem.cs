@@ -368,11 +368,16 @@ public partial class LevelUpSystem : Node
             }
         }
 
-        // Shuffle et prendre count cartes
+        // Shuffle et prendre count cartes.
+        // ⚠ Le modulo se fait en UINT avant le cast : `(int)GD.Randi()` est négatif une fois sur
+        // deux (Randi() couvre tout l'espace uint), et `négatif % n` reste négatif en C# → index
+        // hors bornes. La récompense de mini-boss était perdue une fois sur deux, silencieusement :
+        // l'exception remontait dans le callback Godot, ShowWeaponDrop n'affichait aucune carte et
+        // seul le journal en gardait la trace.
         var shuffled = new System.Collections.Generic.List<LevelUpCardData>(available);
         for (int i = shuffled.Count - 1; i > 0; i--)
         {
-            int j = (int)GD.Randi() % (i + 1);
+            int j = (int)(GD.Randi() % (uint)(i + 1));
             (shuffled[i], shuffled[j]) = (shuffled[j], shuffled[i]);
         }
 

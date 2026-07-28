@@ -2297,9 +2297,21 @@ multiplicateur **3,40 → 2,36**, cadence cumulée **−28 %** sur les 12 armes,
 armes rapides ne perdent rien (elles étaient déjà au plancher) ; les armes lourdes retrouvent leur
 identité — la Singularité repasse de 0,15 s à 1,00 s de recharge effective.
 
-**Recalibrage du boss en cascade** : `rusted_core.maxHp` **8000 → 4000** (§20.6). La fenêtre de TTK
-**se resserre au lieu de se déplacer** : ~21 s pour un build sans Capaciteur, ~29 s pour un build qui
-le saturait, là où l'écart allait de 14,8 s à 43 s. Reste à confirmer par une session jouée.
+**Recalibrage du boss en cascade** : `rusted_core.maxHp` **8000 → 5000** (§20.6). Le premier chiffre
+retenu (4000) venait d'un calcul analytique qui sous-estimait le DPS réel de 40 % ; la **session
+jouée** de validation (Fournaise, niveau 124, 488 DPS) a donné **18,7 s**, sous la fenêtre — d'où
+5000, soit ~23 s pour ce build et ~26 s pour un build de banc à 425 DPS. La fenêtre **se resserre au
+lieu de se déplacer**, là où l'écart allait de 14,8 s à 43 s. *Leçon confirmée pour la deuxième fois :
+ce boss ne se calibre que sur un TTK joué (§20.6), jamais sur un DPS calculé.*
+
+Deux observations de la même session :
+
+- **le Capaciteur s'arrête de lui-même à L7** — la carte quitte le pool dès son plafond atteint,
+  exactement le comportement visé (le testeur le montait à L15-L20 sans aucun gain) ;
+- le testeur est **mort une minute après l'entrée en overtime** (92,5 dégâts subis/s pour 451 PV).
+  Conforme au design — l'overtime est une escalade brutale — mais `reinforced_plating` a lui aussi
+  été amorti (+251 PV au lieu de +500 à L20). Si les runs suivantes se terminent toutes aussi vite,
+  c'est **ce passif-là** qu'il faudra détendre, pas la difficulté du contenu.
 
 ### 30.6 Cible de design
 
