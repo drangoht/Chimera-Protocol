@@ -4,6 +4,71 @@
 > `release-manager`). Entrées en ordre décroissant (la plus récente en haut). Ton orienté
 > joueur, EN puis FR (audience itch surtout anglophone).
 
+## v1.22.0 — The Capacitor was quietly flattening every weapon (2026-07-28)
+
+**Fixed — one passive was erasing the difference between your weapons**
+- The four passives only define **3 levels** but can be taken up to **20**. Past level 3, each
+  extra level was granting the exact same bonus again, forever. The Capacitor added 14 % cooldown
+  reduction per level — so from **level 8 onwards it reached 100 %**, and every weapon you owned
+  dropped to the same **0.15 s** floor.
+- A heavy weapon on a 1.2 s cooldown was firing exactly as fast as a light one on 0.4 s. The
+  Singularity, built around its slow, heavy shot, became a machine gun. Cooldown — one of the things
+  that makes a weapon *itself* — simply stopped existing.
+- It also explains why the final boss felt so wildly inconsistent: the very same fight measured
+  anywhere between **14.8 and 42 seconds** depending on whether you had taken that one card.
+- Passives now keep improving past their defined levels, but with **diminishing returns**, and
+  cooldown reduction is capped at **75 %**. A heavy weapon stays heavy. On top of that, a passive
+  whose stat has hit its cap **stops being offered** — the Capacitor and the Servo Motors were still
+  showing up as cards long after they could do anything for you.
+
+**Fixed — mini-boss rewards vanished half the time**
+- Killing a mini-boss is supposed to offer you a weapon card. One time out of two, **nothing
+  appeared**: an internal shuffle was picking an invalid card and the whole reward was silently
+  dropped. Nine occurrences in a single test session. It now shows up every time.
+- Also silenced a flood of errors caused by the biome golems, which were trying to play an attack
+  animation their sprites never had.
+
+**Changed — the final boss, recalibrated once more**
+- The Rusted Core goes from **8000 to 5000 base health**. With the Capacitor no longer doubling
+  everyone's fire rate, late-run damage came down — the boss needed to follow.
+- Measured on a played run and on the bench: **26 to 35 seconds**, from the end-of-timer fight all
+  the way through its overtime returns. Previously those overtime rematches collapsed to **under
+  15 seconds**, which made the escalation meaningless.
+
+---
+
+**Corrigé — un passif effaçait la différence entre vos armes**
+- Les quatre passifs ne définissent que **3 niveaux** mais montent jusqu'à **20**. Au-delà du
+  niveau 3, chaque niveau supplémentaire réappliquait exactement le même bonus, indéfiniment. Le
+  Capaciteur ajoutait 14 % de réduction de recharge par niveau : **dès le niveau 8, il atteignait
+  100 %** et toutes vos armes tombaient au même plancher de **0,15 s**.
+- Une arme lourde à 1,2 s de recharge tirait exactement aussi vite qu'une arme légère à 0,4 s. La
+  Singularité, construite autour de son tir lent et massif, devenait une mitrailleuse. La cadence —
+  l'une des choses qui font qu'une arme *est* elle-même — cessait purement et simplement d'exister.
+- Cela explique aussi pourquoi le boss de fin semblait si inconstant : le même combat se mesurait
+  entre **14,8 et 42 secondes** selon que vous aviez pris cette carte ou non.
+- Les passifs continuent de progresser au-delà de leurs niveaux définis, mais en **rendements
+  décroissants**, et la réduction de recharge est plafonnée à **75 %**. Une arme lourde reste
+  lourde. Et un passif dont la statistique est au plafond **cesse d'être proposé** — le Capaciteur
+  et les Servomoteurs apparaissaient encore en carte longtemps après ne plus rien pouvoir vous
+  apporter.
+
+**Corrigé — les récompenses de mini-boss disparaissaient une fois sur deux**
+- Tuer un mini-boss doit vous proposer une carte d'arme. Une fois sur deux, **rien n'apparaissait** :
+  un mélange interne tirait une carte invalide et toute la récompense passait à la trappe, sans
+  aucun signe. Neuf occurrences sur une seule session de test. Elle arrive désormais à tous les coups.
+- Au passage, disparition d'un déluge d'erreurs provoqué par les golems de biome, qui tentaient de
+  jouer une animation d'attaque absente de leurs sprites.
+
+**Modifié — le boss de fin, recalibré une fois de plus**
+- Le Noyau Rouillé passe de **8000 à 5000 points de vie de base**. Le Capaciteur ne doublant plus la
+  cadence de tout le monde, les dégâts de fin de partie ont baissé : le boss devait suivre.
+- Mesuré sur une partie jouée et au banc d'essai : **26 à 35 secondes**, du combat de fin de timer
+  jusqu'à ses réapparitions en overtime. Ces dernières s'effondraient auparavant **sous les
+  15 secondes**, ce qui vidait l'escalade de son sens.
+
+---
+
 ## v1.21.0 — Weapon fusions are finally an upgrade (2026-07-28)
 
 **Fixed — fusing a weapon was quietly ruining your run**
