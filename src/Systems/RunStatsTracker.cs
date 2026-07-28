@@ -50,6 +50,10 @@ public partial class RunStatsTracker : Node
         // garanti — sans ce report, le biome peut être encore vide ici et la
         // musique adaptative retomberait sur le fallback à chaque run.
         Callable.From(StartRunMusic).CallDeferred();
+
+        // Journal de la courbe de puissance (flag --power-curve uniquement, cf. PowerTelemetry).
+        // Différé comme la musique : le biome et le build de départ ne sont posés qu'après ce _Ready.
+        Callable.From(PowerTelemetry.Begin).CallDeferred();
     }
 
     /// <summary>
@@ -84,6 +88,8 @@ public partial class RunStatsTracker : Node
 
         ElapsedSeconds += (float)delta;
 
+        PowerTelemetry.Tick((float)delta);
+
         // (L'intensité musicale n'est plus pilotée ici : MusicDirector échantillonne
         // lui-même l'état de la run — ennemis à l'écran, temps, PV, boss.)
 
@@ -95,6 +101,11 @@ public partial class RunStatsTracker : Node
             _overtimeAnnounced = true;
             Banner.Show(GetTree(), Loc.T("OVERTIME"), new Color(1f, 0.3f, 0.3f));
         }
+
+        // Banc automatisé (--run-limit) : la survie étant sans fin, seule une borne de temps permet
+        // de terminer proprement une mesure d'overtime. Jamais actif en build normal.
+        if (DebugHooks.RunLimit > 0f && ElapsedSeconds >= DebugHooks.RunLimit)
+            EndRun("bench_limit");
     }
 
     /// <summary>
@@ -148,6 +159,9 @@ public partial class RunStatsTracker : Node
         // qu'il restait 40 % de PV au boss vaut autant qu'un TTK pour l'équilibrage.
         BossTelemetry.NotifyRunEnd(outcome);
 
+        // Courbe de puissance : clôt le journal (dernier échantillon partiel + écriture disque).
+        PowerTelemetry.End(outcome);
+
         int timeSecs = (int)ElapsedSeconds;
         var (echoes, overtimeBonus) = CalculateEchoesDetailed(timeSecs, KillCount, CoresCollected);
 
@@ -166,6 +180,15 @@ public partial class RunStatsTracker : Node
         int difficultyRank = (int)(GameSettings.Instance?.Difficulty ?? GameSettings.GameDifficulty.Normal);
         var newChallenges = ChallengeSystem.Instance?.EvaluateRunEnd(
             timeSecs, KillCount, CoresCollected, LevelCompleted, biome, difficultyRank) ?? new();
+
+        // Banc headless : l'écran de fin n'a personne pour le lire et la mesure est déjà écrite.
+        // Sans cette sortie, le processus reste vivant sur un arbre en pause et il faut le tuer.
+        if (DisplayServer.GetName() == "headless" &&
+            (DebugHooks.AutoPlay || DebugHooks.PowerCurve || DebugHooks.RunLimit > 0f))
+        {
+            GetTree().Quit();
+            return;
+        }
 
         OpenEndScreen(outcome, timeSecs, echoes, overtimeBonus, newRecord, GameSettings.Instance?.BestTime(biome) ?? timeSecs, newChallenges);
     }

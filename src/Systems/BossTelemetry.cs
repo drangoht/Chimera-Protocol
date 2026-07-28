@@ -206,6 +206,10 @@ public static class BossTelemetry
     private static void QuitIfHeadlessBench()
     {
         if (!DebugHooks.BossDebug && !DebugHooks.AutoPlay) return;
+        // Banc de COURBE DE PUISSANCE : le boss de fin n'est qu'un jalon au milieu de la mesure —
+        // ce qui intéresse (l'overtime et ses boss suivants) vient après. Fermer ici couperait la
+        // run juste avant la partie à mesurer.
+        if (DebugHooks.PowerCurve) return;
         if (DisplayServer.GetName() != "headless") return;
         (Engine.GetMainLoop() as SceneTree)?.Quit();
     }

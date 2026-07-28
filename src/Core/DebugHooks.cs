@@ -230,6 +230,49 @@ public static class DebugHooks
         }
     }
 
+    private static bool? _powerCurve;
+
+    /// <summary>
+    /// Vrai si lancé avec <c>--power-curve</c> : <see cref="PowerTelemetry"/> journalise toute la run
+    /// (DPS, dégâts subis, population d'ennemis, build complet) dans <c>user://power_curve.log</c>.
+    /// Sert à instruire la courbe de puissance en overtime — le DPS y triple alors que toutes les
+    /// cartes sont déjà au plafond. Aucun effet en build normal.
+    /// </summary>
+    public static bool PowerCurve
+    {
+        get
+        {
+            if (_powerCurve == null)
+                _powerCurve = HasFlag("--power-curve");
+            return _powerCurve.Value;
+        }
+    }
+
+    private static bool _runLimitRead;
+    private static float _runLimit;
+
+    /// <summary>
+    /// Durée maximale de run en secondes de jeu via <c>--run-limit=&lt;s&gt;</c>, 0 si absent : au-delà,
+    /// la run se termine d'elle-même (issue <c>bench_limit</c>) comme si le joueur mourait. Sans cela
+    /// un banc d'overtime ne s'arrête jamais — la survie est sans fin, et sous <c>--invuln</c> le
+    /// joueur ne meurt pas. Aucun effet en build normal.
+    /// </summary>
+    public static float RunLimit
+    {
+        get
+        {
+            if (!_runLimitRead)
+            {
+                var raw = ValueFlag("--run-limit=");
+                _runLimit = raw != null && float.TryParse(raw,
+                    System.Globalization.NumberStyles.Float,
+                    System.Globalization.CultureInfo.InvariantCulture, out var v) ? v : 0f;
+                _runLimitRead = true;
+            }
+            return _runLimit;
+        }
+    }
+
     private static bool HasFlag(string flag)
     {
         foreach (var arg in OS.GetCmdlineArgs())

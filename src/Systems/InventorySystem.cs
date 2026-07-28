@@ -501,6 +501,26 @@ public partial class InventorySystem : Node
     /// <summary>Plafond de niveau d'une fusion, aligné sur celui des armes de base.</summary>
     public const int FusionMaxLevel = 20;
 
+    /// <summary>
+    /// Indice de puissance du loadout : somme des <c>dégâts / recharge</c> des armes équipées, en
+    /// dégâts par seconde théoriques sur une cible unique. Multiplicateur de dégâts et réductions de
+    /// recharge y sont déjà inclus (ils sont posés sur les nœuds d'arme par <c>ApplyWeaponStats</c>).
+    ///
+    /// Approximation assumée : elle ignore le nombre de projectiles, les perforations et les
+    /// mécaniques continues. Elle ne sert donc PAS à comparer deux armes entre elles, mais à suivre
+    /// **l'évolution d'un même build dans le temps** — ce que le DPS mesuré sur le terrain ne permet
+    /// pas (il monte tout seul quand la population d'ennemis monte). Utilisée par
+    /// <see cref="PowerTelemetry"/>, aucun effet sur le gameplay.
+    /// </summary>
+    public float PowerIndex()
+    {
+        float total = 0f;
+        foreach (var node in _weaponNodes.Values)
+            if (node is WeaponBase wb && wb.Cooldown > 0.001f)
+                total += wb.Damage / wb.Cooldown;
+        return total;
+    }
+
     public int GetPassiveMaxLevel(string passiveId)
     {
         if (WeaponsData == null) return 3;

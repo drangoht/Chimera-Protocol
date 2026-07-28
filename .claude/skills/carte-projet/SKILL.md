@@ -77,6 +77,12 @@ Les nœuds délèguent ici (SRP).
   `user://boss_ttk.log`). Hooks : `RustedCore` (`_Ready` différé / `TakeDamage` / `EnterSurcharge` /
   `Die`) et `RunStatsTracker.EndRun` (combat interrompu par la mort du joueur). Toujours active, y
   compris en run normale. Session guidée → `tools/boss_ttk_session.ps1`.
+- **Mesure de la courbe de puissance** : `PowerTelemetry` (statique — échantillon toutes les 15 s de
+  jeu dans `user://power_curve.log`, écrit au fil de l'eau : DPS infligé, dégâts subis, population
+  d'ennemis, indice de puissance du loadout `InventorySystem.PowerIndex()`, build complet).
+  **Flag `--power-curve` uniquement** (contrairement à `BossTelemetry`, toujours active). Hooks :
+  `EnemyBase.TakeDamage`, `Player.TakeDamage`, `RunStatsTracker` (`_Ready`/`_Process`/`EndRun`).
+  Session guidée → `tools/power_curve_session.ps1`.
 - Divers : `AudioSystem`, `GameSettings` (source unique des réglages, persistés dans `user://settings.cfg` : volumes, **mode de fenêtre** `Windowed/Borderless/Fullscreen` + résolution + VSync + limite/compteur d'IPS, difficulté, **intensité des secousses**, **réduction des flashs**, **vibration manette**, langue, **tampon de version**, **Discord on/off**, touches `move_*`/`dash` rebindables ; migration des anciennes clés `display/fullscreen` et `gameplay/shake`), `Loc`, `FusionFlash`, `ScreenShake` (`Enabled` + `Intensity`), `RunStatsTracker`
 - **Musique adaptative** : `MusicDirector` (autoload — alterne `music_run_<biome>_{calm,combat}.ogg` + `music_run_boss.ogg` commun, **une seule audible à la fois**, fondu croisé à puissance constante ; détecte le boss tout seul via `EnemyBase.AssimIsBoss/AssimIsMiniBoss`). Logique pure → `MusicIntensity` (§Rules : `Select` avec hystérésis, `Approach`, `WeightToDb`). Démarré par `RunStatsTracker` (différé d'une frame : `CurrentBiomeId` est posé par `GroundRenderer._Ready`). `AudioSystem.PlayMusic` le coupe — les deux ne coexistent jamais. Direction sonore → `docs/AUDIO_AI_PROMPTS.md` ; pièges → `docs/PITFALLS.md`
 - Input : **`InputRemap`** (statique) — actions `move_up/down/left/right` (défaut ZQSD + flèches + manette), séparées des `ui_*` menu ; le Player lit `Input.GetVector(move_*)`, remap via l'écran Options, persisté dans `GameSettings`. Action **`dash`** (Maj gauche / RB, `EnsureExtraActions()` au boot via GameManager) pour la greffe Servos Erratiques
@@ -177,8 +183,10 @@ Fusions : `FusionBlade`, `RailOvercharged`, `OrbitalSwarm`, `OverloadAegis`,
 - Tests/équilibrage : **`boss_ttk_session.ps1`** (mesure du TTK boss par un testeur HUMAIN :
   `-Biome <id>` / `-All` / `-Real` / `-Invuln` / `-ReportOnly` — lance le combat puis affiche le
   tableau des relevés de `BossTelemetry`), `boss_ttk_test.py` (bot legacy : kite en cercle, ses
-  chiffres ne valent PAS validation d'équilibrage), `test_balance_v2.py`, `test_ui_keyboard.py`,
-  `smoketest_exe.py`
+  chiffres ne valent PAS validation d'équilibrage), **`power_curve_session.ps1`** (courbe de
+  puissance d'une run entière : `-Biome <id>` / `-Bench` (banc headless auto-play) / `-Minutes <n>` /
+  `-ReportOnly` — tableau minute par minute puis ratio puissance/population entrée-overtime → fin),
+  `test_balance_v2.py`, `test_ui_keyboard.py`, `smoketest_exe.py`
 - Release : **`release_itch.ps1`** (export → butler push → régénère & push `version.json`) — workflow complet via le skill **`/publier-itch`**
 - Python : `C:\Users\drang\AppData\Local\Programs\Python\Python313\python.exe`
 
@@ -208,13 +216,20 @@ instrumentale, progressions, architecture en stems, mixage, bouclage) ·
 - Compil rapide C# : `dotnet build ChimeraProtocol.csproj`
 - Jouer une run COMPLÈTE en banc (build réellement accumulé jusqu'au boss) : `--auto-play` (level-up
   et assimilation résolus tout seuls) + `--timescale=<x>` (≤ 4, au-delà les projectiles traversent
-  leurs cibles). Ex. : `--headless --auto-play --invuln --timescale=3 --biome=neon`
+  leurs cibles). ⚠ Il faut lancer **la scène de jeu** et passer les flags **après `--`**, sinon le
+  banc reste bloqué sur le menu principal sans rien mesurer :
+  `godot --headless --path <projet> res://scenes/Game.tscn -- --auto-play --invuln --timescale=3 --biome=neon`
 - Forcer un biome (tests/captures) : flag `--biome=<id>`
 - Forcer tous les ennemis basiques en élite (test des affixes) : flag `--force-elites` (`DebugHooks.ForceElites`)
 - Forcer l'équipement d'une (ou des trois) fusion(s) de greffes sans grinder les jauges : flag `--force-fusion=<id|all>` (`DebugHooks.ForcedFusion`, équipe d'abord les 2 greffes prérequises). 3 fusions : `fusion_charge_blindee`, `fusion_ruche_tourelles`, `fusion_nova_rodeur` (Frappe Nova = dash-blink + nova ; partage `erratic_servos` avec Charge Blindée → exclusives)
 - Mesurer le TTK du boss de fin : `powershell -File tools/boss_ttk_session.ps1 -Biome neon` (combat
   joué à la main, relevé automatique) puis `-ReportOnly` pour le tableau. Journal :
   `%APPDATA%\Godot\app_userdata\Chimera Protocol\boss_ttk.log`
+- Mesurer la COURBE DE PUISSANCE d'une run (rapport puissance joueur / menace, overtime compris) :
+  `powershell -File tools/power_curve_session.ps1 -Biome fournaise` (session jouée) ou `-Bench`
+  (banc headless). Flag brut : `--power-curve` (+ `--run-limit=<s>` pour borner une run — la survie
+  est sans fin, un banc ne s'arrête sinon jamais). Journal :
+  `%APPDATA%\Godot\app_userdata\Chimera Protocol\power_curve.log`
 - Rendre le joueur invulnérable pour observer un combat long (phases du boss, VFX) : flag `--invuln` (`DebugHooks.Invulnerable`) — à combiner avec `--debug-boss`, qui trace aussi chaque bascule de phase
 - Forcer la langue de l'UI pour une session sans toucher à `user://settings.cfg` (captures/trailer) : flag `--lang=<en|fr|es>` (`DebugHooks.ForcedLanguage` → `GameSettings.ApplyLanguageOverride`)
 - Forcer l'équipement d'une (ou des 5) greffe(s) de base pour valider les props de silhouette : flag `--force-graft=<id|all>` (`DebugHooks.ForcedGraft`) ; capture par PID via `tools/capture_graft_silhouette.py`

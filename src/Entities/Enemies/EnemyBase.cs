@@ -303,7 +303,11 @@ public partial class EnemyBase : CharacterBody2D
     {
         if (_isDead) return;
         _timeSinceHit = 0f;                    // suspend la régénération (affixe Régénérant)
-        _currentHp -= amount * _damageTakenMult; // <1 pour un affixe Blindé
+        float effective = amount * _damageTakenMult; // <1 pour un affixe Blindé
+        _currentHp -= effective;
+        // Courbe de puissance (--power-curve) : on compte les dégâts EFFECTIVEMENT encaissés, pas
+        // ceux annoncés par l'arme — un affixe Blindé fait bien baisser le DPS réel du build.
+        PowerTelemetry.NotifyDamageDealt(effective);
         HitFlash(0.05f);
         if (_currentHp <= 0f)
             Die();

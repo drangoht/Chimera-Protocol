@@ -666,6 +666,9 @@ public partial class Player : CharacterBody2D
         _invulnTimer = InvulnWindow;
 
         Stats.CurrentHp = Mathf.Max(0f, Stats.CurrentHp - amount);
+        // Courbe de puissance (--power-curve) : seuls les coups qui passent réellement comptent —
+        // i-frames, égide et absorption sont déjà sortis par les retours anticipés ci-dessus.
+        PowerTelemetry.NotifyDamageTaken(amount);
         EmitSignal(SignalName.HpChanged, Stats.CurrentHp, Stats.MaxHp);
 
         if (Stats.CurrentHp > 0f)
