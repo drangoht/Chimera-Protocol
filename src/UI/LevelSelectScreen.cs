@@ -97,9 +97,16 @@ public partial class LevelSelectScreen : Control
         // débloqué → plaque d'acier éteinte (le liseré de catégorie est une information de biome
         // qu'on ne révèle pas tant qu'il est verrouillé).
         var panel = new PanelContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
-        panel.AddThemeStyleboxOverride("panel", unlocked
-            ? UiStyle.CardFrame(accent)
-            : UiStyle.CardFrameDisabled());
+        var cardStyle = unlocked ? UiStyle.CardFrame(accent) : UiStyle.CardFrameDisabled();
+        // Sans marge explicite, le contenu se cale sur la bande du cadre (16 px) et vient donc
+        // butter contre le liseré d'accent, qui court de 12 à 16 px du bord : 4 à 5 px mesurés
+        // entre la plaque du bouton « Jouer ici » et ce liseré, soit un bouton perçu comme collé.
+        // 16 + 12 de respiration (même valeur que les cartes de personnage, cf. docs/PITFALLS.md).
+        // Seuls les CÔTÉS sont élargis : la hauteur est déjà comptée (la liste déborde et défile).
+        const int sideMargin = UiStyle.PanelContentMargin + 12;
+        cardStyle.SetContentMargin(Side.Left,  sideMargin);
+        cardStyle.SetContentMargin(Side.Right, sideMargin);
+        panel.AddThemeStyleboxOverride("panel", cardStyle);
         if (!unlocked) panel.Modulate = new Color(1f, 1f, 1f, 0.45f);   // carte grisée si verrouillée
 
         var hb = new HBoxContainer();
