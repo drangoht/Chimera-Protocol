@@ -21,6 +21,12 @@ Usage :
     python tools/record_trailer.py --list
     python tools/record_trailer.py intro menu
     python tools/record_trailer.py --all
+    python tools/record_trailer.py --all --lang=en   # rushes en anglais (trailer VO)
+
+LANGUE : sans `--lang`, le jeu tourne dans la langue de `user://settings.cfg` -- donc celle du
+poste, ce qui n'est PAS forcement celle du trailer voulu. `--lang=<code>` force la locale de la
+session (cf. `DebugHooks.ForcedLanguage`) sans ecraser la preference du joueur. Tout le texte a
+l'ecran en depend : narration de la cinematique, bannieres de biome, cartes de level-up, menus.
 
 ATTENTION : le script prend le controle du clavier et de la souris pendant toute la capture.
 """
@@ -212,7 +218,7 @@ TAKES = {
 }
 
 
-def run_take(name):
+def run_take(name, lang=None):
     take = TAKES[name]
     os.makedirs(RAW, exist_ok=True)
     avi = os.path.join(RAW, f"{name}.avi")
@@ -223,8 +229,11 @@ def run_take(name):
     if take["scene"]:
         cmd.append(take["scene"])
     cmd += ["--", "--trailer"] + take["args"]
+    if lang:
+        cmd.append(f"--lang={lang}")
 
-    print(f"=== {name} : {take['seconds']}s  {' '.join(take['args']) or '(sans flag)'}")
+    print(f"=== {name} : {take['seconds']}s  {' '.join(take['args']) or '(sans flag)'}"
+          + (f"  [{lang}]" if lang else ""))
     proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     held = None
     try:
@@ -296,8 +305,9 @@ if __name__ == "__main__":
     if unknown:
         print("Prises inconnues :", unknown)
         sys.exit(2)
+    lang = next((a.split("=", 1)[1] for a in argv if a.startswith("--lang=")), None)
     ok = True
     for n in names:
-        ok = run_take(n) and ok
+        ok = run_take(n, lang) and ok
         time.sleep(1.0)
     sys.exit(0 if ok else 1)

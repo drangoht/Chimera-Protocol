@@ -138,6 +138,11 @@ Fusions : `FusionBlade`, `RailOvercharged`, `OrbitalSwarm`, `OverloadAegis`,
   `--step` — **obligatoire après chaque recapture**, les timecodes de l'EDL ne survivent pas aux
   runs randomisées).
   Flag jeu `--trailer` = `DebugHooks.TrailerMode` (masque VersionStamp + invite d'intro).
+  **Langue du trailer** : `record_trailer.py --lang=en` (texte affiché PAR LE JEU dans les rushes :
+  narration, bannières, cartes de level-up, menus) ET `build_trailer.py --lang=en` (cartons de texte
+  incrustés, dict `TEXTS`) — les deux doivent porter la même langue. Sortie nommée
+  `trailer/ChimeraProtocol_trailer_<LANG>_1440p.mp4`. Description YouTube prête à coller →
+  `docs/YOUTUBE_TRAILER.md`.
   Pièges → `docs/PITFALLS.md` §Capture vidéo. Sorties ignorées par git (`trailer/`).
 - Tests/équilibrage : `boss_ttk_test.py`, `test_balance_v2.py`, `test_ui_keyboard.py`, `smoketest_exe.py`
 - Release : **`release_itch.ps1`** (export → butler push → régénère & push `version.json`) — workflow complet via le skill **`/publier-itch`**
@@ -169,4 +174,5 @@ instrumentale, progressions, architecture en stems, mixage, bouclage) ·
 - Forcer un biome (tests/captures) : flag `--biome=<id>`
 - Forcer tous les ennemis basiques en élite (test des affixes) : flag `--force-elites` (`DebugHooks.ForceElites`)
 - Forcer l'équipement d'une (ou des trois) fusion(s) de greffes sans grinder les jauges : flag `--force-fusion=<id|all>` (`DebugHooks.ForcedFusion`, équipe d'abord les 2 greffes prérequises). 3 fusions : `fusion_charge_blindee`, `fusion_ruche_tourelles`, `fusion_nova_rodeur` (Frappe Nova = dash-blink + nova ; partage `erratic_servos` avec Charge Blindée → exclusives)
+- Forcer la langue de l'UI pour une session sans toucher à `user://settings.cfg` (captures/trailer) : flag `--lang=<en|fr|es>` (`DebugHooks.ForcedLanguage` → `GameSettings.ApplyLanguageOverride`)
 - Forcer l'équipement d'une (ou des 5) greffe(s) de base pour valider les props de silhouette : flag `--force-graft=<id|all>` (`DebugHooks.ForcedGraft`) ; capture par PID via `tools/capture_graft_silhouette.py`

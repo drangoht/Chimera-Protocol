@@ -313,6 +313,13 @@ Tout nouveau chemin de sortie de run doit l'appeler aussi.
   l'AVI, sinon le fichier est illisible ou tronqué.
 - Le flag `--trailer` (`DebugHooks.TrailerMode`) masque le tampon `VersionStamp` et l'invite
   « appuyer pour passer » de l'intro — sinon elles s'incrustent dans toutes les prises.
+- **La langue du trailer se décide à la CAPTURE, pas au montage.** Tout le texte affiché par le jeu
+  (narration de la cinématique, bannières de biome, cartes de level-up, menus, codex) est gravé dans
+  les rushes : sans rien préciser, `record_trailer.py` hérite de la langue de `user://settings.cfg`
+  — celle du poste, pas forcément celle voulue. Passer `--lang=<code>`
+  (`DebugHooks.ForcedLanguage`), qui surcharge la locale de la session **sans** l'écrire dans
+  settings.cfg (`GameSettings._persistedLanguage`), et donner la même langue à
+  `build_trailer.py --lang=` pour les cartons incrustés. Se tromper coûte une recapture complète.
 - **La 1re minute d'une run ne montre rien** (nuée clairsemée, armes niveau 1). Le spectacle est en
   mid/late game : prévoir des prises de 4–5 min et ne garder que la fin.
 - Traverser les menus au clavier dérive vite (une prise « menu » a fini dans Options) : lancer

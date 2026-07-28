@@ -25,6 +25,11 @@ public partial class GameSettings : Node
     public string Language { get; private set; } = "en";
     public static readonly string[] Languages = { "en", "fr", "es" };
 
+    // Langue réellement écrite dans settings.cfg. Diffère de Language quand la session tourne sous
+    // --lang=<code> (capture du trailer) : la surcharge ne doit JAMAIS écraser la préférence du
+    // joueur, même si un Save() est déclenché en cours de session (high score, complétion…).
+    private string _persistedLanguage = "en";
+
     // Multiplicateurs de difficulté lus par EnemySpawner (ennemis) — délégués à DifficultyTuning.
     public float EnemyDamageMult => DifficultyTuning.EnemyDamage((int)Difficulty);
     public float EnemyHpMult     => DifficultyTuning.EnemyHp((int)Difficulty);
@@ -43,6 +48,7 @@ public partial class GameSettings : Node
     {
         Instance = this;
         Load();
+        ApplyLanguageOverride();
         Apply();
     }
 
@@ -184,9 +190,23 @@ public partial class GameSettings : Node
     public void SetLanguage(string lang)
     {
         if (System.Array.IndexOf(Languages, lang) < 0) lang = "en";
-        Language = lang;
+        Language = _persistedLanguage = lang;
         TranslationServer.SetLocale(lang);
         Save();
+    }
+
+    /// <summary>Applique <c>--lang=&lt;code&gt;</c> pour la session, sans toucher à settings.cfg
+    /// (cf. DebugHooks.ForcedLanguage). Sans le flag : sans effet.</summary>
+    private void ApplyLanguageOverride()
+    {
+        string? forced = DebugHooks.ForcedLanguage;
+        if (forced == null) return;
+        if (System.Array.IndexOf(Languages, forced) < 0)
+        {
+            GD.PushWarning($"--lang={forced} ignoré (langues : {string.Join(", ", Languages)})");
+            return;
+        }
+        Language = forced;   // _persistedLanguage reste celle du joueur
     }
 
     // ── Application ────────────────────────────────────────────────────────────
@@ -233,6 +253,7 @@ public partial class GameSettings : Node
         Difficulty   = (GameDifficulty)cfg.GetValue("gameplay", "difficulty", (int)Difficulty).AsInt32();
         Language     = cfg.GetValue("display", "language", Language).AsString();
         if (System.Array.IndexOf(Languages, Language) < 0) Language = "en";
+        _persistedLanguage = Language;
 
         _completions.Clear();
         foreach (string key in cfg.GetValue("progress", "completions", new string[0]).AsStringArray())
@@ -286,7 +307,7 @@ public partial class GameSettings : Node
         cfg.SetValue("audio",    "music",      Music);
         cfg.SetValue("audio",    "sfx",        Sfx);
         cfg.SetValue("display",  "fullscreen", Fullscreen);
-        cfg.SetValue("display",  "language",   Language);
+        cfg.SetValue("display",  "language",   _persistedLanguage);
         cfg.SetValue("gameplay", "shake",      ShakeEnabled);
         cfg.SetValue("gameplay", "difficulty", (int)Difficulty);
 

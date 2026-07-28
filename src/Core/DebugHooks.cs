@@ -126,6 +126,29 @@ public static class DebugHooks
         }
     }
 
+    private static bool _forcedLanguageRead;
+    private static string? _forcedLanguage;
+
+    /// <summary>
+    /// Code de langue forcé via <c>--lang=&lt;code&gt;</c> (ex. <c>--lang=en</c>), ou null.
+    /// Surcharge la langue de <c>user://settings.cfg</c> pour la session SANS l'y persister —
+    /// indispensable pour capturer les rushes du trailer dans une autre langue que celle du poste
+    /// (cf. <c>tools/record_trailer.py</c>) sans écraser la préférence du joueur.
+    /// Voir GameSettings._Ready.
+    /// </summary>
+    public static string? ForcedLanguage
+    {
+        get
+        {
+            if (!_forcedLanguageRead)
+            {
+                _forcedLanguage     = ValueFlag("--lang=");
+                _forcedLanguageRead = true;
+            }
+            return _forcedLanguage;
+        }
+    }
+
     private static bool? _trailerMode;
 
     /// <summary>
