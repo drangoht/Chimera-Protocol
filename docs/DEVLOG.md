@@ -4,6 +4,59 @@
 > `release-manager`). Entrées en ordre décroissant (la plus récente en haut). Ton orienté
 > joueur, EN puis FR (audience itch surtout anglophone).
 
+## v1.19.0 — Settings worth opening, and reachable mid-run (2026-07-28)
+
+**Added — the options screen you actually expected**
+- Options are now sorted into five sections — **Audio, Display, Game, Interface, Controls** —
+  instead of one flat list.
+- **Display**: window mode (**windowed / borderless / fullscreen**, replacing the old on-off
+  toggle), **window resolution**, **V-Sync**, an **FPS limit** (60/120/144/240/unlimited) and an
+  **FPS counter**.
+- **Game**: screen shake is now a **slider** (0% turns it off entirely), plus **reduce flashes**
+  for photosensitivity — the fusion flash is dimmed and the chromatic aberration is cut — and
+  **controller rumble**, wired to taking damage and dying.
+- **Interface**: toggle the **version stamp** and **Discord Rich Presence** on or off.
+- Everything applies instantly and is saved to `settings.cfg`. Your existing settings carry over.
+
+**Added — options from the pause menu**
+- The pause menu has an **Options** button that opens the same screen **as an overlay**: no scene
+  change, your run stays exactly where it was. Turn the music down, go fullscreen or rebind a key
+  in the middle of a fight.
+- Two things stay out of reach mid-run: **difficulty** (your run and its high score are already
+  committed to it) and **Reset everything**.
+
+**Fixed**
+- Borderless mode used to be a trap on Windows: you could enter it, but the game refused to go
+  back to windowed. It now uses the engine's native window modes and switches both ways.
+
+---
+
+**Ajouté — l'écran d'options qu'on attendait**
+- Les options sont désormais rangées en cinq sections — **Audio, Affichage, Jeu, Interface,
+  Contrôles** — au lieu d'une liste unique.
+- **Affichage** : mode de fenêtre (**fenêtré / sans bordure / plein écran**, qui remplace l'ancien
+  interrupteur), **résolution** de la fenêtre, **synchro verticale**, **limite d'images/s**
+  (60/120/144/240/illimitée) et **compteur d'images/s**.
+- **Jeu** : les secousses d'écran passent en **slider** (0 % les coupe complètement), avec en plus
+  **réduire les flashs** pour la photosensibilité — le flash de fusion est atténué et l'aberration
+  chromatique coupée — et la **vibration manette**, branchée sur les dégâts reçus et la mort.
+- **Interface** : afficher ou masquer le **tampon de version** et le **statut Discord**.
+- Tout s'applique immédiatement et se sauvegarde dans `settings.cfg`. Vos réglages existants sont
+  conservés.
+
+**Ajouté — les options depuis le menu pause**
+- Le menu pause gagne un bouton **Options** qui ouvre le même écran **en surcouche** : aucun
+  changement de scène, votre run reste exactement où elle en était. Baissez la musique, passez en
+  plein écran ou changez une touche en plein combat.
+- Deux exceptions en cours de partie : la **difficulté** (votre run et son record y sont déjà
+  engagés) et « **Tout réinitialiser** ».
+
+**Corrigé**
+- Le mode sans bordure était un piège sous Windows : on pouvait y entrer, mais le jeu refusait de
+  revenir en fenêtré. Il s'appuie désormais sur les modes natifs du moteur et fait l'aller-retour.
+
+---
+
 ## v1.18.0 — Threat tiers: later levels finally fight back (2026-07-28)
 
 **Changed — difficulty now follows the levels you unlock**
