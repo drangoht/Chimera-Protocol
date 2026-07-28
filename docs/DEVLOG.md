@@ -4,6 +4,34 @@
 > `release-manager`). Entrées en ordre décroissant (la plus récente en haut). Ton orienté
 > joueur, EN puis FR (audience itch surtout anglophone).
 
+## v1.17.1 — A proper application icon (2026-07-28)
+
+**New**
+- **Dedicated app icon** for the Windows executable and editor, replacing Godot's default cyan
+  square placeholder: a chimera head split down the middle — one half machine (steel, temple
+  plate, cyan visor), one half organic (violet flesh, horn, violet eye) — with a golden seam down
+  the center standing in for the Assimilation graft, set on the same beveled armored-plate frame
+  language as the UI. Generated procedurally from the game's own palette, with separate detail
+  levels so it stays legible from a 256px icon down to a 16px taskbar tile.
+- Trailer: English-language cut with a `--lang` flag and a ready-to-paste YouTube description.
+
+*No gameplay, balance or content changes in this release.*
+
+---
+
+**Nouveau**
+- **Icône d'application dédiée** pour l'exécutable Windows et l'éditeur, en remplacement du carré
+  cyan par défaut de Godot : une tête de chimère fendue en deux — moitié machine (acier, plaque de
+  tempe, visière cyan) / moitié organique (chair violette, corne, œil violet) — avec une couture
+  dorée au centre représentant la greffe de l'Assimilation, sur la même plaque blindée chanfreinée
+  que le reste de l'UI. Générée procéduralement depuis la palette du jeu, avec plusieurs niveaux de
+  détail pour rester lisible d'une icône 256px jusqu'à une tuile 16px dans la barre des tâches.
+- Trailer : version anglaise avec un flag `--lang` et une description YouTube prête à coller.
+
+*Aucun changement de gameplay, d'équilibrage ou de contenu dans cette version.*
+
+---
+
 ## v1.17.0 — Industrial metal soundtrack & adaptive music (2026-07-27)
 
 **New — a full metal soundtrack**
