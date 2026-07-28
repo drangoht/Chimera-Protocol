@@ -174,7 +174,15 @@ public partial class HubScreen : Control
             // s'y composite à l'identique et le panneau disparaîtrait. Marge 8 px (au lieu de
             // 16) pour ne pas doubler la hauteur des 18 rangées de la liste.
             var panel = new PanelContainer();
-            panel.AddThemeStyleboxOverride("panel", UiStyle.ScreenPanelSunken(8));
+            var rowStyle = UiStyle.ScreenPanelSunken(8);
+            // Les 8 px verticaux sont volontaires (voir ci-dessus) mais, LATÉRALEMENT, ils collaient
+            // le bouton « Acheter » au bord de la liste — même gêne que les cartes de personnage et
+            // de niveau, alignées à 16 + 12 (cf. docs/PITFALLS.md). On élargit donc les seuls côtés,
+            // sans toucher à la hauteur des 18 rangées.
+            const int rowSideMargin = 20;
+            rowStyle.SetContentMargin(Side.Left,  rowSideMargin);
+            rowStyle.SetContentMargin(Side.Right, rowSideMargin);
+            panel.AddThemeStyleboxOverride("panel", rowStyle);
             panel.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
             panel.AddChild(row);
 
