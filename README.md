@@ -18,6 +18,15 @@ morceau, couplet et refrain, et le jeu passe de l'une à l'autre en fondu selon 
 d'ennemis, temps de survie, points de vie — avant de basculer sur le **thème de boss** quand un
 colosse débarque.
 
+**Courbe de puissance assainie** *(2026-07-28, v1.22.0)* — le Capaciteur atteignait **100 % de
+réduction de recharge** dès son niveau 8 : toutes les armes tombaient au même plancher de 0,15 s, et
+une arme lourde tirait exactement aussi vite qu'une arme légère. Les passifs progressent désormais
+en **rendements décroissants** au-delà de leurs niveaux définis, la réduction de recharge est
+plafonnée à **75 %**, et un passif dont la statistique est au plafond **cesse d'être proposé** en
+carte. Le boss suit (**5000 PV**) : le même combat se mesurait de 14,8 à 42 s selon une seule carte
+tirée, il tient maintenant **26 à 35 s**, y compris sur ses réapparitions d'overtime. Corrigé au
+passage : la **récompense de mini-boss disparaissait une fois sur deux**, sans aucun signe.
+
 **Paliers de menace** *(2026-07-28)* — les 5 niveaux se débloquent en séquence et le Hub te rend
 2 à 3 fois plus fort en chemin : chaque niveau porte désormais un **palier de menace** croissant
 (ennemis plus coriaces, plus dangereux, plus nombreux et plus variés tôt) **et paie plus d'Échos**
@@ -90,6 +99,8 @@ d'UI ne se coupent plus à l'ouverture d'une popup (level-up, pause, Assimilatio
 | **Expansion P5 — ennemis & boss par biome** | ✅ Livré | Socle biome-aware exploité : le **mid-boss varie selon le biome** (Revenant en Aether/Néon, Colosse ailleurs) |
 | **Refonte fin de niveau** | ✅ Livré | **Survie sans fin** : à la fin du temps imparti la difficulté **escalade brutalement** (vagues + mini-boss + **boss en boucle**) ; **battre le boss = niveau TERMINÉ** (débloque le suivant) mais la run **continue** ; la run finit à la **mort**. **Déblocage progressif** des niveaux (Sanctuaire → Aether → Givre → Fournaise → Néon). **High score** = temps survécu max par niveau, **avec la difficulté** du record. **Arsenal à découverte** : armes non trouvées masquées **« ??? »** (sauf armes de signature). Bouton **« Tout réinitialiser »** dans les Options (Échos + progression) |
 | **Boss de fin — phases & incarnations** | ✅ Livré | Le Noyau Rouillé combat en **3 phases** (100→66→33 % de PV : salves, ondes et signature qui se resserrent, **adds** en phase III, **1 s de surcharge** invulnérable et télégraphiée à chaque bascule) et prend une **incarnation par biome** — éventail dirigé (Sanctuaire), translocation (Aether), nova de givre (Givre), flaques de magma (Fournaise), faisceaux rotatifs (Néon) — avec sprite et nom propres. Nouvelle **barre de boss** au HUD (crans aux seuils, numéro de phase). PV et TTK inchangés |
+| **Courbe de puissance & plafonds** | ✅ Livré | Les 4 passifs ne définissent que 3 niveaux pour un plafond de 20 : au-delà, le delta était réappliqué **sans borne** — le Capaciteur franchissait **100 % de réduction de recharge dès L8** (toutes les armes au plancher 0,15 s, cadence de fiche annulée) et le Noyau Thermique montait à ×4,00. Nouvelle règle pure `PassiveScaling` (rendements décroissants), plafond `MaxCooldownReduction = 0,75`, passifs saturés retirés du pool de cartes. Puissance sur 12 min d'overtime : **×6,42 → ×2,73**. Boss recalibré **8000 → 5000 PV** sur un TTK *joué*. Outillage : `PowerTelemetry` + `--power-curve` + `tools/power_curve_session.ps1` — `docs/GDD.md` §30 |
+| **Fix — récompense de mini-boss & spam d'animation** | ✅ Livré | `(int)GD.Randi() % n` donnait un index **négatif une fois sur deux** : la carte offerte à la mort d'un mini-boss était **perdue une fois sur deux, sans aucun signe à l'écran** (exception avalée par le callback Godot). Et les 5 golems de biome, qui partagent la scène du Colosse, tentaient une animation `attack` absente de leurs sprites — 144 erreurs par session. `EnemyBase.PlayAnim` ne joue que si l'animation existe et **renvoie si elle a démarré** (le `QueueFree` de `death` en dépend) |
 | **Fix scroll Codex** | ✅ Livré | Les écrans **Bestiaire** et **Arsenal** ne défilaient pas au clavier/manette (rangées non focalisables → le focus Godot ne scrollait pas) : `CodexScreenBase` pilote désormais le `ScrollContainer` à la main sur `ui_up`/`ui_down` (+ Page Up/Down) dans `_UnhandledInput` |
 
 ---

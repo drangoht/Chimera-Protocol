@@ -14,7 +14,8 @@ cyborgs, robots), inspiré de Vampire Survivors et Everything is Crab.
 - **État d'implémentation détaillé & version courante → `docs/PROJECT_STATE.md`** (évolutif). Résumé de phase ci-dessous.
 - **Synthétiser du volume** (relever/résumer/inventorier à partir de plusieurs gros fichiers : `data/*.json`, docs longues, logs, rapports de test) → déléguer au **MCP local** `mcp__local-llm__local_digest` / `local_map` (outils différés : `ToolSearch` d'abord) plutôt que d'enchaîner les `Read` : le serveur lit les fichiers côté LM Studio, seule la synthèse entre en contexte. Ne pas l'utiliser pour du code que l'on s'apprête à éditer — là, le contenu réel est nécessaire.
 
-**Phase actuelle : courbe de puissance assainie — NON PUBLIÉ.** Le point ouvert de la 1.21.0 est
+**Phase actuelle : libre.** Dernière livraison : **courbe de puissance assainie**, publiée
+**1.22.0** le 2026-07-28. Le point ouvert de la 1.21.0 est
 corrigé : la puissance faisait **×6,42 en 12 min d'overtime** (mesure `PowerTelemetry`, nouveau flag
 **`--power-curve`** + `tools/power_curve_session.ps1`). Cause : les 4 passifs ne définissent que
 **3 niveaux** pour un plafond de **20**, et au-delà le delta était réappliqué **en additif non
@@ -29,7 +30,7 @@ l'équilibrage : `(int)GD.Randi() % n` **négatif une fois sur deux** (la récom
 perdue une fois sur deux, silencieusement) et les sprites de faune `slow_hunter` sans animation
 `attack` (144 erreurs/session) → `EnemyBase.PlayAnim`. Design → `docs/GDD.md` §30 ; pièges →
 `docs/PITFALLS.md` (§Aléatoire, §Animations d'ennemis, §Passifs) ; mesures → `docs/TEST_REPORT.md`.
-**231 tests.** **Reste à faire** : publier.
+**231 tests.**
 Avant ça : **fusions d'armes réparées + boss recalibré**,
 publiée **1.21.0** le 2026-07-28. Les 9 fusions **divisaient le DPS de fin de run par 3 à 6** (dégâts
 en dur jamais multipliés, retour au niveau 1, absentes de tout pool de cartes) : la carte la plus

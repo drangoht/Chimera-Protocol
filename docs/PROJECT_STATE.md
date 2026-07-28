@@ -5,7 +5,7 @@
 > `CLAUDE.md` ; le design complet dans `docs/GDD.md` ; la carte du code dans `/carte-projet`.
 
 - Pile technique : **Godot 4.7 .NET (C# / .NET 8 / GodotSharp)**
-- **Courbe de puissance du joueur assainie (NON PUBLIÉ, 2026-07-28).** Le point resté ouvert après
+- **Courbe de puissance du joueur assainie (PUBLIÉ 1.22.0, 2026-07-28).** Le point resté ouvert après
   la 1.21.0 (« la puissance explose en overtime ») est instruit et corrigé. Nouvel outil de mesure :
   **`PowerTelemetry`** (flag `--power-curve`, journal `user://power_curve.log` écrit au fil de l'eau)
   qui échantillonne toute la run — DPS infligé, dégâts subis, population, **indice de puissance du
@@ -40,7 +40,6 @@
   (2) les 5 golems `slow_hunter` de la faune par biome n'exposent pas d'animation `attack` alors
   qu'ils partagent la scène du Colosse — 144 erreurs par session, d'où `EnemyBase.PlayAnim` (ne joue
   que si l'animation existe, et **renvoie si elle a démarré** : le `QueueFree` de `death` en dépend).
-  **Reste à faire** : publier.
 - **Fusions d'armes réparées + boss recalibré (PUBLIÉ 1.21.0, 2026-07-28).** Le principal
   déséquilibre du jeu : les **9 fusions d'armes divisaient le DPS de fin de run par 3 à 6**. Trois
   défauts cumulés — dégâts posés en dur par leur classe C# et jamais multipliés (`ApplyWeaponStats`
