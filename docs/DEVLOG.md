@@ -4,6 +4,50 @@
 > `release-manager`). Entrées en ordre décroissant (la plus récente en haut). Ton orienté
 > joueur, EN puis FR (audience itch surtout anglophone).
 
+## v1.18.0 — Threat tiers: later levels finally fight back (2026-07-28)
+
+**Changed — difficulty now follows the levels you unlock**
+- The five levels unlock in sequence, and the Hub makes you **two to three times stronger** along
+  the way — but every level ran on the **same difficulty curve**. The result was backwards: the last
+  level was *easier* than the first, and grinding the Rusted Sanctuary was the best Echoes-per-risk
+  ratio in the game. Not anymore.
+- Each level now carries a **threat tier** (Sanctuary → Neon Sector). Higher tiers mean tougher
+  enemies, harder hits, a denser arena, and **dangerous enemy types showing up earlier** — and they
+  **pay more Echoes**, up to **×1.45** in the Neon Sector. Pushing to the next level is now the
+  optimal play, not farming the first one.
+- **The contract is on the card**: every level in the selection screen shows `Threat ★★★ · Echoes
+  ×1.20` before you commit, and the end-of-run screen reminds you which tier paid out.
+- **Bosses were handled with care**: mini-bosses and the level boss only take 55% of the tier's
+  health bonus. Beating the boss is what unlocks the next level — at the full rate, the tier would
+  have turned into a wall instead of a challenge. Their damage does scale fully: they are threats,
+  not sponges.
+- Threat tiers stack on top of your **difficulty setting** (Easy/Normal/Hard), which is untouched.
+  If a tier feels rough, Easy still does what it always did.
+
+---
+
+**Modifié — la difficulté suit les niveaux que vous débloquez**
+- Les cinq niveaux se débloquent en séquence et le Hub vous rend **deux à trois fois plus fort** en
+  chemin — mais tous les niveaux tournaient sur la **même courbe de difficulté**. Le résultat était
+  à l'envers : le dernier niveau était *plus facile* que le premier, et farmer le Sanctuaire Rouillé
+  offrait le meilleur ratio Échos/risque du jeu. C'est terminé.
+- Chaque niveau porte désormais un **palier de menace** (Sanctuaire → Secteur Néon). Plus le palier
+  est élevé, plus les ennemis sont coriaces, frappent fort, remplissent l'arène — et **les types
+  d'ennemis dangereux arrivent plus tôt**. En échange, le niveau **paie plus d'Échos**, jusqu'à
+  **×1,45** au Secteur Néon. Monter d'un palier est maintenant le meilleur choix, plutôt que farmer
+  le premier niveau.
+- **Le contrat est affiché sur la carte** : chaque niveau de l'écran de sélection indique
+  `Menace ★★★ · Échos ×1,20` avant de vous engager, et l'écran de fin de run rappelle quel palier a
+  payé.
+- **Les boss ont été traités avec précaution** : mini-boss et boss de niveau ne reçoivent que 55 %
+  du bonus de PV du palier. Battre le boss est ce qui débloque le niveau suivant — au taux plein, le
+  palier serait devenu un mur au lieu d'un défi. Leurs dégâts, eux, montent à taux plein : ce sont
+  des menaces, pas des éponges.
+- Les paliers se cumulent avec votre **réglage de difficulté** (Facile/Normal/Difficile), inchangé.
+  Si un palier vous semble rude, Facile fait toujours son travail.
+
+---
+
 ## v1.17.1 — A proper application icon (2026-07-28)
 
 **New**
