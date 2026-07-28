@@ -4,6 +4,59 @@
 > `release-manager`). Entrées en ordre décroissant (la plus récente en haut). Ton orienté
 > joueur, EN puis FR (audience itch surtout anglophone).
 
+## v1.21.0 — Weapon fusions are finally an upgrade (2026-07-28)
+
+**Fixed — fusing a weapon was quietly ruining your run**
+- Evolving a weapon **reset it to level 1** and it could never be levelled again: it stopped
+  appearing in level-up cards, and the base weapon was gone from the pool too. That slot was dead
+  for the rest of the run.
+- Worse, fusions ignored **every damage bonus you own** — Thermal Core, Capacitor, and all the
+  permanent upgrades bought with Aether Echoes.
+- The result: taking the shiniest card in the game (epic, white flash, its own sound) **divided
+  your late-run damage by 3 to 6**. Measured on full runs: 105 DPS with a fully fused build against
+  410 for the same level and the same upgrades, but keeping one ordinary weapon.
+- Fusions now **inherit the level** of the weapon they replace, keep levelling up like any other
+  weapon (up to 20), and receive your damage and cooldown bonuses. Same measurement after the fix:
+  **368 to 539 DPS**.
+- Two of them needed extra care: the **Overcharged Rail** was firing its base damage no matter what,
+  and the **Solar Column**'s burn never scaled — half of what makes that weapon what it is.
+
+**Changed — the final boss is no longer a slog**
+- The Rusted Core drops from **12000 to 8000 base health**. Measured on a real, played run, it was
+  taking **44 seconds** to bring down with a strong build — right at the edge of "exhausting".
+  It now lands around **23 to 32 seconds** depending on the biome.
+- This is only fair now that fusions work: before the fix, a fused build simply could not deal
+  enough damage, and lowering the boss's health would have hidden the real problem.
+
+---
+
+**Corrigé — fusionner une arme sabotait votre partie**
+- Faire évoluer une arme la **ramenait au niveau 1**, définitivement : elle ne réapparaissait plus
+  dans les cartes de montée de niveau, et l'arme de base en avait disparu aussi. L'emplacement était
+  mort pour le reste de la partie.
+- Pire, les fusions ignoraient **tous vos bonus de dégâts** — Noyau Thermique, Capaciteur, et toutes
+  les améliorations permanentes achetées avec les Échos d'Aether.
+- Résultat : prendre la carte la plus spectaculaire du jeu (épique, flash blanc, son dédié)
+  **divisait vos dégâts de fin de partie par 3 à 6**. Mesuré sur des parties complètes : 105 DPS
+  pour un build entièrement fusionné, contre 410 à niveau et améliorations identiques en gardant une
+  arme ordinaire.
+- Les fusions **héritent désormais du niveau** de l'arme qu'elles remplacent, continuent de monter
+  comme n'importe quelle arme (jusqu'à 20) et reçoivent vos bonus de dégâts et de recharge. Même
+  mesure après correctif : **368 à 539 DPS**.
+- Deux d'entre elles demandaient un soin particulier : le **Rail Surchargé** tirait ses dégâts de
+  base quoi qu'il arrive, et la brûlure de la **Colonne Solaire** ne progressait pas — la moitié de
+  l'identité de cette arme.
+
+**Modifié — le boss de fin n'est plus une épreuve d'endurance**
+- Le Noyau Rouillé passe de **12000 à 8000 points de vie de base**. Mesuré sur une vraie partie
+  jouée, il demandait **44 secondes** à abattre avec un bon build — à la limite de l'épuisant. Il
+  tombe désormais en **23 à 32 secondes** selon le biome.
+- Cet ajustement n'a de sens que maintenant que les fusions fonctionnent : avant le correctif, un
+  build fusionné ne pouvait tout simplement pas infliger assez de dégâts, et baisser les points de
+  vie du boss aurait masqué le vrai problème.
+
+---
+
 ## v1.20.0 — The Rusted Core fights back, and wears a different face in every biome (2026-07-28)
 
 **Changed — the final boss now has three phases**
