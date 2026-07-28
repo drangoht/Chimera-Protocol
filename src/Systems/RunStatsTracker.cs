@@ -144,6 +144,10 @@ public partial class RunStatsTracker : Node
         // le HUD peut encore réagir.
         HUD.Instance?.HideBossBar();
 
+        // Un combat de boss en cours au moment de la mort du joueur est écrit quand même : savoir
+        // qu'il restait 40 % de PV au boss vaut autant qu'un TTK pour l'équilibrage.
+        BossTelemetry.NotifyRunEnd(outcome);
+
         int timeSecs = (int)ElapsedSeconds;
         var (echoes, overtimeBonus) = CalculateEchoesDetailed(timeSecs, KillCount, CoresCollected);
 

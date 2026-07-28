@@ -4,6 +4,43 @@ Rapport de sessions de test. Chaque section correspond à une session de test di
 
 ---
 
+## Banc de TTK du boss de fin — 5 biomes — 2026-07-28 (MESURE AUTOMATISÉE)
+
+**Outil :** `BossTelemetry` + `tools/boss_ttk_session.ps1`. **Protocole :** `--headless --debug-boss
+--invuln --biome=<id>`, loadout de référence (5 armes L10 + `thermal_core` L3, + `swarm_symbiote` du
+perk de départ équipé sur la save du poste), difficulté Normal, boss isolé (aucun spawn ambiant).
+**Version :** `1.20.0-60b82be`.
+
+**Nature de la mesure : BORNE BASSE.** Le joueur reste immobile et invulnérable : toutes les armes,
+y compris la Lame Plasma (mêlée), restent à portée en permanence. Le DPS obtenu est le maximum
+atteignable par ce loadout — le TTK d'un joueur qui esquive ne peut qu'être **supérieur**. Deux
+passages sur Givre donnent 37,7 s / 660 DPS à l'identique : le banc est reproductible.
+
+| Biome | Palier | PV effectifs | **TTK** | DPS moyen | Phase II | Phase III |
+|---|---|---|---|---|---|---|
+| Sanctuaire | 0 | 21 360 | **32,1 s** | 665 | 13,9 s | 23,0 s |
+| Aether | 1 | 22 991 | **37,7 s** | 609 | 15,3 s | 25,8 s |
+| Givre | 2 | 24 913 | **37,7 s** | 660 | 16,1 s | 26,5 s |
+| Fournaise | 3 | 27 017 | **44,1 s** | 613 | 21,7 s | 32,8 s |
+| Néon | 4 | 29 437 | **46,9 s** | 628 | 22,5 s | 34,6 s |
+
+**Constat — le boss est trop long sur les cinq niveaux.** Cible GDD §20.2 : **20-30 s**, avec « > 45 s
+en combat dense = épuisant ». Même en borne basse, le premier niveau sort déjà de la fenêtre (+7 %) et
+le dernier atteint le seuil d'épuisement (46,9 s). Les deux causes sont additives :
+
+1. **Le DPS réel vaut ~62 % du DPS théorique** qui a servi au calibrage (§20.4 : 711 hors
+   `thermal_core`, soit ~1031 avec ×1,45 ; mesuré : 609-665). L'écart, ce sont les projectiles qui
+   ratent, le temps de vol et les temps morts — invisibles dans une somme de DPS de fiche.
+2. **Le palier de menace gonfle le boss deux fois** : par `ChampionHpMult` (+27,5 % au Néon) *et* par
+   le décalage `TimeOffsetMinutes` qui s'ajoute au temps de scaling (+8 % au Néon). Cumulé : +37,8 %
+   de PV entre Sanctuaire et Néon, pour un joueur dont le DPS ne monte pas d'autant.
+
+**Reste à faire avant d'ajuster les valeurs :** un relevé joué **par un humain** (mêmes flags, sans
+`--invuln`) sur au moins Sanctuaire et Néon, pour mesurer l'écart entre le DPS du banc et celui d'un
+joueur qui esquive. C'est cet écart qui décide de l'ampleur de la baisse de PV.
+
+---
+
 ## Revue Fix rendu obstacles (occultation joueur, commit `e8fbd00`) — 2026-07-05 (SESSION CIBLÉE)
 
 **Testeur :** game-tester (agent). **Moteur :** Godot 4.7.stable.mono, D3D12. **Build :** vert (0 err/0 warn). **Version :** `1.11.2-f5ecd4b`. **Fix testé :** `e8fbd00` — corps des obstacles `ZIndex 1→6` (enfants relatifs → 7-10) dans `BiomeObstacles.Build`, ombre au sol ré-ancrée en `ZAsRelative=false`/`ZIndex=1` absolu, sprite de colonne `GroundRenderer.PlaceColumn` `1→6`. Joueur à `ZIndex=5`, ennemis à `ZIndex=0` (défaut), HUD/PostFX sur `CanvasLayer`.

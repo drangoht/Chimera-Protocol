@@ -70,6 +70,9 @@ public partial class RustedCore : EnemyBase
     /// <summary>Le boss est-il en surcharge de bascule (invulnérable, immobile, inoffensif) ?</summary>
     public bool IsSurcharging => _transitionLeft > 0f;
 
+    /// <summary>Id de l'incarnation résolue depuis le biome (journal de TTK, cf. BossTelemetry).</summary>
+    public string IncarnationId => _inc.Id;
+
     public override void _Ready()
     {
         // NB : ces valeurs sont écrasées par EnemySpawner.ApplyScaling() qui lit data/enemies.json
@@ -103,6 +106,11 @@ public partial class RustedCore : EnemyBase
         _addsTimer      = BossPhases.AddsIntervalSeconds;
 
         AddBossAura();
+
+        // Journal de TTK (user://boss_ttk.log) : DIFFÉRÉ d'une frame, car EnemySpawner.ApplyScaling
+        // écrase MaxHp juste après ce _Ready — ouvrir le relevé ici journaliserait les 12000 PV de
+        // base au lieu des PV effectifs (palier de menace + scaling temporel).
+        Callable.From(() => BossTelemetry.Begin(this)).CallDeferred();
 
         // Entrée fracassante
         ScreenShake.Instance?.Shake(14f, 0.5f);
@@ -163,6 +171,11 @@ public partial class RustedCore : EnemyBase
         if (_isDead) return;
         if (_transitionLeft > 0f) { HitFlash(0.05f); return; }
         base.TakeDamage(amount);
+
+        // Le chrono du TTK part au PREMIER coup encaissé, pas à l'apparition : le boss arrive à
+        // distance et le temps d'approche n'appartient pas au temps de mise à mort.
+        BossTelemetry.NotifyFirstDamage();
+        BossTelemetry.NotifyHpRatio(HpRatio);
     }
 
     /// <summary>Entre en surcharge et bascule de phase à la fin du télégraphe.</summary>
@@ -176,6 +189,8 @@ public partial class RustedCore : EnemyBase
         if (DebugHooks.BossDebug)
             GD.Print($"[RustedCore] {_inc.Id} → phase {BossPhases.RomanNumeral(_phase)} " +
                      $"à t={RunStatsTracker.Instance?.ElapsedSeconds ?? 0f:0.0}s (PV {HpRatio:P0})");
+
+        BossTelemetry.NotifyPhase(_phase, HpRatio);
 
         // Télégraphe : le boss blanchit par pulsations et son aura sature. Lisible même quand
         // l'écran est plein d'ennemis (c'est le seul moment où le boss cesse de tirer).
@@ -538,6 +553,8 @@ public partial class RustedCore : EnemyBase
 
         _beamRig?.QueueFree();
         _beamRig = null;
+
+        BossTelemetry.NotifyKill();
 
         EmitSignal(SignalName.Died, XpValue);
         GameManager.Instance?.NotifyEnemyKilled(this);

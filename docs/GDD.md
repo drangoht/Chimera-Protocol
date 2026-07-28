@@ -1637,6 +1637,23 @@ aux PV globaux. À traiter séparément par `developpeur` (hors périmètre data
   TTK. À valider lisibilité avec `directeur-artistique` (la bascule de phase doit être lisible dans le
   chaos) et cohérence narrative avec `story-teller` (le Noyau « se surcharge » en mourant).
 
+### 20.6 Protocole de mesure du TTK (outillé le 2026-07-28)
+
+Le §20.4 calibre sur un **DPS théorique** (somme des DPS de fiche des armes). Le TTK réel s'en écarte :
+projectiles qui ratent, temps de vol, armes de mêlée hors de portée quand on kite. La mesure est donc
+outillée, plus estimée :
+
+- **`BossTelemetry`** (toujours active) écrit un relevé par combat dans `user://boss_ttk.log` :
+  PV effectifs, build complet, horodatage du 1er dégât, des deux bascules de phase et de la mort,
+  TTK, TTK net hors surcharges, DPS moyen. Un combat perdu est enregistré aussi (PV restants au boss).
+- **`tools/boss_ttk_session.ps1`** lance le combat sur le biome demandé (`-Biome`, `-All`, `-Real`)
+  et affiche le tableau des relevés (`-ReportOnly`).
+- **Banc automatisé** : `--headless --debug-boss --invuln` (joueur immobile, invulnérable, loadout de
+  référence). Toutes les armes restent à portée en permanence : le TTK obtenu est une **borne basse**,
+  celui d'un joueur qui esquive est nécessairement supérieur. Le jeu se ferme dès le relevé écrit.
+- **Mesure de référence** = un humain, build joué, sans `--invuln`. Le bot `boss_ttk_test.py` kite en
+  cercle et ne vaut pas validation d'équilibrage.
+
 ## 21. Faune par biome — 20 nouveaux ennemis basiques (conçu 2026-07-02)
 
 > Conçu par l'agent `game-designer`, en réponse à `docs/EXPANSION_PLAN.md` §B.2 (« nouveaux ennemis

@@ -106,10 +106,15 @@ public partial class EnemySpawner : Node
     /// </summary>
     public void DebugSpawnById(string id, float tMinutes)
     {
+        // Le décalage de palier (LevelThreat.TimeOffsetMinutes) fait partie du temps de SCALING d'une
+        // run réelle : sans lui, un boss debug sur un haut palier apparaît avec ~8 % de PV en moins
+        // qu'en jeu (23 088 au lieu de 25 000 au Néon) et toute mesure de TTK y est optimiste.
+        float tStat = tMinutes + LevelThreat.TimeOffsetMinutes(ThreatTier);
+
         foreach (var data in _enemyPool)
         {
             if (data.Id != id) continue;
-            SpawnEnemy(data, tMinutes);
+            SpawnEnemy(data, tStat);
             return;
         }
         GD.PrintErr($"[EnemySpawner] DebugSpawnById : id introuvable « {id} ».");

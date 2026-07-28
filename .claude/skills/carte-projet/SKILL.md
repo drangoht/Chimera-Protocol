@@ -72,6 +72,11 @@ Les nœuds délèguent ici (SRP).
 - **Titres cosmétiques** : `Titles` (registre id/nom — flair sans effet, débloqué via Défis). Choisi au Hub (`HubScreen.BuildTitleSelector`, infra chips générique `BuildChipSection`/`MakeChip`/`RefreshChips` partagée avec les perks ; `MetaSaveData.EquippedCosmetic`), affiché sous le logo du MainMenu (`MainMenu.ApplyTitleFlair`, nœud `TitleFlair`). Ids = récompenses `cosmetic` de `challenges.json`.
 - **Assimilation (greffes)** : `AssimilationSystem` (autoload — jauges par archétype, slots équipés, pause/reprise de jauge, émet `GaugeFilled` ; délègue les chiffres à `GraftTable`) ; effets côté Player → `GraftManager` (§Entities) ; écran → `AssimilationScreen` (§UI). Data → `grafts.json`. Meta : `graft_slots`/`graft_metabolism`. Action d'entrée `dash` (InputRemap). Cf. docs/DESIGN_ASSIMILATION.md.
 - Biome/arène : `BiomeAtmosphere`, `BiomeObstacles`, `FloorFeatures`, `GroundRenderer`, `DeepMotifShape`, `VignetteFollow`
+- **Mesure du TTK boss** : `BossTelemetry` (statique, pas d'autoload — chrono à partir du 1er dégât
+  encaissé par le boss, horodate les bascules de phase, écrit un bloc lisible + une ligne `CSV;` dans
+  `user://boss_ttk.log`). Hooks : `RustedCore` (`_Ready` différé / `TakeDamage` / `EnterSurcharge` /
+  `Die`) et `RunStatsTracker.EndRun` (combat interrompu par la mort du joueur). Toujours active, y
+  compris en run normale. Session guidée → `tools/boss_ttk_session.ps1`.
 - Divers : `AudioSystem`, `GameSettings` (source unique des réglages, persistés dans `user://settings.cfg` : volumes, **mode de fenêtre** `Windowed/Borderless/Fullscreen` + résolution + VSync + limite/compteur d'IPS, difficulté, **intensité des secousses**, **réduction des flashs**, **vibration manette**, langue, **tampon de version**, **Discord on/off**, touches `move_*`/`dash` rebindables ; migration des anciennes clés `display/fullscreen` et `gameplay/shake`), `Loc`, `FusionFlash`, `ScreenShake` (`Enabled` + `Intensity`), `RunStatsTracker`
 - **Musique adaptative** : `MusicDirector` (autoload — alterne `music_run_<biome>_{calm,combat}.ogg` + `music_run_boss.ogg` commun, **une seule audible à la fois**, fondu croisé à puissance constante ; détecte le boss tout seul via `EnemyBase.AssimIsBoss/AssimIsMiniBoss`). Logique pure → `MusicIntensity` (§Rules : `Select` avec hystérésis, `Approach`, `WeightToDb`). Démarré par `RunStatsTracker` (différé d'une frame : `CurrentBiomeId` est posé par `GroundRenderer._Ready`). `AudioSystem.PlayMusic` le coupe — les deux ne coexistent jamais. Direction sonore → `docs/AUDIO_AI_PROMPTS.md` ; pièges → `docs/PITFALLS.md`
 - Input : **`InputRemap`** (statique) — actions `move_up/down/left/right` (défaut ZQSD + flèches + manette), séparées des `ui_*` menu ; le Player lit `Input.GetVector(move_*)`, remap via l'écran Options, persisté dans `GameSettings`. Action **`dash`** (Maj gauche / RB, `EnsureExtraActions()` au boot via GameManager) pour la greffe Servos Erratiques
@@ -169,7 +174,11 @@ Fusions : `FusionBlade`, `RailOvercharged`, `OrbitalSwarm`, `OverloadAegis`,
   `trailer/ChimeraProtocol_trailer_<LANG>_1440p.mp4`. Description YouTube prête à coller →
   `docs/YOUTUBE_TRAILER.md`.
   Pièges → `docs/PITFALLS.md` §Capture vidéo. Sorties ignorées par git (`trailer/`).
-- Tests/équilibrage : `boss_ttk_test.py`, `test_balance_v2.py`, `test_ui_keyboard.py`, `smoketest_exe.py`
+- Tests/équilibrage : **`boss_ttk_session.ps1`** (mesure du TTK boss par un testeur HUMAIN :
+  `-Biome <id>` / `-All` / `-Real` / `-Invuln` / `-ReportOnly` — lance le combat puis affiche le
+  tableau des relevés de `BossTelemetry`), `boss_ttk_test.py` (bot legacy : kite en cercle, ses
+  chiffres ne valent PAS validation d'équilibrage), `test_balance_v2.py`, `test_ui_keyboard.py`,
+  `smoketest_exe.py`
 - Release : **`release_itch.ps1`** (export → butler push → régénère & push `version.json`) — workflow complet via le skill **`/publier-itch`**
 - Python : `C:\Users\drang\AppData\Local\Programs\Python\Python313\python.exe`
 
@@ -200,6 +209,9 @@ instrumentale, progressions, architecture en stems, mixage, bouclage) ·
 - Forcer un biome (tests/captures) : flag `--biome=<id>`
 - Forcer tous les ennemis basiques en élite (test des affixes) : flag `--force-elites` (`DebugHooks.ForceElites`)
 - Forcer l'équipement d'une (ou des trois) fusion(s) de greffes sans grinder les jauges : flag `--force-fusion=<id|all>` (`DebugHooks.ForcedFusion`, équipe d'abord les 2 greffes prérequises). 3 fusions : `fusion_charge_blindee`, `fusion_ruche_tourelles`, `fusion_nova_rodeur` (Frappe Nova = dash-blink + nova ; partage `erratic_servos` avec Charge Blindée → exclusives)
+- Mesurer le TTK du boss de fin : `powershell -File tools/boss_ttk_session.ps1 -Biome neon` (combat
+  joué à la main, relevé automatique) puis `-ReportOnly` pour le tableau. Journal :
+  `%APPDATA%\Godot\app_userdata\Chimera Protocol\boss_ttk.log`
 - Rendre le joueur invulnérable pour observer un combat long (phases du boss, VFX) : flag `--invuln` (`DebugHooks.Invulnerable`) — à combiner avec `--debug-boss`, qui trace aussi chaque bascule de phase
 - Forcer la langue de l'UI pour une session sans toucher à `user://settings.cfg` (captures/trailer) : flag `--lang=<en|fr|es>` (`DebugHooks.ForcedLanguage` → `GameSettings.ApplyLanguageOverride`)
 - Forcer l'équipement d'une (ou des 5) greffe(s) de base pour valider les props de silhouette : flag `--force-graft=<id|all>` (`DebugHooks.ForcedGraft`) ; capture par PID via `tools/capture_graft_silhouette.py`

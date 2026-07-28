@@ -118,6 +118,20 @@ qui change de **phase** avec ses PV et d'**incarnation** avec le biome.
 - **Valider un combat long** : `--debug-boss --invuln` (le joueur ne subit plus rien) ; sans `--invuln`
   un testeur automatisé meurt en 10-25 s et n'atteint jamais les phases II/III. `--debug-boss` fait
   aussi tracer chaque bascule (`[RustedCore] … → phase … à t=…`).
+- **Mesurer le TTK** (`BossTelemetry`, journal `user://boss_ttk.log`, session guidée
+  `tools/boss_ttk_session.ps1`) — quatre pièges :
+  1. **Ouvrir le relevé en différé.** `EnemySpawner.ApplyScaling` écrase `MaxHp` **après** le `_Ready`
+     du boss : lire les PV dans `_Ready` journalise les 12000 de base au lieu des PV effectifs.
+  2. **Le chrono part au 1er dégât encaissé**, pas à l'apparition : le boss arrive à distance et le
+     temps d'approche (1 à 3 s) n'appartient pas au temps de mise à mort.
+  3. **`DebugSpawnById` doit ajouter `LevelThreat.TimeOffsetMinutes`** au temps demandé. Le décalage
+     de palier fait partie du temps de scaling d'une run réelle ; sans lui, un boss debug au Néon
+     naît avec ~8 % de PV en moins qu'en jeu et la mesure est optimiste.
+  4. **Un bot qui kite ne mesure rien d'utilisable.** `tools/boss_ttk_test.py` tourne en cercle : son
+     DPS n'est pas celui d'un build joué. Les relevés d'équilibrage viennent d'un humain, ou du banc
+     `--headless --debug-boss --invuln` (joueur immobile = **borne basse** du TTK, toutes les armes à
+     portée en permanence). En headless + `--debug-boss`, le jeu **se ferme tout seul** dès le relevé
+     écrit — sans quoi la run continuerait indéfiniment (survie sans fin).
 
 ## Paliers de menace / Échos (`LevelThreat`, `EchoFormula`)
 Trois pièges quand on touche à la difficulté par niveau ou à la formule d'Échos :
