@@ -196,8 +196,12 @@ public partial class MetaProgressionSystem : Node
         stats.Speed             = Mathf.Min(stats.Speed + speedBonus, PlayerStats.MaxSpeed);
         stats.BaseSpeed         = stats.Speed;
 
-        stats.CooldownReduction += GetUpgradeLevel("cooldown_reduction") * 0.05f;
-        stats.CooldownReduction += GetUpgradeLevel("cooldown_reduction_2") * 0.04f;
+        // Même plafond que les passifs de run : la réduction de recharge est la seule stat capable
+        // d'écraser la cadence de fiche de toutes les armes sur un plancher commun (cf. StatCaps).
+        stats.CooldownReduction = StatCaps.CapCooldownReduction(
+            stats.CooldownReduction
+            + GetUpgradeLevel("cooldown_reduction")   * 0.05f
+            + GetUpgradeLevel("cooldown_reduction_2") * 0.04f);
 
         float newDR             = stats.DamageReduction
                                  + GetUpgradeLevel("damage_reduction")   * 0.05f

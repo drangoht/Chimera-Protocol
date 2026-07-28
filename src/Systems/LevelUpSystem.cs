@@ -146,7 +146,9 @@ public partial class LevelUpSystem : Node
         {
             int lvl    = inv.PassiveLevels.GetValueOrDefault(id, 0);
             int maxLvl = inv.GetPassiveMaxLevel(id);
-            if (lvl < maxLvl)
+            // Un passif dont toutes les stats sont au plafond dur (Capaciteur, Servomoteurs) n'a
+            // plus rien à donner : le proposer quand même volerait un choix au joueur.
+            if (lvl < maxLvl && !inv.IsPassiveSaturated(id))
                 pool.Add(MakePassiveCard(id, lvl + 1));
         }
 
@@ -351,7 +353,7 @@ public partial class LevelUpSystem : Node
             {
                 int curLv = inv.PassiveLevels.GetValueOrDefault(id, 0);
                 int maxLv = inv.GetPassiveMaxLevel(id);
-                if (curLv < maxLv)
+                if (curLv < maxLv && !inv.IsPassiveSaturated(id))
                     available.Add(MakePassiveCard(id, curLv + 1));
             }
         }

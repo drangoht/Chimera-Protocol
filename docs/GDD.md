@@ -1688,6 +1688,14 @@ build). Deux constats de méthode :
   +26 % de PV). À arbitrer séparément : la courbe de puissance du joueur dépasse largement celle du
   contenu une fois l'arbre de cartes épuisé.
 
+**Suite (2026-07-28) — §30 :** ce second constat a été instruit et corrigé. La cause n'était pas
+l'overtime mais l'extrapolation additive non bornée des passifs, `capacitor` en tête (100 % de
+réduction de recharge dès son niveau 8). Après correction, le DPS d'un build de fin de run qui
+saturait le Capaciteur est **divisé par 2** — d'où le passage des PV du boss de **8000 à 4000**, qui
+resserre la fenêtre de TTK (~21 s sans Capaciteur, ~29 s avec) au lieu de la déplacer. Ce
+recalibrage-ci **attend encore sa confirmation par une session jouée** : il repose sur un calcul
+analytique à build égal, pas sur une mesure de bout en bout.
+
 ## 21. Faune par biome — 20 nouveaux ennemis basiques (conçu 2026-07-02)
 
 > Conçu par l'agent `game-designer`, en réponse à `docs/EXPANSION_PLAN.md` §B.2 (« nouveaux ennemis
@@ -2196,3 +2204,120 @@ dédiée en haut d'écran**, visible uniquement tant qu'un boss est vivant :
   la victoire en test de DPS, exactement ce que §20.2 refuse.
 - **Allonger les PV pour « faire durer » les phases.** Rejeté explicitement par §20.5 : les phases
   redistribuent l'intensité à TTK constante.
+
+---
+
+## 30. Courbe de puissance du joueur — passifs extrapolés et plafonds (2026-07-28)
+
+> Chantier ouvert par le point resté en suspens après la 1.21.0 : « la puissance du joueur explose en
+> overtime, les boss d'overtime deviennent triviaux ». Outillage de mesure : `PowerTelemetry`
+> (`--power-curve`) + `tools/power_curve_session.ps1`.
+
+### 30.1 Ce qui a été mesuré
+
+Banc Fournaise, run complète de 25 minutes, joueur immobile et invulnérable (donc **puissance de
+build pure**, sans effet de positionnement) :
+
+| moment | indice de puissance | mult. dégâts | réduction de recharge | ennemis vivants |
+|---|---|---|---|---|
+| 4 min | 189 | 1,65 | 0,05 | 127 |
+| 12,8 min (fin du temps imparti) | 679 | 1,95 | 0,29 | 300 |
+| +12 min d'overtime | **4361** | 2,70 | **0,85** | 300 |
+
+Soit **×6,4 de puissance en 12 minutes d'overtime**, contre **×2,8 de PV** pour le boss sur la même
+période. Deuxième constat : la **population sature le cap de 300 dès la 8ᵉ minute** — cinq minutes
+avant l'overtime. L'escalade d'overtime ne peut donc plus jouer sur la quantité d'ennemis, seulement
+sur leurs PV unitaires.
+
+### 30.2 La cause : des passifs extrapolés en additif non borné
+
+Les 4 passifs ne définissent que **3 niveaux** dans `data/weapons.json` pour un plafond de **20**.
+Au-delà, `InventorySystem.ApplyPassiveDelta` réappliquait le delta du dernier niveau défini, à
+l'identique et sans borne :
+
+| passif | delta/niveau | cumul à L20 (avant) |
+|---|---|---|
+| `thermal_core` | +0,15 de multiplicateur | **×4,00** de dégâts |
+| `capacitor` | +0,14 de réduction de recharge | **100 % dès le niveau 8** |
+| `reinforced_plating` | +25 PV | +500 PV (réduction plafonnée à 0,40 dès L5) |
+| `servo_motors` | +30/40 vitesse | plafonné à 380 (seul réellement borné) |
+
+Le cas pathologique est le **Capaciteur**. À 100 % de réduction, `StatCaps.EffectiveCooldown` renvoie
+le plancher `MinCooldown` (0,15 s) **pour toutes les armes** : une arme lourde à 1,2 s de recharge
+tire exactement aussi vite qu'un canon léger à 0,4 s. La cadence de fiche — une dimension de design à
+part entière, celle qui distingue une frappe lourde d'une rafale — **cesse purement et simplement
+d'exister**. Le plafond existant (`CapCooldownReduction`) était fixé à 1,00, c'est-à-dire à rien.
+
+C'est aussi l'explication de la dispersion relevée dans `docs/TEST_REPORT.md` : le testeur humain
+avait `capacitor` L15 **dès le boss de fin** (TTK 14,8 s sur le boss d'overtime), le bot du banc L6
+(TTK 35-42 s). Le même boss, du simple au triple, selon **une seule carte**.
+
+### 30.3 La règle : rendements décroissants + un plafond qui plafonne
+
+**`PassiveScaling`** (logique pure, testée). Aux niveaux définis, rien ne change — l'équilibrage du
+early game est conservé tel quel. Au-delà, le n-ième niveau supplémentaire ne rapporte plus que :
+
+```
+delta_effectif = delta_de_fiche / (1 + 0,20 × n)
+```
+
+La somme croît comme un logarithme : **toujours croissante** (un niveau de passif rapporte toujours
+quelque chose, la carte garde du sens), **jamais explosive**.
+
+| passif | cumul à L20 (avant) | cumul à L20 (après) |
+|---|---|---|
+| `thermal_core` | ×4,00 | **×2,51** |
+| `capacitor` | 100 % (dès L8) | plafonné à **0,75** (atteint vers L7) |
+| `reinforced_plating` | +500 PV | **+251 PV** |
+
+**`StatCaps.MaxCooldownReduction = 0,75`** : une arme à 1,2 s tombe à 0,30 s (×4 de cadence, ce qui
+reste énorme) au lieu de 0,15 s (×8), et **reste plus lente** qu'un canon léger — l'écart de fiche
+survit. Le même plafond s'applique aux améliorations du Hub (`MetaProgressionSystem`), source unique.
+
+### 30.4 Une carte au plafond n'est plus proposée
+
+Corollaire d'UX : `capacitor` et `servo_motors` ne portent qu'une stat, elle-même bornée. Une fois au
+plafond, la carte n'a plus **aucun** effet — la proposer vole un choix au joueur, ce qu'elle faisait
+sur toute la fin de run. `InventorySystem.IsPassiveSaturated` les retire alors du pool
+(`LevelUpSystem`). Le Noyau Thermique et le Blindage, eux, rapportent toujours quelque chose (de
+moins en moins) et restent proposés.
+
+### 30.5 Résultat mesuré
+
+Contre-mesure au même protocole (banc Fournaise, 25 min) :
+
+| | fin du temps imparti | +12 min d'overtime | ratio |
+|---|---|---|---|
+| avant | puissance 679 · recharge 0,29 | 4361 · 0,85 | **×6,42** |
+| après | 942 · recharge 0,55 | 2568 · 0,75 (plafond) | **×2,73** |
+
+Les choix de cartes étant aléatoires en `--auto-play`, c'est le **ratio** qui vaut, pas les valeurs
+absolues. Effet exact à build égal (celui du testeur humain, `thermal_core` L16 / `capacitor` L15) :
+multiplicateur **3,40 → 2,36**, cadence cumulée **−28 %** sur les 12 armes, soit **DPS ×0,50**. Les
+armes rapides ne perdent rien (elles étaient déjà au plancher) ; les armes lourdes retrouvent leur
+identité — la Singularité repasse de 0,15 s à 1,00 s de recharge effective.
+
+**Recalibrage du boss en cascade** : `rusted_core.maxHp` **8000 → 4000** (§20.6). La fenêtre de TTK
+**se resserre au lieu de se déplacer** : ~21 s pour un build sans Capaciteur, ~29 s pour un build qui
+le saturait, là où l'écart allait de 14,8 s à 43 s. Reste à confirmer par une session jouée.
+
+### 30.6 Cible de design
+
+1. **Aucune stat ne doit atteindre un plafond qui annule une dimension de design.** La réduction de
+   recharge ne doit jamais faire converger toutes les armes vers le même plancher.
+2. **La progression continue après épuisement des niveaux définis, en rendements décroissants** : sur
+   12 minutes d'overtime, l'indice de puissance doit croître d'un facteur **≤ 2,5** (×6,4 avant).
+3. Le boss de fin garde sa fenêtre de TTK **20-30 s** (§20.2) pour un build de référence ; ses PV
+   sont recalibrés en conséquence, la mesure faisant foi (§20.6).
+
+### 30.7 Ce qui a été écarté
+
+- **Baisser le plafond des passifs de L20 à L10.** Rejeté : vide le pool de cartes encore plus tôt,
+  et le problème n'est pas le nombre de niveaux mais la forme de la courbe.
+- **Ne durcir que l'overtime** (courbe non-linéaire pour les champions, plus d'élites). Rejeté comme
+  correction principale : ne touche ni la recharge à 100 % ni la dispersion d'un facteur 3 selon les
+  cartes tirées — on aurait durci le contenu pour compenser un défaut de progression. Reste
+  disponible comme réglage complémentaire une fois la courbe assainie.
+- **Plafonner le multiplicateur de dégâts en dur.** Rejeté : c'est la stat de progression principale,
+  un plafond dur y couperait net la sensation de montée en puissance. Les rendements décroissants
+  suffisent.

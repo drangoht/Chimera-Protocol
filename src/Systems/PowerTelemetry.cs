@@ -34,6 +34,7 @@ public static class PowerTelemetry
     private static float _takenWindow;      // dégâts encaissés par le joueur depuis le dernier échantillon
     private static int   _killsAtLastSample;
     private static string _lastBuild = "";  // pour ne marquer que les changements de build
+    private static bool  _wasOvertime;      // l'overtime a été atteint (il ne se quitte jamais)
 
     /// <summary>Vrai si le journal tourne (flag <c>--power-curve</c> et run en cours).</summary>
     public static bool Active => _active;
@@ -106,7 +107,11 @@ public static class PowerTelemetry
         var stats   = player?.Stats;
 
         float t       = tracker?.ElapsedSeconds ?? 0f;
-        bool overtime = tracker?.Overtime ?? false;
+        // `Overtime` retombe à false dès que la run est terminée : sans mémoire, le dernier
+        // échantillon (celui de End) se retrouverait étiqueté « run » en plein overtime et fausserait
+        // tout calcul de ratio entrée-overtime → fin.
+        _wasOvertime |= tracker?.Overtime ?? false;
+        bool overtime = _wasOvertime;
         int kills     = tracker?.KillCount ?? 0;
         int level     = XpSystem.Instance?.CurrentLevel ?? 1;
 
@@ -210,5 +215,6 @@ public static class PowerTelemetry
         _takenWindow = 0f;
         _killsAtLastSample = 0;
         _lastBuild = "";
+        _wasOvertime = false;
     }
 }

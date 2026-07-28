@@ -14,15 +14,26 @@ cyborgs, robots), inspiré de Vampire Survivors et Everything is Crab.
 - **État d'implémentation détaillé & version courante → `docs/PROJECT_STATE.md`** (évolutif). Résumé de phase ci-dessous.
 - **Synthétiser du volume** (relever/résumer/inventorier à partir de plusieurs gros fichiers : `data/*.json`, docs longues, logs, rapports de test) → déléguer au **MCP local** `mcp__local-llm__local_digest` / `local_map` (outils différés : `ToolSearch` d'abord) plutôt que d'enchaîner les `Read` : le serveur lit les fichiers côté LM Studio, seule la synthèse entre en contexte. Ne pas l'utiliser pour du code que l'on s'apprête à éditer — là, le contenu réel est nécessaire.
 
-**Phase actuelle : libre.** Dernière livraison : **fusions d'armes réparées + boss recalibré**,
+**Phase actuelle : courbe de puissance assainie — NON PUBLIÉ.** Le point ouvert de la 1.21.0 est
+corrigé : la puissance faisait **×6,42 en 12 min d'overtime** (mesure `PowerTelemetry`, nouveau flag
+**`--power-curve`** + `tools/power_curve_session.ps1`). Cause : les 4 passifs ne définissent que
+**3 niveaux** pour un plafond de **20**, et au-delà le delta était réappliqué **en additif non
+borné** — `capacitor` atteignait **100 % de réduction de recharge dès L8**, mettant *toutes* les
+armes au plancher de 0,15 s (une arme lourde tirait aussi vite qu'un canon léger). Corrigé →
+`PassiveScaling` (rendements décroissants), `StatCaps.MaxCooldownReduction = 0,75`, passifs saturés
+retirés du pool de cartes. Ratio ramené à **×2,73**, DPS de fin de run **×0,50** à build égal, d'où
+`rusted_core.maxHp` **8000 → 4000** en cascade. Design → `docs/GDD.md` §30 ; pièges →
+`docs/PITFALLS.md` §Passifs ; mesures → `docs/TEST_REPORT.md`. **231 tests.**
+**Reste à faire** : confirmer le recalibrage par une session JOUÉE (le ×0,50 est un calcul, pas une
+mesure de bout en bout), puis publier.
+Avant ça : **fusions d'armes réparées + boss recalibré**,
 publiée **1.21.0** le 2026-07-28. Les 9 fusions **divisaient le DPS de fin de run par 3 à 6** (dégâts
 en dur jamais multipliés, retour au niveau 1, absentes de tout pool de cartes) : la carte la plus
 spectaculaire du jeu en était le pire choix. Corrigé → héritage du niveau, multiplicateurs, montée
 par cartes (piège → `docs/PITFALLS.md` §Fusions ; règle → `docs/GDD.md` §8). Dans la foulée,
 `rusted_core.maxHp` **12000 → 8000** sur la première mesure de TTK *jouée* (GDD §20.6). Outillage :
 `BossTelemetry` (journal `user://boss_ttk.log`), `tools/boss_ttk_session.ps1`, flags **`--auto-play`**
-+ **`--timescale`** pour jouer une run complète en banc. **Ouvert** : la puissance du joueur explose
-en overtime (DPS ×3,8 en 2 min, passifs au plafond), les boss d'overtime deviennent triviaux.
++ **`--timescale`** pour jouer une run complète en banc.
 Avant ça : **boss de fin — phases & incarnations**, publié **1.20.0**. Le
 Noyau Rouillé reste la condition de victoire unique des 5 niveaux, mais combat désormais en **trois
 phases** (100→66→33→0 % de PV, cadences resserrées, adds en phase III, 1 s de surcharge télégraphiée
@@ -78,7 +89,7 @@ l'agent compétent (ordre de lancement : `GUIDE-CLAUDE-CODE.md`).
 - Style de code : PascalCase classes/méthodes, `_camelCase` champs privés, `readonly` par défaut.
 - Architecture : `src/` (logique C#) / `scenes/` (.tscn) / `assets/` (raw) / `data/` (JSON tuning modifiable sans recompiler).
 - **Logique pure testable** : `src/Core/Rules/` (classes statiques sans dépendance Godot — `XpCurve`, `EnemyScaling`, `EliteAffixTable`…). Les nœuds y délèguent (SRP).
-- **Tests unitaires** : xUnit, `dotnet test tests/ChimeraProtocol.Tests.csproj`. **222 tests**.
+- **Tests unitaires** : xUnit, `dotnet test tests/ChimeraProtocol.Tests.csproj`. **231 tests**.
 - **Difficulté** : trois axes multiplicatifs — réglage du joueur (`DifficultyTuning`), **palier de menace du niveau joué** (`LevelThreat`, croît avec l'ordre de déblocage : PV/dégâts/densité/Échos, cf. `docs/GDD.md` §28) et escalade d'overtime.
 - Singletons (AutoLoad) : `GameManager`, `XpSystem`, `InventorySystem`, `LevelUpSystem`, `SaveManager`, `MetaProgressionSystem`, `ChallengeSystem` (défis/succès, `docs/DESIGN_CHALLENGES.md`), `AudioSystem`, `MusicDirector` (musique adaptative : calm/combat/boss en fondu croisé), `FusionFlash`, `ScreenShake`, `GameSettings`, `DiscordPresence` (Rich Presence), `VersionStamp` (tampon `v<ver>-<sha>` bas-droite).
 - Sauvegarde : `user://save.json` (méta/Échos) + `user://settings.cfg` (préférences, high scores, complétions, armes découvertes).

@@ -368,10 +368,14 @@ public partial class InventorySystem : Node
         {
             if (passive.GetProperty("id").GetString() != passiveId) continue;
 
-            // Au-delà des niveaux définis (>3), on réapplique le delta du dernier niveau défini
-            // à chaque montée (les plafonds — DR 0.40, vitesse 380, cooldown min — restent actifs).
+            // Au-delà des niveaux définis (>3), on repart du delta du dernier niveau défini mais en
+            // RENDEMENTS DÉCROISSANTS (PassiveScaling) : l'additif pur faisait franchir 100 % de
+            // réduction de recharge au Capaciteur dès son niveau 8 et montait le Noyau Thermique à
+            // ×4,00 — la puissance du joueur faisait ×6,4 sur 12 minutes d'overtime. Les plafonds
+            // (DR 0.40, vitesse 380, réduction de recharge 0.75, cooldown plancher) restent actifs.
             int definedMax = passive.GetProperty("levels").GetArrayLength();
             int lookup     = Mathf.Min(newLevel, definedMax);
+            float Damped(float definedDelta) => PassiveScaling.ExtrapolatedDelta(definedDelta, newLevel, definedMax);
 
             foreach (var lvlData in passive.GetProperty("levels").EnumerateArray())
             {
@@ -381,28 +385,29 @@ public partial class InventorySystem : Node
                 {
                     case "thermal_core":
                         if (lvlData.TryGetProperty("damageMultiplierBonus", out var dmb))
-                            stats.DamageMultiplier += dmb.GetSingle();
+                            stats.DamageMultiplier += Damped(dmb.GetSingle());
                         RefreshWeaponDamages();
                         break;
 
                     case "reinforced_plating":
                         if (lvlData.TryGetProperty("maxHpBonus",     out var hpb))
                         {
-                            stats.MaxHp    += hpb.GetSingle();
-                            stats.CurrentHp = Mathf.Min(stats.CurrentHp + hpb.GetSingle(), stats.MaxHp);
+                            float hpGain    = Damped(hpb.GetSingle());
+                            stats.MaxHp    += hpGain;
+                            stats.CurrentHp = Mathf.Min(stats.CurrentHp + hpGain, stats.MaxHp);
                         }
                         if (lvlData.TryGetProperty("damageReduction", out var dr))
-                            stats.DamageReduction = StatCaps.CapDamageReduction(stats.DamageReduction + dr.GetSingle());
+                            stats.DamageReduction = StatCaps.CapDamageReduction(stats.DamageReduction + Damped(dr.GetSingle()));
                         break;
 
                     case "servo_motors":
                         if (lvlData.TryGetProperty("speedBonus", out var sb))
-                            stats.Speed = StatCaps.CapSpeed(stats.Speed + sb.GetSingle());
+                            stats.Speed = StatCaps.CapSpeed(stats.Speed + Damped(sb.GetSingle()));
                         break;
 
                     case "capacitor":
                         if (lvlData.TryGetProperty("cooldownReduction", out var cr))
-                            stats.CooldownReduction = StatCaps.CapCooldownReduction(stats.CooldownReduction + cr.GetSingle());
+                            stats.CooldownReduction = StatCaps.CapCooldownReduction(stats.CooldownReduction + Damped(cr.GetSingle()));
                         // Recalcule les cooldowns des armes actives
                         RefreshWeaponCooldowns();
                         break;
@@ -519,6 +524,28 @@ public partial class InventorySystem : Node
             if (node is WeaponBase wb && wb.Cooldown > 0.001f)
                 total += wb.Damage / wb.Cooldown;
         return total;
+    }
+
+    /// <summary>
+    /// Vrai si toutes les stats que porte ce passif sont déjà à leur plafond dur : le monter d'un
+    /// niveau de plus ne changerait strictement rien. <see cref="LevelUpSystem"/> le retire alors du
+    /// pool — proposer une carte sans effet vole un choix au joueur, et c'était le cas du Capaciteur
+    /// et des Servomoteurs sur toute la fin de run.
+    ///
+    /// Le Noyau Thermique (dégâts) et le Blindage (PV) n'ont pas de plafond dur : ils rapportent
+    /// toujours quelque chose, de moins en moins (cf. <see cref="PassiveScaling"/>).
+    /// </summary>
+    public bool IsPassiveSaturated(string passiveId)
+    {
+        var stats = GameManager.Instance?.PlayerInstance?.Stats;
+        if (stats == null) return false;
+
+        return passiveId switch
+        {
+            "capacitor"    => stats.CooldownReduction >= StatCaps.MaxCooldownReduction - 0.0001f,
+            "servo_motors" => stats.Speed             >= StatCaps.MaxSpeed - 0.0001f,
+            _              => false,
+        };
     }
 
     public int GetPassiveMaxLevel(string passiveId)

@@ -313,9 +313,74 @@ public class StatCapsTests
 
     [Theory]
     [InlineData(0.5f, 0.5f)]
-    [InlineData(1.5f, 1.0f)] // plafonné à 100%
+    [InlineData(0.75f, 0.75f)]
+    [InlineData(1.5f, 0.75f)] // plafonné : 100% écraserait toutes les armes sur le même plancher
     public void CapCooldownReduction(float input, float expected)
         => Assert.Equal(expected, StatCaps.CapCooldownReduction(input), 3);
+
+    [Fact]
+    public void CapCooldownReduction_LaisseLesArmesDifferenciees()
+    {
+        // Le défaut corrigé : à 100 % de réduction, une arme lourde tirait exactement aussi vite
+        // qu'un canon léger (toutes deux au plancher). Sous le plafond, l'écart de cadence de
+        // fiche doit subsister.
+        float cr     = StatCaps.MaxCooldownReduction;
+        float lourde = StatCaps.EffectiveCooldown(1.20f, cr);
+        float legere = StatCaps.EffectiveCooldown(0.40f, cr);
+        Assert.True(lourde > legere, "l'arme lourde doit rester plus lente que l'arme légère");
+    }
+}
+
+public class PassiveScalingTests
+{
+    [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    [InlineData(3)]
+    public void ExtrapolatedDelta_NeTouchePasAuxNiveauxDefinis(int level)
+        => Assert.Equal(0.15f, PassiveScaling.ExtrapolatedDelta(0.15f, level, 3), 4);
+
+    [Fact]
+    public void ExtrapolatedDelta_DecroitAuDelaDesNiveauxDefinis()
+    {
+        float precedent = PassiveScaling.ExtrapolatedDelta(0.15f, 3, 3);
+        for (int lvl = 4; lvl <= 20; lvl++)
+        {
+            float d = PassiveScaling.ExtrapolatedDelta(0.15f, lvl, 3);
+            Assert.True(d < precedent, $"le niveau {lvl} doit rapporter moins que le précédent");
+            Assert.True(d > 0f, "un niveau supplémentaire rapporte toujours quelque chose");
+            precedent = d;
+        }
+    }
+
+    [Fact]
+    public void CumulativeBonus_ResteBienEnDecaDeLAdditifPur()
+    {
+        // thermal_core : 0,15/niveau, 3 niveaux définis, plafond L20.
+        // Additif pur (comportement corrigé) : 0,15 × 20 = 3,00 → multiplicateur ×4,00.
+        float cumul = PassiveScaling.CumulativeBonus(0.15f, 20, 3);
+        Assert.True(cumul < 1.75f, $"cumul trop élevé : {cumul}");
+        Assert.True(cumul > 1.20f, $"cumul trop faible, la progression n'est plus lisible : {cumul}");
+    }
+
+    [Fact]
+    public void CumulativeBonus_CapaciteurResteUtileSurSesPremiersNiveaux()
+    {
+        // capacitor : 0,14/niveau, 3 niveaux définis. Chaque niveau doit encore rapporter quelque
+        // chose au moins jusqu'à L6 — sans quoi la carte serait morte presque tout de suite. Le
+        // plafond (0,75) est atteint peu après : LevelUpSystem cesse alors de proposer la carte.
+        Assert.True(PassiveScaling.CumulativeBonus(0.14f, 6, 3) < StatCaps.MaxCooldownReduction);
+        // Et il finit bien par le franchir : c'est le plafond qui borne, pas l'amortissement.
+        Assert.True(PassiveScaling.CumulativeBonus(0.14f, 20, 3) > StatCaps.MaxCooldownReduction);
+    }
+
+    [Fact]
+    public void CumulativeBonus_EstStrictementCroissant()
+    {
+        for (int lvl = 1; lvl < 30; lvl++)
+            Assert.True(PassiveScaling.CumulativeBonus(0.15f, lvl + 1, 3)
+                      > PassiveScaling.CumulativeBonus(0.15f, lvl, 3));
+    }
 }
 
 public class CrowdControlCapsTests

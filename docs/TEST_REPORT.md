@@ -4,6 +4,70 @@ Rapport de sessions de test. Chaque section correspond à une session de test di
 
 ---
 
+## Courbe de puissance du joueur — instrumentation, diagnostic et correction — 2026-07-28
+
+**Point ouvert traité :** « la puissance du joueur explose en overtime, les boss d'overtime
+deviennent triviaux » (laissé en suspens après la 1.21.0). Aucun outil ne mesurait autre chose qu'un
+instantané par combat de boss : ajout de `PowerTelemetry` (flag `--power-curve`), qui échantillonne
+toute la run — DPS infligé, dégâts subis, population, **indice de puissance du loadout**
+(`InventorySystem.PowerIndex()` = somme dégâts/recharge) et build complet.
+
+### Mesure initiale (banc Fournaise, 25 min, bot immobile et invulnérable)
+
+| moment | indice de puissance | mult. dégâts | réduc. recharge | ennemis |
+|---|---|---|---|---|
+| 4 min | 189 | 1,65 | 0,05 | 127 |
+| 12,8 min (fin du temps imparti) | 679 | 1,95 | 0,29 | 300 |
+| +12 min d'overtime | **4361** | 2,70 | **0,85** | 300 |
+
+**×6,42 de puissance en 12 minutes d'overtime**, contre ×2,8 de PV pour le boss. Second constat :
+la **population sature le cap de 300 dès la 8ᵉ minute**, cinq minutes avant l'overtime — l'escalade
+ne peut donc plus jouer que sur les PV unitaires.
+
+### Cause
+
+Les 4 passifs ne définissent que **3 niveaux** pour un plafond de **20** ; au-delà, le delta du
+dernier niveau défini était réappliqué **en additif non borné**. Le cas pathologique est le
+**Capaciteur** : +0,14 par niveau → **100 % de réduction de recharge dès le niveau 8**, ce qui fait
+tomber **toutes** les armes au plancher `MinCooldown` (0,15 s). Une arme lourde à 1,2 s tirait alors
+exactement aussi vite qu'un canon léger à 0,4 s. C'est aussi l'explication de la dispersion notée
+plus bas dans ce rapport : TTK du même boss de **14,8 s à 42 s selon une seule carte prise**.
+
+### Correction (GDD §30)
+
+`PassiveScaling` (rendements décroissants au-delà des niveaux définis, `delta / (1 + 0,20 n)`) +
+`StatCaps.MaxCooldownReduction = 0,75` + retrait du pool des passifs dont l'unique stat est au
+plafond (`IsPassiveSaturated`).
+
+### Contre-mesure (même protocole)
+
+| | fin du temps imparti | +12 min d'overtime | ratio |
+|---|---|---|---|
+| avant | 679 · recharge 0,29 | 4361 · 0,85 | **×6,42** |
+| après | 942 · recharge 0,55 | 2568 · 0,75 (plafond) | **×2,73** |
+
+Les deux runs n'ont pas le même build (choix de cartes aléatoires en `--auto-play`) : c'est le
+**ratio** qui vaut, pas les valeurs absolues. Effet exact à build égal, calculé sur celui du testeur
+humain (`thermal_core` L16, `capacitor` L15) : multiplicateur de dégâts **3,40 → 2,36**, cadence
+cumulée **−28 %** sur les 12 armes → **DPS ×0,50**. Les armes rapides (Canon 0,55 s, Flux 0,40 s)
+ne perdent **rien** — elles étaient déjà au plancher ; les armes lourdes retrouvent leur identité
+(Singularité : 0,15 s → 1,00 s).
+
+### Recalibrage du boss en cascade
+
+`rusted_core.maxHp` **8000 → 4000**. Projection de la fenêtre de TTK à la Fournaise (PV effectifs
+9 100) : **~21 s** pour un build qui n'a pas monté le Capaciteur (425 DPS mesurés au banc) et
+**~29 s** pour un build qui l'a saturé (617 → ~310 DPS estimés). La fenêtre **se resserre** au lieu
+de se déplacer, là où l'écart allait de 14,8 s à 43 s.
+
+**À vérifier par une session jouée** (`tools/power_curve_session.ps1 -Biome fournaise`, puis
+`tools/boss_ttk_session.ps1 -ReportOnly`) : le « ×0,50 » du build optimisé est un calcul, pas une
+mesure. Le loadout figé de `--debug-boss` donne 9-11 s sur les trois biomes testés, mais il a
+toujours produit des TTK 2 à 3 fois plus courts que le jeu réel (13,8 s contre 29 s joué avant
+correction) — il ne vaut que comme test de non-régression.
+
+---
+
 ## Fusions d'armes — la vraie cause du « boss trop long » — 2026-07-28
 
 **Point de départ :** le banc de TTK (section suivante) donnait un boss 2,6 à 3,6× trop long, et un

@@ -154,6 +154,14 @@ qui change de **phase** avec ses PV et d'**incarnation** avec le biome.
   pas la progression : le multiplier par `WeaponBase.DamageScale`, sinon il devient négligeable en
   fin de run alors qu'il porte l'identité de l'arme.
 
+## Passifs & plafonds de stats (`PassiveScaling`, `StatCaps`, `InventorySystem.ApplyPassiveDelta`)
+- **Les 4 passifs ne définissent que 3 niveaux pour un plafond de 20** : 17 niveaux sur 20 sont donc *extrapolés*. Toute valeur de fiche modifiée dans `data/weapons.json` se répercute **17 fois** — raisonner sur le cumul à L20 (`PassiveScaling.CumulativeBonus`), jamais sur le delta seul.
+- **L'extrapolation passe par `PassiveScaling.ExtrapolatedDelta`, jamais par le delta brut.** L'additif pur amenait `thermal_core` à ×4,00 et faisait franchir à `capacitor` **100 % de réduction de recharge dès son niveau 8**.
+- **Une réduction de recharge à 100 % détruit une dimension de design** : `StatCaps.EffectiveCooldown` renvoie alors le plancher `MinCooldown` pour **toutes** les armes — l'arme lourde tire exactement aussi vite que la légère, et la cadence de fiche cesse d'exister. D'où `MaxCooldownReduction = 0,75`. Le symptôme se lisait dans les mesures avant d'être compris : TTK du même boss de 14,8 s à 42 s selon une **seule** carte prise (cf. GDD §30).
+- **Le même plafond doit être appliqué partout où la stat est écrite** — passifs de run *et* améliorations du Hub (`MetaProgressionSystem.ApplyUpgrades`). Un seul point qui l'oublie et le plafond ne vaut rien.
+- **Un passif dont toutes les stats sont au plafond doit sortir du pool de cartes** (`IsPassiveSaturated` → `LevelUpSystem`). Sinon le joueur se voit proposer une carte sans aucun effet, ce qui coûte un choix. Vérifier **les deux** chemins de sélection (`BuildPool` *et* `BuildWeaponCards`).
+- **Mesurer avant de tuner** : le DPS relevé sur le terrain monte tout seul quand la population d'ennemis monte. Ce qui juge une courbe de puissance, c'est `InventorySystem.PowerIndex()` (dégâts/recharge du loadout), journalisé par `PowerTelemetry`.
+
 ## Paliers de menace / Échos (`LevelThreat`, `EchoFormula`)
 Trois pièges quand on touche à la difficulté par niveau ou à la formule d'Échos :
 1. **Le palier se résout à la demande, pas au `_Ready`.** `GameManager.CurrentBiomeId` est posé par

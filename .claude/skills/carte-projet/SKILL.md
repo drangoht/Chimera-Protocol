@@ -30,7 +30,7 @@ data/              JSON de tuning (modifiable sans recompiler) — voir §Data
 localization/      ui.csv (source) → ui.{en,fr,es}.translation ; clé via Loc.T("CLÉ")
 assets/            Raw (sprites PNG 32×32, audio OGG/WAV, themes)
 tools/             Générateurs de sprites/audio + captures + release — voir §Outils
-tests/             xUnit — ChimeraProtocol.Tests.csproj (222 tests). `dotnet test tests/...`
+tests/             xUnit — ChimeraProtocol.Tests.csproj (231 tests). `dotnet test tests/...`
 docs/              GDD.md + briefs/plans — voir §Docs
 ```
 
@@ -41,8 +41,10 @@ docs/              GDD.md + briefs/plans — voir §Docs
 `DiscordPresence` · `VersionStamp` · `FusionFlash` (scène). Accès partout via `NomSystem.Instance`.
 
 ## §Rules — `src/Core/Rules/` (logique pure, testée)
-XpCurve · EnemyScaling (`Scaled` linéaire + `ScaledCurved`/`CurvedFactor` = courbe non-linéaire :
-early grace + accélération late, cf. difficulté) · SpawnCurve · WeaponLeveling · StatCaps · WeightedPicker ·
+XpCurve · **PassiveScaling** (extrapolation des passifs au-delà des 3 niveaux définis : rendements
+décroissants `ExtrapolatedDelta`/`CumulativeBonus`, cf. GDD §30) · EnemyScaling (`Scaled` linéaire + `ScaledCurved`/`CurvedFactor` = courbe non-linéaire :
+early grace + accélération late, cf. difficulté) · SpawnCurve · WeaponLeveling · StatCaps (plafonds durs : DR 0,40 · vitesse 380 · **réduction de
+recharge 0,75** · cooldown plancher 0,15 s) · WeightedPicker ·
 EchoFormula (+ `ApplyTier` = multiplicateur de palier appliqué composante par composante) ·
 **LevelThreat** (paliers de menace par NIVEAU : `Order` = ordre de déblocage — source de vérité de
 `GameSettings.LevelOrder` — et index = palier ; `EnemyHpMult`/`ChampionHpMult`/`EnemyDamageMult`/

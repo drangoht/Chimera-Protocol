@@ -5,6 +5,31 @@
 > `CLAUDE.md` ; le design complet dans `docs/GDD.md` ; la carte du code dans `/carte-projet`.
 
 - Pile technique : **Godot 4.7 .NET (C# / .NET 8 / GodotSharp)**
+- **Courbe de puissance du joueur assainie (NON PUBLIÉ, 2026-07-28).** Le point resté ouvert après
+  la 1.21.0 (« la puissance explose en overtime ») est instruit et corrigé. Nouvel outil de mesure :
+  **`PowerTelemetry`** (flag `--power-curve`, journal `user://power_curve.log` écrit au fil de l'eau)
+  qui échantillonne toute la run — DPS infligé, dégâts subis, population, **indice de puissance du
+  loadout** (`InventorySystem.PowerIndex()`) et build complet — plus `tools/power_curve_session.ps1`
+  (session jouée ou banc headless) et le flag **`--run-limit=<s>`** (la survie est sans fin, un banc
+  ne s'arrêtait jamais tout seul). **Mesure** : ×6,42 de puissance en 12 minutes d'overtime contre
+  ×2,8 de PV pour le boss, population saturée au cap de 300 dès la 8ᵉ minute. **Cause** : les 4
+  passifs ne définissent que **3 niveaux** pour un plafond de **20**, et au-delà le delta du dernier
+  niveau était réappliqué en **additif non borné** — `capacitor` franchissait **100 % de réduction de
+  recharge dès son niveau 8**, ce qui faisait tomber *toutes* les armes au plancher de 0,15 s : une
+  arme lourde à 1,2 s tirait exactement aussi vite qu'un canon léger, et la cadence de fiche cessait
+  d'exister. C'était aussi la cause de la dispersion du TTK (14,8 s à 42 s sur le même boss selon une
+  seule carte prise). **Correction** : `PassiveScaling` (règle pure — rendements décroissants
+  `delta / (1 + 0,20 n)` au-delà des niveaux définis : `thermal_core` ×4,00 → ×2,51 à L20,
+  `reinforced_plating` +500 → +251 PV), **`StatCaps.MaxCooldownReduction = 0,75`** (le plafond était
+  à 1,00, c'est-à-dire à rien — appliqué aussi aux améliorations du Hub), et retrait du pool des
+  passifs dont l'unique stat est au plafond (`IsPassiveSaturated` : proposer une carte sans effet
+  vole un choix au joueur). **Contre-mesure** : ratio ramené de ×6,42 à **×2,73** ; à build égal, DPS
+  **×0,50** (multiplicateur 3,40 → 2,36, cadence cumulée −28 %). D'où le **recalibrage du boss en
+  cascade : `rusted_core.maxHp` 8000 → 4000**, qui *resserre* la fenêtre de TTK (~21 s sans
+  Capaciteur, ~29 s avec) au lieu de la déplacer. Design : `docs/GDD.md` §30 ; mesures :
+  `docs/TEST_REPORT.md` ; pièges : `docs/PITFALLS.md` §Passifs. **231 tests unitaires.**
+  **Reste à faire** : confirmer le recalibrage par une **session jouée** — le ×0,50 est un calcul
+  analytique à build égal, pas une mesure de bout en bout.
 - **Fusions d'armes réparées + boss recalibré (PUBLIÉ 1.21.0, 2026-07-28).** Le principal
   déséquilibre du jeu : les **9 fusions d'armes divisaient le DPS de fin de run par 3 à 6**. Trois
   défauts cumulés — dégâts posés en dur par leur classe C# et jamais multipliés (`ApplyWeaponStats`
