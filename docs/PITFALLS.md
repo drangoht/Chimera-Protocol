@@ -120,6 +120,23 @@ Tout nouveau chemin de sortie de run doit l'appeler aussi.
 - **Tester l'existence d'un asset : `ResourceLoader.Exists("res://…png")`, jamais `FileAccess.FileExists`.** En build exporté le PNG source n'est **pas** dans le `.pck` (seule la texture importée `.ctex` l'est) → `FileExists` renvoie toujours `false` et masque l'asset en jeu alors qu'il marche dans l'éditeur (BUG icônes de greffes absentes du HUD). `GD.Load` seul suffit souvent (renvoie null proprement si absent).
 - Musique WAV : `loop_mode=0` par défaut dans Godot 4.7 → reboucler via signal `Finished` dans `AudioSystem`
 - `AudioSystem.LoadMusic()` tente `.ogg` en priorité, puis `.wav` fallback
+- **Toute image posée dans `docs/` est importée par Godot et embarquée dans le `.pck`.** Nommer les
+  planches de contrôle jetables `docs/ui_sheet_*.png` (motif déjà gitignoré) plutôt qu'un nom libre.
+
+## Icône de l'application (`tools/generate_app_icon.py`)
+- Câblage en 3 points, sinon le `.exe` garde l'icône Godot par défaut :
+  `export_presets.cfg` → `application/icon` **et** `application/console_wrapper_icon` = `res://icon.ico` ;
+  `project.godot` → `config/icon="res://icon.png"` (éditeur/fenêtre) + `config/windows_native_icon="res://icon.ico"`.
+- **Pas besoin de rcedit** : `application/modify_resources=true` (déjà dans le preset) fait patcher le PE
+  par Godot lui-même. L'export headless suffit donc — pas de réglage d'éditeur à configurer.
+- Le `.ico` est embarqué **tel quel**, entrées PNG comprises : chaque taille peut donc porter un
+  dessin DIFFÉRENT. C'est le but — un 256 réduit à 16 px est illisible. Le générateur produit trois
+  niveaux de détail (`full` ≥48, `small` 32, `tiny` ≤24) et écrit l'ICO à la main (PIL ne sait
+  qu'empiler des redimensionnements d'une image unique).
+- `.ico` et `.png` d'icône ne s'« importent » pas comme le reste : `icon.png` a besoin de son
+  `.import` commité (règle ci-dessus), `icon.ico` n'est pas un type reconnu et reste un fichier brut.
+- Vérifier le résultat sur le binaire, pas sur le source : `PrivateExtractIcons` (user32) sur
+  `build/ChimeraProtocol.exe` pour 16/32/48/256 — l'export peut réussir sans que l'icône soit patchée.
 
 ## Musique adaptative (pistes alternées) — `MusicDirector`
 - **Ne JAMAIS superposer `calm` et `combat` en permanence.** Ce sont deux générations Suno

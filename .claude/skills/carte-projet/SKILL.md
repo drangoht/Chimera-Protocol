@@ -118,6 +118,10 @@ Fusions : `FusionBlade`, `RailOvercharged`, `OrbitalSwarm`, `OverloadAegis`,
 
 ## §Outils — `tools/`
 - Sprites : `pseudo3d_lib.py` (⚠ toujours dériver ombre/highlight via ce lib), `generate_*` (sprites/icônes/tiles/vfx)
+- **Icône de l'app** : `generate_app_icon.py` → `icon.ico` (7 tailles, 3 niveaux de détail) + `icon.png` (256).
+  Motif : tête de chimère fendue machine/organique sur plaque blindée. Câblage `export_presets.cfg`
+  (`application/icon`) + `project.godot` (`config/icon`, `config/windows_native_icon`) → `docs/PITFALLS.md` §Icône.
+  Contrôle visuel : `--sheet` (planche 16→256).
 - **Audio / musique** : `synth_lib.py` (moteur DSP : oscillateurs anti-aliasés, filtres résonants,
   formants vocaux, reverb à convolution, mixage, export OGG) + `synth_instruments.py` (timbres :
   nappe CS-80, chœur, basse, arpège, percussions métalliques) + **`generate_music_v3.py`**
