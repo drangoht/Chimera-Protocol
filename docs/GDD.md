@@ -289,6 +289,21 @@ Fusion : + Noyau Thermique → **Lame à Fusion**
 
 Toute fusion supplémentaire est hors-scope MVP (cf. §14).
 
+### Progression des fusions (corrigé le 2026-07-28)
+
+Une fusion **hérite du niveau de l'arme qu'elle remplace**, continue de monter par cartes de level-up
+(plafond 20, comme les armes) et reçoit le multiplicateur de dégâts (Noyau Thermique + Hub) ainsi que
+la réduction de recharge. Les chiffres ci-dessus (55 dps, 22 dégâts…) sont donc des **valeurs de
+fiche au niveau 1**, mises à l'échelle en jeu.
+
+Ce n'était pas le cas jusqu'ici, et c'était le principal déséquilibre du jeu : la fusion repartait au
+niveau 1, n'apparaissait dans aucun pool de cartes (et l'arme de base en était retirée), et ses
+dégâts codés en dur ignoraient tous les multiplicateurs. Accepter une carte de fusion en fin de run
+**divisait le DPS par 3 à 6** — mesuré sur runs complètes : 105 DPS pour un build tout fusionné
+contre 410 pour un build de même niveau ayant conservé une arme de base. La carte la plus
+spectaculaire du jeu (rareté épique, flash blanc, SFX dédié) était son pire choix. Détail des
+mesures : `docs/TEST_REPORT.md`.
+
 ## 9. Monnaie meta : les **Échos d'Aether**
 
 > Spécifié le 2026-06-20 par l'agent `game-designer`. **Rééquilibré le 2026-07-02** suite au

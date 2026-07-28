@@ -137,6 +137,23 @@ qui change de **phase** avec ses PV et d'**incarnation** avec le biome.
      relevé constaté à **271 DPS / 108,8 s** au lieu de 628 DPS / 46,9 s sur le même biome, sans
      aucune erreur console. Un DPS très bas dans un relevé est le symptôme à reconnaître.
 
+## Fusions d'armes (`InventorySystem`, `LevelUpSystem`)
+- **Les fusions ne sont PAS dans la section `weapons` de `weapons.json`** : leurs stats sont posées en
+  dur par leur classe C# (`_Ready`). Tout code qui parcourt `weapons` pour appliquer des stats les
+  ignore silencieusement — c'est ainsi que les 9 fusions ont passé des mois sans recevoir le
+  multiplicateur de dégâts ni leur niveau. Le pipeline passe désormais par `ApplyFusionStats`, à
+  partir de `WeaponBase.BaseDamage`/`BaseCooldown` (capturés une fois, idempotents).
+- **Toujours partir de la valeur de fiche, jamais de la valeur courante.** `RefreshWeaponDamages` et
+  `RefreshWeaponCooldowns` repassent à chaque achat de passif : recalculer depuis `Damage`/`Cooldown`
+  cumulerait les multiplicateurs jusqu'à l'absurde (cadence nulle).
+- **Une arme fusionnée disparaît du pool de cartes** (`IsReplacedByFusion`). Si la fusion n'y entre
+  pas non plus, le slot est **mort pour le reste de la run** — piège invisible en test court, fatal
+  en fin de run. Toute nouvelle arme « qui en remplace une autre » doit vérifier les deux pools
+  (`BuildPool` *et* `BuildWeaponCards`).
+- **Un effet annexe chiffré en dur dans une arme** (brûlure de `SolarColumn`, ralentissement) ne suit
+  pas la progression : le multiplier par `WeaponBase.DamageScale`, sinon il devient négligeable en
+  fin de run alors qu'il porte l'identité de l'arme.
+
 ## Paliers de menace / Échos (`LevelThreat`, `EchoFormula`)
 Trois pièges quand on touche à la difficulté par niveau ou à la formule d'Échos :
 1. **Le palier se résout à la demande, pas au `_Ready`.** `GameManager.CurrentBiomeId` est posé par

@@ -4,6 +4,49 @@ Rapport de sessions de test. Chaque section correspond à une session de test di
 
 ---
 
+## Fusions d'armes — la vraie cause du « boss trop long » — 2026-07-28
+
+**Point de départ :** le banc de TTK (section suivante) donnait un boss 2,6 à 3,6× trop long, et un
+relevé humain à **275 DPS** là où le calibrage du GDD §20.4 supposait ~711 (théoriques). Retour du
+testeur : *« tout dépend du niveau du joueur arrivé au boss, et des améliorations débloquées »* —
+exact, et le protocole ne mesurait ni l'un ni l'autre : le loadout `--debug-boss` était figé au
+niveau 1 avec 5 armes L10 et un seul passif.
+
+**Outillage ajouté pour lever le doute** : `--auto-play` (les écrans de level-up et d'assimilation se
+résolvent seuls — sans quoi une run en banc se fige au premier niveau, ce qui explique que personne
+n'ait jamais mesuré autre chose qu'un loadout figé) et `--timescale=<x>`, permettant de jouer les
+13 minutes précédant le boss en ~4 minutes réelles.
+
+**Ce qu'une vraie run révèle** (4 runs, choix aléatoires) : niveau **66-84** au boss, passifs jusqu'à
+L20, armes bien au-delà de leurs 5 niveaux définis. Et un DPS qui varie **de 103 à 410** à niveau et
+palier identiques. Le facteur n'était ni le niveau ni le palier, mais le **nombre d'armes fusionnées**.
+
+| Build (même niveau ~80, même méta) | DPS avant | DPS après correctif |
+|---|---|---|
+| Sanctuaire — tout fusionné | 105 | **368** |
+| Néon — tout fusionné | 103 | **490 / 539** |
+| Avec une arme de base montée conservée | 347-410 | **858** |
+
+**Cause** (trois défauts cumulés, cf. `GDD.md` §8) : dégâts des fusions codés en dur et jamais
+multipliés (`ApplyWeaponStats` ne parcourait que la section `weapons`), retour au niveau 1 à la
+fusion, et absence totale du pool de cartes — l'arme de base en étant retirée, le slot était mort
+pour le reste de la run.
+
+**Effet sur le boss, PV inchangés (21 360 au Sanctuaire) :** avec un loadout de test recalé sur les
+builds réellement observés (armes L7, 4 passifs, 4 fusions), le TTK au banc tombe à **21,4 s
+(Sanctuaire)** et **25,7 s (Néon)** — pile dans la fenêtre 20-30 s du GDD §20.2. **Le boss n'avait
+donc pas besoin d'être rééquilibré** : le tuning envisagé (PV −63 %) a été annulé, il aurait rendu le
+combat trivial une fois les fusions réparées.
+
+**Limite connue :** la dispersion des builds reste large (368 à 2335 DPS selon les choix de cartes),
+donc le TTK varie de ~10 à ~60 s à PV constants. Aucun réglage de PV ne satisfait les deux extrêmes ;
+c'est le rôle du boss d'être un test de build, mais l'amplitude mérite un arbitrage de design.
+
+**Reste à mesurer :** le facteur humain post-correctif (le banc joue immobile et invulnérable, toutes
+armes à portée en permanence — c'est une borne basse de TTK).
+
+---
+
 ## Banc de TTK du boss de fin — 5 biomes — 2026-07-28 (MESURE AUTOMATISÉE)
 
 **Outil :** `BossTelemetry` + `tools/boss_ttk_session.ps1`. **Protocole :** `--headless --debug-boss

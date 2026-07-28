@@ -273,18 +273,38 @@ public partial class GameManager : Node
         var inv = InventorySystem.Instance;
         if (player == null || inv == null) return;
 
-        // 1) Loadout de référence du game-designer (cellule TTK ~28 s) : 5 armes au niveau 10.
-        const int DebugWeaponLevel = 10;
-        string[] weapons = { "impulse_cannon", "scatter_volley", "drone_swarm", "tesla_coil", "plasma_blade" };
+        // 1) Loadout calé sur ce qu'un joueur a RÉELLEMENT au boss, mesuré sur des runs complètes
+        // (banc --auto-play, 2026-07-28) : niveau 66-84, armes L6-13, passifs L3-13, et surtout
+        // plusieurs FUSIONS. L'ancien loadout (5 armes L10, un seul passif à 3, aucune fusion,
+        // joueur niveau 1) sous-estimait le DPS d'un facteur ~2 et ne testait aucune fusion — donc
+        // aucune mesure de TTK n'était comparable à une vraie fin de run.
+
+        // Passifs d'abord : les fusions les exigent en prérequis.
+        // Niveaux volontairement modestes : dans une vraie run, les ~70 cartes se dispersent (armes
+        // L3-13, passifs L3-13, cartes d'XP). Tout monter à fond fabriquerait un build PARFAIT à
+        // ~2300 DPS, le haut de la fourchette et non la médiane (~600-900 DPS mesurés).
+        var passives = new (string Id, int Level)[]
+        {
+            ("thermal_core", 5), ("capacitor", 4), ("reinforced_plating", 6), ("servo_motors", 6),
+        };
+        foreach (var (id, level) in passives)
+            for (int i = 0; i < level; i++)
+                inv.AddOrUpgradePassive(id);
+
+        // 5 armes montées, choisies pour couvrir 4 archétypes fusionnables (tir direct, chaîne,
+        // mêlée, aura de zone) + une arme de base conservée — le cas de figure le plus fréquent.
+        const int DebugWeaponLevel = 7;
+        string[] weapons = { "impulse_cannon", "tesla_coil", "plasma_blade", "cryo_lance", "glaive" };
         foreach (var w in weapons)
             for (int lvl = inv.WeaponLevels.GetValueOrDefault(w, 0); lvl < DebugWeaponLevel; lvl++)
                 inv.AddOrUpgradeWeapon(w);
 
-        // Noyau Thermique à ses 3 niveaux DÉFINIS (×1.45) — pas au max extrapolé (L20 = ×4.0,
-        // non représentatif). Aligne le DPS de test sur l'hypothèse d'équilibrage du game-designer.
-        const int DebugThermalLevel = 3;
-        for (int i = 0; i < DebugThermalLevel; i++)
-            inv.AddOrUpgradePassive("thermal_core");
+        // Fusions : elles héritent du niveau de l'arme remplacée (cf. InventorySystem.ApplyFusion),
+        // le loadout reste donc à 5 armes.
+        foreach (var f in new[] { "rail_overcharged", "ionic_storm", "fusion_blade", "frost_veil" })
+            if (inv.CanFuse(f)) inv.ApplyFusion(f);
+
+        inv.RefreshWeaponDamages();
 
         // 2) Spawn immédiat du boss à son PV réel (même scaling temporel qu'à t=13 min).
         var spawner = GetTree().GetFirstNodeInGroup(Constants.GroupEnemySpawner) as EnemySpawner;

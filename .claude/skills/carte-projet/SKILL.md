@@ -206,6 +206,9 @@ instrumentale, progressions, architecture en stems, mixage, bouclage) ·
 - Build .exe : `"…/Godot_v4.7…mono.exe" --headless --export-release "Windows Desktop" "./build/ChimeraProtocol.exe"` (⚠ `ChimeraProtocol.sln` requis à la racine)
 - Tests : `dotnet test tests/ChimeraProtocol.Tests.csproj`
 - Compil rapide C# : `dotnet build ChimeraProtocol.csproj`
+- Jouer une run COMPLÈTE en banc (build réellement accumulé jusqu'au boss) : `--auto-play` (level-up
+  et assimilation résolus tout seuls) + `--timescale=<x>` (≤ 4, au-delà les projectiles traversent
+  leurs cibles). Ex. : `--headless --auto-play --invuln --timescale=3 --biome=neon`
 - Forcer un biome (tests/captures) : flag `--biome=<id>`
 - Forcer tous les ennemis basiques en élite (test des affixes) : flag `--force-elites` (`DebugHooks.ForceElites`)
 - Forcer l'équipement d'une (ou des trois) fusion(s) de greffes sans grinder les jauges : flag `--force-fusion=<id|all>` (`DebugHooks.ForcedFusion`, équipe d'abord les 2 greffes prérequises). 3 fusions : `fusion_charge_blindee`, `fusion_ruche_tourelles`, `fusion_nova_rodeur` (Frappe Nova = dash-blink + nova ; partage `erratic_servos` avec Charge Blindée → exclusives)
