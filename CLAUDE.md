@@ -14,7 +14,21 @@ cyborgs, robots), inspiré de Vampire Survivors et Everything is Crab.
 - **État d'implémentation détaillé & version courante → `docs/PROJECT_STATE.md`** (évolutif). Résumé de phase ci-dessous.
 - **Synthétiser du volume** (relever/résumer/inventorier à partir de plusieurs gros fichiers : `data/*.json`, docs longues, logs, rapports de test) → déléguer au **MCP local** `mcp__local-llm__local_digest` / `local_map` (outils différés : `ToolSearch` d'abord) plutôt que d'enchaîner les `Read` : le serveur lit les fichiers côté LM Studio, seule la synthèse entre en contexte. Ne pas l'utiliser pour du code que l'on s'apprête à éditer — là, le contenu réel est nécessaire.
 
-**Phase actuelle : survie en overtime corrigée (non publiée) → mid-boss par biome (B.3).** Le point
+**Phase actuelle : deux chantiers faits, non publiés — à valider en jouant, puis publier (1.23.0).**
+
+**(2) Mid-boss par biome** (2026-07-29) — dernier point non livré de `docs/EXPANSION_PLAN.md` (B.3).
+La faune par biome était complète, mais **trois niveaux sur cinq n'avaient aucun champion de mi-run**
+et `master_sentinel` (16 min, pour une run de 13) n'apparaissait **jamais** hors overtime. Livré :
+**Colosse en Fusion** (Fournaise — charges télégraphiées laissant un sillage de magma), **Sentinelle
+Cryo** (Givre — cône de gel dirigé + plaques dans l'axe), **Gardien Néon** (Néon — bouclier orbital
+qui n'absorbe que 20 % des dégâts venus du secteur couvert), + tag de biome des existants et
+`master_sentinel` ramenée à 11 min. Le boss de fin ayant déjà une signature par biome (§29), chaque
+mid-boss demande le réflexe **inverse** de l'incarnation finale de son biome. Nouveau flag
+**`--debug-enemy=<id>`** (spawn isolé) + `tools/capture_midboss.py`. Design → `docs/GDD.md` §32 ;
+pièges → `docs/PITFALLS.md` §Mid-boss (dont : **ne jamais dessiner un effet dans le `_Draw` du
+champion** — `HitFlash` sature les couleurs à blanc via `Modulate` → `ChampionOverlay`).
+
+**(1) Survie en overtime.** Le point
 laissé « à surveiller » en 1.22.0 est instruit : le testeur mourait **1 min après l'entrée en
 overtime**, quand l'économie d'Échos est dimensionnée sur **5-10 min** d'overtime (GDD §9.2) — ce
 levier de méta-progression était donc inatteignable. Cause : `EnemySpawner` dérivait ses deux temps

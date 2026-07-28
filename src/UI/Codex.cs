@@ -80,6 +80,21 @@ public static class Codex
             EnemyDir + "master_sentinel/master_sentinel_idle_01.png", Cyan,
             EnemyDir + "master_sentinel/master_sentinel_frames.tres"),
 
+        // ── Mid-boss de biome (rendez-vous de mi-run, cf. docs/GDD.md §32) ────────
+        // Un par niveau : Sanctuaire → rust_stalker, Aether → aether_revenant (ci-dessus),
+        // puis les trois dédiés ci-dessous. Accent = couleur du biome.
+        new("molten_colossus", "ENEMY_MOLTEN_COLOSSUS_NAME", "ENEMY_MOLTEN_COLOSSUS_TAG", "ENEMY_MOLTEN_COLOSSUS_DESC",
+            EnemyDir + "molten_colossus/molten_colossus_idle_01.png", Ember,
+            EnemyDir + "molten_colossus/molten_colossus_frames.tres"),
+
+        new("cryo_sentinel", "ENEMY_CRYO_SENTINEL_NAME", "ENEMY_CRYO_SENTINEL_TAG", "ENEMY_CRYO_SENTINEL_DESC",
+            EnemyDir + "cryo_sentinel/cryo_sentinel_idle_01.png", IceB,
+            EnemyDir + "cryo_sentinel/cryo_sentinel_frames.tres"),
+
+        new("neon_warden", "ENEMY_NEON_WARDEN_NAME", "ENEMY_NEON_WARDEN_TAG", "ENEMY_NEON_WARDEN_DESC",
+            EnemyDir + "neon_warden/neon_warden_idle_01.png", Magenta,
+            EnemyDir + "neon_warden/neon_warden_frames.tres"),
+
         // ── Faune par biome (20 ennemis basiques, cf. docs/GDD.md §21) ────────────
         // Matrice 5 biomes x 4 archétypes (fourrage/harceleur/pression_distance/bruiser),
         // réutilisent les scènes archétype existantes (RustSwarm/CorruptedDrone/CorruptedSentinel/

@@ -97,7 +97,7 @@ Ajout minimal et propre :
 
 Scaling via le système existant (hpScalingPerMinute/damageScaling), fenêtres de spawn dédiées.
 
-### B.3 — Boss par biome
+### B.3 — Boss par biome  ✅ **LIVRÉ le 2026-07-29** (cf. `docs/GDD.md` §32)
 
 Actuel : `aether_revenant` (mi-temps 7 min) + `rusted_core` (final 13 min, = victoire). Plan :
 - **Un mid-boss par biome** (~8-10 min), taggé via `biomes`, `maxSimultaneous=1`, sprite dédié
@@ -112,6 +112,17 @@ Actuel : `aether_revenant` (mi-temps 7 min) + `rusted_core` (final 13 min, = vic
   deux boss existants ; aucun ne descend sous le TTK cible.
 
 > ✅ **Verrouillé** : mid-boss par biome + `rusted_core` final partagé.
+>
+> **Livré le 2026-07-29**, avec deux écarts au plan, tous deux motivés par ce qui a été livré entre
+> temps (les incarnations du boss de fin, 1.20.0) :
+> - le *stretch* « variantes finales par biome » a été livré **avant** ce lot (§29) ; les gimmicks
+>   prévus ici pour la Fournaise (coulées) et le Givre (cône) auraient donc doublonné les signatures
+>   `MagmaPools` et `FrostNova` du boss. Chaque mid-boss demande désormais le réflexe **inverse** de
+>   l'incarnation finale de son biome (détail : §32.3) ;
+> - le Sanctuaire et l'Aether n'ont pas reçu de nouvelle entité — ils avaient déjà un champion, il
+>   suffisait de le **tagger** et d'avancer sa fenêtre. Le trou réel portait sur trois niveaux, pas
+>   cinq. `master_sentinel`, jamais vue en run normale (16:00 pour une run de 13 min), est ramenée à
+>   11:00 comme second rendez-vous commun.
 
 ---
 

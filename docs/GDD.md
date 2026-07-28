@@ -2435,3 +2435,96 @@ les minutes d'overtime elles-mêmes : il amortit donc les deux courbes, comme av
   il est calibré pour la run standard (0-13 min), où il fait exactement son travail — rattraper le
   power-creep du build. Le corriger là reviendrait à traiter le symptôme loin de la cause. Reste
   disponible si la mesure jouée montre que ×4,5 en dix minutes est encore trop raide.
+
+---
+
+## 32. Mid-boss par biome — un rendez-vous de mi-run par niveau (2026-07-29)
+
+> Dernier point non livré de `docs/EXPANSION_PLAN.md` (partie B.3). Le plan datait d'avant les
+> incarnations du boss de fin (§29) : sa proposition de « variantes finales par biome » ayant été
+> livrée en 1.20.0, seule la **mi-run** restait à traiter.
+
+### 32.1 Le trou de contenu
+
+La faune par biome est complète depuis le §21 (4 archétypes × 5 biomes), mais les champions, eux,
+n'avaient jamais été répartis :
+
+| mini-boss | fenêtre | biomes |
+|---|---|---|
+| `aether_revenant` | 7:00 | aether, neon |
+| `rust_stalker` | **12:00** | tous |
+| `master_sentinel` | **16:00** | tous |
+
+La run dure 13 minutes. `master_sentinel` **n'apparaissait donc jamais** en run normale — un mini-boss
+entier, avec sa scène, son sprite et son entrée de bestiaire, réservé de fait à l'overtime. Et
+**trois biomes sur cinq** (Sanctuaire, Givre, Fournaise) n'avaient aucun rendez-vous de mi-run : rien
+entre la montée en puissance du début et le boss de fin.
+
+### 32.2 Un champion par niveau
+
+| niveau | mid-boss | fenêtre | mécanique signature |
+|---|---|---|---|
+| Sanctuaire | `rust_stalker` (existant) | 8:00 | poursuite blindée |
+| Aether | `aether_revenant` (existant) | 7:00 | ruades (dash) |
+| Givre | **`cryo_sentinel`** | 8:00 | **cône de gel dirigé** |
+| Fournaise | **`molten_colossus`** | 8:00 | **sillage de magma en charge** |
+| Néon | **`neon_warden`** | 8:00 | **bouclier orbital directionnel** |
+
+`master_sentinel` est ramenée à **11:00** et reste sur tous les biomes : elle devient le second
+rendez-vous, commun, juste avant le boss — le rôle qu'elle n'avait jamais pu tenir.
+
+### 32.3 Les trois mécaniques, et pourquoi celles-là
+
+La contrainte de conception est le §29 : le boss de fin possède **déjà** une signature par biome.
+Reprendre les mêmes idées ferait vivre au joueur deux fois la même chose dans la même run. Chaque
+mid-boss demande donc **le réflexe inverse** de l'incarnation finale de son biome :
+
+| biome | signature du BOSS (§29.2) | mécanique du MID-BOSS | ce que le joueur doit faire |
+|---|---|---|---|
+| Givre | `FrostNova` — nova **radiale** | cône **dirigé**, visée verrouillée avant le tir | s'éloigner ↔ **sortir de l'axe** |
+| Fournaise | `MagmaPools` — flaques **projetées à distance** | flaques **déposées sous ses pas** en charge | esquiver un tir ↔ **gérer un terrain qui se referme** |
+| Néon | `RotatingBeams` — faisceaux **offensifs** | bouclier **défensif** qui tourne | esquiver en tournant ↔ **tourner pour pouvoir toucher** |
+
+Le **Gardien Néon** est le seul champion du jeu que le DPS brut ne suffit pas à abattre : son bouclier
+couvre 230° et ne laisse passer que **20 %** des dégâts. La règle affichée au joueur est « place-toi
+face à l'ouverture » — techniquement, l'angle testé est celui du **joueur**, pas du projectile
+(`TakeDamage(float)` ne transporte pas de position). C'est une approximation assumée : une règle par
+projectile serait indéductible à l'œil, celle-ci est vraie quelle que soit l'arme.
+
+### 32.4 Calibrage
+
+PV entre le mini-boss historique (550) et le boss de fin, dégâts de contact modérés — ces champions
+sont des **tests de placement**, pas des murs de PV :
+
+| id | PV | vitesse | contact | XP | note |
+|---|---|---|---|---|---|
+| `molten_colossus` | 700 | 68 | 22 | 200 | lent : toujours distançable |
+| `cryo_sentinel` | 620 | 58 | 16 | 200 | contact faible, la menace est le cône |
+| `neon_warden` | 800 | 88 | 20 | 220 | +PV car 80 % des dégâts sont absorbés une partie du temps |
+
+Tous héritent des règles §19.2 : `maxSimultaneous = 1`, respawn ≥ 180 s, orbe XP T3, et à la mort
+**un écran de choix d'arme** (`ShowWeaponDrop(3)`) — c'est la récompense qui justifie de les affronter
+plutôt que de les fuir.
+
+### 32.5 Deux règles de rendu apprises en mesurant
+
+1. **Un effet dessiné en code ne doit pas vivre dans l'arbre du champion.** `EnemyBase.HitFlash`
+   anime `Modulate` depuis `(5,5,5,1)`, et `Modulate` se propage à tout le sous-arbre : multipliées
+   par 5, les couleurs saturent. Mesuré en jeu, le bouclier magenta sortait **gris (142,142,145)** —
+   et comme le joueur tire en continu, l'état « flashé » est l'état normal. La couleur disparaissait
+   exactement quand elle sert. D'où `ChampionOverlay`, parenté à la **racine** comme `BossHazard`.
+2. **Un champion doit contraster avec son biome, pas en reprendre la palette.** Première version :
+   Colosse brun sur sol brun, Sentinelle bleue sur sol bleu — repérables à leur seule aura. Les
+   châssis sont désormais nettement plus **sombres** que le sol de leur niveau, accents d'énergie
+   seuls en couleur vive.
+
+### 32.6 Ce qui a été écarté
+
+- **Des incarnations de mid-boss** (une souche + 5 variantes, sur le modèle du §29). Rejeté : le
+  joueur verrait deux fois le même dispositif dans une seule run. Les silhouettes dédiées (bloc
+  trapu / fuseau élancé / anneau) se lisent instantanément et de loin, ce qu'une même silhouette
+  recolorée cinq fois ne fait pas.
+- **Promouvoir les bruisers de biome existants** en champions. Rejeté : cela n'aurait produit qu'un
+  gros ennemi de plus, sans mécanique à apprendre — or c'est la mécanique qui fait un champion.
+- **Un mid-boss dédié au Sanctuaire et à l'Aether.** Inutile : les deux en avaient déjà un, il
+  suffisait de le tagger. Le trou était sur les trois autres niveaux.

@@ -22,9 +22,12 @@ public partial class EnemySpawner : Node
     private float _eliteTimer = 14f; // overtime : prochain spawn de mini-boss d'élite
     private float _bossTimer  = 4f;  // overtime : 1er boss ~4 s après le début (= fin du temps imparti)
 
-    // Mini-boss spawnés en boucle pendant l'overtime.
+    // Mini-boss spawnés en boucle pendant l'overtime. Les mid-boss de biome en font partie : le
+    // filtre `IsAllowedInBiome` de SpawnOvertimeElite ne retiendra de toute façon que celui du
+    // niveau joué (cf. GDD §32).
     private static readonly string[] OvertimeElites =
-        { "grafted_colossus", "rust_stalker", "master_sentinel", "aether_revenant" };
+        { "grafted_colossus", "rust_stalker", "master_sentinel", "aether_revenant",
+          "molten_colossus", "cryo_sentinel", "neon_warden" };
 
     // Boss de fin de niveau : ne spawn PLUS en ambiant (réservé à la boucle d'overtime).
     private static readonly System.Collections.Generic.HashSet<string> BossIds = new() { "rusted_core" };
@@ -60,6 +63,9 @@ public partial class EnemySpawner : Node
         { "rust_stalker",        "res://scenes/entities/MiniBoss/RustStalker.tscn"        },
         { "master_sentinel",     "res://scenes/entities/MiniBoss/MasterSentinel.tscn"     },
         { "aether_revenant",     "res://scenes/entities/MiniBoss/AetherRevenant.tscn"     },
+        { "molten_colossus",     "res://scenes/entities/MiniBoss/MoltenColossus.tscn"     },
+        { "cryo_sentinel",       "res://scenes/entities/MiniBoss/CryoSentinel.tscn"       },
+        { "neon_warden",         "res://scenes/entities/MiniBoss/NeonWarden.tscn"         },
         { "rusted_core",         "res://scenes/entities/Boss/RustedCore.tscn"             },
     };
 
@@ -118,6 +124,18 @@ public partial class EnemySpawner : Node
             return;
         }
         GD.PrintErr($"[EnemySpawner] DebugSpawnById : id introuvable « {id} ».");
+    }
+
+    /// <summary>
+    /// Fenêtre de spawn (minutes) déclarée par cet id dans <c>enemies.json</c>, ou null si l'id est
+    /// inconnu. Sert aux hooks de debug à faire apparaître un champion avec le scaling de SON moment
+    /// de run : mesurer un mid-boss de 8 min avec le scaling de 13 min gonflerait ses PV de moitié.
+    /// </summary>
+    public float? SpawnStartMinuteOf(string id)
+    {
+        foreach (var data in _enemyPool)
+            if (data.Id == id) return data.SpawnStartMinute;
+        return null;
     }
 
     public override void _Process(double delta)

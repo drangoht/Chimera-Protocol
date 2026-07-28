@@ -5,6 +5,28 @@
 > `CLAUDE.md` ; le design complet dans `docs/GDD.md` ; la carte du code dans `/carte-projet`.
 
 - Pile technique : **Godot 4.7 .NET (C# / .NET 8 / GodotSharp)**
+- **Mid-boss par biome — un rendez-vous de mi-run par niveau (2026-07-29, non publié).** Dernier point
+  non livré de `docs/EXPANSION_PLAN.md` (B.3). **Trou constaté** : la faune par biome était complète
+  (§21) mais les champions n'avaient jamais été répartis — `aether_revenant` (7 min) couvrait aether
+  et néon, `rust_stalker` arrivait à **12 min** pour une run de 13, et `master_sentinel` à **16 min**,
+  c'est-à-dire **jamais en run normale** (un mini-boss entier, avec sa scène, son sprite et son entrée
+  de bestiaire, réservé de fait à l'overtime). **Trois niveaux sur cinq** n'avaient donc aucun
+  rendez-vous entre la montée en puissance du début et le boss de fin. **Livré** : 3 mid-boss dédiés —
+  **Colosse en Fusion** (Fournaise, charges télégraphiées laissant un sillage de flaques de magma),
+  **Sentinelle Cryo** (Givre, cône de gel dirigé + plaques de givre dans l'axe, kite à 250 px),
+  **Gardien Néon** (Néon, bouclier orbital couvrant 230° qui n'absorbe que 20 % des dégâts venus du
+  secteur couvert, + renforts locaux) — plus le tag de biome des deux existants et `master_sentinel`
+  ramenée à 11 min comme second rendez-vous commun. **Contrainte de conception** : le boss de fin ayant
+  déjà une signature par biome depuis la 1.20.0 (§29), chaque mid-boss demande le réflexe **inverse**
+  de l'incarnation finale de son biome (nova radiale → cône dirigé ; flaques projetées → flaques
+  déposées sous ses pas ; faisceaux offensifs → bouclier défensif). **Deux règles de rendu apprises en
+  mesurant** : (1) un effet dessiné en code ne peut pas vivre dans l'arbre du champion — `HitFlash`
+  anime `Modulate` depuis `(5,5,5,1)`, qui se propage au `_Draw` et **sature les couleurs à blanc**
+  (bouclier magenta mesuré à (142,142,145) en jeu, et le joueur tirant en continu, l'état flashé *est*
+  l'état normal) → `ChampionOverlay` parenté à la racine ; (2) un champion doit **contraster** avec son
+  biome, pas en reprendre la palette. Outillage : flag **`--debug-enemy=<id>`** (spawn isolé au scaling
+  de sa propre fenêtre — `--debug-boss` ne savait spawner que `rusted_core`) et
+  `tools/capture_midboss.py`. Design → `docs/GDD.md` §32 ; pièges → `docs/PITFALLS.md` §Mid-boss.
 - **Survie en overtime — escalade de densité découplée du scaling (2026-07-28, non publié).** Le point
   laissé « à surveiller » à la publication de la 1.22.0 : le testeur meurt **1 minute après l'entrée
   en overtime**, alors que l'économie d'Échos est dimensionnée sur des runs d'overtime de **5 à 10

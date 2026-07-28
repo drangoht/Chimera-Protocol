@@ -4,6 +4,60 @@ Rapport de sessions de test. Chaque section correspond à une session de test di
 
 ---
 
+## Mid-boss par biome — validation en jeu — 2026-07-29
+
+**Chantier :** `docs/EXPANSION_PLAN.md` B.3, dernier point non livré (design → `docs/GDD.md` §32).
+
+### Constat de départ (lecture de `data/enemies.json`)
+
+`master_sentinel` était déclarée à **16:00** pour une run de **13 minutes** : elle n'apparaissait
+**jamais** en run normale. `rust_stalker` à 12:00 arrivait juste avant le boss. Trois niveaux sur
+cinq (Sanctuaire, Givre, Fournaise) n'avaient aucun champion de mi-run.
+
+### Protocole
+
+Nouveau flag **`--debug-enemy=<id>`** : spawn isolé du champion visé, avec le scaling de **sa** fenêtre
+de spawn (8 min) et non celle du boss — sans quoi un mid-boss serait mesuré avec ~50 % de PV en trop.
+Captures en jeu via `tools/capture_midboss.py` (d3d12, fenêtré, rafale).
+
+| contrôle | résultat |
+|---|---|
+| spawn des 3 champions (headless, 3 biomes) | OK — aucune exception, **aucune** erreur `no animation` |
+| tests unitaires | **237** au vert |
+| run de fumée complète (Givre, `--auto-play --invuln`) | 0 erreur |
+| Gardien Néon en jeu | bouclier magenta + nœuds cyan lisibles, tirs absorbés côté couvert |
+| Sentinelle Cryo en jeu | 3 plaques de givre déposées **alignées dans l'axe** du tir |
+| Colosse en Fusion en jeu | flaque de magma déposée sous ses pas pendant la charge |
+
+### Deux défauts trouvés et corrigés par la capture
+
+1. **Le bouclier sortait gris.** Pixels mesurés à **(142,142,145)** au lieu du magenta attendu.
+   `EnemyBase.HitFlash` anime `Modulate` depuis `(5,5,5,1)` et `Modulate` se propage au `_Draw` du
+   nœud : ×5, toutes les composantes saturent. Le joueur tirant en continu, l'état flashé *était*
+   l'état normal — la couleur disparaissait exactement quand elle sert à viser la brèche. Corrigé par
+   `ChampionOverlay`, parenté à la racine (même parti pris que `BossHazard`). Vérifié après correctif :
+   bouclier magenta franc.
+2. **Deux champions se fondaient dans leur propre biome.** Colosse brun sur le sol brun de la
+   Fournaise, Sentinelle bleue sur le sol bleu du Givre — repérables à leur seule aura. Châssis
+   assombris (accents d'énergie seuls en couleur vive).
+
+### Piège de protocole (noté dans `docs/PITFALLS.md`)
+
+Première série : **huit captures d'une arène vide**, interprétées à tort comme un spawn défaillant.
+En réalité un champion apparaît **hors champ** (~800 px) et rejoint le joueur à sa propre vitesse —
+58 px/s pour la Sentinelle, qui garde en plus ses distances à 250 px. Il faut ~15 s d'approche avant
+de déclencher la rafale (`WARMUP` dans `capture_midboss.py`).
+
+### Reste à faire
+
+**Ressenti et équilibrage en session jouée.** Le bot ne se déplace pas : il ne peut ni contourner un
+bouclier, ni sortir d'un cône, ni éviter un sillage — c'est-à-dire aucune des trois mécaniques. Les PV
+(700/620/800) et les périodes d'attaque n'ont donc **pas encore été confrontés à un joueur**. À
+vérifier en particulier : le Gardien Néon n'est-il pas trop long à abattre pour un build de 8 min qui
+n'aurait pas compris la règle du bouclier ?
+
+---
+
 ## Survie en overtime — l'escalade de densité se déversait sur les stats — 2026-07-28
 
 **Point traité :** celui laissé « à surveiller » à la publication de la 1.22.0 — le testeur meurt

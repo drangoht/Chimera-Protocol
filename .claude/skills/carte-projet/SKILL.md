@@ -136,7 +136,13 @@ Fusions : `FusionBlade`, `RailOvercharged`, `OrbitalSwarm`, `OverloadAegis`,
 ## §Entities — `src/Entities/`
 - Player : `Player` (+ `PlayerStats`, + **`GraftManager`** : applique les effets de greffe — stat mods avec retrait exact, mini-essaims orbitants/tourelle/thorns/onde en `_Process`, teinte additive `SelfModulate`, + **props de silhouette** Phase B `BuildPropFor`/`UpdateProps`/`Shade` : carapace/servos/œil/onde/proue de charge/cœur de ruche ancrés au corps, miroir via `Player.FacingLeft` ; le dash vit dans `Player` : `EnableDash`/`DisableDash`, `GraftSpeedMultiplier`, `HealFlat`, `SetGraftTint`, `FacingLeft`, `IsDashing`)
 - Enemies : `EnemyBase` (data-driven, `SetSpriteFrames`, **`ApplyElite`** — affixes d'élite), `EliteAura` (halo VFX), `EnemyBullet`, `CorruptedDrone`, `CorruptedSentinel`, `RustSwarm`, `RustStalker`
-- MiniBoss : `AetherRevenant`, `MasterSentinel` · Boss : `GraftedColossus` (48×48, `Die()` custom)
+- MiniBoss : `AetherRevenant`, `MasterSentinel`, `RustStalker` + **3 mid-boss de biome** (GDD §32) :
+  **`MoltenColossus`** (Fournaise — charges télégraphiées laissant un sillage de `BossHazard` Magma),
+  **`CryoSentinel`** (Givre — cône de gel dirigé + plaques de givre dans l'axe, kite à 250 px),
+  **`NeonWarden`** (Néon — bouclier orbital qui absorbe 80 % des dégâts venant du secteur couvert,
+  + adds via `EnemySpawner.SummonAdds`). Leurs effets dessinés vivent dans **`ChampionOverlay`**
+  (parenté à la RACINE : `Modulate` du HitFlash saturerait les couleurs, cf. `docs/PITFALLS.md`)
+  · Boss : `GraftedColossus` (48×48, `Die()` custom)
 - **Boss de fin** (`src/Entities/Boss/`) : **`RustedCore`** (condition de victoire des 5 niveaux —
   3 phases + 1 incarnation par biome ; override `TakeDamage` pour la surcharge de bascule ;
   `DisplayName`/`HpRatio`/`Phase`/`IsSurcharging` lus par la barre de boss du HUD ; signatures dans
@@ -153,7 +159,8 @@ Fusions : `FusionBlade`, `RailOvercharged`, `OrbitalSwarm`, `OverloadAegis`,
 **`challenges.json`** (Défis/succès : condition + récompense echoes/perk/cosmetic, cf. ChallengeTable) · `texts.json`.
 
 ## §Outils — `tools/`
-- Sprites : `pseudo3d_lib.py` (⚠ toujours dériver ombre/highlight via ce lib), `generate_*` (sprites/icônes/tiles/vfx)
+- Sprites : `pseudo3d_lib.py` (⚠ toujours dériver ombre/highlight via ce lib), `generate_*` (sprites/icônes/tiles/vfx),
+  **`generate_midboss_sprites.py`** (les 3 mid-boss de biome en 48×48, `--only=<id>`)
 - **Icône de l'app** : `generate_app_icon.py` → `icon.ico` (7 tailles, 3 niveaux de détail) + `icon.png` (256).
   Motif : tête de chimère fendue machine/organique sur plaque blindée. Câblage `export_presets.cfg`
   (`application/icon`) + `project.godot` (`config/icon`, `config/windows_native_icon`) → `docs/PITFALLS.md` §Icône.
@@ -225,6 +232,10 @@ instrumentale, progressions, architecture en stems, mixage, bouclage) ·
   `godot --headless --path <projet> res://scenes/Game.tscn -- --auto-play --invuln --timescale=3 --biome=neon`
 - Forcer un biome (tests/captures) : flag `--biome=<id>`
 - Forcer tous les ennemis basiques en élite (test des affixes) : flag `--force-elites` (`DebugHooks.ForceElites`)
+- Faire apparaître UN champion isolé, avec le scaling de sa propre fenêtre de spawn : flag
+  **`--debug-enemy=<id>`** (`DebugHooks.DebugEnemy`) — généralise `--debug-boss`, qui ne sait spawner
+  que `rusted_core`. Seul, il sert à **observer** (loadout de départ conservé) ; combiné à
+  `--debug-boss`, à **mesurer** un TTK (loadout de test). Captures : `tools/capture_midboss.py`
 - Forcer l'équipement d'une (ou des trois) fusion(s) de greffes sans grinder les jauges : flag `--force-fusion=<id|all>` (`DebugHooks.ForcedFusion`, équipe d'abord les 2 greffes prérequises). 3 fusions : `fusion_charge_blindee`, `fusion_ruche_tourelles`, `fusion_nova_rodeur` (Frappe Nova = dash-blink + nova ; partage `erratic_servos` avec Charge Blindée → exclusives)
 - Mesurer le TTK du boss de fin : `powershell -File tools/boss_ttk_session.ps1 -Biome neon` (combat
   joué à la main, relevé automatique) puis `-ReportOnly` pour le tableau. Journal :

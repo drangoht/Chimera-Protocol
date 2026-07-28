@@ -126,6 +126,31 @@ public static class DebugHooks
         }
     }
 
+    private static bool _debugEnemyRead;
+    private static string? _debugEnemy;
+
+    /// <summary>
+    /// Id d'ennemi à faire apparaître <b>isolément</b> via <c>--debug-enemy=&lt;id&gt;</c> (ex.
+    /// <c>--debug-enemy=molten_colossus</c>), ou null.
+    ///
+    /// Généralise <c>--debug-boss</c>, qui ne sait spawner que <c>rusted_core</c> : sans lui, valider
+    /// un mid-boss de biome imposait de jouer jusqu'à sa fenêtre de spawn (8 min), pour chacun des
+    /// cinq niveaux. Même effet que <c>--debug-boss</c> par ailleurs (loadout de test, spawn ambiant
+    /// coupé). Aucun effet en build normal. Voir GameManager.ApplyBossDebugHook.
+    /// </summary>
+    public static string? DebugEnemy
+    {
+        get
+        {
+            if (!_debugEnemyRead)
+            {
+                _debugEnemy     = ValueFlag("--debug-enemy=");
+                _debugEnemyRead = true;
+            }
+            return _debugEnemy;
+        }
+    }
+
     private static bool? _forceBuff;
 
     /// <summary>

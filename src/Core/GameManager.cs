@@ -154,7 +154,9 @@ public partial class GameManager : Node
         // Différé pour laisser tous les _Ready de la scène passer (EnemySpawner doit avoir
         // chargé enemies.json, les armes doivent pouvoir s'instancier proprement).
         // Aucun effet sans le flag.
-        if (DebugHooks.BossDebug)
+        // `--debug-enemy=<id>` emprunte le même chemin en changeant seulement la cible : c'est le
+        // moyen de valider un mid-boss de biome sans jouer 8 min par niveau (cf. GDD §32).
+        if (DebugHooks.BossDebug || !string.IsNullOrEmpty(DebugHooks.DebugEnemy))
             Callable.From(ApplyBossDebugHook).CallDeferred();
 
         // Hook --force-fusion=<id|all> : équipe d'office une (ou les deux) fusion(s) de greffes
@@ -263,15 +265,34 @@ public partial class GameManager : Node
     }
 
     /// <summary>
-    /// Hook --debug-boss : équipe un loadout de test représentatif (5 armes niv.10 +
-    /// thermal_core ×1.45) et force le spawn immédiat du boss final à son PV réel (scaling t=13 min).
-    /// N'est appelé que si <see cref="DebugHooks.BossDebug"/> est vrai.
+    /// Hook de debug « champion isolé ». Deux usages, volontairement distincts :
+    ///
+    /// <list type="bullet">
+    /// <item><c>--debug-boss</c> — <b>mesurer</b>. Équipe un loadout de test représentatif d'une fin
+    /// de run et spawne le boss final : c'est le protocole de mesure du TTK (GDD §20.6).</item>
+    /// <item><c>--debug-enemy=&lt;id&gt;</c> — <b>observer</b>. Spawne le champion demandé en laissant
+    /// le loadout de départ. Un loadout de fin de run tue un mid-boss en deux secondes et son aura
+    /// (Voile de Givre) recouvre l'arène : aucun de ses patterns n'est alors observable, ni à l'œil
+    /// ni en capture.</item>
+    /// </list>
+    ///
+    /// Les deux se combinent (<c>--debug-enemy=X --debug-boss</c>) pour mesurer le TTK d'un mid-boss.
     /// </summary>
     private void ApplyBossDebugHook()
     {
         var player = PlayerInstance;
         var inv = InventorySystem.Instance;
         if (player == null || inv == null) return;
+
+        if (DebugHooks.BossDebug)
+            EquipDebugTestLoadout(inv);
+
+        SpawnDebugChampion();
+    }
+
+    /// <summary>Loadout de test du protocole de mesure (cf. <see cref="ApplyBossDebugHook"/>).</summary>
+    private void EquipDebugTestLoadout(InventorySystem inv)
+    {
 
         // 1) Loadout calé sur ce qu'un joueur a RÉELLEMENT au boss, mesuré sur des runs complètes
         // (banc --auto-play, 2026-07-28) : niveau 66-84, armes L6-13, passifs L3-13, et surtout
@@ -305,19 +326,28 @@ public partial class GameManager : Node
             if (inv.CanFuse(f)) inv.ApplyFusion(f);
 
         inv.RefreshWeaponDamages();
+    }
 
-        // 2) Spawn immédiat du boss à son PV réel (même scaling temporel qu'à t=13 min).
-        var spawner = GetTree().GetFirstNodeInGroup(Constants.GroupEnemySpawner) as EnemySpawner;
-        if (spawner != null)
+    /// <summary>
+    /// Fait apparaître le champion visé, seul dans l'arène, avec le scaling de SA fenêtre de spawn.
+    /// </summary>
+    private void SpawnDebugChampion()
+    {
+        if (GetTree().GetFirstNodeInGroup(Constants.GroupEnemySpawner) is not EnemySpawner spawner)
         {
-            spawner.AmbientEnabled = false; // isole le boss : pas d'ennemis/XP parasites
-            spawner.DebugSpawnById("rusted_core", 13f);
-            GD.Print("[GameManager] --debug-boss : loadout de test équipé + rusted_core spawné isolé (t=13 min).");
+            GD.PrintErr("[GameManager] debug champion : EnemySpawner introuvable dans la scène.");
+            return;
         }
-        else
-        {
-            GD.PrintErr("[GameManager] --debug-boss : EnemySpawner introuvable dans la scène.");
-        }
+
+        // --debug-enemy=<id> cible un autre champion ; sa fenêtre de spawn réelle sert de temps
+        // de scaling, sans quoi un mid-boss (8 min) apparaîtrait avec les PV d'un t=13 min.
+        string targetId = DebugHooks.DebugEnemy ?? "rusted_core";
+        float  tMinutes = spawner.SpawnStartMinuteOf(targetId) ?? 13f;
+
+        spawner.AmbientEnabled = false;     // isole le champion : pas d'ennemis/XP parasites
+        spawner.DebugSpawnById(targetId, tMinutes);
+        GD.Print($"[GameManager] debug champion : {targetId} spawné isolé (t={tMinutes:0.#} min, "
+               + $"loadout de test {(DebugHooks.BossDebug ? "équipé" : "NON équipé")}).");
     }
 
     /// <summary>Appelé par EnemyBase.Die() (et les Die() surchargés) pour notifier la fin d'un ennemi.

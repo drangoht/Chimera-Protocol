@@ -106,7 +106,7 @@
       "xpValue": 80,
       "contactRadius": 32,
       "detectionRange": 9999,
-      "spawnStartMinute": 12,
+      "spawnStartMinute": 8,
       "spawnWeight": 1,
       "maxSimultaneous": 1,
       "minRespawnDelaySec": 180,
@@ -145,7 +145,10 @@
         "xpOrbColor": "#FFD700",
         "xpOrbSize": 14,
         "triggerWeaponChoiceScreen": true
-      }
+      },
+      "biomes": [
+        "sanctuaire"
+      ]
     },
     {
       "id": "master_sentinel",
@@ -158,7 +161,7 @@
       "xpValue": 120,
       "contactRadius": 36,
       "detectionRange": 9999,
-      "spawnStartMinute": 16,
+      "spawnStartMinute": 11,
       "spawnWeight": 1,
       "maxSimultaneous": 1,
       "minRespawnDelaySec": 180,
@@ -234,7 +237,93 @@
         "triggerWeaponChoiceScreen": true
       },
       "biomes": [
-        "aether",
+        "aether"
+      ]
+    },
+    {
+      "id": "molten_colossus",
+      "name": "Colosse en Fusion",
+      "role": "mini_boss",
+      "isMinisBoss": true,
+      "maxHp": 700,
+      "speed": 68,
+      "damagePerSecond": 22,
+      "xpValue": 200,
+      "contactRadius": 36,
+      "detectionRange": 9999,
+      "spawnStartMinute": 8,
+      "spawnWeight": 1,
+      "maxSimultaneous": 1,
+      "minRespawnDelaySec": 180,
+      "hpScalingPerMinute": 0.16,
+      "damageScalingPerMinute": 0.1,
+      "ai": {
+        "type": "charging_bruiser",
+        "description": "Mid-boss de la Fournaise. Marche lourde ponctuee de charges telegraphiees (0,8 s immobile) qui laissent un sillage de flaques de magma persistantes. La menace est le terrain qui se referme, pas la charge elle-meme. A la mort : gros orbe XP + ecran choix d'arme."
+      },
+      "onDeath": {
+        "xpOrbColor": "#FF6018",
+        "triggerWeaponChoiceScreen": true
+      },
+      "biomes": [
+        "fournaise"
+      ]
+    },
+    {
+      "id": "cryo_sentinel",
+      "name": "Sentinelle Cryo",
+      "role": "mini_boss",
+      "isMinisBoss": true,
+      "maxHp": 620,
+      "speed": 58,
+      "damagePerSecond": 16,
+      "xpValue": 200,
+      "contactRadius": 30,
+      "detectionRange": 9999,
+      "spawnStartMinute": 8,
+      "spawnWeight": 1,
+      "maxSimultaneous": 1,
+      "minRespawnDelaySec": 180,
+      "hpScalingPerMinute": 0.16,
+      "damageScalingPerMinute": 0.1,
+      "ai": {
+        "type": "cone_kiter",
+        "description": "Mid-boss du Givre. Garde ses distances (~250 px) et tire un cone de gel dirige toutes les 4,5 s : degats moderes mais ralentissement severe, plus des plaques de givre laissees dans l'axe. Se pare en sortant de l'axe, pas en reculant. A la mort : gros orbe XP + choix d'arme."
+      },
+      "onDeath": {
+        "xpOrbColor": "#78E1FF",
+        "triggerWeaponChoiceScreen": true
+      },
+      "biomes": [
+        "givre"
+      ]
+    },
+    {
+      "id": "neon_warden",
+      "name": "Gardien Neon",
+      "role": "mini_boss",
+      "isMinisBoss": true,
+      "maxHp": 800,
+      "speed": 88,
+      "damagePerSecond": 20,
+      "xpValue": 220,
+      "contactRadius": 32,
+      "detectionRange": 9999,
+      "spawnStartMinute": 8,
+      "spawnWeight": 1,
+      "maxSimultaneous": 1,
+      "minRespawnDelaySec": 180,
+      "hpScalingPerMinute": 0.16,
+      "damageScalingPerMinute": 0.1,
+      "ai": {
+        "type": "shielded_chaser",
+        "description": "Mid-boss du Secteur Neon. Un bouclier orbital couvre 230 deg de sa circonference et absorbe 80 % des degats qui le traversent ; il tourne lentement, il faut tourner autour du Gardien pour viser la breche. Invoque 3 renforts locaux toutes les 9 s. A la mort : gros orbe XP + choix d'arme."
+      },
+      "onDeath": {
+        "xpOrbColor": "#FF3ED2",
+        "triggerWeaponChoiceScreen": true
+      },
+      "biomes": [
         "neon"
       ]
     },
@@ -284,7 +373,9 @@
       },
       "colorPlaceholder": "rust_amber",
       "framesPath": "res://assets/sprites/enemies/sanctuary_marked_walker/sanctuary_marked_walker_frames.tres",
-      "biomes": ["sanctuaire"]
+      "biomes": [
+        "sanctuaire"
+      ]
     },
     {
       "id": "sanctuary_scout_drone",
@@ -309,7 +400,9 @@
       },
       "colorPlaceholder": "steel_blue",
       "framesPath": "res://assets/sprites/enemies/sanctuary_scout_drone/sanctuary_scout_drone_frames.tres",
-      "biomes": ["sanctuaire"]
+      "biomes": [
+        "sanctuaire"
+      ]
     },
     {
       "id": "sanctuary_walker_turret",
@@ -337,7 +430,9 @@
       },
       "colorPlaceholder": "rust_copper",
       "framesPath": "res://assets/sprites/enemies/sanctuary_walker_turret/sanctuary_walker_turret_frames.tres",
-      "biomes": ["sanctuaire"]
+      "biomes": [
+        "sanctuaire"
+      ]
     },
     {
       "id": "sanctuary_maintenance_golem",
@@ -360,7 +455,9 @@
       },
       "colorPlaceholder": "iron_grey",
       "framesPath": "res://assets/sprites/enemies/sanctuary_maintenance_golem/sanctuary_maintenance_golem_frames.tres",
-      "biomes": ["sanctuaire"]
+      "biomes": [
+        "sanctuaire"
+      ]
     },
     {
       "id": "aether_shard",
@@ -382,7 +479,9 @@
       },
       "colorPlaceholder": "violet_glow",
       "framesPath": "res://assets/sprites/enemies/aether_shard/aether_shard_frames.tres",
-      "biomes": ["aether"]
+      "biomes": [
+        "aether"
+      ]
     },
     {
       "id": "aether_drifting_wraith",
@@ -407,7 +506,9 @@
       },
       "colorPlaceholder": "aether_teal",
       "framesPath": "res://assets/sprites/enemies/aether_drifting_wraith/aether_drifting_wraith_frames.tres",
-      "biomes": ["aether"]
+      "biomes": [
+        "aether"
+      ]
     },
     {
       "id": "aether_spectral_watcher",
@@ -435,7 +536,9 @@
       },
       "colorPlaceholder": "violet_deep",
       "framesPath": "res://assets/sprites/enemies/aether_spectral_watcher/aether_spectral_watcher_frames.tres",
-      "biomes": ["aether"]
+      "biomes": [
+        "aether"
+      ]
     },
     {
       "id": "aether_golem",
@@ -458,7 +561,9 @@
       },
       "colorPlaceholder": "aether_white",
       "framesPath": "res://assets/sprites/enemies/aether_golem/aether_golem_frames.tres",
-      "biomes": ["aether"]
+      "biomes": [
+        "aether"
+      ]
     },
     {
       "id": "cinder_crawler",
@@ -480,7 +585,9 @@
       },
       "colorPlaceholder": "ember_orange",
       "framesPath": "res://assets/sprites/enemies/cinder_crawler/cinder_crawler_frames.tres",
-      "biomes": ["fournaise"]
+      "biomes": [
+        "fournaise"
+      ]
     },
     {
       "id": "volatile_spark",
@@ -505,7 +612,9 @@
       },
       "colorPlaceholder": "spark_yellow",
       "framesPath": "res://assets/sprites/enemies/volatile_spark/volatile_spark_frames.tres",
-      "biomes": ["fournaise"]
+      "biomes": [
+        "fournaise"
+      ]
     },
     {
       "id": "lava_spitter",
@@ -533,7 +642,9 @@
       },
       "colorPlaceholder": "magma_red",
       "framesPath": "res://assets/sprites/enemies/lava_spitter/lava_spitter_frames.tres",
-      "biomes": ["fournaise"]
+      "biomes": [
+        "fournaise"
+      ]
     },
     {
       "id": "magma_colossus",
@@ -556,7 +667,9 @@
       },
       "colorPlaceholder": "molten_black",
       "framesPath": "res://assets/sprites/enemies/magma_colossus/magma_colossus_frames.tres",
-      "biomes": ["fournaise"]
+      "biomes": [
+        "fournaise"
+      ]
     },
     {
       "id": "frost_crawler",
@@ -578,7 +691,9 @@
       },
       "colorPlaceholder": "frost_blue",
       "framesPath": "res://assets/sprites/enemies/frost_crawler/frost_crawler_frames.tres",
-      "biomes": ["givre"]
+      "biomes": [
+        "givre"
+      ]
     },
     {
       "id": "wandering_ice_shard",
@@ -603,7 +718,9 @@
       },
       "colorPlaceholder": "ice_white",
       "framesPath": "res://assets/sprites/enemies/wandering_ice_shard/wandering_ice_shard_frames.tres",
-      "biomes": ["givre"]
+      "biomes": [
+        "givre"
+      ]
     },
     {
       "id": "cryo_marksman",
@@ -631,7 +748,9 @@
       },
       "colorPlaceholder": "glacier_cyan",
       "framesPath": "res://assets/sprites/enemies/cryo_marksman/cryo_marksman_frames.tres",
-      "biomes": ["givre"]
+      "biomes": [
+        "givre"
+      ]
     },
     {
       "id": "ice_titan",
@@ -654,7 +773,9 @@
       },
       "colorPlaceholder": "deep_ice",
       "framesPath": "res://assets/sprites/enemies/ice_titan/ice_titan_frames.tres",
-      "biomes": ["givre"]
+      "biomes": [
+        "givre"
+      ]
     },
     {
       "id": "neon_security_drone",
@@ -676,7 +797,9 @@
       },
       "colorPlaceholder": "neon_magenta",
       "framesPath": "res://assets/sprites/enemies/neon_security_drone/neon_security_drone_frames.tres",
-      "biomes": ["neon"]
+      "biomes": [
+        "neon"
+      ]
     },
     {
       "id": "holographic_glitch",
@@ -701,7 +824,9 @@
       },
       "colorPlaceholder": "neon_glitch",
       "framesPath": "res://assets/sprites/enemies/holographic_glitch/holographic_glitch_frames.tres",
-      "biomes": ["neon"]
+      "biomes": [
+        "neon"
+      ]
     },
     {
       "id": "neon_laser_turret",
@@ -729,7 +854,9 @@
       },
       "colorPlaceholder": "neon_cyan",
       "framesPath": "res://assets/sprites/enemies/neon_laser_turret/neon_laser_turret_frames.tres",
-      "biomes": ["neon"]
+      "biomes": [
+        "neon"
+      ]
     },
     {
       "id": "synthetic_golem",
@@ -752,7 +879,9 @@
       },
       "colorPlaceholder": "neon_violet",
       "framesPath": "res://assets/sprites/enemies/synthetic_golem/synthetic_golem_frames.tres",
-      "biomes": ["neon"]
+      "biomes": [
+        "neon"
+      ]
     }
   ],
   "scalingNote": "hpScalingPerMinute / damageScalingPerMinute releves le 2026-06-29 pour durcir le mid/end game (les ennemis tardifs fondaient trop vite). stat = base x (1 + minutes x perMinute) x difficulte.",

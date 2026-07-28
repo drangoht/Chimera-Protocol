@@ -137,6 +137,33 @@ qui change de **phase** avec ses PV et d'**incarnation** avec le biome.
      relevé constaté à **271 DPS / 108,8 s** au lieu de 628 DPS / 46,9 s sur le même biome, sans
      aucune erreur console. Un DPS très bas dans un relevé est le symptôme à reconnaître.
 
+## Mid-boss de biome (`ChampionOverlay`, `MoltenColossus`, `CryoSentinel`, `NeonWarden`)
+Cf. GDD §32. Un mid-boss par niveau, avec une mécanique signature qui demande le réflexe **inverse**
+de l'incarnation finale du même biome (§29.2) — le vérifier avant d'en ajouter une.
+- **Ne JAMAIS dessiner un effet de champion dans le `_Draw` du champion lui-même.**
+  `EnemyBase.HitFlash` anime `Modulate` depuis `(5,5,5,1)` à chaque coup encaissé, et `Modulate` se
+  **propage à tout le sous-arbre**, `_Draw` compris : multipliées par 5, toutes les composantes
+  saturent et l'effet sort **blanc**. Mesuré en jeu : bouclier magenta rendu à (142,142,145), un gris
+  neutre. Le joueur tirant en continu, l'état flashé *est* l'état normal — la couleur disparaît
+  précisément quand elle sert. Passer par `ChampionOverlay` (parenté à la **racine**, suit son
+  propriétaire, se libère avec lui), même parti pris que `BossHazard`. `SelfModulate` ne sauve pas :
+  il ne s'applique pas au `_Draw`.
+- **Un calque hors arbre ne meurt pas avec son champion** : le `Die()` doit le `QueueFree()`
+  explicitement, sinon un bouclier (ou un télégraphe de cône) orphelin reste affiché pendant toute
+  l'animation de mort — ~1 s à mentir au joueur.
+- **Un champion doit CONTRASTER avec son biome, pas en reprendre la palette.** Erreur commise à la
+  1re passe : Colosse brun sur le sol brun de la Fournaise, Sentinelle bleue sur le sol bleu du
+  Givre — repérables à leur seule aura. Châssis nettement plus sombres que le sol, accents d'énergie
+  seuls en couleur vive.
+- **Valider un mid-boss en jeu** : `--debug-enemy=<id>` (spawn isolé, avec le scaling de SA fenêtre
+  de spawn, pas celle du boss). À ne pas combiner avec `--debug-boss` pour de l'**observation** : le
+  loadout de test tue le champion en 2 s et l'aura du Voile de Givre recouvre l'arène. Les deux
+  ensemble servent à **mesurer** un TTK. Capture : `tools/capture_midboss.py`.
+- **Un champion apparaît HORS CHAMP** (~800 px) et rejoint le joueur à sa propre vitesse (58 px/s
+  pour la Sentinelle, qui garde en plus ses distances à 250 px). Toute capture automatisée doit
+  attendre ~15 s avant de déclencher, sinon on photographie une arène vide et on conclut à tort que
+  le spawn ne marche pas (`WARMUP` dans `capture_midboss.py`).
+
 ## Fusions d'armes (`InventorySystem`, `LevelUpSystem`)
 - **Les fusions ne sont PAS dans la section `weapons` de `weapons.json`** : leurs stats sont posées en
   dur par leur classe C# (`_Ready`). Tout code qui parcourt `weapons` pour appliquer des stats les
