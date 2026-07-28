@@ -88,10 +88,17 @@ qui change de **phase** avec ses PV et d'**incarnation** avec le biome.
 - **`EnemyBase.TakeDamage` est `virtual`** uniquement pour ça : `RustedCore` l'override pour ignorer
   les PV pendant la surcharge **tout en appelant `HitFlash`**. Retirer le flash « pour faire propre »
   fait croire au joueur que ses armes ne touchent plus.
-- **Le HUD gèle en pause.** L'écran de fin met l'arbre en pause : le `_Process` du HUD ne tourne plus
-  et la barre de boss resterait posée par-dessus le titre « MORT EN SERVICE ». Elle est donc retirée
-  **depuis `RunStatsTracker.EndRun`** (`HUD.HideBossBar`), pas par une condition dans `_Process`.
-  Toute future info de HUD à masquer en fin de run doit suivre le même chemin.
+- **Le HUD passe AU-DESSUS des écrans qui mettent le jeu en pause, et il gèle avec eux.** Layers :
+  LevelUpScreen 10 · RunEndScreen 20 · AssimilationScreen 60 · Banner 85 · **HUD 95** · PauseScreen
+  100 · Options 110. Les widgets historiques du HUD vivent dans les coins, donc le recouvrement ne
+  se voyait pas ; la **barre de boss fait 520 px centrés en haut** et tombe pile sur le titre du
+  level-up (« Niveau 2 ! ») et de l'assimilation. Pire, le HUD étant gelé par `Paused`, il ne peut
+  pas se masquer lui-même une fois la modale ouverte. La barre est donc retirée **par l'appelant, au
+  moment où l'écran prend la main** : `RunStatsTracker.EndRun` et `ModalQueue.Advance` appellent
+  `HUD.HideBossBar()` ; le HUD la réaffiche seul quand le jeu repart. Tout futur widget de HUD large
+  ou centré doit suivre ce chemin — ou passer sur un `CanvasLayer` sous 10. `HideBossBar` ne
+  réinitialise pas la phase mémorisée, sans quoi chaque retour de level-up rejouerait le flash de
+  bascule.
 - **Les zones au sol (`BossHazard`) détectent le joueur par distance**, pas par `Area2D` : une Area2D
   ne signale l'entrée que sur mouvement physique (même piège qu'en tests headless) et imposerait
   d'accorder une couche de collision de plus. Elles se parentent à la **racine** — donc purgées par

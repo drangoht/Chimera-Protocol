@@ -235,12 +235,16 @@ public partial class HUD : CanvasLayer
 		_bossPhase.HorizontalAlignment = HorizontalAlignment.Center;
 	}
 
-	/// <summary>Retire la barre de boss immédiatement (fin de run — cf. RunStatsTracker.EndRun).</summary>
+	/// <summary>
+	/// Retire la barre de boss immédiatement. Appelée quand un écran qui passe DERRIÈRE le HUD
+	/// prend l'écran : fin de run (`RunStatsTracker.EndRun`) et écrans modaux (`ModalQueue`).
+	/// Ne réinitialise PAS la phase mémorisée : au retour au jeu, la barre doit revenir telle
+	/// quelle, sans rejouer son flash de bascule.
+	/// </summary>
 	public void HideBossBar()
 	{
 		if (_bossBox == null) return;
 		_bossBox.Visible = false;
-		_lastBossPhase   = -1;
 	}
 
 	/// <summary>
