@@ -13,16 +13,17 @@ cyborgs, robots), inspiré de Vampire Survivors et Everything is Crab.
 - **Avant de coder** dans un domaine (armes, ennemis, UI/focus, VFX, scènes, assets, tests headless) → lire **`docs/PITFALLS.md`** (pièges non-évidents Godot/C# + checklists de câblage). Y ajouter tout nouveau piège découvert.
 - **État d'implémentation détaillé & version courante → `docs/PROJECT_STATE.md`** (évolutif). Résumé de phase ci-dessous.
 
-**Phase actuelle : boss de fin — phases & incarnations (implémenté 2026-07-28, non publié).** Le
+**Phase actuelle : libre.** Dernière livraison majeure : **boss de fin — phases & incarnations**,
+publiée **1.20.0** le 2026-07-28. Le
 Noyau Rouillé reste la condition de victoire unique des 5 niveaux, mais combat désormais en **trois
 phases** (100→66→33→0 % de PV, cadences resserrées, adds en phase III, 1 s de surcharge télégraphiée
 à chaque bascule) et prend une **incarnation par biome** (éventail dirigé / translocation / nova de
 givre / flaques de magma / faisceaux rotatifs), avec sprite et nom propres. Nouvelle **barre de boss**
 au HUD (crans aux seuils, numéro de phase). Design → `docs/GDD.md` §29 ; logique pure →
 `BossPhases` + `BossIncarnations` (222 tests) ; pièges + checklist « ajouter une incarnation » →
-`docs/PITFALLS.md`. **Reste à faire** : mesure de TTK par un testeur humain (le bot de test kite mal)
-puis publication. Dernière livraison publiée : **1.19.0** (options enrichies + accès depuis la pause).
-Avant ça : **bande-son metal industriel & musique adaptative**, publiée **1.17.0** le 2026-07-27. Les 14 musiques sont **générées sur Suno** à partir des
+`docs/PITFALLS.md`. **Reste à faire** : mesure de TTK par un testeur humain (le bot de test kite mal).
+Avant ça : **options enrichies + accès depuis la pause**, publiées **1.19.0**, et les **paliers de
+menace** en **1.18.0**. Avant ça : **bande-son metal industriel & musique adaptative**, publiée **1.17.0** le 2026-07-27. Les 14 musiques sont **générées sur Suno** à partir des
 prompts de `docs/AUDIO_AI_PROMPTS.md` (source de vérité de la direction sonore) — metal industriel
 / synth-metal : guitares down-tuned et batterie live au premier plan, synthés et chœurs sans
 paroles au service du riff, 112 à 176 BPM. **Licence Suno : plan gratuit = usage non commercial**,

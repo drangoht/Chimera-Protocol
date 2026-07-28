@@ -5,7 +5,7 @@
 > `CLAUDE.md` ; le design complet dans `docs/GDD.md` ; la carte du code dans `/carte-projet`.
 
 - Pile technique : **Godot 4.7 .NET (C# / .NET 8 / GodotSharp)**
-- **Boss de fin — trois phases et cinq incarnations (✅ 2026-07-28, non publié).** Les cinq niveaux
+- **Boss de fin — trois phases et cinq incarnations (PUBLIÉ 1.20.0, 2026-07-28).** Les cinq niveaux
   se terminaient sur **exactement le même combat** : même sprite, même pattern, intensité plate du
   premier au dernier point de vie. Depuis les paliers de menace (1.18.0), le Néon est ~45 % plus dur
   que le Sanctuaire mais offre la même fin — le moment le plus mémorable d'une run était le seul qui
@@ -35,7 +35,7 @@
   bascules mesurées à 25,4 s et 51,0 s, 0 erreur console sur 55 s. **Mesure de TTK humaine restant à
   faire** — un bot qui kite en cercle ne représente pas le DPS d'un vrai build. Détail et chiffres :
   `docs/GDD.md` §29. **222 tests unitaires.**
-- **Options enrichies + accès depuis le menu pause (✅ 2026-07-28, non publié).** L'écran Options
+- **Options enrichies + accès depuis le menu pause (PUBLIÉ 1.19.0, 2026-07-28).** L'écran Options
   se limitait à 3 volumes, un toggle plein écran, un toggle secousses, difficulté, langue et le
   remap ZQSD — et n'était atteignable que depuis le menu principal : impossible de baisser la
   musique ou de passer en plein écran sans abandonner sa run. Il est désormais **découpé en cinq
@@ -53,7 +53,7 @@
   `gameplay/shake` → `gameplay/shake_intensity`). Piège documenté dans `docs/PITFALLS.md` : le mode
   « sans bordure » passe par `DisplayServer.WindowMode.Fullscreen` (mode natif Godot) et **jamais**
   par un flag `Borderless` posé à la main — sinon le retour en fenêtré est impossible.
-- **Paliers de menace — la difficulté suit les niveaux débloqués (✅ 2026-07-28, non publié).** Les 5
+- **Paliers de menace — la difficulté suit les niveaux débloqués (PUBLIÉ 1.18.0, 2026-07-28).** Les 5
   niveaux se débloquent en séquence et le Hub rend le joueur 2 à 3 fois plus fort entre-temps, mais
   **tous tournaient sur la même courbe** : le dernier niveau était plus facile que le premier, et
   farmer le Sanctuaire restait le meilleur ratio Échos/risque. Chaque niveau porte désormais un

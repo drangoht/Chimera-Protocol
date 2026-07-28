@@ -4,6 +4,72 @@
 > `release-manager`). Entrées en ordre décroissant (la plus récente en haut). Ton orienté
 > joueur, EN puis FR (audience itch surtout anglophone).
 
+## v1.20.0 — The Rusted Core fights back, and wears a different face in every biome (2026-07-28)
+
+**Changed — the final boss now has three phases**
+- The Rusted Core no longer fights the same way from full health to zero. At **66%** and **33%**
+  it **overloads**: it freezes, stops shooting, takes no damage for a second — then comes back
+  faster. Volleys, shockwaves and its signature move all tighten with every phase.
+- In the **final phase** it calls in reinforcements from the local wildlife, every 12 seconds.
+- The overload is your window: it can't hurt you while it's charging. Use it to reposition
+  before the pace goes up.
+- Its health and the time it takes to kill are unchanged — the fight is not longer, it's less flat.
+
+**Added — five incarnations, one per biome**
+- The Core has spread through all five zones and taken on what it found there. Same creature,
+  same victory condition, but each biome now has its own version, with its own sprite, name and
+  **one extra move**:
+  - **Sanctuary — The Rusted Core**: a tight **directed fan** of shots. Stop running in straight lines.
+  - **Aether — The Spectral Core**: **blinks** next to you and opens with a spiral volley. Kiting won't save you.
+  - **Frost — The Frostbound Core**: a **cryo nova** that slows you, and frost patches that stay on the ground.
+  - **Furnace — The Molten Core**: telegraphed **magma pools** that shrink the safe ground around you.
+  - **Neon — The Prismatic Core**: two to four **rotating beams**. Keep circling.
+
+**Added — boss health bar**
+- A dedicated bar at the top of the screen while a boss is alive: its name, notches carved at the
+  phase thresholds so you can see the switch coming, and the current phase.
+
+**Fixed**
+- Buttons on the character select, level select and Hub screens were sitting right on top of their
+  panel's inner border. They now have room to breathe.
+- The fourth character card (Vector) had its last line of text cut off. All four now fit on screen
+  without scrolling, in every language.
+
+---
+
+**Modifié — le boss de fin combat désormais en trois phases**
+- Le Noyau Rouillé ne se bat plus de la même façon du début à la fin. À **66 %** et **33 %** de sa
+  vie, il entre en **surcharge** : il se fige, cesse de tirer, n'encaisse plus rien pendant une
+  seconde — puis repart plus vite. Salves, ondes de choc et attaque signature se resserrent à
+  chaque phase.
+- En **dernière phase**, il appelle des renforts parmi la faune locale, toutes les 12 secondes.
+- La surcharge est votre fenêtre : il ne peut pas vous blesser pendant qu'il se recharge.
+  Profitez-en pour vous replacer avant que la cadence monte.
+- Ses points de vie et le temps nécessaire pour l'abattre n'ont pas changé — le combat n'est pas
+  plus long, il est moins plat.
+
+**Ajouté — cinq incarnations, une par biome**
+- Le Noyau s'est propagé dans les cinq zones et a assimilé ce qu'il y a trouvé. Même créature,
+  même condition de victoire, mais chaque biome a maintenant sa version, avec son sprite, son nom
+  et **une attaque en plus** :
+  - **Sanctuaire — Le Noyau Rouillé** : un **éventail dirigé** et resserré. Fini les lignes droites.
+  - **Aether — Le Noyau Spectral** : il **se téléporte** près de vous et enchaîne sur une salve en spirale. Le kiting ne suffit plus.
+  - **Givre — Le Noyau de Givre** : une **nova cryogénique** qui vous ralentit, et des plaques de givre qui restent au sol.
+  - **Fournaise — Le Noyau en Fusion** : des **flaques de magma** télégraphiées qui réduisent le terrain sûr.
+  - **Néon — Le Noyau Prismatique** : deux à quatre **faisceaux rotatifs**. Tournez autour, sans vous arrêter.
+
+**Ajouté — barre de vie du boss**
+- Une barre dédiée en haut de l'écran tant qu'un boss est vivant : son nom, des crans gravés aux
+  seuils de phase pour voir venir la bascule, et la phase en cours.
+
+**Corrigé**
+- Sur les écrans de choix du personnage, de choix du niveau et du Hub, les boutons étaient posés
+  sur la bordure intérieure de leur cadre. Ils respirent enfin.
+- La quatrième carte de personnage (Vecteur) avait sa dernière ligne coupée. Les quatre tiennent
+  désormais à l'écran sans défilement, dans toutes les langues.
+
+---
+
 ## v1.19.0 — Settings worth opening, and reachable mid-run (2026-07-28)
 
 **Added — the options screen you actually expected**
