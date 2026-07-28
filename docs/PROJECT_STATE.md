@@ -5,6 +5,36 @@
 > `CLAUDE.md` ; le design complet dans `docs/GDD.md` ; la carte du code dans `/carte-projet`.
 
 - Pile technique : **Godot 4.7 .NET (C# / .NET 8 / GodotSharp)**
+- **Boss de fin — trois phases et cinq incarnations (✅ 2026-07-28, non publié).** Les cinq niveaux
+  se terminaient sur **exactement le même combat** : même sprite, même pattern, intensité plate du
+  premier au dernier point de vie. Depuis les paliers de menace (1.18.0), le Néon est ~45 % plus dur
+  que le Sanctuaire mais offre la même fin — le moment le plus mémorable d'une run était le seul qui
+  ne changeait jamais. Le Noyau Rouillé **reste l'unique condition de victoire** (groupe
+  `rusted_core`, `onDeath.endsRunVictory`, verrou `EXPANSION_PLAN.md` §B.3 préservé) mais gagne deux
+  couches. **(1) Trois phases** (100→66→33→0 % de PV, logique pure `BossPhases`, 25 tests) qui
+  resserrent salves (2,00 → 1,20 s), ondes de choc (3,50 → 2,20 s), cadence de la signature (×1,00 →
+  ×1,70) et vitesse (×1,00 → ×1,18) ; la phase III **invoque 4 adds** de la faune locale toutes les
+  12 s via `EnemySpawner.SummonAdds`, plafonnés par le **cap simultané global** (le boss ne peut pas
+  faire exploser la population). Chaque bascule ouvre **1 s de surcharge** télégraphiée : le boss
+  s'immobilise, cesse de tirer, **n'inflige plus de contact** et **ne perd plus de PV** (le HitFlash
+  est conservé — sans lui le joueur croit ses armes cassées), puis repart sur une onde de choc.
+  **(2) Cinq incarnations** (`BossIncarnations`, 12 tests) résolues depuis le biome joué, chacune
+  avec une mécanique signature : **éventail dirigé** (Sanctuaire, punit la ligne droite),
+  **translocation** + salve spiralée (Aether, casse le kiting), **nova cryogénique** + plaques de
+  givre au sol (Givre, punit l'immobilité), **flaques de magma** télégraphiées 0,7 s (Fournaise,
+  réduit l'espace sûr), **2 à 4 faisceaux rotatifs** (Néon, impose la rotation). Les cinq partagent
+  PV, TTK, socle d'attaques et mort — un joueur qui a appris le boss du Sanctuaire a *une* chose de
+  plus à gérer, pas un boss à réapprendre. Sprites : les 4 variantes sont le **même dessin sous une
+  autre palette** (`tools/generate_boss_sprites.py`, ombrage toujours dérivé par `pseudo3d_lib`),
+  ce qui garantit visuellement qu'il s'agit de la même entité. Nouveau **HUD : barre de boss** (nom
+  localisé, crans gravés aux seuils 66/33 %, numéro de phase en chiffres romains, flash à la
+  bascule) — sans elle les phases sont invisibles. Nouvelles briques : `BossHazard` (zones au sol
+  persistantes magma/givre, détection par distance et non `Area2D`, télégraphe avant armement),
+  `Player.ApplyChill` (ralentissement environnemental, multiplicatif et séparé des greffes et de la
+  Célérité), flag de debug **`--invuln`**. **Playtest** (`--debug-boss --invuln`, 5 biomes) :
+  bascules mesurées à 25,4 s et 51,0 s, 0 erreur console sur 55 s. **Mesure de TTK humaine restant à
+  faire** — un bot qui kite en cercle ne représente pas le DPS d'un vrai build. Détail et chiffres :
+  `docs/GDD.md` §29. **222 tests unitaires.**
 - **Options enrichies + accès depuis le menu pause (✅ 2026-07-28, non publié).** L'écran Options
   se limitait à 3 volumes, un toggle plein écran, un toggle secousses, difficulté, langue et le
   remap ZQSD — et n'était atteignable que depuis le menu principal : impossible de baisser la

@@ -30,7 +30,7 @@ data/              JSON de tuning (modifiable sans recompiler) — voir §Data
 localization/      ui.csv (source) → ui.{en,fr,es}.translation ; clé via Loc.T("CLÉ")
 assets/            Raw (sprites PNG 32×32, audio OGG/WAV, themes)
 tools/             Générateurs de sprites/audio + captures + release — voir §Outils
-tests/             xUnit — ChimeraProtocol.Tests.csproj (184 tests). `dotnet test tests/...`
+tests/             xUnit — ChimeraProtocol.Tests.csproj (222 tests). `dotnet test tests/...`
 docs/              GDD.md + briefs/plans — voir §Docs
 ```
 
@@ -56,7 +56,13 @@ docs/DESIGN_ASSIMILATION.md §11-21) · **ChallengeTable** (Défis/succès : par
 `ChallengeContext` fin de run, `IsMet`/`NewlyCompleted` ; cf. docs/DESIGN_CHALLENGES.md) ·
 **`MusicIntensity`** (musique adaptative : `Compute` = intensité 0-1 depuis ennemis/temps/PV,
 `Smooth` = lissage asymétrique montée/descente, `GainDb(MusicStem, …)` = niveau de chaque couche ;
-enum `MusicStem` Bed/Pulse/Lead/Boss). Les nœuds délèguent ici (SRP).
+enum `MusicStem` Bed/Pulse/Lead/Boss) ·
+**`BossPhases`** (boss de fin : `PhaseAt`/`Advance` = phase depuis le ratio de PV, progression
+**irréversible** ; `BurstInterval`/`ShockInterval`/`SignatureRate`/`SpeedMult` par phase ;
+`TransitionSeconds`, `AddsPerWave`, `RomanNumeral` ; cf. GDD §29.3) ·
+**`BossIncarnations`** (les 5 incarnations du boss — `For(biomeId)` → `BossIncarnation` {Id, NameKey,
+`BossSignature`, période, teinte, FramesPath} ; repli sur la souche si biome inconnu ; cf. GDD §29.2).
+Les nœuds délèguent ici (SRP).
 
 ## §Systems — `src/Systems/`
 - Spawn : `EnemySpawner` (+ `EnemySpawnData`), `PowerUpSpawner` (+ `PowerUp`), `MagnetSpawner`, `AetherCoreSpawner`
@@ -116,7 +122,14 @@ Fusions : `FusionBlade`, `RailOvercharged`, `OrbitalSwarm`, `OverloadAegis`,
 - Player : `Player` (+ `PlayerStats`, + **`GraftManager`** : applique les effets de greffe — stat mods avec retrait exact, mini-essaims orbitants/tourelle/thorns/onde en `_Process`, teinte additive `SelfModulate`, + **props de silhouette** Phase B `BuildPropFor`/`UpdateProps`/`Shade` : carapace/servos/œil/onde/proue de charge/cœur de ruche ancrés au corps, miroir via `Player.FacingLeft` ; le dash vit dans `Player` : `EnableDash`/`DisableDash`, `GraftSpeedMultiplier`, `HealFlat`, `SetGraftTint`, `FacingLeft`, `IsDashing`)
 - Enemies : `EnemyBase` (data-driven, `SetSpriteFrames`, **`ApplyElite`** — affixes d'élite), `EliteAura` (halo VFX), `EnemyBullet`, `CorruptedDrone`, `CorruptedSentinel`, `RustSwarm`, `RustStalker`
 - MiniBoss : `AetherRevenant`, `MasterSentinel` · Boss : `GraftedColossus` (48×48, `Die()` custom)
-- Environment : `AetherCore`, `RustedCore`, `AetherGeyser`, `HpOrb`, `XpOrb`, `MagnetPickup`, `PowerUpPickup`
+- **Boss de fin** (`src/Entities/Boss/`) : **`RustedCore`** (condition de victoire des 5 niveaux —
+  3 phases + 1 incarnation par biome ; override `TakeDamage` pour la surcharge de bascule ;
+  `DisplayName`/`HpRatio`/`Phase`/`IsSurcharging` lus par la barre de boss du HUD ; signatures dans
+  `FireSignature`) · **`BossHazard`** (zones au sol persistantes `Magma`/`Frost`, construites en
+  code, détection par distance, `armDelay` de télégraphe). Logique pure → `BossPhases` +
+  `BossIncarnations` (§Rules). Sprites des 5 incarnations → `tools/generate_boss_sprites.py`
+  (`CORE_VARIANTS`). Pièges + checklist « ajouter une incarnation » → `docs/PITFALLS.md`.
+- Environment : `AetherCore`, `AetherGeyser`, `HpOrb`, `XpOrb`, `MagnetPickup`, `PowerUpPickup`
 
 ## §Data — `data/*.json` (tuning sans recompiler)
 `weapons.json` (5 niveaux/arme) · `enemies.json` + `enemies_biome_expansion.json` ·
@@ -177,6 +190,7 @@ instrumentale, progressions, architecture en stems, mixage, bouclage) ·
 - **Arme** (8 pts) : `weapons.json` · `levelup_config.json` · `InventorySystem` (paths+stats) · `LevelUpSystem.AllWeaponIds` · `Codex` · icône `ui_icon_*.png`+`.import` · clés `WPN_*` EN/FR/ES.
 - **Ennemi basique** (variante d'archétype, PAS de scène) : `enemies.json` (`ai.type` ∈ straight_chase/erratic_chase/ranged_kiter/slow_hunter, `framesPath` optionnel) · `Codex.Enemies` · clés `ENEMY_*` EN/FR/ES · sprite `.tres`/`.png`. Vrai nouveau comportement = scène + sous-classe.
 - **Greffe (Assimilation)** : `grafts.json` (entrée `grafts[]` : gauge 1:1, sourceAiType, rarity, tint, effects/statMods) · effet appliqué dans `GraftManager` (Setup*/Update* + retrait via RebuildBehaviors/ReverseStatMods ; stat sur `PlayerStats` avec delta réversible et hardcaps `StatCaps`) · clés loc `GRAFT_<ID>_NAME/_DESC` EN/FR/ES (fallback FR du json via `TFallback`) · icône `assets/sprites/grafts/<id>_icon.png` (optionnelle, fallback carré teinté). Routage kill→jauge = pur (`GraftTable.RouteKill`, testé). Nouveau comportement moteur (dash-like lisant l'entrée) = côté `Player`, pas GraftManager.
+- **Incarnation de boss de fin** (5 pts) : `BossIncarnations.All` (biome, `NameKey`, `BossSignature`, période de base, teinte, `FramesPath`) · branche dans `RustedCore.FireSignature` · clé `BOSS_<ID>_NAME` EN/FR/ES · palette dans `CORE_VARIANTS` de `tools/generate_boss_sprites.py` puis `--import` Godot · aucun ajout dans `enemies.json` (les 5 partagent la def `rusted_core`). Cf. GDD §29 + `docs/PITFALLS.md`.
 - **Personnage jouable** (5 pts) : `Characters.All` (id, stats, `StartingWeaponId`, `Tint`, `FramesPath`) · sprite dédié via `tools/generate_character_sprites.py <id>` (+ `.tres` + import Godot) · clés `CHAR_<ID>_NAME/TAG/DESC` EN/FR/ES (l'écran lit les clés, pas les champs C#) · `GameSettings.SignatureWeapons` si l'arme de base doit être « découverte » d'office · aucune méca moteur (le pipeline `GameManager`/`InventorySystem` gère toute arme de départ).
 
 ## Commandes utiles
@@ -186,5 +200,6 @@ instrumentale, progressions, architecture en stems, mixage, bouclage) ·
 - Forcer un biome (tests/captures) : flag `--biome=<id>`
 - Forcer tous les ennemis basiques en élite (test des affixes) : flag `--force-elites` (`DebugHooks.ForceElites`)
 - Forcer l'équipement d'une (ou des trois) fusion(s) de greffes sans grinder les jauges : flag `--force-fusion=<id|all>` (`DebugHooks.ForcedFusion`, équipe d'abord les 2 greffes prérequises). 3 fusions : `fusion_charge_blindee`, `fusion_ruche_tourelles`, `fusion_nova_rodeur` (Frappe Nova = dash-blink + nova ; partage `erratic_servos` avec Charge Blindée → exclusives)
+- Rendre le joueur invulnérable pour observer un combat long (phases du boss, VFX) : flag `--invuln` (`DebugHooks.Invulnerable`) — à combiner avec `--debug-boss`, qui trace aussi chaque bascule de phase
 - Forcer la langue de l'UI pour une session sans toucher à `user://settings.cfg` (captures/trailer) : flag `--lang=<en|fr|es>` (`DebugHooks.ForcedLanguage` → `GameSettings.ApplyLanguageOverride`)
 - Forcer l'équipement d'une (ou des 5) greffe(s) de base pour valider les props de silhouette : flag `--force-graft=<id|all>` (`DebugHooks.ForcedGraft`) ; capture par PID via `tools/capture_graft_silhouette.py`

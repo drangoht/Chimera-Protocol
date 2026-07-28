@@ -270,19 +270,19 @@ def draw_rusted_core(img, core=1.0, stomp=0, charge=0.0, alpha=255, blast=0.0, b
                 if px[x,y][3] > 0 and rnd.random() < broken * ((y-body_top)/40.0):
                     px[x,y] = (0,0,0,0)
 
-def gen_rusted_core(out):
+def gen_rusted_core(out, prefix="rusted_core"):
     n = {}
     # idle : 4 frames (noyau qui pulse)
     for i in range(4):
         img = canvas()
         draw_rusted_core(img, core=0.6+0.4*math.sin(i*1.6))
-        save(img, f"{out}/rusted_core_idle_{i+1:02d}.png")
+        save(img, f"{out}/{prefix}_idle_{i+1:02d}.png")
     n["idle"] = 4
     # move : 6 frames (martelement)
     for i in range(6):
         img = canvas()
         draw_rusted_core(img, core=0.8, stomp=[0,1,1,0,1,1][i])
-        save(img, f"{out}/rusted_core_move_{i+1:02d}.png")
+        save(img, f"{out}/{prefix}_move_{i+1:02d}.png")
     n["move"] = 6
     # attack : 6 frames (charge du noyau puis decharge radiale)
     ch = [0.2,0.5,0.8,1.0,0.5,0.1]
@@ -291,7 +291,7 @@ def gen_rusted_core(out):
         draw_rusted_core(img, core=1.0, charge=ch[i])
         if i == 3:  # flash de decharge
             glow(img, 32, 34, 30, C_CORE_B, 0.5)
-        save(img, f"{out}/rusted_core_attack_{i+1:02d}.png")
+        save(img, f"{out}/{prefix}_attack_{i+1:02d}.png")
     n["attack"] = 6
     # death : 14 frames (surcharge -> explosion -> effritement)
     for i in range(14):
@@ -307,7 +307,7 @@ def gen_rusted_core(out):
             x = 32 + rnd.randint(-20,20); y = 34 + rnd.randint(-18,18)
             col = C_CORE_B if rnd.random()<0.5 else C_CRACK
             put(img, x, y, (col[0],col[1],col[2],int(220*(1-d))))
-        save(img, f"{out}/rusted_core_death_{i+1:02d}.png")
+        save(img, f"{out}/{prefix}_death_{i+1:02d}.png")
     n["death"] = 14
     return n
 
@@ -348,20 +348,81 @@ def write_tres(folder, prefix, counts, speeds):
         f.write("\n".join(lines) + "\n")
     print("  .tres ecrit :", path)
 
+# ================================================================ INCARNATIONS DE BIOME
+# Le Noyau Rouille prend une forme differente dans chaque biome (cf. docs/GDD.md section 29 et
+# src/Core/Rules/BossIncarnations.cs, source de verite des chemins de .tres attendus par le jeu).
+# On ne redessine PAS le titan : on rejoue le meme dessin avec une autre palette, ce qui garantit
+# que les cinq incarnations restent la meme entite (silhouette identique, matiere assimilee
+# differente). L'ombrage pseudo-3D reste derive par pseudo3d_lib (jamais de couleur plate ad hoc,
+# cf. CLAUDE.md) : seules les 8 couleurs de base changent.
+#
+# Ordre des cles : DARK, RUST, RUST_L, METAL, CORE, CORE_B, CRACK, EYE.
+CORE_VARIANTS = {
+    # Aether — spectre violet, metal froid, noyau ultraviolet.
+    "spectral": ((28, 20, 44), (72, 52, 110), (110, 84, 160), (76, 70, 104),
+                 (170, 90, 255), (220, 170, 255), (150, 80, 255), (200, 140, 255)),
+    # Givre — plaques givrees, noyau bleu glacier.
+    "frost":    ((20, 34, 46), (52, 84, 110), (86, 132, 162), (74, 96, 110),
+                 (90, 200, 255), (200, 245, 255), (120, 220, 255), (160, 230, 255)),
+    # Fournaise — rouille portee au rouge, noyau en fusion sature.
+    "molten":   ((48, 18, 12), (120, 42, 22), (176, 74, 34), (96, 62, 52),
+                 (255, 90, 20), (255, 200, 80), (255, 60, 20), (255, 150, 40)),
+    # Neon — chrome violace, noyau magenta et accents cyan (overclock).
+    "prism":    ((30, 16, 42), (92, 34, 96), (140, 58, 146), (80, 66, 102),
+                 (255, 60, 220), (140, 255, 255), (255, 80, 200), (120, 255, 240)),
+}
+
+_CORE_PALETTE_KEYS = ["C_DARK", "C_RUST", "C_RUST_L", "C_METAL",
+                      "C_CORE", "C_CORE_B", "C_CRACK", "C_EYE"]
+
+def set_core_palette(colors):
+    """Reassigne la palette du Noyau et met a jour la liste des couleurs 'energie'.
+
+    `_CORE_COLORS` est mutee EN PLACE : wrap_save() en a capture la reference au chargement du
+    module, une reaffectation ne serait pas vue par le shader d'ombrage (les accents lumineux
+    seraient assombris comme du metal).
+    """
+    g = globals()
+    for key, col in zip(_CORE_PALETTE_KEYS, colors):
+        g[key] = col
+    energy = [g["C_CORE"], g["C_CORE_B"], g["C_CRACK"], g["C_EYE"]]
+    del _CORE_COLORS[4:]          # garde les accents du Revenant (R_*), remplace ceux du Noyau
+    _CORE_COLORS.extend(energy)
+
+_CORE_SPEEDS = {"idle": 4.0, "move": 7.0, "attack": 12.0, "death": 13.0}
+
 # ================================================================ main
 def main():
+    only = None
+    for arg in sys.argv[1:]:
+        if arg.startswith("--only="):
+            only = arg.split("=", 1)[1]
+
     rev_dir  = os.path.join(ROOT, "assets", "sprites", "enemies", "aether_revenant")
     core_dir = os.path.join(ROOT, "assets", "sprites", "enemies", "rusted_core")
 
-    print("Revenant d'Aether...")
-    rc = gen_revenant(rev_dir)
-    write_tres("aether_revenant", "aether_revenant", rc,
-               {"idle": 5.0, "move": 9.0, "attack": 11.0, "death": 12.0})
+    if only is None:
+        print("Revenant d'Aether...")
+        rc = gen_revenant(rev_dir)
+        write_tres("aether_revenant", "aether_revenant", rc,
+                   {"idle": 5.0, "move": 9.0, "attack": 11.0, "death": 12.0})
 
-    print("Le Noyau Rouille...")
-    cc = gen_rusted_core(core_dir)
-    write_tres("rusted_core", "rusted_core", cc,
-               {"idle": 4.0, "move": 7.0, "attack": 12.0, "death": 13.0})
+    souche = (C_DARK, C_RUST, C_RUST_L, C_METAL, C_CORE, C_CORE_B, C_CRACK, C_EYE)
+
+    if only in (None, "rusted_core"):
+        print("Le Noyau Rouille (souche)...")
+        cc = gen_rusted_core(core_dir)
+        write_tres("rusted_core", "rusted_core", cc, _CORE_SPEEDS)
+
+    for variant, colors in CORE_VARIANTS.items():
+        if only not in (None, variant):
+            continue
+        print(f"Le Noyau Rouille — incarnation {variant}...")
+        set_core_palette(colors)
+        prefix = f"rusted_core_{variant}"
+        cc = gen_rusted_core(core_dir, prefix=prefix)
+        write_tres("rusted_core", prefix, cc, _CORE_SPEEDS)
+        set_core_palette(souche)   # ne jamais laisser fuiter une palette sur la variante suivante
 
     print("Termine.")
 

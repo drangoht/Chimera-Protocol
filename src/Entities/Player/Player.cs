@@ -246,6 +246,35 @@ public partial class Player : CharacterBody2D
         }
     }
 
+    // ── Ralentissement environnemental (nova et plaques du Noyau de Givre, cf. GDD §29) ──
+    // Volontairement séparé de GraftSpeedMultiplier et de SpeedMultiplier (Célérité) : les trois
+    // sources se multiplient sans jamais s'écraser, et un ralentissement qui expire ne peut pas
+    // annuler un bonus de greffe posé entre-temps.
+    private float _chillMult = 1f;
+    private float _chillTime = 0f;
+
+    /// <summary>Multiplicateur de vitesse dû aux zones de froid (1 = aucun ralentissement).</summary>
+    public float ChillMultiplier => _chillMult;
+
+    /// <summary>
+    /// Ralentit le joueur pendant <paramref name="duration"/> secondes. Deux sources qui se
+    /// chevauchent ne s'additionnent pas : on garde le ralentissement le PLUS FORT et on rafraîchit
+    /// la durée — rester dans une nappe de plaques de givre ne doit pas immobiliser le joueur.
+    /// </summary>
+    public void ApplyChill(float mult, float duration)
+    {
+        mult = Mathf.Clamp(mult, 0.35f, 1f);   // plancher : jamais cloué sur place
+        if (mult < _chillMult || _chillTime <= 0f) _chillMult = mult;
+        _chillTime = Mathf.Max(_chillTime, duration);
+    }
+
+    private void UpdateChill(float dt)
+    {
+        if (_chillTime <= 0f) return;
+        _chillTime -= dt;
+        if (_chillTime <= 0f) { _chillTime = 0f; _chillMult = 1f; }
+    }
+
     private void UpdateBuffs(float dt)
     {
         if (_buffTime.Count > 0)
@@ -336,6 +365,7 @@ public partial class Player : CharacterBody2D
         if (_invulnTimer > 0f) _invulnTimer -= (float)delta;
         UpdateDashTimers((float)delta);
         UpdateBuffs((float)delta);
+        UpdateChill((float)delta);
         UpdateHpRegen(delta);
 
         var direction = Input.GetVector(InputRemap.Left, InputRemap.Right, InputRemap.Up, InputRemap.Down);
@@ -347,7 +377,7 @@ public partial class Player : CharacterBody2D
         if (_dashActiveLeft > 0f)
             Velocity = _dashVel; // override en burst (ne passe pas par MaxSpeed)
         else
-            Velocity = direction.Normalized() * Stats.Speed * SpeedMultiplier * GraftSpeedMultiplier;
+            Velocity = direction.Normalized() * Stats.Speed * SpeedMultiplier * GraftSpeedMultiplier * _chillMult;
 
         MoveAndSlide();
         ClampToArena();
@@ -617,6 +647,8 @@ public partial class Player : CharacterBody2D
     public void TakeDamage(float amount)
     {
         if (_isDead) return;
+        // Hook --invuln (debug/validation visuelle uniquement, cf. DebugHooks.Invulnerable).
+        if (DebugHooks.Invulnerable) return;
         // I-frames de dash (greffe Servos Erratiques) : invulnérabilité pendant la ruade.
         if (_dashIframeLeft > 0f) return;
         // Plaque Adaptative (consommable meta damage_absorb) : absorbe totalement les premiers coups.

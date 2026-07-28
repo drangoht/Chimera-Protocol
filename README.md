@@ -89,6 +89,7 @@ d'UI ne se coupent plus à l'ouverture d'une popup (level-up, pause, Assimilatio
 | **Expansion P4 — power-ups temporaires** | ✅ Livré | 4 buffs ramassables à durée limitée : **Surcadence** (cadence ×1.6), **Furie** (+dégâts), **Égide** (invulnérabilité), **Célérité** (vitesse) ; apparition programmée, indicateur HUD de buff actif. Aucun power-creep permanent |
 | **Expansion P5 — ennemis & boss par biome** | ✅ Livré | Socle biome-aware exploité : le **mid-boss varie selon le biome** (Revenant en Aether/Néon, Colosse ailleurs) |
 | **Refonte fin de niveau** | ✅ Livré | **Survie sans fin** : à la fin du temps imparti la difficulté **escalade brutalement** (vagues + mini-boss + **boss en boucle**) ; **battre le boss = niveau TERMINÉ** (débloque le suivant) mais la run **continue** ; la run finit à la **mort**. **Déblocage progressif** des niveaux (Sanctuaire → Aether → Givre → Fournaise → Néon). **High score** = temps survécu max par niveau, **avec la difficulté** du record. **Arsenal à découverte** : armes non trouvées masquées **« ??? »** (sauf armes de signature). Bouton **« Tout réinitialiser »** dans les Options (Échos + progression) |
+| **Boss de fin — phases & incarnations** | ✅ Livré | Le Noyau Rouillé combat en **3 phases** (100→66→33 % de PV : salves, ondes et signature qui se resserrent, **adds** en phase III, **1 s de surcharge** invulnérable et télégraphiée à chaque bascule) et prend une **incarnation par biome** — éventail dirigé (Sanctuaire), translocation (Aether), nova de givre (Givre), flaques de magma (Fournaise), faisceaux rotatifs (Néon) — avec sprite et nom propres. Nouvelle **barre de boss** au HUD (crans aux seuils, numéro de phase). PV et TTK inchangés |
 | **Fix scroll Codex** | ✅ Livré | Les écrans **Bestiaire** et **Arsenal** ne défilaient pas au clavier/manette (rangées non focalisables → le focus Godot ne scrollait pas) : `CodexScreenBase` pilote désormais le `ScrollContainer` à la main sur `ui_up`/`ui_down` (+ Page Up/Down) dans `_UnhandledInput` |
 
 ---
@@ -117,10 +118,10 @@ d'UI ne se coupent plus à l'ouverture d'une popup (level-up, pause, Assimilatio
 | **Revenant d'Aether** *(mini-boss mi-temps)* | Poursuite rapide + ruades, aura violette — drop arme | 550 | 180 🟣 | dès 7:00 |
 | Colosse Greffé | Bruiser lent, dégâts lourds + drop Noyau | 200 | 60 🟡 | dès 9:00 |
 | **Rôdeur de Rouille** *(mini-boss)* | Araignée 64×64, très résistant — drop arme | 300 | 80 🟡 | dès 12:00 |
-| **Le Noyau Rouillé** *(BOSS DE FIN)* | Salves radiales (16 proj.) + ondes de choc — 3 Noyaux, fin de run | 18000¹ | 500 🟡 | dès 13:00 |
+| **Le Noyau Rouillé** *(BOSS DE FIN)* | Salves radiales (16 proj.) + ondes de choc, **3 phases** et **1 incarnation par biome** — 3 Noyaux, niveau terminé | 12000¹ | 500 🟡 | dès 13:00 |
 | **Sentinelle Maîtresse** *(mini-boss)* | Double tir ±12°, kiter — drop arme | 450 | 120 🟡 | dès 16:00 |
 
-> ¹ **PV de base.** L'`EnemySpawner` applique un scaling temporel `PV = base × (1 + t_min × hpScaling) × difficulté` (boss `hpScaling = 0,06`). Le Noyau Rouillé arrivant à 13 min, son PV effectif est **≈32 000 en Normal** (≈25 600 Facile / ≈41 650 Difficile). Idem pour les autres ennemis selon leur heure d'apparition (scalings relevés le 2026-06-29 pour durcir le mid/end).
+> ¹ **PV de base.** L'`EnemySpawner` applique un scaling temporel `PV = base × (1 + t_min × hpScaling) × difficulté` (boss `hpScaling = 0,06`). Le Noyau Rouillé arrivant à 13 min, son PV effectif est **≈21 400 en Normal** (≈17 100 Facile / ≈27 800 Difficile). Les **phases ne changent pas ses PV** : elles redistribuent l'intensité du combat (cf. `docs/GDD.md` §29). Idem pour les autres ennemis selon leur heure d'apparition (scalings relevés le 2026-06-29 pour durcir le mid/end).
 
 ### Armes & passifs (10 cartes + fusions)
 

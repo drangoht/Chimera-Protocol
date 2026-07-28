@@ -2041,3 +2041,107 @@ plutôt que sur le niveau joué. Rejeté : c'est du *rubber banding*. Acheter un
 rendrait mécaniquement le jeu plus dur, annulant la récompense — le joueur paierait pour ne rien
 gagner. Le palier par niveau garde la relation lisible « niveau plus avancé = plus dur = paie plus »,
 et laisse la puissance méta se ressentir pleinement quand on rejoue un niveau déjà maîtrisé.
+
+---
+
+## 29. Boss de fin — phases et incarnations par biome (conçu 2026-07-28)
+
+> Répond au brief §20.5 (« mécanique de PHASES », resté non implémenté) et au trou d'endgame ouvert
+> par §28 : depuis les paliers de menace, le Néon est ~45 % plus dur que le Sanctuaire mais se
+> termine sur **exactement le même combat**. Les valeurs runtime restent dans `data/enemies.json` ;
+> la logique de phase est pure et testée (`src/Core/Rules/BossPhases.cs`).
+
+### 29.1 Le problème
+
+Le Noyau Rouillé est la condition de victoire des **cinq** niveaux, avec le même sprite, le même
+pattern et la même durée. Deux conséquences :
+
+- **Pas de récompense de progression.** Le joueur qui débloque le Néon après ~10 h de jeu affronte
+  le boss qu'il a déjà vaincu quatre fois. Le moment le plus mémorable d'une run est le seul qui ne
+  change jamais.
+- **Un sac à PV plat.** Sur les ~28 s de TTK visées (§20.2), l'intensité est constante du premier au
+  dernier point de vie : aucune montée, aucun pic, aucune fenêtre de respiration.
+
+### 29.2 Principe : une entité, cinq incarnations
+
+Le Noyau Rouillé **reste l'unique condition de victoire** — on ne casse ni le verrou de
+`docs/EXPANSION_PLAN.md` §B.3 (« `rusted_core` reste le final universel »), ni le groupe
+`rusted_core`, ni `onDeath.endsRunVictory`. Ce qui change est **ce qu'il a assimilé sur place** :
+le Noyau s'est propagé dans les cinq zones et a intégré la matière locale.
+
+| Biome | Palier | Incarnation | Mécanique signature |
+|---|---|---|---|
+| Sanctuaire | 0 | **Le Noyau Rouillé** (souche) | **Éventail dirigé** — 5 projectiles resserrés vers le joueur, entre deux salves radiales |
+| Aether | 1 | **Le Noyau Spectral** | **Translocation** — disparaît et réapparaît près du joueur en salve spiralée |
+| Givre | 2 | **Le Noyau de Givre** | **Nova cryogénique** — anneau expansif qui ralentit, laisse des plaques de givre au sol |
+| Fournaise | 3 | **Le Noyau en Fusion** | **Flaques de magma** — projectiles en cloche laissant des zones de dégâts persistantes |
+| Néon | 4 | **Le Noyau Prismatique** | **Faisceaux rotatifs** — 2 à 4 lasers balayant en rotation continue |
+
+Le classement suit l'ordre de déblocage (`LevelThreat.Order`) : la souche est un pattern
+d'apprentissage lisible, les faisceaux rotatifs du Néon exigent un déplacement constant. Chaque
+signature attaque une habitude différente : l'éventail punit la ligne droite, la translocation casse
+le kiting, la nova punit l'immobilité, les flaques réduisent l'espace sûr, les faisceaux imposent la
+rotation.
+
+**Ce que les cinq partagent** : PV, TTK, salves radiales, ondes de choc, contact lourd, mort en
+3 Noyaux d'Aether, `OnLevelBossDefeated`. Un joueur qui a appris le boss du Sanctuaire n'est jamais
+dépaysé — il doit gérer **une** chose de plus.
+
+### 29.3 Les trois phases (communes aux cinq)
+
+Seuils sur le ratio de PV — **les PV totaux ne bougent pas** (12000 base, §20.3) : les phases
+redistribuent l'intensité, elles n'allongent pas la TTK.
+
+| Phase | PV | Salve radiale | Onde de choc | Signature | Vitesse |
+|---|---|---|---|---|---|
+| **I — Éveil** | 100 → 66 % | 2,00 s | 3,50 s | cadence ×1,00 | ×1,00 |
+| **II — Surcharge** | 66 → 33 % | 1,55 s | 2,80 s | ×1,35 | ×1,08 |
+| **III — Effondrement** | 33 → 0 % | 1,20 s | 2,20 s | ×1,70 + **adds** | ×1,18 |
+
+- La signature est active **dès la phase I** : c'est l'identité du boss, pas une surprise de fin. Elle
+  s'intensifie ensuite.
+- **Adds en phase III** : un pack de 4 ennemis basiques **du biome courant** à l'entrée en phase,
+  puis toutes les 12 s. Ils passent par `EnemySpawner` et respectent le cap global d'entités — le
+  boss ne peut pas faire exploser la population (perf : 200-300 entités, cf. CLAUDE.md).
+- Le passage de phase est **irréversible** : un boss soigné (affixe régénérant impossible sur un
+  boss, mais aussi tout futur effet de soin) ne redescend pas de phase. Sans ce verrou, un boss
+  oscillant autour de 66 % rejouerait sa bascule en boucle.
+
+### 29.4 La bascule : 1 s d'invulnérabilité télégraphiée
+
+À chaque franchissement de seuil, le boss entre en **surcharge** pendant **1,0 s** :
+
+- il **s'immobilise**, cesse de tirer et **n'inflige plus de dégâts de contact** (sinon un joueur au
+  corps-à-corps serait puni pour avoir bien joué) ;
+- il **encaisse mais ne perd plus de PV** — les dégâts continuent de s'afficher, la barre est gelée ;
+- **télégraphe** : flash blanc-or pulsé sur le sprite, aura portée à son maximum, secousse d'écran
+  légère, SFX de recharge ; à la reprise, **une onde de choc** part du boss.
+
+Rôle de design : marquer la bascule dans le chaos (le joueur *voit* le boss changer d'état) et offrir
+une **fenêtre de repositionnement** avant que la cadence monte — respirer juste avant que ça
+s'accélère est ce qui crée le rythme absent du sac à PV plat.
+
+Coût en TTK : 2 bascules × 1 s = **+2 s** sur ~28 s, soit ~7 %. Assumé et non compensé — la TTK de
+référence passe de 28 s à ~30 s, toujours dans la fenêtre 20-30 s visée (§20.2).
+
+### 29.5 Lisibilité : la barre de vie de boss
+
+Les phases sont invisibles sans jauge : le HUD n'affichait aucun état du boss. Ajout d'une **barre
+dédiée en haut d'écran**, visible uniquement tant qu'un boss est vivant :
+
+- **nom de l'incarnation** (localisé) au-dessus de la jauge ;
+- **deux crans** gravés à 66 % et 33 % — le joueur anticipe la bascule au lieu de la subir ;
+- **numéro de phase** en chiffres romains, et **flash de la jauge** pendant la surcharge ;
+- couleurs et cadre via `UiPalette`/`UiStyle` (jamais de `StyleBoxFlat` ad hoc, cf. CLAUDE.md).
+
+### 29.6 Ce qui a été écarté
+
+- **Cinq boss entièrement distincts** (entités, PV et conditions de victoire propres). Rejeté :
+  multiplie par cinq le coût d'équilibrage du TTK, casse le verrou « final universel » et la lecture
+  narrative (le Noyau est *une* entité qui se propage), pour un gain de variété qu'une mécanique
+  signature par biome délivre déjà.
+- **Enrager / soft enrage** (le boss devient invincible au bout de N secondes). Rejeté : la survie
+  est déjà le vrai gate (§20.2) et le joueur peut kiter indéfiniment ; un timer dur transformerait
+  la victoire en test de DPS, exactement ce que §20.2 refuse.
+- **Allonger les PV pour « faire durer » les phases.** Rejeté explicitement par §20.5 : les phases
+  redistribuent l'intensité à TTK constante.

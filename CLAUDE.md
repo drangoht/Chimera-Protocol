@@ -13,8 +13,16 @@ cyborgs, robots), inspiré de Vampire Survivors et Everything is Crab.
 - **Avant de coder** dans un domaine (armes, ennemis, UI/focus, VFX, scènes, assets, tests headless) → lire **`docs/PITFALLS.md`** (pièges non-évidents Godot/C# + checklists de câblage). Y ajouter tout nouveau piège découvert.
 - **État d'implémentation détaillé & version courante → `docs/PROJECT_STATE.md`** (évolutif). Résumé de phase ci-dessous.
 
-**Phase actuelle : libre.** Dernière livraison majeure : **bande-son metal industriel & musique
-adaptative**, publiée **1.17.0** le 2026-07-27. Les 14 musiques sont **générées sur Suno** à partir des
+**Phase actuelle : boss de fin — phases & incarnations (implémenté 2026-07-28, non publié).** Le
+Noyau Rouillé reste la condition de victoire unique des 5 niveaux, mais combat désormais en **trois
+phases** (100→66→33→0 % de PV, cadences resserrées, adds en phase III, 1 s de surcharge télégraphiée
+à chaque bascule) et prend une **incarnation par biome** (éventail dirigé / translocation / nova de
+givre / flaques de magma / faisceaux rotatifs), avec sprite et nom propres. Nouvelle **barre de boss**
+au HUD (crans aux seuils, numéro de phase). Design → `docs/GDD.md` §29 ; logique pure →
+`BossPhases` + `BossIncarnations` (222 tests) ; pièges + checklist « ajouter une incarnation » →
+`docs/PITFALLS.md`. **Reste à faire** : mesure de TTK par un testeur humain (le bot de test kite mal)
+puis publication. Dernière livraison publiée : **1.19.0** (options enrichies + accès depuis la pause).
+Avant ça : **bande-son metal industriel & musique adaptative**, publiée **1.17.0** le 2026-07-27. Les 14 musiques sont **générées sur Suno** à partir des
 prompts de `docs/AUDIO_AI_PROMPTS.md` (source de vérité de la direction sonore) — metal industriel
 / synth-metal : guitares down-tuned et batterie live au premier plan, synthés et chœurs sans
 paroles au service du riff, 112 à 176 BPM. **Licence Suno : plan gratuit = usage non commercial**,
@@ -60,7 +68,7 @@ l'agent compétent (ordre de lancement : `GUIDE-CLAUDE-CODE.md`).
 - Style de code : PascalCase classes/méthodes, `_camelCase` champs privés, `readonly` par défaut.
 - Architecture : `src/` (logique C#) / `scenes/` (.tscn) / `assets/` (raw) / `data/` (JSON tuning modifiable sans recompiler).
 - **Logique pure testable** : `src/Core/Rules/` (classes statiques sans dépendance Godot — `XpCurve`, `EnemyScaling`, `EliteAffixTable`…). Les nœuds y délèguent (SRP).
-- **Tests unitaires** : xUnit, `dotnet test tests/ChimeraProtocol.Tests.csproj`. **184 tests**.
+- **Tests unitaires** : xUnit, `dotnet test tests/ChimeraProtocol.Tests.csproj`. **222 tests**.
 - **Difficulté** : trois axes multiplicatifs — réglage du joueur (`DifficultyTuning`), **palier de menace du niveau joué** (`LevelThreat`, croît avec l'ordre de déblocage : PV/dégâts/densité/Échos, cf. `docs/GDD.md` §28) et escalade d'overtime.
 - Singletons (AutoLoad) : `GameManager`, `XpSystem`, `InventorySystem`, `LevelUpSystem`, `SaveManager`, `MetaProgressionSystem`, `ChallengeSystem` (défis/succès, `docs/DESIGN_CHALLENGES.md`), `AudioSystem`, `MusicDirector` (musique adaptative : calm/combat/boss en fondu croisé), `FusionFlash`, `ScreenShake`, `GameSettings`, `DiscordPresence` (Rich Presence), `VersionStamp` (tampon `v<ver>-<sha>` bas-droite).
 - Sauvegarde : `user://save.json` (méta/Échos) + `user://settings.cfg` (préférences, high scores, complétions, armes découvertes).

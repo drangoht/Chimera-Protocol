@@ -295,7 +295,11 @@ public partial class EnemyBase : CharacterBody2D
             sprite.Play("move");
     }
 
-    public void TakeDamage(float amount)
+    /// <summary>
+    /// Encaisse des dégâts. Virtuelle pour que le boss de fin puisse ignorer les PV perdus pendant
+    /// sa surcharge de bascule de phase tout en conservant le retour visuel (GDD §29.4).
+    /// </summary>
+    public virtual void TakeDamage(float amount)
     {
         if (_isDead) return;
         _timeSinceHit = 0f;                    // suspend la régénération (affixe Régénérant)
@@ -305,7 +309,7 @@ public partial class EnemyBase : CharacterBody2D
             Die();
     }
 
-    private void HitFlash(float duration)
+    protected void HitFlash(float duration)
     {
         _hitTween?.Kill();
         _hitTween = CreateTween();

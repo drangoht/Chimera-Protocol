@@ -139,6 +139,11 @@ public partial class RunStatsTracker : Node
         if (RunEnded) return;
         RunEnded = true;
 
+        // L'écran de fin met l'arbre en pause : le HUD cesse de traiter ses frames et sa barre de
+        // boss resterait figée par-dessus le titre de l'écran de fin. On la retire ici, tant que
+        // le HUD peut encore réagir.
+        HUD.Instance?.HideBossBar();
+
         int timeSecs = (int)ElapsedSeconds;
         var (echoes, overtimeBonus) = CalculateEchoesDetailed(timeSecs, KillCount, CoresCollected);
 

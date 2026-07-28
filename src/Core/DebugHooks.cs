@@ -64,6 +64,24 @@ public static class DebugHooks
         }
     }
 
+    private static bool? _invulnerable;
+
+    /// <summary>
+    /// Vrai si lancé avec <c>--invuln</c> : le joueur ne subit plus aucun dégât. Sert à observer un
+    /// combat long jusqu'au bout — typiquement les trois phases du boss de fin (GDD §29), qu'un
+    /// testeur automatisé n'atteint jamais parce qu'il meurt avant. Ne touche à rien d'autre : le
+    /// DPS, le scaling et le TTK restent ceux d'une vraie run. Aucun effet en build normal.
+    /// </summary>
+    public static bool Invulnerable
+    {
+        get
+        {
+            if (_invulnerable == null)
+                _invulnerable = HasFlag("--invuln");
+            return _invulnerable.Value;
+        }
+    }
+
     private static bool _forcedFusionRead;
     private static string? _forcedFusion;
 

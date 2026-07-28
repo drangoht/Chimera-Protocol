@@ -237,6 +237,27 @@ public partial class EnemySpawner : Node
         }
     }
 
+    /// <summary>
+    /// Invocation d'adds par le boss de fin en phase III (GDD §29.3). Les ennemis sont tirés dans
+    /// le pool du BIOME COURANT — le boss appelle la faune locale, pas une liste à part — et le
+    /// **cap simultané global est respecté** : un boss ne peut pas faire exploser la population
+    /// au-delà du budget de performance (200-300 entités, cf. CLAUDE.md).
+    /// Retourne le nombre réellement invoqué (0 si l'arène est déjà pleine).
+    /// </summary>
+    public int SummonAdds(int count, float tMinutes)
+    {
+        int room = CurrentMaxEnemies(tMinutes) - GetTree().GetNodesInGroup(Constants.GroupEnemies).Count;
+        if (room <= 0) return 0;
+        count = Mathf.Min(count, room);
+
+        var available = GetAvailableEnemies(tMinutes);
+        if (available.Count == 0) return 0;
+
+        for (int i = 0; i < count; i++)
+            SpawnEnemy(WeightedRandom(available), tMinutes);
+        return count;
+    }
+
     private List<EnemySpawnData> GetAvailableEnemies(float tMinutes)
     {
         // Filtre par temps d'apparition ET par biome courant (les ennemis sans champ `biomes`

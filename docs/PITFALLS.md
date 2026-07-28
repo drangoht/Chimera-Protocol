@@ -79,6 +79,39 @@ les préserve. À `frost=0`, `mix(...,0)=texture` puis `* COLOR` = strictement i
 shader. (Limite connue, non bloquante : l'éclairage 2D d'un biome chaud — Fournaise — désature le bleu
 vers un gris froid ; le rendu reste lisible « gelé » mais moins bleu que dans un biome neutre.)
 
+## Boss de fin — phases, incarnations et zones au sol (`RustedCore`, `BossPhases`, `BossHazard`)
+Cf. GDD §29. Le boss est **une** entité (groupe `rusted_core`, condition de victoire des 5 niveaux)
+qui change de **phase** avec ses PV et d'**incarnation** avec le biome.
+- **La progression de phase ne recule jamais** (`BossPhases.Advance` = max de la phase courante et
+  de celle du ratio de PV). Sans ce verrou, tout soin — ou un simple arrondi autour du seuil — ferait
+  rejouer la bascule en boucle : télégraphe, invulnérabilité et onde de choc à répétition.
+- **`EnemyBase.TakeDamage` est `virtual`** uniquement pour ça : `RustedCore` l'override pour ignorer
+  les PV pendant la surcharge **tout en appelant `HitFlash`**. Retirer le flash « pour faire propre »
+  fait croire au joueur que ses armes ne touchent plus.
+- **Le HUD gèle en pause.** L'écran de fin met l'arbre en pause : le `_Process` du HUD ne tourne plus
+  et la barre de boss resterait posée par-dessus le titre « MORT EN SERVICE ». Elle est donc retirée
+  **depuis `RunStatsTracker.EndRun`** (`HUD.HideBossBar`), pas par une condition dans `_Process`.
+  Toute future info de HUD à masquer en fin de run doit suivre le même chemin.
+- **Les zones au sol (`BossHazard`) détectent le joueur par distance**, pas par `Area2D` : une Area2D
+  ne signale l'entrée que sur mouvement physique (même piège qu'en tests headless) et imposerait
+  d'accorder une couche de collision de plus. Elles se parentent à la **racine** — donc purgées par
+  `SceneCleanup.ClearWorldVfx` en sortie de run — et ne s'arment qu'après leur télégraphe
+  (`armDelay`) : une flaque qui blesse à l'instant où elle apparaît se lit comme un coup gratuit.
+- **Ralentir le joueur passe par `Player.ApplyChill`**, jamais par `GraftSpeedMultiplier` (aux
+  greffes) ni `SpeedMultiplier` (à la Célérité) : les trois se multiplient, et un chill qui expire
+  n'a pas à annuler un bonus posé entre-temps. Le chill garde le ralentissement le **plus fort** et
+  rafraîchit la durée — sinon une nappe de plaques de givre immobilise le joueur.
+- **Les adds de la phase III passent par `EnemySpawner.SummonAdds`**, qui respecte le **cap simultané
+  global**. Instancier des ennemis directement depuis le boss contournerait le budget de performance
+  (200-300 entités).
+- **Ajouter une incarnation** = une entrée dans `BossIncarnations.All` (biome, clé de loc, signature,
+  période, teinte, `.tres`) + une branche dans `RustedCore.FireSignature` + la clé `BOSS_*_NAME` en
+  EN/FR/ES + la palette dans `tools/generate_boss_sprites.py` (`CORE_VARIANTS`). Un `.tres` manquant
+  n'est pas fatal : `ResolveIncarnation` retombe sur le sprite de la souche + teinte.
+- **Valider un combat long** : `--debug-boss --invuln` (le joueur ne subit plus rien) ; sans `--invuln`
+  un testeur automatisé meurt en 10-25 s et n'atteint jamais les phases II/III. `--debug-boss` fait
+  aussi tracer chaque bascule (`[RustedCore] … → phase … à t=…`).
+
 ## Paliers de menace / Échos (`LevelThreat`, `EchoFormula`)
 Trois pièges quand on touche à la difficulté par niveau ou à la formule d'Échos :
 1. **Le palier se résout à la demande, pas au `_Ready`.** `GameManager.CurrentBiomeId` est posé par

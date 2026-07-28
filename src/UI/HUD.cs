@@ -179,7 +179,127 @@ public partial class HUD : CanvasLayer
 		_loadout.AddThemeConstantOverride("separation", 6);
 		root.AddChild(_loadout);
 
+		BuildBossBar(root);
+
 		StartIdleAnimations();
+	}
+
+	// ── Barre de boss (phases du boss de fin, GDD §29.5) ───────────────────────
+	// Sans jauge dédiée, les trois phases du boss sont invisibles : le joueur subit une bascule
+	// qu'il ne peut ni lire ni anticiper. La barre n'apparaît QUE tant qu'un boss est vivant.
+	private Control       _bossBox     = null!;
+	private Label         _bossName    = null!;
+	private Label         _bossPhase   = null!;
+	private Panel         _bossFill    = null!;
+	private StyleBoxFlat  _bossFillSty = null!;
+	private float         _bossDisplayRatio = 1f;
+	private int           _lastBossPhase    = -1;
+	private Tween?        _bossFlashTween;
+
+	private const float BossBarW = 520f;
+	private const float BossBarH = 14f;
+
+	private void BuildBossBar(Control root)
+	{
+		_bossBox = new Control { MouseFilter = Control.MouseFilterEnum.Ignore, Visible = false };
+		_bossBox.AnchorLeft = 0.5f; _bossBox.AnchorRight = 0.5f;
+		_bossBox.OffsetLeft = -BossBarW / 2f; _bossBox.OffsetRight = BossBarW / 2f;
+		// Sous le chip de biome (y 56 + ~18), qu'elle ne doit pas recouvrir.
+		_bossBox.OffsetTop = 86; _bossBox.OffsetBottom = 86 + 46;
+		root.AddChild(_bossBox);
+
+		_bossName = MakeLabel(_bossBox, new Vector2(0, 0), "", 16, new Color(1f, 0.72f, 0.35f));
+		_bossName.Size = new Vector2(BossBarW, 20);
+		_bossName.HorizontalAlignment = HorizontalAlignment.Center;
+		_bossName.AddThemeColorOverride("font_outline_color", new Color(0, 0, 0, 0.8f));
+		_bossName.AddThemeConstantOverride("outline_size", 4);
+
+		(_, _bossFill, _bossFillSty) = MakeBar(_bossBox, new Vector2(0, 24), new Vector2(BossBarW, BossBarH),
+			new Color(0.08f, 0.05f, 0.06f, 0.92f), new Color(0.95f, 0.35f, 0.22f));
+
+		// Crans aux seuils de phase : le joueur voit venir la bascule au lieu de la découvrir.
+		foreach (float t in BossPhases.Thresholds)
+		{
+			var notch = new ColorRect
+			{
+				Position    = new Vector2(BossBarW * t - 1f, 22),
+				Size        = new Vector2(2, BossBarH + 4),
+				Color       = new Color(0.05f, 0.05f, 0.08f, 0.9f),
+				MouseFilter = Control.MouseFilterEnum.Ignore,
+			};
+			_bossBox.AddChild(notch);
+		}
+
+		_bossPhase = MakeLabel(_bossBox, new Vector2(0, 24 + BossBarH + 2), "", 12, Dim);
+		_bossPhase.Size = new Vector2(BossBarW, 16);
+		_bossPhase.HorizontalAlignment = HorizontalAlignment.Center;
+	}
+
+	/// <summary>Retire la barre de boss immédiatement (fin de run — cf. RunStatsTracker.EndRun).</summary>
+	public void HideBossBar()
+	{
+		if (_bossBox == null) return;
+		_bossBox.Visible = false;
+		_lastBossPhase   = -1;
+	}
+
+	/// <summary>
+	/// Suit le boss vivant via son groupe : le HUD n'a pas à être prévenu de son apparition, et une
+	/// disparition (mort, sortie de run) fait simplement retomber la barre.
+	/// </summary>
+	private void UpdateBossBar(float delta)
+	{
+		// La run terminée, l'écran de fin prend le dessus : une barre de boss qui reste posée
+		// par-dessus son titre se lit comme un bug (constaté au playtest du 2026-07-28).
+		bool runOver = RunStatsTracker.Instance?.RunEnded ?? false;
+
+		if (runOver || GetTree().GetFirstNodeInGroup("rusted_core") is not RustedCore boss || !IsInstanceValid(boss))
+		{
+			if (_bossBox.Visible)
+			{
+				_bossBox.Visible = false;
+				_lastBossPhase   = -1;
+			}
+			return;
+		}
+
+		if (!_bossBox.Visible)
+		{
+			_bossBox.Visible  = true;
+			_bossDisplayRatio = boss.HpRatio;
+			_bossName.Text    = boss.DisplayName;
+		}
+
+		// Drain lissé, comme la barre de PV du joueur : sur 20 000 PV, une jauge qui suit au pixel
+		// près saccade à chaque tick d'arme.
+		float target = boss.HpRatio;
+		if (target >= _bossDisplayRatio) _bossDisplayRatio = target;
+		else _bossDisplayRatio = Mathf.MoveToward(_bossDisplayRatio, target, delta * HpDrainSpeed * 0.6f);
+		_bossFill.Size = new Vector2(Mathf.Max(BossBarW * _bossDisplayRatio, 0f), BossBarH);
+
+		if (boss.Phase != _lastBossPhase)
+		{
+			_lastBossPhase = boss.Phase;
+			_bossPhase.Text = Loc.T("BOSS_PHASE", BossPhases.RomanNumeral(boss.Phase));
+			FlashBossBar();
+		}
+
+		// Pendant la surcharge, la jauge pulse : elle ne descend plus et le joueur doit comprendre
+		// que ce n'est pas ses dégâts qui ne passent plus, mais le boss qui bascule.
+		if (boss.IsSurcharging)
+			_bossFillSty.BgColor = new Color(1f, 0.95f, 0.7f);
+		else
+			_bossFillSty.BgColor = boss.Phase >= 2 ? new Color(1f, 0.25f, 0.30f)
+								 : boss.Phase == 1 ? new Color(1f, 0.45f, 0.20f)
+													: new Color(0.95f, 0.60f, 0.22f);
+	}
+
+	private void FlashBossBar()
+	{
+		_bossFlashTween?.Kill();
+		_bossFlashTween = CreateTween();
+		_bossFlashTween.TweenProperty(_bossBox, "modulate", Colors.White, 0.35)
+					   .From(new Color(3f, 3f, 3f, 1f));
 	}
 
 	/// <summary>Animations discrètes en boucle : respiration du liseré et du souligné timer.</summary>
@@ -242,6 +362,7 @@ public partial class HUD : CanvasLayer
 		UpdateXp((float)delta);
 		UpdateTimer();
 		UpdateCores();
+		UpdateBossBar((float)delta);
 
 		// Rafraîchit le loadout si le nombre d'armes a changé (ajout / fusion).
 		var inv = InventorySystem.Instance;
