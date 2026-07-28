@@ -5,6 +5,26 @@
 > `CLAUDE.md` ; le design complet dans `docs/GDD.md` ; la carte du code dans `/carte-projet`.
 
 - Pile technique : **Godot 4.7 .NET (C# / .NET 8 / GodotSharp)**
+- **Fusions d'armes réparées + boss recalibré (PUBLIÉ 1.21.0, 2026-07-28).** Le principal
+  déséquilibre du jeu : les **9 fusions d'armes divisaient le DPS de fin de run par 3 à 6**. Trois
+  défauts cumulés — dégâts posés en dur par leur classe C# et jamais multipliés (`ApplyWeaponStats`
+  ne parcourait que la section `weapons` du JSON, donc ni Noyau Thermique ni améliorations du Hub),
+  retour au **niveau 1** en fusionnant (l'arme remplacée atteint L11-L20 par extrapolation en fin de
+  run), et **absence de tout pool de cartes** — l'arme de base en étant retirée, le slot était mort
+  pour le reste de la run. La carte la plus spectaculaire du jeu (épique, flash blanc, SFX dédié) en
+  était le pire choix. Corrigé par `WeaponBase.BaseDamage`/`BaseCooldown` (capture idempotente) +
+  `InventorySystem.ApplyFusionStats` (niveau extrapolé × multiplicateur de dégâts, recharge depuis la
+  valeur de fiche) + héritage du niveau + entrée des fusions dans les deux pools de cartes.
+  Mesuré : build tout fusionné **105 → 368 DPS** au Sanctuaire, **103 → 490/539** au Néon.
+  **Boss** : `maxHp` **12000 → 8000**, calibré sur la première mesure de TTK *jouée* de bout en bout
+  (niveau 126, 3 fusions L20, 617 DPS, TTK 44,2 s → ~23-32 s selon le biome). **Outillage de mesure**
+  livré au passage : `BossTelemetry` (journal `user://boss_ttk.log` : PV effectifs, build, bascules
+  de phase, TTK, DPS), `tools/boss_ttk_session.ps1`, et les flags **`--auto-play`** (level-up et
+  assimilation résolus seuls) + **`--timescale`** — sans eux une run en banc se fige au premier
+  niveau, ce qui explique que le déséquilibre soit passé inaperçu si longtemps. Protocole :
+  `docs/GDD.md` §20.6 ; mesures : `docs/TEST_REPORT.md` ; pièges : `docs/PITFALLS.md` §Fusions.
+  **Ouvert** : la puissance du joueur explose en overtime (DPS 617 → 2322 en deux minutes, tous les
+  passifs au plafond L20) — les boss d'overtime en deviennent triviaux.
 - **Boss de fin — trois phases et cinq incarnations (PUBLIÉ 1.20.0, 2026-07-28).** Les cinq niveaux
   se terminaient sur **exactement le même combat** : même sprite, même pattern, intensité plate du
   premier au dernier point de vie. Depuis les paliers de menace (1.18.0), le Néon est ~45 % plus dur

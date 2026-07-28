@@ -14,8 +14,16 @@ cyborgs, robots), inspiré de Vampire Survivors et Everything is Crab.
 - **État d'implémentation détaillé & version courante → `docs/PROJECT_STATE.md`** (évolutif). Résumé de phase ci-dessous.
 - **Synthétiser du volume** (relever/résumer/inventorier à partir de plusieurs gros fichiers : `data/*.json`, docs longues, logs, rapports de test) → déléguer au **MCP local** `mcp__local-llm__local_digest` / `local_map` (outils différés : `ToolSearch` d'abord) plutôt que d'enchaîner les `Read` : le serveur lit les fichiers côté LM Studio, seule la synthèse entre en contexte. Ne pas l'utiliser pour du code que l'on s'apprête à éditer — là, le contenu réel est nécessaire.
 
-**Phase actuelle : libre.** Dernière livraison majeure : **boss de fin — phases & incarnations**,
-publiée **1.20.0** le 2026-07-28. Le
+**Phase actuelle : libre.** Dernière livraison : **fusions d'armes réparées + boss recalibré**,
+publiée **1.21.0** le 2026-07-28. Les 9 fusions **divisaient le DPS de fin de run par 3 à 6** (dégâts
+en dur jamais multipliés, retour au niveau 1, absentes de tout pool de cartes) : la carte la plus
+spectaculaire du jeu en était le pire choix. Corrigé → héritage du niveau, multiplicateurs, montée
+par cartes (piège → `docs/PITFALLS.md` §Fusions ; règle → `docs/GDD.md` §8). Dans la foulée,
+`rusted_core.maxHp` **12000 → 8000** sur la première mesure de TTK *jouée* (GDD §20.6). Outillage :
+`BossTelemetry` (journal `user://boss_ttk.log`), `tools/boss_ttk_session.ps1`, flags **`--auto-play`**
++ **`--timescale`** pour jouer une run complète en banc. **Ouvert** : la puissance du joueur explose
+en overtime (DPS ×3,8 en 2 min, passifs au plafond), les boss d'overtime deviennent triviaux.
+Avant ça : **boss de fin — phases & incarnations**, publié **1.20.0**. Le
 Noyau Rouillé reste la condition de victoire unique des 5 niveaux, mais combat désormais en **trois
 phases** (100→66→33→0 % de PV, cadences resserrées, adds en phase III, 1 s de surcharge télégraphiée
 à chaque bascule) et prend une **incarnation par biome** (éventail dirigé / translocation / nova de
