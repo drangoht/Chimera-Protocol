@@ -29,7 +29,7 @@ public partial class CharacterSelectScreen : Control
         var root = new VBoxContainer();
         root.SetAnchorsPreset(LayoutPreset.FullRect);
         root.AddThemeConstantOverride("separation", 12);
-        root.OffsetLeft = 80; root.OffsetRight = -80; root.OffsetTop = 30; root.OffsetBottom = -24;
+        root.OffsetLeft = 80; root.OffsetRight = -80; root.OffsetTop = 26; root.OffsetBottom = -18;
         AddChild(root);
 
         var title = new Label { Text = Loc.T("CHARSEL_TITLE"), HorizontalAlignment = HorizontalAlignment.Center };
@@ -37,10 +37,21 @@ public partial class CharacterSelectScreen : Control
         title.AddThemeColorOverride("font_color", Cyan);
         root.AddChild(title);
 
-        var scroll = new ScrollContainer { SizeFlagsVertical = SizeFlags.ExpandFill };
+        // Défilement vertical UNIQUEMENT. Avec le mode horizontal laissé sur Auto, le contenu peut
+        // se croire aussi large qu'il veut : un Label en autowrap calcule alors sa hauteur minimale
+        // sur une largeur qui n'est pas celle du rendu, la carte réserve trop peu de hauteur et la
+        // dernière ligne de description dépasse sous le liseré (constaté sur la carte du Vecteur,
+        // seule description à tenir sur 3 lignes).
+        var scroll = new ScrollContainer
+        {
+            SizeFlagsVertical    = SizeFlags.ExpandFill,
+            HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled,
+        };
         root.AddChild(scroll);
         var list = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
-        list.AddThemeConstantOverride("separation", 12);
+        // 6 (et non 12) : compense les marges verticales des cartes portées à 16, pour que les
+        // quatre personnages tiennent SANS BARRE DE DÉFILEMENT dans la hauteur disponible.
+        list.AddThemeConstantOverride("separation", 6);
         scroll.AddChild(list);
 
         Button? first = null;
@@ -82,13 +93,14 @@ public partial class CharacterSelectScreen : Control
         // que 4 px mesurés entre la plaque du bouton « Choisir » et ce liseré — le bouton
         // paraissait toujours collé. Les 12 px supplémentaires absorbent aussi l'expansion du
         // cadre de focus (UiStyle FocusExpand = 3) quand le bouton est sélectionné.
-        // Les marges HAUT/BAS restent à 10 : les monter rendrait les quatre cartes trop hautes
-        // pour l'écran, et la dernière serait encore plus rognée par le ScrollContainer.
         const int sideMargin = UiStyle.PanelContentMargin + 12;
         style.SetContentMargin(Side.Left,   sideMargin);
         style.SetContentMargin(Side.Right,  sideMargin);
-        style.SetContentMargin(Side.Top,    10);
-        style.SetContentMargin(Side.Bottom, 10);
+        // Haut/bas à 16 (= bande du cadre) et pas moins : à 10, la dernière ligne d'une description
+        // sur trois lignes passait SOUS le liseré et se retrouvait rognée (carte du Vecteur). La
+        // hauteur ainsi reprise est récupérée sur l'espacement entre cartes, cf. _Ready.
+        style.SetContentMargin(Side.Top,    UiStyle.PanelContentMargin);
+        style.SetContentMargin(Side.Bottom, UiStyle.PanelContentMargin);
         panel.AddThemeStyleboxOverride("panel", style);
 
         var hb = new HBoxContainer();
