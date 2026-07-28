@@ -14,12 +14,52 @@ public partial class GameSettings : Node
 
     public enum GameDifficulty { Facile, Normal, Difficile }
 
+    /// <summary>Mode de fenêtre : fenêtré / plein écran fenêtré (sans bordure) / plein écran.</summary>
+    public enum WindowMode { Windowed, Borderless, Fullscreen }
+
     public float          Master       { get; private set; } = 1.0f;
     public float          Music        { get; private set; } = 0.8f;
     public float          Sfx          { get; private set; } = 0.9f;
-    public bool           Fullscreen   { get; private set; } = false;
-    public bool           ShakeEnabled { get; private set; } = true;
     public GameDifficulty Difficulty   { get; private set; } = GameDifficulty.Normal;
+
+    // ── Affichage ─────────────────────────────────────────────────────────────
+    public WindowMode DisplayMode { get; private set; } = WindowMode.Windowed;
+
+    /// <summary>Taille de la fenêtre en mode fenêtré (ignorée dans les deux autres modes).</summary>
+    public Vector2I WindowSize { get; private set; } = new(1280, 720);
+
+    /// <summary>Résolutions de fenêtre proposées par l'écran Options (mode fenêtré).</summary>
+    public static readonly Vector2I[] Resolutions =
+        { new(1280, 720), new(1600, 900), new(1920, 1080), new(2560, 1440) };
+
+    public bool VSync   { get; private set; } = true;
+
+    /// <summary>Limite d'images par seconde ; 0 = illimitée (<see cref="Engine.MaxFps"/>).</summary>
+    public int  MaxFps  { get; private set; } = 0;
+    public static readonly int[] FpsLimits = { 0, 60, 120, 144, 240 };
+
+    /// <summary>Compteur d'images/s affiché en surimpression (au-dessus du tampon de version).</summary>
+    public bool ShowFps { get; private set; } = false;
+
+    // ── Confort / accessibilité ───────────────────────────────────────────────
+    /// <summary>Intensité des secousses de caméra (0 = désactivées, 1 = nominal).</summary>
+    public float ShakeIntensity { get; private set; } = 1f;
+
+    /// <summary>Compat : les secousses sont-elles actives ? (intensité non nulle)</summary>
+    public bool ShakeEnabled => ShakeIntensity > 0.001f;
+
+    /// <summary>Photosensibilité : atténue le flash de fusion et coupe l'aberration chromatique.</summary>
+    public bool ReduceFlashes { get; private set; } = false;
+
+    /// <summary>Intensité des vibrations manette (0 = coupées, 1 = nominal).</summary>
+    public float Rumble { get; private set; } = 0.7f;
+
+    // ── Interface ─────────────────────────────────────────────────────────────
+    /// <summary>Affiche le tampon <c>v&lt;version&gt;-&lt;sha&gt;</c> en bas à droite.</summary>
+    public bool ShowVersionStamp { get; private set; } = true;
+
+    /// <summary>Publie le statut Discord Rich Presence (« joue à Chimera Protocol »).</summary>
+    public bool DiscordEnabled { get; private set; } = true;
 
     /// <summary>Code de langue de l'UI : "en" (défaut), "fr", "es". Persisté.</summary>
     public string Language { get; private set; } = "en";
@@ -183,9 +223,28 @@ public partial class GameSettings : Node
     public void SetMaster(float v)     { Master = Mathf.Clamp(v, 0f, 1f); ApplyAudio(); Save(); }
     public void SetMusic(float v)      { Music  = Mathf.Clamp(v, 0f, 1f); ApplyAudio(); Save(); }
     public void SetSfx(float v)        { Sfx    = Mathf.Clamp(v, 0f, 1f); ApplyAudio(); Save(); }
-    public void SetFullscreen(bool v)  { Fullscreen = v;   ApplyDisplay(); Save(); }
-    public void SetShake(bool v)       { ShakeEnabled = v; ScreenShake.Enabled = v; Save(); }
     public void SetDifficulty(GameDifficulty d) { Difficulty = d; Save(); }
+
+    public void SetDisplayMode(WindowMode m)  { DisplayMode = m; ApplyDisplay(); Save(); }
+    public void SetWindowSize(Vector2I size)  { WindowSize  = size; ApplyDisplay(); Save(); }
+    public void SetVSync(bool v)              { VSync  = v; ApplyDisplay(); Save(); }
+    public void SetMaxFps(int fps)            { MaxFps = Mathf.Max(0, fps); Engine.MaxFps = MaxFps; Save(); }
+    public void SetShowFps(bool v)            { ShowFps = v; VersionStamp.Instance?.SetFpsVisible(v); Save(); }
+
+    /// <summary>Intensité des secousses ; 0 les désactive complètement (accessibilité).</summary>
+    public void SetShakeIntensity(float v)
+    {
+        ShakeIntensity = Mathf.Clamp(v, 0f, 1f);
+        ScreenShake.Intensity = ShakeIntensity;
+        ScreenShake.Enabled   = ShakeEnabled;
+        Save();
+    }
+
+    public void SetReduceFlashes(bool v) { ReduceFlashes = v; Save(); }
+    public void SetRumble(float v)       { Rumble = Mathf.Clamp(v, 0f, 1f); Save(); }
+
+    public void SetShowVersionStamp(bool v) { ShowVersionStamp = v; VersionStamp.Instance?.SetStampVisible(v); Save(); }
+    public void SetDiscordEnabled(bool v)   { DiscordEnabled = v; DiscordPresence.Instance?.SetEnabled(v); Save(); }
 
     /// <summary>Change la langue de l'UI, l'applique au TranslationServer et persiste.</summary>
     public void SetLanguage(string lang)
@@ -215,7 +274,8 @@ public partial class GameSettings : Node
     {
         ApplyAudio();
         ApplyDisplay();
-        ScreenShake.Enabled = ShakeEnabled;
+        ScreenShake.Intensity = ShakeIntensity;
+        ScreenShake.Enabled   = ShakeEnabled;
         TranslationServer.SetLocale(Language);
         InputRemap.ApplyAll(this);
         InputRemap.SetDashKey(DashKey);
@@ -232,11 +292,40 @@ public partial class GameSettings : Node
         }
     }
 
+    /// <summary>Applique mode de fenêtre, taille (mode fenêtré), VSync et limite d'IPS.
+    /// On s'appuie EXCLUSIVEMENT sur les modes natifs de Godot : `Fullscreen` y désigne le
+    /// plein écran FENÊTRÉ (sans bordure) et `ExclusiveFullscreen` le plein écran exclusif.
+    /// Fabriquer soi-même un « sans bordure » (flag Borderless + fenêtre à la taille de l'écran)
+    /// fonctionne à l'aller mais pas au retour : Godot relit alors le mode depuis la géométrie,
+    /// se croit en plein écran, et refuse de repasser en fenêtré — le joueur reste coincé.</summary>
     private void ApplyDisplay()
     {
-        DisplayServer.WindowSetMode(Fullscreen
-            ? DisplayServer.WindowMode.Fullscreen
-            : DisplayServer.WindowMode.Windowed);
+        switch (DisplayMode)
+        {
+            case WindowMode.Fullscreen:
+                DisplayServer.WindowSetMode(DisplayServer.WindowMode.ExclusiveFullscreen);
+                break;
+
+            case WindowMode.Borderless:
+                DisplayServer.WindowSetMode(DisplayServer.WindowMode.Fullscreen);
+                break;
+
+            default:
+                DisplayServer.WindowSetMode(DisplayServer.WindowMode.Windowed);
+                DisplayServer.WindowSetSize(WindowSize);
+                // Recentrage : sans ça, changer de résolution laisse la fenêtre collée en haut
+                // à gauche de sa position précédente, parfois à cheval hors de l'écran.
+                int screen = DisplayServer.WindowGetCurrentScreen();
+                DisplayServer.WindowSetPosition(
+                    DisplayServer.ScreenGetPosition(screen)
+                    + (DisplayServer.ScreenGetSize(screen) - WindowSize) / 2);
+                break;
+        }
+
+        DisplayServer.WindowSetVsyncMode(VSync
+            ? DisplayServer.VSyncMode.Enabled
+            : DisplayServer.VSyncMode.Disabled);
+        Engine.MaxFps = MaxFps;
     }
 
     private static float Db(float linear) => linear <= 0.001f ? -80f : Mathf.LinearToDb(linear);
@@ -249,10 +338,32 @@ public partial class GameSettings : Node
         Master       = (float)cfg.GetValue("audio",   "master",     Master).AsSingle();
         Music        = (float)cfg.GetValue("audio",   "music",      Music).AsSingle();
         Sfx          = (float)cfg.GetValue("audio",   "sfx",        Sfx).AsSingle();
-        Fullscreen   = cfg.GetValue("display", "fullscreen", Fullscreen).AsBool();
-        ShakeEnabled = cfg.GetValue("gameplay","shake",      ShakeEnabled).AsBool();
         Difficulty   = (GameDifficulty)cfg.GetValue("gameplay", "difficulty", (int)Difficulty).AsInt32();
         Language     = cfg.GetValue("display", "language", Language).AsString();
+
+        // Affichage — migration des anciennes clés : le booléen `fullscreen` devient le défaut
+        // du nouveau mode à trois valeurs, et `shake` (bool) devient l'intensité 0/1.
+        bool legacyFullscreen = cfg.GetValue("display", "fullscreen", false).AsBool();
+        var  defaultMode      = legacyFullscreen ? WindowMode.Fullscreen : WindowMode.Windowed;
+        DisplayMode = (WindowMode)cfg.GetValue("display", "mode", (int)defaultMode).AsInt32();
+        if (!System.Enum.IsDefined(DisplayMode)) DisplayMode = WindowMode.Windowed;
+
+        WindowSize = new Vector2I(
+            cfg.GetValue("display", "width",  WindowSize.X).AsInt32(),
+            cfg.GetValue("display", "height", WindowSize.Y).AsInt32());
+        VSync   = cfg.GetValue("display", "vsync",    VSync).AsBool();
+        MaxFps  = Mathf.Max(0, cfg.GetValue("display", "max_fps", MaxFps).AsInt32());
+        ShowFps = cfg.GetValue("display", "show_fps", ShowFps).AsBool();
+
+        bool legacyShake = cfg.GetValue("gameplay", "shake", true).AsBool();
+        ShakeIntensity = Mathf.Clamp(
+            cfg.GetValue("gameplay", "shake_intensity", legacyShake ? 1f : 0f).AsSingle(), 0f, 1f);
+        ReduceFlashes = cfg.GetValue("gameplay", "reduce_flashes", ReduceFlashes).AsBool();
+        Rumble        = Mathf.Clamp(cfg.GetValue("gameplay", "rumble", Rumble).AsSingle(), 0f, 1f);
+
+        ShowVersionStamp = cfg.GetValue("interface", "version_stamp", ShowVersionStamp).AsBool();
+        DiscordEnabled   = cfg.GetValue("interface", "discord",       DiscordEnabled).AsBool();
+
         if (System.Array.IndexOf(Languages, Language) < 0) Language = "en";
         _persistedLanguage = Language;
 
@@ -307,10 +418,19 @@ public partial class GameSettings : Node
         cfg.SetValue("audio",    "master",     Master);
         cfg.SetValue("audio",    "music",      Music);
         cfg.SetValue("audio",    "sfx",        Sfx);
-        cfg.SetValue("display",  "fullscreen", Fullscreen);
         cfg.SetValue("display",  "language",   _persistedLanguage);
-        cfg.SetValue("gameplay", "shake",      ShakeEnabled);
+        cfg.SetValue("display",  "mode",       (int)DisplayMode);
+        cfg.SetValue("display",  "width",      WindowSize.X);
+        cfg.SetValue("display",  "height",     WindowSize.Y);
+        cfg.SetValue("display",  "vsync",      VSync);
+        cfg.SetValue("display",  "max_fps",    MaxFps);
+        cfg.SetValue("display",  "show_fps",   ShowFps);
         cfg.SetValue("gameplay", "difficulty", (int)Difficulty);
+        cfg.SetValue("gameplay", "shake_intensity", ShakeIntensity);
+        cfg.SetValue("gameplay", "reduce_flashes",  ReduceFlashes);
+        cfg.SetValue("gameplay", "rumble",          Rumble);
+        cfg.SetValue("interface","version_stamp",   ShowVersionStamp);
+        cfg.SetValue("interface","discord",         DiscordEnabled);
 
         var keys = new string[_completions.Count];
         _completions.CopyTo(keys);

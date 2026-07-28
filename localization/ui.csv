@@ -48,6 +48,7 @@ PAUSE_WEAPONS,WEAPONS,ARMES,ARMAS
 PAUSE_PASSIVES,PASSIVES,PASSIFS,PASIVOS
 PAUSE_GRAFTS,GRAFTS,GREFFES,INJERTOS
 PAUSE_RESUME,RESUME  [Esc],REPRENDRE  [Échap],REANUDAR  [Esc]
+PAUSE_OPTIONS,OPTIONS,OPTIONS,OPCIONES
 PAUSE_QUIT,QUIT GAME,QUITTER LA PARTIE,SALIR DE LA PARTIDA
 PAUSE_TIME_SURVIVED,Time survived,Temps survécu,Tiempo sobrevivido
 PAUSE_TIME_LEFT,Time left,Temps restant,Tiempo restante
@@ -66,8 +67,24 @@ OPTIONS_TITLE,OPTIONS,OPTIONS,OPCIONES
 OPTIONS_MASTER,Master volume,Volume général,Volumen general
 OPTIONS_MUSIC,Music,Musique,Música
 OPTIONS_SFX,SFX,Effets sonores,Efectos
-OPTIONS_FULLSCREEN,Fullscreen,Plein écran,Pantalla completa
+OPTIONS_SECTION_AUDIO,AUDIO,AUDIO,AUDIO
+OPTIONS_SECTION_DISPLAY,DISPLAY,AFFICHAGE,PANTALLA
+OPTIONS_SECTION_GAMEPLAY,GAME,JEU,JUEGO
+OPTIONS_SECTION_INTERFACE,INTERFACE,INTERFACE,INTERFAZ
+OPTIONS_DISPLAY_MODE,Window mode,Mode d'affichage,Modo de ventana
+OPTIONS_DISPLAY_WINDOWED,Windowed,Fenêtré,En ventana
+OPTIONS_DISPLAY_BORDERLESS,Borderless,Sans bordure,Sin bordes
+OPTIONS_DISPLAY_FULLSCREEN,Fullscreen,Plein écran,Pantalla completa
+OPTIONS_RESOLUTION,Resolution,Résolution,Resolución
+OPTIONS_VSYNC,V-Sync,Synchro verticale,Sincronización vertical
+OPTIONS_FPS_LIMIT,FPS limit,Limite d'images/s,Límite de FPS
+OPTIONS_FPS_UNLIMITED,Unlimited,Illimitée,Sin límite
+OPTIONS_SHOW_FPS,Show FPS,Compteur d'images/s,Mostrar FPS
 OPTIONS_SHAKE,Screen shake,Secousses écran,Vibración de pantalla
+OPTIONS_REDUCE_FLASHES,Reduce flashes,Réduire les flashs,Reducir destellos
+OPTIONS_RUMBLE,Controller rumble,Vibration manette,Vibración del mando
+OPTIONS_VERSION_STAMP,Version stamp,Tampon de version,Sello de versión
+OPTIONS_DISCORD,Discord Rich Presence,Discord Rich Presence,Discord Rich Presence
 OPTIONS_DIFFICULTY,Difficulty,Difficulté,Dificultad
 OPTIONS_LANGUAGE,Language,Langue,Idioma
 OPTIONS_CONTROLS,Controls,Contrôles,Controles

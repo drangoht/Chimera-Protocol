@@ -2,10 +2,16 @@ using Godot;
 using System.Collections.Generic;
 
 /// <summary>
-/// Écran Options : volumes (master/musique/SFX), plein écran, screen shake, langue,
-/// difficulté et remap des touches de déplacement (ZQSD par défaut, rebindables).
+/// Écran Options, organisé en sections : Audio (master/musique/SFX), Affichage (mode de fenêtre,
+/// résolution, VSync, limite et compteur d'IPS), Jeu (difficulté, secousses, flashs, vibration),
+/// Interface (langue, tampon de version, Discord) et Contrôles (remap ZQSD + dash).
 /// Lit/écrit via <see cref="GameSettings"/> (appliqué + persisté immédiatement).
 /// UI construite en code ; la scène = root Control + script. Retour : Échap / bouton.
+///
+/// Deux usages :
+/// - écran plein (depuis le menu principal) — le retour recharge <c>MainMenu.tscn</c> ;
+/// - surcouche modale (depuis le menu pause, via <see cref="OpenOverlay"/>) — le retour libère
+///   la surcouche et rend la main à l'appelant, sans toucher à la scène de run.
 /// </summary>
 public partial class OptionsScreen : Control
 {
@@ -23,17 +29,65 @@ public partial class OptionsScreen : Control
     private string? _listeningAction;
     private readonly Dictionary<string, Button> _rebindButtons = new();
 
+    // ── Mode surcouche (ouvert depuis le menu pause) ──────────────────────────
+    private bool             _overlay  = false;
+    private System.Action?   _onClosed;
+
+    /// <summary>
+    /// Ouvre les options en surcouche au-dessus de la scène courante (menu pause en run) :
+    /// aucun changement de scène, l'arbre reste en pause. <paramref name="onClosed"/> est
+    /// appelé après la fermeture — l'appelant y reprend la main (input, rafraîchissement).
+    /// </summary>
+    public static void OpenOverlay(Node context, System.Action? onClosed = null)
+    {
+        var scene  = GD.Load<PackedScene>("res://scenes/ui/OptionsScreen.tscn");
+        var screen = scene.Instantiate<OptionsScreen>();
+        // Champs posés AVANT l'entrée dans l'arbre : _Ready() en dépend.
+        screen._overlay  = true;
+        screen._onClosed = onClosed;
+
+        // Layer au-dessus du PauseScreen (100). ProcessMode.Always : sans ça, rien ne
+        // répondrait — l'arbre est en pause pendant tout l'affichage.
+        var layer = new CanvasLayer { Layer = 110, ProcessMode = ProcessModeEnum.Always };
+        layer.AddChild(screen);
+        context.GetTree().Root.AddChild(layer);
+    }
+
     public override void _Ready()
+    {
+        if (_overlay) ProcessMode = ProcessModeEnum.Always;
+        Build();
+    }
+
+    /// <summary>Reconstruit l'écran à neuf (changement de langue en surcouche, où l'on ne peut
+    /// pas recharger la scène courante sans tuer la run).</summary>
+    private void Rebuild()
+    {
+        _listeningAction = null;
+        _resetArmed      = false;
+        _resetButton     = null;
+        _rebindButtons.Clear();
+        foreach (var child in GetChildren())
+        {
+            RemoveChild(child);
+            child.QueueFree();
+        }
+        Build();
+    }
+
+    private void Build()
     {
         SetAnchorsPreset(LayoutPreset.FullRect);
 
-        var bg = new ColorRect { Color = Bg };
+        // Fond opaque en écran plein ; voile semi-transparent en surcouche (le menu pause
+        // doit rester perceptible dessous).
+        var bg = new ColorRect { Color = _overlay ? new Color(0f, 0f, 0f, 0.85f) : Bg };
         bg.SetAnchorsPreset(LayoutPreset.FullRect);
         bg.MouseFilter = MouseFilterEnum.Ignore;
         AddChild(bg);
 
-        // Conteneur défilable (le contenu dépasse la hauteur en 720p depuis l'ajout
-        // de la section Contrôles) — FollowFocus garde l'élément focalisé visible en nav clavier.
+        // Conteneur défilable (le contenu dépasse largement la hauteur en 720p) —
+        // FollowFocus garde l'élément focalisé visible en nav clavier.
         var scroll = new ScrollContainer();
         scroll.SetAnchorsPreset(LayoutPreset.FullRect);
         scroll.HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled;
@@ -54,8 +108,8 @@ public partial class OptionsScreen : Control
         panel.AddThemeStyleboxOverride("panel", UiStyle.ScreenPanel());
         hcenter.AddChild(panel);
 
-        var vbox = new VBoxContainer { CustomMinimumSize = new Vector2(560, 0) };
-        vbox.AddThemeConstantOverride("separation", 18);
+        var vbox = new VBoxContainer { CustomMinimumSize = new Vector2(600, 0) };
+        vbox.AddThemeConstantOverride("separation", 14);
         panel.AddChild(vbox);
 
         var title = new Label
@@ -69,19 +123,45 @@ public partial class OptionsScreen : Control
         vbox.AddChild(UiStyle.ScreenTitleUnderline(UiPalette.Cyan));
 
         var s = GameSettings.Instance;
+
+        // ── Audio ─────────────────────────────────────────────────────────────
+        AddSectionHeader(vbox, "OPTIONS_SECTION_AUDIO");
         AddSlider(vbox, Loc.T("OPTIONS_MASTER"), s?.Master ?? 1f, v => GameSettings.Instance?.SetMaster(v));
         AddSlider(vbox, Loc.T("OPTIONS_MUSIC"),  s?.Music  ?? 0.8f, v => GameSettings.Instance?.SetMusic(v));
         AddSlider(vbox, Loc.T("OPTIONS_SFX"),    s?.Sfx    ?? 0.9f, v => GameSettings.Instance?.SetSfx(v));
-        AddToggle(vbox, Loc.T("OPTIONS_FULLSCREEN"), s?.Fullscreen ?? false, v => GameSettings.Instance?.SetFullscreen(v));
-        AddToggle(vbox, Loc.T("OPTIONS_SHAKE"), s?.ShakeEnabled ?? true, v => GameSettings.Instance?.SetShake(v));
-        AddDifficulty(vbox, s?.Difficulty ?? GameSettings.GameDifficulty.Normal);
-        AddLanguage(vbox, s?.Language ?? "en");
 
-        vbox.AddChild(UiStyle.Separator(UiPalette.Cyan));
+        // ── Affichage ─────────────────────────────────────────────────────────
+        AddSectionHeader(vbox, "OPTIONS_SECTION_DISPLAY");
+        AddDisplaySettings(vbox, s);
+
+        // ── Jeu / confort ─────────────────────────────────────────────────────
+        AddSectionHeader(vbox, "OPTIONS_SECTION_GAMEPLAY");
+        AddDifficulty(vbox, s?.Difficulty ?? GameSettings.GameDifficulty.Normal);
+        AddSlider(vbox, Loc.T("OPTIONS_SHAKE"), s?.ShakeIntensity ?? 1f,
+                  v => GameSettings.Instance?.SetShakeIntensity(v));
+        AddToggle(vbox, Loc.T("OPTIONS_REDUCE_FLASHES"), s?.ReduceFlashes ?? false,
+                  v => GameSettings.Instance?.SetReduceFlashes(v));
+        AddSlider(vbox, Loc.T("OPTIONS_RUMBLE"), s?.Rumble ?? 0.7f,
+                  v => GameSettings.Instance?.SetRumble(v));
+
+        // ── Interface ─────────────────────────────────────────────────────────
+        AddSectionHeader(vbox, "OPTIONS_SECTION_INTERFACE");
+        AddLanguage(vbox, s?.Language ?? "en");
+        AddToggle(vbox, Loc.T("OPTIONS_VERSION_STAMP"), s?.ShowVersionStamp ?? true,
+                  v => GameSettings.Instance?.SetShowVersionStamp(v));
+        AddToggle(vbox, Loc.T("OPTIONS_DISCORD"), s?.DiscordEnabled ?? true,
+                  v => GameSettings.Instance?.SetDiscordEnabled(v));
+
+        // ── Contrôles ─────────────────────────────────────────────────────────
         AddControls(vbox);
 
-        vbox.AddChild(UiStyle.Separator(UiPalette.Cyan));
-        AddResetButton(vbox);
+        // Réinitialisation totale : jamais proposée en pleine run (destructif, et la run en
+        // cours écrirait par-dessus la remise à zéro à sa fin).
+        if (!_overlay)
+        {
+            vbox.AddChild(UiStyle.Separator(UiPalette.Cyan));
+            AddResetButton(vbox);
+        }
         vbox.AddChild(UiStyle.Separator(UiPalette.Cyan));
 
         var back = new Button { Text = Loc.T("COMMON_BACK"), CustomMinimumSize = new Vector2(200, 48) };
@@ -97,12 +177,29 @@ public partial class OptionsScreen : Control
         _fade.MouseFilter = MouseFilterEnum.Ignore;
         AddChild(_fade);
         var t = CreateTween();
+        // En surcouche l'arbre est en pause : sans ce mode, le tween — donc le focus initial —
+        // ne démarrerait jamais.
+        if (_overlay) t.SetPauseMode(Tween.TweenPauseMode.Process);
         t.TweenProperty(_fade, "color:a", 0f, 0.4);
         // Le focus va au PREMIER réglage, pas au bouton Retour : avec FollowFocus, focaliser un
         // contrôle situé tout en bas fait défiler la liste dès l'ouverture et l'écran s'affichait
         // au milieu de la section « Contrôles », son début hors champ. Repli sur Retour si aucun
         // réglage n'est focalisable.
         t.TweenCallback(Callable.From(() => (FirstFocusable(vbox) ?? back).GrabFocus()));
+    }
+
+    /// <summary>Titre de section + séparateur (règle du brief §3.6).</summary>
+    private static void AddSectionHeader(VBoxContainer parent, string labelKey)
+    {
+        var header = new Label
+        {
+            Text                = Loc.T(labelKey),
+            HorizontalAlignment = HorizontalAlignment.Center,
+        };
+        header.AddThemeFontSizeOverride("font_size", 22);
+        header.AddThemeColorOverride("font_color", Cyan);
+        parent.AddChild(header);
+        parent.AddChild(UiStyle.Separator(UiPalette.Cyan));
     }
 
     /// <summary>Premier contrôle réellement focalisable de l'arbre, en profondeur d'abord.</summary>
@@ -118,14 +215,25 @@ public partial class OptionsScreen : Control
         return null;
     }
 
-    private void AddSlider(VBoxContainer parent, string label, float value, System.Action<float> onChange)
+    // ── Lignes de réglage ─────────────────────────────────────────────────────
+
+    /// <summary>Ligne « libellé + contrôle » : gabarit commun à tous les réglages.</summary>
+    private static HBoxContainer AddRow(VBoxContainer parent, string label)
     {
         var row = new HBoxContainer();
         row.AddThemeConstantOverride("separation", 16);
 
-        var lbl = new Label { Text = label, CustomMinimumSize = new Vector2(220, 0) };
+        var lbl = new Label { Text = label, CustomMinimumSize = new Vector2(240, 0) };
         lbl.AddThemeColorOverride("font_color", Text);
         row.AddChild(lbl);
+
+        parent.AddChild(row);
+        return row;
+    }
+
+    private void AddSlider(VBoxContainer parent, string label, float value, System.Action<float> onChange)
+    {
+        var row = AddRow(parent, label);
 
         var slider = new HSlider
         {
@@ -147,66 +255,110 @@ public partial class OptionsScreen : Control
             val.Text = $"{d * 100:0} %";
             onChange((float)d);
         };
-        parent.AddChild(row);
+    }
+
+    /// <summary>Liste déroulante « libellé + choix », gabarit commun (difficulté, langue, affichage).</summary>
+    private OptionButton AddDropdown(VBoxContainer parent, string label, string[] items,
+                                     int selected, System.Action<int> onSelected)
+    {
+        var row = AddRow(parent, label);
+
+        // 220 px : le plus long libellé (« Fenêtré » / « Sans bordure » / « Plein écran »)
+        // doit rester en deçà de la flèche du dropdown.
+        var opt = new OptionButton { CustomMinimumSize = new Vector2(220, 0) };
+        UiStyle.ApplyDropdownFrames(opt);   // liste déroulante : la flèche doit rester en deçà du liseré
+        foreach (string item in items) opt.AddItem(item);
+        opt.Selected = Mathf.Clamp(selected, 0, items.Length - 1);
+        opt.ItemSelected += idx => onSelected((int)idx);
+        row.AddChild(opt);
+        return opt;
     }
 
     private void AddDifficulty(VBoxContainer parent, GameSettings.GameDifficulty value)
     {
-        var row = new HBoxContainer();
-        row.AddThemeConstantOverride("separation", 16);
+        var opt = AddDropdown(parent, Loc.T("OPTIONS_DIFFICULTY"),
+            new[] { Loc.T("DIFF_EASY"), Loc.T("DIFF_NORMAL"), Loc.T("DIFF_HARD") },
+            (int)value,
+            idx => GameSettings.Instance?.SetDifficulty((GameSettings.GameDifficulty)idx));
 
-        var lbl = new Label { Text = Loc.T("OPTIONS_DIFFICULTY"), CustomMinimumSize = new Vector2(220, 0) };
-        lbl.AddThemeColorOverride("font_color", Text);
-        row.AddChild(lbl);
-
-        var opt = new OptionButton { CustomMinimumSize = new Vector2(180, 0) };
-        UiStyle.ApplyDropdownFrames(opt);   // liste déroulante : la flèche doit rester en deçà du liseré
-        opt.AddItem(Loc.T("DIFF_EASY"));
-        opt.AddItem(Loc.T("DIFF_NORMAL"));
-        opt.AddItem(Loc.T("DIFF_HARD"));
-        opt.Selected = (int)value;
-        opt.ItemSelected += idx =>
-            GameSettings.Instance?.SetDifficulty((GameSettings.GameDifficulty)idx);
-        row.AddChild(opt);
-        parent.AddChild(row);
+        // En pleine run, la difficulté est déjà engagée (scaling des ennemis, high score) :
+        // la changer à chaud fausserait la partie en cours.
+        if (_overlay) opt.Disabled = true;
     }
 
     private void AddLanguage(VBoxContainer parent, string current)
     {
-        var row = new HBoxContainer();
-        row.AddThemeConstantOverride("separation", 16);
+        var codes = GameSettings.Languages;
+        var names = new string[codes.Length];
+        for (int i = 0; i < codes.Length; i++) names[i] = codes[i].ToUpper();
 
-        var lbl = new Label { Text = Loc.T("OPTIONS_LANGUAGE"), CustomMinimumSize = new Vector2(220, 0) };
-        lbl.AddThemeColorOverride("font_color", Text);
-        row.AddChild(lbl);
-
-        var opt = new OptionButton { CustomMinimumSize = new Vector2(180, 0) };
-        UiStyle.ApplyDropdownFrames(opt);
-        foreach (var l in GameSettings.Languages) opt.AddItem(l.ToUpper());
-        opt.Selected = System.Math.Max(0, System.Array.IndexOf(GameSettings.Languages, current));
-        opt.ItemSelected += idx =>
-        {
-            GameSettings.Instance?.SetLanguage(GameSettings.Languages[idx]);
-            GetTree().ReloadCurrentScene(); // recharge l'écran pour appliquer la langue
-        };
-        row.AddChild(opt);
-        parent.AddChild(row);
+        AddDropdown(parent, Loc.T("OPTIONS_LANGUAGE"), names,
+            System.Math.Max(0, System.Array.IndexOf(codes, current)),
+            idx =>
+            {
+                GameSettings.Instance?.SetLanguage(codes[idx]);
+                // Écran plein : rechargement de la scène. En surcouche, recharger la scène
+                // courante tuerait la run — on se reconstruit sur place.
+                if (_overlay) Rebuild();
+                else          GetTree().ReloadCurrentScene();
+            });
     }
 
     private void AddToggle(VBoxContainer parent, string label, bool value, System.Action<bool> onChange)
     {
-        var row = new HBoxContainer();
-        row.AddThemeConstantOverride("separation", 16);
-
-        var lbl = new Label { Text = label, CustomMinimumSize = new Vector2(220, 0) };
-        lbl.AddThemeColorOverride("font_color", Text);
-        row.AddChild(lbl);
+        var row = AddRow(parent, label);
 
         var check = new CheckButton { ButtonPressed = value };
         UiStyle.ApplyToggleStyles(check);
         check.Toggled += pressed => onChange(pressed);
         row.AddChild(check);
-        parent.AddChild(row);
+    }
+
+    // ── Affichage (fenêtre, résolution, VSync, IPS) ───────────────────────────
+
+    private void AddDisplaySettings(VBoxContainer parent, GameSettings? s)
+    {
+        var mode = s?.DisplayMode ?? GameSettings.WindowMode.Windowed;
+
+        // La résolution ne concerne QUE le mode fenêtré : elle est grisée dans les deux autres
+        // (le plein écran fenêtré prend la taille de l'écran, le plein écran celle du moniteur).
+        OptionButton? resolution = null;
+
+        AddDropdown(parent, Loc.T("OPTIONS_DISPLAY_MODE"),
+            new[] { Loc.T("OPTIONS_DISPLAY_WINDOWED"),
+                    Loc.T("OPTIONS_DISPLAY_BORDERLESS"),
+                    Loc.T("OPTIONS_DISPLAY_FULLSCREEN") },
+            (int)mode,
+            idx =>
+            {
+                var picked = (GameSettings.WindowMode)idx;
+                GameSettings.Instance?.SetDisplayMode(picked);
+                if (resolution != null) resolution.Disabled = picked != GameSettings.WindowMode.Windowed;
+            });
+
+        var sizes = GameSettings.Resolutions;
+        var names = new string[sizes.Length];
+        for (int i = 0; i < sizes.Length; i++) names[i] = $"{sizes[i].X} × {sizes[i].Y}";
+
+        resolution = AddDropdown(parent, Loc.T("OPTIONS_RESOLUTION"), names,
+            System.Math.Max(0, System.Array.IndexOf(sizes, s?.WindowSize ?? sizes[0])),
+            idx => GameSettings.Instance?.SetWindowSize(sizes[idx]));
+        resolution.Disabled = mode != GameSettings.WindowMode.Windowed;
+
+        AddToggle(parent, Loc.T("OPTIONS_VSYNC"), s?.VSync ?? true,
+                  v => GameSettings.Instance?.SetVSync(v));
+
+        var limits = GameSettings.FpsLimits;
+        var limitNames = new string[limits.Length];
+        for (int i = 0; i < limits.Length; i++)
+            limitNames[i] = limits[i] == 0 ? Loc.T("OPTIONS_FPS_UNLIMITED") : limits[i].ToString();
+
+        AddDropdown(parent, Loc.T("OPTIONS_FPS_LIMIT"), limitNames,
+            System.Math.Max(0, System.Array.IndexOf(limits, s?.MaxFps ?? 0)),
+            idx => GameSettings.Instance?.SetMaxFps(limits[idx]));
+
+        AddToggle(parent, Loc.T("OPTIONS_SHOW_FPS"), s?.ShowFps ?? false,
+                  v => GameSettings.Instance?.SetShowFps(v));
     }
 
     // ── Remap des touches (déplacement ZQSD + dash) ───────────────────────────
@@ -233,16 +385,7 @@ public partial class OptionsScreen : Control
 
     private void AddControls(VBoxContainer parent)
     {
-        var header = new Label
-        {
-            Text                = Loc.T("OPTIONS_CONTROLS"),
-            HorizontalAlignment = HorizontalAlignment.Center,
-        };
-        header.AddThemeFontSizeOverride("font_size", 22);
-        header.AddThemeColorOverride("font_color", Cyan);
-        parent.AddChild(header);
-        // Règle du brief §3.6 : tout titre de section est systématiquement suivi du séparateur.
-        parent.AddChild(UiStyle.Separator(UiPalette.Cyan));
+        AddSectionHeader(parent, "OPTIONS_CONTROLS");
 
         foreach (var (action, labelKey) in MoveRows)
             AddRebindRow(parent, action, labelKey);
@@ -262,20 +405,14 @@ public partial class OptionsScreen : Control
 
     private void AddRebindRow(VBoxContainer parent, string action, string labelKey)
     {
-        var row = new HBoxContainer();
-        row.AddThemeConstantOverride("separation", 16);
+        var row = AddRow(parent, Loc.T(labelKey));
 
-        var lbl = new Label { Text = Loc.T(labelKey), CustomMinimumSize = new Vector2(220, 0) };
-        lbl.AddThemeColorOverride("font_color", Text);
-        row.AddChild(lbl);
-
-        var btn = new Button { CustomMinimumSize = new Vector2(180, 40) };
+        var btn = new Button { CustomMinimumSize = new Vector2(200, 40) };
         StyleButton(btn);
         btn.Pressed += () => StartListening(action);
         _rebindButtons[action] = btn;
         row.AddChild(btn);
 
-        parent.AddChild(row);
         RefreshRebindLabel(action);
     }
 
@@ -381,8 +518,21 @@ public partial class OptionsScreen : Control
         _leaving = true;
         AudioSystem.Instance?.PlaySfx("sfx_ui_button");
         var t = CreateTween();
-        t.TweenProperty(_fade, "color:a", 1f, 0.3);
-        t.TweenCallback(Callable.From(() =>
-            GetTree().ChangeSceneToFile("res://scenes/MainMenu.tscn")));
+        if (_overlay) t.SetPauseMode(Tween.TweenPauseMode.Process);
+        t.TweenProperty(_fade, "color:a", 1f, _overlay ? 0.15 : 0.3);
+        t.TweenCallback(Callable.From(_overlay ? CloseOverlay : ReturnToMenu));
+    }
+
+    private void ReturnToMenu() => GetTree().ChangeSceneToFile("res://scenes/MainMenu.tscn");
+
+    /// <summary>Libère la surcouche (et son CanvasLayer porteur), puis rend la main à l'appelant.</summary>
+    private void CloseOverlay()
+    {
+        var callback = _onClosed;
+        _onClosed = null;
+        // Le CanvasLayer a été créé par OpenOverlay pour ce seul écran : il part avec lui.
+        Node carrier = GetParent() is CanvasLayer layer ? layer : this;
+        carrier.QueueFree();
+        callback?.Invoke();
     }
 }

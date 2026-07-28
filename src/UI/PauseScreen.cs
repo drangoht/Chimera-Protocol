@@ -96,19 +96,25 @@ public partial class PauseScreen : CanvasLayer
         BuildInventorySection(right);
         BuildGraftsSection(right);
 
-        // Boutons : reprendre + quitter la partie
+        // Boutons : reprendre + options + quitter la partie
         root.AddChild(Sep(UiPalette.Violet));
         var btn = MakeButton("▶  " + Loc.T("PAUSE_RESUME"));
         btn.Pressed += Close;
         root.AddChild(btn);
 
+        var optionsBtn = MakeButton("⚙  " + Loc.T("PAUSE_OPTIONS"));
+        optionsBtn.Pressed += OpenOptions;
+        root.AddChild(optionsBtn);
+
         var quitBtn = MakeButton(Loc.T("PAUSE_QUIT"));
         quitBtn.Pressed += QuitToMenu;
         root.AddChild(quitBtn);
 
-        // Navigation clavier/manette entre les deux boutons
-        btn.FocusNeighborBottom     = btn.GetPathTo(quitBtn);
-        quitBtn.FocusNeighborTop    = quitBtn.GetPathTo(btn);
+        // Navigation clavier/manette entre les trois boutons
+        btn.FocusNeighborBottom        = btn.GetPathTo(optionsBtn);
+        optionsBtn.FocusNeighborTop    = optionsBtn.GetPathTo(btn);
+        optionsBtn.FocusNeighborBottom = optionsBtn.GetPathTo(quitBtn);
+        quitBtn.FocusNeighborTop       = quitBtn.GetPathTo(optionsBtn);
 
         // Focus sur le bouton reprendre après le layout
         CreateTween().TweenCallback(Callable.From(() => btn.GrabFocus()));
@@ -339,6 +345,35 @@ public partial class PauseScreen : CanvasLayer
         "rail_overcharged" => n is RailOvercharged,
         _                  => false,
     };
+
+    // ── Options (surcouche) ───────────────────────────────────────────────────
+
+    /// <summary>Ouvre l'écran Options par-dessus la pause, sans quitter la run.
+    /// Pendant ce temps le menu pause cesse d'écouter Échap (sinon la même touche fermerait
+    /// les deux d'un coup) ; au retour il se reconstruit pour refléter un éventuel
+    /// changement de langue.</summary>
+    private void OpenOptions()
+    {
+        AudioSystem.Instance?.PlaySfx("sfx_ui_button");
+        SetProcessUnhandledInput(false);
+        OptionsScreen.OpenOverlay(this, onClosed: () =>
+        {
+            if (!IsInstanceValid(this)) return;   // run quittée entre-temps
+            SetProcessUnhandledInput(true);
+            Rebuild();
+        });
+    }
+
+    /// <summary>Reconstruit le panneau de pause à neuf (retour des Options : langue, réglages).</summary>
+    private void Rebuild()
+    {
+        foreach (var child in GetChildren())
+        {
+            RemoveChild(child);
+            child.QueueFree();
+        }
+        BuildLayout();
+    }
 
     // ── Fermeture ─────────────────────────────────────────────────────────────
 

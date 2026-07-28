@@ -66,10 +66,10 @@ enum `MusicStem` Bed/Pulse/Lead/Boss). Les nœuds délèguent ici (SRP).
 - **Titres cosmétiques** : `Titles` (registre id/nom — flair sans effet, débloqué via Défis). Choisi au Hub (`HubScreen.BuildTitleSelector`, infra chips générique `BuildChipSection`/`MakeChip`/`RefreshChips` partagée avec les perks ; `MetaSaveData.EquippedCosmetic`), affiché sous le logo du MainMenu (`MainMenu.ApplyTitleFlair`, nœud `TitleFlair`). Ids = récompenses `cosmetic` de `challenges.json`.
 - **Assimilation (greffes)** : `AssimilationSystem` (autoload — jauges par archétype, slots équipés, pause/reprise de jauge, émet `GaugeFilled` ; délègue les chiffres à `GraftTable`) ; effets côté Player → `GraftManager` (§Entities) ; écran → `AssimilationScreen` (§UI). Data → `grafts.json`. Meta : `graft_slots`/`graft_metabolism`. Action d'entrée `dash` (InputRemap). Cf. docs/DESIGN_ASSIMILATION.md.
 - Biome/arène : `BiomeAtmosphere`, `BiomeObstacles`, `FloorFeatures`, `GroundRenderer`, `DeepMotifShape`, `VignetteFollow`
-- Divers : `AudioSystem`, `GameSettings` (audio/affichage/diff/langue + **touches move_* rebindables**), `Loc`, `FusionFlash`, `ScreenShake`, `RunStatsTracker`
+- Divers : `AudioSystem`, `GameSettings` (source unique des réglages, persistés dans `user://settings.cfg` : volumes, **mode de fenêtre** `Windowed/Borderless/Fullscreen` + résolution + VSync + limite/compteur d'IPS, difficulté, **intensité des secousses**, **réduction des flashs**, **vibration manette**, langue, **tampon de version**, **Discord on/off**, touches `move_*`/`dash` rebindables ; migration des anciennes clés `display/fullscreen` et `gameplay/shake`), `Loc`, `FusionFlash`, `ScreenShake` (`Enabled` + `Intensity`), `RunStatsTracker`
 - **Musique adaptative** : `MusicDirector` (autoload — alterne `music_run_<biome>_{calm,combat}.ogg` + `music_run_boss.ogg` commun, **une seule audible à la fois**, fondu croisé à puissance constante ; détecte le boss tout seul via `EnemyBase.AssimIsBoss/AssimIsMiniBoss`). Logique pure → `MusicIntensity` (§Rules : `Select` avec hystérésis, `Approach`, `WeightToDb`). Démarré par `RunStatsTracker` (différé d'une frame : `CurrentBiomeId` est posé par `GroundRenderer._Ready`). `AudioSystem.PlayMusic` le coupe — les deux ne coexistent jamais. Direction sonore → `docs/AUDIO_AI_PROMPTS.md` ; pièges → `docs/PITFALLS.md`
 - Input : **`InputRemap`** (statique) — actions `move_up/down/left/right` (défaut ZQSD + flèches + manette), séparées des `ui_*` menu ; le Player lit `Input.GetVector(move_*)`, remap via l'écran Options, persisté dans `GameSettings`. Action **`dash`** (Maj gauche / RB, `EnsureExtraActions()` au boot via GameManager) pour la greffe Servos Erratiques
-- Intégrations : **`DiscordPresence`** (autoload, NuGet `DiscordRichPresence` — statut « joue à Chimera Protocol », clés art `chimera`/`chimera_small`, tolérant à l'absence de Discord ; `SetInMenus`/`SetInRun` appelés par MainMenu/GameManager), **`VersionStamp`** (autoload, overlay `v<ver>-<sha>` bas-droite) ; **`BuildInfo`** (`src/Core/`, `GitSha` auto-généré par `tools/gen_build_info.ps1`, version lue de project.godot)
+- Intégrations : **`DiscordPresence`** (autoload, NuGet `DiscordRichPresence` — statut « joue à Chimera Protocol », clés art `chimera`/`chimera_small`, tolérant à l'absence de Discord ; `SetInMenus`/`SetInRun` appelés par MainMenu/GameManager), **`VersionStamp`** (autoload `src/UI/`, overlay bas-droite : tampon `v<ver>-<sha>` + **compteur d'IPS**, les deux commandés par les Options via `SetStampVisible`/`SetFpsVisible`) ; **`BuildInfo`** (`src/Core/`, `GitSha` auto-généré par `tools/gen_build_info.ps1`, version lue de project.godot)
 
 ## §UI — `src/UI/` (écrans Control)
 
@@ -82,7 +82,11 @@ Les `.tscn` ne portent plus de `StyleBoxFlat` : un `theme_override_styles/*` en 
 l'override runtime et rendrait le style invisible (`tools/strip_tscn_styleboxes.py` les retire).
 `MainMenu` (+ **bandeau MAJ** → §MAJ ; 5 entrées : Jouer/Hub/**Codex**/Options/Quitter — les écrans info sont sous le sous-menu Codex ; sélecteur de langue = drapeaux `flag_{fr,en,es}.png` en haut à droite ; flair du titre équipé sous le logo via `ApplyTitleFlair`) · `CharacterSelectScreen` · `LevelSelectScreen` ·
 `HubScreen` · `BestiaryScreen` / `ArsenalScreen` / `CodexScreenBase` (+ `Codex`) ·
-`OptionsScreen` · `PauseScreen` · `LevelUpScreen` · **`AssimilationScreen`** (écran modal des
+**`OptionsScreen`** (5 sections — Audio / Affichage / Jeu / Interface / Contrôles ; UI en code ;
+double usage : écran plein depuis le MainMenu **ou surcouche** modale via `OpenOverlay(context,
+onClosed)` depuis le menu pause — pas de changement de scène, difficulté grisée et réinit totale
+masquée en run) · **`PauseScreen`** (bouton **Options** → surcouche, puis `Rebuild()` au retour) ·
+`LevelUpScreen` · **`AssimilationScreen`** (écran modal des
 greffes, UI construite en code) · **`ChimeraCodexScreen`** (codex explicatif des greffes/fusions —
 sous-classe `CodexScreenBase`, entrées dérivées de `AssimilationSystem.Config` ; accessible depuis le
 bouton « Chimère » du MainMenu ; `CodexScreenBase.IntroText` = paragraphe d'intro optionnel) ·

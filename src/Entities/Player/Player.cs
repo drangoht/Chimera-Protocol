@@ -640,10 +640,23 @@ public partial class Player : CharacterBody2D
         {
             AudioSystem.Instance?.PlaySfx("sfx_player_hit");
             HitFlash(0.1f);
+            Rumble(0.55f, 0.18f);
         }
 
         if (Stats.CurrentHp <= 0f)
+        {
+            Rumble(1f, 0.5f);
             HandleDeath();
+        }
+    }
+
+    /// <summary>Vibration manette dosée par le réglage Options (0 = coupée). Sans manette
+    /// branchée, <see cref="Input.StartJoyVibration"/> est un no-op — aucun test à faire.</summary>
+    private static void Rumble(float strength, float duration)
+    {
+        float scale = GameSettings.Instance?.Rumble ?? 0f;
+        if (scale <= 0.01f) return;
+        Input.StartJoyVibration(0, strength * scale * 0.6f, strength * scale, duration);
     }
 
     /// <summary>

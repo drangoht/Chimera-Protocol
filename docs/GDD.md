@@ -531,7 +531,16 @@ Brief complet : `docs/ARENA_DA_BRIEF.md`.
   et pulsation basse vie, barre XP 12px avec flash au level-up, label `LV N`, sous-label XP
   `cur / max XP`, timer encadré (centre haut), compteur Noyaux ⬡ (droite haut)
 - **Écran de montée de niveau** : 3 cartes de choix, pause du jeu pendant le choix
-- **Menu pause**
+- **Menu pause** : état complet de la run (mission, joueur, armes/passifs, greffes) +
+  Reprendre / **Options** / Quitter. Les Options s'y ouvrent **en surcouche**, sans quitter la
+  run : le joueur peut régler volume, plein écran, secousses ou toucher au remap en pleine
+  partie. Seuls la **difficulté** (déjà engagée dans la run et son high score) et
+  « Tout réinitialiser » y sont indisponibles.
+- **Options** en cinq sections : Audio (général / musique / SFX), Affichage (mode de fenêtre —
+  fenêtré, sans bordure, plein écran —, résolution, VSync, limite et compteur d'IPS), Jeu
+  (difficulté, intensité des secousses, réduction des flashs pour la photosensibilité, vibration
+  manette), Interface (langue, tampon de version, Discord Rich Presence) et Contrôles (remap
+  ZQSD + ruade). Tout est appliqué immédiatement et persisté dans `user://settings.cfg`.
 
 ## 12. Direction artistique (résumé — détaillée par `directeur-artistique` et `graphiste`)
 

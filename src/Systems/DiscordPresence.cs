@@ -24,6 +24,20 @@ public partial class DiscordPresence : Node
     public override void _Ready()
     {
         Instance = this;
+        // GameSettings est chargé AVANT cet autoload : la préférence est déjà disponible ici.
+        if (GameSettings.Instance?.DiscordEnabled ?? true) Connect();
+    }
+
+    /// <summary>Active ou coupe la présence Discord à chaud (réglage Options).</summary>
+    public void SetEnabled(bool enabled)
+    {
+        if (enabled == (_client != null)) return;
+        if (enabled) Connect();
+        else         Shutdown();
+    }
+
+    private void Connect()
+    {
         try
         {
             _client = new DiscordRpcClient(AppId);

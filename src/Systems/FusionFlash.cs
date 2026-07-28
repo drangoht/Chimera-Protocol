@@ -34,10 +34,14 @@ public partial class FusionFlash : CanvasLayer
         // S'assurer que l'alpha est à 0 avant de rejouer (appels rapprochés)
         _flashRect.Color = new Color(1f, 1f, 1f, 0f);
 
+        // Accessibilité (Options → « réduire les flashs ») : le voile blanc reste, très atténué,
+        // pour que la fusion se lise quand même — mais sans le « reset de l'œil » photosensible.
+        bool reduced = GameSettings.Instance?.ReduceFlashes ?? false;
+
         // Flash blanc existant
         var tween = CreateTween();
         tween.SetPauseMode(Tween.TweenPauseMode.Process);
-        tween.TweenProperty(_flashRect, "color:a", 0.85f, 0.1)
+        tween.TweenProperty(_flashRect, "color:a", reduced ? 0.22f : 0.85f, 0.1)
              .SetEase(Tween.EaseType.Out)
              .SetTrans(Tween.TransitionType.Quad);
         tween.TweenProperty(_flashRect, "color:a", 0f, 0.25)
@@ -48,8 +52,8 @@ public partial class FusionFlash : CanvasLayer
         if (!GetTree().Paused)
             ScreenShake.Instance?.Shake(8f, 0.25f);
 
-        // Chromatic aberration 0 → 4 en 0.1 s → 0 en 0.2 s
-        if (_chromaMat != null)
+        // Chromatic aberration 0 → 4 en 0.1 s → 0 en 0.2 s (coupée en mode flashs réduits)
+        if (_chromaMat != null && !reduced)
         {
             _chromaMat.SetShaderParameter("strength", 0.0f);
             var chromaTween = CreateTween();

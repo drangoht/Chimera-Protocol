@@ -5,6 +5,24 @@
 > `CLAUDE.md` ; le design complet dans `docs/GDD.md` ; la carte du code dans `/carte-projet`.
 
 - Pile technique : **Godot 4.7 .NET (C# / .NET 8 / GodotSharp)**
+- **Options enrichies + accès depuis le menu pause (✅ 2026-07-28, non publié).** L'écran Options
+  se limitait à 3 volumes, un toggle plein écran, un toggle secousses, difficulté, langue et le
+  remap ZQSD — et n'était atteignable que depuis le menu principal : impossible de baisser la
+  musique ou de passer en plein écran sans abandonner sa run. Il est désormais **découpé en cinq
+  sections** (Audio / Affichage / Jeu / Interface / Contrôles) et gagne : **mode de fenêtre**
+  (fenêtré / sans bordure / plein écran, remplace le toggle), **résolution** de la fenêtre (grisée
+  hors mode fenêtré), **VSync**, **limite d'IPS** (60/120/144/240/illimitée), **compteur d'IPS**
+  (affiché au-dessus du tampon de version), **intensité des secousses** en slider (remplace le
+  toggle, 0 % = coupées), **réduction des flashs** (photosensibilité : flash de fusion atténué +
+  aberration chromatique coupée), **vibration manette** en slider (branchée sur les dégâts et la
+  mort du joueur), **affichage du tampon de version** et **Discord Rich Presence** (coupable à
+  chaud). Le **menu pause** ouvre le même écran en **surcouche** (`OptionsScreen.OpenOverlay`) :
+  pas de changement de scène, l'arbre reste en pause, la difficulté y est grisée (la run est déjà
+  engagée) et « Tout réinitialiser » masqué ; au retour le panneau de pause se reconstruit (langue).
+  Migration transparente des anciennes clés de `settings.cfg` (`display/fullscreen` → `display/mode`,
+  `gameplay/shake` → `gameplay/shake_intensity`). Piège documenté dans `docs/PITFALLS.md` : le mode
+  « sans bordure » passe par `DisplayServer.WindowMode.Fullscreen` (mode natif Godot) et **jamais**
+  par un flag `Borderless` posé à la main — sinon le retour en fenêtré est impossible.
 - **Paliers de menace — la difficulté suit les niveaux débloqués (✅ 2026-07-28, non publié).** Les 5
   niveaux se débloquent en séquence et le Hub rend le joueur 2 à 3 fois plus fort entre-temps, mais
   **tous tournaient sur la même courbe** : le dernier niveau était plus facile que le premier, et

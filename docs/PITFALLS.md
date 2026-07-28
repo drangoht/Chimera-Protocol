@@ -123,6 +123,17 @@ Tout nouveau chemin de sortie de run doit l'appeler aussi.
 - `PivotOffset` pour hover scale : calculer dans `MouseEntered` (`btn.Size / 2f`), PAS dans `_Ready()` (size = Vector2.Zero à ce stade)
 - `MouseFilter = Ignore` sur la racine d'un écran "attend n'importe quelle entrée" — sinon le clic est absorbé comme événement GUI avant `_UnhandledInput`
 
+## Réglages d'affichage (`GameSettings.ApplyDisplay`)
+- **Ne jamais fabriquer un mode « sans bordure » à la main** (`WindowSetFlag(Borderless, true)` + fenêtre redimensionnée à l'écran). L'aller marche, le retour non : Godot redéduit le mode depuis la géométrie, `WindowGetMode()` renvoie alors `ExclusiveFullscreen`, et le `WindowSetMode(Windowed)` suivant est ignoré — **le joueur reste coincé en plein écran**. Utiliser les modes natifs : `Windowed`, `Fullscreen` (= plein écran FENÊTRÉ chez Godot, ce que le joueur appelle « sans bordure ») et `ExclusiveFullscreen`.
+- Repasser en fenêtré doit **repositionner** la fenêtre (recentrage sur l'écran courant) : `WindowSetSize` seul la laisse à son ancienne origine, souvent à cheval hors de l'écran après un retour de plein écran ou un changement de résolution.
+- Les réglages de fenêtre s'écrivent dans `user://settings.cfg` **à chaque changement** : tout script de test qui les manipule doit sauvegarder/restaurer ce fichier, sinon il laisse le jeu du joueur dans l'état de test.
+
+## Surcouche modale par-dessus le menu pause (`OptionsScreen.OpenOverlay`)
+- L'écran est instancié dans un `CanvasLayer` **créé pour lui** (layer 110 > 100 du `PauseScreen`) avec `ProcessMode = Always` : sans ça rien ne répond, l'arbre étant en pause. La fermeture libère le `CanvasLayer` porteur, pas seulement l'écran.
+- Le `PauseScreen` doit **couper son `_UnhandledInput`** (`SetProcessUnhandledInput(false)`) pendant l'affichage de la surcouche : sinon un seul Échap ferme les deux d'un coup.
+- Un écran conçu pour le plein écran ne peut pas recharger la scène courante en surcouche (`ReloadCurrentScene` tuerait la run) : prévoir un chemin de reconstruction sur place (`Rebuild()`) — c'est ce que fait le changement de langue.
+- Les tweens de l'écran (fondu d'entrée/sortie, et donc le `GrabFocus` différé qu'ils portent) ont besoin de `SetPauseMode(Tween.TweenPauseMode.Process)` en surcouche.
+
 ## Scènes / cycle de vie
 - `WeaponBase._Ready()` initialise `_timer = Cooldown` — chaque sous-classe DOIT appeler `base._Ready()` EN DERNIER (après avoir assigné `Cooldown`), sinon tir au frame 0
 - `GraftedColossus.Die()` n'appelle PAS `base.Die()` (qui fait `QueueFree()` immédiatement, tuant le nœud avant l'anim death)
