@@ -31,9 +31,17 @@ désormais la **seule stat exemptée** → **675 PV** mesurés en banc.
 de l'XP pour gagner des niveaux qui ne donnent rien. Livré : **`OverloadCards`**, trois cartes de
 fin de partie **sans plafond** (Blindage +45 PV max et soigne d'autant · Auto-réparation +0,6 PV/s ·
 Surtension +5 % de dégâts), proposées uniquement quand le pool est vide. Nouveau flag
-**`--saturate-arsenal`** (le banc n'atteint jamais cet état seul). Design → `docs/GDD.md` §31.6 +
-**§33** ; pièges → `docs/PITFALLS.md` (§Amortissement des passifs, §Cartes de surcharge) ; mesures →
-`docs/TEST_REPORT.md`. **243 tests.** **Reste** : calibrage sur session jouée (valeurs de départ).
+**`--saturate-arsenal`** (le banc n'atteint jamais cet état seul).
+**(c)** 2ᵉ session jouée : PV **700 → 2680** en overtime (la courbe n'est plus plate), survie 74 s →
+**5 min 18 s**… mais **mort volontaire**, la run « aurait pu durer beaucoup plus longtemps ». Le
+pendule était allé trop loin : la menace passait **sous** la défense à 5 min (×2,37 contre ×2,44),
+les cartes rapportant ~306 PV/min. → `OvertimeEscalation.StatAcceleration` **1,5 → 3** (la valeur de
+1,5 n'existait que parce que la survie était plafonnée — les cartes ont supprimé ce plafond). Le test
+ne compare plus la menace à un **seuil absolu** mais à la **pente de la défense**.
+Design → `docs/GDD.md` §31.6, **§31.7**, **§33** ; pièges → `docs/PITFALLS.md` (§Amortissement des
+passifs, §Cartes de surcharge) ; mesures → `docs/TEST_REPORT.md`. **244 tests.**
+**Reste** : session jouée jusqu'à la mort **subie** (cible 5-10 min) ; l'**Auto-réparation** est un
+choix mort (1 prise sur 80, §33.5), non corrigée pour ne pas fausser la prochaine mesure.
 
 **(2) Mid-boss par biome** (2026-07-29) — dernier point non livré de `docs/EXPANSION_PLAN.md` (B.3).
 La faune par biome était complète, mais **trois niveaux sur cinq n'avaient aucun champion de mi-run**

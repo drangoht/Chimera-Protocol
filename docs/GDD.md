@@ -2402,7 +2402,7 @@ accélérations distinctes :
 | courbe | accélération | ce qu'elle pilote |
 |---|---|---|
 | `DensityMinutes` | **×4** (inchangée) | cadence de lots, taille des vagues, cap simultané |
-| `StatMinutes` | **×1,5** | PV, dégâts, variété d'ennemis tirables, fréquence d'élite, champions d'overtime |
+| `StatMinutes` | **×1,5** → **×3** (cf. §31.7) | PV, dégâts, variété d'ennemis tirables, fréquence d'élite, champions d'overtime |
 
 `tStat` ne dérive plus de `tDensity` : il repart du temps réel. La densité conserve sa pente franche
 — sans effet pratique aujourd'hui, mais elle redeviendra juste le jour où le cap de 300 sera relevé.
@@ -2415,11 +2415,13 @@ les minutes d'overtime elles-mêmes : il amortit donc les deux courbes, comme av
 1. **L'overtime doit tuer** — c'est un mode de score, pas un mode infini. L'escalade reste
    strictement croissante et sans plafond.
 2. **La fenêtre de survie visée est de 5 à 10 minutes** pour un build de fin de run, cohérente avec
-   la saturation du bonus d'Échos (§9.2). Traduit en test : les dégâts entrants ne doivent pas
-   dépasser **×6 en dix minutes d'overtime** (×10,9 avant), ni descendre sous ×3 (sinon l'escalade
-   ne remplit plus son office).
-3. **Quand une défense est plafonnée, la menace correspondante ne peut pas être quadratique sans
-   borne.** Règle générale à opposer à toute future escalade.
+   la saturation du bonus d'Échos (§9.2). ~~Traduit en test : les dégâts entrants ne doivent pas
+   dépasser ×6 en dix minutes d'overtime~~ — **critère abandonné au §31.7** : un seuil *absolu*
+   n'avait de sens que tant que la défense du joueur était plafonnée. Le test compare désormais la
+   croissance de la menace à celle de la défense.
+3. **Une défense plafonnée interdit une menace quadratique sans borne — et réciproquement, une
+   défense non bornée en exige une.** Règle générale à opposer à toute future escalade ; c'est le
+   sens de lecture qui manquait qui a coûté deux itérations (§31.6, §31.7).
 
 ### 31.5 Ce qui a été écarté
 
@@ -2480,7 +2482,42 @@ doit être lue dans les deux sens : **une menace non bornée exige une défense 
 
 Piste à instruire (non tranchée) : des cartes de fin de partie à effet faible, cumulatif et sans
 plafond de niveau (+PV max, +soin), proposées une fois l'arsenal saturé — la réponse classique du
-genre au même problème.
+genre au même problème. → **livrée au §33.**
+
+### 31.7 Le durcissement qui suit les cartes de surcharge (2026-07-29)
+
+Deuxième session jouée, avec les trois correctifs (PV non amortis + cartes de surcharge). La courbe
+de PV n'est plus plate — **700 → 2680** entre la saturation de l'arsenal et la fin — et la survie en
+overtime passe de 74 s à **5 min 18 s**.
+
+Mais la run a été **interrompue volontairement** : le testeur estime qu'elle « aurait pu durer
+beaucoup plus longtemps ». Le pendule est donc allé trop loin. Le calcul le confirme, en comparant
+les deux croissances sur le cas mesuré (Fournaise, palier 3) :
+
+| minutes d'overtime | menace à `StatAcceleration` = 1,5 | défense du joueur (mesurée) |
+|---|---|---|
+| 5 | ×2,37 | **×2,44** |
+| 10 | ×4,46 | ×3,89 |
+| 15 | ×7,29 | ×5,33 |
+
+**À 5 minutes la menace passait sous la défense.** Les cartes de surcharge font gagner au joueur
+~306 PV par minute d'overtime : la course, que l'escalade était censée remporter, était perdue
+d'avance sur toute la première moitié de la fenêtre. L'overtime avait cessé d'être une fin pour
+devenir un plateau.
+
+**Correctif : `StatAcceleration` 1,5 → 3.** La valeur de 1,5 avait été choisie *parce que* la survie
+était plafonnée (§31.3) ; les cartes ayant supprimé ce plafond, la contrainte qui la justifiait a
+disparu avec lui. À 3, la menace repasse devant dès la 5ᵉ minute (×3,54 contre ×2,44) et **double**
+la défense à la 10ᵉ (×7,95 contre ×3,89).
+
+**Le critère de test change de nature.** Le seuil absolu du §31.4.2 (« pas plus de ×6 en dix
+minutes ») supposait une défense plafonnée : comparer une menace à une constante n'a plus de sens dès
+lors que le joueur croît lui aussi. `OvertimeEscalationTests` compare désormais les deux pentes —
+la menace doit dépasser la défense à 5 minutes, et l'écart doit **se creuser** ensuite — avec un
+garde-fou symétrique pour qu'elle ne tue pas dès la 2ᵉ minute.
+
+**Reste à vérifier en jouant** : que la mort survienne bien dans la fenêtre 5-10 min, cette fois
+subie et non consentie.
 
 
 ---
@@ -2630,3 +2667,27 @@ d'XP et plafonne au niveau ~73 en 17 minutes (armes L12-16), là où une session
 des fusions puis de leur montée de L1 à L20), puis octroie le niveau qui rend les cartes visibles.
 Sans cet octroi, un bot à l'arsenal saturé tue tout à distance, ne ramasse plus un seul orbe et ne
 monte jamais de niveau.
+
+### 33.5 Premier retour de jeu : l'Auto-réparation est un choix mort
+
+Session jouée du 2026-07-29. Les prises se déduisent des stats, entre la saturation de l'arsenal
+(11ᵉ minute) et la fin de run :
+
+| carte | calcul | prises |
+|---|---|---|
+| Blindage d'urgence | (2680 − 700) / 45 | **44** |
+| Surtension | (3,81 − 2,08) / 0,05 | **~35** |
+| *niveaux gagnés sur la période* | 181 − 101 | *80* |
+
+44 + 35 = 79 sur 80 : **l'Auto-réparation n'a été choisie qu'une fois.** À +0,6 PV/s face à 100+
+dégâts/s entrants, elle est invisible, quand +45 PV max est immédiat et se cumule avec son propre
+soin. Le joueur n'arbitre donc qu'entre deux cartes sur trois.
+
+Arithmétiquement elle n'est pourtant pas si loin du compte : +0,6 PV/s rattrape +45 PV max en 75
+secondes, et une run d'overtime en dure plusieurs centaines. C'est un problème de **lisibilité**, pas
+de valeur — un gain étalé ne se perçoit pas quand la barre de vie tombe par à-coups de 100.
+
+Non corrigé à ce stade : la priorité était de rendre l'overtime mortel (§31.7), et retoucher cette
+valeur dans le même lot rendrait la prochaine mesure inexploitable. Pistes, à instruire une fois la
+fenêtre de survie stabilisée : monter franchement le débit, ou l'indexer sur les PV max (elle
+suivrait alors la même pente que le Blindage au lieu de décrocher).

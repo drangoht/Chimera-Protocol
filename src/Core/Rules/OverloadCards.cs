@@ -80,6 +80,19 @@ public static class OverloadCards
     /// <summary>Les trois cartes, dans l'ordre d'affichage.</summary>
     public static readonly IReadOnlyList<Card> All = new[] { Plating, Regen, Damage };
 
+    /// <summary>
+    /// Repère de calibrage, <b>mesuré</b> sur la session jouée du 2026-07-29 (Fournaise, palier 3) :
+    /// PV max du joueur de 1060 à l'entrée en overtime à 2680 après 5:18, soit ~306 PV gagnés par
+    /// minute d'overtime. C'est la vitesse à laquelle la défense du joueur croît une fois l'arsenal
+    /// saturé — la grandeur que l'escalade de la menace doit dépasser pour que l'overtime tue
+    /// (cf. <see cref="OvertimeEscalation.StatAcceleration"/> et GDD §31.4.3).
+    ///
+    /// Vaut pour un joueur qui privilégie <see cref="Plating"/> : sur cette session, 44 prises de
+    /// Blindage et ~35 de Surtension pour 80 niveaux — <see cref="Regen"/> n'a été choisie qu'une
+    /// fois, cf. GDD §33.5.
+    /// </summary>
+    public const float MeasuredHpGainPerOvertimeMinute = 306f;
+
     /// <summary>Carte d'id <paramref name="id"/>, ou <c>null</c> si l'id n'est pas une surcharge.</summary>
     public static Card? ById(string id)
     {

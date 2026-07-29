@@ -265,6 +265,15 @@ Trois pièges quand on touche à la difficulté par niveau ou à la formule d'É
   rend les cartes observables — sans quoi l'écran ne s'ouvre pas et le chemin de code reste mort.
 - Ces cartes sont **linéaires et sans plafond, par conception**. Ne leur appliquer ni
   `PassiveScaling` ni `StatCaps` : ce serait recréer exactement le défaut qu'elles corrigent.
+- **Elles changent la nature du calibrage de l'overtime.** Tant que la défense était plafonnée, on
+  pouvait comparer la menace à un seuil absolu (« pas plus de ×6 en dix minutes »). Depuis, le joueur
+  gagne ~306 PV/min : le seul critère qui ait un sens est le **rapport des deux pentes**. Toute
+  modification de `OverloadCards.Plating.Delta` déplace donc `OvertimeEscalation.StatAcceleration`,
+  et réciproquement — les régler séparément revient à régler l'un contre l'autre (GDD §31.7).
+- **Le journal ne distingue pas une mort subie d'une mort consentie** : `# fin de run : death` dans
+  les deux cas. Une session de calibrage de survie n'est exploitable qu'avec la confirmation orale du
+  testeur — un relevé de 5:18 pris pour une survie réelle a failli valider un overtime devenu
+  inoffensif.
 
 ## VFX/projectiles parentés à la racine — purge à la sortie de run
 Les entités éphémères de gameplay (balles, flammes, death bursts, anneaux de choc, explosions

@@ -73,6 +73,49 @@ Chantier ouvert dans la foulée sur le point 2 ci-dessus. Validation **en banc**
    ramasse plus un seul orbe d'XP (`N=0` sur 300 s). Le flag doit donc octroyer explicitement le
    niveau qu'il sert à rendre observable.
 
+### Session jouée de calibrage — 2026-07-29 (2e session) — **borne inférieure, cible non mesurée**
+
+Même protocole (Fournaise, palier 3, Normal), avec les trois correctifs. Fin à **18:18**, overtime à
+13:00 → **5 min 18 s d'overtime**.
+
+> ⚠ **Le testeur s'est laissé mourir volontairement** : il estime que la run « aurait pu durer
+> beaucoup plus longtemps ». 5:18 est donc un **plancher**, pas la survie réelle, et la cible du GDD
+> §9.2 (5-10 min) n'est **ni validée ni infirmée** — elle pourrait être dépassée. Le journal ne
+> distingue pas une mort subie d'une mort consentie (`# fin de run : death` dans les deux cas) : ne
+> jamais conclure un calibrage de survie sans cette confirmation orale.
+
+| | 1ʳᵉ session (081b6f6 seul) | 2ᵉ session (+ c15f6db + 8b36e32) |
+|---|---|---|
+| survie en overtime | 74 s | **318 s** (×4,3) |
+| dégâts entrants encaissés à la mort | 61,8/s | **254,8/s** |
+| PV max à la mort | 451 (plat depuis la 11ᵉ min) | **2680** |
+
+La courbe de PV n'est plus plate — c'était tout l'objet du chantier :
+
+| | 11 min (saturation) | 13 min (OT) | 15 min | 18 min (mort) |
+|---|---|---|---|---|
+| PV max | 700 | 1060 | 1780 | **2680** |
+| multiplicateur de dégâts | 2,08 | 2,73 | 3,21 | 3,81 |
+| dégâts subis | 26/s | 29/s | 48/s | 114/s |
+
+**Défaut relevé : l'Auto-réparation est un choix mort.** Prises déduites des stats entre la
+saturation (11ᵉ min) et la mort : Blindage `(2680−700)/45` = **44**, Surtension `(3,81−2,08)/0,05` =
+**~35**, pour **80 niveaux** gagnés sur la période. 44 + 35 = 79 : l'Auto-réparation n'a donc été
+choisie **qu'une fois sur 80**. À +0,6 PV/s face à 100+ dégâts/s, elle est invisible, quand +45 PV
+max est immédiat et se cumule avec son propre soin. Sur trois cartes, le joueur n'en arbitre que
+deux. À instruire — la cible étant atteinte, toucher à ce paramètre invaliderait ce relevé.
+
+**Ce que la puissance devient** : indice ×1,48 et population ×1,80 entre l'entrée en overtime et la
+mort — à comparer au ×6,42 corrigé en 1.22.0 (§30). La Surtension n'a donc pas rouvert le
+power-creep sur cette run.
+
+**Conclusion et suite** : la mort volontaire a révélé que le pendule était allé trop loin. En
+comparant les deux croissances sur ce cas, la menace passait **sous** la défense à 5 min d'overtime
+(×2,37 contre ×2,44) — les cartes font gagner ~306 PV/min au joueur, qui remportait donc la course.
+→ `StatAcceleration` **1,5 → 3** (GDD §31.7) : menace devant dès la 5ᵉ minute (×3,54), double de la
+défense à la 10ᵉ (×7,95 contre ×3,89). Le critère de test passe d'un seuil absolu à une comparaison
+des deux pentes. **244 tests.** À revérifier en jouant — mort **subie**, cette fois.
+
 ## Mid-boss par biome — validation en jeu — 2026-07-29
 
 **Chantier :** `docs/EXPANSION_PLAN.md` B.3, dernier point non livré (design → `docs/GDD.md` §32).

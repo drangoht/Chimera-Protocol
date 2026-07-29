@@ -494,25 +494,52 @@ public class OvertimeEscalationTests
             Assert.True(OvertimeEscalation.StatMinutes(ot) < OvertimeEscalation.DensityMinutes(ot));
     }
 
-    [Fact]
-    public void LesDegatsEntrantsRestentDansLaFenetreDeSurvieVisee()
+    /// <summary>Croissance de la menace après <paramref name="otMinutes"/> d'overtime, Fournaise (palier 3).</summary>
+    private static float MenaceRatio(float otMinutes)
     {
-        // Cas mesuré : Fournaise (palier 3), run de 13 min, damageScalingPerMinute = 0,10.
-        // L'économie d'Échos est dimensionnée sur 5 à 10 min d'overtime (GDD §9.2) ; la survie du
-        // joueur, elle, est TRIPLEMENT plafonnée en fin de run (plating L20, DR et vitesse aux caps).
-        // Une escalade au-delà de ~×6 en dix minutes rend cette fenêtre inatteignable — c'était le
-        // cas avant le découplage (×10,9).
-        const float perMinute = 0.10f;
+        const float perMinute = 0.10f;   // damageScalingPerMinute du cas mesuré
         float offset = LevelThreat.TimeOffsetMinutes(3);
-
         float aLEntree = EnemyScaling.CurvedFactor(13f + offset, perMinute);
-        float aDixMinutes = EnemyScaling.CurvedFactor(
-            23f + OvertimeEscalation.StatMinutes(10f) + offset, perMinute);
+        float apres = EnemyScaling.CurvedFactor(
+            13f + otMinutes + OvertimeEscalation.StatMinutes(otMinutes) + offset, perMinute);
+        return apres / aLEntree;
+    }
 
-        float ratio = aDixMinutes / aLEntree;
-        Assert.True(ratio < 6f, $"l'overtime tue trop vite pour la fenêtre visée : ×{ratio:F2}");
-        // …mais l'overtime DOIT finir par tuer : c'est sa raison d'être, pas un mode infini.
-        Assert.True(ratio > 3f, $"l'overtime n'escalade plus assez : ×{ratio:F2}");
+    /// <summary>Croissance de la défense du joueur (cartes de surcharge) sur la même durée.</summary>
+    private static float DefenseRatio(float otMinutes)
+    {
+        const float hpALEntree = 1060f;  // mesuré, session jouée du 2026-07-29
+        return (hpALEntree + OverloadCards.MeasuredHpGainPerOvertimeMinute * otMinutes) / hpALEntree;
+    }
+
+    [Fact]
+    public void LaMenaceDoitDistancerLaDefenseDuJoueur()
+    {
+        // LA règle de l'overtime (GDD §31.4.3, lu dans les deux sens) : la menace n'est plus comparée
+        // à un plafond absolu — la défense du joueur n'en a plus depuis OverloadCards — mais à la
+        // vitesse à laquelle cette défense croît. Un ratio « pas plus de ×6 en dix minutes » avait du
+        // sens quand la survie était triplement plafonnée ; il en a perdu tout quand le joueur s'est
+        // mis à gagner ~306 PV par minute. C'est exactement ce qui a rendu l'overtime survivable
+        // indéfiniment à StatAcceleration = 1,5 (menace ×2,37 CONTRE défense ×2,44 à 5 minutes).
+        Assert.True(MenaceRatio(5f) > DefenseRatio(5f),
+            $"à 5 min la menace ({MenaceRatio(5f):F2}) ne dépasse pas la défense ({DefenseRatio(5f):F2}) : l'overtime ne tue plus");
+
+        // …et l'écart doit se CREUSER, sinon la course reste indéfiniment serrée.
+        float ecart5  = MenaceRatio(5f)  / DefenseRatio(5f);
+        float ecart10 = MenaceRatio(10f) / DefenseRatio(10f);
+        Assert.True(ecart10 > ecart5 * 1.3f,
+            $"l'écart menace/défense ne se creuse pas assez : ×{ecart5:F2} à 5 min, ×{ecart10:F2} à 10 min");
+    }
+
+    [Fact]
+    public void LOvertimeNeDoitPasTuerImmediatement()
+    {
+        // Garde-fou symétrique : l'overtime est un mode de score, il doit laisser le temps d'en
+        // marquer. L'économie d'Échos est dimensionnée sur 5 à 10 minutes (GDD §9.2) — une menace
+        // qui doublerait la défense dès la 2e minute la rendrait de nouveau inatteignable, dans
+        // l'autre sens cette fois.
+        Assert.True(MenaceRatio(2f) < DefenseRatio(2f) * 1.5f,
+            $"l'overtime tue trop tôt : menace ×{MenaceRatio(2f):F2} contre défense ×{DefenseRatio(2f):F2} à 2 min");
     }
 
     [Fact]
