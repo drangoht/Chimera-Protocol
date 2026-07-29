@@ -169,6 +169,29 @@ public static class DebugHooks
         }
     }
 
+    private static bool? _saturateArsenal;
+
+    /// <summary>
+    /// Vrai si lancé avec <c>--saturate-arsenal</c> : monte d'office les 5 armes et les 4 passifs à
+    /// leur niveau maximum au démarrage de la run, de sorte que le pool de <see cref="LevelUpSystem"/>
+    /// soit <b>vide dès le premier level-up</b> et que les cartes de <see cref="OverloadCards"/>
+    /// soient proposées immédiatement.
+    ///
+    /// Sans ce flag, ce chemin de code est inatteignable en banc : le bot <c>--auto-play</c> ne se
+    /// déplace pas, ramasse donc peu d'XP et plafonne au niveau ~73 en 17 minutes de jeu (armes L12-16),
+    /// là où une session jouée atteint le niveau 124 dès la 13ᵉ minute avec tout au maximum. Aucun
+    /// effet en build normal.
+    /// </summary>
+    public static bool SaturateArsenal
+    {
+        get
+        {
+            if (_saturateArsenal == null)
+                _saturateArsenal = HasFlag("--saturate-arsenal");
+            return _saturateArsenal.Value;
+        }
+    }
+
     private static bool _forcedLanguageRead;
     private static string? _forcedLanguage;
 

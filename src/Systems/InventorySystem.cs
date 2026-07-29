@@ -13,6 +13,11 @@ public partial class InventorySystem : Node
     // id → niveau actuel (0 = non possédé)
     public Dictionary<string, int> WeaponLevels  { get; } = new();
     public Dictionary<string, int> PassiveLevels { get; } = new();
+    /// <summary>
+    /// id de carte de surcharge → nombre de prises. Sans plafond, par construction (OverloadCards).
+    /// Sert à l'affichage du niveau sur la carte ; les effets, eux, sont appliqués à chaque prise.
+    /// </summary>
+    public Dictionary<string, int> OverloadLevels { get; } = new();
     // id fusion → true si appliquée
     public HashSet<string> AppliedFusions { get; } = new();
 
@@ -359,6 +364,46 @@ public partial class InventorySystem : Node
         GD.Print($"[InventorySystem] Passif {passiveId} niveau {newLevel}");
     }
 
+    /// <summary>
+    /// Applique une carte de <b>surcharge</b> (progression de fin de partie, cf. <see cref="OverloadCards"/>).
+    /// Aucun plafond de niveau, et aucun amortissement <see cref="PassiveScaling"/> : ces cartes
+    /// répondent à une menace non bornée, les brider les ramènerait au défaut qu'elles corrigent.
+    /// Les hardcaps de <see cref="StatCaps"/> ne s'appliquent pas non plus — aucune des trois stats
+    /// touchées (PV max, régénération, multiplicateur de dégâts) n'en a.
+    /// </summary>
+    public void ApplyOverloadCard(string cardId)
+    {
+        var card = OverloadCards.ById(cardId);
+        if (card == null) { GD.PrintErr($"[InventorySystem] Carte de surcharge inconnue : {cardId}"); return; }
+
+        var player = GameManager.Instance.PlayerInstance;
+        if (player == null) return;
+        var stats = player.Stats;
+
+        int takes = OverloadLevels.GetValueOrDefault(cardId, 0) + 1;
+        OverloadLevels[cardId] = takes;
+
+        if (card == OverloadCards.Plating)
+        {
+            // Soigne d'autant : sinon la carte prise à 20 % de vie n'offre qu'une plus grande barre
+            // tout aussi vide, au moment précis où le joueur la choisit pour survivre.
+            stats.MaxHp     += card.Delta;
+            stats.CurrentHp  = Mathf.Min(stats.CurrentHp + card.Delta, stats.MaxHp);
+            player.EmitSignal(Player.SignalName.HpChanged, stats.CurrentHp, stats.MaxHp);
+        }
+        else if (card == OverloadCards.Regen)
+        {
+            stats.HpRegenPerSecond += card.Delta;
+        }
+        else if (card == OverloadCards.Damage)
+        {
+            stats.DamageMultiplier += card.Delta;
+            RefreshWeaponDamages();
+        }
+
+        GD.Print($"[InventorySystem] Surcharge {cardId} ×{takes}");
+    }
+
     private void ApplyPassiveDelta(string passiveId, int newLevel, Player player)
     {
         if (WeaponsData == null) return;
@@ -609,6 +654,7 @@ public partial class InventorySystem : Node
         _weaponNodes.Clear();
         WeaponLevels.Clear();
         PassiveLevels.Clear();
+        OverloadLevels.Clear();
         AppliedFusions.Clear();
     }
 

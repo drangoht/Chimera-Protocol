@@ -1,4 +1,5 @@
 using Godot;
+using System.Linq;
 
 /// <summary>
 /// AutoLoad singleton — coordinateur central de la run.
@@ -159,6 +160,11 @@ public partial class GameManager : Node
         if (DebugHooks.BossDebug || !string.IsNullOrEmpty(DebugHooks.DebugEnemy))
             Callable.From(ApplyBossDebugHook).CallDeferred();
 
+        // Hook --saturate-arsenal : indépendant des deux précédents (on veut pouvoir saturer sans
+        // faire apparaître de champion). Même différé, pour les mêmes raisons.
+        if (DebugHooks.SaturateArsenal)
+            Callable.From(ApplySaturateArsenalHook).CallDeferred();
+
         // Hook --force-fusion=<id|all> : équipe d'office une (ou les deux) fusion(s) de greffes
         // pour valider leur ressenti/équilibrage sans grinder les jauges. Aucun effet sans le flag.
         if (!string.IsNullOrEmpty(DebugHooks.ForcedFusion))
@@ -288,6 +294,38 @@ public partial class GameManager : Node
             EquipDebugTestLoadout(inv);
 
         SpawnDebugChampion();
+    }
+
+    /// <summary>Point d'entrée du hook <c>--saturate-arsenal</c>.</summary>
+    private void ApplySaturateArsenalHook()
+    {
+        var inv = InventorySystem.Instance;
+        if (PlayerInstance == null || inv == null) return;
+        SaturateArsenal(inv);
+    }
+
+    /// <summary>
+    /// Monte tout l'arsenal à son plafond (<c>--saturate-arsenal</c>) pour que le pool de
+    /// <see cref="LevelUpSystem"/> soit vide dès le premier level-up et que les cartes de
+    /// <see cref="OverloadCards"/> soient proposées tout de suite. Cf. <see cref="DebugHooks.SaturateArsenal"/>
+    /// pour la raison d'être : le banc n'atteint jamais la saturation par le jeu normal.
+    /// </summary>
+    private void SaturateArsenal(InventorySystem inv)
+    {
+        // Une première arme doit être équipée pour que les fusions puissent s'enchaîner ; le reste
+        // est entièrement piloté par le pool lui-même (LevelUpSystem.DebugDrainPool), qui sait seul
+        // quand il est vide.
+        int consumed = LevelUpSystem.Instance?.DebugDrainPool() ?? 0;
+
+        GD.Print($"[GameManager] --saturate-arsenal : {consumed} cartes consommées, pool vide. " +
+                 $"Armes: {string.Join(", ", inv.WeaponLevels.Select(kv => $"{kv.Key} L{kv.Value}"))} · " +
+                 $"Passifs: {string.Join(", ", inv.PassiveLevels.Select(kv => $"{kv.Key} L{kv.Value}"))}");
+
+        // Provoque le level-up que le flag sert justement à rendre observable. Nécessaire : une fois
+        // l'arsenal saturé, un bot immobile (--auto-play) tue tout à distance et ne ramasse plus un
+        // seul orbe d'XP — le banc restait au niveau 0 sur 300 s et l'écran ne s'ouvrait jamais. En
+        // session jouée, cela évite aussi d'attendre le prochain palier pour voir les cartes.
+        XpSystem.Instance?.AddXp(XpSystem.Instance.XpToNextLevel);
     }
 
     /// <summary>Loadout de test du protocole de mesure (cf. <see cref="ApplyBossDebugHook"/>).</summary>

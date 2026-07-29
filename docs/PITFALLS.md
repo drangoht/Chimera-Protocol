@@ -233,6 +233,38 @@ Trois pièges quand on touche à la difficulté par niveau ou à la formule d'É
   (`OvertimeEscalationTests`), pas seulement écrite dans le GDD.
 - **`overtime_stabilizer` (Hub) s'applique en amont**, sur les minutes d'overtime elles-mêmes : il
   amortit donc les deux courbes à la fois. Ne pas le réappliquer en aval.
+- **Un correctif qui atteint sa métrique peut ne pas résoudre le problème.** Le découplage a bien
+  fait −33 % de dégâts entrants et n'a acheté que **14 secondes** de survie (session jouée du
+  2026-07-29). Toujours mesurer l'**issue** (le joueur meurt-il plus tard ?), jamais seulement
+  l'indicateur intermédiaire.
+- **Estimer un gain de PV « en secondes de survie » au tarif de l'instant de la mort est faux** quand
+  les dégâts entrants croissent (+0,56/s par seconde en overtime). Des PV supplémentaires ne
+  rachètent pas des secondes au tarif courant : ils repoussent le seuil de mort *le long de la pente*.
+  L'erreur a coûté un chantier — la bonne piste avait été écartée sur ce calcul (GDD §31.5).
+
+## Amortissement des passifs (`PassiveScaling`) — brider par famille, jamais en bloc
+- **Les PV max de `reinforced_plating` sont la seule stat EXEMPTÉE** de l'amortissement
+  (`InventorySystem.ApplyPassiveDelta`). Ne pas « harmoniser » en les y remettant : l'amortissement
+  a été conçu pour `capacitor`/`thermal_core`, dont la croissance était réellement explosive. Des PV
+  **plats et additifs** croissent linéairement, n'ont jamais participé au power-creep, et sont le
+  **seul levier défensif non plafonné** du joueur (DR et vitesse sont à leur cap dès la 4ᵉ minute).
+  Les amortir plafonnait les PV à 451 dès la 11ᵉ minute et fermait la fenêtre d'overtime (GDD §31.6).
+- Avant d'appliquer un correctif transversal à une famille de stats, **vérifier ce qu'il touche en
+  dehors de sa cible** : celui-ci a atteint son objectif offensif (§30) tout en amputant de moitié la
+  survie de fin de run, sans que personne ne le mesure pendant deux versions.
+
+## Cartes de surcharge (`OverloadCards`) — tester la fin de partie
+- **Le banc n'atteint JAMAIS l'arsenal saturé tout seul.** Le bot `--auto-play` ne se déplace pas,
+  ramasse peu d'XP et plafonne au niveau ~73 en 17 min de jeu (armes L12-16) ; une session jouée est
+  au niveau 124 dès la 13ᵉ minute avec tout au maximum. Utiliser **`--saturate-arsenal`**.
+- **Monter armes et passifs au plafond ne vide pas le pool** : il se remplit alors des **fusions**,
+  justement rendues disponibles par ces niveaux max, puis de leur propre montée de L1 à L20. D'où
+  `LevelUpSystem.DebugDrainPool`, qui boucle jusqu'à point fixe (garde-fou à 2000 cartes).
+- **Un bot à l'arsenal saturé ne monte plus jamais de niveau** : il tue tout à distance et ne ramasse
+  plus un seul orbe d'XP (`N=0` sur 300 s de banc). Le flag octroie donc explicitement le niveau qui
+  rend les cartes observables — sans quoi l'écran ne s'ouvre pas et le chemin de code reste mort.
+- Ces cartes sont **linéaires et sans plafond, par conception**. Ne leur appliquer ni
+  `PassiveScaling` ni `StatCaps` : ce serait recréer exactement le défaut qu'elles corrigent.
 
 ## VFX/projectiles parentés à la racine — purge à la sortie de run
 Les entités éphémères de gameplay (balles, flammes, death bursts, anneaux de choc, explosions

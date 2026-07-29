@@ -298,6 +298,12 @@ public static class Codex
         { "servo_motors",      IconDir + "ui_icon_servomotors.png"    },
         { "capacitor",         IconDir + "ui_icon_capacitor.png"      },
         { "xp_bonus",          IconDir + "ui_icon_noyau.png"          },
+        // Cartes de surcharge (fin de partie, cf. OverloadCards) : elles réemploient volontairement
+        // l'icône du passif dont elles prolongent l'effet — le joueur qui les découvre en overtime
+        // n'a pas à apprendre trois nouveaux pictogrammes pour comprendre ce qu'elles font.
+        { "overload_plating",  IconDir + "ui_icon_reinforced_plate.png" },
+        { "overload_regen",    IconDir + "ui_icon_noyau.png"          },
+        { "overload_damage",   IconDir + "ui_icon_thermal_core.png"   },
     };
 
     // ── Correspondance id → nom canonique (source unique d'affichage) ─────────

@@ -2482,6 +2482,7 @@ Piste à instruire (non tranchée) : des cartes de fin de partie à effet faible
 plafond de niveau (+PV max, +soin), proposées une fois l'arsenal saturé — la réponse classique du
 genre au même problème.
 
+
 ---
 
 ## 32. Mid-boss par biome — un rendez-vous de mi-run par niveau (2026-07-29)
@@ -2574,3 +2575,58 @@ plutôt que de les fuir.
   gros ennemi de plus, sans mécanique à apprendre — or c'est la mécanique qui fait un champion.
 - **Un mid-boss dédié au Sanctuaire et à l'Aether.** Inutile : les deux en avaient déjà un, il
   suffisait de le tagger. Le trou était sur les trois autres niveaux.
+
+---
+
+## 33. Cartes de surcharge — la progression de fin de partie (2026-07-29)
+
+> Répond au point laissé ouvert au §31.6. Sans elles, la fenêtre d'overtime de 5-10 minutes (§9.2)
+> reste inatteignable quel que soit le réglage des pentes.
+
+### 33.1 Le trou
+
+Mesuré sur la session jouée du 2026-07-29 : le joueur passe du **niveau 124 au niveau 140 en 74
+secondes d'overtime**, pour un gain **nul**. Ses 5 armes sont L20, ses 4 passifs sont saturés, et le
+§30 a précisément retiré les passifs saturés du pool. `LevelUpSystem` complétait alors les trois
+cartes avec `XP_BONUS` : une carte qui donne de l'XP, laquelle ne sert qu'à gagner des niveaux… qui
+ne donnent rien. Une boucle fermée sur elle-même.
+
+Pendant ce temps la menace, elle, ne sature jamais. C'est cette asymétrie qui fermait la fenêtre — et
+la règle du §31.4.3 doit se lire dans les deux sens : **une menace non bornée exige une défense non
+bornée**.
+
+### 33.2 Les trois cartes
+
+Proposées **uniquement** quand le pool normal est épuisé : en run standard elles n'existent pas.
+Sans plafond de niveau, à effet faible et **strictement linéaire** — aucun amortissement
+(`PassiveScaling`) ne s'y applique, ce qui les ramènerait au défaut qu'elles corrigent.
+
+| carte | effet par prise | rôle |
+|---|---|---|
+| **Blindage d'urgence** | +45 PV max, **et soigne d'autant** | encaisser plus fort |
+| **Auto-réparation** | +0,6 PV/s | tenir dans la durée |
+| **Surtension** | +5 % de dégâts | raccourcir la menace à la source |
+
+Étant toujours les trois mêmes, le choix ne porte plus sur la découverte mais sur l'**arbitrage**.
+Le soin du Blindage n'est pas un bonus : sans lui, la carte prise à 20 % de vie n'offrirait qu'une
+plus grande barre tout aussi vide, au moment précis où le joueur la choisit pour survivre.
+
+### 33.3 Calibrage
+
+Repères de la même mesure : **~13 niveaux gagnés par minute** d'overtime, dégâts entrants **+0,56/s
+par seconde**. Sur 10 minutes le joueur voit donc ~130 cartes, soit ~43 de chaque s'il répartit.
+Valeurs de départ, **à affiner sur session jouée** — la survie n'est pas mesurable en banc.
+
+**Surtension est le levier à réduire en premier** si le power-creep du §30 réapparaît : c'est la
+seule des trois qui alimente l'offensive. Verrouillé par test (×4 maximum sur 43 prises, contre le
+×6,4 corrigé au §30).
+
+### 33.4 Comment le tester
+
+Le banc n'atteint **jamais** cet état tout seul : le bot `--auto-play` ne se déplace pas, ramasse peu
+d'XP et plafonne au niveau ~73 en 17 minutes (armes L12-16), là où une session jouée est au niveau
+124 dès la 13ᵉ. D'où le flag **`--saturate-arsenal`** : il draine le pool jusqu'à point fixe
+(`LevelUpSystem.DebugDrainPool` — monter armes et passifs ne suffit pas, le pool se remplit ensuite
+des fusions puis de leur montée de L1 à L20), puis octroie le niveau qui rend les cartes visibles.
+Sans cet octroi, un bot à l'arsenal saturé tue tout à distance, ne ramasse plus un seul orbe et ne
+monte jamais de niveau.

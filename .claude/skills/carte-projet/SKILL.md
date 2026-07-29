@@ -43,7 +43,10 @@ docs/              GDD.md + briefs/plans — voir §Docs
 ## §Rules — `src/Core/Rules/` (logique pure, testée)
 XpCurve · **PassiveScaling** (extrapolation des passifs au-delà des 3 niveaux définis : rendements
 décroissants `ExtrapolatedDelta`/`CumulativeBonus`, cf. GDD §30) · EnemyScaling (`Scaled` linéaire + `ScaledCurved`/`CurvedFactor` = courbe non-linéaire :
-early grace + accélération late, cf. difficulté) · SpawnCurve · **OvertimeEscalation** (escalade
+early grace + accélération late, cf. difficulté) · SpawnCurve · **OverloadCards** (progression de FIN
+DE PARTIE : les 3 cartes sans plafond proposées quand le pool de level-up est vide — `Plating`
++45 PV max, `Regen` +0,6 PV/s, `Damage` +5 % ; `ById`/`IsOverload`/`CumulativeBonus` linéaire, JAMAIS
+amorti par PassiveScaling, cf. GDD §33) · **OvertimeEscalation** (escalade
 d'overtime : `DensityMinutes` ×4 / `StatMinutes` ×1,5 — les deux courbes sont DÉCOUPLÉES, cf. GDD
 §31) · WeaponLeveling · StatCaps (plafonds durs : DR 0,40 · vitesse 380 · **réduction de
 recharge 0,75** · cooldown plancher 0,15 s) · WeightedPicker ·
@@ -232,6 +235,11 @@ instrumentale, progressions, architecture en stems, mixage, bouclage) ·
   `godot --headless --path <projet> res://scenes/Game.tscn -- --auto-play --invuln --timescale=3 --biome=neon`
 - Forcer un biome (tests/captures) : flag `--biome=<id>`
 - Forcer tous les ennemis basiques en élite (test des affixes) : flag `--force-elites` (`DebugHooks.ForceElites`)
+- Observer les **cartes de surcharge** (fin de partie, GDD §33) : flag **`--saturate-arsenal`**
+  (`DebugHooks.SaturateArsenal`) — draine le pool jusqu'à point fixe via `LevelUpSystem.DebugDrainPool`
+  (armes + passifs + fusions + montée des fusions) puis octroie un niveau. ⚠ Indispensable : le banc
+  n'atteint JAMAIS la saturation seul (bot immobile → niveau ~73 en 17 min contre 124 en session
+  jouée), et une fois saturé il ne ramasse plus d'orbe donc ne monte plus de niveau.
 - Faire apparaître UN champion isolé, avec le scaling de sa propre fenêtre de spawn : flag
   **`--debug-enemy=<id>`** (`DebugHooks.DebugEnemy`) — généralise `--debug-boss`, qui ne sait spawner
   que `rusted_core`. Seul, il sert à **observer** (loadout de départ conservé) ; combiné à

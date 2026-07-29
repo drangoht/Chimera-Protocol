@@ -403,6 +403,66 @@ public class PassiveScalingTests
     }
 }
 
+public class OverloadCardsTests
+{
+    [Fact]
+    public void LesTroisCartesSontDistinctesEtResolubles()
+    {
+        Assert.Equal(3, OverloadCards.All.Count);
+        var ids = new HashSet<string>();
+        foreach (var c in OverloadCards.All)
+        {
+            Assert.True(ids.Add(c.Id), $"id dupliqué : {c.Id}");
+            Assert.Same(c, OverloadCards.ById(c.Id));
+            Assert.True(OverloadCards.IsOverload(c.Id));
+            Assert.True(c.Delta > 0f, "une carte de surcharge doit toujours rapporter quelque chose");
+        }
+    }
+
+    [Fact]
+    public void UnIdInconnuNEstPasUneSurcharge()
+    {
+        Assert.Null(OverloadCards.ById("thermal_core"));
+        Assert.False(OverloadCards.IsOverload("thermal_core"));
+        Assert.False(OverloadCards.IsOverload("xp_bonus"));
+    }
+
+    [Fact]
+    public void LeCumulEstLineaireEtSansPlafond()
+    {
+        // C'est TOUT l'objet de ces cartes : elles répondent à une menace non bornée. Le moindre
+        // amortissement (cf. PassiveScaling) ou plafond les ramènerait au défaut qu'elles corrigent
+        // — la défense du joueur saturait à la 11e minute quand la menace, elle, ne sature jamais.
+        var card = OverloadCards.Plating;
+        Assert.Equal(card.Delta * 500f, OverloadCards.CumulativeBonus(card, 500), 2);
+
+        // Strictement croissant sur toute la plage utile (~130 prises pour 10 min d'overtime).
+        for (int n = 0; n < 200; n++)
+            Assert.True(OverloadCards.CumulativeBonus(card, n + 1)
+                      > OverloadCards.CumulativeBonus(card, n));
+    }
+
+    [Fact]
+    public void AucunePriseNApporteRien()
+    {
+        foreach (var c in OverloadCards.All)
+        {
+            Assert.Equal(0f, OverloadCards.CumulativeBonus(c, 0));
+            Assert.Equal(0f, OverloadCards.CumulativeBonus(c, -3));
+        }
+    }
+
+    [Fact]
+    public void LaSurchargeOffensiveResteLaPlusModeste()
+    {
+        // Repère de calibrage : sur ~43 prises (10 min d'overtime en répartissant sur les 3 cartes),
+        // la carte de dégâts doit rester loin du power-creep corrigé au §30 (l'indice de puissance
+        // y faisait ×6,4). Elle est le premier levier à réduire s'il réapparaît.
+        float mult = 1f + OverloadCards.CumulativeBonus(OverloadCards.Damage, 43);
+        Assert.True(mult < 4f, $"la surcharge offensive rouvre le power-creep : ×{mult}");
+    }
+}
+
 public class OvertimeEscalationTests
 {
     [Fact]

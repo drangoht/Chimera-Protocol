@@ -47,6 +47,32 @@ Deux constats, tous deux issus du relevé :
 **Conclusion :** la cible des 5-10 min n'est pas atteignable par réglage de pentes seul. Publication
 de la 1.23.0 à arbitrer — le correctif PV est un gain net, le trou de progression est un chantier.
 
+### Suite — cartes de surcharge (`OverloadCards`, GDD §33)
+
+Chantier ouvert dans la foulée sur le point 2 ci-dessus. Validation **en banc**, la chaîne complète
+étant fonctionnelle et non un équilibrage (le calibrage, lui, demandera une session jouée).
+
+| contrôle | résultat |
+|---|---|
+| tests unitaires | **243** au vert (5 nouveaux : `OverloadCardsTests`) |
+| compilation | 0 avertissement, 0 erreur |
+| `--saturate-arsenal` draine le pool | **156 cartes** consommées → 5 fusions L20 + passifs saturés, pool vide |
+| carte proposée pool vide → appliquée | OK — `[InventorySystem] Surcharge overload_plating ×1`, puis `overload_regen ×1` au run suivant (tirage aléatoire) |
+| PV max effectifs, `reinforced_plating` L20 | **675** (contre 451 avant `c15f6db`) — le correctif PV est vérifié en jeu |
+| non-régression, run complète Givre 17 min sans le flag | voir ci-dessous |
+
+**Trois obstacles rencontrés, tous instructifs pour la suite** (consignés dans `docs/PITFALLS.md`) :
+
+1. **Le banc n'atteint jamais la saturation.** Bot immobile → niveau **73** en 17 min de jeu (armes
+   L12-16), là où la session jouée est au niveau **124** dès la 13ᵉ minute. Le chemin de code était
+   structurellement intestable sans flag dédié.
+2. **Monter armes et passifs au plafond ne vide pas le pool** : il se remplit alors des **fusions**,
+   justement rendues disponibles par ces niveaux max, puis de leur montée de L1 à L20. D'où
+   `LevelUpSystem.DebugDrainPool`, qui boucle jusqu'à point fixe.
+3. **Un bot à l'arsenal saturé ne monte plus jamais de niveau** : il tue tout à distance et ne
+   ramasse plus un seul orbe d'XP (`N=0` sur 300 s). Le flag doit donc octroyer explicitement le
+   niveau qu'il sert à rendre observable.
+
 ## Mid-boss par biome — validation en jeu — 2026-07-29
 
 **Chantier :** `docs/EXPANSION_PLAN.md` B.3, dernier point non livré (design → `docs/GDD.md` §32).

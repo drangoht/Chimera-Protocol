@@ -227,6 +227,10 @@ public partial class LevelUpScreen : CanvasLayer
                 AudioSystem.Instance?.PlaySfx("sfx_card_select");
                 XpSystem.Instance.AddXp(50);
                 break;
+            case OverloadCards.CardType:
+                AudioSystem.Instance?.PlaySfx("sfx_card_select");
+                inv.ApplyOverloadCard(id);
+                break;
         }
 
         // Réinitialise l'état weapon drop dans LevelUpSystem

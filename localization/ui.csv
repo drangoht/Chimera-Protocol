@@ -129,6 +129,12 @@ TAG_FUSION,FUSION (epic),FUSION (épique),FUSIÓN (épica)
 MISC_XP_BONUS_NAME,Aether Echo,Écho d'Aether,Eco de Aether
 CARD_XP_BONUS,+50 XP,+50 XP,+50 XP
 CARD_LEVEL," (Lv. {0})"," (Niv. {0})"," (Niv. {0})"
+CARD_OVERLOAD_PLATING,Emergency Plating,Blindage d'urgence,Blindaje de emergencia
+CARD_OVERLOAD_PLATING_DESC,+45 max HP and heals the same amount.,+45 PV max et soigne d'autant.,+45 PV máx. y cura otro tanto.
+CARD_OVERLOAD_REGEN,Self-Repair,Auto-réparation,Autorreparación
+CARD_OVERLOAD_REGEN_DESC,+0.6 HP regenerated per second.,"+0,6 PV régénéré par seconde.","+0,6 PV regenerado por segundo."
+CARD_OVERLOAD_DAMAGE,Power Surge,Surtension,Sobretensión
+CARD_OVERLOAD_DAMAGE_DESC,+5% damage on every weapon.,+5 % de dégâts sur toutes les armes.,+5 % de daño en todas las armas.
 ENEMY_RUST_SWARM_NAME,Rust Swarm,Essaim de Rouille,Enjambre de Herrumbre
 ENEMY_RUST_SWARM_TAG,Fodder — from 0:00,Fourrage — dès 0:00,Carne de cañón — desde 0:00
 ENEMY_RUST_SWARM_DESC,"Mechanical husk eaten away by the Living Rust. Charges in a straight line, no cunning. Weak alone, deadly in numbers: it is the tide of the Sanctuary.","Carcasse mécanique rongée par la Rouille Vivante. Fonce en ligne droite, sans ruse. Faible isolément, mortelle en nombre : c'est la marée du Sanctuaire.","Carcasa mecánica corroída por la Herrumbre Viviente. Embiste en línea recta, sin astucia. Débil en solitario, mortal en grupo: es la marea del Santuario."

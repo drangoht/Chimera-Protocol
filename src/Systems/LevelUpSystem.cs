@@ -174,6 +174,42 @@ public partial class LevelUpSystem : Node
         return pool;
     }
 
+    /// <summary>
+    /// <c>--saturate-arsenal</c> : consomme le pool jusqu'à ce qu'il soit <b>réellement</b> vide, en
+    /// prenant chaque carte proposée. Monter les armes et passifs au plafond ne suffit pas — le pool
+    /// se remplit alors des <b>fusions</b>, justement rendues disponibles par ces niveaux max, puis de
+    /// leur propre montée de L1 à L20. Seule une boucle jusqu'à point fixe atteint l'état qu'un joueur
+    /// connaît vers la 11ᵉ minute et que le banc n'atteint jamais tout seul.
+    ///
+    /// Renvoie le nombre de cartes consommées. Réservé au banc (cf. <see cref="DebugHooks.SaturateArsenal"/>).
+    /// </summary>
+    public int DebugDrainPool()
+    {
+        var inv = InventorySystem.Instance;
+        if (inv == null) return 0;
+
+        const int SafetyLimit = 2000;   // garde-fou : jamais de boucle infinie dans un banc headless
+        int consumed = 0;
+
+        while (consumed < SafetyLimit)
+        {
+            var pool = BuildPool(inv);
+            if (pool.Count == 0) break;
+
+            var card = pool[0];
+            switch (card.CardType)
+            {
+                case "weapon":  inv.AddOrUpgradeWeapon(card.Id);  break;
+                case "passive": inv.AddOrUpgradePassive(card.Id); break;
+                case "fusion":  inv.ApplyFusion(card.Id);         break;
+                default:        return consumed;   // type inattendu : on s'arrête plutôt que boucler
+            }
+            consumed++;
+        }
+
+        return consumed;
+    }
+
     private List<LevelUpCardData> PickCards(List<LevelUpCardData> pool, int currentLevel, InventorySystem inv)
     {
         const int CardCount = 3;
@@ -202,7 +238,18 @@ public partial class LevelUpSystem : Node
             result.Add(card);
         }
 
-        // Compléter avec XP bonus si pool insuffisant
+        // Pool épuisé : compléter avec les cartes de SURCHARGE (progression de fin de partie, sans
+        // plafond). Elles remplacent XP_BONUS, qui fermait la boucle sur elle-même — de l'XP pour
+        // gagner des niveaux qui ne donnaient plus rien, alors que la menace, elle, ne sature jamais.
+        // Cf. OverloadCards + GDD §33.
+        foreach (var card in OverloadCards.All)
+        {
+            if (result.Count >= CardCount) break;
+            if (result.Exists(c => c.Id == card.Id)) continue;
+            result.Add(MakeOverloadCard(card));
+        }
+
+        // Filet de sécurité : ne peut se produire que si CardCount dépassait le nombre de surcharges.
         while (result.Count < CardCount)
             result.Add(XpBonusCard());
 
@@ -265,6 +312,17 @@ public partial class LevelUpSystem : Node
     private LevelUpCardData MakeFusionCard(string id)
     {
         return new LevelUpCardData(id, Codex.DisplayName(id), Codex.Description(id), "epic", "fusion");
+    }
+
+    /// <summary>
+    /// Carte de surcharge, affichée avec son nombre de prises — sans plafond, donc « Niv. 37 » est
+    /// une valeur normale ici, contrairement aux armes et passifs bornés à 20.
+    /// </summary>
+    private static LevelUpCardData MakeOverloadCard(OverloadCards.Card card)
+    {
+        int takes = InventorySystem.Instance?.OverloadLevels.GetValueOrDefault(card.Id, 0) ?? 0;
+        return new LevelUpCardData(card.Id, Loc.T(card.NameKey),
+            Loc.T(card.DescKey) + Loc.T("CARD_LEVEL", takes + 1), "rare", OverloadCards.CardType);
     }
 
     private static LevelUpCardData XpBonusCard() =>

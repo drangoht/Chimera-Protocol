@@ -14,7 +14,26 @@ cyborgs, robots), inspiré de Vampire Survivors et Everything is Crab.
 - **État d'implémentation détaillé & version courante → `docs/PROJECT_STATE.md`** (évolutif). Résumé de phase ci-dessous.
 - **Synthétiser du volume** (relever/résumer/inventorier à partir de plusieurs gros fichiers : `data/*.json`, docs longues, logs, rapports de test) → déléguer au **MCP local** `mcp__local-llm__local_digest` / `local_map` (outils différés : `ToolSearch` d'abord) plutôt que d'enchaîner les `Read` : le serveur lit les fichiers côté LM Studio, seule la synthèse entre en contexte. Ne pas l'utiliser pour du code que l'on s'apprête à éditer — là, le contenu réel est nécessaire.
 
-**Phase actuelle : deux chantiers faits, non publiés — à valider en jouant, puis publier (1.23.0).**
+**Phase actuelle : trois chantiers faits, non publiés — mid-boss à valider en jouant, puis 1.23.0.**
+
+**(3) Survie en overtime — mesurée en jeu, cause réelle trouvée** (2026-07-29). La session jouée de
+validation du chantier (1) l'a **réfuté** : le découplage tient sa métrique (dégâts entrants
+**−33 %**) et n'achète que **14 secondes** (60 s → 74 s de survie, cible 5-10 min). Le relevé montre
+que **la défense du joueur sature à la 11ᵉ minute**, deux minutes *avant* l'overtime — PV bloqués à
+451, DR au cap depuis la 4ᵉ — pendant que le DPS fait **×700** sur la run. Deux causes, toutes deux
+corrigées :
+**(a)** effet de bord du §30 — `PassiveScaling` amortissait *aussi* les +25 PV/niveau de
+`reinforced_plating` (500 → 251 PV à L20), alors qu'il visait `capacitor`/`thermal_core` ; des PV
+plats et additifs croissent linéairement et n'ont jamais causé de power-creep. Les PV max sont
+désormais la **seule stat exemptée** → **675 PV** mesurés en banc.
+**(b)** les **niveaux vides** — le joueur passait du niveau **124 à 140 en 74 s** pour un gain
+**nul** (armes L20, passifs saturés retirés du pool), `LevelUpSystem` complétant avec `XP_BONUS` :
+de l'XP pour gagner des niveaux qui ne donnent rien. Livré : **`OverloadCards`**, trois cartes de
+fin de partie **sans plafond** (Blindage +45 PV max et soigne d'autant · Auto-réparation +0,6 PV/s ·
+Surtension +5 % de dégâts), proposées uniquement quand le pool est vide. Nouveau flag
+**`--saturate-arsenal`** (le banc n'atteint jamais cet état seul). Design → `docs/GDD.md` §31.6 +
+**§33** ; pièges → `docs/PITFALLS.md` (§Amortissement des passifs, §Cartes de surcharge) ; mesures →
+`docs/TEST_REPORT.md`. **243 tests.** **Reste** : calibrage sur session jouée (valeurs de départ).
 
 **(2) Mid-boss par biome** (2026-07-29) — dernier point non livré de `docs/EXPANSION_PLAN.md` (B.3).
 La faune par biome était complète, mais **trois niveaux sur cinq n'avaient aucun champion de mi-run**
@@ -39,10 +58,9 @@ de 300 dès la 8ᵉ min). En face, la survie du joueur est **triplement plafonn�
 L20, DR 0,40, vitesse 380) : aucune fenêtre possible, quel que soit le skill. Corrigé →
 `OvertimeEscalation` (densité ×4 conservé, scaling **×1,5**, courbes découplées). Dégâts entrants à
 10 min d'overtime : **×10,9 → ×4,5**. Design → `docs/GDD.md` §31 ; pièges → `docs/PITFALLS.md`
-§Escalade d'overtime ; mesures → `docs/TEST_REPORT.md`. **237 tests.** **Reste** : validation par une
-**session jouée** (la survie n'est pas mesurable en banc — le bot `--auto-play` ne se déplace pas),
-puis publication. Ensuite : **mid-boss par biome** (`docs/EXPANSION_PLAN.md` B.3, dernier point non
-livré de la roadmap d'expansion).
+§Escalade d'overtime ; mesures → `docs/TEST_REPORT.md`. **237 tests.**
+⚠ **Diagnostic réfuté depuis par la session jouée** : correct sur son propre objectif, mais ce
+n'était pas la cause de la mort du joueur → voir le chantier **(3)** ci-dessus.
 Avant ça : **courbe de puissance assainie**, publiée
 **1.22.0** le 2026-07-28. Le point ouvert de la 1.21.0 est
 corrigé : la puissance faisait **×6,42 en 12 min d'overtime** (mesure `PowerTelemetry`, nouveau flag
