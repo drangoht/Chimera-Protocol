@@ -362,6 +362,19 @@ la racine sauf `CurrentScene` — sûr car tous les AutoLoads sont `Node`/`Canva
 chaque `ChangeSceneToFile` qui quitte une run (`RunEndScreen` Hub/Rejouer, `PauseScreen` Quitter).
 Tout nouveau chemin de sortie de run doit l'appeler aussi.
 
+## Export release — fichiers réécrits par Godot
+- **`default_bus_layout.tres` est renormalisé par l'éditeur pendant l'export** (constaté à la 1.23.0) :
+  Godot le réécrit en omettant toute valeur égale au défaut et en ajoutant un `uid`. Concrètement il
+  supprime `ratio = 4.0` et `attack_us = 20.0` du compresseur (qui *sont* les défauts, donc **aucune
+  régression audio** — `threshold`, `release_ms` et `sidechain` sont conservés), le bloc `bus/0`
+  (Master, entièrement par défaut)… **et les 11 lignes de commentaire** qui expliquent pourquoi ce
+  sidechain existe. Après un export, vérifier `git diff default_bus_layout.tres` et **restaurer**
+  (`git checkout`) : la version documentée est fonctionnellement identique, et c'est la doc qui a de
+  la valeur. Ne pas confondre cette normalisation avec une vraie perte de configuration — comparer
+  chaque valeur supprimée au défaut Godot avant de s'inquiéter.
+- Un nouveau script C# fait apparaître un **`.uid` non suivi** après le premier chargement par Godot
+  (ex. `MidBossVisuals.cs.uid`) : le committer avec le script, sinon il revient à chaque release.
+
 ## Navigation clavier/manette
 - Les touches de déplacement (ZQSD, `move_*`) sont **séparées** des `ui_*` (nav focus des menus/modals). Pour que ZQSD navigue aussi les menus, `InputRemap.SetKey` **miroite** chaque `move_*` vers son `ui_*` (`BuildDirectional(UiNav[action], …)`). Un menu qui repose sur le focus natif de Godot lit les `ui_*` : sans ce miroir, seules les flèches fonctionnent. Tout nouvel écran doit donc s'appuyer sur les `ui_*` (focus natif) et non lire `move_*` en dur.
 - Le **dash** (`dash`) est une action à part (Maj/RB), rebindable via Options (`GameSettings.SetDashKey` → `InputRemap.SetDashKey`, persistée sous `[input] dash`). Non miroitée vers `ui_*` (ce n'est pas une direction).
