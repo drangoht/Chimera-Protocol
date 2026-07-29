@@ -198,6 +198,63 @@ la session de référence. Aucun rapport avec les correctifs (`StatAcceleration`
 l'exemption des PV ne joue qu'au-delà du niveau 3 de la Plaque). `StatAcceleration = 2,25` **reste
 donc à valider**.
 
+### 5ᵉ session jouée — `StatAcceleration = 2,25` : **cible atteinte**
+
+Fournaise, palier 3, Normal. Entrée en overtime à **13:00**, `# fin de run : death` à **21:36** →
+**8 min 36 s d'overtime, mort subie**, dans la fenêtre de 5-10 min du GDD §9.2. C'est la première
+run à mesurer cette valeur ; les deux essais précédents l'encadraient sans la toucher (1,5 → ≥5:18
+interrompue volontairement ; 3 → 1:31 subie).
+
+| | entrée OT (13:00) | fin (21:36) | facteur |
+|---|---|---|---|
+| Défense (`MaxHp`) | 1015 | 2140 | **×2,11** |
+| Menace (dégâts subis/s) | 28,5 | ~259 | **×9,1** |
+| Niveau | 126 | 207 | +81 |
+| Indice de puissance | 3029 | 5617 | ×1,85 |
+
+La menace distance donc franchement la défense — ce que le §31.4.3 exige — et il faut malgré tout
+8 min 36 s pour tuer. Le dernier échantillon est partiel (2 s) à **573 dégâts/s** : submersion, pas
+usure.
+
+**Ce que montre la courbe des PV, plus instructif que le chiffre de survie.** La pente de la défense
+n'est pas constante — elle s'effondre en cours d'overtime :
+
+- 13:00 → 16:00 : 1015 → 1825 PV, soit **270 PV/min** ;
+- 16:00 → 21:36 : 1825 → 2140 PV, soit **56 PV/min**, dont un **plateau strictement plat de 16:00 à
+  17:48** (16 niveaux gagnés, **zéro PV**).
+
+Sur ce même plateau le DPS monte de 27 % (26 948 → 34 135) : le joueur prenait **Surtension** plutôt
+que **Blindage**. Ce n'est pas un défaut des cartes de surcharge, c'est **l'arbitrage offense/défense
+qu'elles étaient censées créer** — et c'est ce choix, pas la constante d'escalade, qui a décidé de
+l'heure de la mort. Corollaire pour tout réglage futur : `StatAcceleration` et
+`OverloadCards.Plating.Delta` sont couplés, mais **le choix du joueur pèse davantage que les deux**.
+
+**Compte des prises de cartes de surcharge**, déduit des colonnes du journal (81 niveaux d'overtime) :
+
+| carte | prises | déduction |
+|---|---|---|
+| **Surtension** | ~46 | `mult_degats` 2,73 → 5,06, +0,05/prise |
+| **Blindage** | 25 | `pv_max` 1015 → 2140, +45/prise |
+| reste, dont **Auto-réparation** | ≤10 | non instrumenté — le journal ne relève pas la régénération |
+
+Le ratio Surtension/Blindage vaut **1,84** ici, contre **0,80** sur la session du même jour (35 contre
+44). Même joueur, deux runs, arbitrage inversé : le repère
+`OverloadCards.MeasuredHpGainPerOvertimeMinute = 306` décrit **un profil de jeu, pas une constante du
+système** — la note du champ a été corrigée en ce sens.
+
+**Lacune d'instrumentation relevée :** `PowerTelemetry` ne journalise pas la régénération, si bien que
+la question ouverte « l'Auto-réparation est-elle prise maintenant que son effet est visible ? » ne
+peut pas être tranchée sur ce relevé — seulement bornée à ≤10 prises sur 81. Une colonne `regen_ps`
+la rendrait mesurable au lieu de reposer sur le souvenir du testeur.
+
+État du build en fin de run : armes toutes L20 (5), `reinforced_plating` L20, `thermal_core` L20,
+`capacitor` **L7** et `servo_motors` **L5** (les deux s'arrêtent d'eux-mêmes — rendements décroissants
+du §30, comportement attendu), DR au cap 0,40, vitesse au cap 380.
+
+→ **`StatAcceleration = 2,25` est retenu.** Réserve maintenue : une run unique ne mesure pas la
+variance (facteur 2,4 constaté entre deux entrées en overtime), mais la valeur tombe au milieu de la
+fenêtre visée, avec une mort subie — les deux bornes fausses sont écartées.
+
 ## Mid-boss par biome — validation en jeu — 2026-07-29
 
 **Chantier :** `docs/EXPANSION_PLAN.md` B.3, dernier point non livré (design → `docs/GDD.md` §32).

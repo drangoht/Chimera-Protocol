@@ -55,10 +55,22 @@ et les **tirs ennemis écrasaient le mixage** (`sfx_weapon_sentinel_shoot` à �
 de la banque, **+9,4 dB au-dessus du tir du joueur**) → nouvelle table `AudioSystem.MixGainDb`,
 **−12 dB** après un premier essai à −9 encore jugé trop fort : mixer selon la **polyphonie réelle**
 (N sentinelles contre 1 arme), pas seulement selon le niveau du fichier.
+**(g)** **`2,25` mesuré — cible atteinte** : 5ᵉ session, mort **subie** à **8 min 36 s** d'overtime
+(fenêtre visée 5-10 min). La menace y distance franchement la défense (dégâts subis **×9,1** contre
+PV max **×2,11**) et met malgré tout ce temps à tuer. Le relevé **déplace le levier principal** : la
+pente de la défense n'est pas une propriété du réglage mais un **choix du joueur** — 270 PV/min sur
+les 3 premières minutes, puis **56**, avec un plateau *strictement plat* de près de 2 min pendant
+lequel le DPS montait de 27 % (~46 prises de **Surtension** contre 25 de **Blindage**, ratio 1,84 ;
+la session précédente donnait l'inverse, 0,80). Même joueur, deux runs, facteur **2,3** sur la pente
+de la défense. Les cartes produisent donc bien l'**arbitrage** pour lequel elles ont été écrites, et
+c'est lui — pas l'escalade — qui décide de l'heure de la mort. Le repère
+`OverloadCards.MeasuredHpGainPerOvertimeMinute = 306` est requalifié : **profil de jeu, pas
+constante**.
 Design → `docs/GDD.md` §31.6, **§31.7**, **§31.8**, **§33** ; pièges → `docs/PITFALLS.md`
 (§Amortissement des passifs, §Cartes de surcharge, §Capacités déclenchées par une touche,
 §Calques d'écran, §Mixage des SFX) ; mesures → `docs/TEST_REPORT.md`. **244 tests.**
-**Reste** : valider `2,25` sur **plusieurs** runs (cible 5-10 min, mort subie).
+**Reste** : ressenti à valider en jouant — mixage des tirs ennemis (−12 dB), Auto-réparation
+(non instrumentée : `PowerTelemetry` ne journalise pas la régénération), mid-boss jamais joués.
 
 **(2) Mid-boss par biome** (2026-07-29) — dernier point non livré de `docs/EXPANSION_PLAN.md` (B.3).
 La faune par biome était complète, mais **trois niveaux sur cinq n'avaient aucun champion de mi-run**

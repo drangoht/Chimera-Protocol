@@ -55,8 +55,17 @@ public static class OvertimeEscalation
     /// Le joueur gagnait la course, l'overtime devenait un plateau — session interrompue
     /// volontairement à 5:18, « elle aurait pu durer beaucoup plus longtemps ».</item>
     /// <item><b>3</b> : mort subie à <b>1:31</b> d'overtime, très en deçà des 5-10 min visées.</item>
-    /// <item><b>2,25</b> : retenu, au milieu des deux.</item>
+    /// <item><b>2,25</b> : <b>retenu et mesuré</b> — mort subie à <b>8:36</b> d'overtime, dans la
+    /// fenêtre visée. La menace y croît bien plus vite que la défense (dégâts subis ×9,1 contre PV
+    /// max ×2,11 sur les 8 minutes) et met malgré tout ce temps à tuer.</item>
     /// </list>
+    ///
+    /// Le relevé de cette 5ᵉ session déplace le levier principal : la pente de la défense n'est pas
+    /// une propriété du réglage mais un <b>choix du joueur</b>. Elle valait 270 PV/min sur les trois
+    /// premières minutes d'overtime, puis 56 PV/min — avec un plateau strictement plat de près de
+    /// deux minutes pendant lequel le DPS montait de 27 %, le joueur préférant Surtension à Blindage.
+    /// Cette constante et <see cref="OverloadCards.Plating"/> sont couplées, mais l'arbitrage
+    /// offense/défense pèse plus lourd que les deux.
     ///
     /// <b>Attention en relisant ces mesures : la variance entre runs est énorme.</b> À l'entrée en
     /// overtime — où cette constante n'a encore <i>aucun</i> effet, zéro minute étant écoulée — les

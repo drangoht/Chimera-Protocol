@@ -90,6 +90,14 @@ public static class OverloadCards
     /// Vaut pour un joueur qui privilégie <see cref="Plating"/> : sur cette session, 44 prises de
     /// Blindage et ~35 de Surtension pour 80 niveaux — <see cref="Regen"/> n'a été choisie qu'une
     /// fois, cf. GDD §33.5.
+    ///
+    /// <b>⚠ Ce repère décrit un profil de jeu, pas une constante du système.</b> La session du même
+    /// jour à <c>StatAcceleration = 2,25</c> (8:36 d'overtime, 81 niveaux) a produit l'arbitrage
+    /// <b>inverse</b> — ~46 prises de Surtension pour 25 de Blindage — et la défense n'y a crû que de
+    /// <b>131 PV/min</b> en moyenne : 270 PV/min sur les trois premières minutes, puis 56, avec un
+    /// plateau strictement plat de près de deux minutes. Même joueur, deux runs, un facteur 2,3 sur
+    /// la pente de la défense. Tout réglage qui suppose 306 PV/min soutenus se trompe : c'est un
+    /// <i>maximum observé sur un profil défensif</i>, pas une valeur à laquelle opposer la menace.
     /// </summary>
     public const float MeasuredHpGainPerOvertimeMinute = 306f;
 

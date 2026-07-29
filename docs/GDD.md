@@ -2532,9 +2532,33 @@ lors que le joueur croît lui aussi. `OvertimeEscalationTests` compare désormai
 la menace doit dépasser la défense à 5 minutes, et l'écart doit **se creuser** ensuite — avec un
 garde-fou symétrique pour qu'elle ne tue pas dès la 2ᵉ minute.
 
-**Reste à vérifier en jouant** : que la mort survienne bien dans la fenêtre 5-10 min à
-`StatAcceleration = 2,25`, sur **plusieurs runs** — une seule ne départage pas le réglage de la
-variance.
+**Mesuré : `2,25` tient la fenêtre.** Session jouée du 2026-07-29 (Fournaise, palier 3) — entrée en
+overtime à 13:00, **mort subie à 21:36**, soit **8 min 36 s d'overtime**. Sur ces huit minutes, la
+menace croît bien plus vite que la défense (dégâts subis **×9,1**, PV max **×2,11**) et met malgré
+tout ce temps à tuer : c'est exactement la forme visée au §31.4.3.
+
+**Le relevé déplace le levier principal.** La pente de la défense n'est pas une propriété du réglage,
+c'est un **choix du joueur**, et il varie plus que la constante :
+
+| fenêtre | pente de la défense | ce que faisait le joueur |
+|---|---|---|
+| 13:00 → 16:00 | **270 PV/min** | prises de Blindage régulières |
+| 16:00 → 17:48 | **0 PV/min** (plateau plat, 16 niveaux) | Surtension exclusivement — DPS +27 % |
+| 16:00 → 21:36 | **56 PV/min** | arbitrage majoritairement offensif |
+
+Sur la run entière : ~46 prises de **Surtension** contre 25 de **Blindage** (ratio 1,84), là où la
+session précédente donnait 35 contre 44 (ratio 0,80). Même joueur, deux runs, arbitrage inversé — et
+un facteur 2,3 sur la pente de la défense qui en résulte. Conséquence pour tout réglage futur :
+`StatAcceleration` et `OverloadCards.Plating.Delta` sont couplés, mais **le choix du joueur pèse plus
+lourd que les deux réunis**. Le repère des 306 PV/min du §33.4 décrit un profil défensif, pas une
+constante à laquelle opposer la menace.
+
+Ce que ces cartes devaient produire — un arbitrage réel entre survivre et tuer — est donc constaté :
+c'est le choix d'aller chercher les dégâts, pas l'escalade, qui a décidé de l'heure de la mort.
+
+**Réserve maintenue** : une run unique ne mesure pas la variance (facteur 2,4 constaté ci-dessus).
+Elle écarte les deux bornes fausses et place `2,25` au milieu de la fenêtre visée, avec une mort
+subie — c'est le niveau de preuve dont dispose le réglage aujourd'hui.
 
 ### 31.8 Le dash était invisible
 
