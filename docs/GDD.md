@@ -2427,14 +2427,60 @@ les minutes d'overtime elles-mêmes : il amortit donc les deux courbes, comme av
   Rejeté : les caps existent pour empêcher l'invulnérabilité, et les repousser rendrait la run
   standard trop sûre pour corriger un problème qui n'existe qu'en overtime. Le §30 vient tout juste
   d'établir qu'un plafond qui ne plafonne pas est un défaut, pas une solution.
-- **Détendre `reinforced_plating`** (piste initialement suspectée : l'amortissement du §30 l'a fait
-  passer de +500 à +251 PV à L20). Rejeté après mesure : le passif était **déjà à son niveau maximum**
-  et les 249 PV perdus ne représentent que ~2,7 s de survie supplémentaire aux dégâts constatés. Le
-  problème est la pente de la menace, pas la hauteur de la défense.
+- ~~**Détendre `reinforced_plating`**~~ (piste initialement suspectée : l'amortissement du §30 l'a
+  fait passer de +500 à +251 PV à L20). Rejeté à l'époque au motif que les 249 PV perdus ne valaient
+  que ~2,7 s de survie supplémentaire. **Conclusion invalidée par la session jouée du 2026-07-29,
+  piste finalement retenue → §31.6** : ce calcul figeait les dégâts entrants à leur valeur au moment
+  de la mort, alors qu'ils *croissent* (+0,56/s par seconde en overtime). Des PV en plus ne rachètent
+  pas des secondes au tarif du dernier instant, ils repoussent le seuil de mort le long de la pente —
+  soit ~60 s, pas 3.
 - **Borner le terme quadratique de `EnemyScaling.CurvedFactor`.** Écarté comme correction principale :
   il est calibré pour la run standard (0-13 min), où il fait exactement son travail — rattraper le
   power-creep du build. Le corriger là reviendrait à traiter le symptôme loin de la cause. Reste
   disponible si la mesure jouée montre que ×4,5 en dix minutes est encore trop raide.
+
+### 31.6 Ce que la session jouée a montré (2026-07-29)
+
+Le §31.3 a été validé **par la mesure jouée** sur son propre objectif, et **réfuté sur sa conclusion** :
+le découplage fait bien ce qu'il promet, et n'ouvre pratiquement aucune fenêtre.
+
+| | avant §31.3 | après §31.3 |
+|---|---|---|
+| dégâts entrants en fin d'overtime | 92,5/s en 54 s | **61,8/s en 74 s** |
+| survie en overtime | ~60 s | **74 s** |
+
+−33 % de dégâts entrants pour **+14 secondes**. Le goulot n'était donc pas l'escalade. Relevé de la
+même session (Fournaise, palier 3, mort réelle à 14:14) :
+
+| | 4 min | 8 min | 11 min | 12 min | 14,2 min |
+|---|---|---|---|---|---|
+| PV max | 304 | 412 | **451** | **451** | **451** |
+| réduction de dégâts | 0,40 | 0,40 | 0,40 | 0,40 | 0,40 |
+| DPS joueur | 1 312 | 3 420 | 7 930 | 12 535 | 17 464 |
+| survie sans soin | 152 s | 31 s | 13 s | 10,5 s | 7,3 s |
+
+**La défense du joueur sature à la 11ᵉ minute** — deux minutes *avant* l'overtime. L'offensive, elle,
+fait ×700 sur la run. L'overtime hérite d'un joueur qui tient déjà dix secondes : aucun réglage de
+l'escalade ne pouvait produire une fenêtre de 5-10 minutes à partir de là.
+
+**Cause première — un effet de bord du §30.** `PassiveScaling` amortissait *toutes* les stats de
+passif, dont les +25 PV/niveau de `reinforced_plating` : 500 → 251 PV à L20. L'amortissement visait
+`capacitor` et `thermal_core`, dont la croissance était réellement explosive ; des PV **plats et
+additifs** croissent linéairement et n'ont jamais participé au power-creep. La 1.22.0 a mesuré l'effet
+du §30 sur la puissance offensive (objectif atteint) sans regarder ce qu'il faisait à la survie.
+→ **Correctif** : les PV max sont désormais **exemptés** de l'amortissement (seule exception ;
+`InventorySystem.ApplyPassiveDelta`). PV max à L20 : 451 → ~700, survie en overtime ~1 min → ~2 min.
+
+**Ce qui reste ouvert — les niveaux vides.** Le joueur passe du **niveau 124 au niveau 140 en 74
+secondes d'overtime**, pour un gain **nul** : les 5 armes sont L20, les 4 passifs sont saturés, et le
+§30 a précisément retiré les passifs saturés du pool de cartes. Il n'existe aucune progression qui ne
+sature pas, alors que la menace, elle, ne sature jamais. Tant que ce trou n'est pas comblé, la cible
+des 5-10 minutes reste hors d'atteinte quel que soit le réglage des pentes — et la règle du §31.4.3
+doit être lue dans les deux sens : **une menace non bornée exige une défense non bornée**.
+
+Piste à instruire (non tranchée) : des cartes de fin de partie à effet faible, cumulatif et sans
+plafond de niveau (+PV max, +soin), proposées une fois l'arsenal saturé — la réponse classique du
+genre au même problème.
 
 ---
 

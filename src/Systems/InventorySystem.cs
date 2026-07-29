@@ -373,9 +373,14 @@ public partial class InventorySystem : Node
             // réduction de recharge au Capaciteur dès son niveau 8 et montait le Noyau Thermique à
             // ×4,00 — la puissance du joueur faisait ×6,4 sur 12 minutes d'overtime. Les plafonds
             // (DR 0.40, vitesse 380, réduction de recharge 0.75, cooldown plancher) restent actifs.
+            //
+            // EXCEPTION : les PV max (cf. Undamped ci-dessous). L'amortissement ne vise que les stats
+            // dont la croissance est réellement explosive ; l'appliquer aux PV plats a fermé la
+            // fenêtre d'overtime, cf. GDD §31.6.
             int definedMax = passive.GetProperty("levels").GetArrayLength();
             int lookup     = Mathf.Min(newLevel, definedMax);
             float Damped(float definedDelta) => PassiveScaling.ExtrapolatedDelta(definedDelta, newLevel, definedMax);
+            float Undamped(float definedDelta) => definedDelta;
 
             foreach (var lvlData in passive.GetProperty("levels").EnumerateArray())
             {
@@ -392,7 +397,13 @@ public partial class InventorySystem : Node
                     case "reinforced_plating":
                         if (lvlData.TryGetProperty("maxHpBonus",     out var hpb))
                         {
-                            float hpGain    = Damped(hpb.GetSingle());
+                            // NON amorti : seul levier défensif non plafonné du joueur, et le seul
+                            // qui puisse encore croître après la 11e minute (DR et vitesse sont à
+                            // leur cap dès la 4e). Les PV plats croissent LINÉAIREMENT face à une
+                            // menace quadratique — ils n'ont jamais participé au power-creep que
+                            // PassiveScaling corrige. Les amortir plafonnait les PV à 451 et
+                            // ramenait la survie en overtime à ~1 min contre 5-10 visées (GDD §31.6).
+                            float hpGain    = Undamped(hpb.GetSingle());
                             stats.MaxHp    += hpGain;
                             stats.CurrentHp = Mathf.Min(stats.CurrentHp + hpGain, stats.MaxHp);
                         }

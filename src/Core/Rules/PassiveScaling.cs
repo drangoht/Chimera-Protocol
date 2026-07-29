@@ -18,6 +18,15 @@ using System;
 /// supplémentaire ne rapporte plus que <c>1 / (1 + Falloff × n)</c> du delta de fiche. La somme croît
 /// comme un logarithme : toujours croissante, jamais explosive.
 ///
+/// <b>Portée</b> — l'amortissement ne s'applique qu'aux stats dont la croissance était réellement
+/// explosive : multiplicateur de dégâts, réduction de recharge, réduction de dégâts, vitesse. Il ne
+/// s'applique <b>pas</b> aux <b>PV max</b> de <c>reinforced_plating</c> (cf. <c>InventorySystem</c>) :
+/// ce sont des points plats, additifs, donc à croissance <b>linéaire</b> — ils n'ont jamais contribué
+/// au power-creep, et c'est le seul levier défensif du joueur qui ne soit pas plafonné. Les avoir
+/// amortis en 1.22.0 était un effet de bord : les PV max saturaient à 451 dès la 11ᵉ minute (au lieu
+/// de ~700), face à des dégâts entrants quadratiques, ce qui ramenait la survie en overtime à ~1 min
+/// contre les 5-10 min sur lesquelles l'économie d'Échos est dimensionnée. Cf. <c>docs/GDD.md</c> §31.6.
+///
 /// Design : <c>docs/GDD.md</c> §30.
 /// </summary>
 public static class PassiveScaling

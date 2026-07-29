@@ -381,6 +381,26 @@ public class PassiveScalingTests
             Assert.True(PassiveScaling.CumulativeBonus(0.15f, lvl + 1, 3)
                       > PassiveScaling.CumulativeBonus(0.15f, lvl, 3));
     }
+
+    [Fact]
+    public void LesPvMaxNeDoiventPasEtreAmortis()
+    {
+        // Garde-fou de conception, pas un test de PassiveScaling lui-même : `InventorySystem`
+        // applique le delta de `maxHpBonus` NON amorti (seule exception), et ce test chiffre
+        // pourquoi. Amortir les 25 PV/niveau de reinforced_plating divisait par 2 le seul levier
+        // défensif non plafonné du joueur — PV max bloqués à 451 dès la 11e minute, survie en
+        // overtime ramenée à ~1 min contre les 5-10 min du design (GDD §31.6).
+        const float deltaFiche = 25f;   // reinforced_plating.maxHpBonus
+        const int   plafond    = 20;    // maxLevel
+
+        float amorti   = PassiveScaling.CumulativeBonus(deltaFiche, plafond, 3);
+        float additif  = deltaFiche * plafond;
+
+        Assert.Equal(500f, additif, 1);
+        Assert.True(amorti < 260f, $"l'amortissement rendait bien moins que l'additif : {amorti}");
+        Assert.True(additif > amorti * 1.9f,
+            "amortir les PV max coûtait au joueur près de la moitié de sa survie de fin de run");
+    }
 }
 
 public class OvertimeEscalationTests

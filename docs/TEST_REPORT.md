@@ -4,6 +4,49 @@ Rapport de sessions de test. Chaque section correspond à une session de test di
 
 ---
 
+## Survie en overtime — session jouée de validation — 2026-07-29
+
+**Objet :** valider en jeu le correctif d'overtime (`081b6f6`, design → `docs/GDD.md` §31), la survie
+n'étant pas mesurable en banc (le bot `--auto-play` ne se déplace pas).
+
+**Protocole :** `tools/power_curve_session.ps1 -Biome fournaise` (palier de menace 3, difficulté
+Normal), session jouée jusqu'à la mort. Journal `user://power_curve.log`, échantillon / 15 s.
+Correctif vérifié actif : aucune source `.cs` postérieure à la DLL utilisée.
+
+**Résultat brut :** overtime à 13:00, mort réelle (`# fin de run : death`) à **14:14** →
+**74 secondes de survie**, contre 5-10 minutes visées (GDD §9.2).
+
+### Le correctif tient sa promesse — et ne change presque rien
+
+| | avant `081b6f6` | après |
+|---|---|---|
+| dégâts entrants en fin d'overtime | 92,5/s en 54 s | **61,8/s en 74 s** |
+| survie en overtime | ~60 s | **74 s** |
+
+−33 % de dégâts entrants pour **+14 s**. Le goulot était donc ailleurs.
+
+### Le vrai goulot : la défense sature deux minutes avant l'overtime
+
+| | 4 min | 8 min | 11 min | 12 min | 14,2 min |
+|---|---|---|---|---|---|
+| PV max | 304 | 412 | **451** | **451** | **451** |
+| réduction de dégâts | 0,40 | 0,40 | 0,40 | 0,40 | 0,40 |
+| DPS joueur | 1 312 | 3 420 | 7 930 | 12 535 | 17 464 |
+| survie sans soin | 152 s | 31 s | 13 s | 10,5 s | 7,3 s |
+
+Deux constats, tous deux issus du relevé :
+
+1. **Effet de bord du §30.** `PassiveScaling` amortissait aussi les +25 PV/niveau de
+   `reinforced_plating` : 500 → 251 PV à L20, d'où le plafond de 451 atteint dès la 11ᵉ minute.
+   → corrigé, les PV max sont exemptés de l'amortissement (`InventorySystem.ApplyPassiveDelta`).
+   Estimation : survie ~1 min → ~2 min. **238 tests** au vert.
+2. **16 niveaux pour rien.** Le joueur passe du **niveau 124 au niveau 140** pendant les 74 s
+   d'overtime, sans aucun gain : armes L20, passifs saturés et retirés du pool par le §30. Aucune
+   progression ne reste ouverte alors que la menace ne sature jamais. → non tranché, cf. GDD §31.6.
+
+**Conclusion :** la cible des 5-10 min n'est pas atteignable par réglage de pentes seul. Publication
+de la 1.23.0 à arbitrer — le correctif PV est un gain net, le trou de progression est un chantier.
+
 ## Mid-boss par biome — validation en jeu — 2026-07-29
 
 **Chantier :** `docs/EXPANSION_PLAN.md` B.3, dernier point non livré (design → `docs/GDD.md` §32).
