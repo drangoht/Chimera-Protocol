@@ -43,6 +43,12 @@ public partial class HUD : CanvasLayer
 	// Voile de recharge posé sur le slot de la greffe de dash (Servos Érratiques / fusion Charge).
 	private ColorRect?   _dashCdVeil;
 	private float        _dashSlotSize;
+	// Régénération PV/s, à droite de la barre de vie (masqué si nulle).
+	private Label        _regenLabel = null!;
+	private float        _lastRegenShown = -1f;
+	// Rappel de la touche d'esquive, sous la rangée de greffes (masqué sans greffe de dash).
+	private Label        _dashHint = null!;
+	private string       _dashHintKey = "";
 
 	private const float HpBarW = 222f;
 	private const float XpBarW = 296f;
@@ -102,6 +108,15 @@ public partial class HUD : CanvasLayer
 
 		(_, _hpFill, _hpFillStyle) = MakeBar(root, new Vector2(30, 50), new Vector2(HpBarW, 16),
 			new Color(0.08f, 0.09f, 0.14f, 0.95f), HpHigh);
+
+		// Régénération continue (Auto-réparation, meta hp_regen, greffes). Sans cet indicateur, l'effet
+		// est strictement invisible : il rend quelques PV par seconde sur une barre qui tombe par
+		// à-coups de 100. Un testeur a cru qu'il fallait la « déclencher » et n'a plus jamais pris la
+		// carte (2026-07-29). Affiché juste à droite de la barre de vie, masqué quand la régen est nulle.
+		_regenLabel = MakeLabel(root, new Vector2(30 + HpBarW + 8, 50), "", 12, HpHigh);
+		_regenLabel.Size = new Vector2(70, 16);
+		_regenLabel.VerticalAlignment = VerticalAlignment.Center;
+		_regenLabel.Visible = false;
 
 		(_, _xpFill, _xpFillStyle) = MakeBar(root, new Vector2(30, 82), new Vector2(XpBarW, 6),
 			new Color(0.08f, 0.09f, 0.14f, 0.95f), _accent);
@@ -172,6 +187,15 @@ public partial class HUD : CanvasLayer
 										MouseFilter = Control.MouseFilterEnum.Ignore };
 		_graftRow.AddThemeConstantOverride("separation", 5);
 		root.AddChild(_graftRow);
+
+		// Rappel de la touche d'esquive, sous la rangée de greffes. Placé ICI et non sur le slot :
+		// le slot est en ClipContents (garde-fou des icônes plein-cadre) et rognait « Shift » à ses
+		// deux bords — le badge était présent et illisible, donc inutile. Le voile de recharge disait
+		// « quand » le dash est prêt, jamais « comment » le déclencher : un testeur a joué une run
+		// entière sans savoir qu'une touche existait (2026-07-29).
+		_dashHint = MakeLabel(root, new Vector2(32, 120), "", 11, new Color(0.85f, 0.90f, 1f, 0.85f));
+		_dashHint.Size = new Vector2(220, 14);
+		_dashHint.Visible = false;
 
 		// ── Bandeau de loadout (armes équipées) sous le panneau agrandi ──
 		_loadout = new HBoxContainer { Position = new Vector2(20, 144),
@@ -473,8 +497,11 @@ public partial class HUD : CanvasLayer
 	/// <summary>Anime le voile de recharge du dash : hauteur ∝ cooldown restant, se retire par le bas.</summary>
 	private void UpdateDashCooldownVeil()
 	{
+		var dashPlayer = GameManager.Instance?.PlayerInstance;
+		UpdateDashHint(dashPlayer != null && dashPlayer.DashEnabled);
+
 		if (_dashCdVeil == null || !IsInstanceValid(_dashCdVeil)) return;
-		var player = GameManager.Instance?.PlayerInstance;
+		var player = dashPlayer;
 		if (player == null || !player.DashEnabled) { _dashCdVeil.Visible = false; return; }
 
 		float ready = player.DashReadyRatio;          // 0 = juste utilisé, 1 = prêt
@@ -493,6 +520,39 @@ public partial class HUD : CanvasLayer
 		return ResourceLoader.Exists(def.HudIcon) ? GD.Load<Texture2D>(def.HudIcon) : null;
 	}
 
+	/// <summary>
+	/// Affiche « ⇧ Shift — esquive » sous la rangée de greffes tant que le joueur dispose du dash.
+	/// Le libellé est relu de l'InputMap (touche remappable), et seulement quand il change.
+	/// </summary>
+	private void UpdateDashHint(bool hasDash)
+	{
+		if (_dashHint == null || !IsInstanceValid(_dashHint)) return;
+		if (!hasDash) { _dashHint.Visible = false; _dashHintKey = ""; return; }
+
+		string key = InputRemap.DashKeyLabel();
+		if (key != _dashHintKey)
+		{
+			_dashHintKey = key;
+			_dashHint.Text = string.Format(Loc.T("HUD_DASH_HINT"), key);
+		}
+		_dashHint.Visible = true;
+	}
+
+	/// <summary>
+	/// Affiche la régénération continue à droite de la barre de vie (« ♥ +2,4/s »), masquée si nulle.
+	/// Ne se met à jour que sur changement : ce label ne bouge qu'à la prise d'une carte.
+	/// </summary>
+	private void UpdateRegenLabel(float regenPerSecond)
+	{
+		if (_regenLabel == null || !IsInstanceValid(_regenLabel)) return;
+		if (Mathf.IsEqualApprox(regenPerSecond, _lastRegenShown)) return;
+		_lastRegenShown = regenPerSecond;
+
+		if (regenPerSecond <= 0.01f) { _regenLabel.Visible = false; return; }
+		_regenLabel.Visible = true;
+		_regenLabel.Text = "♥ +" + regenPerSecond.ToString("0.0") + "/s";
+	}
+
 	// ── PV ─────────────────────────────────────────────────────────────────────
 	private void UpdateHp(float delta)
 	{
@@ -500,6 +560,8 @@ public partial class HUD : CanvasLayer
 		if (player == null) return;
 		float cur = player.Stats.CurrentHp, max = player.Stats.MaxHp;
 		float target = max > 0f ? Mathf.Clamp(cur / max, 0f, 1f) : 0f;
+
+		UpdateRegenLabel(player.Stats.HpRegenPerSecond);
 
 		if (target >= _displayHpRatio) _displayHpRatio = target;
 		else _displayHpRatio = Mathf.MoveToward(_displayHpRatio, target, delta * HpDrainSpeed);

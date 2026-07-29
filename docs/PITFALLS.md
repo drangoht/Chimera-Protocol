@@ -274,6 +274,26 @@ Trois pièges quand on touche à la difficulté par niveau ou à la formule d'É
   les deux cas. Une session de calibrage de survie n'est exploitable qu'avec la confirmation orale du
   testeur — un relevé de 5:18 pris pour une survie réelle a failli valider un overtime devenu
   inoffensif.
+- **Une seule session ne départage pas un réglage d'overtime de la variance entre runs.** À l'entrée
+  en overtime, où `StatAcceleration` n'a encore aucun effet, deux sessions ont montré un facteur
+  **2,4** sur la survie (1060 PV / 28,9 dégâts/s contre 745 PV / 48,9). Selon que l'arsenal sature
+  vers la 11ᵉ ou la 13ᵉ minute, le joueur entre en overtime avec deux à trois fois moins de cartes
+  accumulées. Comparer des réglages sur une run chacun, c'est mesurer surtout le bruit.
+
+## Capacités déclenchées par une touche — l'afficher, toujours
+- **Le dash n'a annoncé sa touche nulle part pendant plusieurs versions** : ni HUD, ni description de
+  greffe, ni écran d'assimilation. Le voile de recharge du slot disait *quand* il était prêt, jamais
+  *comment* le déclencher — un testeur a joué une run entière sans s'en servir. Vaut pour *Servos
+  Erratiques*, *Charge Blindée* et *Frappe Nova*, qui partagent ce système.
+- **Ne pas poser le libellé de touche sur le slot de greffe** : le slot est en `ClipContents = true`
+  (garde-fou voulu, les icônes plein-cadre mordraient le liseré arrondi) et rogne « Shift » à ses
+  deux bords — le badge s'affiche, illisible, ce qui est pire qu'absent. Le mettre **hors du slot**
+  (ligne sous la rangée de greffes).
+- **Lire la touche dans l'`InputMap`** (`InputRemap.DashKeyLabel`), jamais une constante : elle est
+  remappable depuis les Options, un libellé en dur mentirait dès le premier remap.
+- Symétriquement, **un effet passif doit se voir** : l'Auto-réparation (+0,6 PV/s) était si invisible
+  que le testeur la croyait *active* et la cherchait une touche à la main — donc ne la prenait jamais
+  (1 fois sur 80). Toute stat continue a besoin d'un indicateur (ici `♥ +X/s` au HUD).
 
 ## VFX/projectiles parentés à la racine — purge à la sortie de run
 Les entités éphémères de gameplay (balles, flammes, death bursts, anneaux de choc, explosions

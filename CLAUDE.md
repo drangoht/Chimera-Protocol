@@ -38,10 +38,21 @@ pendule était allé trop loin : la menace passait **sous** la défense à 5 min
 les cartes rapportant ~306 PV/min. → `OvertimeEscalation.StatAcceleration` **1,5 → 3** (la valeur de
 1,5 n'existait que parce que la survie était plafonnée — les cartes ont supprimé ce plafond). Le test
 ne compare plus la menace à un **seuil absolu** mais à la **pente de la défense**.
-Design → `docs/GDD.md` §31.6, **§31.7**, **§33** ; pièges → `docs/PITFALLS.md` (§Amortissement des
-passifs, §Cartes de surcharge) ; mesures → `docs/TEST_REPORT.md`. **244 tests.**
-**Reste** : session jouée jusqu'à la mort **subie** (cible 5-10 min) ; l'**Auto-réparation** est un
-choix mort (1 prise sur 80, §33.5), non corrigée pour ne pas fausser la prochaine mesure.
+**(d)** 3ᵉ session : à ×3, mort **subie** à **1 min 31 s** — trop dur. Valeur retenue **2,25**.
+⚠ **La variance entre runs domine le réglage** : à l'entrée en overtime, *où `StatAcceleration` n'a
+aucun effet*, deux sessions différaient d'un facteur **2,4** en survie (1060 PV / 28,9 dég/s contre
+745 / 48,9) selon que l'arsenal sature vers la 11ᵉ ou la 13ᵉ min. **Une session par réglage mesure
+surtout le bruit.**
+**(e)** Deux angles morts d'ergonomie signalés par le testeur, corrigés : le **dash n'annonçait sa
+touche nulle part** (ni HUD, ni description, ni écran d'assimilation — une run entière jouée sans
+savoir qu'une touche existait) → ligne « Shift — esquive » au HUD + rappel à l'acquisition, libellé
+lu de l'`InputMap` ; l'**Auto-réparation était crue *active*** (« son effet ne se voit pas ») →
+indicateur `♥ +X/s` au HUD + description « automatiquement et en permanence, aucune touche à
+presser ». Valeur **inchangée à dessein** : le retour porte sur la lisibilité.
+Design → `docs/GDD.md` §31.6, **§31.7**, **§31.8**, **§33** ; pièges → `docs/PITFALLS.md`
+(§Amortissement des passifs, §Cartes de surcharge, §Capacités déclenchées par une touche) ; mesures →
+`docs/TEST_REPORT.md`. **244 tests.**
+**Reste** : valider `2,25` sur **plusieurs** runs (cible 5-10 min, mort subie).
 
 **(2) Mid-boss par biome** (2026-07-29) — dernier point non livré de `docs/EXPANSION_PLAN.md` (B.3).
 La faune par biome était complète, mais **trois niveaux sur cinq n'avaient aucun champion de mi-run**

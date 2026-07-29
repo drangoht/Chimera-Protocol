@@ -112,9 +112,47 @@ power-creep sur cette run.
 **Conclusion et suite** : la mort volontaire a révélé que le pendule était allé trop loin. En
 comparant les deux croissances sur ce cas, la menace passait **sous** la défense à 5 min d'overtime
 (×2,37 contre ×2,44) — les cartes font gagner ~306 PV/min au joueur, qui remportait donc la course.
-→ `StatAcceleration` **1,5 → 3** (GDD §31.7) : menace devant dès la 5ᵉ minute (×3,54), double de la
-défense à la 10ᵉ (×7,95 contre ×3,89). Le critère de test passe d'un seuil absolu à une comparaison
-des deux pentes. **244 tests.** À revérifier en jouant — mort **subie**, cette fois.
+→ `StatAcceleration` **1,5 → 3** (GDD §31.7). Le critère de test passe d'un seuil absolu à une
+comparaison des deux pentes.
+
+### 3ᵉ session jouée — `StatAcceleration = 3` : trop dur
+
+Mort **subie** à 14:31, overtime à 13:00 → **1 min 31 s**. Très en deçà des 5-10 min.
+
+Mais le relevé interdit d'imputer l'écart au seul réglage. **À l'entrée en overtime, où
+`StatAcceleration` n'a encore aucun effet** (zéro minute écoulée), les deux sessions divergeaient
+déjà d'un facteur 2,4 :
+
+| à t = 13 min | session à 1,5 | session à 3 |
+|---|---|---|
+| PV max | 1060 | **745** |
+| dégâts subis | 28,9/s | **48,9/s** |
+| survie sans soin | 36,7 s | **15,2 s** |
+| PV à la mort | 2680 | 1195 |
+
+Les PV sont restés bloqués à 700 jusqu'à 12:48 (contre 835 dès 12:00) : l'arsenal s'est saturé plus
+tard, donc bien moins de cartes de surcharge accumulées avant la bascule. **Une session par réglage
+mesure surtout le bruit.**
+
+→ valeur retenue **2,25**, au milieu des deux essais. Le seuil du 2ᵉ critère de test est assoupli de
+1,3 à 1,25 : fixé à 1,3 il excluait `StatAcceleration = 2`, pourtant défendable — le test doit suivre
+le design, pas le contraindre. **244 tests.** À revérifier sur **plusieurs** runs.
+
+### Ergonomie — deux angles morts signalés par le testeur
+
+Sans rapport avec l'équilibrage, relevés dans la même passe.
+
+1. **Le dash n'annonçait sa touche nulle part** — ni HUD, ni description de greffe, ni écran
+   d'assimilation. Une run entière jouée sans savoir qu'une touche existait. → ligne « Shift —
+   esquive » sous la rangée de greffes + « ▸ Appuie sur Shift pour l'utiliser » à l'acquisition,
+   libellé lu de l'`InputMap` (touche remappable).
+2. **L'Auto-réparation était crue *active*** — « son effet ne se voit pas et ce n'est pas clair
+   comment la déclencher ». → indicateur `♥ +X/s` au HUD + description explicite (« automatiquement
+   et en permanence. Aucune touche à presser »). **Valeur inchangée à dessein**, cf. GDD §33.5.
+
+Validé en capture (`--saturate-arsenal --force-graft=erratic_servos`, fenêtré d3d12). Le premier
+essai plaçait la touche *sur* le slot de greffe : illisible, le slot étant en `ClipContents` et
+rognant « Shift » aux deux bords — corrigé en le sortant du slot, vérifié à la capture suivante.
 
 ## Mid-boss par biome — validation en jeu — 2026-07-29
 

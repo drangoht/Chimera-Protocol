@@ -132,7 +132,7 @@ CARD_LEVEL," (Lv. {0})"," (Niv. {0})"," (Niv. {0})"
 CARD_OVERLOAD_PLATING,Emergency Plating,Blindage d'urgence,Blindaje de emergencia
 CARD_OVERLOAD_PLATING_DESC,+45 max HP and heals the same amount.,+45 PV max et soigne d'autant.,+45 PV máx. y cura otro tanto.
 CARD_OVERLOAD_REGEN,Self-Repair,Auto-réparation,Autorreparación
-CARD_OVERLOAD_REGEN_DESC,+0.6 HP regenerated per second.,"+0,6 PV régénéré par seconde.","+0,6 PV regenerado por segundo."
+CARD_OVERLOAD_REGEN_DESC,"+0.6 HP per second, automatically and forever. No key to press.","+0,6 PV par seconde, automatiquement et en permanence. Aucune touche à presser.","+0,6 PV por segundo, automáticamente y siempre. Ninguna tecla que pulsar."
 CARD_OVERLOAD_DAMAGE,Power Surge,Surtension,Sobretensión
 CARD_OVERLOAD_DAMAGE_DESC,+5% damage on every weapon.,+5 % de dégâts sur toutes les armes.,+5 % de daño en todas las armas.
 ENEMY_RUST_SWARM_NAME,Rust Swarm,Essaim de Rouille,Enjambre de Herrumbre
@@ -370,6 +370,8 @@ GRAFT_SWARM_SYMBIOTE_NAME,Symbiotic Swarm,Nuée Symbiotique,Enjambre Simbiótico
 GRAFT_SWARM_SYMBIOTE_DESC,"4 mini-swarms of living rust orbit you, biting anything that nears and stealing HP on contact.","4 mini-essaims de rouille vivante t'entourent, mordant ce qui approche et volant des PV au contact.","4 mini-enjambres de herrumbre viva te rodean, mordiendo lo que se acerca y robando PV al contacto."
 GRAFT_ERRATIC_SERVOS_NAME,Erratic Servos,Servos Erratiques,Servos Erráticos
 GRAFT_ERRATIC_SERVOS_DESC,"Drone reflexes grafted to your legs: a brief invulnerable dodge dash, on cooldown.","Les réflexes du drone greffés à tes jambes : une ruade d'esquive brève et invulnérable, à recharge.","Los reflejos del dron injertados en tus piernas: una embestida de esquiva breve e invulnerable, con recarga."
+HINT_ACTIVE_KEY,▸ Press  {0}  to use it.,▸ Appuie sur  {0}  pour l'utiliser.,▸ Pulsa  {0}  para usarla.
+HUD_DASH_HINT,{0} — dodge,{0} — esquive,{0} — esquiva
 GRAFT_AIMING_EYE_NAME,Aiming Eye,Œil de Visée,Ojo de Puntería
 GRAFT_AIMING_EYE_DESC,A sentinel's eye grafted into your skull fires on its own at the nearest enemy.,Un œil de sentinelle greffé dans ton crâne tire seul sur l'ennemi le plus proche.,Un ojo de centinela injertado en tu cráneo dispara solo al enemigo más cercano.
 GRAFT_GRAFTED_CARAPACE_NAME,Grafted Carapace,Carapace Greffée,Caparazón Injertado

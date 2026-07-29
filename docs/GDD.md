@@ -2505,10 +2505,26 @@ les deux croissances sur le cas mesuré (Fournaise, palier 3) :
 d'avance sur toute la première moitié de la fenêtre. L'overtime avait cessé d'être une fin pour
 devenir un plateau.
 
-**Correctif : `StatAcceleration` 1,5 → 3.** La valeur de 1,5 avait été choisie *parce que* la survie
-était plafonnée (§31.3) ; les cartes ayant supprimé ce plafond, la contrainte qui la justifiait a
-disparu avec lui. À 3, la menace repasse devant dès la 5ᵉ minute (×3,54 contre ×2,44) et **double**
-la défense à la 10ᵉ (×7,95 contre ×3,89).
+**Correctif : `StatAcceleration` 1,5 → 3 → 2,25.** La valeur de 1,5 avait été choisie *parce que* la
+survie était plafonnée (§31.3) ; les cartes ayant supprimé ce plafond, la contrainte qui la
+justifiait a disparu avec lui. Le premier essai à **3** a été mesuré dans la foulée : mort subie à
+**1:31** d'overtime, très en deçà des 5-10 min. Valeur retenue : **2,25**, au milieu des deux.
+
+**⚠ La variance entre runs est énorme, et elle domine le réglage.** À l'entrée en overtime — où
+`StatAcceleration` n'a encore *aucun* effet, zéro minute étant écoulée — les deux sessions
+différaient déjà d'un facteur 2,4 :
+
+| à t = 13 min | session à 1,5 | session à 3 |
+|---|---|---|
+| PV max | 1060 | 745 |
+| dégâts subis | 28,9/s | 48,9/s |
+| survie sans soin | 36,7 s | **15,2 s** |
+
+Selon que l'arsenal se sature vers la 11ᵉ ou la 13ᵉ minute, le joueur aborde l'overtime avec deux à
+trois fois moins de cartes de surcharge accumulées. **Une session isolée ne suffit donc pas à
+trancher un réglage fin** : les 1:31 mesurés à `StatAcceleration = 3` mélangent le durcissement voulu
+et une run défavorable. À rapprocher de §33.4 : le calibrage de l'overtime demande plusieurs runs, ou
+un protocole qui fixe l'état d'entrée.
 
 **Le critère de test change de nature.** Le seuil absolu du §31.4.2 (« pas plus de ×6 en dix
 minutes ») supposait une défense plafonnée : comparer une menace à une constante n'a plus de sens dès
@@ -2516,8 +2532,29 @@ lors que le joueur croît lui aussi. `OvertimeEscalationTests` compare désormai
 la menace doit dépasser la défense à 5 minutes, et l'écart doit **se creuser** ensuite — avec un
 garde-fou symétrique pour qu'elle ne tue pas dès la 2ᵉ minute.
 
-**Reste à vérifier en jouant** : que la mort survienne bien dans la fenêtre 5-10 min, cette fois
-subie et non consentie.
+**Reste à vérifier en jouant** : que la mort survienne bien dans la fenêtre 5-10 min à
+`StatAcceleration = 2,25`, sur **plusieurs runs** — une seule ne départage pas le réglage de la
+variance.
+
+### 31.8 Le dash était invisible
+
+Relevé dans la même passe, sans rapport avec l'équilibrage. Le dash (greffe *Servos Erratiques*, ses
+fusions *Charge Blindée* et *Frappe Nova*) **n'annonçait sa touche nulle part** : ni le HUD, ni la
+description de la greffe, ni l'écran d'assimilation. Le voile de recharge sur le slot indiquait
+*quand* le dash était prêt, jamais *comment* le déclencher. Un testeur a joué une run entière sans
+savoir qu'une touche existait.
+
+Corrigé à deux endroits, le libellé étant lu de l'`InputMap` — la touche est remappable, une
+constante en dur mentirait dès le premier remap (`InputRemap.DashKeyLabel`) :
+
+- **HUD** : ligne « Shift — esquive » sous la rangée de greffes, tant que le joueur a le dash.
+- **Écran d'assimilation** : « ▸ Appuie sur **Shift** pour l'utiliser », au moment où il découvre la
+  greffe.
+
+Le premier essai plaçait un badge *sur* le slot de greffe : illisible, le slot étant en
+`ClipContents` (garde-fou des icônes plein-cadre) et rognant « Shift » à ses deux bords. Piège
+consigné dans `docs/PITFALLS.md`. **Règle générale : toute capacité déclenchée par une touche doit
+afficher cette touche.**
 
 
 ---
@@ -2687,7 +2724,17 @@ Arithmétiquement elle n'est pourtant pas si loin du compte : +0,6 PV/s rattrape
 secondes, et une run d'overtime en dure plusieurs centaines. C'est un problème de **lisibilité**, pas
 de valeur — un gain étalé ne se perçoit pas quand la barre de vie tombe par à-coups de 100.
 
-Non corrigé à ce stade : la priorité était de rendre l'overtime mortel (§31.7), et retoucher cette
-valeur dans le même lot rendrait la prochaine mesure inexploitable. Pistes, à instruire une fois la
-fenêtre de survie stabilisée : monter franchement le débit, ou l'indexer sur les PV max (elle
-suivrait alors la même pente que le Blindage au lieu de décrocher).
+**Le testeur l'a confirmé, et il a dit plus que ça** : il l'ignorait « parce que son effet ne se voit
+pas », et surtout parce qu'il ne savait pas *comment la déclencher* — il la croyait **active**. Une
+carte passive prise pour une capacité à activer est une carte qu'on ne prend pas. Corrigé sans
+toucher à sa valeur :
+
+- **Indicateur au HUD** : `♥ +2,4/s` à droite de la barre de vie, masqué si la régénération est
+  nulle. Il vaut pour toutes les sources (Auto-réparation, méta `hp_regen`, greffes).
+- **Description reformulée** : « +0,6 PV par seconde, **automatiquement et en permanence. Aucune
+  touche à presser.** »
+
+La valeur reste inchangée **délibérément** : le retour porte sur la lisibilité, et la corriger dans
+le même lot empêcherait de savoir laquelle des deux causes agit. Si la carte reste boudée une fois
+visible, alors seulement monter le débit ou l'indexer sur les PV max (elle suivrait la pente du
+Blindage au lieu de décrocher).

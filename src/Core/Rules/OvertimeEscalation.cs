@@ -43,22 +43,32 @@ public static class OvertimeEscalation
     /// Accélération du temps de référence du <b>scaling</b> (PV, dégâts, variété d'ennemis tirables,
     /// fréquence d'élite, et par ricochet les champions d'overtime).
     ///
-    /// <b>Historique — 4 → 1,5 → 3.</b> Abaissée à 1,5 quand la survie du joueur était
-    /// <b>plafonnée</b> en fin de run : une menace quadratique face à une défense bornée ne laissait
-    /// aucune fenêtre. Les cartes de <see cref="OverloadCards"/> ont supprimé ce plafond — la défense
-    /// croît désormais d'environ <see cref="OverloadCards.MeasuredHpGainPerOvertimeMinute"/> PV par
-    /// minute d'overtime — et la raison de brider la menace a disparu avec lui.
+    /// <b>Historique — 4 → 1,5 → 3 → 2,25</b>, les trois derniers réglages mesurés en session jouée
+    /// le 2026-07-29. Abaissée à 1,5 quand la survie du joueur était <b>plafonnée</b> en fin de run :
+    /// une menace quadratique face à une défense bornée ne laissait aucune fenêtre. Les cartes de
+    /// <see cref="OverloadCards"/> ont supprimé ce plafond — la défense croît désormais d'environ
+    /// <see cref="OverloadCards.MeasuredHpGainPerOvertimeMinute"/> PV par minute — et la raison de
+    /// brider la menace a disparu avec lui.
     ///
-    /// À 1,5, la menace passait <b>sous</b> la défense (×2,37 contre ×2,44 à 5 minutes d'overtime) :
-    /// le joueur gagnait la course et l'overtime cessait d'être mortel — mesuré sur la session jouée
-    /// du 2026-07-29, interrompue volontairement à 5:18 « alors qu'elle aurait pu durer beaucoup plus
-    /// longtemps ». À 3, la menace repasse devant dès la 5ᵉ minute (×3,54) et double la défense à la
-    /// 10ᵉ (×7,95 contre ×3,89) : l'overtime redevient une fin, pas un plateau.
+    /// <list type="bullet">
+    /// <item><b>1,5</b> : la menace passait <i>sous</i> la défense (×2,37 contre ×2,44 à 5 minutes).
+    /// Le joueur gagnait la course, l'overtime devenait un plateau — session interrompue
+    /// volontairement à 5:18, « elle aurait pu durer beaucoup plus longtemps ».</item>
+    /// <item><b>3</b> : mort subie à <b>1:31</b> d'overtime, très en deçà des 5-10 min visées.</item>
+    /// <item><b>2,25</b> : retenu, au milieu des deux.</item>
+    /// </list>
     ///
-    /// La règle du §31.4.3 se lit donc dans les deux sens : une défense non bornée <b>autorise</b> —
-    /// et exige — une menace qui le soit aussi.
+    /// <b>Attention en relisant ces mesures : la variance entre runs est énorme.</b> À l'entrée en
+    /// overtime — où cette constante n'a encore <i>aucun</i> effet, zéro minute étant écoulée — les
+    /// deux sessions différaient déjà d'un facteur 2,4 en survie (1060 PV contre 745, 28,9 dégâts/s
+    /// contre 48,9). Selon que l'arsenal se sature vers la 11ᵉ ou la 13ᵉ minute, le joueur aborde
+    /// l'overtime avec deux à trois fois moins de cartes de surcharge accumulées. Une session isolée
+    /// ne suffit donc pas à trancher un réglage fin.
+    ///
+    /// La règle du §31.4.3 se lit dans les deux sens : une défense non bornée <b>autorise</b> — et
+    /// exige — une menace qui le soit aussi.
     /// </summary>
-    public const float StatAcceleration = 3f;
+    public const float StatAcceleration = 2.25f;
 
     /// <summary>Minutes de courbe ajoutées à la densité pour <paramref name="overtimeMinutes"/> d'overtime.</summary>
     public static float DensityMinutes(float overtimeMinutes)

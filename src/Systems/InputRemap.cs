@@ -126,4 +126,22 @@ public static class InputRemap
 
     /// <summary>Nom lisible de la touche clavier principale d'une action (pour l'UI Options).</summary>
     public static string KeyName(Key key) => OS.GetKeycodeString(key);
+
+    /// <summary>
+    /// Libellé de la touche de dash <b>réellement bindée</b> (« Shift », « Espace »…), pour l'afficher
+    /// au joueur. Lit l'InputMap plutôt que <see cref="DefaultDashKey"/> : la touche est remappable
+    /// depuis les Options, un libellé en dur mentirait dès le premier remap.
+    ///
+    /// Le dash est resté invisible pendant plusieurs versions — ni le HUD ni la description de la
+    /// greffe ne disaient qu'il fallait appuyer sur quoi que ce soit (retour de test du 2026-07-29).
+    /// Toute capacité déclenchée par une touche doit afficher cette touche.
+    /// </summary>
+    public static string DashKeyLabel()
+    {
+        if (InputMap.HasAction(Dash))
+            foreach (var ev in InputMap.ActionGetEvents(Dash))
+                if (ev is InputEventKey k && k.Keycode != Key.None)
+                    return OS.GetKeycodeString(k.Keycode);
+        return OS.GetKeycodeString(DefaultDashKey);
+    }
 }

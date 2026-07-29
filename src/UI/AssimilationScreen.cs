@@ -194,6 +194,14 @@ public partial class AssimilationScreen : CanvasLayer
         string idKey = def.Id.ToUpperInvariant();
         _nameLabel.Text = TFallback($"GRAFT_{idKey}_NAME", def.Name);
         _descLabel.Text = TFallback($"GRAFT_{idKey}_DESC", def.Description);
+        // Greffe ACTIVE (dash / charge / Frappe Nova) : dire la touche, et la dire ici. C'est le seul
+        // écran où le joueur découvre la greffe — sans cette ligne, rien dans le jeu n'indiquait
+        // qu'une touche existait, et un testeur a joué une run entière sans jamais s'en servir
+        // (2026-07-29). Libellé lu dans l'InputMap : la touche est remappable.
+        if (def.HasEffect("dash") || def.HasEffect("charge") || def.HasEffect("novaDash"))
+            _descLabel.Text += "\n\n" + string.Format(
+                TFallback("HINT_ACTIVE_KEY", "▸ Appuie sur  {0}  pour l'utiliser."),
+                InputRemap.DashKeyLabel());
         // Affinité de biome (§21) : ce que la greffe gagnera en étant assimilée ICI.
         string affLine = BiomeAffinityLine();
         if (!string.IsNullOrEmpty(affLine)) _descLabel.Text += "\n\n" + affLine;

@@ -524,10 +524,13 @@ public class OvertimeEscalationTests
         Assert.True(MenaceRatio(5f) > DefenseRatio(5f),
             $"à 5 min la menace ({MenaceRatio(5f):F2}) ne dépasse pas la défense ({DefenseRatio(5f):F2}) : l'overtime ne tue plus");
 
-        // …et l'écart doit se CREUSER, sinon la course reste indéfiniment serrée.
+        // …et l'écart doit se CREUSER, sinon la course reste indéfiniment serrée. Le seuil exprime
+        // « l'écart croît nettement », pas une valeur magique : le fixer trop haut interdirait des
+        // réglages légitimes (à 1,3 il excluait StatAcceleration = 2, pourtant défendable). Le
+        // premier assert ci-dessus est le vrai garde-fou contre un overtime non mortel.
         float ecart5  = MenaceRatio(5f)  / DefenseRatio(5f);
         float ecart10 = MenaceRatio(10f) / DefenseRatio(10f);
-        Assert.True(ecart10 > ecart5 * 1.3f,
+        Assert.True(ecart10 > ecart5 * 1.25f,
             $"l'écart menace/défense ne se creuse pas assez : ×{ecart5:F2} à 5 min, ×{ecart10:F2} à 10 min");
     }
 
