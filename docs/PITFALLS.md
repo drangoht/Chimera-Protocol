@@ -163,6 +163,31 @@ de l'incarnation finale du même biome (§29.2) — le vérifier avant d'en ajou
   pour la Sentinelle, qui garde en plus ses distances à 250 px). Toute capture automatisée doit
   attendre ~15 s avant de déclencher, sinon on photographie une arène vide et on conclut à tort que
   le spawn ne marche pas (`WARMUP` dans `capture_midboss.py`).
+- **Dimensionner un sprite d'après la taille NATIVE d'un autre sprite est un piège** — c'est la taille
+  **à l'écran** qui compte, et elle inclut le `Scale` appliqué au rendu. Les 3 mid-boss ont été livrés
+  en 48×48 au motif qu'ils ne devaient pas « égaler le boss de fin (64) » : or `RustedCore` s'affiche
+  à `Scale = 2,4`, soit **154 px**, et les pairs de rôle `mini_boss` (`rust_stalker`,
+  `aether_revenant`, `master_sentinel`) sont à **64** natif. Résultat : les champions de biome étaient
+  les plus petits de tous, signalé « trop petit » au premier test joué. Avant de choisir une taille,
+  lire les `Scale` des voisins, pas leurs PNG.
+- **Le sprite doit couvrir le `contactRadius`, sinon le joueur encaisse dans du vide.** Les stats des
+  3 mid-boss étaient écrites pour un champion de la taille de leurs pairs : le Colosse touche dans un
+  diamètre de **72 px** (`contactRadius` 36) pour un corps qui n'en occupait que 48 — des dégâts pris
+  hors de la silhouette, qui se ressentent comme injustes. La cible de 72 px
+  (`MidBossVisuals.SpriteScale = 1,5`) est calée là-dessus, pas sur un jugement de goût.
+- **Agrandir au rendu plutôt que régénérer le PNG**, quand le générateur dessine en coordonnées
+  entières dans un espace logique fixe : `generate_midboss_sprites.py` itère sur
+  `range(int(y0), int(y1)+1)` dans un espace de 48, donc y injecter un facteur d'échelle laisse des
+  **rangées vides** entre les formes. Même parti pris que le boss de fin ; avec
+  `texture_filter = Nearest`, le rendu est celui d'un agrandissement au plus proche voisin.
+- **Ne pas appliquer l'échelle au `ChampionOverlay`** : bouclier et cône sont dessinés en unités monde
+  depuis la racine et calés sur la portée réelle de l'effet (`ShieldRadius = 34`). Les mettre à
+  l'échelle du corps ferait mentir le télégraphe. `MidBossVisuals.ApplyTo` ne touche qu'au sprite.
+- **`_sprite.Scale` est libre pour les champions, mais pas pour la faune** : `EnemyBase.ApplyElite`
+  fait `_sprite.Scale *= EliteAffixTable.VisualScale`. Aucun conflit ici — l'éligibilité aux affixes
+  exige `MaxSimultaneous == 0`, et tout mid-boss est à 1 — mais une assignation (`=`) sur un ennemi
+  **basique** écraserait le grossissement d'élite. Le retournement passe par `FlipH`, jamais par un
+  `Scale.X` négatif : rien d'autre ne touche à cette propriété.
 
 ## Fusions d'armes (`InventorySystem`, `LevelUpSystem`)
 - **Les fusions ne sont PAS dans la section `weapons` de `weapons.json`** : leurs stats sont posées en

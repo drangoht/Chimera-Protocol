@@ -2662,6 +2662,15 @@ plutôt que de les fuir.
    Colosse brun sur sol brun, Sentinelle bleue sur sol bleu — repérables à leur seule aura. Les
    châssis sont désormais nettement plus **sombres** que le sol de leur niveau, accents d'énergie
    seuls en couleur vive.
+3. **Un champion se dimensionne sur la taille des autres à l'écran, pas sur celle de leurs fichiers.**
+   Signalé « trop petit » au premier test joué. Les trois sprites avaient été dessinés en 48×48 pour
+   « ne pas égaler le boss de fin (64) » — mais le boss de fin est rendu à `Scale = 2,4`, soit
+   **154 px**, et les mini-boss globaux sont à **64** natif : les champions de biome étaient donc les
+   plus petits de tous. Pire, **leur hitbox débordait de leur corps** — le Colosse touche dans un
+   diamètre de 72 px pour une silhouette de 48, des dégâts pris hors du sprite. Portés à **72 px**
+   (`MidBossVisuals.SpriteScale = 1,5`), une cible calée sur le `contactRadius` et non sur un goût.
+   La hiérarchie visuelle suit enfin le rôle : faune 32 · mini-boss globaux 64 · **champions de biome
+   72** · boss de fin 154.
 
 ### 32.6 Ce qui a été écarté
 

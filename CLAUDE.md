@@ -69,8 +69,18 @@ constante**.
 Design → `docs/GDD.md` §31.6, **§31.7**, **§31.8**, **§33** ; pièges → `docs/PITFALLS.md`
 (§Amortissement des passifs, §Cartes de surcharge, §Capacités déclenchées par une touche,
 §Calques d'écran, §Mixage des SFX) ; mesures → `docs/TEST_REPORT.md`. **244 tests.**
-**Reste** : ressenti à valider en jouant — mixage des tirs ennemis (−12 dB), Auto-réparation
-(non instrumentée : `PowerTelemetry` ne journalise pas la régénération), mid-boss jamais joués.
+**(h)** Testeur : mixage des tirs ennemis (−12 dB) et Auto-réparation **validés à l'usage** ; en
+revanche **« le mid-boss est trop petit »** — exact, et l'erreur était de raisonnement. Les 3 sprites
+étaient en 48 pour « ne pas égaler le boss de fin (64) », or celui-ci est rendu à `Scale = 2,4`
+(**154 px**) et les mini-boss globaux sont à **64** natif : les champions de biome étaient les plus
+petits de tous. Et **leur hitbox débordait du corps** — le Colosse touche dans un diamètre de 72 px
+pour une silhouette de 48. → **72 px** (`MidBossVisuals.SpriteScale = 1,5`), cible calée sur le
+`contactRadius`, échelle appliquée **au rendu** (le générateur dessine en entiers dans un espace de
+48 : un facteur y laisserait des rangées vides). Hiérarchie enfin alignée sur le rôle : faune 32 ·
+mini-boss globaux 64 · **champions de biome 72** · boss 154. Vérifié en jeu sur les 3, overlays
+intacts.
+**Reste** : ressenti de **combat** des mid-boss (jamais joués — seule leur taille a été relevée) ;
+l'Auto-réparation n'est pas instrumentée (`PowerTelemetry` ne journalise pas la régénération).
 
 **(2) Mid-boss par biome** (2026-07-29) — dernier point non livré de `docs/EXPANSION_PLAN.md` (B.3).
 La faune par biome était complète, mais **trois niveaux sur cinq n'avaient aucun champion de mi-run**

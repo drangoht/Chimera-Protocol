@@ -299,13 +299,52 @@ En réalité un champion apparaît **hors champ** (~800 px) et rejoint le joueur
 58 px/s pour la Sentinelle, qui garde en plus ses distances à 250 px. Il faut ~15 s d'approche avant
 de déclencher la rafale (`WARMUP` dans `capture_midboss.py`).
 
+### Défaut trouvé au premier test joué — les champions étaient trop petits (2026-07-29)
+
+Retour du testeur après une run complète : « le mid-boss est trop petit ». Vérifié dans les données —
+c'était exact, et l'erreur était de raisonnement, pas de goût.
+
+| entité | sprite natif | `Scale` au rendu | **taille à l'écran** |
+|---|---|---|---|
+| faune | 32 | — | 32 |
+| **mid-boss de biome** | **48** | — | **48** |
+| mini-boss globaux (`rust_stalker`, `aether_revenant`, `master_sentinel`) | 64 | — | **64** |
+| boss de fin `rusted_core` | 64 | **2,4** | **154** |
+
+`generate_midboss_sprites.py` justifiait le 48 par « plus imposant que la faune (32) sans égaler le
+boss de fin (64) ». La prémisse est fausse : le boss de fin n'est pas à 64 à l'écran mais à **154**,
+et le vrai voisinage d'un mid-boss, ce sont ses **pairs de rôle** `mini_boss`, tous à 64. Les trois
+champions de biome étaient donc les **plus petits de tous les champions**, pas seulement plus petits
+que le boss.
+
+**Le défaut n'était pas qu'esthétique : la hitbox débordait du sprite.** Leurs statistiques avaient
+été écrites pour un champion de la taille de ses pairs — le Colosse a un `contactRadius` de 36, soit
+un **diamètre dangereux de 72 px**, pour un corps qui n'en occupait que 48 à l'écran. Le joueur
+encaissait à une distance où il ne voyait rien.
+
+**Correctif : 72 px** (`MidBossVisuals.SpriteScale = 1,5`), cible calée sur le `contactRadius` du
+Colosse. Le facteur 1,5 garde des pixels réguliers ; l'échelle est appliquée **au rendu** et non par
+régénération des PNG, parce que le générateur dessine en coordonnées entières dans un espace logique
+de 48 (`range(int(y0), int(y1)+1)`) — y injecter un facteur laisserait des rangées vides. Même parti
+pris que le boss de fin.
+
+**Vérifié en jeu** (`capture_midboss.py`, les trois champions, 8 captures chacun) : le Colosse passe
+d'environ 1,2× à **1,8× la hauteur du joueur** ; la Sentinelle et le Gardien dominent nettement la
+silhouette du joueur. **Aucune régression sur les overlays** — le bouclier orbital du Gardien reste à
+l'extérieur du corps (`ShieldRadius = 34` inchangé, `MidBossVisuals.ApplyTo` ne touche qu'au sprite),
+le cône de gel reste calé sur sa portée réelle. Deux conflits potentiels écartés par lecture du code :
+le retournement passe par `FlipH` (jamais par un `Scale.X` négatif), et le grossissement d'élite
+(`_sprite.Scale *= EliteAffixTable.VisualScale`) ne s'applique qu'aux ennemis de
+`MaxSimultaneous == 0` — donc jamais à un mid-boss.
+
 ### Reste à faire
 
-**Ressenti et équilibrage en session jouée.** Le bot ne se déplace pas : il ne peut ni contourner un
-bouclier, ni sortir d'un cône, ni éviter un sillage — c'est-à-dire aucune des trois mécaniques. Les PV
-(700/620/800) et les périodes d'attaque n'ont donc **pas encore été confrontés à un joueur**. À
-vérifier en particulier : le Gardien Néon n'est-il pas trop long à abattre pour un build de 8 min qui
-n'aurait pas compris la règle du bouclier ?
+**Équilibrage en session jouée.** Le bot ne se déplace pas : il ne peut ni contourner un bouclier, ni
+sortir d'un cône, ni éviter un sillage — c'est-à-dire aucune des trois mécaniques. Les PV (700/620/800)
+et les périodes d'attaque n'ont donc **pas encore été confrontés à un joueur**. À vérifier en
+particulier : le Gardien Néon n'est-il pas trop long à abattre pour un build de 8 min qui n'aurait pas
+compris la règle du bouclier ? La 5ᵉ session jouée (Fournaise, 21 min) a croisé le Colosse sans que
+son ressenti de combat soit relevé — seule sa **taille** l'a été.
 
 ---
 

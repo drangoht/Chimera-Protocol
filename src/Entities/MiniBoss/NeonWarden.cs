@@ -46,6 +46,7 @@ public partial class NeonWarden : EnemyBase
         if (_sprite != null)
         {
             _sprite.AnimationFinished += OnAnimationFinished;
+            MidBossVisuals.ApplyTo(_sprite);
             PlayAnim(_sprite, "idle");
         }
 

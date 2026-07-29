@@ -11,8 +11,20 @@ docs/EXPANSION_PLAN.md B.3 :
 Les silhouettes sont VOLONTAIREMENT distinctes les unes des autres (trapue / elancee / circulaire) :
 en pleine nuee, la forme est la seule chose que le joueur lit avant la couleur.
 
-Taille 48x48 : plus imposant que la faune (32) sans egaler le boss de fin (64). Meme exception que
-le Colosse Greffe, cf. CLAUDE.md.
+Taille 48x48 sur le PNG, mais rendu a 72 px EN JEU (MidBossVisuals.SpriteScale = 1,5).
+
+/!\ Le raisonnement d'origine -- "48 : plus imposant que la faune (32) sans egaler le boss de fin
+(64)" -- etait FAUX sur sa premisse. Le boss de fin n'est pas a 64 a l'ecran : RustedCore._Ready
+l'affiche a Scale = 2,4, soit 154 px. Et les pairs de role mini_boss (rust_stalker,
+aether_revenant, master_sentinel) ont tous un sprite natif de 64. Les 3 mid-boss etaient donc 25 %
+plus petits que TOUS les autres champions, et leur hitbox debordait du sprite -- le Colosse touche
+dans un diametre de 72 px (contactRadius 36) pour un corps qui n'en occupait que 48.
+
+Ne PAS regenerer ces sprites en 72 pour "corriger" : les primitives ci-dessous dessinent en
+coordonnees entieres dans un espace logique de 48 (rect/disc iterent sur range(int(y0), int(y1)+1)),
+et y injecter un facteur laisserait des rangees vides. L'echelle est appliquee au rendu, comme pour
+le boss de fin. Avec texture_filter = Nearest le resultat est identique a un agrandissement au plus
+proche voisin.
 
 Ombrage pseudo-3D derive par pseudo3d_lib (JAMAIS de couleur plate ad hoc, cf.
 docs/ART_BRIEF_PSEUDO3D.md) : lumiere fixe haut-gauche, ombre portee elliptique, accents
