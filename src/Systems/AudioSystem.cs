@@ -247,13 +247,18 @@ public partial class AudioSystem : Node
     /// par chaque sentinelle à l'écran. Le corriger ici plutôt que de réencoder le WAV garde l'asset
     /// CC0 intact et le réglage lisible.
     ///
-    /// Objectif : aligner les tirs ennemis sur les tirs du joueur, pas les enterrer — ils restent le
-    /// signal sonore d'un danger qui arrive hors du champ de vision.
+    /// Objectif : ne pas enterrer les tirs ennemis — ils restent le signal sonore d'un danger qui
+    /// arrive hors du champ de vision — mais les faire passer <b>sous</b> les tirs du joueur.
+    ///
+    /// Les aligner exactement sur les tirs du joueur (premier essai à −9 dB) ne suffisait pas : à
+    /// niveau égal, une dizaine de sentinelles qui tirent ensemble couvrent forcément l'arme unique
+    /// du joueur. Le mixage doit tenir compte de la <b>polyphonie réelle</b>, pas seulement du niveau
+    /// du fichier. D'où −12 dB, qui place le tir ennemi ~2,6 dB sous celui du joueur.
     /// </summary>
     private static float MixGainDb(string sfxId) => sfxId switch
     {
-        "sfx_weapon_sentinel_shoot"     => -9.0f,   // −7,5 → ~−16,5 dB, au niveau des tirs du joueur
-        "sfx_enemy_sentinel_projectile" => -3.0f,   // −13,6 → ~−16,6 dB, idem
+        "sfx_weapon_sentinel_shoot"     => -12.0f,  // −7,5 → ~−19,5 dB, sous les tirs du joueur (−16,9)
+        "sfx_enemy_sentinel_projectile" => -6.0f,   // −13,6 → ~−19,6 dB, même cible
         _                               => 0f,
     };
 

@@ -302,11 +302,15 @@ Ordre en vigueur : `Banner` 85 · **`PostFX` 90** (vignette + liserés d'écran,
   de **−7,5 à −29,7 dB**. `PlaySfx` applique le même gain à tous — sans correction, le mixage n'est
   que le reflet des banques d'origine.
 - Cas corrigé : `sfx_weapon_sentinel_shoot` était à **−7,5 dB**, le plus fort de toute la banque et
-  **+9,4 dB au-dessus du tir du joueur** (−16,9), joué par chaque sentinelle à l'écran → −9 dB.
+  **+9,4 dB au-dessus du tir du joueur** (−16,9), joué par chaque sentinelle à l'écran → **−12 dB**.
+- **Mixer selon la POLYPHONIE RÉELLE, pas seulement le niveau du fichier.** Premier essai à −9 dB,
+  qui alignait exactement le tir ennemi sur celui du joueur : encore trop fort à l'oreille, parce
+  qu'une dizaine de sentinelles tirent *ensemble* contre une seule arme du joueur. Un son joué par N
+  sources doit passer **sous** un son joué par une seule.
 - **Corriger dans `MixGainDb`, pas en réencodant le WAV** : l'asset CC0 reste intact et le réglage
-  lisible. Mesurer avant de choisir une valeur (RMS des fichiers), ne pas régler à l'oreille seule.
-- Ne pas enterrer un son ennemi : il signale un danger hors du champ de vision. La cible est
-  l'alignement sur les tirs du joueur, pas l'inaudibilité.
+  lisible. Mesurer avant de choisir une valeur (RMS des fichiers), puis **valider à l'oreille en
+  jeu** — la mesure donne l'ordre de grandeur, pas le réglage final.
+- Ne pas enterrer un son ennemi : il signale un danger hors du champ de vision.
 
 ## Capacités déclenchées par une touche — l'afficher, toujours
 - **Le dash n'a annoncé sa touche nulle part pendant plusieurs versions** : ni HUD, ni description de

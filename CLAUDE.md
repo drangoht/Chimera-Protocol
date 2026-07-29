@@ -52,7 +52,9 @@ presser ». Valeur **inchangée à dessein** : le retour porte sur la lisibilit�
 **(f)** Deux correctifs de finition : les **modales étaient assombries par la vignette** (`PostFX` est
 à `layer 90` ; level-up 10, fin de run 20 et assimilation 60 passaient dessous) → remontées à 97/98 ;
 et les **tirs ennemis écrasaient le mixage** (`sfx_weapon_sentinel_shoot` à −7,5 dB RMS, le plus fort
-de la banque, **+9,4 dB au-dessus du tir du joueur**) → nouvelle table `AudioSystem.MixGainDb`.
+de la banque, **+9,4 dB au-dessus du tir du joueur**) → nouvelle table `AudioSystem.MixGainDb`,
+**−12 dB** après un premier essai à −9 encore jugé trop fort : mixer selon la **polyphonie réelle**
+(N sentinelles contre 1 arme), pas seulement selon le niveau du fichier.
 Design → `docs/GDD.md` §31.6, **§31.7**, **§31.8**, **§33** ; pièges → `docs/PITFALLS.md`
 (§Amortissement des passifs, §Cartes de surcharge, §Capacités déclenchées par une touche,
 §Calques d'écran, §Mixage des SFX) ; mesures → `docs/TEST_REPORT.md`. **244 tests.**

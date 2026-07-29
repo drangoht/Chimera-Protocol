@@ -180,8 +180,23 @@ les *deux* bords. Toujours comparer des zones de même état de focus.
 Le tir ennemi était **+9,4 dB au-dessus du tir du joueur** — près de trois fois plus fort en
 amplitude — et joué par chaque sentinelle à l'écran. Les SFX venant de banques Kenney distinctes
 n'avaient jamais été nivelés, et `PlaySfx` leur appliquait à tous le même gain. → nouvelle table
-`AudioSystem.MixGainDb` : −9 dB et −3 dB, ce qui les aligne sur les tirs du joueur. Corrigé en code
-plutôt qu'en réencodant le WAV : l'asset CC0 reste intact et le réglage reste lisible.
+`AudioSystem.MixGainDb`. Corrigé en code plutôt qu'en réencodant le WAV : l'asset CC0 reste intact et
+le réglage reste lisible.
+
+Premier essai à **−9 dB**, qui alignait exactement le tir ennemi sur celui du joueur : jugé « encore
+un peu fort » à l'écoute en jeu. La mesure ne suffisait pas — elle compare des fichiers, pas des
+situations : une dizaine de sentinelles tirent *ensemble* contre une seule arme du joueur. → porté à
+**−12 dB** (et −6 dB pour `sfx_enemy_sentinel_projectile`), ce qui place le tir ennemi ~2,6 dB
+*sous* celui du joueur. **À revalider à l'oreille.**
+
+### 4ᵉ session jouée — non exploitable
+
+Mort réelle à **4:36**, soit avant l'overtime : la phase à mesurer n'a jamais été atteinte. Build
+tout en offensive — 36 niveaux pour un seul point en `reinforced_plating`, donc **0 % de réduction
+de dégâts** (le niveau 1 n'en accorde aucune) et 200 PV, contre 304 PV / DR 0,40 au même instant sur
+la session de référence. Aucun rapport avec les correctifs (`StatAcceleration` n'agit qu'en overtime,
+l'exemption des PV ne joue qu'au-delà du niveau 3 de la Plaque). `StatAcceleration = 2,25` **reste
+donc à valider**.
 
 ## Mid-boss par biome — validation en jeu — 2026-07-29
 
