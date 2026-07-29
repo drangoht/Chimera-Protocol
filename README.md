@@ -18,6 +18,23 @@ morceau, couplet et refrain, et le jeu passe de l'une à l'autre en fondu selon 
 d'ennemis, temps de survie, points de vie — avant de basculer sur le **thème de boss** quand un
 colosse débarque.
 
+**L'overtime devient une vraie partie** *(2026-07-29, v1.23.0)* — il est censé durer **5 à 10 minutes**
+(toute l'économie d'Échos est dimensionnée dessus) ; les testeurs mouraient au bout de **74 secondes**.
+Deux causes : l'accélérateur d'overtime visait la **densité** d'ennemis, mais tous les leviers de
+densité sont déjà saturés à son déclenchement — il se déversait donc en entier sur les PV et les
+dégâts, au carré ; et un bug amortissait les gains de **PV maximum** (la Plaque Renforcée donnait 251
+PV au niveau 20 au lieu de 500). S'y ajoutent les **cartes de surcharge** : passé le niveau où tout
+est au maximum, on gagnait des niveaux **pour rien** (124 → 140 en 74 s), le jeu distribuant des bonus
+d'XP faute de mieux. Trois cartes **sans plafond** prennent le relais quand le pool est vide. Mesuré
+sur une partie jouée : **74 secondes → 8 min 36**, sur une mort subie.
+
+**Un champion de mi-partie par biome** *(2026-07-29, v1.23.0)* — trois niveaux sur cinq n'avaient
+**aucun boss de mi-partie**. Le **Colosse en Fusion** (Fournaise) télégraphie ses charges et laisse un
+sillage de magma — le danger est le terrain qui se referme ; la **Sentinelle Cryo** (Givre) tire un
+cône de gel dirigé ; le **Gardien Néon** (Néon) porte un bouclier orbital absorbant 80 % des dégâts
+venus du secteur couvert, qu'il faut contourner. Chacun demande le réflexe **inverse** du boss final
+de son propre biome.
+
 **Courbe de puissance assainie** *(2026-07-28, v1.22.0)* — le Capaciteur atteignait **100 % de
 réduction de recharge** dès son niveau 8 : toutes les armes tombaient au même plancher de 0,15 s, et
 une arme lourde tirait exactement aussi vite qu'une arme légère. Les passifs progressent désormais

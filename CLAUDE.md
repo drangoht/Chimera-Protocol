@@ -14,7 +14,10 @@ cyborgs, robots), inspiré de Vampire Survivors et Everything is Crab.
 - **État d'implémentation détaillé & version courante → `docs/PROJECT_STATE.md`** (évolutif). Résumé de phase ci-dessous.
 - **Synthétiser du volume** (relever/résumer/inventorier à partir de plusieurs gros fichiers : `data/*.json`, docs longues, logs, rapports de test) → déléguer au **MCP local** `mcp__local-llm__local_digest` / `local_map` (outils différés : `ToolSearch` d'abord) plutôt que d'enchaîner les `Read` : le serveur lit les fichiers côté LM Studio, seule la synthèse entre en contexte. Ne pas l'utiliser pour du code que l'on s'apprête à éditer — là, le contenu réel est nécessaire.
 
-**Phase actuelle : trois chantiers faits, non publiés — mid-boss à valider en jouant, puis 1.23.0.**
+**Phase actuelle : 1.23.0 PUBLIÉE le 2026-07-29** (overtime jouable, mid-boss par biome, cartes de
+surcharge). Reste côté utilisateur : **coller les devlogs 1.21.0, 1.22.0 et 1.23.0 sur itch** (corps
+prêts en tête de `docs/DEVLOG.md`). Seul point de contenu encore ouvert : le **ressenti de combat**
+des mid-boss, jamais joués — seule leur taille a été jugée.
 
 **(3) Survie en overtime — mesurée en jeu, cause réelle trouvée** (2026-07-29). La session jouée de
 validation du chantier (1) l'a **réfuté** : le découplage tient sa métrique (dégâts entrants
