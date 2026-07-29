@@ -154,6 +154,35 @@ Validé en capture (`--saturate-arsenal --force-graft=erratic_servos`, fenêtré
 essai plaçait la touche *sur* le slot de greffe : illisible, le slot étant en `ClipContents` et
 rognant « Shift » aux deux bords — corrigé en le sortant du slot, vérifié à la capture suivante.
 
+### Deux correctifs supplémentaires signalés par le testeur
+
+**1. Les modales étaient assombries par la vignette.** `PostFX` (vignette plein écran) est un
+`CanvasLayer` à **layer 90**, et trois écrans passaient dessous : level-up (10), fin de run (20),
+assimilation (60). Leurs bords — donc les cartes latérales — étaient assombris, alors qu'une modale
+doit se lire à luminosité constante. Le menu pause (100) n'avait pas le défaut, ce qui rendait le
+symptôme partiel et déroutant. → remontés à **97 / 98 / 97**.
+
+Vérifié par la mesure sur capture (et non à l'œil) : luminance du bord droit contre le centre,
+**0,97 / 255** d'écart. ⚠ Piège de méthode rencontré : la première mesure donnait 10,6 d'écart, mais
+c'était la carte **focalisée** qui était *plus claire* (liseré cyan) — une vignette aurait assombri
+les *deux* bords. Toujours comparer des zones de même état de focus.
+
+**2. Les tirs ennemis écrasaient le reste du mixage.** Mesure RMS de toute la banque SFX :
+
+| SFX | RMS |
+|---|---|
+| `sfx_weapon_sentinel_shoot` | **−7,5 dB** — le plus fort de la banque |
+| `sfx_enemy_sentinel_projectile` | −13,6 dB |
+| `sfx_weapon_rail_shoot` (joueur) | −16,5 dB |
+| `sfx_weapon_impulse_shoot` (joueur) | −16,9 dB |
+| `sfx_player_hit` | −19,5 dB |
+
+Le tir ennemi était **+9,4 dB au-dessus du tir du joueur** — près de trois fois plus fort en
+amplitude — et joué par chaque sentinelle à l'écran. Les SFX venant de banques Kenney distinctes
+n'avaient jamais été nivelés, et `PlaySfx` leur appliquait à tous le même gain. → nouvelle table
+`AudioSystem.MixGainDb` : −9 dB et −3 dB, ce qui les aligne sur les tirs du joueur. Corrigé en code
+plutôt qu'en réencodant le WAV : l'asset CC0 reste intact et le réglage reste lisible.
+
 ## Mid-boss par biome — validation en jeu — 2026-07-29
 
 **Chantier :** `docs/EXPANSION_PLAN.md` B.3, dernier point non livré (design → `docs/GDD.md` §32).

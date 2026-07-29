@@ -4,7 +4,7 @@
 
 [node name="RunEndScreen" type="CanvasLayer"]
 script = ExtResource("1")
-layer = 20
+layer = 98
 
 [node name="Background" type="ColorRect" parent="."]
 anchors_preset = 15

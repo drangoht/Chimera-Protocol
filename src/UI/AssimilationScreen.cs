@@ -35,7 +35,12 @@ public partial class AssimilationScreen : CanvasLayer
 
     public override void _Ready()
     {
-        Layer = 60; // au-dessus du jeu, sous les overlays PostFX (90)
+        // AU-DESSUS de PostFX (90). En dessous, la vignette plein écran de `PostFX/Vignette`
+        // s'appliquait PAR-DESSUS la modale et lui assombrissait les bords : les cartes latérales
+        // paraissaient éteintes par rapport à celle du centre, alors qu'une modale doit être lue à
+        // luminosité constante. Le menu pause (100) n'avait pas le défaut, d'où un symptôme qui ne
+        // touchait que le level-up et l'assimilation. Cf. docs/PITFALLS.md §Calques d'écran.
+        Layer = 97;
         ProcessMode = ProcessModeEnum.Always;
         BuildUi();
         Visible = false;

@@ -49,9 +49,13 @@ savoir qu'une touche existait) → ligne « Shift — esquive » au HUD + rappel
 lu de l'`InputMap` ; l'**Auto-réparation était crue *active*** (« son effet ne se voit pas ») →
 indicateur `♥ +X/s` au HUD + description « automatiquement et en permanence, aucune touche à
 presser ». Valeur **inchangée à dessein** : le retour porte sur la lisibilité.
+**(f)** Deux correctifs de finition : les **modales étaient assombries par la vignette** (`PostFX` est
+à `layer 90` ; level-up 10, fin de run 20 et assimilation 60 passaient dessous) → remontées à 97/98 ;
+et les **tirs ennemis écrasaient le mixage** (`sfx_weapon_sentinel_shoot` à −7,5 dB RMS, le plus fort
+de la banque, **+9,4 dB au-dessus du tir du joueur**) → nouvelle table `AudioSystem.MixGainDb`.
 Design → `docs/GDD.md` §31.6, **§31.7**, **§31.8**, **§33** ; pièges → `docs/PITFALLS.md`
-(§Amortissement des passifs, §Cartes de surcharge, §Capacités déclenchées par une touche) ; mesures →
-`docs/TEST_REPORT.md`. **244 tests.**
+(§Amortissement des passifs, §Cartes de surcharge, §Capacités déclenchées par une touche,
+§Calques d'écran, §Mixage des SFX) ; mesures → `docs/TEST_REPORT.md`. **244 tests.**
 **Reste** : valider `2,25` sur **plusieurs** runs (cible 5-10 min, mort subie).
 
 **(2) Mid-boss par biome** (2026-07-29) — dernier point non livré de `docs/EXPANSION_PLAN.md` (B.3).

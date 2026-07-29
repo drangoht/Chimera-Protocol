@@ -4,7 +4,7 @@
 
 [node name="LevelUpScreen" type="CanvasLayer"]
 script = ExtResource("1")
-layer = 10
+layer = 97
 
 [node name="Background" type="ColorRect" parent="."]
 anchors_preset = 15

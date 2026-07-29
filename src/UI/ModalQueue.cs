@@ -61,10 +61,11 @@ public static class ModalQueue
         _busy = true;
         if (_tree != null) _tree.Paused = true;
 
-        // Le HUD est sur un CanvasLayer PLUS HAUT (95) que les écrans modaux (level-up 10,
-        // assimilation 60) : sa barre de boss, large et centrée en haut, recouvrirait leur titre.
-        // Elle doit donc être retirée ICI — le HUD, gelé par la pause, ne peut plus le faire
-        // lui-même. Il la réaffiche tout seul dès que la file est vide et que le jeu repart.
+        // Les écrans modaux (97) passent désormais au-dessus du HUD (95) — ils ont dû remonter
+        // par-dessus PostFX (90), dont la vignette leur assombrissait les bords. La barre de boss ne
+        // peut donc plus recouvrir leur titre, mais on continue de la masquer : large et centrée en
+        // haut, elle reste du bruit derrière une modale. Le HUD, gelé par la pause, ne peut pas le
+        // faire lui-même ; il la réaffiche seul dès que la file est vide et que le jeu repart.
         HUD.Instance?.HideBossBar();
 
         next();

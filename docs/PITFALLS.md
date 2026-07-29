@@ -280,6 +280,34 @@ Trois pièges quand on touche à la difficulté par niveau ou à la formule d'É
   vers la 11ᵉ ou la 13ᵉ minute, le joueur entre en overtime avec deux à trois fois moins de cartes
   accumulées. Comparer des réglages sur une run chacun, c'est mesurer surtout le bruit.
 
+## Calques d'écran (`CanvasLayer.Layer`) — les modales passent AU-DESSUS de PostFX
+Ordre en vigueur : `Banner` 85 · **`PostFX` 90** (vignette + liserés d'écran, `scenes/Game.tscn`) ·
+`HUD` 95 · `BuffBar` 96 · **`LevelUpScreen` 97** · **`AssimilationScreen` 97** ·
+**`RunEndScreen` 98** · `FusionFlash` 99 · `PauseScreen` 100 · `OptionsScreen` (surcouche) 110 ·
+`VersionStamp` 128.
+
+- **Une modale sous le calque 90 se fait assombrir les bords par la vignette.** Level-up (10),
+  fin de run (20) et assimilation (60) étaient dans ce cas : les cartes latérales paraissaient
+  éteintes par rapport à celle du centre, alors qu'une modale doit se lire à luminosité constante.
+  Le menu pause (100) n'avait pas le défaut — d'où un symptôme qui semblait ne toucher que certains
+  écrans. Toute nouvelle modale plein écran doit être **> 90**.
+- **Vérifier une correction de ce type par la mesure, pas à l'œil** : échantillonner la luminance de
+  deux zones symétriques (bord vs centre). ⚠ Exclure la carte qui porte le **focus** — son liseré la
+  rend *plus claire*, et on conclut à un écart alors qu'il n'a rien à voir avec la vignette.
+- Conséquence : les modales couvrent désormais le HUD. `ModalQueue.HideBossBar()` n'est plus
+  indispensable mais reste utile (la barre de boss est du bruit derrière une modale).
+
+## Mixage des SFX (`AudioSystem.MixGainDb`)
+- **Les SFX ne sont pas nivelés entre eux** : issus de banques Kenney différentes, leur RMS s'étale
+  de **−7,5 à −29,7 dB**. `PlaySfx` applique le même gain à tous — sans correction, le mixage n'est
+  que le reflet des banques d'origine.
+- Cas corrigé : `sfx_weapon_sentinel_shoot` était à **−7,5 dB**, le plus fort de toute la banque et
+  **+9,4 dB au-dessus du tir du joueur** (−16,9), joué par chaque sentinelle à l'écran → −9 dB.
+- **Corriger dans `MixGainDb`, pas en réencodant le WAV** : l'asset CC0 reste intact et le réglage
+  lisible. Mesurer avant de choisir une valeur (RMS des fichiers), ne pas régler à l'oreille seule.
+- Ne pas enterrer un son ennemi : il signale un danger hors du champ de vision. La cible est
+  l'alignement sur les tirs du joueur, pas l'inaudibilité.
+
 ## Capacités déclenchées par une touche — l'afficher, toujours
 - **Le dash n'a annoncé sa touche nulle part pendant plusieurs versions** : ni HUD, ni description de
   greffe, ni écran d'assimilation. Le voile de recharge du slot disait *quand* il était prêt, jamais

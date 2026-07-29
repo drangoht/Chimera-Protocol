@@ -230,9 +230,32 @@ public partial class AudioSystem : Node
         }
 
         player.Stream   = stream;
-        player.VolumeDb = LinearToDb(_sfxVolume);
+        player.VolumeDb = LinearToDb(_sfxVolume) + MixGainDb(sfxId);
         player.Play();
     }
+
+    /// <summary>
+    /// Correction de mixage propre à un SFX, en dB, ajoutée au volume global.
+    ///
+    /// Les SFX viennent de banques différentes (Kenney CC0) et n'ont jamais été nivelés entre eux :
+    /// leur niveau RMS s'étale de −7,5 à −29,7 dB. Sans cette table, <see cref="PlaySfx"/> applique
+    /// le même gain à tous et le mixage n'est que le reflet des banques d'origine.
+    ///
+    /// Le seul cas criant, mesuré sur les fichiers : <c>sfx_weapon_sentinel_shoot</c> est à
+    /// <b>−7,5 dB</b>, le plus fort de toute la banque et <b>+9,4 dB au-dessus du tir du joueur</b>
+    /// (<c>sfx_weapon_impulse_shoot</c>, −16,9) — près de trois fois plus fort en amplitude, et joué
+    /// par chaque sentinelle à l'écran. Le corriger ici plutôt que de réencoder le WAV garde l'asset
+    /// CC0 intact et le réglage lisible.
+    ///
+    /// Objectif : aligner les tirs ennemis sur les tirs du joueur, pas les enterrer — ils restent le
+    /// signal sonore d'un danger qui arrive hors du champ de vision.
+    /// </summary>
+    private static float MixGainDb(string sfxId) => sfxId switch
+    {
+        "sfx_weapon_sentinel_shoot"     => -9.0f,   // −7,5 → ~−16,5 dB, au niveau des tirs du joueur
+        "sfx_enemy_sentinel_projectile" => -3.0f,   // −13,6 → ~−16,6 dB, idem
+        _                               => 0f,
+    };
 
     // -------------------------------------------------------------------------
     // Chargement des assets (avec cache et null-guard)
