@@ -255,6 +255,38 @@ du §30, comportement attendu), DR au cap 0,40, vitesse au cap 380.
 variance (facteur 2,4 constaté entre deux entrées en overtime), mais la valeur tombe au milieu de la
 fenêtre visée, avec une mort subie — les deux bornes fausses sont écartées.
 
+## Écran de pause — les boutons sortaient de l'écran en fin de run — 2026-07-29
+
+**Signalé par le testeur :** « lorsqu'il y a beaucoup d'informations affichées sur l'écran de pause on
+ne voit plus le bouton pour quitter ».
+
+**Cause, lue dans `PauseScreen.BuildLayout`.** Titre, corps à deux colonnes **et** les trois boutons
+étaient empilés dans un seul `VBoxContainer`, dans un `CenterContainer`, **sans `ScrollContainer` ni
+plafond de hauteur**. Le panneau grandissait donc avec la run : 5 armes L20 et leur ligne de détails,
+4 passifs, 5 greffes à description multiligne. Passé la hauteur de la fenêtre, et le panneau étant
+*centré*, le débordement se répartit en haut **et** en bas — emportant les boutons, situés tout en
+bas. Conséquence concrète : **plus aucun moyen d'abandonner la partie** au moment précis où le joueur
+en a le plus besoin (fin de run chargée).
+
+**Correctif.** Seul le corps entre dans un `ScrollContainer` ; titre et boutons restent hors du scroll
+et donc toujours visibles. Le corps demande sa hauteur naturelle
+(`cols.GetCombinedMinimumSize().Y` — un `ScrollContainer` ignore la taille minimale de son contenu
+dans l'axe de défilement et s'écraserait à zéro sans cela), puis on retranche l'excédent mesuré sur le
+panneau assemblé.
+
+**Un premier essai a échoué et vaut d'être noté** : réserver une constante de 300 px pour le chrome
+(titre + séparateurs + 3 boutons). Vérifié en capture — « Quitter la partie » restait **coupé au bord
+de l'écran** : le chrome réel vaut ~430 px, les cadres « plaque blindée » d'`UiStyle` rendant les
+boutons bien plus hauts que leur `CustomMinimumSize` de 44. Remplacé par une mesure —
+`overflow = panel.GetCombinedMinimumSize().Y − budget` — qui ne dépend d'aucune constante devinée et
+suit la police, la langue et la résolution.
+
+**Vérifié en jeu** (`--saturate-arsenal --force-graft=all`, soit le contenu maximal) : les trois
+boutons tiennent entièrement dans la fenêtre avec de la marge, et Page↓ fait défiler le corps jusqu'à
+la cinquième greffe. Le défilement clavier/manette passe par `ui_page_up`/`ui_page_down` **seuls** :
+`ui_up`/`ui_down` servent déjà à naviguer entre les trois boutons, les capturer aurait cassé la
+chaîne de focus.
+
 ## Mid-boss par biome — validation en jeu — 2026-07-29
 
 **Chantier :** `docs/EXPANSION_PLAN.md` B.3, dernier point non livré (design → `docs/GDD.md` §32).

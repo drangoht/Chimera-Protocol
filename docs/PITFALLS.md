@@ -371,6 +371,32 @@ Tout nouveau chemin de sortie de run doit l'appeler aussi.
 - `GrabFocus()` toujours dans un callback de tween (après fade-in), jamais dans `_Ready()` directement
 - `FocusEntered` = tween scale uniquement (pas de SFX) ; `MouseEntered` = scale + SFX
 
+## UI — panneaux dont le contenu grandit avec la run
+- **Un panneau centré sans `ScrollContainer` finit par pousser ses boutons hors de l'écran.** Cas
+  vécu sur `PauseScreen` : titre, deux colonnes de stats **et** les trois boutons vivaient dans un
+  seul `VBoxContainer` sous un `CenterContainer`, sans plafond de hauteur. En début de run le
+  panneau tient ; en fin de run (5 armes L20 + leur ligne de détails, 4 passifs, 5 greffes à
+  description multiligne) il dépasse la fenêtre — et comme il est **centré**, il déborde en haut *et*
+  en bas : « Quitter la partie », tout en bas, sortait du cadre. Le joueur ne pouvait plus abandonner
+  sa partie. **Ne mettre dans le scroll que le corps** : titre et boutons restent hors du
+  `ScrollContainer`, donc toujours visibles.
+- **Ne pas estimer la hauteur du « chrome » par une constante.** Premier essai :
+  `available = hauteur_fenêtre − 300`. Faux de ~130 px — les cadres « plaque blindée » d'`UiStyle`
+  rendent un bouton nettement plus haut que son `CustomMinimumSize` de 44, et le bouton du bas restait
+  coupé. Mesurer le panneau assemblé et retrancher l'excédent du corps :
+  `overflow = panel.GetCombinedMinimumSize().Y − budget`. Ça suit police, langue et résolution sans
+  constante à re-régler.
+- **`GetCombinedMinimumSize()` n'exige pas de passe de layout** : utilisable dès la fin de la
+  construction, sans `CallDeferred` ni callback de tween. À préférer à `Size`, qui vaut zéro tant que
+  le layout n'a pas tourné.
+- **Un `ScrollContainer` ignore la taille minimale de son contenu dans l'axe où il défile.** Sans
+  `CustomMinimumSize.Y` explicite, il s'écrase à zéro : panneau vide alors que le contenu est là.
+  Lui donner `contenu.GetCombinedMinimumSize().Y`, puis plafonner.
+- **Ne pas capturer `ui_up`/`ui_down` pour faire défiler** un panneau dont les boutons se naviguent
+  au focus : ces actions appartiennent déjà à la chaîne de focus, les intercepter la casse. Sur
+  `PauseScreen`, le défilement clavier/manette passe donc par `ui_page_up`/`ui_page_down` seuls
+  (le contenu n'étant que des `Label`, rien n'y est focalisable — cf. §Navigation clavier/manette).
+
 ## UI — pièges StyleBox / focus
 - **`TextureRect` dans un petit conteneur clippé** : `ExpandMode` par défaut = `KeepSize` → le `TextureRect` prend la **taille de sa texture** (ex. 32 px) comme taille minimale, qui l'emporte sur un rect d'ancrage plus petit (ex. 20 px). L'icône déborde et, si le parent a `ClipContents=true`, on n'en voit qu'un coin (BUG icônes de greffe tronquées, slots 26 px). Poser `ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize` pour que `KeepAspectCentered` respecte le rect et recentre l'icône entière.
 - **Tous les cadres passent par `UiStyle`** (`src/UI/UiStyle.cs`) et toutes les couleurs par `UiPalette`. Un `new StyleBoxFlat` ad hoc dans un écran est une régression : c'est exactement ce qui avait produit ~300 sites divergents (rayons 3/4/6/8/10, deux « fonds officiels » concurrents, le cyan réécrit à la main dans 8 blocs). Cadres à texture 9-slice → `assets/sprites/ui/frames/`, régénérables par `tools/generate_ui_frames.py`.

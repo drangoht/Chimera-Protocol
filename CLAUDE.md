@@ -79,6 +79,15 @@ pour une silhouette de 48. → **72 px** (`MidBossVisuals.SpriteScale = 1,5`), c
 48 : un facteur y laisserait des rangées vides). Hiérarchie enfin alignée sur le rôle : faune 32 ·
 mini-boss globaux 64 · **champions de biome 72** · boss 154. Vérifié en jeu sur les 3, overlays
 intacts.
+**(i)** **Écran de pause — les boutons sortaient de l'écran en fin de run.** Titre, corps et les trois
+boutons vivaient dans un seul `VBoxContainer` sous un `CenterContainer`, **sans scroll ni plafond** :
+avec 5 armes L20, 4 passifs et 5 greffes multilignes, le panneau dépassait la fenêtre et, *étant
+centré*, débordait des deux côtés — « Quitter la partie » hors cadre, plus moyen d'abandonner la
+partie. → seul le **corps** défile (titre et boutons hors du `ScrollContainer`). Le plafond n'est pas
+une constante devinée (un 1ᵉʳ essai à 300 px sous-estimait le chrome de ~130, les cadres « plaque
+blindée » gonflant les boutons) mais une **mesure** : `panel.GetCombinedMinimumSize().Y − budget`.
+Défilement clavier via `ui_page_up/down` **seuls** — `ui_up/down` appartiennent à la chaîne de focus
+des boutons. Vérifié avec `--saturate-arsenal --force-graft=all`.
 **Reste** : ressenti de **combat** des mid-boss (jamais joués — seule leur taille a été relevée) ;
 l'Auto-réparation n'est pas instrumentée (`PowerTelemetry` ne journalise pas la régénération).
 

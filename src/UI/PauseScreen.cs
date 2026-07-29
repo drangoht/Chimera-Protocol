@@ -30,6 +30,16 @@ public partial class PauseScreen : CanvasLayer
         ["capacitor"]          = "Capaciteur",
     };
 
+    // ── Débordement ───────────────────────────────────────────────────────────
+
+    /// <summary>Marge laissée entre le panneau et les bords de la fenêtre, en haut comme en bas.</summary>
+    private const float OuterMargin = 24f;
+
+    /// <summary>Hauteur minimale du corps : en deçà, mieux vaut scroller que ne rien montrer.</summary>
+    private const float MinBodyHeight = 160f;
+
+    private ScrollContainer? _scroll;
+
     // ── Construction ──────────────────────────────────────────────────────────
 
     public override void _Ready()
@@ -80,10 +90,25 @@ public partial class PauseScreen : CanvasLayer
         root.AddChild(Lbl("⏸  " + Loc.T("PAUSE_TITLE"), 26, UiPalette.Cyan, center: true));
         root.AddChild(Sep(UiPalette.Violet));
 
-        // Corps 2 colonnes
+        // Corps 2 colonnes, DANS un ScrollContainer.
+        //
+        // Sans lui, le panneau grandissait sans limite avec le contenu (5 armes L20 et leur ligne de
+        // détails, 4 passifs, 3 greffes à description multiligne) : centré verticalement, il
+        // débordait en haut ET en bas, emportant les boutons hors de l'écran. Le joueur ne pouvait
+        // plus quitter la partie — signalé en fin de run.
+        //
+        // Seul le corps défile : titre et boutons restent hors du scroll, donc toujours visibles.
+        _scroll = new ScrollContainer
+        {
+            HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled,
+            SizeFlagsHorizontal  = Control.SizeFlags.ExpandFill,
+        };
+        root.AddChild(_scroll);
+
         var cols = new HBoxContainer();
         cols.AddThemeConstantOverride("separation", 24);
-        root.AddChild(cols);
+        cols.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        _scroll.AddChild(cols);
 
         var left  = NewCol(cols);
         var vsep  = new VSeparator();
@@ -95,6 +120,11 @@ public partial class PauseScreen : CanvasLayer
         BuildPlayerSection(left);
         BuildInventorySection(right);
         BuildGraftsSection(right);
+
+        // Le corps demande d'abord sa hauteur naturelle. Un ScrollContainer ignore la taille minimale
+        // de son contenu dans l'axe où il défile : sans cette ligne il s'écraserait à zéro, donnant un
+        // panneau vide en début de run.
+        _scroll.CustomMinimumSize = new Vector2(0f, cols.GetCombinedMinimumSize().Y);
 
         // Boutons : reprendre + options + quitter la partie
         root.AddChild(Sep(UiPalette.Violet));
@@ -115,6 +145,18 @@ public partial class PauseScreen : CanvasLayer
         optionsBtn.FocusNeighborTop    = optionsBtn.GetPathTo(btn);
         optionsBtn.FocusNeighborBottom = optionsBtn.GetPathTo(quitBtn);
         quitBtn.FocusNeighborTop       = quitBtn.GetPathTo(optionsBtn);
+
+        // Le panneau complet doit tenir dans la fenêtre : on retranche du corps ce qui dépasse.
+        // Mesurer le panneau plutôt que d'estimer la hauteur du chrome (titre + séparateurs + trois
+        // boutons) évite une constante devinée — un premier essai à 300 px la sous-estimait de ~130,
+        // les cadres « plaque blindée » rendant les boutons plus hauts que leur `CustomMinimumSize`,
+        // et « Quitter la partie » restait coupé au bord de l'écran. `GetCombinedMinimumSize` donne
+        // la hauteur voulue sans attendre une passe de layout, et suit la police et la langue.
+        float budget   = GetViewport().GetVisibleRect().Size.Y - 2f * OuterMargin;
+        float overflow = panel.GetCombinedMinimumSize().Y - budget;
+        if (overflow > 0f)
+            _scroll.CustomMinimumSize = new Vector2(
+                0f, Mathf.Max(MinBodyHeight, _scroll.CustomMinimumSize.Y - overflow));
 
         // Focus sur le bouton reprendre après le layout
         CreateTween().TweenCallback(Callable.From(() => btn.GrabFocus()));
@@ -404,6 +446,24 @@ public partial class PauseScreen : CanvasLayer
         {
             GetViewport().SetInputAsHandled();
             Close();
+            return;
+        }
+
+        // Défilement du corps au clavier/manette. Le contenu n'est que des Labels — rien de
+        // focalisable —, il faut donc piloter le ScrollContainer à la main (même parti pris que
+        // CodexScreenBase). On se limite à Page↑/Page↓ : ui_up/ui_down appartiennent déjà à la
+        // navigation entre les trois boutons, les capturer la casserait.
+        if (_scroll == null || !IsInstanceValid(_scroll)) return;
+
+        if (@event.IsActionPressed("ui_page_down", allowEcho: true))
+        {
+            _scroll.ScrollVertical += (int)_scroll.Size.Y;
+            GetViewport().SetInputAsHandled();
+        }
+        else if (@event.IsActionPressed("ui_page_up", allowEcho: true))
+        {
+            _scroll.ScrollVertical -= (int)_scroll.Size.Y;
+            GetViewport().SetInputAsHandled();
         }
     }
 
