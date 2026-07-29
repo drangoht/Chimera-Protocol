@@ -4,6 +4,116 @@
 > `release-manager`). Entrées en ordre décroissant (la plus récente en haut). Ton orienté
 > joueur, EN puis FR (audience itch surtout anglophone).
 
+## v1.23.0 — Overtime is a real run now, and every biome has its champion (2026-07-29)
+
+**Added — a mid-run champion for every biome**
+- Three levels out of five had **no mid-run boss at all**, and the Master Sentinel showed up at
+  16 minutes — in a run that ends at 13. You could clear a whole level without ever meeting a
+  champion. Meet the **Molten Colossus** (Furnace), the **Cryo Sentinel** (Frost) and the **Neon
+  Warden** (Neon).
+- Each one asks for the **opposite reflex** of the final boss of its own biome. The Colossus
+  telegraphs its charges and leaves a trail of magma behind — the danger is the ground closing in,
+  not the charge itself. The Sentinel fires a directed freeze cone. The Warden carries an orbital
+  shield that absorbs 80 % of everything hitting the sector it covers: you have to read the gap and
+  move around it.
+- Killing one offers you a weapon card. The Master Sentinel now arrives at **11 minutes**, inside
+  the run instead of after it.
+
+**Added — overload cards, so late game keeps going somewhere**
+- Once every weapon and passive is maxed out, the level-up screen had nothing left to give. You were
+  gaining levels **124 to 140 in 74 seconds for literally nothing** — the game handed out XP bonuses
+  because there was nothing else in the pool. Levels that meant nothing.
+- Three **uncapped** cards now appear when the pool runs dry: **Plating** (+45 max health, and heals
+  you for the same), **Auto-repair** (+0.6 health per second) and **Overdrive** (+5 % damage). They
+  never stop being useful, so your defence never flatlines.
+
+**Changed — overtime was unsurvivable, and now it isn't**
+- Overtime is meant to last **5 to 10 minutes** — that is what the Echo economy is built around.
+  Testers were dying **74 seconds** in. The whole late-game reward loop was out of reach.
+- Two separate causes, both fixed. The overtime accelerator was meant for **enemy density**, but
+  every density lever is already maxed out by the time overtime starts — so all of it was pouring
+  into enemy health and damage instead, through a squared term. And a bug was damping your **max
+  health** gains: the Reinforced Plating was giving you 251 health at level 20 instead of 500.
+- Measured on a played run: overtime went from **74 seconds to 8 minutes 36**, ending in a death
+  you actually take rather than one you choose.
+
+**Fixed — the pause screen could hide its own buttons**
+- Late in a run, with five maxed weapons, four passives and five grafts on display, the pause panel
+  grew taller than the screen. Being centred, it overflowed **both ways** — and **Quit** dropped off
+  the bottom. You could no longer abandon a run. The stats now scroll; the buttons stay put.
+
+**Fixed — smaller things that were quietly wrong**
+- **Mid-bosses were too small.** They were drawn 25 % smaller than every other champion in the game,
+  and worse, their **hitbox reached further than their body**: the Colossus could hit you from
+  outside its own silhouette. Now sized to match what they actually do.
+- **The dash never told you it existed.** Not in the HUD, not in the graft description, not on the
+  assimilation screen — a whole run could be played without knowing there was a key. It is now shown
+  in the HUD, with the key you actually have bound.
+- **Auto-repair looked inert.** It heals you constantly, with no button to press, but nothing on
+  screen said so. A `♥ +X/s` readout now shows it working.
+- **Pop-ups were being dimmed by the screen vignette** — level-up, end of run and assimilation all
+  rendered underneath it.
+- **Enemy fire was drowning the mix.** The sentinel shot was the loudest sound in the game, 9.4 dB
+  above your own weapon — and a dozen sentinels fire at once against your single gun. Turned down
+  12 dB.
+
+---
+
+**Ajouté — un champion de mi-partie pour chaque biome**
+- Trois niveaux sur cinq n'avaient **aucun boss de mi-partie**, et la Sentinelle Maîtresse
+  apparaissait à 16 minutes — dans une partie qui s'arrête à 13. Vous pouviez terminer un niveau
+  entier sans jamais croiser de champion. Voici le **Colosse en Fusion** (Fournaise), la
+  **Sentinelle Cryo** (Givre) et le **Gardien Néon** (Néon).
+- Chacun demande le réflexe **inverse** du boss final de son propre biome. Le Colosse télégraphie ses
+  charges et laisse un sillage de magma : le danger, c'est le terrain qui se referme, pas la charge
+  elle-même. La Sentinelle tire un cône de gel dirigé. Le Gardien porte un bouclier orbital qui
+  absorbe 80 % de ce qui frappe le secteur couvert — il faut lire la brèche et tourner autour.
+- En tuer un vous propose une carte d'arme. La Sentinelle Maîtresse arrive désormais à
+  **11 minutes**, dans la partie et non après elle.
+
+**Ajouté — les cartes de surcharge, pour que la fin de partie mène quelque part**
+- Une fois toutes les armes et tous les passifs au maximum, l'écran de niveau n'avait plus rien à
+  offrir. Vous passiez **du niveau 124 à 140 en 74 secondes pour strictement rien** — le jeu
+  distribuait des bonus d'XP faute de mieux. Des niveaux qui ne donnaient rien.
+- Trois cartes **sans plafond** apparaissent maintenant quand le pool est vide : **Blindage**
+  (+45 PV max, et vous soigne d'autant), **Auto-réparation** (+0,6 PV par seconde) et **Surtension**
+  (+5 % de dégâts). Elles ne cessent jamais d'être utiles : votre défense ne plafonne plus.
+
+**Modifié — l'overtime était insurvivable, il ne l'est plus**
+- L'overtime est censé durer **5 à 10 minutes** — c'est ce sur quoi l'économie d'Échos est
+  dimensionnée. Les testeurs mouraient au bout de **74 secondes**. Toute la boucle de récompense de
+  fin de partie était hors d'atteinte.
+- Deux causes distinctes, toutes deux corrigées. L'accélérateur d'overtime visait la **densité**
+  d'ennemis, mais tous les leviers de densité sont déjà saturés quand l'overtime commence : il se
+  déversait donc en entier sur les points de vie et les dégâts, via un terme au carré. Et un bug
+  amortissait vos gains de **PV maximum** : la Plaque Renforcée donnait 251 PV au niveau 20 au lieu
+  de 500.
+- Mesuré sur une partie jouée : l'overtime passe de **74 secondes à 8 minutes 36**, et se termine
+  par une mort que l'on subit, pas une mort que l'on choisit.
+
+**Corrigé — l'écran de pause pouvait masquer ses propres boutons**
+- En fin de partie, avec cinq armes au maximum, quatre passifs et cinq greffes affichés, le panneau
+  de pause devenait plus haut que l'écran. Étant centré, il débordait **des deux côtés** — et
+  **Quitter** tombait hors du cadre. Vous ne pouviez plus abandonner la partie. Les statistiques
+  défilent désormais ; les boutons restent en place.
+
+**Corrigé — de plus petites choses qui n'allaient pas**
+- **Les mid-boss étaient trop petits.** Ils étaient dessinés 25 % plus petits que tous les autres
+  champions du jeu et, pire, leur **zone de contact dépassait leur corps** : le Colosse pouvait vous
+  toucher depuis l'extérieur de sa propre silhouette. Ils font désormais la taille de ce qu'ils font.
+- **Le dash n'annonçait jamais son existence.** Ni au HUD, ni dans la description de la greffe, ni à
+  l'écran d'assimilation — on pouvait jouer une partie entière sans savoir qu'une touche existait.
+  Il est maintenant affiché au HUD, avec la touche réellement assignée.
+- **L'Auto-réparation semblait inerte.** Elle vous soigne en permanence, sans aucune touche à
+  presser, mais rien à l'écran ne le disait. Un indicateur `♥ +X/s` montre désormais son effet.
+- **Les fenêtres étaient assombries par la vignette de l'écran** — montée de niveau, fin de partie
+  et assimilation passaient toutes en dessous.
+- **Les tirs ennemis écrasaient le mixage.** Le tir de sentinelle était le son le plus fort du jeu,
+  9,4 dB au-dessus de votre propre arme — et une dizaine de sentinelles tirent ensemble contre votre
+  unique canon. Baissé de 12 dB.
+
+---
+
 ## v1.22.0 — The Capacitor was quietly flattening every weapon (2026-07-28)
 
 **Fixed — one passive was erasing the difference between your weapons**
