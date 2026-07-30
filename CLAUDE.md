@@ -58,7 +58,14 @@ pas celui qu'on réglait — **soins ponctuels 129,7 PV/s contre 13,6 pour la r�
 le joueur est **en surplus de PV 60 % du temps d'overtime**. L'Auto-réparation est donc invisible *par
 construction* (9,7 % des dégâts encaissés, noyée dans un canal dix fois plus gros), et la mort ne peut
 venir que d'un **pic** : le levier de survie en overtime est le **soin ponctuel** (donc les tirages de
-cartes, donc le choix du joueur).
+cartes, donc le choix du joueur). ④ **Référence figée** (`docs/bench/ref_overtime_225.json`, 4 graines
+appariées, `--overtime --minutes 20` — 7 min d'overtime suffisent puisque les métriques se lisent par
+échantillon, soit **28 min de banc** au total) : le bruit tombe de **240 %** (deux sessions humaines)
+à **4-13 %**. Un réglage dont l'effet dépasse **~6 %** du temps soutenable est désormais décidable
+**sans session jouée**. Et « temps soutenable » se révèle **invariant à la fenêtre d'observation**
+(60,4 % sur 11:45 d'overtime, 60,7 % sur 6:45) là où la survie théorique ne l'est pas → c'est **la**
+métrique de réglage. Prochain réglage : `--compare docs/bench/ref_overtime_225.json`, lire le test des
+signes.
 Pièges → `docs/PITFALLS.md` (§Tests headless, §Cartes de surcharge) ; mesures → `docs/TEST_REPORT.md`.
 **256 tests.**
 

@@ -93,23 +93,51 @@ la puissance et les PV max. Corollaire visible dans le rapport : mélanger deux 
 0 vs `--overtime`) fait bondir le bruit sur les PV max de **21 % à 64 %**. Une campagne doit être
 homogène ; l'outil le signale mais ne peut pas le réparer.
 
-### La campagne n'a pas pu être complétée — et c'est une contrainte d'outillage, pas de mesure
+### Référence figée — 4 runs appariées, et le bruit s'effondre
 
-Deux tentatives de complétion (graines 1002-1003) **tuées par l'environnement** : les tâches de fond
-n'y survivent pas à ~12 min réelles par run — la seconde a été coupée en pleine première run. Les
-garde-fous ajoutés ce jour ont absorbé le dégât : les 3 relevés partiels sont écartés automatiquement
-et le journal reste exploitable.
+Deux tentatives de campagne en tâche de fond ont été **tuées par l'environnement** (~12 min réelles
+par run). Contournement, qui découle directement de l'abandon de la survie comme critère : puisque les
+métriques retenues se lisent **échantillon par échantillon**, une fenêtre d'overtime de **7 min**
+suffit — soit `--minutes 20`, ~6,7 min réelles par run, lançable au premier plan. Les 4 graines ont
+donc été **rejouées dans ce protocole unique** plutôt que mélangées au précédent.
 
-**Reste à faire :** figer la référence de `2,25` en lançant la campagne **au premier plan**, run par
-run (le journal est cumulatif) :
+Campagne `--overtime --minutes 20`, graines 1000-1003, Fournaise → `docs/bench/ref_overtime_225.json` :
+
+| métrique | médiane | bruit | plus petit écart détectable |
+|---|---|---|---|
+| niveau final | 128,5 | 5 % | ±3,9 (3 %) |
+| PV max | 2 725 | 5 % | ±87 (3 %) |
+| DPS en overtime | 27 179 | **4 %** | ±659 (2 %) |
+| dégâts subis/s | 94,9 | 13 % | ±7,4 (8 %) |
+| régénération rendue/s | 8,2 | 25 % | ±1,3 (16 %) |
+| soins ponctuels/s | 86,4 | 10 % | ±5,4 (6 %) |
+| survie théo. hors soins | 24,4 s | 11 % | ±1,7 (7 %) |
+| **temps soutenable** | **60,7 %** | 9 % | ±3,3 (6 %) |
+
+**C'est le résultat qui valide le chantier.** Deux sessions humaines différaient d'un facteur **2,4**
+(240 %) à l'entrée en overtime ; le protocole standardisé ramène la dispersion à **4-13 %** selon la
+métrique. Un réglage dont l'effet dépasse ~6 % sur le temps soutenable est désormais **décidable en
+28 minutes de banc**, sans session jouée.
+
+Deux confirmations au passage :
+
+1. **« Temps soutenable » est invariant à la fenêtre d'observation** — 60,4 % sur 11:45 d'overtime,
+   **60,7 %** sur 6:45. La « survie théorique » ne l'est pas (17,5 s → 24,4 s : la pression croît avec
+   le temps, donc la médiane dépend de la fenêtre). C'est un argument décisif pour en faire **la**
+   métrique de réglage : elle est comparable entre campagnes de durées différentes.
+2. **Le rapport soins/régénération se confirme sur 4 runs** : 86,4 contre 8,2 PV/s, soit **×10,5**
+   (×9,5 sur le relevé précédent).
+
+**Mode d'emploi pour le prochain réglage d'overtime :**
 
 ```
-py tools/power_curve_multi.py --overtime --runs 1 --seed-base 1002   # puis 1003…
-py tools/power_curve_multi.py --report-only --runs 4 --out ref_225.json
+…modifier la valeur…
+py tools/power_curve_multi.py --overtime --minutes 20 --runs 1 --seed-base 1000   # puis 1001…1003
+py tools/power_curve_multi.py --report-only --runs 4 --compare docs/bench/ref_overtime_225.json
 ```
 
-Puis n'instruire l'équilibrage d'overtime que via `--compare ref_225.json`, en lisant **« temps
-soutenable »** et **« survie théorique »** — jamais la survie du bot.
+Lire le **test des signes** (« runs en hausse »), sur **temps soutenable** en premier — jamais la
+survie du bot.
 
 ---
 
