@@ -14,9 +14,13 @@ public partial class HUD : CanvasLayer
 	private static readonly Color HpHigh = new(0.30f, 1f,   0.70f);
 	private static readonly Color HpMid  = new(1f,    0.62f, 0.12f);
 	private static readonly Color HpLow  = new(0.95f, 0.25f, 0.18f);
-	// Réserve de régénération : cyan clair, distinct des trois teintes de PV — c'est un tampon, pas de
-	// la vie, et le joueur doit lire les deux d'un coup d'œil.
-	private static readonly Color ReserveColor = new(0.40f, 0.95f, 0.92f);
+	// Réserve de régénération : le blanc cassé de la palette (UiPalette.OffWhite), volontairement NON
+	// saturé. Un premier essai en cyan clair était illisible : les accents de biome Sanctuaire
+	// (0.30 0.85 0.95) et Givre (0.62 0.88 0.95) sont quasi identiques, et la barre d'XP qui les porte
+	// n'est qu'à 12 px sous ce liseré — deux barres de même teinte, l'une au-dessus de l'autre. Le
+	// liseré ne suit PAS le thème du biome, il doit donc se distinguer des cinq accents comme des trois
+	// teintes de PV.
+	private static readonly Color ReserveColor = new(0.85f, 0.85f, 0.95f);
 	private static readonly Color Dim    = new(0.62f, 0.66f, 0.78f);
 
 	private Color _accent = new(0.30f, 0.85f, 0.95f);
