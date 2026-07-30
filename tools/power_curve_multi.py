@@ -34,6 +34,22 @@ devient **identique d'une run à l'autre**, alors que c'est précisément là qu
 qui empêchait de conclure. En contrepartie, la survie ainsi mesurée n'est pas celle d'un joueur qui a
 construit son build lui-même — elle sert à COMPARER des réglages, pas à prédire une durée de vie.
 
+Ne pas trancher sur la SURVIE du bot
+------------------------------------
+Enseignement de la première campagne réelle (2026-07-30, cf. `docs/TEST_REPORT.md`). Arsenal saturé,
+le bot **survit bien mieux qu'un humain** : 22:42 d'overtime avant de mourir, contre 8:36 pour le
+joueur sur le même réglage. Deux conséquences pratiques :
+
+* avec `--minutes 25`, les runs se terminent sur la limite de temps (`bench_limit`) et non sur une
+  mort. Leur survie est un **plancher**, pas une mesure ; le rapport la préfixe de « ≥ » et refuse
+  d'annoncer un seuil de détection quand la moitié des runs sont dans ce cas ;
+* laisser le bot mourir demanderait ~40 min de jeu par run, soit des heures de campagne — le headless
+  ne tient pas `--timescale 3` en nuée (mesuré : ~1× effectif, 12 min réelles pour 12 min de jeu).
+
+D'où la métrique à privilégier : **survie théorique** = PV max ÷ (dégâts subis − régénération rendue),
+relevée sur chaque échantillon d'overtime. Elle n'est pas censurée, se mesure dans le budget de 12 min
+et décrit la **pression produite par le réglage** plutôt que l'habileté de l'agent qui l'encaisse.
+
 Exemples
 --------
     py tools/power_curve_multi.py --runs 5 --biome fournaise
@@ -91,8 +107,31 @@ class Run:
     ot_dps: float = 0.0          # DPS médian en overtime
     ot_taken: float = 0.0        # dégâts subis médians en overtime (PV/s)
     ot_regen_eff: float = 0.0    # régénération réellement rendue en overtime (PV/s)
+    ot_heal: float = 0.0         # soins PONCTUELS reçus en overtime (PV/s)
+    ot_ttl_s: float = 0.0        # survie théorique hors soins ponctuels (s) — cf. summarize()
+    ot_sustain_pct: float = 0.0  # % du temps d'overtime où les PV rendus couvrent les PV perdus
     samples: int = 0
     rows: list[list[str]] = field(default_factory=list, repr=False)
+
+    @property
+    def truncated(self) -> bool:
+        """La run n'a pas écrit son `# fin de run` : interrompue (arrêt du banc, plantage).
+
+        Son relevé s'arrête n'importe où, donc sa survie est un artefact de l'interruption. La
+        compter comme une run normale tire toute la campagne vers le bas — c'est arrivé dès la
+        première campagne réelle (cf. docs/TEST_REPORT.md, 2026-07-30).
+        """
+        return self.outcome in ("?", "")
+
+    @property
+    def censored(self) -> bool:
+        """La run s'est arrêtée sur la limite de temps, pas sur une mort.
+
+        La survie n'est alors pas mesurée : elle est seulement **minorée** par le plafond. Une
+        médiane calculée là-dessus renvoie le plafond lui-même, et la dispersion s'écrase — la
+        campagne se croit précise alors qu'elle n'a rien mesuré. Remède : augmenter `--minutes`.
+        """
+        return self.outcome == "bench_limit"
 
     def to_dict(self) -> dict:
         d = asdict(self)
@@ -131,7 +170,15 @@ def parse_blocks(text: str) -> list[Run]:
 
     for run in runs:
         summarize(run)
-    return [r for r in runs if r.samples > 0]
+
+    usable = [r for r in runs if r.samples > 0]
+    # Une run interrompue a écrit des échantillons mais n'a pas fini de vivre : la garder revient à
+    # compter une mort qui n'a pas eu lieu, à l'instant où le banc a été coupé.
+    cut = [r for r in usable if r.truncated]
+    if cut:
+        print(f"ATTENTION : {len(cut)} run(s) interrompue(s) sans « fin de run » — écartée(s) "
+              f"(banc arrêté ou plantage).")
+    return [r for r in usable if not r.truncated]
 
 
 def summarize(run: Run) -> None:
@@ -160,6 +207,34 @@ def summarize(run: Run) -> None:
         run.ot_dps = statistics.median(num(r, C_DPS) for r in ot)
         run.ot_taken = statistics.median(num(r, C_TAKEN) for r in ot)
         run.ot_regen_eff = statistics.median(num(r, C_REGEN_EFF) for r in ot)
+
+        run.ot_heal = statistics.median(num(r, C_HEAL) for r in ot)
+
+        # Survie THÉORIQUE : PV max ÷ (dégâts subis − régénération rendue), échantillon par
+        # échantillon. C'est la métrique à privilégier pour trancher un réglage d'overtime, parce
+        # qu'elle est la seule qui ne soit pas CENSURÉE : elle se lit sans attendre une mort que le bot
+        # fait attendre bien plus longtemps qu'un humain (22:42 d'overtime relevées contre 8:36 pour le
+        # joueur — cf. docs/TEST_REPORT.md, 2026-07-30). Elle décrit la pression que le réglage
+        # produit, non l'habileté de l'agent qui l'encaisse.
+        #
+        # HORS soins ponctuels, à dessein : orbes, lifesteal et carte Blindage arrivent par pointes
+        # (jusqu'à 333 PV/s relevés) dictées par les tirages, et les inclure remettrait dans la
+        # métrique le bruit qu'on cherche à en sortir. La contrepartie est qu'elle MINORE la survie
+        # réelle — d'où `ot_sustain_pct` juste en dessous, qui rend leur contribution visible.
+        ttls = []
+        sustained = 0
+        for r in ot:
+            taken, regen, heal = num(r, C_TAKEN), num(r, C_REGEN_EFF), num(r, C_HEAL)
+            hp_max = num(r, C_HPMAX)
+            net = taken - regen
+            if net > 0.5 and hp_max > 0:
+                ttls.append(hp_max / net)
+            if regen + heal >= taken:
+                sustained += 1
+        run.ot_ttl_s = statistics.median(ttls) if ttls else 0.0
+        # Part du temps d'overtime où le joueur regagne au moins ce qu'il perd. À 100 %, la mort ne
+        # peut venir que d'un pic ponctuel, et allonger la survie ne passe plus par la défense.
+        run.ot_sustain_pct = 100.0 * sustained / len(ot)
 
 
 # ---------------------------------------------------------------------------
@@ -196,15 +271,21 @@ class Stat:
                     sd / mean if mean else 0.0)
 
 
+# Le 3ᵉ champ marque les métriques de DURÉE : ce sont les seules que la censure fausse (une run
+# arrêtée par la limite de temps n'a pas fini de vivre). Les autres — PV max, DPS, dégâts subis — sont
+# des états relevés en cours de run et restent valides même si la run est écourtée.
 METRICS = [
-    ("survie (s)", "survival_s"),
-    ("overtime (s)", "overtime_s"),
-    ("niveau final", "final_level"),
-    ("puissance", "final_power"),
-    ("PV max", "final_hp_max"),
-    ("DPS en OT", "ot_dps"),
-    ("subis/s en OT", "ot_taken"),
-    ("régén rendue/s en OT", "ot_regen_eff"),
+    ("survie (s)", "survival_s", True),
+    ("overtime (s)", "overtime_s", True),
+    ("niveau final", "final_level", False),
+    ("puissance", "final_power", False),
+    ("PV max", "final_hp_max", False),
+    ("DPS en OT", "ot_dps", False),
+    ("subis/s en OT", "ot_taken", False),
+    ("régén rendue/s en OT", "ot_regen_eff", False),
+    ("soins ponctuels/s en OT", "ot_heal", False),
+    ("survie théo. hors soins (s)", "ot_ttl_s", False),
+    ("temps soutenable (%)", "ot_sustain_pct", False),
 ]
 
 
@@ -215,24 +296,44 @@ def print_campaign(runs: list[Run], label: str) -> dict:
     print(f"{'run':>4} {'seed':>8} {'survie':>9} {'overtime':>9} {'niv':>5} {'puiss':>7} "
           f"{'PVmax':>7} {'DPS(OT)':>9} {'subis/s':>8} {'issue':<14}")
     for i, r in enumerate(runs, 1):
-        print(f"{i:>4} {str(r.seed):>8} {fmt_mmss(r.survival_s):>9} {fmt_mmss(r.overtime_s):>9} "
+        # « ≥ » et non « = » : sur une run censurée le chiffre est un plancher, et le lire comme une
+        # mesure est exactement l'erreur que ce banc existe pour éviter.
+        prefix = "≥" if r.censored else " "
+        print(f"{i:>4} {str(r.seed):>8} {prefix}{fmt_mmss(r.survival_s):>8} "
+              f"{prefix}{fmt_mmss(r.overtime_s):>8} "
               f"{r.final_level:>5} {r.final_power:>7} {r.final_hp_max:>7} "
               f"{r.ot_dps:>9.0f} {r.ot_taken:>8.1f} {r.outcome:<14}")
 
+    n_censored = sum(1 for r in runs if r.censored)
+    if n_censored:
+        print()
+        print(f"ATTENTION : {n_censored}/{len(runs)} run(s) arrêtée(s) par la limite de temps, pas par une")
+        print("mort. Leur survie est un PLANCHER, pas une mesure — augmenter --minutes pour laisser le")
+        print("bot mourir, sans quoi les durées ci-dessous mesurent le plafond du banc, pas le réglage.")
+
     print()
-    print(f"{'métrique':<24} {'médiane':>10} {'p10':>10} {'p90':>10} {'bruit':>8}   plus petit écart détectable")
+    print(f"{'métrique':<28}{'médiane':>10} {'p10':>10} {'p90':>10} {'bruit':>8}   plus petit écart détectable")
     summary: dict[str, dict] = {}
-    for label_m, attr in METRICS:
+    for label_m, attr, is_duration in METRICS:
         values = [float(getattr(r, attr)) for r in runs]
         st = Stat.of(values)
         summary[attr] = asdict(st)
+        # La médiane résiste à la censure à droite tant que MOINS de la moitié des runs sont
+        # censurées : le rang médian tombe alors sur une vraie mort. Au-delà, elle vaut le plafond et
+        # ne veut plus rien dire — on refuse alors d'annoncer un seuil de détection qui serait faux.
+        blind = is_duration and n_censored * 2 >= len(runs)
+        if blind:
+            print(f"{label_m:<28}{'≥' + format(st.median, '.1f'):>10} {st.p10:>10.1f} "
+                  f"{'plafond':>10} {'—':>8}   non mesurable (censuré)")
+            continue
         # Une campagne ne sait pas distinguer un écart plus petit que la dispersion de sa propre
         # médiane. Approximation usuelle : 1,25 × écart-type / √n (erreur type de la médiane).
         n = max(len(values), 1)
         mdd = 1.25 * (st.cv * statistics.fmean(values) if values else 0) / (n ** 0.5)
         pct = 100 * mdd / st.median if st.median else 0
-        print(f"{label_m:<24} {st.median:>10.1f} {st.p10:>10.1f} {st.p90:>10.1f} "
-              f"{100*st.cv:>7.0f}%   ±{mdd:>8.1f} ({pct:.0f} %)")
+        mark = " ≥" if is_duration and n_censored else "  "
+        print(f"{label_m:<28}{st.median:>10.1f} {st.p10:>10.1f} {st.p90:>10.1f} "
+              f"{100*st.cv:>7.0f}%   ±{mdd:>8.1f} ({pct:.0f} %){mark}")
 
     print()
     print("Lecture : « bruit » = dispersion relative entre runs. Un écart de réglage plus petit que")
@@ -260,20 +361,32 @@ def compare(before_path: Path, after: list[Run], label: str) -> None:
         return
     print(f"{len(pairs)} run(s) appariée(s) sur {len(after)}")
     print()
-    print(f"{'métrique':<24} {'avant':>10} {'après':>10} {'delta médian':>14} {'runs en hausse':>16}")
-    for label_m, attr in METRICS:
-        deltas = [float(getattr(b_a[1], attr)) - float(b_a[0][attr]) for b_a in pairs]
-        b_med = statistics.median(float(p[0][attr]) for p in pairs)
-        a_med = statistics.median(float(getattr(p[1], attr)) for p in pairs)
+    print(f"{'métrique':<28}{'avant':>10} {'après':>10} {'delta médian':>14} {'runs en hausse':>16}")
+    for label_m, attr, is_duration in METRICS:
+        # Une paire dont un côté a été arrêté par la limite de temps ne dit rien sur la DURÉE : les
+        # deux runs auraient peut-être continué. La garder produit un delta nul très convaincant —
+        # « le réglage ne change rien » — alors que la mesure n'a simplement pas eu lieu.
+        usable = pairs if not is_duration else [
+            p for p in pairs if not p[1].censored and p[0].get("outcome") != "bench_limit"]
+        if not usable:
+            print(f"{label_m:<28}{'—':>10} {'—':>10} {'—':>14} {'0':>10}/{len(pairs):<5}"
+                  f"  ← censuré des deux côtés")
+            continue
+
+        deltas = [float(getattr(b_a[1], attr)) - float(b_a[0][attr]) for b_a in usable]
+        b_med = statistics.median(float(p[0][attr]) for p in usable)
+        a_med = statistics.median(float(getattr(p[1], attr)) for p in usable)
         up = sum(1 for d in deltas if d > 0)
         med_delta = statistics.median(deltas)
         # Test des signes : avec n runs appariées, un effet réel doit pousser la MÊME direction sur
         # la grande majorité des paires. Un 50/50 signe du bruit, quelle que soit la taille du delta.
-        verdict = "" if len(pairs) < 4 else (
-            "  ← net" if up >= len(pairs) - 1 or up <= 1 else
-            ("  ← bruit" if abs(up - len(pairs) / 2) <= len(pairs) * 0.15 else ""))
-        print(f"{label_m:<24} {b_med:>10.1f} {a_med:>10.1f} {med_delta:>+14.1f} "
-              f"{up:>10}/{len(pairs):<5}{verdict}")
+        verdict = "" if len(usable) < 4 else (
+            "  ← net" if up >= len(usable) - 1 or up <= 1 else
+            ("  ← bruit" if abs(up - len(usable) / 2) <= len(usable) * 0.15 else ""))
+        if len(usable) < len(pairs):
+            verdict += f"  ({len(pairs) - len(usable)} paire(s) censurée(s) écartée(s))"
+        print(f"{label_m:<28}{b_med:>10.1f} {a_med:>10.1f} {med_delta:>+14.1f} "
+              f"{up:>10}/{len(usable):<5}{verdict}")
 
     print()
     print("Lecture : « runs en hausse » est le test des signes. Un effet réel pousse presque toutes")

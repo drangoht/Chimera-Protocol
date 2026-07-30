@@ -45,6 +45,20 @@ le taux **nominal** du **réellement rendu** (nul à PV pleins) et des soins pon
 obtenu, qui donne raison au testeur (« son effet ne se voit pas ») : en overtime tardif,
 l'Auto-réparation rend **~15 PV/s effectifs pour 24 nominaux**, face à **~230 dégâts/s** — soit
 **~6 %** de ce qui est encaissé.
+**(f) première campagne réelle** (2026-07-30) — elle a **invalidé deux choix de méthode et déplacé le
+levier**. ① `--timescale=3` ne rend **×1,0** en nuée (headless limité par le CPU) : une campagne de
+6 runs coûte **70 min**, pas 25. ② La **survie du bot ne peut pas servir de critère** : arsenal saturé,
+il tient **22:42** d'overtime contre **8:36** pour le joueur, et sous `--minutes 25` toutes les runs
+finissent sur la limite de temps — la survie n'est alors pas mesurée mais **minorée**, avec une
+variance écrasée qui faisait annoncer une précision de 13 % là où rien n'avait été mesuré (censure
+désormais signalée, runs interrompues écartées). → métriques non censurées : **survie théorique**
+(PV max ÷ dégâts nets) et **temps soutenable** (part du temps d'overtime où les PV rendus couvrent les
+PV perdus — la plus stable, bruit 5 %). ③ **Le résultat de design** : le canal de soin dominant n'est
+pas celui qu'on réglait — **soins ponctuels 129,7 PV/s contre 13,6 pour la régénération** (×9,5), et
+le joueur est **en surplus de PV 60 % du temps d'overtime**. L'Auto-réparation est donc invisible *par
+construction* (9,7 % des dégâts encaissés, noyée dans un canal dix fois plus gros), et la mort ne peut
+venir que d'un **pic** : le levier de survie en overtime est le **soin ponctuel** (donc les tirages de
+cartes, donc le choix du joueur).
 Pièges → `docs/PITFALLS.md` (§Tests headless, §Cartes de surcharge) ; mesures → `docs/TEST_REPORT.md`.
 **256 tests.**
 

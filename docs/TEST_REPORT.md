@@ -4,6 +4,91 @@ Rapport de sessions de test. Chaque section correspond à une session de test di
 
 ---
 
+## Banc multi-run — première campagne réelle : le canal de soin dominant n'était pas celui qu'on réglait — 2026-07-30
+
+**Objet :** produire la mesure de référence du banc multi-run (`tools/power_curve_multi.py`, livré la
+veille) sur le réglage publié `OvertimeEscalation.StatAcceleration = 2,25`, afin de disposer d'une
+base `avant/après` appariée pour les prochains réglages d'overtime.
+
+**Protocole :** `--overtime --runs 6 --biome fournaise` (= `--start-at 13 --saturate-arsenal`,
+`--timescale 3`, graines 1000…1005). Campagne **interrompue après 2 runs complètes** ; le relevé
+ci-dessous ajoute la run `seed 42` (run complète depuis 0, même build) → **3 runs exploitables**.
+
+### La campagne coûte 20× son estimation, et `--timescale` n'y est pour rien
+
+| | attendu | mesuré |
+|---|---|---|
+| durée réelle d'une run d'overtime | ~4 min (12 min de jeu ÷ 3) | **~11,8 min** (708 s) |
+| accélération effective | ×3 | **×1,0** |
+
+En nuée d'overtime (300 entités) le headless est **limité par le CPU** : `Engine.TimeScale` demande 3×
+mais le moteur ne fournit que le temps réel. Conséquence de planification : une campagne de 6 runs
+coûte **~70 min**, pas 25. `--timescale` reste utile en début de run, où la densité est faible.
+
+### Défaut de méthode nº 1 : la survie du bot est censurée, et le rapport n'en disait rien
+
+Les deux runs de campagne se sont terminées sur la **limite de temps** (`bench_limit`), pas sur une
+mort — survie identique à la seconde (1500 s), overtime 11:45 dans les deux cas. Le script en tirait
+une médiane, un p90 et un « plus petit écart détectable » de **13 %** : la variance était écrasée par
+le plafond, donc la campagne s'annonçait **précise là où elle n'avait rien mesuré**.
+
+Corrigé : une run `bench_limit` est marquée censurée, sa survie s'affiche « ≥ », et dès que la moitié
+des runs sont dans ce cas les métriques de durée affichent `non mesurable (censuré)` au lieu d'un
+chiffre. Une run interrompue sans `# fin de run` (le cas de `seed 1002`, coupée par l'arrêt) est
+désormais **écartée** : elle entrait auparavant dans les stats comme une mort à l'instant de la coupe.
+
+### Défaut de méthode nº 2 : le bot survit bien mieux qu'un humain
+
+| | joueur (5ᵉ session, 2026-07-29) | bot de banc |
+|---|---|---|
+| survie en overtime | 8 min 36 s (mort subie) | **22 min 42 s** (`seed 42`, mort subie) |
+
+Arsenal saturé, le bot tient **2,6× plus longtemps** que le joueur sur le même réglage. Lever la
+censure demanderait ~40 min de jeu par run, soit des **heures** de campagne — et mesurerait surtout
+l'habileté du bot. La survie du bot est donc **abandonnée comme critère de réglage**.
+
+Remplacée par la **survie théorique** = PV max ÷ (dégâts subis − régénération rendue), lue sur chaque
+échantillon d'overtime : non censurée, disponible dans le budget de 12 min, et elle décrit la
+**pression produite par le réglage** plutôt que la performance de l'agent qui l'encaisse.
+
+### Le résultat qui compte : les soins ponctuels écrasent tout le reste
+
+Médianes sur 3 runs (les deux dernières colonnes sont nouvelles) :
+
+| métrique | médiane | bruit | plus petit écart détectable |
+|---|---|---|---|
+| dégâts subis/s en overtime | 140,5 | 13 % | ±12,6 (9 %) |
+| **régénération rendue/s** | **13,6** | 23 % | ±2,1 (16 %) |
+| **soins ponctuels/s** | **129,7** | 15 % | ±12,8 (10 %) |
+| PV max | 2 860 | 21 % | ±479 (17 %) |
+| survie théo. hors soins | 17,5 s | 18 % | ±2,6 (15 %) |
+| **temps soutenable** | **60,4 %** | 5 % | ±2,1 (3 %) |
+
+Trois lectures, toutes issues du même relevé :
+
+1. **Le canal de soin dominant est le soin ponctuel, pas la régénération** — 129,7 contre 13,6 PV/s,
+   un facteur **9,5**. La régénération ne représente que **9,7 %** des dégâts encaissés. Le retour du
+   testeur (« l'effet de l'Auto-réparation ne se voit pas ») est donc exact *deux fois* : faible
+   devant les dégâts, et surtout **noyée dans un canal dix fois plus gros** (orbes, lifesteal, et la
+   carte Blindage qui soigne de son propre gain). Toute retouche de la régénération est invisible par
+   construction tant que ce rapport tient.
+2. **Le joueur est en surplus de PV 60 % du temps d'overtime.** La mort ne peut alors venir que d'un
+   **pic** — ce qui est cohérent avec les deux morts « subies » observées et avec le fait que la
+   défense moyenne ne prédise pas l'heure de la mort. Régler la survie moyenne par les PV max ou la
+   régénération revient à agir sur les 40 % restants.
+3. **Le levier de survie en overtime est le soin ponctuel**, et il est piloté par les tirages de
+   cartes — donc par le **choix du joueur**, ce qui confirme et précise la requalification du
+   2026-07-29 (`MeasuredHpGainPerOvertimeMinute` = profil de jeu, pas constante).
+
+**Ce que la campagne ne dit pas :** n = 3, dont 2 censurées sur la durée, sur un seul biome. Les
+seuils de détection ci-dessus valent pour cette taille de campagne ; « temps soutenable » est de loin
+la métrique la plus stable (bruit 5 %) et devient le candidat naturel pour trancher un réglage.
+
+**Suite proposée :** campagne appariée à 6 runs (≈70 min) pour figer la référence de `2,25`, puis
+n'instruire l'équilibrage d'overtime que via « temps soutenable » et « survie théorique ».
+
+---
+
 ## Survie en overtime — session jouée de validation — 2026-07-29
 
 **Objet :** valider en jeu le correctif d'overtime (`081b6f6`, design → `docs/GDD.md` §31), la survie
