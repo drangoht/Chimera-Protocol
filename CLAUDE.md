@@ -14,14 +14,15 @@ cyborgs, robots), inspiré de Vampire Survivors et Everything is Crab.
 - **État d'implémentation détaillé & version courante → `docs/PROJECT_STATE.md`** (évolutif). Résumé de phase ci-dessous.
 - **Synthétiser du volume** (relever/résumer/inventorier à partir de plusieurs gros fichiers : `data/*.json`, docs longues, logs, rapports de test) → déléguer au **MCP local** `mcp__local-llm__local_digest` / `local_map` (outils différés : `ToolSearch` d'abord) plutôt que d'enchaîner les `Read` : le serveur lit les fichiers côté LM Studio, seule la synthèse entre en contexte. Ne pas l'utiliser pour du code que l'on s'apprête à éditer — là, le contenu réel est nécessaire.
 
-**Phase actuelle : 1.23.0 PUBLIÉE le 2026-07-29** (overtime jouable, mid-boss par biome, cartes de
-surcharge) — **devlogs 1.21.0 → 1.23.0 collés sur itch** le 2026-07-30. Points de contenu encore
-ouverts, tous deux à juger **en jouant** : le **ressenti de combat** des mid-boss (jamais joués, seule
-leur taille a été jugée) et l'**arbitrage** de l'Auto-réparation après la réserve de régénération —
-le banc ne peut pas trancher un choix de carte, cf. (5) ci-dessous.
+**Phase actuelle : 1.24.0 PUBLIÉE le 2026-07-30** (réserve de régénération, mid-boss à 72 px, banc de
+mesure apparié) — build butler **#1843179**, `version.json` à 1.24.0. Devlogs 1.21.0 → 1.23.0 collés
+sur itch ; **reste côté utilisateur : coller le devlog 1.24.0** (corps prêt en tête de
+`docs/DEVLOG.md`). **Mid-boss validés en combat** le 2026-07-30. Seul point encore ouvert :
+l'**arbitrage** de l'Auto-réparation une fois la réserve en place — le banc ne peut pas trancher un
+choix de carte (le bot tire au hasard), cf. (5) ci-dessous.
 
 **(5) Réserve de régénération — la carte ne manquait pas de valeur, elle en perdait 58 %**
-(2026-07-30, non publié). Premier réglage instruit **au banc apparié** plutôt qu'à la session jouée.
+(2026-07-30, **publié en 1.24.0**). Premier réglage instruit **au banc apparié** plutôt qu'à la session jouée.
 Le §33.5 posait l'alternative « monter le débit ou l'indexer sur les PV max » : la mesure montre que
 **les deux auraient manqué la cause**. La régénération tourne à **19,2 PV/s nominaux pour 8,2 rendus**
 (**58 % jeté**) parce que le porteur passe **100 % de l'overtime au-dessus de 90 % de ses PV max** et

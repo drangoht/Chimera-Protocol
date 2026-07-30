@@ -18,6 +18,26 @@ morceau, couplet et refrain, et le jeu passe de l'une à l'autre en fondu selon 
 d'ennemis, temps de survie, points de vie — avant de basculer sur le **thème de boss** quand un
 colosse débarque.
 
+**L'Auto-réparation jetait 58 % de ce qu'elle soignait** *(2026-07-30, v1.24.0)* — c'était la carte que
+personne ne prenait : **44 Blindages contre 1 Auto-réparation** sur une partie relevée. On avait cru à
+un défaut de lisibilité et ajouté un indicateur au HUD ; insuffisant, donc cette fois on l'a
+**instrumentée**. Elle tournait à **19,2 PV/s pour 8,2 réellement rendus** — le reste était **perdu**,
+parce qu'on passe **100 % de l'overtime au-dessus de 90 % de ses PV** et qu'on meurt d'un **pic**, pas
+d'usure. Monter le chiffre n'aurait fait que grossir la part jetée. Désormais, à PV pleins le débit
+remplit une **réserve** (le liseré pâle sous la barre de vie) qui **encaisse le prochain coup** — un
+coup entièrement absorbé se lit comme **paré** : flash cyan, aucun son de blessure. Mesuré sur quatre
+runs de banc appariées : PV réellement rendus **8,2 → 15,9/s (+94 %)**, difficulté d'overtime
+**inchangée**. Au passage, les **champions de biome** passent de 48 à **72 px** — leur hitbox
+débordait de leur silhouette, et ils étaient les plus petits boss du jeu.
+
+**On ne règle plus ce jeu sur une seule partie** *(2026-07-30, v1.24.0)* — trois passes d'équilibrage
+d'affilée s'étaient décidées sur **une session jouée chacune**, alors que deux sessions du même joueur
+différaient d'un facteur **2,4** en survie — mesuré *là où le réglage testé n'a encore aucun effet*.
+Le bot de banc **se déplace** désormais (il kite, ramasse, esquive), donc il meurt pour de vrai et la
+survie devient mesurable sans invulnérabilité ; les runs sont **reproductibles par graine**, ce qui
+permet de comparer deux réglages sur des vagues et des tirages **identiques**. La dispersion tombe de
+**240 % à 4-13 %** : un écart supérieur à ~6 % se tranche en moins d'une demi-heure, sans jouer.
+
 **L'overtime devient une vraie partie** *(2026-07-29, v1.23.0)* — il est censé durer **5 à 10 minutes**
 (toute l'économie d'Échos est dimensionnée dessus) ; les testeurs mouraient au bout de **74 secondes**.
 Deux causes : l'accélérateur d'overtime visait la **densité** d'ennemis, mais tous les leviers de
