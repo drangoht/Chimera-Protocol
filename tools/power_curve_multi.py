@@ -376,7 +376,7 @@ def compare(before_path: Path, after: list[Run], label: str) -> None:
         return
     print(f"{len(pairs)} run(s) appariée(s) sur {len(after)}")
     print()
-    print(f"{'métrique':<28}{'avant':>10} {'après':>10} {'delta médian':>14} {'runs en hausse':>16}")
+    print(f"{'métrique':<28}{'avant':>10} {'après':>10} {'delta médian':>14} {'hausses/bougé':>16}")
     for label_m, attr, is_duration in METRICS:
         # Une paire dont un côté a été arrêté par la limite de temps ne dit rien sur la DURÉE : les
         # deux runs auraient peut-être continué. La garder produit un delta nul très convaincant —
@@ -399,21 +399,35 @@ def compare(before_path: Path, after: list[Run], label: str) -> None:
         deltas = [float(getattr(b_a[1], attr)) - float(b_a[0][attr]) for b_a in usable]
         b_med = statistics.median(float(p[0][attr]) for p in usable)
         a_med = statistics.median(float(getattr(p[1], attr)) for p in usable)
-        up = sum(1 for d in deltas if d > 0)
         med_delta = statistics.median(deltas)
-        # Test des signes : avec n runs appariées, un effet réel doit pousser la MÊME direction sur
-        # la grande majorité des paires. Un 50/50 signe du bruit, quelle que soit la taille du delta.
-        verdict = "" if len(usable) < 4 else (
-            "  ← net" if up >= len(usable) - 1 or up <= 1 else
-            ("  ← bruit" if abs(up - len(usable) / 2) <= len(usable) * 0.15 else ""))
+        # Test des signes. Les EX ÆQUO n'y portent aucune information de direction et doivent être
+        # écartés du décompte, pas comptés comme « pas en hausse » : sinon une campagne rejouée à
+        # l'identique (tous les deltas nuls) donne 0/n et se fait qualifier d'« effet net », le pire
+        # contresens possible pour un outil censé distinguer un effet du bruit.
+        moved = [d for d in deltas if d != 0]
+        up = sum(1 for d in moved if d > 0)
+        n_moved = len(moved)
+
+        if n_moved == 0:
+            verdict = "  ← identique"
+        elif n_moved < 4:
+            # Trop peu de paires ont bougé pour que le signe veuille dire quoi que ce soit.
+            verdict = f"  ({n_moved} paire(s) ont bougé)"
+        elif up >= n_moved - 1 or up <= 1:
+            verdict = "  ← net"
+        elif abs(up - n_moved / 2) <= n_moved * 0.15:
+            verdict = "  ← bruit"
+        else:
+            verdict = ""
         if len(usable) < len(pairs):
             verdict += f"  ({len(pairs) - len(usable)} paire(s) censurée(s) écartée(s))"
         print(f"{label_m:<28}{b_med:>10.1f} {a_med:>10.1f} {med_delta:>+14.1f} "
-              f"{up:>10}/{len(usable):<5}{verdict}")
+              f"{up:>10}/{n_moved:<5}{verdict}")
 
     print()
-    print("Lecture : « runs en hausse » est le test des signes. Un effet réel pousse presque toutes")
-    print("les paires dans le même sens ; un 50/50 est du bruit, même si le delta médian paraît gros.")
+    print("Lecture : « hausses/bougé » est le test des signes, ex æquo écartés (ils ne portent aucune")
+    print("direction). Un effet réel pousse presque toutes les paires dans le même sens ; un 50/50 est")
+    print("du bruit, même si le delta médian paraît gros.")
 
 
 # ---------------------------------------------------------------------------

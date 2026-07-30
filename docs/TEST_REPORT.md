@@ -136,8 +136,20 @@ py tools/power_curve_multi.py --overtime --minutes 20 --runs 1 --seed-base 1000 
 py tools/power_curve_multi.py --report-only --runs 4 --compare docs/bench/ref_overtime_225.json
 ```
 
-Lire le **test des signes** (« runs en hausse »), sur **temps soutenable** en premier — jamais la
+Lire le **test des signes** (« hausses/bougé »), sur **temps soutenable** en premier — jamais la
 survie du bot.
+
+### Le chemin `--compare` validé, et un contresens de verdict corrigé
+
+Le code de comparaison appariée n'avait jamais été exécuté. Test à blanc (la référence comparée à
+elle-même) : **4/4 paires appariées, deltas nuls au chiffre près** — ce qui valide au passage le
+**déterminisme de `--seed`**, les graines rejouées redonnant exactement les mêmes relevés.
+
+Ce test a révélé un contresens : le verdict affichait **« ← net » sur un delta de +0,0**. Le test des
+signes comptait les **ex æquo** comme « pas en hausse » (0/4 → interprété comme un effet unanime à la
+baisse). Or un ex æquo ne porte aucune direction : ils sont désormais **écartés du décompte** (colonne
+« hausses/bougé »), et une campagne rejouée à l'identique affiche **« ← identique »**. Sans ce
+correctif, le premier réglage sans effet aurait été présenté comme un effet net.
 
 ---
 
