@@ -40,6 +40,46 @@
   4-13 %**: a change worth more than ~6 % is now decidable in under half an hour, with no session
   played at all.
 
+---
+
+**Modifié — l'Auto-réparation met de côté ce qu'elle ne peut pas soigner**
+- C'était la carte que personne ne prenait. Sur une partie relevée : **44 Blindages, 1
+  Auto-réparation**. On avait cru à un problème de lisibilité et ajouté un indicateur au HUD au patch
+  précédent. Insuffisant — alors cette fois on l'a **instrumentée**, et les chiffres disaient tout
+  autre chose.
+- L'Auto-réparation tournait à **19,2 PV par seconde et en rendait 8,2**. Les **58 % restants étaient
+  jetés**, parce que vous passez **100 % de l'overtime au-dessus de 90 % de vos PV max** et que vous
+  mourez d'un **pic**, pas d'usure. Un filet de PV régulier n'a presque aucune fenêtre pour agir.
+  Monter le chiffre n'aurait fait que grossir la part perdue.
+- Elle ne soigne donc pas plus fort : elle arrête de gaspiller. À PV pleins, le débit remplit une
+  **réserve** (le liseré pâle sous votre barre de vie) qui **encaisse votre prochain coup**. Un coup
+  entièrement absorbé se lit comme **paré** : flash cyan, aucun son de blessure. La réserve contient
+  **20 secondes de votre régénération**, plafonnée à un quart de vos PV max — elle grandit donc avec
+  ce que vous avez investi dans la carte.
+- Mesuré sur quatre runs de banc appariées : les PV réellement rendus passent de **8,2 à 15,9 par
+  seconde (+94 %)**, à difficulté d'overtime **inchangée** — la carte devient digne d'être prise sans
+  rendre la partie plus facile.
+
+**Modifié — les champions de biome ont enfin la bonne taille**
+- Les trois champions étaient dessinés en 48 pixels pour ne pas rivaliser avec le boss final, à 64.
+  Sauf que le boss final est *rendu* à 154 pixels, et que les mini-boss itinérants sont à 64 — ce qui
+  faisait des champions les plus petits boss du jeu. Pire, le Colosse **vous touchait depuis
+  l'extérieur de son propre corps** : 72 pixels de contact pour une silhouette de 48.
+- Les trois sont désormais rendus à **72 pixels**, calés sur leur rayon de contact réel. La hiérarchie
+  est enfin cohérente : faune 32 · mini-boss 64 · champions de biome 72 · boss final 154.
+
+**Sous le capot — on ne règle plus ce jeu sur une seule partie**
+- Trois passes d'équilibrage d'affilée se sont décidées sur **une session jouée chacune**, alors que
+  deux sessions du même joueur différaient d'un facteur **2,4** en survie — mesuré *là où le réglage
+  testé n'a encore aucun effet*. Une partie isolée mesurait surtout la chance.
+- Le bot de banc **se déplace** désormais (il kite, ramasse, esquive) : il meurt donc pour de vrai, et
+  la survie devient mesurable sans invulnérabilité. Les parties peuvent être **rejouées à graine
+  fixe**, ce qui permet de comparer deux réglages sur des vagues et des tirages de cartes
+  **identiques**. La dispersion tombe de **240 % à 4-13 %** : un écart supérieur à ~6 % se tranche en
+  moins d'une demi-heure, sans jouer une seule partie.
+
+---
+
 ## v1.23.0 — Overtime is a real run now, and every biome has its champion (2026-07-29)
 
 **Added — a mid-run champion for every biome**
