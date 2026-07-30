@@ -15,9 +15,28 @@ cyborgs, robots), inspiré de Vampire Survivors et Everything is Crab.
 - **Synthétiser du volume** (relever/résumer/inventorier à partir de plusieurs gros fichiers : `data/*.json`, docs longues, logs, rapports de test) → déléguer au **MCP local** `mcp__local-llm__local_digest` / `local_map` (outils différés : `ToolSearch` d'abord) plutôt que d'enchaîner les `Read` : le serveur lit les fichiers côté LM Studio, seule la synthèse entre en contexte. Ne pas l'utiliser pour du code que l'on s'apprête à éditer — là, le contenu réel est nécessaire.
 
 **Phase actuelle : 1.23.0 PUBLIÉE le 2026-07-29** (overtime jouable, mid-boss par biome, cartes de
-surcharge). Reste côté utilisateur : **coller les devlogs 1.21.0, 1.22.0 et 1.23.0 sur itch** (corps
-prêts en tête de `docs/DEVLOG.md`). Seul point de contenu encore ouvert : le **ressenti de combat**
-des mid-boss, jamais joués — seule leur taille a été jugée.
+surcharge) — **devlogs 1.21.0 → 1.23.0 collés sur itch** le 2026-07-30. Points de contenu encore
+ouverts, tous deux à juger **en jouant** : le **ressenti de combat** des mid-boss (jamais joués, seule
+leur taille a été jugée) et l'**arbitrage** de l'Auto-réparation après la réserve de régénération —
+le banc ne peut pas trancher un choix de carte, cf. (5) ci-dessous.
+
+**(5) Réserve de régénération — la carte ne manquait pas de valeur, elle en perdait 58 %**
+(2026-07-30, non publié). Premier réglage instruit **au banc apparié** plutôt qu'à la session jouée.
+Le §33.5 posait l'alternative « monter le débit ou l'indexer sur les PV max » : la mesure montre que
+**les deux auraient manqué la cause**. La régénération tourne à **19,2 PV/s nominaux pour 8,2 rendus**
+(**58 % jeté**) parce que le porteur passe **100 % de l'overtime au-dessus de 90 % de ses PV max** et
+meurt d'un **pic**, pas d'usure — monter le débit n'aurait fait que grossir la part perdue. → `RegenReserve`
+(logique pure) : le tick **soigne d'abord**, le surplus alimente une **réserve** (20 s de débit, bornée
+à 25 % des PV max) qui **absorbe le prochain coup**, après les i-frames. Le plafond dépend du **débit**
+et non des seuls PV max, sinon une prise finirait par valoir quarante. Lisibilité (l'angle mort du
+§33.5 se rejouerait) : liseré cyan sous la barre de vie, et un coup entièrement absorbé se lit **paré**
+— flash cyan, aucun son de blessure. **Validé au banc sur les 4 mêmes graines** : régénération rendue
+**8,2 → 15,9 PV/s** (+94 %, **4/4 en hausse**) et **temps soutenable inchangé** (60,7 %, classé bruit)
+— la carte devient utile **sans** allonger l'overtime, donc sans rouvrir `StatAcceleration = 2,25`.
+⚠ Ce que le banc ne dit pas : le bot tire ses cartes **au hasard**, donc l'*arbitrage* d'un humain
+reste à observer. ⚠ L'appariement est fiable sur les métriques de **pression**, fragile sur celles de
+**build** (PV max, puissance) dès que le changement modifie la longueur de la run.
+Design → `docs/GDD.md` **§33.6** ; mesures → `docs/TEST_REPORT.md`. **272 tests.**
 
 **(4) Banc de mesure — sortir du bruit** (2026-07-29, non publié). Les trois chantiers d'équilibrage
 précédents se sont réglés à **une session jouée par valeur**, alors que le relevé (g) a établi que la

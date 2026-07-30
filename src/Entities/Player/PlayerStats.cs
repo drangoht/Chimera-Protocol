@@ -17,6 +17,12 @@ public partial class PlayerStats : Resource
     [Export] public float CooldownReduction { get; set; } = 0.0f;
     /// <summary>Régénération HP/s continue (upgrade meta hp_regen). Défaut 0, max 1.2 HP/s (3 niveaux).</summary>
     [Export] public float HpRegenPerSecond { get; set; } = 0.0f;
+    /// <summary>
+    /// PV mis de côté par la <see cref="RegenReserve"/> : le surplus de régénération qui serait perdu à
+    /// PV pleins, absorbé avant les PV au prochain coup. Non exporté vers l'inspecteur — c'est un état
+    /// de run, pas un réglage.
+    /// </summary>
+    public float RegenReserveCharge { get; set; } = 0.0f;
 
     // Vitesse de base sauvegardée pour les recalculs servo_motors
     [Export] public float BaseSpeed { get; set; } = 200f;

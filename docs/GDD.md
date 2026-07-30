@@ -2771,3 +2771,48 @@ La valeur reste inchangée **délibérément** : le retour porte sur la lisibili
 le même lot empêcherait de savoir laquelle des deux causes agit. Si la carte reste boudée une fois
 visible, alors seulement monter le débit ou l'indexer sur les PV max (elle suivrait la pente du
 Blindage au lieu de décrocher).
+
+### 33.6 Réserve de régénération — la carte ne manquait pas de valeur, elle en perdait 58 % (2026-07-30)
+
+Le §33.5 posait l'alternative « monter le débit ou l'indexer sur les PV max ». La campagne du
+2026-07-30 (4 runs appariées, overtime, Fournaise — `docs/TEST_REPORT.md`) montre que **les deux
+auraient manqué la cause** :
+
+| mesure en overtime | valeur |
+|---|---|
+| régénération **nominale** | 19,2 PV/s |
+| régénération **réellement rendue** | **8,2 PV/s** |
+| **débit perdu** (clampé à `MaxHp`) | **58 %** |
+| temps passé au-dessus de 90 % des PV max | **100 %** |
+| soins **ponctuels** (orbes, lifesteal, Blindage) | 86,4 PV/s |
+
+Le porteur ne meurt pas d'attrition — il passe l'overtime à PV quasi pleins et meurt d'un **pic** qui
+traverse. Un flux continu de PV n'a donc presque aucune fenêtre pour agir, et **monter le débit
+n'aurait fait que grossir la part jetée**. Le commentaire d'origine de la carte (« il meurt de ne
+jamais reprendre ce qu'il a perdu ») décrivait un mode de mort que la mesure réfute.
+
+**Règle retenue** — ne rien ajouter, ne plus rien perdre (`RegenReserve`, logique pure) :
+
+1. le tick de régénération **soigne d'abord** (un PV rendu vaut mieux qu'un PV promis) ;
+2. à PV pleins, le surplus alimente une **réserve** au lieu d'être jeté ;
+3. un coup encaissé est absorbé par la réserve **avant** les PV — après les i-frames, l'égide et la
+   Plaque Adaptative : la réserve est le dernier rempart, jamais un substitut à l'invulnérabilité ;
+4. capacité = **20 s de régénération accumulée**, bornée à **25 % des PV max**.
+
+Le plafond dépend du **débit**, et non des seuls PV max : sinon une unique prise finirait par offrir le
+même tampon que quarante, et la carte perdrait la progression sans plafond qui justifie les cartes de
+surcharge (§33). À 0,6 PV/s (1 prise) la réserve vaut 12 PV — négligeable, comme il se doit ; à
+24 PV/s (~40 prises), 480 PV, sous le garde-fou de 681 PV à 2 725 PV max.
+
+**Lisibilité** (l'angle mort du §33.5 se rejouerait sinon) : liseré cyan sous la barre de vie, rempli
+de 0 à la capacité, masqué en l'absence de toute régénération ; un coup entièrement absorbé se lit
+comme **paré** — flash cyan, vibration courte, **aucun son de blessure**.
+
+**Effet sur la télémétrie** : les PV mis en réserve ne sont **pas** comptés à la mise en réserve mais à
+l'absorption. Compter les deux doublerait la régénération dans le journal et gonflerait « temps
+soutenable » — l'erreur de mesure même que le chantier du banc venait de corriger.
+
+**Intention d'équilibrage : difficulté constante.** L'objectif est la qualité du choix, pas
+l'allongement de l'overtime (8:36 mesurés sont dans la fenêtre de 5-10 min du §9.2). Critère de
+validation au banc : « temps soutenable » doit rester dans la bande de **60,7 % ± 6 %** (le plus petit
+écart que la campagne sache détecter). Au-delà, réduire `ReserveSeconds` avant toute autre valeur.

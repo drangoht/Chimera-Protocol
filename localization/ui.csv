@@ -132,7 +132,7 @@ CARD_LEVEL," (Lv. {0})"," (Niv. {0})"," (Niv. {0})"
 CARD_OVERLOAD_PLATING,Emergency Plating,Blindage d'urgence,Blindaje de emergencia
 CARD_OVERLOAD_PLATING_DESC,+45 max HP and heals the same amount.,+45 PV max et soigne d'autant.,+45 PV máx. y cura otro tanto.
 CARD_OVERLOAD_REGEN,Self-Repair,Auto-réparation,Autorreparación
-CARD_OVERLOAD_REGEN_DESC,"+0.6 HP per second, automatically and forever. No key to press.","+0,6 PV par seconde, automatiquement et en permanence. Aucune touche à presser.","+0,6 PV por segundo, automáticamente y siempre. Ninguna tecla que pulsar."
+CARD_OVERLOAD_REGEN_DESC,"+0.6 HP per second. At full health it fills a reserve (cyan bar) that soaks up the next hit.","+0,6 PV par seconde. À PV pleins, remplit une réserve (liseré cyan) qui encaisse le prochain coup.","+0,6 PV por segundo. Con la vida al máximo, llena una reserva (línea cian) que absorbe el próximo golpe."
 CARD_OVERLOAD_DAMAGE,Power Surge,Surtension,Sobretensión
 CARD_OVERLOAD_DAMAGE_DESC,+5% damage on every weapon.,+5 % de dégâts sur toutes les armes.,+5 % de daño en todas las armas.
 ENEMY_RUST_SWARM_NAME,Rust Swarm,Essaim de Rouille,Enjambre de Herrumbre

@@ -62,9 +62,15 @@ public static class OverloadCards
         new("overload_plating", "CARD_OVERLOAD_PLATING", "CARD_OVERLOAD_PLATING_DESC", 45f);
 
     /// <summary>
-    /// +0,6 PV/s de régénération par prise. C'est le levier qui transforme l'attrition en quelque
-    /// chose de soutenable : en overtime le joueur ne meurt pas d'un coup encaissé, il meurt de ne
-    /// jamais reprendre ce qu'il a perdu.
+    /// +0,6 PV/s de régénération par prise, et — depuis le 2026-07-30 — le surplus perdu à PV pleins
+    /// alimente la <see cref="RegenReserve"/>, qui absorbe le prochain coup.
+    ///
+    /// <para>⚠ Cette carte a longtemps porté la justification suivante : « en overtime le joueur ne
+    /// meurt pas d'un coup encaissé, il meurt de ne jamais reprendre ce qu'il a perdu ». <b>La mesure
+    /// l'a réfutée</b> : le porteur passe 100 % de l'overtime au-dessus de 90 % de ses PV max et meurt
+    /// d'un <b>pic</b>. C'est bien un coup encaissé qui tue, et 58 % du débit de cette carte était
+    /// jeté faute de PV manquants à rendre. D'où la réserve, qui en fait un tampon anti-pic sans
+    /// changer son delta. Détail : GDD §33.6.</para>
     /// </summary>
     public static readonly Card Regen =
         new("overload_regen", "CARD_OVERLOAD_REGEN", "CARD_OVERLOAD_REGEN_DESC", 0.6f);

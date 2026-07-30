@@ -14,6 +14,9 @@ public partial class HUD : CanvasLayer
 	private static readonly Color HpHigh = new(0.30f, 1f,   0.70f);
 	private static readonly Color HpMid  = new(1f,    0.62f, 0.12f);
 	private static readonly Color HpLow  = new(0.95f, 0.25f, 0.18f);
+	// Réserve de régénération : cyan clair, distinct des trois teintes de PV — c'est un tampon, pas de
+	// la vie, et le joueur doit lire les deux d'un coup d'œil.
+	private static readonly Color ReserveColor = new(0.40f, 0.95f, 0.92f);
 	private static readonly Color Dim    = new(0.62f, 0.66f, 0.78f);
 
 	private Color _accent = new(0.30f, 0.85f, 0.95f);
@@ -46,6 +49,10 @@ public partial class HUD : CanvasLayer
 	// Régénération PV/s, à droite de la barre de vie (masqué si nulle).
 	private Label        _regenLabel = null!;
 	private float        _lastRegenShown = -1f;
+	// Réserve de régénération (RegenReserve) : liseré sous la barre de vie, masqué sans régénération.
+	private Panel        _reserveBar  = null!;
+	private Panel        _reserveFill = null!;
+	private float        _lastReserveRatio = -1f;
 	// Rappel de la touche d'esquive, sous la rangée de greffes (masqué sans greffe de dash).
 	private Label        _dashHint = null!;
 	private string       _dashHintKey = "";
@@ -117,6 +124,13 @@ public partial class HUD : CanvasLayer
 		_regenLabel.Size = new Vector2(70, 16);
 		_regenLabel.VerticalAlignment = VerticalAlignment.Center;
 		_regenLabel.Visible = false;
+
+		// Réserve de régénération : liseré fin sous la barre de vie, rempli de 0 à sa capacité. Sans
+		// lui, le joueur ne verrait ni qu'il accumule un tampon en restant intact, ni qu'un coup vient
+		// d'être paré — et la carte redeviendrait le « choix mort » que ce chantier corrige (GDD §33.6).
+		(_reserveBar, _reserveFill, _) = MakeBar(root, new Vector2(30, 70),
+			new Vector2(HpBarW, 4), new Color(0.08f, 0.09f, 0.14f, 0.6f), ReserveColor);
+		_reserveBar.Visible = false;
 
 		(_, _xpFill, _xpFillStyle) = MakeBar(root, new Vector2(30, 82), new Vector2(XpBarW, 6),
 			new Color(0.08f, 0.09f, 0.14f, 0.95f), _accent);
@@ -553,6 +567,30 @@ public partial class HUD : CanvasLayer
 		_regenLabel.Text = "♥ +" + regenPerSecond.ToString("0.0") + "/s";
 	}
 
+	/// <summary>
+	/// Liseré de réserve sous la barre de vie : rempli de 0 à la capacité (<see cref="RegenReserve"/>).
+	/// Masqué tant que le joueur n'a aucune régénération — sans source, la réserve n'existe pas et un
+	/// liseré vide en permanence ne serait que du bruit visuel.
+	/// </summary>
+	private void UpdateReserveBar(PlayerStats stats)
+	{
+		if (_reserveBar == null || !IsInstanceValid(_reserveBar)) return;
+
+		float capacity = RegenReserve.Capacity(stats.HpRegenPerSecond, stats.MaxHp);
+		bool show = capacity > 0.01f;
+		if (_reserveBar.Visible != show)
+		{
+			_reserveBar.Visible = show;
+			_reserveFill.Visible = show;
+		}
+		if (!show) return;
+
+		float ratio = Mathf.Clamp(stats.RegenReserveCharge / capacity, 0f, 1f);
+		if (Mathf.IsEqualApprox(ratio, _lastReserveRatio)) return;
+		_lastReserveRatio = ratio;
+		_reserveFill.Size = new Vector2(Mathf.Max(HpBarW * ratio, 0f), 4f);
+	}
+
 	// ── PV ─────────────────────────────────────────────────────────────────────
 	private void UpdateHp(float delta)
 	{
@@ -562,6 +600,7 @@ public partial class HUD : CanvasLayer
 		float target = max > 0f ? Mathf.Clamp(cur / max, 0f, 1f) : 0f;
 
 		UpdateRegenLabel(player.Stats.HpRegenPerSecond);
+		UpdateReserveBar(player.Stats);
 
 		if (target >= _displayHpRatio) _displayHpRatio = target;
 		else _displayHpRatio = Mathf.MoveToward(_displayHpRatio, target, delta * HpDrainSpeed);

@@ -541,16 +541,27 @@ public partial class Player : CharacterBody2D
         if (_sprite != null) _sprite.SelfModulate = tint;
     }
 
-    /// <summary>Auto-Réparation (upgrade meta hp_regen) : régénération continue clampée à MaxHp.</summary>
+    /// <summary>
+    /// Auto-Réparation (upgrade meta hp_regen, carte de surcharge <c>overload_regen</c>, greffes) :
+    /// soigne d'abord, puis met le surplus en <see cref="RegenReserve"/> au lieu de le perdre — 58 % du
+    /// débit était jeté à PV pleins (mesure du 2026-07-30, cf. GDD §33.6).
+    /// </summary>
     private void UpdateHpRegen(double delta)
     {
         if (Stats.HpRegenPerSecond <= 0f || Stats.CurrentHp <= 0f) return;
-        float before = Stats.CurrentHp;
-        Stats.CurrentHp = Mathf.Min(Stats.MaxHp, Stats.CurrentHp + Stats.HpRegenPerSecond * (float)delta);
-        // Le montant RÉELLEMENT rendu, pas le taux nominal : à PV pleins la régénération tourne à vide
-        // et c'est précisément ce que le journal doit pouvoir montrer (cf. PowerTelemetry.NotifyRegen).
-        PowerTelemetry.NotifyRegen(Stats.CurrentHp - before);
-        if (Stats.CurrentHp != before)
+
+        var (healed, stored, reserve) = RegenReserve.ApplyRegen(
+            Stats.CurrentHp, Stats.MaxHp, Stats.RegenReserveCharge,
+            Stats.HpRegenPerSecond, (float)delta);
+
+        Stats.CurrentHp += healed;
+        Stats.RegenReserveCharge = reserve;
+        // Seuls les PV RÉELLEMENT rendus sont journalisés. Ce qui part en réserve (`stored`) est un
+        // transfert, pas un gain : il sera compté à l'absorption, dans TakeDamage. Compter les deux
+        // doublerait la régénération dans le journal et gonflerait « temps soutenable » — précisément
+        // le genre d'erreur de mesure que ce chantier existe pour corriger.
+        PowerTelemetry.NotifyRegen(healed);
+        if (healed > 0f)
             EmitSignal(SignalName.HpChanged, Stats.CurrentHp, Stats.MaxHp);
     }
 
@@ -682,13 +693,31 @@ public partial class Player : CharacterBody2D
         if (_invulnTimer > 0f) return;
         _invulnTimer = InvulnWindow;
 
-        Stats.CurrentHp = Mathf.Max(0f, Stats.CurrentHp - amount);
+        // Réserve de régénération : dernier rempart avant les PV, jamais un substitut aux i-frames —
+        // d'où sa place APRÈS tous les retours anticipés ci-dessus (cf. RegenReserve).
+        var (toHp, absorbed, reserve) = RegenReserve.Absorb(amount, Stats.RegenReserveCharge);
+        Stats.RegenReserveCharge = reserve;
+        // Les PV épargnés par la réserve sont de la régénération enfin rendue : c'est ici qu'elle est
+        // journalisée, et pas au moment de la mise en réserve (cf. UpdateHpRegen).
+        if (absorbed > 0f) PowerTelemetry.NotifyRegen(absorbed);
+
+        Stats.CurrentHp = Mathf.Max(0f, Stats.CurrentHp - toHp);
         // Courbe de puissance (--power-curve) : seuls les coups qui passent réellement comptent —
-        // i-frames, égide et absorption sont déjà sortis par les retours anticipés ci-dessus.
+        // i-frames, égide et absorption sont déjà sortis par les retours anticipés ci-dessus. Le
+        // montant journalisé reste le coup ENTIER : c'est la pression du contenu, indépendante de ce
+        // que la défense du joueur en absorbe.
         PowerTelemetry.NotifyDamageTaken(amount);
         EmitSignal(SignalName.HpChanged, Stats.CurrentHp, Stats.MaxHp);
 
-        if (Stats.CurrentHp > 0f)
+        // Un coup entièrement absorbé se lit comme un coup PARÉ, pas comme une blessure : flash cyan
+        // et pas de son de douleur. Sans cette distinction, le joueur ne peut pas voir que sa réserve
+        // travaille — l'angle mort de lisibilité déjà rencontré sur l'Auto-réparation (GDD §33.5).
+        if (toHp <= 0f && absorbed > 0f)
+        {
+            HitFlash(0.12f, new Color(0.6f, 1.6f, 1.4f, 1f));
+            Rumble(0.25f, 0.1f);
+        }
+        else if (Stats.CurrentHp > 0f)
         {
             AudioSystem.Instance?.PlaySfx("sfx_player_hit");
             HitFlash(0.1f);

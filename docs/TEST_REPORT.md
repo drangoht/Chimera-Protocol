@@ -4,6 +4,51 @@ Rapport de sessions de test. Chaque section correspond à une session de test di
 
 ---
 
+## Réserve de régénération — validée au banc apparié : +94 % de régénération rendue, difficulté inchangée — 2026-07-30
+
+**Objet :** valider `RegenReserve` (GDD §33.6) contre la référence figée le même jour, sur le critère
+posé d'avance : **rendre la carte utile sans déplacer la difficulté**.
+
+**Protocole :** 4 runs sur les **mêmes graines** (1000-1003) que
+`docs/bench/ref_overtime_225.json`, `--overtime --minutes 20`, Fournaise. Comparaison **appariée**,
+lecture par **test des signes**.
+
+| métrique | avant | après | delta médian | signes | verdict |
+|---|---|---|---|---|---|
+| **régénération rendue/s** | 8,2 | **15,9** | **+7,3** | **4/4** | **net** |
+| **temps soutenable** | 60,7 % | 60,7 % | −1,8 | 2/4 | **bruit** |
+| survie théo. hors soins | 24,4 s | 23,6 s | −0,9 | 2/4 | bruit |
+| soins ponctuels/s | 86,4 | 77,3 | −3,5 | 0/4 | net |
+| DPS en overtime | 27 179 | 28 001 | +902 | 3/4 | net |
+
+**Les deux objectifs sont tenus :**
+
+1. **La régénération rendue double** (+94 %), et le test des signes est **unanime** — les 4 paires
+   poussent dans le même sens. Le débit nominal n'a pas changé d'un PV : c'est bien le gaspillage de
+   58 % qui est récupéré, exactement le mécanisme visé.
+2. **La difficulté n'a pas bougé** : « temps soutenable » reste à 60,7 % (delta classé *bruit*), donc
+   dans la bande de validation ±6 %. La carte devient utile sans allonger l'overtime, ce qui était la
+   condition pour ne pas rouvrir `StatAcceleration = 2,25`.
+
+### Réserve de lecture : l'appariement diverge dès que le nombre de tirages change
+
+`PV max` (0/4, −125) et `puissance` (3/4, +650) sont classés « net » et **ne doivent pourtant pas être
+lus comme des effets du changement**. La réserve fait gagner ~2 niveaux de plus (le porteur survit
+mieux, tue davantage), donc **le nombre de cartes tirées change** — et la séquence RNG, bien que fixée
+par la graine, ne fait plus correspondre les mêmes tirages. Sous `--auto-play` les cartes sont tirées
+**au hasard**, si bien qu'un Blindage de moins suffit à faire bouger les PV max de 125.
+
+Règle d'usage qui en découle : **l'appariement est fiable pour les métriques de pression** (régénération
+rendue, dégâts subis, temps soutenable — des états moyens), et **fragile pour les métriques de build**
+(PV max, puissance, niveau) dès que le changement testé modifie la longueur de la run.
+
+### Ce que le banc ne peut pas dire
+
+La question de design d'origine — *un joueur humain choisira-t-il enfin cette carte ?* — reste
+**ouverte** : le bot tire ses cartes au hasard et n'arbitre pas. Le banc établit que la carte délivre
+désormais ce qu'elle promet ; seule une session jouée dira si l'arbitrage change (44 Blindage contre 1
+Auto-réparation, GDD §33.5). À observer avec le liseré cyan sous la barre de vie.
+
 ## Banc multi-run — première campagne réelle : le canal de soin dominant n'était pas celui qu'on réglait — 2026-07-30
 
 **Objet :** produire la mesure de référence du banc multi-run (`tools/power_curve_multi.py`, livré la
