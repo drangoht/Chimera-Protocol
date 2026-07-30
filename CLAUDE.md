@@ -15,9 +15,9 @@ cyborgs, robots), inspiré de Vampire Survivors et Everything is Crab.
 - **Synthétiser du volume** (relever/résumer/inventorier à partir de plusieurs gros fichiers : `data/*.json`, docs longues, logs, rapports de test) → déléguer au **MCP local** `mcp__local-llm__local_digest` / `local_map` (outils différés : `ToolSearch` d'abord) plutôt que d'enchaîner les `Read` : le serveur lit les fichiers côté LM Studio, seule la synthèse entre en contexte. Ne pas l'utiliser pour du code que l'on s'apprête à éditer — là, le contenu réel est nécessaire.
 
 **Phase actuelle : 1.24.0 PUBLIÉE le 2026-07-30** (réserve de régénération, mid-boss à 72 px, banc de
-mesure apparié) — build butler **#1843179**, `version.json` à 1.24.0. Devlogs 1.21.0 → 1.23.0 collés
-sur itch ; **reste côté utilisateur : coller le devlog 1.24.0** (corps prêt en tête de
-`docs/DEVLOG.md`). **Mid-boss validés en combat** le 2026-07-30. Seul point encore ouvert :
+mesure apparié) — build butler **#1843179**, `version.json` à 1.24.0, **devlog collé sur itch**
+(tous les devlogs sont à jour, plus rien en attente côté publication).
+**Mid-boss validés en combat** le 2026-07-30. Seul point encore ouvert :
 l'**arbitrage** de l'Auto-réparation une fois la réserve en place — le banc ne peut pas trancher un
 choix de carte (le bot tire au hasard), cf. (5) ci-dessous.
 
