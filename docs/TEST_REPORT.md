@@ -4,6 +4,49 @@ Rapport de sessions de test. Chaque section correspond à une session de test di
 
 ---
 
+## Ascension — le cadre fonctionne : temps soutenable 60,7 % → 39,9 % — 2026-07-30
+
+**Objet :** vérifier que le lot 1 de `docs/ENDGAME_PLAN.md` produit une difficulté réelle, sur le
+critère posé par le plan lui-même (§5) : un cran doit faire baisser le **temps soutenable** de plus de
+**6 %**, sinon il coûte un palier au joueur sans rien changer.
+
+**Protocole :** 4 runs sur les **mêmes graines** (1000-1003) que `docs/bench/ref_overtime_225.json`,
+`--overtime --minutes 20 --ascension 5`, Fournaise. Comparaison **appariée**, test des signes.
+
+| métrique | avant (asc. 0) | après (asc. 5) | delta médian | signes | verdict |
+|---|---|---|---|---|---|
+| **temps soutenable** | 60,7 % | **39,9 %** | **−23,2** | **0/4** | **net** |
+| **survie théo. hors soins** | 24,4 s | **12,3 s** | **−11,8** | **0/4** | **net** |
+| dégâts subis/s | 94,9 | 130,7 | +35,8 | 4/4 | net |
+| soins ponctuels/s | 86,4 | 117,6 | +31,1 | 4/4 | net |
+| PV max | 2 725 | 2 082 | −665 | 0/4 | net |
+| niveau final | 128,5 | 93,0 | −34,5 | 0/4 | net |
+
+**Le critère est dépassé d'un facteur 5** : −34 % de temps soutenable là où 6 % suffisaient, et les
+quatre paires poussent dans le même sens. La survie théorique est **divisée par deux**.
+
+Signe le plus parlant : **2 runs sur 4 finissent par une mort réelle** (`seed 1002` à 1:30 d'overtime,
+`seed 1003` à 1:53), alors que les quatre atteignaient le plafond du banc sans ascension. Le bot —
+celui qui tenait 22 minutes d'overtime et « survivait bien mieux qu'un humain » — ne passe plus la
+deuxième minute sur la moitié des graines.
+
+Lecture des baisses de **PV max** et de **niveau** : ce ne sont pas des effets directs des crans mais
+leurs conséquences (moins de temps de jeu, donc moins de cartes). La réserve de lecture du 2026-07-30
+s'applique — l'appariement est fiable sur les métriques de pression, fragile sur celles de build dès
+que le changement modifie la longueur de la run.
+
+### Ce qui n'est pas encore mesuré
+
+Seul le **cumul** des cinq crans est validé, pas chaque cran isolément — cela demanderait cinq
+campagnes appariées (≈2 h 20 de banc). Deux conséquences :
+
+1. il reste possible qu'un cran particulier soit **sous le seuil de détection** et ne mérite pas sa
+   place dans l'échelle ;
+2. la **progressivité** de la courbe (le saut entre crans consécutifs) n'est pas connue : rien ne
+   garantit encore que le cran 2 soit un pas plus petit que le cran 5.
+
+À instruire cran par cran avant d'ajouter les crans VI-X du lot 2.
+
 ## Réserve de régénération — validée au banc apparié : +94 % de régénération rendue, difficulté inchangée — 2026-07-30
 
 **Objet :** valider `RegenReserve` (GDD §33.6) contre la référence figée le même jour, sur le critère

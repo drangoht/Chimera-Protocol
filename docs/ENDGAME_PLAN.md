@@ -132,11 +132,32 @@ leur ressenti se juge **en jouant**, le banc n'en mesure que la pression.
 
 Chaque lot est publiable seul et laisse le jeu cohérent.
 
-**Lot 1 — le cadre (viser 1.25.0).** `AscensionTable` en logique pure (`src/Core/Rules/`) sur le patron
-de `LevelThreat` : tables indexées, `EchoMult`, amortissement des champions. Sélecteur d'ascension à
-l'écran de niveau (avec la liste des crans actifs, lisible **avant** de lancer), déblocage par victoire,
-persistance dans `settings.cfg`, affichage du multiplicateur d'Échos à l'écran de fin. Crans **I à V**
-(leviers existants). Tests unitaires sur la table et le déblocage. Validation au banc, cran par cran.
+**Lot 1 — le cadre. ✅ LIVRÉ le 2026-07-30** (commit `30ec10d`, non publié). `AscensionTable` en logique
+pure sur le patron de `LevelThreat`, sélecteur à l'écran de niveau (liste des règles actives, lisible
+avant de lancer), déblocage global par victoire, persistance + **migration** des anciens `settings.cfg`,
+Échos via une source unique. Crans **I à V**, 21 tests, flag **`--ascension=<n>`** pour le banc.
+
+**Validé au banc** (`docs/TEST_REPORT.md`, 4 graines appariées) : temps soutenable **60,7 % → 39,9 %**
+(0/4, net) et survie théorique **÷2** — le critère des 6 % est dépassé d'un facteur 5, et 2 runs sur 4
+finissent désormais par une **mort réelle** là où les quatre atteignaient le plafond du banc.
+
+⚠ Deux écarts au plan, assumés et documentés dans le code :
+- le cran IV prévu (« une phase de boss en plus ») est **reporté au lot 2** et remplacé par « Sans
+  filet » (l'ancien cran X). Motif : `BossPhases.Count` est une constante à tables fixes et le refactor
+  toucherait le HUD, la télémétrie, douze appels de `RustedCore` et des tests aux seuils codés en dur —
+  une règle **publiée** à re-tester sur cinq incarnations, qui n'a pas sa place dans le lot qui valide
+  le cadre lui-même ;
+- le cran V ne laisse pas le facteur ×3 traverser le plafond d'élites (3 × 0,28 = 84 %, soit la
+  « horde » que le code interdit par commentaire, avec le coût des affixes sur 200-300 entités) : le
+  plafond est relevé **explicitement** à 0,55.
+
+⚠ **Reste à mesurer** : seul le **cumul** des cinq crans est validé, pas chaque cran isolément
+(≈2 h 20 de banc). La progressivité de la courbe est donc inconnue, et un cran pourrait être sous le
+seuil de détection. À instruire avant le lot 2.
+
+⚠ **Reste au lot 3** : les complétions et records restent indexés par *difficulté* et non par
+ascension. Conséquence temporaire : le badge « vaincu » ne distingue plus les crans (`RecordCompletion`
+reçoit désormais toujours `Normal`).
 
 **Lot 2 — les crans qualitatifs.** **VI** (dégâts en % des PV max), **VII** (corrosion), **VIII**
 (brèche). C'est le cœur du problème mesuré, et le lot le plus risqué : chacun demande du code de

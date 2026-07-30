@@ -21,6 +21,27 @@ mesure apparié) — build butler **#1843179**, `version.json` à 1.24.0, **devl
 l'**arbitrage** de l'Auto-réparation une fois la réserve en place — le banc ne peut pas trancher un
 choix de carte (le bot tire au hasard), cf. (5) ci-dessous.
 
+**(6) Ascension — challenge de fin de partie** (2026-07-30, non publié). Plan complet →
+**`docs/ENDGAME_PLAN.md`** (validé : ascension cumulative, **choisie et récompensée**, rejouabilité par
+de nouvelles *raisons* de rejouer et non par du contenu neuf). Diagnostic : le jeu devenait facile parce
+que la défense du joueur croît **sans plafond** (Blindage +45 PV/prise) face à une menace à **courbe
+fixe**, densité déjà saturée et plafond de difficulté à ×1,35 — et surtout parce que la menace ne posait
+qu'**une** question (des statistiques), donc le joueur n'avait qu'**une** réponse, qu'il gagne toujours.
+**Lot 1 livré** : `AscensionTable` (logique pure) — un cran = **une règle nommée** lisible avant de
+lancer, qui retire une certitude ; les statistiques ne montent plus après le cran 1 (un test le
+verrouille). I Meute · II Hémorragie (soins −40 %, le canal **dominant** : 86,4 PV/s contre 8,2) ·
+III Compte à rebours (overtime à la 10ᵉ — attaque le temps de *build*) · IV Sans filet · V Élite
+ordinaire. L'ascension **absorbe** l'ancienne difficulté : le cran 1 vaut « Difficile » aux mêmes
+valeurs, donc **les records déjà gagnés restent exacts** ; « Facile » survit comme mode d'**assistance**,
+hors échelle (migration des `settings.cfg` testée). Échos +20 %/cran via une **source unique**
+(`TotalEchoMult`) — `EchoFormula` et `RunEndScreen` doivent appliquer le même facteur, sinon la somme
+animée diverge du total crédité. Nouveau flag **`--ascension=<n>`** : sans lui aucun cran n'est
+mesurable (le bot ne traverse pas l'écran de sélection), non persisté via la même parade que `--lang`.
+**Validé au banc** : temps soutenable **60,7 % → 39,9 %** (0/4, net), survie théorique **÷2**, et
+**2 runs sur 4 meurent** là où les quatre atteignaient le plafond. ⚠ Seul le **cumul** des 5 crans est
+mesuré, pas chaque cran (≈2 h 20 de banc) → progressivité inconnue. Mesures → `docs/TEST_REPORT.md`.
+**293 tests.**
+
 **(5) Réserve de régénération — la carte ne manquait pas de valeur, elle en perdait 58 %**
 (2026-07-30, **publié en 1.24.0**). Premier réglage instruit **au banc apparié** plutôt qu'à la session jouée.
 Le §33.5 posait l'alternative « monter le débit ou l'indexer sur les PV max » : la mesure montre que
