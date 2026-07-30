@@ -4,6 +4,42 @@
 > `release-manager`). Entrées en ordre décroissant (la plus récente en haut). Ton orienté
 > joueur, EN puis FR (audience itch surtout anglophone).
 
+## v1.24.0 — Auto-repair was throwing away 58 % of what it healed (2026-07-30)
+
+**Changed — Auto-repair now banks what it can't heal**
+- Auto-repair was the card nobody took. On a measured run: **44 Plating, 1 Auto-repair**. We assumed
+  it was a readability problem and gave it a HUD indicator last patch. It wasn't enough, so this time
+  we instrumented it — and the numbers said something else entirely.
+- Auto-repair was ticking at **19.2 health per second and delivering 8.2**. The other **58 % was
+  being thrown away**, because you spend **100 % of overtime above 90 % of your max health** and you
+  die to a **spike**, not to attrition. A steady trickle of health has almost no window to do
+  anything. Raising the number would only have grown the part that gets discarded.
+- So it doesn't heal harder — it stops wasting. At full health the tick fills a **reserve** (the pale
+  bar under your health) that **soaks up your next hit**. A hit absorbed entirely reads as *parried*:
+  cyan flash, no damage sound. The reserve holds **20 seconds of your regen rate**, capped at a
+  quarter of your max health, so it scales with how much you invested in the card.
+- Measured on four paired benchmark runs: health actually delivered went **from 8.2 to 15.9 per
+  second (+94 %)**, with overtime difficulty **unchanged** — the card became worth taking without
+  making the run easier.
+
+**Changed — champions of the biome are the right size now**
+- The three biome champions were drawn at 48 pixels so they wouldn't rival the final boss at 64. But
+  the final boss is *rendered* at 154 pixels, and the roaming mini-bosses are 64 — which made the
+  champions the smallest bosses in the game. Worse, the Colossus **hit you from outside its own
+  body**: 72 pixels of contact for a 48-pixel silhouette.
+- All three now render at **72 pixels**, matched to their actual contact radius. The hierarchy
+  finally lines up: wildlife 32 · mini-bosses 64 · biome champions 72 · final boss 154.
+
+**Under the hood — we stopped tuning this game on single runs**
+- Three balance passes in a row were decided on **one played session each**, while two sessions of
+  the same player differed by a factor of **2.4** in survival — measured *at the point where the
+  setting being tested has no effect yet*. A single run was mostly measuring luck.
+- The benchmark bot now actually **moves** (it kites, collects and dashes), so it dies for real and
+  survival is measurable without invulnerability. Runs can be **seeded** and replayed, so two
+  settings can be compared on **identical** waves and card draws. Dispersion dropped from **240 % to
+  4-13 %**: a change worth more than ~6 % is now decidable in under half an hour, with no session
+  played at all.
+
 ## v1.23.0 — Overtime is a real run now, and every biome has its champion (2026-07-29)
 
 **Added — a mid-run champion for every biome**
