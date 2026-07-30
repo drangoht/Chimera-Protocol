@@ -84,8 +84,32 @@ Trois lectures, toutes issues du même relevé :
 seuils de détection ci-dessus valent pour cette taille de campagne ; « temps soutenable » est de loin
 la métrique la plus stable (bruit 5 %) et devient le candidat naturel pour trancher un réglage.
 
-**Suite proposée :** campagne appariée à 6 runs (≈70 min) pour figer la référence de `2,25`, puis
-n'instruire l'équilibrage d'overtime que via « temps soutenable » et « survie théorique ».
+### Défaut de méthode nº 3 : une run sans overtime pollue une campagne d'overtime
+
+En agrégeant les graines relevées, la run de calibration du bot (`seed 777`, 7:18, **jamais entrée en
+overtime**) apportait des **zéros** sur toutes les colonnes « en OT » : médianes écrasées et p10 à 0.
+Corrigé — ces runs sont exclues des métriques « en OT » seulement, et restent comptées pour le niveau,
+la puissance et les PV max. Corollaire visible dans le rapport : mélanger deux protocoles (run depuis
+0 vs `--overtime`) fait bondir le bruit sur les PV max de **21 % à 64 %**. Une campagne doit être
+homogène ; l'outil le signale mais ne peut pas le réparer.
+
+### La campagne n'a pas pu être complétée — et c'est une contrainte d'outillage, pas de mesure
+
+Deux tentatives de complétion (graines 1002-1003) **tuées par l'environnement** : les tâches de fond
+n'y survivent pas à ~12 min réelles par run — la seconde a été coupée en pleine première run. Les
+garde-fous ajoutés ce jour ont absorbé le dégât : les 3 relevés partiels sont écartés automatiquement
+et le journal reste exploitable.
+
+**Reste à faire :** figer la référence de `2,25` en lançant la campagne **au premier plan**, run par
+run (le journal est cumulatif) :
+
+```
+py tools/power_curve_multi.py --overtime --runs 1 --seed-base 1002   # puis 1003…
+py tools/power_curve_multi.py --report-only --runs 4 --out ref_225.json
+```
+
+Puis n'instruire l'équilibrage d'overtime que via `--compare ref_225.json`, en lisant **« temps
+soutenable »** et **« survie théorique »** — jamais la survie du bot.
 
 ---
 

@@ -111,6 +111,7 @@ class Run:
     ot_ttl_s: float = 0.0        # survie théorique hors soins ponctuels (s) — cf. summarize()
     ot_sustain_pct: float = 0.0  # % du temps d'overtime où les PV rendus couvrent les PV perdus
     samples: int = 0
+    ot_samples: int = 0          # échantillons en phase overtime (0 = la run n'y est jamais entrée)
     rows: list[list[str]] = field(default_factory=list, repr=False)
 
     @property
@@ -199,6 +200,7 @@ def summarize(run: Run) -> None:
     run.final_hp_max = int(num(last, C_HPMAX))
 
     ot = [r for r in run.rows if r[C_PHASE] == "OT"]
+    run.ot_samples = len(ot)
     if ot:
         # Référence = premier échantillon marqué OT, à un intervalle d'échantillonnage près de
         # l'entrée réelle. Ce décalage (≤15 s) est constant d'une run à l'autre : il ne biaise pas la
@@ -311,11 +313,24 @@ def print_campaign(runs: list[Run], label: str) -> dict:
         print("mort. Leur survie est un PLANCHER, pas une mesure — augmenter --minutes pour laisser le")
         print("bot mourir, sans quoi les durées ci-dessous mesurent le plafond du banc, pas le réglage.")
 
+    # Une run qui n'a jamais atteint l'overtime relève des zéros sur toutes les colonnes « en OT ».
+    # Les agréger avec les autres écrase les médianes et tire le p10 à 0 — une run de calibration du
+    # bot (7:18, aucun overtime) suffisait à fausser toute la campagne.
+    with_ot = [r for r in runs if r.ot_samples > 0]
+    if len(with_ot) < len(runs):
+        print()
+        print(f"NOTE : {len(runs) - len(with_ot)} run(s) n'ont jamais atteint l'overtime — exclue(s) "
+              f"des métriques « en OT » seulement.")
+
     print()
     print(f"{'métrique':<28}{'médiane':>10} {'p10':>10} {'p90':>10} {'bruit':>8}   plus petit écart détectable")
     summary: dict[str, dict] = {}
     for label_m, attr, is_duration in METRICS:
-        values = [float(getattr(r, attr)) for r in runs]
+        scope = with_ot if attr.startswith("ot_") else runs
+        if not scope:
+            print(f"{label_m:<28}{'—':>10} {'—':>10} {'—':>10} {'—':>8}   aucune run en overtime")
+            continue
+        values = [float(getattr(r, attr)) for r in scope]
         st = Stat.of(values)
         summary[attr] = asdict(st)
         # La médiane résiste à la censure à droite tant que MOINS de la moitié des runs sont
@@ -366,8 +381,16 @@ def compare(before_path: Path, after: list[Run], label: str) -> None:
         # Une paire dont un côté a été arrêté par la limite de temps ne dit rien sur la DURÉE : les
         # deux runs auraient peut-être continué. La garder produit un delta nul très convaincant —
         # « le réglage ne change rien » — alors que la mesure n'a simplement pas eu lieu.
-        usable = pairs if not is_duration else [
-            p for p in pairs if not p[1].censored and p[0].get("outcome") != "bench_limit"]
+        if is_duration:
+            usable = [p for p in pairs
+                      if not p[1].censored and p[0].get("outcome") != "bench_limit"]
+        elif attr.startswith("ot_"):
+            # Même raison que dans print_campaign : sans overtime, les colonnes « en OT » valent zéro
+            # des deux côtés et produisent un delta nul parfaitement trompeur.
+            usable = [p for p in pairs
+                      if p[1].ot_samples > 0 and p[0].get("ot_samples", 1) > 0]
+        else:
+            usable = pairs
         if not usable:
             print(f"{label_m:<28}{'—':>10} {'—':>10} {'—':>14} {'0':>10}/{len(pairs):<5}"
                   f"  ← censuré des deux côtés")
