@@ -514,6 +514,15 @@ def main() -> None:
     if args.overtime:
         args.start_at = args.start_at or 13.0
         args.saturate = True
+        # Un cran de saturation qui AVANCE l'overtime (« Compte à rebours », cran III : durée de run
+        # ×0,77) déplace la ligne de départ. Sans cet alignement, `--start-at 13` fait commencer la run
+        # ~3 minutes APRÈS l'entrée en overtime, escalade déjà lancée : la fenêtre observée n'est plus
+        # celle des autres crans, et la mesure devient ininterprétable — relevé le 2026-07-30, bruit à
+        # 36 % contre 4-9 % ailleurs, une graine morte en 26 secondes.
+        if args.saturation is not None and args.saturation >= 3:
+            args.start_at = round(args.start_at * 0.77, 2)   # cf. SaturationTable.RunDurationMult
+            print(f"[saturation {args.saturation}] entrée en overtime avancée → "
+                  f"--start-at={args.start_at} (sinon la run démarrerait en plein overtime)")
 
     label = args.label or (
         f"{args.biome} ×{args.runs}" + (f" (dès {args.start_at:g} min)" if args.start_at else ""))

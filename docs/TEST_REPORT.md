@@ -88,6 +88,40 @@ dur. Ce n'est pas une contradiction — cette métrique exclut délibérément l
 donc de la hausse de régénération. C'est « temps soutenable » qui tranche ici, parce qu'il compte **tous**
 les PV rendus. Confirmation que c'est la métrique de référence.
 
+### Progressivité de l'échelle — mesure cran par cran
+
+Chaque cran mesuré isolément contre la même référence (4 graines appariées, `--overtime --minutes 20`) :
+
+| cran | règle ajoutée | temps soutenable | pas |
+|---|---|---|---|
+| 0 | — | 60,7 % | — |
+| **I** | Hémorragie (soins −40 %) | **53,6 %** | **−7,1 pts** |
+| **II** | + Meute (statistiques) | **50,0 %** | **−3,6 pts** |
+| III | + Compte à rebours | *non concluant, voir ci-dessous* | — |
+| I→V | cumul des cinq | **39,9 %** | — |
+
+Deux enseignements de design :
+
+1. **Le cran I porte à lui seul la moitié de la descente** (−7,1 points sur les −20,8 du cumul). La
+   porte d'entrée est donc bien dimensionnée depuis l'échange — c'était exactement le défaut signalé par
+   le testeur.
+2. **Le cran II ne pèse que la moitié du cran I** (−3,6 points), et c'est celui qui n'ajoute que des
+   statistiques. La hiérarchie mesurée confirme le parti pris du plan : une règle qui retire une
+   certitude vaut deux fois un multiplicateur.
+
+### Défaut de protocole : un cran qui déplace le temps ne se mesure pas à départ fixe
+
+La mesure du cran III est **écartée** : bruit de **36 %** (contre 4-9 % pour les autres crans) et seuil
+de détection à ±10,4 points — donc inexploitable. Cause identifiée : le cran avance l'overtime à la
+10ᵉ minute, alors que le banc fixe le départ à la 13ᵉ (`--start-at 13`). La run démarrait donc **trois
+minutes après** l'entrée en overtime, escalade déjà lancée, sur une fenêtre incomparable à celle des
+autres crans. Symptôme : une graine morte en **26 secondes** de jeu, niveau 17 contre ~125 ailleurs.
+
+Corrigé dans `power_curve_multi.py` : sous `--overtime`, le point d'entrée suit désormais le même
+facteur que le jeu (`RunDurationMult`) dès le cran III. **Règle générale** : tout cran qui touche à la
+*durée* de la run invalide un protocole à départ fixe — il faut aligner la ligne de départ avant de
+comparer quoi que ce soit.
+
 ### Bug trouvé : le banc débloquait l'échelle dans la sauvegarde réelle
 
 `saturation_beaten=5` a été trouvé dans le `settings.cfg` du testeur **sans aucune victoire à ce cran** :
