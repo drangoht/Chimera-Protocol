@@ -59,6 +59,35 @@ système entier ne fait rien. Exactement le travers de l'Auto-réparation (§33.
 ⚠ Tension à trancher : le cran 1 est délibérément l'**équivalent exact de l'ancien « Difficile »**, ce
 qui est ce qui rend les records déjà gagnés valides. Le rendre plus perceptible casse cette équivalence.
 
+### Après échange : le cran I « Hémorragie » est 2,5× plus perceptible — et il revalorise la réserve
+
+Les crans I et II ont été échangés (Hémorragie devient la porte d'entrée). Nouvelle campagne appariée,
+mêmes graines, `--saturation 1` :
+
+| métrique | cran 0 | cran 1 (Hémorragie) | delta | signes |
+|---|---|---|---|---|
+| **temps soutenable** | 60,7 % | **53,6 %** | **−10,7** (−17,6 % relatif) | **0/4 net** |
+| soins ponctuels/s | 86,4 | **66,3** | −19,8 | 0/4 net |
+| régénération rendue/s | 8,2 | **18,7** | +10,6 | 4/4 net |
+| dégâts subis/s | 94,9 | 84,3 | −7,5 | 2/4 bruit |
+| survie théo. hors soins | 24,4 s | 27,1 s | +1,9 | 3/4 net |
+
+**−17,6 % contre −7 % pour l'ancien cran I** : la porte d'entrée est maintenant nettement au-dessus du
+seuil de détection, et elle agit par le canal visé (les soins ponctuels chutent, unanimement). Les
+dégâts subis, eux, ne bougent pas — c'est correct, Hémorragie ne touche pas la menace.
+
+**Effet de système non anticipé, et heureux : Hémorragie revalorise la régénération.** Les PV rendus par
+la régénération **plus que doublent** (8,2 → 18,7 PV/s, 4/4). La raison est mécanique : en coupant les
+soins ponctuels, le joueur cesse de vivre à PV pleins, donc la régénération trouve enfin des PV
+manquants à rendre — au lieu d'être gaspillée à 58 % (§ du 2026-07-30). Le cran rend donc la **réserve de
+régénération** de la 1.24.0 pertinente, alors qu'elle était noyée par un canal dix fois plus gros. Les
+deux systèmes se répondent au lieu de se neutraliser.
+
+⚠ **Piège de lecture** : la « survie théorique hors soins » **monte** (+1,9 s) alors que le cran est plus
+dur. Ce n'est pas une contradiction — cette métrique exclut délibérément les soins ponctuels et bénéficie
+donc de la hausse de régénération. C'est « temps soutenable » qui tranche ici, parce qu'il compte **tous**
+les PV rendus. Confirmation que c'est la métrique de référence.
+
 ### Bug trouvé : le banc débloquait l'échelle dans la sauvegarde réelle
 
 `saturation_beaten=5` a été trouvé dans le `settings.cfg` du testeur **sans aucune victoire à ce cran** :
