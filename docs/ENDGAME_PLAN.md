@@ -97,9 +97,20 @@ optimal redescendrait — exactement le travers que `EchoMult` corrige déjà en
 
 Arbitrage (c) : exploiter ce qui existe déjà (5 biomes, 28 ennemis, 9 fusions, 13 défis, 3 mid-boss).
 
-1. **Records par saturation.** `GameSettings` indexe **déjà** complétions et meilleurs temps par
-   difficulté (`CompletionKey(biomeId, difficulty)`, `_bestDiff`). Étendre la clé à la saturation donne
-   une grille 5 biomes × N crans à remplir — de la rejouabilité pour le coût d'une clé de dictionnaire.
+1. **Records par niveau × difficulté × saturation.** `GameSettings` indexe **déjà** complétions et
+   meilleurs temps par difficulté (`CompletionKey(biomeId, difficulty)`, `_bestDiff`, `_bestTimes`). La
+   clé doit devenir un **triplet** : `biome:difficulté:saturation`.
+   - **Un record par combinaison, pas un record écrasé.** Aujourd'hui `_bestTimes` garde un seul temps
+     par biome et se contente de mémoriser à côté la difficulté du record (`_bestDiff`) : un temps
+     réalisé au cran 4 est donc **écrasé** par un temps plus long fait au cran 0, et l'exploit
+     disparaît. C'est exactement ce que la grille doit empêcher.
+   - **La difficulté d'assistance reste une dimension à part entière** : un temps fait en « Facile » ne
+     concourt pas contre un temps fait en « Normal ».
+   - Grille résultante : 5 biomes × 2 difficultés × (MaxRank+1) crans — de la rejouabilité pour le coût
+     d'une clé de dictionnaire, et l'écran de sélection peut afficher « meilleur au cran courant »
+     plutôt qu'un record sans rapport avec ce que le joueur s'apprête à jouer.
+   - **Affichage** : montrer le record de la combinaison **sélectionnée**, et non le meilleur absolu —
+     sinon monter d'un cran donne l'impression d'avoir régressé.
 2. **Graine du jour.** `--seed` existe et est **journalisé** depuis la 1.24.0 : une graine dérivée de
    la date donne à tous les joueurs la même run, comparable. Le socle technique est déjà là, il ne
    manque que l'entrée de menu et l'affichage du score.
@@ -207,11 +218,16 @@ des complétions — sans elles, le crédit du cran serait perdu.
 
 ### Reste à faire (lot 3) — et à ne pas oublier
 
-1. **Clés de complétion et de records.** Elles sont indexées par *difficulté*
-   (`"biome:2"` = Difficile) et doivent passer à la saturation. Conversion : `"biome:2"` → cran 1,
-   `"biome:1"` → cran 0, `"biome:0"` → assistance. **Régression temporaire acceptée depuis le lot 1** :
-   `RecordCompletion` reçoit toujours `Normal`, donc le badge ne distingue plus les crans.
-2. **Meilleurs temps** (`_bestTimes` / `_bestDiff`) : même conversion, en conservant le temps.
+1. **Clés de complétion et de records → triplet `biome:difficulté:saturation`.** Elles sont
+   aujourd'hui indexées par *difficulté* seule (`"biome:2"` = Difficile). Conversion :
+   `"biome:2"` → `biome:1:1` (Normal, cran 1 — il jouait bien au-dessus de Normal),
+   `"biome:1"` → `biome:1:0`, `"biome:0"` → `biome:0:0` (assistance).
+   **Régression temporaire acceptée depuis le lot 1** : `RecordCompletion` reçoit toujours `Normal`,
+   donc le badge ne distingue plus les crans.
+2. **Meilleurs temps** (`_bestTimes` / `_bestDiff`) : même conversion, en **conservant le temps**. Point
+   de vigilance : le schéma actuel garde *un* temps par biome, donc la migration ne peut reconstituer
+   qu'**une** case de la nouvelle grille — celle de la difficulté mémorisée dans `_bestDiff`. Les autres
+   cases démarrent vides, ce qui est correct : elles n'ont jamais été jouées *en tant que telles*.
 3. **Écrire une migration versionnée**, pas une détection par clé absente. La parade actuelle (« pas de
    clé `saturation` ⇒ ancien fichier ») ne fonctionne qu'**une fois** ; le lot 3 en ajoutera d'autres. Un
    entier `save_version` dans `settings.cfg` rend les migrations suivantes déterministes et ordonnées.
