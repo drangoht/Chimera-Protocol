@@ -19,6 +19,14 @@ public partial class LevelSelectScreen : Control
     private ScrollContainer _scroll = null!;
     private readonly System.Collections.Generic.List<Button> _playButtons = new();
 
+    // Sélecteur d'ascension (cf. docs/ENDGAME_PLAN.md). Null en mode assistance : l'échelle de
+    // challenge et l'accessibilité ne se mélangent pas.
+    private Button? _ascDown;
+    private Button? _ascUp;
+    private Label?  _ascValue;
+    private Label?  _ascEchoes;
+    private VBoxContainer? _ascRules;
+
     public override void _Ready()
     {
         SetAnchorsPreset(LayoutPreset.FullRect);
@@ -38,6 +46,11 @@ public partial class LevelSelectScreen : Control
         title.AddThemeFontSizeOverride("font_size", 32);
         title.AddThemeColorOverride("font_color", Cyan);
         root.AddChild(title);
+
+        // Sélecteur d'ascension, AVANT la liste : c'est un choix qui s'applique à toute la run, pas au
+        // niveau. Masqué en mode assistance (« Facile »), où l'ascension est forcée à 0.
+        var ascPanel = BuildAscensionSelector();
+        if (ascPanel != null) root.AddChild(ascPanel);
 
         _scroll = new ScrollContainer { SizeFlagsVertical = SizeFlags.ExpandFill };
         root.AddChild(_scroll);
@@ -79,6 +92,152 @@ public partial class LevelSelectScreen : Control
         // Présélectionne le 1er niveau (fallback « Retour » s'il n'y a aucun biome).
         t.TweenCallback(Callable.From(() => (_firstPlay ?? back).GrabFocus()));
     }
+
+    /// <summary>
+    /// Panneau de choix du cran d'ascension : valeur, multiplicateur d'Échos et <b>liste des règles
+    /// actives</b>. Renvoie null en mode assistance.
+    ///
+    /// <para>La liste des règles n'est pas décorative : tout le parti pris du système est qu'un cran
+    /// est une <b>règle nommée qu'on lit avant de jouer</b> (docs/ENDGAME_PLAN.md §2). Un sélecteur qui
+    /// n'afficherait qu'un numéro reproduirait le défaut que l'ascension corrige — une difficulté qui
+    /// monte sans que le joueur sache ce qui a changé.</para>
+    /// </summary>
+    private Control? BuildAscensionSelector()
+    {
+        var gs = GameSettings.Instance;
+        if (gs == null || gs.IsAssisted) return null;
+
+        var panel = new PanelContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        // Cadre « plaque blindée » à l'or de la palette : la même couleur que les récompenses d'Échos,
+        // puisque c'est le contrat de ce panneau — plus dur, mieux payé.
+        panel.AddThemeStyleboxOverride("panel", UiStyle.CardFrame(UiPalette.Gold));
+
+        var vb = new VBoxContainer();
+        vb.AddThemeConstantOverride("separation", 6);
+        panel.AddChild(vb);
+
+        var row = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
+        row.AddThemeConstantOverride("separation", 12);
+
+        var caption = new Label { Text = Loc.T("ASC_TITLE"), SizeFlagsVertical = SizeFlags.ShrinkCenter };
+        caption.AddThemeFontSizeOverride("font_size", 18);
+        caption.AddThemeColorOverride("font_color", Cyan);
+        row.AddChild(caption);
+
+        // ShrinkCenter sur les deux flèches : le cadre de focus s'étend de FocusExpand px et, sans
+        // ancrage centré, un bouton focalisé grandit vers le bas et décale toute la ligne (cf.
+        // docs/PITFALLS.md §UI — pièges StyleBox / focus).
+        _ascDown = new Button
+        {
+            Text = "◄",
+            CustomMinimumSize = new Vector2(52, 40),
+            SizeFlagsVertical = SizeFlags.ShrinkCenter,
+        };
+        StyleButton(_ascDown, Violet);
+        _ascDown.Pressed += () => ChangeAscension(-1);
+        row.AddChild(_ascDown);
+
+        _ascValue = new Label
+        {
+            HorizontalAlignment = HorizontalAlignment.Center,
+            SizeFlagsVertical = SizeFlags.ShrinkCenter,
+            CustomMinimumSize = new Vector2(46, 0),
+        };
+        _ascValue.AddThemeFontSizeOverride("font_size", 24);
+        _ascValue.AddThemeColorOverride("font_color", Text);
+        row.AddChild(_ascValue);
+
+        _ascUp = new Button
+        {
+            Text = "►",
+            CustomMinimumSize = new Vector2(52, 40),
+            SizeFlagsVertical = SizeFlags.ShrinkCenter,
+        };
+        StyleButton(_ascUp, Violet);
+        _ascUp.Pressed += () => ChangeAscension(+1);
+        row.AddChild(_ascUp);
+
+        _ascEchoes = new Label { SizeFlagsVertical = SizeFlags.ShrinkCenter };
+        _ascEchoes.AddThemeFontSizeOverride("font_size", 15);
+        _ascEchoes.AddThemeColorOverride("font_color", new Color(1f, 0.8f, 0.27f));   // or : récompense
+        row.AddChild(_ascEchoes);
+
+        vb.AddChild(row);
+
+        _ascRules = new VBoxContainer();
+        _ascRules.AddThemeConstantOverride("separation", 2);
+        vb.AddChild(_ascRules);
+
+        RefreshAscension();
+        return panel;
+    }
+
+    /// <summary>Décale le cran choisi (borné par la progression) et rafraîchit l'affichage.</summary>
+    private void ChangeAscension(int delta)
+    {
+        var gs = GameSettings.Instance;
+        if (gs == null) return;
+        gs.SetAscension(gs.Ascension + delta);
+        AudioSystem.Instance?.PlaySfx("sfx_ui_click");
+        RefreshAscension();
+    }
+
+    /// <summary>Met à jour valeur, Échos, règles actives et l'état des deux flèches.</summary>
+    private void RefreshAscension()
+    {
+        var gs = GameSettings.Instance;
+        if (gs == null || _ascValue == null || _ascRules == null) return;
+
+        int rank = gs.Ascension;
+        _ascValue.Text = rank.ToString();
+        if (_ascEchoes != null)
+            _ascEchoes.Text = Loc.T("LEVELSEL_ECHO_MULT", $"{gs.AscensionEchoMult:0.00}");
+
+        if (_ascDown != null) _ascDown.Disabled = rank <= 0;
+        if (_ascUp   != null) _ascUp.Disabled   = rank >= gs.MaxSelectableAscension;
+
+        foreach (var child in _ascRules.GetChildren()) child.QueueFree();
+
+        if (rank == 0)
+        {
+            var none = new Label { Text = Loc.T("ASC_NONE"), HorizontalAlignment = HorizontalAlignment.Center };
+            none.AddThemeFontSizeOverride("font_size", 13);
+            none.AddThemeColorOverride("font_color", Dim);
+            _ascRules.AddChild(none);
+            return;
+        }
+
+        foreach (var r in AscensionTable.ActiveRanks(rank))
+        {
+            var line = new Label
+            {
+                Text = $"{RomanNumeral(r.Value)} · {Loc.T(r.NameKey)} — {Loc.T(r.RuleKey)}",
+                HorizontalAlignment = HorizontalAlignment.Center,
+                AutowrapMode = TextServer.AutowrapMode.WordSmart,
+            };
+            line.AddThemeFontSizeOverride("font_size", 13);
+            line.AddThemeColorOverride("font_color", Text);
+            _ascRules.AddChild(line);
+        }
+
+        if (rank < AscensionTable.MaxRank && rank >= gs.MaxSelectableAscension)
+        {
+            var next = new Label
+            {
+                Text = Loc.T("ASC_LOCKED_HINT"),
+                HorizontalAlignment = HorizontalAlignment.Center,
+            };
+            next.AddThemeFontSizeOverride("font_size", 12);
+            next.AddThemeColorOverride("font_color", Dim);
+            _ascRules.AddChild(next);
+        }
+    }
+
+    /// <summary>Chiffre romain d'un cran (I..V). Table courte : MaxRank vaut 5.</summary>
+    private static string RomanNumeral(int n) => n switch
+    {
+        1 => "I", 2 => "II", 3 => "III", 4 => "IV", 5 => "V", _ => n.ToString(),
+    };
 
     /// <summary>
     /// Jauge de menace du palier, en étoiles (palier 0 → ★, palier 4 → ★★★★★). Seul le glyphe plein
@@ -211,11 +370,27 @@ public partial class LevelSelectScreen : Control
     /// </summary>
     private void SetupFocusChain(Button rand, Button back)
     {
+        // Les flèches d'ascension sont en TÊTE de chaîne : sans câblage explicite elles resteraient
+        // inatteignables à la manette (le focus spatial ne traverse pas les PanelContainer — c'est déjà
+        // la raison d'être de cette méthode), et le cran d'ascension serait un réglage souris seulement.
+        if (_ascDown != null && _ascUp != null)
+        {
+            _ascDown.FocusNeighborRight = _ascDown.GetPathTo(_ascUp);
+            _ascUp.FocusNeighborLeft    = _ascUp.GetPathTo(_ascDown);
+            if (_playButtons.Count > 0)
+            {
+                _ascDown.FocusNeighborBottom = _ascDown.GetPathTo(_playButtons[0]);
+                _ascUp.FocusNeighborBottom   = _ascUp.GetPathTo(_playButtons[0]);
+            }
+        }
+
         for (int i = 0; i < _playButtons.Count; i++)
         {
             var cur = _playButtons[i];
             if (i > 0)
                 cur.FocusNeighborTop = cur.GetPathTo(_playButtons[i - 1]);
+            else if (_ascUp != null)
+                cur.FocusNeighborTop = cur.GetPathTo(_ascUp);   // remonter au sélecteur depuis la 1re carte
             cur.FocusNeighborBottom = (i < _playButtons.Count - 1)
                 ? cur.GetPathTo(_playButtons[i + 1])
                 : cur.GetPathTo(rand);

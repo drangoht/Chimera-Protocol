@@ -326,6 +326,36 @@ public static class DebugHooks
         }
     }
 
+    private static bool _ascensionRead;
+    private static int? _ascension;
+
+    /// <summary>
+    /// Cran d'ascension forcé via <c>--ascension=&lt;n&gt;</c>, ou null (le choix persisté s'applique).
+    ///
+    /// <para>Sans ce flag, <b>aucun cran ne serait mesurable au banc</b> : l'ascension se choisit à
+    /// l'écran de sélection de niveau, que le bot ne traverse jamais. Or le plan
+    /// (<c>docs/ENDGAME_PLAN.md</c> §5) fait de la mesure la condition d'existence d'un cran — il doit
+    /// faire baisser le « temps soutenable » de plus de 6 % pour mériter sa place.</para>
+    ///
+    /// <para>La surcharge <b>ne persiste jamais</b> dans <c>settings.cfg</c> (même principe que
+    /// <c>--lang</c>) : une campagne de banc ne doit pas laisser le joueur avec un cran qu'il n'a pas
+    /// choisi. Elle ignore aussi le déblocage, pour pouvoir mesurer un cran avant de l'avoir gagné.
+    /// Aucun effet en build normal.</para>
+    /// </summary>
+    public static int? Ascension
+    {
+        get
+        {
+            if (!_ascensionRead)
+            {
+                var raw = ValueFlag("--ascension=");
+                _ascension = raw != null && int.TryParse(raw, out var v) ? v : null;
+                _ascensionRead = true;
+            }
+            return _ascension;
+        }
+    }
+
     private static bool _startAtRead;
     private static float _startAt;
 

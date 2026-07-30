@@ -136,9 +136,11 @@ public partial class RunEndScreen : CanvasLayer
         int capKills    = meta?.EchoCapKills ?? kills;
         int capCores    = meta?.EchoCapCores ?? cores;
 
-        // Palier de menace : chaque composante est majorée EXACTEMENT comme dans EchoFormula
-        // (même helper, même troncature) pour que la somme animée tombe pile sur le total crédité.
-        double tierMult = LevelThreat.EchoMult(PendingThreatTier);
+        // Palier de menace ET ascension : chaque composante est majorée EXACTEMENT comme dans
+        // EchoFormula (même helper, même troncature, même facteur combiné via TotalEchoMult) pour que
+        // la somme animée tombe pile sur le total crédité.
+        double tierMult = GameSettings.Instance?.TotalEchoMult(PendingThreatTier)
+                          ?? LevelThreat.EchoMult(PendingThreatTier);
         int timeEchoes = EchoFormula.ApplyTier(Mathf.Min(timeSecs, capTimeSecs) / timeDiv, tierMult);
         int killEchoes = EchoFormula.ApplyTier(Mathf.Min(kills,    capKills)    / killDiv, tierMult);
         int coreEchoes = EchoFormula.ApplyTier(Mathf.Min(cores,    capCores)    * coreMult, tierMult);

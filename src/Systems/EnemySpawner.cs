@@ -341,6 +341,8 @@ public partial class EnemySpawner : Node
         // des champions (mini-boss/boss de fin) ne reçoivent qu'une fraction du bonus — battre le boss
         // est la condition de déblocage du niveau suivant (cf. LevelThreat.ChampionHpSoftening).
         int   tier    = ThreatTier;
+        bool  assisted = GameSettings.Instance?.IsAssisted ?? false;
+        int   ascension = GameSettings.Instance?.Ascension ?? 0;
         float hpMult  = (GameSettings.Instance?.EnemyHpMult ?? 1f);
         float dmgMult = (GameSettings.Instance?.EnemyDamageMult ?? 1f) * LevelThreat.EnemyDamageMult(tier);
         // La courbe non-linéaire (early grace + accélération late) cible les ennemis BASIQUES —
@@ -349,6 +351,12 @@ public partial class EnemySpawner : Node
         // ils gardent le scaling LINÉAIRE historique pour ne pas fausser leur fenêtre de victoire.
         bool isChampion = data.MaxSimultaneous > 0 || BossIds.Contains(data.Id);
         hpMult *= isChampion ? LevelThreat.ChampionHpMult(tier) : LevelThreat.EnemyHpMult(tier);
+        // L'ascension suit la MÊME règle que le palier de menace sur les champions : `EnemyHpMult` a
+        // déjà versé le bonus plein ci-dessus, on en reprend donc la part amortie. Sans cette
+        // correction, chaque cran rallongerait un TTK de boss déjà mesuré comme long (GDD §20.6) et le
+        // cran deviendrait un mur de patience au lieu d'un mur de difficulté.
+        if (isChampion && !assisted && ascension > 0)
+            hpMult *= AscensionTable.ChampionHpMult(ascension) / AscensionTable.EnemyHpMult(ascension);
         float scaledHp = isChampion
             ? EnemyScaling.Scaled(data.MaxHp, tMinutes, data.HpScalingPerMinute, hpMult)
             : EnemyScaling.ScaledCurved(data.MaxHp, tMinutes, data.HpScalingPerMinute, hpMult);
@@ -361,8 +369,12 @@ public partial class EnemySpawner : Node
         // La fréquence monte avec le temps (EliteAffixTable, plafonnée). Appliqué APRÈS ApplyScaling
         // pour multiplier les stats déjà scalées, et avant la 1re frame (capture de la vitesse de base).
         bool eliteEligible = data.MaxSimultaneous == 0 && !BossIds.Contains(data.Id);
+        // Cran V « Élite ordinaire » : fréquence ×3 et plafond relevé (cf. AscensionTable.EliteChanceCap).
+        float eliteMult = assisted ? 1f : AscensionTable.EliteFrequencyMult(ascension);
+        float eliteCap  = assisted ? EliteAffixTable.MaxChance : AscensionTable.EliteChanceCap(ascension);
         if (eliteEligible &&
-            (DebugHooks.ForceElites || EliteAffixTable.ShouldBeElite(tMinutes, _rng.Randf())))
+            (DebugHooks.ForceElites ||
+             EliteAffixTable.ShouldBeElite(tMinutes, _rng.Randf(), eliteMult, eliteCap)))
             node.ApplyElite(EliteAffixTable.Pick(_rng.Randf()));
     }
 

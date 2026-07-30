@@ -86,6 +86,16 @@ public partial class RunStatsTracker : Node
         using var doc = System.Text.Json.JsonDocument.Parse(file.GetAsText());
         if (doc.RootElement.TryGetProperty("runDurationSeconds", out var prop))
             _runDurationSeconds = prop.GetInt32();
+
+        // Cran III « Compte à rebours » : l'overtime arrive plus tôt (13 → ~10 min). Appliqué ici, sur
+        // la valeur du JSON, pour rester compatible avec l'upgrade méta `overtime_stabilizer` qui module
+        // la même durée — un seuil en dur ailleurs contredirait l'un des deux.
+        //
+        // Ce cran attaque le TEMPS DE CONSTRUCTION du build, pas la puissance : le relevé du 2026-07-29
+        // a montré que l'état d'entrée en overtime explique à lui seul un facteur 2,4 sur la survie.
+        float durationMult = GameSettings.Instance?.RunDurationMult ?? 1f;
+        if (durationMult < 1f)
+            _runDurationSeconds = Mathf.Max(60, Mathf.RoundToInt(_runDurationSeconds * durationMult));
     }
 
     public override void _Process(double delta)
@@ -125,7 +135,12 @@ public partial class RunStatsTracker : Node
 
         string biome = GameManager.Instance?.CurrentBiomeId ?? "";
         if (biome.Length > 0 && GameSettings.Instance != null)
+        {
             GameSettings.Instance.RecordCompletion(biome, GameSettings.Instance.Difficulty);
+            // Le cran d'ascension est validé par la MORT DU BOSS, pas par la durée de survie : c'est
+            // ce qui débloque le cran suivant (déblocage global, tous biomes confondus).
+            GameSettings.Instance.RecordAscensionBeaten(GameSettings.Instance.Ascension);
+        }
 
         Banner.Show(GetTree(), Loc.T("LEVEL_COMPLETE"), new Color(1f, 0.85f, 0.3f));
         AudioSystem.Instance?.PlaySfx("sfx_core_collect");
@@ -216,7 +231,9 @@ public partial class RunStatsTracker : Node
             meta.EchoTimeDiv, meta.EchoKillDiv, meta.EchoCoreMult, meta.EchoBaseBonus,
             RunDurationSeconds, meta.EchoCapKills, meta.EchoCapCores,
             meta.EchoOvertimeDampening, meta.EchoOvertimeBonusCap,
-            LevelThreat.EchoMult(ThreatTier));
+            // Palier du niveau × ascension, via la source unique (cf. GameSettings.TotalEchoMult) :
+            // RunEndScreen refait le même calcul pour animer les composantes.
+            GameSettings.Instance?.TotalEchoMult(ThreatTier) ?? LevelThreat.EchoMult(ThreatTier));
     }
 
     /// <summary>Palier de menace du niveau joué (cf. <see cref="LevelThreat"/>, GDD §28).</summary>

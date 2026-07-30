@@ -148,15 +148,24 @@ titres. Beaucoup de valeur par heure, aucune mécanique neuve.
 **Lot 4 — crans de finition.** **IX** (deux champions) et **X** (sans filet), qui ne valent que si les
 lots 1-2 ont tenu.
 
-## 7. Questions ouvertes (à trancher au début du lot 1)
+## 7. Décisions (tranchées le 2026-07-30, avant le lot 1)
 
-1. **L'ascension remplace-t-elle « Difficile » ou s'y ajoute-t-elle ?** Quatre axes multiplicatifs
-   simultanés rendent tout diagnostic difficile (le chantier §31 l'a montré). Piste recommandée :
-   l'ascension **absorbe** `DifficultyTuning`, « Difficile » devenant l'ascension 1 — un seul axe
-   lisible plutôt que deux qui se cumulent en silence.
-2. **Combien de crans au lancement ?** Cinq crans réellement testés valent mieux que dix annoncés.
-3. **Le déblocage est-il par biome ou global ?** Par biome multiplie la grille (donc la rejouabilité)
-   mais peut se transformer en corvée sur cinq niveaux.
+1. **L'ascension absorbe la difficulté.** Quatre axes multiplicatifs simultanés rendraient tout
+   diagnostic impossible — le chantier §31 a mis trois sessions à isoler une cause pour cette raison
+   exacte. Donc :
+   - **l'ascension 1 EST l'ancien « Difficile »**, aux mêmes valeurs (PV ×1,30, dégâts ×1,35, spawn
+     ×1,25). Ce n'est pas une coïncidence exploitée après coup : c'est ce qui rend les **records et
+     complétions existants valides sans migration destructrice** ;
+   - **« Facile » survit comme mode d'ASSISTANCE**, pas comme une ascension négative. C'est de
+     l'accessibilité (dégâts ×0,60) et cela ne se mélange pas avec une échelle de challenge ;
+   - `GameDifficulty.Difficile` reste dans l'énumération pour **relire les anciens `settings.cfg`**,
+     mais n'est plus proposé : au chargement, il est converti en *Normal + ascension 1*.
+2. **Cinq crans au lancement** (I à V), tous validés au banc. Les crans VI-X viennent aux lots 2 et 4.
+   Cinq crans réellement testés valent mieux que dix annoncés.
+3. **Déblocage global, records par biome × ascension.** Le cran maximum atteint est global (battre
+   l'ascension N sur *n'importe quel* biome débloque N+1) : par biome, cinq niveaux × dix crans
+   deviendrait une corvée. En revanche les **records** restent indexés par biome **et** par ascension —
+   la grille à remplir existe pour qui la veut, sans être un péage.
 
 ## 8. Hors périmètre (décidé)
 

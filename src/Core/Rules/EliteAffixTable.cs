@@ -74,18 +74,28 @@ public static class EliteAffixTable
     /// <summary>Rayon (px) et récompense : bonus d'échelle visuelle appliqué au sprite d'élite.</summary>
     public const float VisualScale = 1.35f;
 
-    /// <summary>Probabilité qu'un ennemi basique devienne élite au temps <paramref name="tMinutes"/>.</summary>
-    public static float EliteChance(float tMinutes)
+    /// <summary>
+    /// Probabilité qu'un ennemi basique devienne élite au temps <paramref name="tMinutes"/>.
+    ///
+    /// <para><paramref name="frequencyMult"/> et <paramref name="cap"/> servent au cran d'ascension
+    /// « Élite ordinaire » (<see cref="AscensionTable.EliteFrequencyMult"/>). Le plafond est un
+    /// <b>paramètre</b> et non un simple facteur appliqué à <see cref="MaxChance"/> : multiplier 0,28
+    /// par 3 donnerait 84 % d'élites, ce qui n'est plus « une texture de nuée » mais une horde — ce que
+    /// le plafond d'origine interdit explicitement — et ferait peser les affixes (régénération,
+    /// explosion, sprites agrandis) sur la cible de 200-300 entités simultanées.</para>
+    /// </summary>
+    public static float EliteChance(float tMinutes, float frequencyMult = 1f, float cap = MaxChance)
     {
-        float c = BaseChance + ChancePerMinute * tMinutes;
+        float c = (BaseChance + ChancePerMinute * tMinutes) * frequencyMult;
         if (c < 0f) c = 0f;
-        if (c > MaxChance) c = MaxChance;
+        if (c > cap) c = cap;
         return c;
     }
 
     /// <summary>Décision d'élite à partir d'un tirage uniforme [0,1) (testable/déterministe).</summary>
-    public static bool ShouldBeElite(float tMinutes, float roll01)
-        => roll01 < EliteChance(tMinutes);
+    public static bool ShouldBeElite(float tMinutes, float roll01,
+                                     float frequencyMult = 1f, float cap = MaxChance)
+        => roll01 < EliteChance(tMinutes, frequencyMult, cap);
 
     /// <summary>Choisit un affixe à partir d'un tirage uniforme [0,1) (répartition égale).</summary>
     public static EliteAffix Pick(float pickRoll01)

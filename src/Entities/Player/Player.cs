@@ -116,9 +116,12 @@ public partial class Player : CharacterBody2D
         _buffBar = new BuffBar();
         AddChild(_buffBar);
 
-        // Consommables meta rechargés à chaque run.
-        _extraLivesLeft    = MetaProgressionSystem.Instance?.GetUpgradeLevel("extra_life")    ?? 0;
-        _absorbChargesLeft = MetaProgressionSystem.Instance?.GetUpgradeLevel("damage_absorb")  ?? 0;
+        // Consommables meta rechargés à chaque run. Le cran d'ascension IV « Sans filet » les coupe :
+        // ils s'achètent une fois et profitent à TOUTES les runs suivantes, si bien qu'une partie ne
+        // commence jamais vraiment à zéro (cf. AscensionTable.SafetyNetsEnabled).
+        bool safetyNets = GameSettings.Instance?.SafetyNetsEnabled ?? true;
+        _extraLivesLeft    = safetyNets ? MetaProgressionSystem.Instance?.GetUpgradeLevel("extra_life")   ?? 0 : 0;
+        _absorbChargesLeft = safetyNets ? MetaProgressionSystem.Instance?.GetUpgradeLevel("damage_absorb") ?? 0 : 0;
 
         _lastMousePos = GetGlobalMousePosition();
         BuildAimIndicator();
@@ -296,7 +299,7 @@ public partial class Player : CharacterBody2D
     /// <summary>Restaure un pourcentage des HP max. Flash vert si HP < max avant soin.</summary>
     public void Heal(float percent)
     {
-        float amount = Stats.MaxHp * percent;
+        float amount = Stats.MaxHp * percent * HealingScale;
         float before = Stats.CurrentHp;
         Stats.CurrentHp = Mathf.Min(Stats.MaxHp, Stats.CurrentHp + amount);
         EmitSignal(SignalName.HpChanged, Stats.CurrentHp, Stats.MaxHp);
@@ -523,9 +526,21 @@ public partial class Player : CharacterBody2D
         }
     }
 
+    /// <summary>
+    /// Facteur appliqué à tout soin <b>ponctuel</b> reçu — cran d'ascension II « Hémorragie »
+    /// (<see cref="AscensionTable.HealingMult"/>).
+    ///
+    /// <para>Il ne touche <b>pas</b> la régénération continue, qui a son propre cran (VII, lot 2). Le
+    /// ciblage est délibéré : le soin ponctuel est le canal <b>dominant</b> de la défense du joueur —
+    /// 86,4 PV/s mesurés en overtime contre 8,2 pour la régénération. Un cran qui l'épargnerait
+    /// n'agirait que sur un dixième de ce qui le maintient en vie.</para>
+    /// </summary>
+    private static float HealingScale => GameSettings.Instance?.HealingMult ?? 1f;
+
     /// <summary>Soigne d'un montant FIXE de PV (lifesteal de greffe), sans flash. Clampé à MaxHp.</summary>
     public void HealFlat(float amount)
     {
+        amount *= HealingScale;
         if (amount <= 0f || Stats.CurrentHp <= 0f) return;
         float before = Stats.CurrentHp;
         Stats.CurrentHp = Mathf.Min(Stats.MaxHp, Stats.CurrentHp + amount);
