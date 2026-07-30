@@ -35,10 +35,43 @@ leurs conséquences (moins de temps de jeu, donc moins de cartes). La réserve d
 s'applique — l'appariement est fiable sur les métriques de pression, fragile sur celles de build dès
 que le changement modifie la longueur de la run.
 
+### Le cran 1 seul : mesurable, mais au ras du seuil — et le joueur ne le sent pas
+
+Mesuré ensuite sur les mêmes graines, `--ascension 1` (le seul cran accessible à un joueur qui n'a rien
+encore battu) :
+
+| métrique | asc. 0 | asc. 1 | delta | signes |
+|---|---|---|---|---|
+| temps soutenable | 60,7 % | 55,4 % | **−4,3** (−7 % relatif) | 0/3 |
+| survie théo. hors soins | 24,4 s | 16,9 s | −7,6 | 0/4 net |
+| dégâts subis/s | 94,9 | 119,1 | +26,3 | 4/4 net |
+
+**Le câblage fonctionne** — les dégâts subis montent de 28 %, unanimement. Mais l'effet sur le temps
+soutenable (−7 % relatif) est **à peine au-dessus du seuil de détection de la campagne** (6 %), et le
+testeur a joué une session sans **percevoir aucune différence**.
+
+C'est un défaut de conception, pas une illusion : un écart que quatre runs de banc distinguent à peine
+du bruit ne peut pas se sentir en une partie. Le plan l'avait à demi anticipé (« I est le moins utile des
+dix : il est là parce qu'un premier cran doit être rassurant »), mais la conséquence est plus grave que
+prévu — **c'est la porte d'entrée de l'échelle**, et un premier pas invisible fait conclure que le
+système entier ne fait rien. Exactement le travers de l'Auto-réparation (§33.5).
+
+⚠ Tension à trancher : le cran 1 est délibérément l'**équivalent exact de l'ancien « Difficile »**, ce
+qui est ce qui rend les records déjà gagnés valides. Le rendre plus perceptible casse cette équivalence.
+
+### Bug trouvé : le banc débloquait l'échelle dans la sauvegarde réelle
+
+`ascension_beaten=5` a été trouvé dans le `settings.cfg` du testeur **sans aucune victoire à ce cran** :
+les campagnes lancées sous `--ascension=5` appelaient `RecordAscensionBeaten` à la mort du boss, ce qui
+persistait le déblocage. Protéger la valeur *choisie* (`_persistedAscension`, sur le modèle de `--lang`)
+ne suffisait pas — le **déblocage est une seconde voie d'écriture**. Corrigé : sous `--ascension`, le
+déblocage n'est jamais enregistré. Sauvegarde du testeur réparée (`ascension_beaten=0`, ses complétions
+datant d'avant l'ascension).
+
 ### Ce qui n'est pas encore mesuré
 
-Seul le **cumul** des cinq crans est validé, pas chaque cran isolément — cela demanderait cinq
-campagnes appariées (≈2 h 20 de banc). Deux conséquences :
+Les crans **2, 3 et 4** ne sont pas mesurés isolément — cela demanderait trois campagnes appariées
+supplémentaires (≈1 h 30 de banc). Deux conséquences :
 
 1. il reste possible qu'un cran particulier soit **sous le seuil de détection** et ne mérite pas sa
    place dans l'échelle ;

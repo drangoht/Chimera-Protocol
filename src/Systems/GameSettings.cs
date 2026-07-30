@@ -325,6 +325,12 @@ public partial class GameSettings : Node
     public void RecordAscensionBeaten(int rank)
     {
         if (IsAssisted || rank <= HighestAscensionBeaten) return;
+        // ⚠ Sous --ascension=<n>, le cran n'a pas été GAGNÉ par le joueur : il a été imposé au banc.
+        // Sans ce garde-fou, une campagne de mesure débloque l'échelle dans la sauvegarde réelle — c'est
+        // arrivé le 2026-07-30 (`ascension_beaten=5` sans aucune victoire à ce cran), et le joueur s'est
+        // retrouvé à pouvoir choisir n'importe quel cran. Protéger `ascension` contre la persistance ne
+        // suffisait pas : le DÉBLOCAGE est une seconde voie d'écriture.
+        if (DebugHooks.Ascension.HasValue) return;
         HighestAscensionBeaten = Mathf.Min(rank, AscensionTable.MaxRank);
         Save();
     }

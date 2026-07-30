@@ -188,7 +188,42 @@ lots 1-2 ont tenu.
    deviendrait une corvée. En revanche les **records** restent indexés par biome **et** par ascension —
    la grille à remplir existe pour qui la veut, sans être un péage.
 
-## 8. Hors périmètre (décidé)
+## 8. Migration des sauvegardes des joueurs déjà en place
+
+La 1.24.0 est **publiée** : des joueurs ont des `settings.cfg` et des `save.json` antérieurs à
+l'ascension. Rien ne doit être perdu ni réinterprété.
+
+### Fait au lot 1
+
+| cas | conversion | pourquoi |
+|---|---|---|
+| `difficulty=2` (Difficile) | → *Normal + ascension 1* | le cran 1 a **les mêmes multiplicateurs** : le record reste exact |
+| `difficulty=0` (Facile) | → assistance, hors échelle | l'accessibilité n'est pas une ascension négative |
+| a déjà terminé un niveau en Difficile | `ascension_beaten = 1` | il jouait effectivement au cran 1 : le lui créditer, plutôt que de le renvoyer au bas de l'échelle |
+| absence de la clé `gameplay/ascension` | déclenche la migration **une seule fois** | l'écriture des deux clés au premier `Save()` fait foi ensuite |
+
+Ces quatre cas sont **testés** (`AscensionTableTests`), et la migration s'exécute *après* le chargement
+des complétions — sans elles, le crédit du cran serait perdu.
+
+### Reste à faire (lot 3) — et à ne pas oublier
+
+1. **Clés de complétion et de records.** Elles sont indexées par *difficulté*
+   (`"biome:2"` = Difficile) et doivent passer à l'ascension. Conversion : `"biome:2"` → cran 1,
+   `"biome:1"` → cran 0, `"biome:0"` → assistance. **Régression temporaire acceptée depuis le lot 1** :
+   `RecordCompletion` reçoit toujours `Normal`, donc le badge ne distingue plus les crans.
+2. **Meilleurs temps** (`_bestTimes` / `_bestDiff`) : même conversion, en conservant le temps.
+3. **Écrire une migration versionnée**, pas une détection par clé absente. La parade actuelle (« pas de
+   clé `ascension` ⇒ ancien fichier ») ne fonctionne qu'**une fois** ; le lot 3 en ajoutera d'autres. Un
+   entier `save_version` dans `settings.cfg` rend les migrations suivantes déterministes et ordonnées.
+4. **Ne jamais faire monter un joueur dans l'échelle sans victoire.** Leçon du 2026-07-30 : les runs de
+   banc sous `--ascension=5` avaient persisté `ascension_beaten=5` dans une sauvegarde réelle, ouvrant
+   tous les crans. Protéger la valeur *choisie* ne suffisait pas — le **déblocage** est une seconde voie
+   d'écriture. Tout nouveau champ de progression doit être audité de la même façon.
+5. **Vérifier sur une sauvegarde réelle avant publication** (copie du `settings.cfg` d'un joueur de la
+   1.24.0), pas seulement sur un fichier neuf : les défauts de migration ne se voient que sur des
+   données accumulées.
+
+## 9. Hors périmètre (décidé)
 
 - **Mutateurs panachés** (run composée à la carte) : écartés au profit de l'ascension ordonnée. À
   reconsidérer seulement si l'ascension s'avère trop rigide à l'usage.
