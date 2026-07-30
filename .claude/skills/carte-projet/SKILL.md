@@ -270,6 +270,11 @@ instrumentale, progressions, architecture en stems, mixage, bouclage) ·
   --biome fournaise --out avant.json`, modifier la valeur, puis relancer avec `--compare avant.json`.
   La campagne annonce le **plus petit écart détectable** ; `--compare` apparie run par run via les
   graines. **Une run isolée — bot ou humaine — ne tranche rien** (variance ×2,4 mesurée).
+  ⚠ **Lire « temps soutenable » et « survie théorique », pas la survie** : le bot tient 2,6× plus
+  longtemps qu'un joueur, et sous `--minutes 25` les runs s'arrêtent sur la limite de temps
+  (`bench_limit`) — la durée y est un plancher, signalé « ≥ ». Compter **~12 min réelles par run**
+  d'overtime (`--timescale` ne rend rien en nuée) ; le journal est cumulatif, donc une campagne peut
+  se lancer par lots de 2 via `--seed-base` puis s'agréger avec `--report-only --runs N`.
 - Rendre une run REPRODUCTIBLE (mêmes vagues, mêmes cartes) : flag **`--seed=<n>`** (`DebugHooks.Seed`
   → `GD.Seed`, + dérive le RNG de `PowerUpSpawner`). Base de l'appariement du banc multi-run.
 - Rendre le joueur invulnérable pour observer un combat long (phases du boss, VFX) : flag `--invuln` (`DebugHooks.Invulnerable`) — à combiner avec `--debug-boss`, qui trace aussi chaque bascule de phase
