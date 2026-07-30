@@ -213,11 +213,12 @@ public static class SaturationTable
 
     /// <summary>
     /// Rang maximum <b>sélectionnable</b> quand le joueur a déjà validé <paramref name="highestBeaten"/>
-    /// (rang le plus élevé où il a battu un boss de fin, tous biomes confondus ; 0 = aucun).
+    /// (rang le plus élevé où il a battu le boss de fin <b>de ce niveau</b> ; 0 = aucun).
     ///
-    /// <para>Le déblocage est <b>global</b> et non par biome : cinq niveaux × dix crans se
-    /// transformeraient en corvée. Les <i>records</i>, eux, restent indexés par biome et par saturation —
-    /// la grille existe pour qui veut la remplir, sans être un péage.</para>
+    /// <para>Le déblocage est <b>par niveau</b> (décision de l'auteur, 2026-07-30, qui renverse le §7.3
+    /// du plan). Conséquence assumée : l'échelle se regagne sur chacun des cinq biomes. En contrepartie,
+    /// un biome tardif — déjà plus dur via <see cref="LevelThreat"/> — ne se retrouve pas ouvert au
+    /// cran 5 parce que le joueur l'a gagné sur le Sanctuaire.</para>
     /// </summary>
     public static int MaxSelectable(int highestBeaten) => Math.Min(Clamp(highestBeaten) + 1, MaxRank);
 
@@ -257,4 +258,36 @@ public static class SaturationTable
             2 => (1, 0, 1),
             _ => (1, 0, 0),   // Normal
         };
+
+    /// <summary>Version courante du schéma de saturation dans <c>settings.cfg</c>.</summary>
+    /// <remarks>1 = un cran global · 2 = un cran par niveau.</remarks>
+    public const int SchemaVersion = 2;
+
+    /// <summary>
+    /// Convertit un état de saturation <b>global</b> (schéma 1) en état <b>par niveau</b> (schéma 2) :
+    /// le cran choisi et le cran débloqué sont <b>diffusés à tous les biomes</b>.
+    ///
+    /// <para>C'est la seule conversion fidèle possible. Sous le schéma 1 le déblocage était global :
+    /// le joueur avait effectivement accès à ce cran sur <i>tous</i> les niveaux, et le lui retirer
+    /// serait une régression. Quant à savoir <i>sur quel</i> biome il l'a gagné — l'information n'a
+    /// jamais été écrite.</para>
+    ///
+    /// <para>Le choix est borné par ce qui est débloqué : un fichier incohérent (cran 4 choisi, rien
+    /// de battu) ne doit pas ouvrir l'échelle par la porte de derrière.</para>
+    /// </summary>
+    public static (Dictionary<string, int> Choice, Dictionary<string, int> Beaten) DiffuseGlobalRanks(
+        IReadOnlyList<string> biomes, int globalChoice, int globalBeaten)
+    {
+        int beaten = Clamp(globalBeaten);
+        int choice = Math.Clamp(Clamp(globalChoice), 0, MaxSelectable(beaten));
+
+        var choiceMap = new Dictionary<string, int>();
+        var beatenMap = new Dictionary<string, int>();
+        foreach (var biome in biomes)
+        {
+            choiceMap[biome] = choice;
+            beatenMap[biome] = beaten;
+        }
+        return (choiceMap, beatenMap);
+    }
 }

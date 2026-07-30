@@ -77,24 +77,69 @@ public partial class GameSettings : Node
     private string _persistedLanguage = "en";
 
     // ── Saturation (challenge de fin de partie, cf. docs/ENDGAME_PLAN.md) ──────
-    /// <summary>Cran de saturation choisi pour la prochaine run (0 = aucun). Persisté.</summary>
-    public int Saturation { get; private set; } = 0;
+    //
+    // Le cran se règle et se débloque PAR NIVEAU (décision de l'auteur, 2026-07-30), ce qui renverse
+    // le §7.3 du plan (déblocage global). Conséquence assumée : l'échelle se regagne sur chacun des
+    // cinq biomes. En contrepartie, un biome tardif — déjà plus dur via LevelThreat — ne se retrouve
+    // plus ouvert au cran 5 parce que le joueur l'a gagné sur le Sanctuaire, et chaque niveau porte sa
+    // propre courbe de progression.
+    //
+    // Deux dictionnaires, jamais un champ global : un choix par biome, un déblocage par biome. La
+    // valeur d'un biome absent vaut 0 (cran neutre), ce qui rend l'ajout d'un biome futur sans effet
+    // de bord.
+    private readonly Dictionary<string, int> _saturationChoice = new();
+    private readonly Dictionary<string, int> _saturationBeaten = new();
 
-    // Cran réellement écrit dans settings.cfg. Diffère de Saturation quand la session tourne sous
-    // --saturation=<n> (banc de mesure) : la surcharge ne doit JAMAIS écraser le choix du joueur, même
-    // si un Save() est déclenché en cours de session (high score, complétion, découverte d'arme…).
-    // Même parade que _persistedLanguage pour --lang, et même raison : ces Save() sont fréquents.
-    private int _persistedSaturation = 0;
+    /// <summary>Cran choisi pour ce biome (0 = aucun). Borné par ce qui y est débloqué.</summary>
+    public int SaturationFor(string? biomeId)
+    {
+        if (IsAssisted || biomeId is null || biomeId.Length == 0) return 0;
+        int chosen = _saturationChoice.TryGetValue(biomeId, out var v) ? v : 0;
+        return Mathf.Clamp(chosen, 0, MaxSelectableSaturationFor(biomeId));
+    }
+
+    /// <summary>Cran le plus élevé auquel le boss de <b>ce</b> biome a été battu.</summary>
+    public int HighestSaturationBeatenFor(string? biomeId)
+        => biomeId != null && _saturationBeaten.TryGetValue(biomeId, out var v)
+            ? Mathf.Clamp(v, 0, SaturationTable.MaxRank) : 0;
+
+    /// <summary>Cran maximum sélectionnable sur ce biome, en l'état de sa progression.</summary>
+    public int MaxSelectableSaturationFor(string? biomeId)
+        => SaturationTable.MaxSelectable(HighestSaturationBeatenFor(biomeId));
 
     /// <summary>
-    /// Cran le plus élevé auquel un boss de fin a été battu, <b>tous biomes confondus</b> — c'est lui
-    /// qui débloque le cran suivant. Le déblocage est global à dessein : par biome, cinq niveaux ×
-    /// dix crans deviendrait une corvée (`docs/ENDGAME_PLAN.md` §7.3).
+    /// Cran de la <b>run en cours</b> — c'est cette propriété que lisent tous les systèmes de jeu
+    /// (<c>EnemySpawner</c>, <c>Player</c>, <c>EchoFormula</c>…).
+    ///
+    /// <para>Résolue <b>à la demande</b> sur le biome joué, jamais figée dans un champ : le biome est
+    /// posé par <c>GroundRenderer._Ready</c> et l'ordre des <c>_Ready</c> entre nœuds frères n'est pas
+    /// garanti (même raison que <c>EnemySpawner.ThreatTier</c>). On lit donc d'abord
+    /// <c>SelectedBiomeId</c>, qui est écrit par l'écran de sélection <i>avant</i> le chargement de la
+    /// scène de jeu — sans quoi <c>Player._Ready</c> pourrait lire le cran d'un biome pas encore
+    /// résolu et rallumer les filets que le cran IV vient de couper.</para>
     /// </summary>
-    public int HighestSaturationBeaten { get; private set; } = 0;
+    public int Saturation
+    {
+        get
+        {
+            // Banc de mesure : --saturation=<n> écrase le choix sans jamais toucher au dictionnaire
+            // persisté — la surcharge vit uniquement ici, à la lecture.
+            if (DebugHooks.Saturation.HasValue)
+                return Mathf.Clamp(DebugHooks.Saturation.Value, 0, SaturationTable.MaxRank);
+            return SaturationFor(ActiveBiomeId);
+        }
+    }
 
-    /// <summary>Cran maximum sélectionnable en l'état de la progression.</summary>
-    public int MaxSelectableSaturation => SaturationTable.MaxSelectable(HighestSaturationBeaten);
+    /// <summary>Biome de la run en cours : le choix de l'écran de sélection, sinon celui résolu en jeu.</summary>
+    private static string? ActiveBiomeId
+    {
+        get
+        {
+            var gm = GameManager.Instance;
+            if (gm == null) return null;
+            return gm.SelectedBiomeId is { Length: > 0 } sel ? sel : gm.CurrentBiomeId;
+        }
+    }
 
     /// <summary>true si le joueur joue en mode assistance (aucune saturation possible).</summary>
     public bool IsAssisted => Difficulty == GameDifficulty.Facile;
@@ -310,35 +355,37 @@ public partial class GameSettings : Node
     public void SetDifficulty(GameDifficulty d)
     {
         Difficulty = d;
-        // Passer en assistance remet la saturation à zéro : garder un cran actif sous « Facile » ferait
-        // coexister les deux axes que la 1.25.0 vient précisément de fusionner.
-        if (d == GameDifficulty.Facile) Saturation = 0;
+        // Passer en assistance neutralise la saturation : garder un cran actif sous « Facile » ferait
+        // coexister les deux axes que la 1.25.0 vient précisément de fusionner. Les choix par biome ne
+        // sont PAS effacés — ils sont seulement ignorés (`SaturationFor` renvoie 0) : repasser en
+        // « Normal » doit rendre au joueur l'échelle qu'il avait réglée, pas une échelle remise à plat.
         Save();
     }
 
-    /// <summary>Choisit le cran de saturation de la prochaine run (borné par la progression).</summary>
-    public void SetSaturation(int rank)
+    /// <summary>Choisit le cran de saturation de ce biome (borné par ce qui y est débloqué).</summary>
+    public void SetSaturationFor(string biomeId, int rank)
     {
-        if (IsAssisted) { Saturation = 0; _persistedSaturation = 0; Save(); return; }
-        Saturation = Mathf.Clamp(rank, 0, MaxSelectableSaturation);
-        _persistedSaturation = Saturation;   // choix explicite du joueur : il devient la valeur persistée
+        if (IsAssisted || biomeId.Length == 0) return;
+        _saturationChoice[biomeId] = Mathf.Clamp(rank, 0, MaxSelectableSaturationFor(biomeId));
         Save();
     }
 
     /// <summary>
-    /// À appeler quand le boss de fin est battu : mémorise le cran atteint, ce qui débloque le suivant.
-    /// Ne redescend jamais (un cran validé reste validé, même après une run à cran plus bas).
+    /// À appeler quand le boss de fin d'un biome est battu : mémorise le cran atteint <b>sur ce
+    /// biome</b>, ce qui y débloque le suivant. Ne redescend jamais (un cran validé reste validé, même
+    /// après une run à cran plus bas).
     /// </summary>
-    public void RecordSaturationBeaten(int rank)
+    public void RecordSaturationBeaten(string biomeId, int rank)
     {
-        if (IsAssisted || rank <= HighestSaturationBeaten) return;
+        if (IsAssisted || biomeId.Length == 0) return;
+        if (rank <= HighestSaturationBeatenFor(biomeId)) return;
         // ⚠ Sous --saturation=<n>, le cran n'a pas été GAGNÉ par le joueur : il a été imposé au banc.
         // Sans ce garde-fou, une campagne de mesure débloque l'échelle dans la sauvegarde réelle — c'est
         // arrivé le 2026-07-30 (`saturation_beaten=5` sans aucune victoire à ce cran), et le joueur s'est
-        // retrouvé à pouvoir choisir n'importe quel cran. Protéger `saturation` contre la persistance ne
+        // retrouvé à pouvoir choisir n'importe quel cran. Protéger le CHOIX contre la persistance ne
         // suffisait pas : le DÉBLOCAGE est une seconde voie d'écriture.
         if (DebugHooks.Saturation.HasValue) return;
-        HighestSaturationBeaten = Mathf.Min(rank, SaturationTable.MaxRank);
+        _saturationBeaten[biomeId] = Mathf.Min(rank, SaturationTable.MaxRank);
         Save();
     }
 
@@ -448,52 +495,100 @@ public partial class GameSettings : Node
     private static float Db(float linear) => linear <= 0.001f ? -80f : Mathf.LinearToDb(linear);
 
     /// <summary>
-    /// Lit la saturation, ou <b>migre</b> une sauvegarde d'avant la 1.25.0.
+    /// Version du schéma de <c>settings.cfg</c>. <b>1</b> = saturation globale (1.25.0 initiale),
+    /// <b>2</b> = saturation par biome. Toujours écrite ; l'absence de la clé signe un fichier
+    /// antérieur à la saturation.
     ///
-    /// <para>L'absence de la clé <c>gameplay/saturation</c> signe un ancien fichier. « Difficile » y
-    /// devient <i>Normal + saturation 1</i>, aux multiplicateurs identiques
+    /// <para>Introduite ici parce que la détection « clé absente » ne fonctionne qu'<b>une</b> fois :
+    /// elle a servi pour la première migration, et la deuxième arrivait déjà (plan §8.3). Un entier
+    /// explicite rend les migrations suivantes déterministes et ordonnées.</para>
+    /// </summary>
+    private const int SaveVersion = SaturationTable.SchemaVersion;
+
+    /// <summary>
+    /// Lit la saturation et <b>migre</b> les schémas antérieurs. Rien n'est perdu ni réinterprété à la
+    /// hausse.
+    ///
+    /// <list type="bullet">
+    /// <item><b>v0</b> (aucune clé de saturation) — fichier d'avant la 1.25.0. « Difficile » devient
+    /// <i>Normal + saturation 1</i>, aux multiplicateurs identiques
     /// (<see cref="SaturationTable.MigrateLegacyDifficulty"/>) : les records gagnés à cette difficulté
-    /// restent donc <b>exacts</b> — ni effacés, ni réinterprétés à la hausse. Et comme ce joueur jouait
-    /// effectivement au cran 1, on le lui crédite s'il a déjà terminé un niveau, plutôt que de le
-    /// renvoyer au bas de l'échelle.</para>
+    /// restent <b>exacts</b>. Le cran n'est crédité que si un niveau a réellement été terminé.</item>
+    /// <item><b>v1</b> (saturation globale) — le cran choisi et le cran débloqué sont <b>diffusés à
+    /// tous les biomes</b>. Sous ce schéma le déblocage était global : le joueur avait donc bel et bien
+    /// accès à ce cran partout, et le lui retirer serait une régression. On ne sait pas <i>sur quel</i>
+    /// biome il l'a gagné — l'information n'a jamais existé.</item>
+    /// </list>
     ///
     /// <para>Doit être appelée <b>après</b> le chargement des complétions (cf. l'appel dans
     /// <c>Load</c>) : sans elles, le crédit du cran est perdu.</para>
     /// </summary>
     private void LoadOrMigrateSaturation(ConfigFile cfg)
     {
-        if (cfg.HasSectionKey("gameplay", "saturation"))
+        int version = cfg.GetValue("gameplay", "save_version", 0).AsInt32();
+        // Fichier écrit par la 1.25.0 initiale : versionné a posteriori d'après la clé qu'elle écrivait.
+        if (version == 0 && cfg.HasSectionKey("gameplay", "saturation")) version = 1;
+
+        if (version >= 2)
         {
-            Saturation = cfg.GetValue("gameplay", "saturation", 0).AsInt32();
-            HighestSaturationBeaten = cfg.GetValue("gameplay", "saturation_beaten", 0).AsInt32();
+            ReadRankMap(cfg, "saturation_by_level",        _saturationChoice);
+            ReadRankMap(cfg, "saturation_beaten_by_level", _saturationBeaten);
         }
         else
         {
-            var (migratedDiff, migratedSat, migratedBeaten) =
-                SaturationTable.MigrateLegacyDifficulty((int)Difficulty);
-            Difficulty = (GameDifficulty)migratedDiff;
-            Saturation = migratedSat;
-            // Le cran n'est crédité que si le joueur a réellement terminé un niveau : jouer en
-            // « Difficile » sans jamais gagner ne débloque rien.
-            if (migratedBeaten > 0 && HasCompletedAny(LevelOrder[0]))
-                HighestSaturationBeaten = migratedBeaten;
-        }
+            int choice, beaten;
+            if (version == 1)
+            {
+                choice = cfg.GetValue("gameplay", "saturation", 0).AsInt32();
+                beaten = cfg.GetValue("gameplay", "saturation_beaten", 0).AsInt32();
+            }
+            else
+            {
+                var (migratedDiff, migratedSat, migratedBeaten) =
+                    SaturationTable.MigrateLegacyDifficulty((int)Difficulty);
+                Difficulty = (GameDifficulty)migratedDiff;
+                choice = migratedSat;
+                // Le cran n'est crédité que si le joueur a réellement terminé un niveau : jouer en
+                // « Difficile » sans jamais gagner ne débloque rien.
+                beaten = migratedBeaten > 0 && HasCompletedAny(LevelOrder[0]) ? migratedBeaten : 0;
+            }
 
-        HighestSaturationBeaten = Mathf.Clamp(HighestSaturationBeaten, 0, SaturationTable.MaxRank);
-        Saturation = Mathf.Clamp(Saturation, 0, MaxSelectableSaturation);
-        if (Difficulty == GameDifficulty.Facile) Saturation = 0;
+            var (choiceMap, beatenMap) = SaturationTable.DiffuseGlobalRanks(LevelOrder, choice, beaten);
+            _saturationChoice.Clear(); foreach (var kv in choiceMap) _saturationChoice[kv.Key] = kv.Value;
+            _saturationBeaten.Clear(); foreach (var kv in beatenMap) _saturationBeaten[kv.Key] = kv.Value;
+        }
 
         // Banc de mesure : --saturation=<n> force le cran sans passer par l'écran de sélection (que le
-        // bot ne traverse jamais) et SANS persister — une campagne ne doit pas laisser le joueur avec
-        // un cran qu'il n'a pas choisi. Le déblocage est volontairement ignoré : on mesure un cran
-        // avant de l'avoir gagné. Appliqué en dernier pour écraser le clamp ci-dessus.
-        _persistedSaturation = Saturation;
+        // bot ne traverse jamais) et SANS jamais toucher aux dictionnaires — la surcharge vit dans le
+        // getter de `Saturation`. Une campagne ne doit pas laisser le joueur avec un cran qu'il n'a pas
+        // choisi, ni avec un déblocage qu'il n'a pas gagné.
         if (DebugHooks.Saturation.HasValue)
         {
-            Saturation = Mathf.Clamp(DebugHooks.Saturation.Value, 0, SaturationTable.MaxRank);
             Difficulty = GameDifficulty.Normal;   // l'assistance annulerait tous les crans
-            GD.Print($"[GameSettings] --saturation : cran forcé à {Saturation} (non persisté)");
+            GD.Print($"[GameSettings] --saturation : cran forcé à {DebugHooks.Saturation.Value} (non persisté)");
         }
+    }
+
+    /// <summary>Lit une table « biome:cran » persistée en <c>PackedStringArray</c>.</summary>
+    private static void ReadRankMap(ConfigFile cfg, string key, Dictionary<string, int> into)
+    {
+        into.Clear();
+        var raw = cfg.GetValue("gameplay", key, new string[0]).AsStringArray();
+        foreach (var entry in raw)
+        {
+            int sep = entry.LastIndexOf(':');
+            if (sep <= 0 || !int.TryParse(entry[(sep + 1)..], out int rank)) continue;
+            into[entry[..sep]] = Mathf.Clamp(rank, 0, SaturationTable.MaxRank);
+        }
+    }
+
+    /// <summary>Sérialise une table « biome:cran ». Les crans nuls sont omis (fichier plus lisible).</summary>
+    private static string[] WriteRankMap(Dictionary<string, int> from)
+    {
+        var list = new List<string>();
+        foreach (var kv in from)
+            if (kv.Value > 0) list.Add($"{kv.Key}:{kv.Value}");
+        return list.ToArray();
     }
 
     // ── Persistance ────────────────────────────────────────────────────────────
@@ -581,9 +676,8 @@ public partial class GameSettings : Node
         _discoveredGrafts.Clear();
         // La saturation est de la PROGRESSION, pas une préférence : la laisser survivre à une remise à
         // zéro donnerait un cran 5 débloqué à un joueur qui n'a plus aucune victoire à son compte.
-        Saturation = 0;
-        _persistedSaturation = 0;
-        HighestSaturationBeaten = 0;
+        _saturationChoice.Clear();
+        _saturationBeaten.Clear();
         Save();
     }
 
@@ -601,11 +695,13 @@ public partial class GameSettings : Node
         cfg.SetValue("display",  "max_fps",    MaxFps);
         cfg.SetValue("display",  "show_fps",   ShowFps);
         cfg.SetValue("gameplay", "difficulty", (int)Difficulty);
-        // La présence de ces deux clés signale à LoadOrMigrateSaturation que le fichier est au format
-        // 1.25.0 : ne jamais les rendre conditionnelles, sinon la migration se rejouerait à chaque
-        // démarrage et écraserait un choix d'assistance par « Normal + saturation 1 ».
-        cfg.SetValue("gameplay", "saturation",        _persistedSaturation);
-        cfg.SetValue("gameplay", "saturation_beaten", HighestSaturationBeaten);
+        // ⚠ Écrire `save_version` INCONDITIONNELLEMENT : c'est lui qui dit à LoadOrMigrateSaturation
+        // que le fichier est déjà migré. Le rendre conditionnel (ou l'oublier sur un chemin de
+        // sauvegarde) rejouerait la migration à chaque démarrage — et une migration qui se rejoue
+        // réécrit des choix que le joueur a faits depuis.
+        cfg.SetValue("gameplay", "save_version",              SaveVersion);
+        cfg.SetValue("gameplay", "saturation_by_level",        WriteRankMap(_saturationChoice));
+        cfg.SetValue("gameplay", "saturation_beaten_by_level", WriteRankMap(_saturationBeaten));
         cfg.SetValue("gameplay", "shake_intensity", ShakeIntensity);
         cfg.SetValue("gameplay", "reduce_flashes",  ReduceFlashes);
         cfg.SetValue("gameplay", "rumble",          Rumble);

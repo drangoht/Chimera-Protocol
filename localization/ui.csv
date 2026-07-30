@@ -329,8 +329,10 @@ LEVELSEL_LOCKED,LOCKED,VERROUILLÉ,BLOQUEADO
 LEVELSEL_THREAT,Threat,Menace,Amenaza
 LEVELSEL_ECHO_MULT,Echoes ×{0},Échos ×{0},Ecos ×{0}
 SAT_TITLE,Rust Saturation,Saturation de Rouille,Saturación de Herrumbre
+SAT_SHORT,Saturation,Saturation,Saturación
+SAT_MAX,unlocked: {0},débloqué : {0},desbloqueado: {0}
 SAT_NONE,No extra rules — the standard run.,Aucune règle ajoutée — la partie standard.,Sin reglas añadidas: la partida estándar.
-SAT_LOCKED_HINT,Beat this saturation to unlock the next one.,Battez cette saturation pour débloquer la suivante.,Supera esta saturación para desbloquear la siguiente.
+SAT_LOCKED_HINT,Beat this saturation on this level to unlock the next one here.,Battez cette saturation sur ce niveau pour y débloquer la suivante.,Supera esta saturación en este nivel para desbloquear la siguiente aquí.
 SAT_1_NAME,Haemorrhage,Hémorragie,Hemorragia
 SAT_1_RULE,Healing received is cut by 40 % (orbs and lifesteal included).,Les soins reçus sont réduits de 40 % (orbes et vol de vie compris).,La curación recibida se reduce un 40 % (orbes y robo de vida incluidos).
 SAT_2_NAME,Pack,Meute,Manada

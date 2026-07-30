@@ -2846,6 +2846,14 @@ contenu neuf.
 ce qui rend les records déjà gagnés valides sans migration destructrice ; « Facile » survit comme mode
 d'**assistance**, hors échelle, parce que l'accessibilité n'est pas une saturation négative.
 
+**L'échelle se règle et se débloque par NIVEAU** (2026-07-30). Battre la saturation N sur un biome y
+ouvre le N+1, et seulement là. Le coût est réel — l'échelle se regagne cinq fois — et il est assumé
+pour deux raisons : un biome tardif, déjà plus dur via `LevelThreat` (§28), ne se retrouve pas ouvert
+au cran 5 parce que le joueur l'a gagné sur le Sanctuaire ; et chaque niveau porte sa propre courbe.
+Conséquence d'interface : **le sélecteur vit sur la carte du biome**, jamais dans un panneau en tête
+d'écran — la liste défile, et un réglage global aurait laissé modifier le cran d'un niveau sorti du
+champ de vision.
+
 ### 34.3 Les cinq crans livrés
 
 | # | Nom | La certitude retirée | Effet mesuré (temps soutenable) |

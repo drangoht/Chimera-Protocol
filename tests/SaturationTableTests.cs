@@ -269,4 +269,53 @@ public class SaturationTableTests
         for (int legacy = 0; legacy <= 2; legacy++)
             Assert.Equal(0, SaturationTable.MigrateLegacyDifficulty(legacy).Saturation);
     }
+
+    // ─── Schéma 1 (cran global) → schéma 2 (cran par niveau) ─────────────────
+
+    private static readonly string[] Biomes =
+        { "sanctuaire", "aether", "givre", "fournaise", "neon" };
+
+    [Fact]
+    public void Le_Cran_Global_Est_Diffuse_A_Tous_Les_Niveaux()
+    {
+        // Sous le schéma 1 le déblocage était GLOBAL : le joueur avait bien accès au cran 2 partout.
+        // Le lui retirer sur quatre biomes serait une régression, et on ne sait pas où il l'a gagné.
+        var (choice, beaten) = SaturationTable.DiffuseGlobalRanks(Biomes, globalChoice: 1, globalBeaten: 2);
+
+        Assert.Equal(Biomes.Length, choice.Count);
+        foreach (var b in Biomes)
+        {
+            Assert.Equal(1, choice[b]);
+            Assert.Equal(2, beaten[b]);
+        }
+    }
+
+    [Fact]
+    public void La_Diffusion_Borne_Le_Choix_Par_Le_Deblocage()
+    {
+        // Fichier incohérent (cran 4 choisi, rien de battu) : la migration ne doit pas ouvrir l'échelle
+        // par la porte de derrière. MaxSelectable(0) vaut 1.
+        var (choice, _) = SaturationTable.DiffuseGlobalRanks(Biomes, globalChoice: 4, globalBeaten: 0);
+        foreach (var b in Biomes) Assert.Equal(1, choice[b]);
+    }
+
+    [Fact]
+    public void Un_Niveau_Absent_De_La_Table_Vaut_Cran_Zero()
+    {
+        // Un biome ajouté après coup ne doit hériter d'aucun cran : la table est la seule source, et
+        // l'absence y vaut 0 (c'est ce que fait GameSettings.SaturationFor).
+        var (choice, beaten) = SaturationTable.DiffuseGlobalRanks(Biomes, 3, 3);
+        Assert.False(choice.ContainsKey("biome_futur"));
+        Assert.False(beaten.ContainsKey("biome_futur"));
+    }
+
+    [Fact]
+    public void Le_Deblocage_Ouvre_Le_Cran_Suivant_Niveau_Par_Niveau()
+    {
+        // Battre le cran 2 sur un niveau y ouvre le 3 — et ne dit rien des autres niveaux, qui gardent
+        // leur propre progression (c'est tout le sens du déblocage par niveau).
+        Assert.Equal(3, SaturationTable.MaxSelectable(2));
+        Assert.Equal(1, SaturationTable.MaxSelectable(0));
+        Assert.Equal(SaturationTable.MaxRank, SaturationTable.MaxSelectable(SaturationTable.MaxRank));
+    }
 }

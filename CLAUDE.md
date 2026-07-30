@@ -32,7 +32,10 @@ lancer, qui retire une certitude ; les statistiques ne montent plus après le cr
 verrouille). I Hémorragie (soins −40 %, le canal **dominant** : 86,4 PV/s contre 8,2) · II Meute
 (ex-« Difficile ») · III Compte à rebours (overtime à la 10ᵉ — attaque le temps de *build*) ·
 IV Sans filet (**le passage de niveau ne soigne plus**, + filets méta coupés) · V Élite
-ordinaire. La saturation **absorbe** l'ancienne difficulté : le cran 1 vaut « Difficile » aux mêmes
+ordinaire. **Le cran se règle et se débloque PAR NIVEAU** (2026-07-30, renverse le §7.3 du plan) :
+sélecteur **sur la carte du biome** (la liste défile — un panneau global aurait laissé régler un niveau
+hors écran), et `settings.cfg` passe en **`save_version=2`** (tables `biome:cran`, migration qui diffuse
+l'ancien cran global à tous les biomes). La saturation **absorbe** l'ancienne difficulté : le cran 1 vaut « Difficile » aux mêmes
 valeurs, donc **les records déjà gagnés restent exacts** ; « Facile » survit comme mode d'**assistance**,
 hors échelle (migration des `settings.cfg` testée). Échos +20 %/cran via une **source unique**
 (`TotalEchoMult`) — `EchoFormula` et `RunEndScreen` doivent appliquer le même facteur, sinon la somme
@@ -47,7 +50,7 @@ protocoles biaisent en sens opposés). ⚠ **Un cran ne doit jamais reposer sur 
 « Sans filet » ne coupait que deux consommables **achetés**, absents de la sauvegarde de référence après
 84 runs — il ne retirait donc rien, et un bonus *fini* est de toute façon invisible pour une métrique de
 *flux*. Élargi au filet **universel** (soin de passage de niveau). Mesures → `docs/TEST_REPORT.md` ;
-design → `docs/GDD.md` **§34**. **296 tests.**
+design → `docs/GDD.md` **§34**. **300 tests.**
 
 **(5) Réserve de régénération — la carte ne manquait pas de valeur, elle en perdait 58 %**
 (2026-07-30, **publié en 1.24.0**). Premier réglage instruit **au banc apparié** plutôt qu'à la session jouée.

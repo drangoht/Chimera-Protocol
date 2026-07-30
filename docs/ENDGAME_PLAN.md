@@ -210,10 +210,20 @@ lots 1-2 ont tenu.
      mais n'est plus proposé : au chargement, il est converti en *Normal + saturation 1*.
 2. **Cinq crans au lancement** (I à V), tous validés au banc. Les crans VI-X viennent aux lots 2 et 4.
    Cinq crans réellement testés valent mieux que dix annoncés.
-3. **Déblocage global, records par biome × saturation.** Le cran maximum atteint est global (battre
-   la saturation N sur *n'importe quel* biome débloque N+1) : par biome, cinq niveaux × dix crans
-   deviendrait une corvée. En revanche les **records** restent indexés par biome **et** par saturation —
-   la grille à remplir existe pour qui la veut, sans être un péage.
+3. ~~**Déblocage global, records par biome × saturation.**~~ **RENVERSÉ le 2026-07-30 par l'auteur :
+   le cran se règle et se débloque PAR NIVEAU.** Battre la saturation N sur la Fournaise y ouvre le
+   N+1, et seulement là. L'objection d'origine tient toujours — l'échelle se regagne cinq fois, et
+   c'est un coût réel — mais elle est assumée en échange de deux propriétés : un biome tardif (déjà
+   plus dur via `LevelThreat`) ne se retrouve plus ouvert au cran 5 parce que le joueur l'a gagné sur
+   le Sanctuaire, et chaque niveau porte sa propre courbe de progression. Les **records** restent
+   indexés par biome **et** par saturation (lot 3).
+   - **Conséquence d'UI** : le sélecteur vit **sur la carte du biome**, pas dans un panneau en tête
+     d'écran. La liste défile ; un sélecteur global aurait laissé régler le cran d'un niveau sorti du
+     champ de vision.
+   - **Conséquence de schéma** : `settings.cfg` passe en **version 2** (`save_version`), les deux
+     valeurs globales devenant des tables `biome:cran`. Migration : le cran global est **diffusé à
+     tous les biomes** — sous l'ancien schéma le joueur y avait effectivement accès partout, et
+     l'information « sur quel biome l'a-t-il gagné » n'a jamais existé.
 
 ## 8. Migration des sauvegardes des joueurs déjà en place
 
@@ -244,9 +254,12 @@ des complétions — sans elles, le crédit du cran serait perdu.
    de vigilance : le schéma actuel garde *un* temps par biome, donc la migration ne peut reconstituer
    qu'**une** case de la nouvelle grille — celle de la difficulté mémorisée dans `_bestDiff`. Les autres
    cases démarrent vides, ce qui est correct : elles n'ont jamais été jouées *en tant que telles*.
-3. **Écrire une migration versionnée**, pas une détection par clé absente. La parade actuelle (« pas de
-   clé `saturation` ⇒ ancien fichier ») ne fonctionne qu'**une fois** ; le lot 3 en ajoutera d'autres. Un
-   entier `save_version` dans `settings.cfg` rend les migrations suivantes déterministes et ordonnées.
+3. ~~**Écrire une migration versionnée**~~ — **FAIT le 2026-07-30**, et pour la raison exacte
+   annoncée : la deuxième migration (saturation par niveau) est arrivée bien avant le lot 3, et la
+   parade « pas de clé `saturation` ⇒ ancien fichier » ne fonctionnait qu'**une fois**. `settings.cfg`
+   porte désormais `gameplay/save_version` (**2**), écrit **inconditionnellement** — le rendre
+   conditionnel rejouerait la migration à chaque démarrage, donc réécrirait des choix faits depuis.
+   Chemins couverts : v0 (avant la saturation) → v1 (cran global) → v2 (cran par niveau).
 4. **Ne jamais faire monter un joueur dans l'échelle sans victoire.** Leçon du 2026-07-30 : les runs de
    banc sous `--saturation=5` avaient persisté `saturation_beaten=5` dans une sauvegarde réelle, ouvrant
    tous les crans. Protéger la valeur *choisie* ne suffisait pas — le **déblocage** est une seconde voie

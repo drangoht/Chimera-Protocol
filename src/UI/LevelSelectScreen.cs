@@ -19,13 +19,15 @@ public partial class LevelSelectScreen : Control
     private ScrollContainer _scroll = null!;
     private readonly System.Collections.Generic.List<Button> _playButtons = new();
 
-    // Sélecteur de saturation (cf. docs/ENDGAME_PLAN.md). Null en mode assistance : l'échelle de
-    // challenge et l'accessibilité ne se mélangent pas.
-    private Button? _ascDown;
-    private Button? _ascUp;
-    private Label?  _ascValue;
-    private Label?  _ascEchoes;
-    private VBoxContainer? _ascRules;
+    // Sélecteur de saturation (cf. docs/ENDGAME_PLAN.md), UN PAR CARTE depuis le 2026-07-30 : le cran
+    // se règle et se débloque par niveau. Il vit sur la carte du biome plutôt que dans un panneau en
+    // tête d'écran — la liste défile, et un sélecteur global aurait permis de régler le cran d'un
+    // biome sorti du champ de vision. Absent en mode assistance (challenge et accessibilité ne se
+    // mélangent pas) et absent des cartes verrouillées (rien à régler sur un niveau injouable).
+    //
+    // Une rangée par carte : les boutons focalisables dans l'ordre horizontal (◄, ►, « Jouer ici »).
+    // Sert à câbler la navigation clavier/manette, cf. SetupFocusChain.
+    private readonly System.Collections.Generic.List<Button[]> _cardRows = new();
 
     public override void _Ready()
     {
@@ -46,11 +48,6 @@ public partial class LevelSelectScreen : Control
         title.AddThemeFontSizeOverride("font_size", 32);
         title.AddThemeColorOverride("font_color", Cyan);
         root.AddChild(title);
-
-        // Sélecteur de saturation, AVANT la liste : c'est un choix qui s'applique à toute la run, pas au
-        // niveau. Masqué en mode assistance (« Facile »), où la saturation est forcée à 0.
-        var ascPanel = BuildSaturationSelector();
-        if (ascPanel != null) root.AddChild(ascPanel);
 
         _scroll = new ScrollContainer { SizeFlagsVertical = SizeFlags.ExpandFill };
         root.AddChild(_scroll);
@@ -94,143 +91,143 @@ public partial class LevelSelectScreen : Control
     }
 
     /// <summary>
-    /// Panneau de choix du cran de saturation : valeur, multiplicateur d'Échos et <b>liste des règles
-    /// actives</b>. Renvoie null en mode assistance.
+    /// Sélecteur de saturation d'UNE carte de biome : cran, cran maximum débloqué sur ce niveau,
+    /// multiplicateur d'Échos, puis les règles actives.
     ///
-    /// <para>La liste des règles n'est pas décorative : tout le parti pris du système est qu'un cran
-    /// est une <b>règle nommée qu'on lit avant de jouer</b> (docs/ENDGAME_PLAN.md §2). Un sélecteur qui
+    /// <para>Les règles ne sont pas décoratives : tout le parti pris du système est qu'un cran est une
+    /// <b>règle nommée qu'on lit avant de jouer</b> (docs/ENDGAME_PLAN.md §2). Un sélecteur qui
     /// n'afficherait qu'un numéro reproduirait le défaut que la saturation corrige — une difficulté qui
     /// monte sans que le joueur sache ce qui a changé.</para>
+    ///
+    /// <para><b>Ce qui est affiché, et pourquoi pas tout</b> : les crans déjà acquis sont rappelés par
+    /// leur seul <b>nom</b>, et seul le <b>dernier</b> cran — celui qu'on vient d'ajouter — est donné
+    /// en toutes lettres. Le moment où lire compte est celui où l'on monte d'un cran ; répéter cinq
+    /// règles complètes sur cinq cartes ferait une page de texte que plus personne ne lit.</para>
     /// </summary>
-    private Control? BuildSaturationSelector()
+    private Button[] BuildCardSaturation(VBoxContainer into, string biomeId, Color accent)
     {
         var gs = GameSettings.Instance;
-        if (gs == null || gs.IsAssisted) return null;
+        if (gs == null || gs.IsAssisted) return System.Array.Empty<Button>();
 
-        var panel = new PanelContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
-        // Cadre « plaque blindée » à l'or de la palette : la même couleur que les récompenses d'Échos,
-        // puisque c'est le contrat de ce panneau — plus dur, mieux payé.
-        panel.AddThemeStyleboxOverride("panel", UiStyle.CardFrame(UiPalette.Gold));
+        var row = new HBoxContainer();
+        row.AddThemeConstantOverride("separation", 10);
 
-        var vb = new VBoxContainer();
-        vb.AddThemeConstantOverride("separation", 6);
-        panel.AddChild(vb);
-
-        var row = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
-        row.AddThemeConstantOverride("separation", 12);
-
-        var caption = new Label { Text = Loc.T("SAT_TITLE"), SizeFlagsVertical = SizeFlags.ShrinkCenter };
-        caption.AddThemeFontSizeOverride("font_size", 18);
+        var caption = new Label { Text = Loc.T("SAT_SHORT"), SizeFlagsVertical = SizeFlags.ShrinkCenter };
+        caption.AddThemeFontSizeOverride("font_size", 14);
         caption.AddThemeColorOverride("font_color", Cyan);
         row.AddChild(caption);
 
         // ShrinkCenter sur les deux flèches : le cadre de focus s'étend de FocusExpand px et, sans
         // ancrage centré, un bouton focalisé grandit vers le bas et décale toute la ligne (cf.
         // docs/PITFALLS.md §UI — pièges StyleBox / focus).
-        _ascDown = new Button
+        var down = new Button
         {
             Text = "◄",
-            CustomMinimumSize = new Vector2(52, 40),
+            CustomMinimumSize = new Vector2(44, 34),
             SizeFlagsVertical = SizeFlags.ShrinkCenter,
         };
-        StyleButton(_ascDown, Violet);
-        _ascDown.Pressed += () => ChangeSaturation(-1);
-        row.AddChild(_ascDown);
+        StyleButton(down, Violet);
+        row.AddChild(down);
 
-        _ascValue = new Label
+        var value = new Label
         {
             HorizontalAlignment = HorizontalAlignment.Center,
-            SizeFlagsVertical = SizeFlags.ShrinkCenter,
-            CustomMinimumSize = new Vector2(46, 0),
+            SizeFlagsVertical   = SizeFlags.ShrinkCenter,
+            CustomMinimumSize   = new Vector2(28, 0),
         };
-        _ascValue.AddThemeFontSizeOverride("font_size", 24);
-        _ascValue.AddThemeColorOverride("font_color", Text);
-        row.AddChild(_ascValue);
+        value.AddThemeFontSizeOverride("font_size", 20);
+        value.AddThemeColorOverride("font_color", Text);
+        row.AddChild(value);
 
-        _ascUp = new Button
+        var up = new Button
         {
             Text = "►",
-            CustomMinimumSize = new Vector2(52, 40),
+            CustomMinimumSize = new Vector2(44, 34),
             SizeFlagsVertical = SizeFlags.ShrinkCenter,
         };
-        StyleButton(_ascUp, Violet);
-        _ascUp.Pressed += () => ChangeSaturation(+1);
-        row.AddChild(_ascUp);
+        StyleButton(up, Violet);
+        row.AddChild(up);
 
-        _ascEchoes = new Label { SizeFlagsVertical = SizeFlags.ShrinkCenter };
-        _ascEchoes.AddThemeFontSizeOverride("font_size", 15);
-        _ascEchoes.AddThemeColorOverride("font_color", new Color(1f, 0.8f, 0.27f));   // or : récompense
-        row.AddChild(_ascEchoes);
+        var maxLbl = new Label { SizeFlagsVertical = SizeFlags.ShrinkCenter };
+        maxLbl.AddThemeFontSizeOverride("font_size", 13);
+        maxLbl.AddThemeColorOverride("font_color", Dim);
+        row.AddChild(maxLbl);
 
-        vb.AddChild(row);
+        var sep = new Label { Text = "·", SizeFlagsVertical = SizeFlags.ShrinkCenter };
+        sep.AddThemeFontSizeOverride("font_size", 13);
+        sep.AddThemeColorOverride("font_color", Dim);
+        row.AddChild(sep);
 
-        _ascRules = new VBoxContainer();
-        _ascRules.AddThemeConstantOverride("separation", 2);
-        vb.AddChild(_ascRules);
+        var echoes = new Label { SizeFlagsVertical = SizeFlags.ShrinkCenter };
+        echoes.AddThemeFontSizeOverride("font_size", 14);
+        echoes.AddThemeColorOverride("font_color", UiPalette.Gold);   // or : récompense
+        row.AddChild(echoes);
 
-        RefreshSaturation();
-        return panel;
+        into.AddChild(row);
+
+        var rules = new VBoxContainer();
+        rules.AddThemeConstantOverride("separation", 1);
+        into.AddChild(rules);
+
+        void Refresh()
+        {
+            int rank = gs.SaturationFor(biomeId);
+            int max  = gs.MaxSelectableSaturationFor(biomeId);
+
+            value.Text   = rank.ToString();
+            maxLbl.Text  = Loc.T("SAT_MAX", max.ToString());
+            echoes.Text  = Loc.T("LEVELSEL_ECHO_MULT", $"{SaturationTable.EchoMult(rank):0.00}");
+            down.Disabled = rank <= 0;
+            up.Disabled   = rank >= max;
+
+            foreach (var child in rules.GetChildren()) child.QueueFree();
+
+            if (rank == 0)
+            {
+                AddRuleLine(rules, Loc.T("SAT_NONE"), Dim, 13);
+            }
+            else
+            {
+                // Rappel des crans acquis : noms seuls, sur une ligne.
+                var names = new System.Text.StringBuilder();
+                foreach (var r in SaturationTable.ActiveRanks(rank))
+                {
+                    if (names.Length > 0) names.Append("  ·  ");
+                    names.Append($"{RomanNumeral(r.Value)} {Loc.T(r.NameKey)}");
+                }
+                AddRuleLine(rules, names.ToString(), accent, 13);
+
+                // La règle du cran le plus haut, en toutes lettres : c'est la seule nouveauté par
+                // rapport au cran précédent, donc la seule que le joueur doive lire.
+                var top = SaturationTable.ActiveRanks(rank)[^1];
+                AddRuleLine(rules, Loc.T(top.RuleKey), Text, 13);
+            }
+
+            if (rank < SaturationTable.MaxRank && rank >= max)
+                AddRuleLine(rules, Loc.T("SAT_LOCKED_HINT"), Dim, 12);
+        }
+
+        void Change(int delta)
+        {
+            gs.SetSaturationFor(biomeId, gs.SaturationFor(biomeId) + delta);
+            AudioSystem.Instance?.PlaySfx("sfx_ui_click");
+            Refresh();
+        }
+
+        down.Pressed += () => Change(-1);
+        up.Pressed   += () => Change(+1);
+        Refresh();
+
+        return new[] { down, up };
     }
 
-    /// <summary>Décale le cran choisi (borné par la progression) et rafraîchit l'affichage.</summary>
-    private void ChangeSaturation(int delta)
+    /// <summary>Ligne de texte d'une carte (règle de saturation), repliée si trop longue.</summary>
+    private static void AddRuleLine(VBoxContainer into, string text, Color color, int size)
     {
-        var gs = GameSettings.Instance;
-        if (gs == null) return;
-        gs.SetSaturation(gs.Saturation + delta);
-        AudioSystem.Instance?.PlaySfx("sfx_ui_click");
-        RefreshSaturation();
-    }
-
-    /// <summary>Met à jour valeur, Échos, règles actives et l'état des deux flèches.</summary>
-    private void RefreshSaturation()
-    {
-        var gs = GameSettings.Instance;
-        if (gs == null || _ascValue == null || _ascRules == null) return;
-
-        int rank = gs.Saturation;
-        _ascValue.Text = rank.ToString();
-        if (_ascEchoes != null)
-            _ascEchoes.Text = Loc.T("LEVELSEL_ECHO_MULT", $"{gs.SaturationEchoMult:0.00}");
-
-        if (_ascDown != null) _ascDown.Disabled = rank <= 0;
-        if (_ascUp   != null) _ascUp.Disabled   = rank >= gs.MaxSelectableSaturation;
-
-        foreach (var child in _ascRules.GetChildren()) child.QueueFree();
-
-        if (rank == 0)
-        {
-            var none = new Label { Text = Loc.T("SAT_NONE"), HorizontalAlignment = HorizontalAlignment.Center };
-            none.AddThemeFontSizeOverride("font_size", 13);
-            none.AddThemeColorOverride("font_color", Dim);
-            _ascRules.AddChild(none);
-            return;
-        }
-
-        foreach (var r in SaturationTable.ActiveRanks(rank))
-        {
-            var line = new Label
-            {
-                Text = $"{RomanNumeral(r.Value)} · {Loc.T(r.NameKey)} — {Loc.T(r.RuleKey)}",
-                HorizontalAlignment = HorizontalAlignment.Center,
-                AutowrapMode = TextServer.AutowrapMode.WordSmart,
-            };
-            line.AddThemeFontSizeOverride("font_size", 13);
-            line.AddThemeColorOverride("font_color", Text);
-            _ascRules.AddChild(line);
-        }
-
-        if (rank < SaturationTable.MaxRank && rank >= gs.MaxSelectableSaturation)
-        {
-            var next = new Label
-            {
-                Text = Loc.T("SAT_LOCKED_HINT"),
-                HorizontalAlignment = HorizontalAlignment.Center,
-            };
-            next.AddThemeFontSizeOverride("font_size", 12);
-            next.AddThemeColorOverride("font_color", Dim);
-            _ascRules.AddChild(next);
-        }
+        var line = new Label { Text = text, AutowrapMode = TextServer.AutowrapMode.WordSmart };
+        line.AddThemeFontSizeOverride("font_size", size);
+        line.AddThemeColorOverride("font_color", color);
+        into.AddChild(line);
     }
 
     /// <summary>Chiffre romain d'un cran (I..V). Table courte : MaxRank vaut 5.</summary>
@@ -336,6 +333,11 @@ public partial class LevelSelectScreen : Control
         lblDesc.AddThemeFontSizeOverride("font_size", 14);
         lblDesc.AddThemeColorOverride("font_color", Dim);
         vb.AddChild(nameRow); vb.AddChild(lblEffect); vb.AddChild(lblThreat); vb.AddChild(lblDesc);
+
+        // Cran de saturation de CE niveau : réglé et débloqué ici, sous la description du biome qu'il
+        // modifie. Rien sur une carte verrouillée — il n'y a pas de cran à régler sur un niveau qu'on
+        // ne peut pas encore jouer.
+        var satButtons = unlocked ? BuildCardSaturation(vb, id, accent) : System.Array.Empty<Button>();
         hb.AddChild(vb);
 
         var play = new Button
@@ -354,6 +356,17 @@ public partial class LevelSelectScreen : Control
             hb.AddChild(play);
             _playButtons.Add(play);          // seuls les débloqués entrent dans la chaîne de focus
             _firstPlay ??= play;             // 1er niveau jouable = présélection
+
+            // Rangée focalisable de la carte, dans l'ordre horizontal. Les flèches doivent en faire
+            // partie : sans câblage explicite elles resteraient inatteignables à la manette (le focus
+            // spatial de Godot ne traverse pas les PanelContainer des cartes), et le cran deviendrait
+            // un réglage souris seulement.
+            var rowButtons = new Button[satButtons.Length + 1];
+            satButtons.CopyTo(rowButtons, 0);
+            rowButtons[^1] = play;
+            foreach (var b in satButtons)
+                b.FocusEntered += () => _scroll.EnsureControlVisible(b);
+            _cardRows.Add(rowButtons);
         }
         else
         {
@@ -370,35 +383,29 @@ public partial class LevelSelectScreen : Control
     /// </summary>
     private void SetupFocusChain(Button rand, Button back)
     {
-        // Les flèches de saturation sont en TÊTE de chaîne : sans câblage explicite elles resteraient
-        // inatteignables à la manette (le focus spatial ne traverse pas les PanelContainer — c'est déjà
-        // la raison d'être de cette méthode), et le cran de saturation serait un réglage souris seulement.
-        if (_ascDown != null && _ascUp != null)
+        // Chaque carte est une RANGÉE (◄ ► « Jouer ici ») : gauche/droite parcourt la rangée,
+        // haut/bas saute de carte en carte. Le voisin vertical vise le PREMIER bouton de la carte
+        // voisine — descendre puis remonter ramène donc au sélecteur, jamais dans un cul-de-sac.
+        for (int i = 0; i < _cardRows.Count; i++)
         {
-            _ascDown.FocusNeighborRight = _ascDown.GetPathTo(_ascUp);
-            _ascUp.FocusNeighborLeft    = _ascUp.GetPathTo(_ascDown);
-            if (_playButtons.Count > 0)
+            var row = _cardRows[i];
+            for (int j = 0; j < row.Length; j++)
             {
-                _ascDown.FocusNeighborBottom = _ascDown.GetPathTo(_playButtons[0]);
-                _ascUp.FocusNeighborBottom   = _ascUp.GetPathTo(_playButtons[0]);
-            }
-        }
+                if (j > 0)              row[j].FocusNeighborLeft  = row[j].GetPathTo(row[j - 1]);
+                if (j < row.Length - 1) row[j].FocusNeighborRight = row[j].GetPathTo(row[j + 1]);
 
-        for (int i = 0; i < _playButtons.Count; i++)
-        {
-            var cur = _playButtons[i];
-            if (i > 0)
-                cur.FocusNeighborTop = cur.GetPathTo(_playButtons[i - 1]);
-            else if (_ascUp != null)
-                cur.FocusNeighborTop = cur.GetPathTo(_ascUp);   // remonter au sélecteur depuis la 1re carte
-            cur.FocusNeighborBottom = (i < _playButtons.Count - 1)
-                ? cur.GetPathTo(_playButtons[i + 1])
-                : cur.GetPathTo(rand);
+                row[j].FocusNeighborTop = i > 0
+                    ? row[j].GetPathTo(_cardRows[i - 1][0])
+                    : new NodePath();
+                row[j].FocusNeighborBottom = i < _cardRows.Count - 1
+                    ? row[j].GetPathTo(_cardRows[i + 1][0])
+                    : row[j].GetPathTo(rand);
+            }
         }
 
         if (_playButtons.Count > 0)
         {
-            var last = _playButtons[^1];
+            var last = _cardRows.Count > 0 ? _cardRows[^1][0] : _playButtons[^1];
             rand.FocusNeighborTop = rand.GetPathTo(last);
             back.FocusNeighborTop = back.GetPathTo(last);
         }
