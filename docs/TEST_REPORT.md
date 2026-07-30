@@ -122,6 +122,25 @@ facteur que le jeu (`RunDurationMult`) dès le cran III. **Règle générale** :
 *durée* de la run invalide un protocole à départ fixe — il faut aligner la ligne de départ avant de
 comparer quoi que ce soit.
 
+**Mais l'alignement ne suffit pas, et c'est le vrai enseignement.** Re-mesuré avec `--start-at 10.01`,
+le cran III donne **56,2 %** — soit *au-dessus* du cran II (50,0 %), ce qui le ferait passer pour plus
+facile qu'un cran inférieur. Les deux protocoles biaisent en sens **opposés** :
+
+| protocole | biais | effet |
+|---|---|---|
+| départ fixe (13 min) | la run commence 3 min *dans* l'overtime | trop dur, bruit 36 % |
+| départ aligné (10 min) | la fenêtre inclut 3 min où le scaling temporel est plus faible | trop facile |
+
+Le scaling des ennemis dépend du **temps de jeu absolu**, alors que la phase de run dépend du **seuil
+d'overtime** : le cran III modifie précisément le lien entre les deux, donc aucune fenêtre ne rend les
+campagnes comparables. **Conclusion : le cran III n'est pas mesurable par ce banc**, et il ne faut pas
+le classer d'après ces chiffres. Ce qu'on sait de lui reste solide et suffisant pour le conserver : il
+augmente les dégâts subis (+9,7/s, 3/4, net) et il attaque le temps de construction du build — le levier
+dont le relevé du 2026-07-29 avait montré qu'il explique un facteur 2,4 sur la survie.
+
+Pour le trancher un jour : mesurer sur une run **complète** (sans `--start-at`), au prix de ~20 min
+réelles par run, soit 80 min pour quatre graines.
+
 ### Bug trouvé : le banc débloquait l'échelle dans la sauvegarde réelle
 
 `saturation_beaten=5` a été trouvé dans le `settings.cfg` du testeur **sans aucune victoire à ce cran** :

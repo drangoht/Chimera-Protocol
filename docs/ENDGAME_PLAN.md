@@ -129,6 +129,13 @@ py tools/power_curve_multi.py --overtime --minutes 20 --runs 1 --seed-base 1000 
 py tools/power_curve_multi.py --report-only --runs 4 --compare docs/bench/ref_overtime_225.json
 ```
 
+⚠ **Un cran qui touche à la DURÉE de la run n'est pas mesurable par ce banc** (constaté sur le cran III,
+2026-07-30). Le scaling des ennemis suit le temps de jeu absolu, la phase de run suit le seuil
+d'overtime : un cran qui modifie le lien entre les deux rend toute fenêtre d'observation incomparable —
+départ fixe = trop dur (bruit 36 %), départ aligné = trop facile. Le trancher demande une run complète,
+sans `--start-at` (~20 min réelles par run). Les crans qui ne touchent ni au temps ni au scaling
+(Hémorragie, Sans filet, Élite ordinaire) se mesurent normalement.
+
 **Critère par cran** : faire baisser le **temps soutenable** de plus de **6 %** (le plus petit écart
 que la campagne sache détecter). Un cran dont l'effet est sous ce seuil ne mérite pas d'exister — il
 coûte un palier au joueur sans rien changer.
