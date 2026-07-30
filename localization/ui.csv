@@ -338,7 +338,7 @@ SAT_2_RULE,"Enemies: +30 % health, +35 % damage, denser waves.","Ennemis : +30 %
 SAT_3_NAME,Countdown,Compte à rebours,Cuenta atrás
 SAT_3_RULE,Overtime starts around minute 10 instead of 13.,L'overtime commence vers la 10ᵉ minute au lieu de la 13ᵉ.,El tiempo extra empieza hacia el minuto 10 en vez del 13.
 SAT_4_NAME,No Safety Net,Sans filet,Sin red
-SAT_4_RULE,Emergency Core and Adaptive Plate no longer work.,Le Noyau de Secours et la Plaque Adaptative ne fonctionnent plus.,El Núcleo de Emergencia y la Placa Adaptativa dejan de funcionar.
+SAT_4_RULE,"Levelling up no longer heals. Emergency Core and Adaptive Plate are inactive.","Monter de niveau ne soigne plus. Noyau de Secours et Plaque Adaptative inactifs.","Subir de nivel ya no cura. Núcleo de Emergencia y Placa Adaptativa inactivos."
 SAT_5_NAME,Elites Everywhere,Élite ordinaire,Élite ordinaria
 SAT_5_RULE,Elites are three times more common — most of the swarm carries an affix.,Les élites sont trois fois plus fréquentes — la nuée porte des affixes.,Las élites son tres veces más frecuentes: el enjambre lleva afijos.
 RUNEND_TIER,Threat,Menace,Amenaza

@@ -121,7 +121,7 @@ public partial class GameSettings : Node
         : SaturationTable.SpawnMult(Saturation);
 
     /// <summary>
-    /// Multiplicateur des soins <b>reçus</b> (cran II « Hémorragie »). Vise le canal de soin dominant
+    /// Multiplicateur des soins <b>reçus</b> (cran I « Hémorragie »). Vise le canal de soin dominant
     /// mesuré — 86,4 PV/s de soins ponctuels contre 8,2 de régénération.
     /// </summary>
     public float HealingMult => IsAssisted ? 1f : SaturationTable.HealingMult(Saturation);
@@ -134,6 +134,13 @@ public partial class GameSettings : Node
     /// Faux à partir du cran IV « Sans filet ».
     /// </summary>
     public bool SafetyNetsEnabled => IsAssisted || SaturationTable.SafetyNetsEnabled(Saturation);
+
+    /// <summary>
+    /// Le passage de niveau soigne-t-il encore ? Faux à partir du cran IV, même cran que les filets
+    /// méta ci-dessus : c'est la <b>même</b> règle (« aucun rattrapage automatique »), exprimée sur le
+    /// levier universel plutôt que sur deux achats que le joueur peut ne pas posséder.
+    /// </summary>
+    public bool LevelUpHealsEnabled => IsAssisted || SaturationTable.LevelUpHealsEnabled(Saturation);
 
     /// <summary>Multiplicateur de fréquence des élites (cran V « Élite ordinaire »).</summary>
     public float EliteFrequencyMult => IsAssisted ? 1f : SaturationTable.EliteFrequencyMult(Saturation);

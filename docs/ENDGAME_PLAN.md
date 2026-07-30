@@ -66,6 +66,13 @@ la dimension qualitative qui manque. Valeurs à confirmer au banc, cran par cran
 | IX | Régence | **Deux champions** simultanés en overtime | spawn (existant, à orchestrer) |
 | X | Sans filet | Plus de vies supplémentaires ni de Plaque Adaptative | méta (existant, à inverser) |
 
+⚠ **Le cran X tel qu'écrit ici était creux**, et c'est une leçon générale : ses deux leviers
+**s'achètent**, donc il ne retirait rien à un joueur qui ne les possède pas — cas de la sauvegarde de
+référence, 84 runs et 25 186 Échos en banque sans avoir acheté ni l'un ni l'autre. Livré au lot 1 à la
+place du cran IV, il a été **élargi au filet universel du jeu** : le passage de niveau ne soigne plus
+(mesure : `docs/TEST_REPORT.md`, 2026-07-30). **Règle à retenir pour les crans suivants — un cran ne
+doit jamais reposer uniquement sur un levier optionnel** ; sa règle doit s'appliquer à toute partie.
+
 Le cran **VI** est le plus important du lot : c'est le seul qui répond directement au « surplus de PV
 60 % du temps ». À l'inverse, **I** est le moins utile — il est là parce qu'un premier cran doit être
 rassurant, pas parce qu'il apporte quelque chose.
@@ -161,17 +168,19 @@ finissent désormais par une **mort réelle** là où les quatre atteignaient le
 
 ⚠ Deux écarts au plan, assumés et documentés dans le code :
 - le cran IV prévu (« une phase de boss en plus ») est **reporté au lot 2** et remplacé par « Sans
-  filet » (l'ancien cran X). Motif : `BossPhases.Count` est une constante à tables fixes et le refactor
-  toucherait le HUD, la télémétrie, douze appels de `RustedCore` et des tests aux seuils codés en dur —
-  une règle **publiée** à re-tester sur cinq incarnations, qui n'a pas sa place dans le lot qui valide
-  le cadre lui-même ;
+  filet » (l'ancien cran X, **élargi** — voir §2). Motif : `BossPhases.Count` est une constante à tables
+  fixes et le refactor toucherait le HUD, la télémétrie, douze appels de `RustedCore` et des tests aux
+  seuils codés en dur — une règle **publiée** à re-tester sur cinq incarnations, qui n'a pas sa place
+  dans le lot qui valide le cadre lui-même ;
 - le cran V ne laisse pas le facteur ×3 traverser le plafond d'élites (3 × 0,28 = 84 %, soit la
   « horde » que le code interdit par commentaire, avec le coût des affixes sur 200-300 entités) : le
   plafond est relevé **explicitement** à 0,55.
 
-⚠ **Reste à mesurer** : seul le **cumul** des cinq crans est validé, pas chaque cran isolément
-(≈2 h 20 de banc). La progressivité de la courbe est donc inconnue, et un cran pourrait être sous le
-seuil de détection. À instruire avant le lot 2.
+**Progressivité mesurée cran par cran** (2026-07-30, `docs/TEST_REPORT.md`) : cran 0 **60,7 %** → I
+**53,6 %** → II **50,0 %** → IV **−16 % relatif** contre le cran III → cumul I→V **39,9 %**. Le cran I
+porte la moitié de la descente et le cran II — le seul purement statistique — pèse deux fois moins :
+la hiérarchie mesurée confirme le parti pris. Le **cran III reste non mesurable par ce banc** (il
+déplace le temps ; voir §5), et il n'y a pas lieu de le classer d'après un chiffre.
 
 ⚠ **Reste au lot 3** : les complétions et records restent indexés par *difficulté* et non par
 saturation. Conséquence temporaire : le badge « vaincu » ne distingue plus les crans (`RecordCompletion`

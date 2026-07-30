@@ -71,11 +71,23 @@ public class SaturationTableTests
             if (SaturationTable.EnemyHpMult(r)         != SaturationTable.EnemyHpMult(r - 1))         changed++;
             if (SaturationTable.HealingMult(r)         != SaturationTable.HealingMult(r - 1))         changed++;
             if (SaturationTable.RunDurationMult(r)     != SaturationTable.RunDurationMult(r - 1))     changed++;
-            if (SaturationTable.SafetyNetsEnabled(r)   != SaturationTable.SafetyNetsEnabled(r - 1))   changed++;
             if (SaturationTable.EliteFrequencyMult(r)  != SaturationTable.EliteFrequencyMult(r - 1))  changed++;
+            // « Sans filet » agit sur deux leviers (consommables méta + soin de passage de niveau) mais
+            // énonce UNE règle — « plus aucun rattrapage automatique ». Ils comptent donc pour un, et le
+            // test ci-dessous vérifie qu'ils basculent bien au même rang : s'ils se séparaient, ce
+            // seraient deux règles déguisées en une, et une mort cesserait d'être interprétable.
+            if (SaturationTable.SafetyNetsEnabled(r)   != SaturationTable.SafetyNetsEnabled(r - 1)
+             || SaturationTable.LevelUpHealsEnabled(r) != SaturationTable.LevelUpHealsEnabled(r - 1))  changed++;
 
             Assert.Equal(1, changed);
         }
+    }
+
+    [Fact]
+    public void Les_Deux_Leviers_De_Sans_Filet_Basculent_Au_Meme_Rang()
+    {
+        for (int r = 0; r <= SaturationTable.MaxRank; r++)
+            Assert.Equal(SaturationTable.SafetyNetsEnabled(r), SaturationTable.LevelUpHealsEnabled(r));
     }
 
     // ─── Les règles elles-mêmes ──────────────────────────────────────────────
@@ -104,6 +116,17 @@ public class SaturationTableTests
         Assert.True(SaturationTable.SafetyNetsEnabled(3));
         Assert.False(SaturationTable.SafetyNetsEnabled(4));
         Assert.False(SaturationTable.SafetyNetsEnabled(SaturationTable.MaxRank));
+    }
+
+    [Fact]
+    public void Cran4_Retire_Aussi_Le_Soin_De_Passage_De_Niveau()
+    {
+        // Sans ce second levier, le cran ne retirait rien à un joueur n'ayant acheté ni Noyau de Secours
+        // ni Plaque Adaptative — cas de la sauvegarde de référence du 2026-07-30, 84 runs et 25 186 Échos
+        // en banque, aucun des deux acheté. Un cran conditionnel à un achat n'est pas une règle lisible.
+        Assert.True(SaturationTable.LevelUpHealsEnabled(3));
+        Assert.False(SaturationTable.LevelUpHealsEnabled(4));
+        Assert.False(SaturationTable.LevelUpHealsEnabled(SaturationTable.MaxRank));
     }
 
     [Fact]

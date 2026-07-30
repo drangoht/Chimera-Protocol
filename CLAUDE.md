@@ -29,8 +29,9 @@ fixe**, densité déjà saturée et plafond de difficulté à ×1,35 — et surt
 qu'**une** question (des statistiques), donc le joueur n'avait qu'**une** réponse, qu'il gagne toujours.
 **Lot 1 livré** : `SaturationTable` (logique pure) — un cran = **une règle nommée** lisible avant de
 lancer, qui retire une certitude ; les statistiques ne montent plus après le cran 1 (un test le
-verrouille). I Meute · II Hémorragie (soins −40 %, le canal **dominant** : 86,4 PV/s contre 8,2) ·
-III Compte à rebours (overtime à la 10ᵉ — attaque le temps de *build*) · IV Sans filet · V Élite
+verrouille). I Hémorragie (soins −40 %, le canal **dominant** : 86,4 PV/s contre 8,2) · II Meute
+(ex-« Difficile ») · III Compte à rebours (overtime à la 10ᵉ — attaque le temps de *build*) ·
+IV Sans filet (**le passage de niveau ne soigne plus**, + filets méta coupés) · V Élite
 ordinaire. La saturation **absorbe** l'ancienne difficulté : le cran 1 vaut « Difficile » aux mêmes
 valeurs, donc **les records déjà gagnés restent exacts** ; « Facile » survit comme mode d'**assistance**,
 hors échelle (migration des `settings.cfg` testée). Échos +20 %/cran via une **source unique**
@@ -38,9 +39,15 @@ hors échelle (migration des `settings.cfg` testée). Échos +20 %/cran via une 
 animée diverge du total crédité. Nouveau flag **`--saturation=<n>`** : sans lui aucun cran n'est
 mesurable (le bot ne traverse pas l'écran de sélection), non persisté via la même parade que `--lang`.
 **Validé au banc** : temps soutenable **60,7 % → 39,9 %** (0/4, net), survie théorique **÷2**, et
-**2 runs sur 4 meurent** là où les quatre atteignaient le plafond. ⚠ Seul le **cumul** des 5 crans est
-mesuré, pas chaque cran (≈2 h 20 de banc) → progressivité inconnue. Mesures → `docs/TEST_REPORT.md`.
-**293 tests.**
+**2 runs sur 4 meurent** là où les quatre atteignaient le plafond. **Progressivité mesurée cran par
+cran** : 0 **60,7 %** → I **53,6 %** → II **50,0 %** → IV **−16 %** relatif (contre le cran III) →
+cumul **39,9 %**. Le cran I porte la moitié de la descente, le cran II — le seul purement statistique —
+deux fois moins. ⚠ Le **cran III n'est pas mesurable par ce banc** (il déplace le temps : les deux
+protocoles biaisent en sens opposés). ⚠ **Un cran ne doit jamais reposer sur un levier optionnel** :
+« Sans filet » ne coupait que deux consommables **achetés**, absents de la sauvegarde de référence après
+84 runs — il ne retirait donc rien, et un bonus *fini* est de toute façon invisible pour une métrique de
+*flux*. Élargi au filet **universel** (soin de passage de niveau). Mesures → `docs/TEST_REPORT.md` ;
+design → `docs/GDD.md` **§34**. **296 tests.**
 
 **(5) Réserve de régénération — la carte ne manquait pas de valeur, elle en perdait 58 %**
 (2026-07-30, **publié en 1.24.0**). Premier réglage instruit **au banc apparié** plutôt qu'à la session jouée.

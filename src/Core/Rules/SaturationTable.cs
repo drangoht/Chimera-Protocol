@@ -56,7 +56,7 @@ public static class SaturationTable
         new Rank(1, "SAT_1_NAME", "SAT_1_RULE"),   // Hémorragie  — soins reçus −40 %
         new Rank(2, "SAT_2_NAME", "SAT_2_RULE"),   // Meute       — ennemis plus durs (= ex-Difficile)
         new Rank(3, "SAT_3_NAME", "SAT_3_RULE"),   // Compte à rebours — overtime à la 10ᵉ minute
-        new Rank(4, "SAT_4_NAME", "SAT_4_RULE"),   // Sans filet  — plus de Noyau de Secours ni de Plaque
+        new Rank(4, "SAT_4_NAME", "SAT_4_RULE"),   // Sans filet  — le niveau ne soigne plus, filets coupés
         new Rank(5, "SAT_5_NAME", "SAT_5_RULE"),   // Élite ordinaire — élites ×3
     };
 
@@ -91,7 +91,7 @@ public static class SaturationTable
     public static float ChampionHpMult(int rank)
         => 1f + (EnemyHpMult(rank) - 1f) * LevelThreat.ChampionHpSoftening;
 
-    // ── Cran II — « Hémorragie » ────────────────────────────────────────────────────────────────
+    // ── Cran I — « Hémorragie » ─────────────────────────────────────────────────────────────────
 
     /// <summary>
     /// Multiplicateur des soins <b>reçus</b> (orbes, lifesteal, carte Blindage qui soigne de son gain).
@@ -141,6 +141,31 @@ public static class SaturationTable
     /// valide le cadre de saturation lui-même.</para>
     /// </summary>
     public static bool SafetyNetsEnabled(int rank) => Clamp(rank) < 4;
+
+    /// <summary>
+    /// Le passage de niveau soigne-t-il encore (25 % des PV max) ? Non à partir du cran IV.
+    ///
+    /// <para><b>Pourquoi ce second levier existe.</b> Les deux filets méta ci-dessus <b>s'achètent</b> :
+    /// à un joueur qui ne les possède pas, le cran IV ne retirait <i>rien du tout</i>. Constaté le
+    /// 2026-07-30 sur la sauvegarde de référence — 84 runs, 25 186 Échos en banque, et ni
+    /// <c>extra_life</c> ni <c>damage_absorb</c> achetés. Un cran dont l'effet dépend de l'état de la
+    /// méta n'est pas une règle lisible : c'est exactement le défaut qui a fait descendre « Meute » du
+    /// cran I au cran II (une porte d'entrée qui ne se sent pas fait conclure que toute l'échelle est
+    /// inopérante).</para>
+    ///
+    /// <para><b>Et pourquoi celui-ci.</b> Le soin de passage de niveau est le filet <b>universel</b> du
+    /// jeu : gratuit, automatique, proportionnel aux PV max — donc il grossit avec les cartes de
+    /// surcharge, sans plafond — et en overtime les niveaux tombent en rafale (124 → 140 en 74 s
+    /// mesurées au §31.7). C'est le rattrapage que personne ne choisit et que tout le monde reçoit.
+    /// Le retirer garde le cran fidèle à son nom, et le rend <b>mesurable</b> : contrairement à deux
+    /// vies et trois coups absorbés (≈1 900 PV, un bonus fini que le « temps soutenable » ne peut pas
+    /// voir puisqu'il compare des flux), c'est un débit de soin qui disparaît.</para>
+    ///
+    /// <para>Ce n'est pas un doublon d'« Hémorragie » (cran I) : celui-ci <b>réduit</b> tous les soins
+    /// de 40 %, celui-là <b>supprime</b> une source entière. Les deux se cumulent — la moitié restante
+    /// du soin de niveau tombe elle aussi.</para>
+    /// </summary>
+    public static bool LevelUpHealsEnabled(int rank) => Clamp(rank) < 4;
 
     // ── Cran V — « Élite ordinaire » ────────────────────────────────────────────────────────────
 

@@ -1,0 +1,144 @@
+{
+  "label": "cran IV elargi (sat4, 4 graines)",
+  "biome": "fournaise",
+  "minutes": 25,
+  "timescale": 3.0,
+  "summary": {
+    "survival_s": {
+      "median": 1020.0,
+      "p10": 1020.0,
+      "p90": 1020.0,
+      "cv": 0.0
+    },
+    "overtime_s": {
+      "median": 404.0,
+      "p10": 404.0,
+      "p90": 404.0,
+      "cv": 0.0
+    },
+    "final_level": {
+      "median": 131.0,
+      "p10": 129.6,
+      "p90": 135.2,
+      "cv": 0.026243194054073896
+    },
+    "final_power": {
+      "median": 6399.5,
+      "p10": 6311.0,
+      "p90": 6777.1,
+      "cv": 0.04279765382271651
+    },
+    "final_hp_max": {
+      "median": 2770.0,
+      "p10": 2410.0,
+      "p90": 2878.0,
+      "cv": 0.10441095954950165
+    },
+    "ot_dps": {
+      "median": 28689.75,
+      "p10": 27333.0,
+      "p90": 29641.9,
+      "cv": 0.04386506579590495
+    },
+    "ot_taken": {
+      "median": 84.375,
+      "p10": 77.285,
+      "p90": 92.02499999999999,
+      "cv": 0.09390392692645723
+    },
+    "ot_regen_eff": {
+      "median": 16.025,
+      "p10": 13.790000000000001,
+      "p90": 20.43,
+      "cv": 0.22596845829031378
+    },
+    "ot_heal": {
+      "median": 64.75,
+      "p10": 61.825,
+      "p90": 74.08000000000001,
+      "cv": 0.11077062230184102
+    },
+    "ot_ttl_s": {
+      "median": 26.799714803495263,
+      "p10": 23.679322099689468,
+      "p90": 29.935124683623876,
+      "cv": 0.12516818633251342
+    },
+    "ot_sustain_pct": {
+      "median": 46.42857142857143,
+      "p10": 43.92857142857143,
+      "p90": 53.92857142857143,
+      "cv": 0.12830005981991688
+    }
+  },
+  "runs": [
+    {
+      "seed": 1000,
+      "outcome": "bench_limit",
+      "survival_s": 1020.0,
+      "overtime_s": 404.0,
+      "final_level": 129,
+      "final_power": 6311,
+      "final_hp_max": 2815,
+      "ot_dps": 28194.0,
+      "ot_taken": 79.69999999999999,
+      "ot_regen_eff": 16.65,
+      "ot_heal": 60.85,
+      "ot_ttl_s": 28.536929606990526,
+      "ot_sustain_pct": 46.42857142857143,
+      "samples": 28,
+      "ot_samples": 28
+    },
+    {
+      "seed": 1001,
+      "outcome": "bench_limit",
+      "survival_s": 1020.0,
+      "overtime_s": 404.0,
+      "final_level": 131,
+      "final_power": 6488,
+      "final_hp_max": 2905,
+      "ot_dps": 29837.5,
+      "ot_taken": 76.25,
+      "ot_regen_eff": 15.4,
+      "ot_heal": 64.1,
+      "ot_ttl_s": 30.534351145038165,
+      "ot_sustain_pct": 57.142857142857146,
+      "samples": 28,
+      "ot_samples": 28
+    },
+    {
+      "seed": 1002,
+      "outcome": "bench_limit",
+      "survival_s": 1020.0,
+      "overtime_s": 404.0,
+      "final_level": 137,
+      "final_power": 6901,
+      "final_hp_max": 2725,
+      "ot_dps": 29185.5,
+      "ot_taken": 93.3,
+      "ot_regen_eff": 13.100000000000001,
+      "ot_heal": 77.80000000000001,
+      "ot_ttl_s": 23.086531570984953,
+      "ot_sustain_pct": 42.857142857142854,
+      "samples": 28,
+      "ot_samples": 28
+    },
+    {
+      "seed": 1003,
+      "outcome": "bench_limit",
+      "survival_s": 1020.0,
+      "overtime_s": 404.0,
+      "final_level": 131,
+      "final_power": 6311,
+      "final_hp_max": 2275,
+      "ot_dps": 26964.0,
+      "ot_taken": 89.05,
+      "ot_regen_eff": 22.05,
+      "ot_heal": 65.4,
+      "ot_ttl_s": 25.0625,
+      "ot_sustain_pct": 46.42857142857143,
+      "samples": 28,
+      "ot_samples": 28
+    }
+  ]
+}

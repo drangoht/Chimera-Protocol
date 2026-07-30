@@ -1,0 +1,144 @@
+{
+  "label": "cran III (sat3, 4 graines)",
+  "biome": "fournaise",
+  "minutes": 25,
+  "timescale": 3.0,
+  "summary": {
+    "survival_s": {
+      "median": 1020.0,
+      "p10": 1020.0,
+      "p90": 1020.0,
+      "cv": 0.0
+    },
+    "overtime_s": {
+      "median": 404.0,
+      "p10": 404.0,
+      "p90": 404.0,
+      "cv": 0.0
+    },
+    "final_level": {
+      "median": 133.5,
+      "p10": 129.5,
+      "p90": 136.1,
+      "cv": 0.028132762306570986
+    },
+    "final_power": {
+      "median": 6205.0,
+      "p10": 5744.1,
+      "p90": 6739.4,
+      "cv": 0.08592812307131863
+    },
+    "final_hp_max": {
+      "median": 2657.5,
+      "p10": 2338.0,
+      "p90": 2882.5,
+      "cv": 0.11494598911605393
+    },
+    "ot_dps": {
+      "median": 28204.25,
+      "p10": 27066.9,
+      "p90": 30491.0,
+      "cv": 0.06634312015519471
+    },
+    "ot_taken": {
+      "median": 100.65,
+      "p10": 87.49499999999999,
+      "p90": 116.185,
+      "cv": 0.1614416315263274
+    },
+    "ot_regen_eff": {
+      "median": 15.350000000000001,
+      "p10": 15.174999999999999,
+      "p90": 18.57,
+      "cv": 0.14263911119109846
+    },
+    "ot_heal": {
+      "median": 82.6,
+      "p10": 71.0,
+      "p90": 97.56,
+      "cv": 0.1853769101571274
+    },
+    "ot_ttl_s": {
+      "median": 22.9225493116517,
+      "p10": 21.459454110548222,
+      "p90": 27.42548323846939,
+      "cv": 0.14620938962094937
+    },
+    "ot_sustain_pct": {
+      "median": 55.35714285714286,
+      "p10": 48.57142857142857,
+      "p90": 62.14285714285715,
+      "cv": 0.1343010322236215
+    }
+  },
+  "runs": [
+    {
+      "seed": 1000,
+      "outcome": "bench_limit",
+      "survival_s": 1020.0,
+      "overtime_s": 404.0,
+      "final_level": 134,
+      "final_power": 5673,
+      "final_hp_max": 2725,
+      "ot_dps": 27205.5,
+      "ot_taken": 99.5,
+      "ot_regen_eff": 19.95,
+      "ot_heal": 82.55,
+      "ot_ttl_s": 23.652061367510576,
+      "ot_sustain_pct": 46.42857142857143,
+      "samples": 28,
+      "ot_samples": 28
+    },
+    {
+      "seed": 1001,
+      "outcome": "bench_limit",
+      "survival_s": 1020.0,
+      "overtime_s": 404.0,
+      "final_level": 133,
+      "final_power": 5910,
+      "final_hp_max": 2950,
+      "ot_dps": 27007.5,
+      "ot_taken": 122.35,
+      "ot_regen_eff": 15.35,
+      "ot_heal": 103.94999999999999,
+      "ot_ttl_s": 22.19303725579282,
+      "ot_sustain_pct": 57.142857142857146,
+      "samples": 28,
+      "ot_samples": 28
+    },
+    {
+      "seed": 1002,
+      "outcome": "bench_limit",
+      "survival_s": 1020.0,
+      "overtime_s": 404.0,
+      "final_level": 128,
+      "final_power": 6500,
+      "final_hp_max": 2230,
+      "ot_dps": 31043.0,
+      "ot_taken": 101.80000000000001,
+      "ot_regen_eff": 15.350000000000001,
+      "ot_heal": 82.65,
+      "ot_ttl_s": 21.145061334014823,
+      "ot_sustain_pct": 53.57142857142857,
+      "samples": 28,
+      "ot_samples": 28
+    },
+    {
+      "seed": 1003,
+      "outcome": "bench_limit",
+      "survival_s": 1020.0,
+      "overtime_s": 404.0,
+      "final_level": 137,
+      "final_power": 6842,
+      "final_hp_max": 2590,
+      "ot_dps": 29203.0,
+      "ot_taken": 82.35,
+      "ot_regen_eff": 15.1,
+      "ot_heal": 66.05,
+      "ot_ttl_s": 29.042664040308882,
+      "ot_sustain_pct": 64.28571428571429,
+      "samples": 28,
+      "ot_samples": 28
+    }
+  ]
+}

@@ -2816,3 +2816,69 @@ soutenable » — l'erreur de mesure même que le chantier du banc venait de cor
 l'allongement de l'overtime (8:36 mesurés sont dans la fenêtre de 5-10 min du §9.2). Critère de
 validation au banc : « temps soutenable » doit rester dans la bande de **60,7 % ± 6 %** (le plus petit
 écart que la campagne sache détecter). Au-delà, réduire `ReserveSeconds` avant toute autre valeur.
+
+---
+
+## 34. Saturation de Rouille — l'échelle de challenge de fin de partie (2026-07-30)
+
+Plan complet : `docs/ENDGAME_PLAN.md`. Logique pure : `SaturationTable`. Mesures :
+`docs/TEST_REPORT.md`. Cette section fixe le **design**, pas les valeurs de détail.
+
+### 34.1 Le problème
+
+Avec toutes les évolutions, le jeu devenait facile, et le mécanisme est mesuré : la défense du joueur
+croît **sans plafond** (cartes de surcharge, +45 PV par prise, 270 PV/min relevés au §33) alors que la
+menace suit une **courbe fixe** — densité saturée dès la 8ᵉ minute, plafond de difficulté à ×1,35 face
+à un DPS joueur qui fait ×700 sur une run. Surtout, la menace ne posait qu'**une seule question** — des
+statistiques — donc le joueur n'avait qu'une seule réponse, et il gagnait toujours cet échange. Le §31
+a réglé l'escalade **trois fois** (1,5 → 3 → 2,25) sans jamais toucher ce fond.
+
+### 34.2 Le parti pris
+
+**Un cran = une règle nommée, lisible avant de lancer, qui retire une certitude.** Jamais un
+multiplicateur de plus : le joueur doit pouvoir dire *pourquoi* il est mort et *ce qu'il changera*. Un
+test verrouille la règle (les statistiques ne montent plus après le cran II). Trois arbitrages tranchés
+avec l'auteur : échelle **cumulative** (pas de mutateurs panachés), **choisie et récompensée** (jamais
+imposée, +20 % d'Échos par cran), rejouabilité par de nouvelles **raisons** de rejouer et non par du
+contenu neuf.
+
+**La saturation absorbe l'ancienne difficulté.** Le cran I d'origine reprenait exactement « Difficile »,
+ce qui rend les records déjà gagnés valides sans migration destructrice ; « Facile » survit comme mode
+d'**assistance**, hors échelle, parce que l'accessibilité n'est pas une saturation négative.
+
+### 34.3 Les cinq crans livrés
+
+| # | Nom | La certitude retirée | Effet mesuré (temps soutenable) |
+|---|---|---|---|
+| I | **Hémorragie** | soins reçus −40 % — le canal **dominant** (86,4 PV/s contre 8,2) | 60,7 % → **53,6 %** |
+| II | **Meute** | PV +30 %, dégâts +35 %, spawn +25 % (ex-« Difficile ») | → **50,0 %** |
+| III | **Compte à rebours** | overtime dès la 10ᵉ minute — attaque le temps de *build* | non mesurable par le banc |
+| IV | **Sans filet** | le passage de niveau ne soigne plus ; Noyau de Secours et Plaque Adaptative coupés | **−16 %** relatif |
+| V | **Élite ordinaire** | élites ×3, plafond relevé à 0,55 | cumul I→V : **39,9 %** |
+
+**La hiérarchie mesurée confirme le parti pris** : le cran I porte à lui seul la moitié de la descente,
+et le cran II — le seul purement statistique — pèse **deux fois moins**. Une règle qui retire une
+certitude vaut deux fois un multiplicateur.
+
+### 34.4 Trois règles de conception, apprises à la dure
+
+1. **La porte d'entrée doit se *sentir*.** « Meute » occupait le cran I ; le testeur n'a « vu aucune
+   différence » sur une session entière, et le banc lui a donné raison (−7 %, au ras du seuil
+   détectable). Un premier pas invisible fait conclure que **tout** le système est inopérant. D'où
+   l'échange avec Hémorragie (−17,6 %, unanime).
+2. **Un cran ne repose jamais sur un levier optionnel.** « Sans filet » ne coupait d'abord que deux
+   consommables **achetés** en méta : il ne retirait rien à un joueur qui ne les possède pas — cas de la
+   sauvegarde de référence après 84 runs. Sa règle a été élargie au filet **universel** du jeu, le soin
+   de passage de niveau (25 % des PV max, gratuit, automatique, indexé sur des PV sans plafond, et
+   déclenché en rafale en overtime). Ce n'est pas un doublon d'Hémorragie : celle-ci **réduit** tous les
+   soins, celui-là **supprime** une source entière.
+3. **Jamais un mur sur le boss.** Les PV des champions restent amortis par
+   `LevelThreat.ChampionHpSoftening` — battre le boss conditionne la progression, et il est calibré sur
+   un TTK **joué** (§20.6). Un boss qui gagne 30 % de PV par cran serait un mur de patience.
+
+### 34.5 Effet de système : les crans se répondent
+
+Hémorragie **revalorise la réserve de régénération** du §33.6 : en coupant les soins ponctuels, le
+joueur cesse de vivre à PV pleins, donc la régénération trouve enfin des PV manquants à rendre
+(8,2 → 18,7 PV/s, 4/4 des graines). Le système le plus récent et le plus ancien de la fin de partie se
+renforcent au lieu de se neutraliser — à conserver comme critère quand un cran du lot 2 sera conçu.

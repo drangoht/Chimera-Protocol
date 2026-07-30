@@ -211,7 +211,13 @@ public partial class Player : CharacterBody2D
     {
         ScreenShake.Instance?.Shake(6f, 0.20f);
         HitFlash(0.15f, new Color(1f, 0.8f, 0.267f, 1f));
-        Heal(0.25f);
+        // Le soin de passage de niveau est le filet UNIVERSEL du jeu : gratuit, automatique, indexé sur
+        // les PV max (donc sans plafond via les cartes de surcharge) et déclenché en rafale en overtime.
+        // Le cran de saturation IV « Sans filet » le coupe — cf. SaturationTable.LevelUpHealsEnabled,
+        // qui explique pourquoi les deux consommables méta ne suffisaient pas à porter ce cran.
+        // Le shake et le flash doré restent : le niveau se voit toujours, seul le rattrapage disparaît.
+        if (GameSettings.Instance?.LevelUpHealsEnabled ?? true)
+            Heal(0.25f);
     }
 
     // ─── Power-ups temporaires ────────────────────────────────────────────────

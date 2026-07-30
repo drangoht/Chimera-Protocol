@@ -141,6 +141,65 @@ dont le relevé du 2026-07-29 avait montré qu'il explique un facteur 2,4 sur la
 Pour le trancher un jour : mesurer sur une run **complète** (sans `--start-at`), au prix de ~20 min
 réelles par run, soit 80 min pour quatre graines.
 
+### Le cran IV « Sans filet » ne retirait rien — et n'était pas mesurable non plus
+
+Avant de lancer la campagne prévue, deux vérifications ont invalidé la mesure telle qu'elle était
+planifiée. Le cran IV coupait les deux consommables méta (`extra_life`, `damage_absorb`) :
+
+1. **Ils ne sont pas achetés.** Le banc lance Godot sans `--user-dir` : il lit la sauvegarde réelle.
+   Or `save.json` ne contient que `damage_boost 5`, `speed_boost 3`, `hp_boost 2`,
+   `cooldown_reduction 1`, `hp_boost_2 1`, `skip 1` — **ni Noyau de Secours ni Plaque Adaptative**,
+   après 84 runs et avec 25 186 Échos en banque. La campagne aurait mesuré **exactement zéro**, pour
+   une raison sans aucun rapport avec le cran.
+2. **Même achetés au maximum, la métrique ne peut pas les voir.** 2 vies (30 % des PV max) + 3 coups
+   absorbés ≈ **1 900 PV** en overtime tardif, face à ~230 PV/s : un bonus **fini et ponctuel**, quand
+   le temps soutenable compare des **flux** sur sept minutes. Contrairement au cran III, ce n'est pas
+   un défaut de fenêtre d'observation — c'est une incompatibilité de nature entre la règle et la
+   métrique.
+
+Le vrai défaut est de conception : **un cran dont l'effet dépend d'un achat n'est pas une règle
+lisible.** C'est ce qui avait fait descendre « Meute » du cran I au cran II — un palier qui ne se sent
+pas fait conclure que l'échelle entière est inopérante. Ici c'est pire : pour ce joueur, la saturation 4
+aurait coûté un cran **pour rien**.
+
+**Correctif retenu** (arbitré le 2026-07-30) : garder le nom et y ajouter le filet **universel** du jeu
+— **le passage de niveau ne soigne plus** (`Heal(0.25f)`, `Player.OnLevelUp`). Gratuit, automatique,
+indexé sur les PV max — donc il grossit sans plafond avec les cartes de surcharge — et déclenché en
+rafale en overtime (niveaux 124 → 140 en 74 s, §31.7). C'est le rattrapage que personne ne choisit et
+que tout le monde reçoit. Ce n'est pas un doublon d'Hémorragie : celui-ci **réduit** tous les soins de
+40 %, celui-là **supprime** une source entière, et les deux se cumulent.
+
+**Mesure appariée** — 4 graines (1000-1003), `--overtime --minutes 17`, `--saturation 3` contre
+`--saturation 4`. Comparer au cran III et non au cran 0 est délibéré : le biais du cran III (départ
+aligné, ci-dessus) est **commun aux deux campagnes** et s'annule dans la différence.
+
+| métrique | cran III | cran IV | delta médian | signes | verdict |
+|---|---|---|---|---|---|
+| **temps soutenable** | 55,4 % | **46,4 %** | **−5,4** | **0/2** | **net** (−16 % relatif) |
+| **soins ponctuels/s** | 82,6 | **64,8** | −13,3 | **0/4** | **net** |
+| dégâts subis/s | 100,7 | 84,4 | −14,2 | 1/4 | net |
+| survie théo. hors soins | 22,9 s | 26,8 s | +3,4 | 3/4 | net |
+| niveau final | 133,5 | 131,0 | −3,5 | 1/4 | net |
+| PV max | 2 657 | 2 770 | +22,5 | 2/4 | bruit |
+
+**Le critère des 6 % est dépassé d'un facteur 2,7**, et la preuve la plus solide est le canal visé :
+les soins ponctuels chutent de **21 %**, unanimement (0/4). Le cran fait exactement ce que sa règle
+annonce.
+
+⚠ **Deux réserves de lecture, à ne pas escamoter.**
+
+- Sur le temps soutenable, **2 paires sur 4 sont ex æquo** (46,4 % apparaît des deux côtés sur la
+  graine 1000). La métrique est **quantifiée** — c'est une part d'échantillons sur une fenêtre finie —
+  et deux runs différentes peuvent tomber sur la même valeur. Le test des signes ne porte donc que sur
+  deux paires : c'est le canal des soins (0/4) et l'écart des médianes qui font la décision, pas ce
+  0/2.
+- **Les dégâts subis baissent** (−16 %, net), ce qu'aucun mécanisme du cran n'explique — il ne touche
+  pas à la menace. Cela reste cohérent avec la conclusion, et la renforce même : la pression a
+  *baissé* et le joueur tient pourtant **moins** bien. Mais c'est le rappel du 2026-07-30 — dès que la
+  trajectoire du bot change, l'appariement reste fiable sur ce qu'on règle, pas sur le reste.
+- La hausse de la « survie théorique hors soins » est le piège déjà documenté : elle exclut les soins
+  ponctuels, donc elle monte quand on les coupe. C'est **temps soutenable** qui tranche.
+
 ### Bug trouvé : le banc débloquait l'échelle dans la sauvegarde réelle
 
 `saturation_beaten=5` a été trouvé dans le `settings.cfg` du testeur **sans aucune victoire à ce cran** :
