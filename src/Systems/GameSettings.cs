@@ -13,10 +13,10 @@ public partial class GameSettings : Node
     private const string Path = "user://settings.cfg";
 
     /// <summary>
-    /// Réglage d'<b>assistance</b>. Depuis la 1.25.0 le challenge passe par l'ascension
-    /// (<see cref="AscensionTable"/>) : seuls <c>Facile</c> et <c>Normal</c> sont proposés.
+    /// Réglage d'<b>assistance</b>. Depuis la 1.25.0 le challenge passe par la saturation
+    /// (<see cref="SaturationTable"/>) : seuls <c>Facile</c> et <c>Normal</c> sont proposés.
     /// <c>Difficile</c> est conservé pour <b>relire les anciens <c>settings.cfg</c></b> — au chargement
-    /// il est converti en <i>Normal + ascension 1</i>, aux multiplicateurs identiques.
+    /// il est converti en <i>Normal + saturation 1</i>, aux multiplicateurs identiques.
     /// </summary>
     public enum GameDifficulty { Facile, Normal, Difficile }
 
@@ -76,73 +76,73 @@ public partial class GameSettings : Node
     // joueur, même si un Save() est déclenché en cours de session (high score, complétion…).
     private string _persistedLanguage = "en";
 
-    // ── Ascension (challenge de fin de partie, cf. docs/ENDGAME_PLAN.md) ──────
-    /// <summary>Cran d'ascension choisi pour la prochaine run (0 = aucun). Persisté.</summary>
-    public int Ascension { get; private set; } = 0;
+    // ── Saturation (challenge de fin de partie, cf. docs/ENDGAME_PLAN.md) ──────
+    /// <summary>Cran de saturation choisi pour la prochaine run (0 = aucun). Persisté.</summary>
+    public int Saturation { get; private set; } = 0;
 
-    // Cran réellement écrit dans settings.cfg. Diffère de Ascension quand la session tourne sous
-    // --ascension=<n> (banc de mesure) : la surcharge ne doit JAMAIS écraser le choix du joueur, même
+    // Cran réellement écrit dans settings.cfg. Diffère de Saturation quand la session tourne sous
+    // --saturation=<n> (banc de mesure) : la surcharge ne doit JAMAIS écraser le choix du joueur, même
     // si un Save() est déclenché en cours de session (high score, complétion, découverte d'arme…).
     // Même parade que _persistedLanguage pour --lang, et même raison : ces Save() sont fréquents.
-    private int _persistedAscension = 0;
+    private int _persistedSaturation = 0;
 
     /// <summary>
     /// Cran le plus élevé auquel un boss de fin a été battu, <b>tous biomes confondus</b> — c'est lui
     /// qui débloque le cran suivant. Le déblocage est global à dessein : par biome, cinq niveaux ×
     /// dix crans deviendrait une corvée (`docs/ENDGAME_PLAN.md` §7.3).
     /// </summary>
-    public int HighestAscensionBeaten { get; private set; } = 0;
+    public int HighestSaturationBeaten { get; private set; } = 0;
 
     /// <summary>Cran maximum sélectionnable en l'état de la progression.</summary>
-    public int MaxSelectableAscension => AscensionTable.MaxSelectable(HighestAscensionBeaten);
+    public int MaxSelectableSaturation => SaturationTable.MaxSelectable(HighestSaturationBeaten);
 
-    /// <summary>true si le joueur joue en mode assistance (aucune ascension possible).</summary>
+    /// <summary>true si le joueur joue en mode assistance (aucune saturation possible).</summary>
     public bool IsAssisted => Difficulty == GameDifficulty.Facile;
 
     // Multiplicateurs de menace lus par EnemySpawner (ennemis).
     //
-    // L'ascension ABSORBE l'ancien axe de difficulté : les deux ne se cumulent jamais. Sans cela,
-    // quatre axes multiplicatifs se superposeraient en silence (assistance × ascension × palier de
+    // La saturation ABSORBE l'ancien axe de difficulté : les deux ne se cumulent jamais. Sans cela,
+    // quatre axes multiplicatifs se superposeraient en silence (assistance × saturation × palier de
     // niveau × overtime) et plus aucun diagnostic ne serait possible — le chantier du GDD §31 a mis
     // trois sessions jouées à isoler une cause pour cette raison précise.
     //
     // « Facile » reste hors de l'échelle : c'est de l'accessibilité (ennemis affaiblis), pas une
-    // ascension négative, et l'ascension y est forcée à 0.
+    // saturation négative, et la saturation y est forcée à 0.
     public float EnemyDamageMult => IsAssisted
         ? DifficultyTuning.EnemyDamage((int)GameDifficulty.Facile)
-        : AscensionTable.EnemyDamageMult(Ascension);
+        : SaturationTable.EnemyDamageMult(Saturation);
 
     public float EnemyHpMult => IsAssisted
         ? DifficultyTuning.EnemyHp((int)GameDifficulty.Facile)
-        : AscensionTable.EnemyHpMult(Ascension);
+        : SaturationTable.EnemyHpMult(Saturation);
 
     public float SpawnMult => IsAssisted
         ? DifficultyTuning.Spawn((int)GameDifficulty.Facile)
-        : AscensionTable.SpawnMult(Ascension);
+        : SaturationTable.SpawnMult(Saturation);
 
     /// <summary>
     /// Multiplicateur des soins <b>reçus</b> (cran II « Hémorragie »). Vise le canal de soin dominant
     /// mesuré — 86,4 PV/s de soins ponctuels contre 8,2 de régénération.
     /// </summary>
-    public float HealingMult => IsAssisted ? 1f : AscensionTable.HealingMult(Ascension);
+    public float HealingMult => IsAssisted ? 1f : SaturationTable.HealingMult(Saturation);
 
     /// <summary>Multiplicateur de la durée de run avant overtime (cran III « Compte à rebours »).</summary>
-    public float RunDurationMult => IsAssisted ? 1f : AscensionTable.RunDurationMult(Ascension);
+    public float RunDurationMult => IsAssisted ? 1f : SaturationTable.RunDurationMult(Saturation);
 
     /// <summary>
     /// Les filets de survie de la méta (Noyau de Secours, Plaque Adaptative) sont-ils actifs ?
     /// Faux à partir du cran IV « Sans filet ».
     /// </summary>
-    public bool SafetyNetsEnabled => IsAssisted || AscensionTable.SafetyNetsEnabled(Ascension);
+    public bool SafetyNetsEnabled => IsAssisted || SaturationTable.SafetyNetsEnabled(Saturation);
 
     /// <summary>Multiplicateur de fréquence des élites (cran V « Élite ordinaire »).</summary>
-    public float EliteFrequencyMult => IsAssisted ? 1f : AscensionTable.EliteFrequencyMult(Ascension);
+    public float EliteFrequencyMult => IsAssisted ? 1f : SaturationTable.EliteFrequencyMult(Saturation);
 
-    /// <summary>Multiplicateur d'Échos apporté par l'ascension (branché dans <c>EchoFormula</c>).</summary>
-    public double AscensionEchoMult => IsAssisted ? 1.0 : AscensionTable.EchoMult(Ascension);
+    /// <summary>Multiplicateur d'Échos apporté par la saturation (branché dans <c>EchoFormula</c>).</summary>
+    public double SaturationEchoMult => IsAssisted ? 1.0 : SaturationTable.EchoMult(Saturation);
 
     /// <summary>
-    /// Multiplicateur d'Échos <b>total</b> d'une run : palier du niveau × ascension.
+    /// Multiplicateur d'Échos <b>total</b> d'une run : palier du niveau × saturation.
     ///
     /// <para>Source unique à dessein. <c>EchoFormula</c> applique ce facteur <b>composante par
     /// composante</b> et <c>RunEndScreen</c> refait le même calcul pour animer l'écran de fin : si les
@@ -150,7 +150,7 @@ public partial class GameSettings : Node
     /// du total crédité — exactement ce que le commentaire d'en-tête d'<c>EchoFormula</c> met en garde
     /// de ne pas faire.</para>
     /// </summary>
-    public double TotalEchoMult(int threatTier) => LevelThreat.EchoMult(threatTier) * AscensionEchoMult;
+    public double TotalEchoMult(int threatTier) => LevelThreat.EchoMult(threatTier) * SaturationEchoMult;
 
     // Touches de déplacement personnalisées (move_up/down/left/right → keycode). Absente = défaut ZQSD.
     private readonly Dictionary<string, Key> _moveKeys = new();
@@ -303,18 +303,18 @@ public partial class GameSettings : Node
     public void SetDifficulty(GameDifficulty d)
     {
         Difficulty = d;
-        // Passer en assistance remet l'ascension à zéro : garder un cran actif sous « Facile » ferait
+        // Passer en assistance remet la saturation à zéro : garder un cran actif sous « Facile » ferait
         // coexister les deux axes que la 1.25.0 vient précisément de fusionner.
-        if (d == GameDifficulty.Facile) Ascension = 0;
+        if (d == GameDifficulty.Facile) Saturation = 0;
         Save();
     }
 
-    /// <summary>Choisit le cran d'ascension de la prochaine run (borné par la progression).</summary>
-    public void SetAscension(int rank)
+    /// <summary>Choisit le cran de saturation de la prochaine run (borné par la progression).</summary>
+    public void SetSaturation(int rank)
     {
-        if (IsAssisted) { Ascension = 0; _persistedAscension = 0; Save(); return; }
-        Ascension = Mathf.Clamp(rank, 0, MaxSelectableAscension);
-        _persistedAscension = Ascension;   // choix explicite du joueur : il devient la valeur persistée
+        if (IsAssisted) { Saturation = 0; _persistedSaturation = 0; Save(); return; }
+        Saturation = Mathf.Clamp(rank, 0, MaxSelectableSaturation);
+        _persistedSaturation = Saturation;   // choix explicite du joueur : il devient la valeur persistée
         Save();
     }
 
@@ -322,16 +322,16 @@ public partial class GameSettings : Node
     /// À appeler quand le boss de fin est battu : mémorise le cran atteint, ce qui débloque le suivant.
     /// Ne redescend jamais (un cran validé reste validé, même après une run à cran plus bas).
     /// </summary>
-    public void RecordAscensionBeaten(int rank)
+    public void RecordSaturationBeaten(int rank)
     {
-        if (IsAssisted || rank <= HighestAscensionBeaten) return;
-        // ⚠ Sous --ascension=<n>, le cran n'a pas été GAGNÉ par le joueur : il a été imposé au banc.
+        if (IsAssisted || rank <= HighestSaturationBeaten) return;
+        // ⚠ Sous --saturation=<n>, le cran n'a pas été GAGNÉ par le joueur : il a été imposé au banc.
         // Sans ce garde-fou, une campagne de mesure débloque l'échelle dans la sauvegarde réelle — c'est
-        // arrivé le 2026-07-30 (`ascension_beaten=5` sans aucune victoire à ce cran), et le joueur s'est
-        // retrouvé à pouvoir choisir n'importe quel cran. Protéger `ascension` contre la persistance ne
+        // arrivé le 2026-07-30 (`saturation_beaten=5` sans aucune victoire à ce cran), et le joueur s'est
+        // retrouvé à pouvoir choisir n'importe quel cran. Protéger `saturation` contre la persistance ne
         // suffisait pas : le DÉBLOCAGE est une seconde voie d'écriture.
-        if (DebugHooks.Ascension.HasValue) return;
-        HighestAscensionBeaten = Mathf.Min(rank, AscensionTable.MaxRank);
+        if (DebugHooks.Saturation.HasValue) return;
+        HighestSaturationBeaten = Mathf.Min(rank, SaturationTable.MaxRank);
         Save();
     }
 
@@ -441,11 +441,11 @@ public partial class GameSettings : Node
     private static float Db(float linear) => linear <= 0.001f ? -80f : Mathf.LinearToDb(linear);
 
     /// <summary>
-    /// Lit l'ascension, ou <b>migre</b> une sauvegarde d'avant la 1.25.0.
+    /// Lit la saturation, ou <b>migre</b> une sauvegarde d'avant la 1.25.0.
     ///
-    /// <para>L'absence de la clé <c>gameplay/ascension</c> signe un ancien fichier. « Difficile » y
-    /// devient <i>Normal + ascension 1</i>, aux multiplicateurs identiques
-    /// (<see cref="AscensionTable.MigrateLegacyDifficulty"/>) : les records gagnés à cette difficulté
+    /// <para>L'absence de la clé <c>gameplay/saturation</c> signe un ancien fichier. « Difficile » y
+    /// devient <i>Normal + saturation 1</i>, aux multiplicateurs identiques
+    /// (<see cref="SaturationTable.MigrateLegacyDifficulty"/>) : les records gagnés à cette difficulté
     /// restent donc <b>exacts</b> — ni effacés, ni réinterprétés à la hausse. Et comme ce joueur jouait
     /// effectivement au cran 1, on le lui crédite s'il a déjà terminé un niveau, plutôt que de le
     /// renvoyer au bas de l'échelle.</para>
@@ -453,36 +453,39 @@ public partial class GameSettings : Node
     /// <para>Doit être appelée <b>après</b> le chargement des complétions (cf. l'appel dans
     /// <c>Load</c>) : sans elles, le crédit du cran est perdu.</para>
     /// </summary>
-    private void LoadOrMigrateAscension(ConfigFile cfg)
+    private void LoadOrMigrateSaturation(ConfigFile cfg)
     {
-        if (cfg.HasSectionKey("gameplay", "ascension"))
+        if (cfg.HasSectionKey("gameplay", "saturation"))
         {
-            Ascension = cfg.GetValue("gameplay", "ascension", 0).AsInt32();
-            HighestAscensionBeaten = cfg.GetValue("gameplay", "ascension_beaten", 0).AsInt32();
+            Saturation = cfg.GetValue("gameplay", "saturation", 0).AsInt32();
+            HighestSaturationBeaten = cfg.GetValue("gameplay", "saturation_beaten", 0).AsInt32();
         }
         else
         {
-            var (migratedDiff, migratedAsc) = AscensionTable.MigrateLegacyDifficulty((int)Difficulty);
+            var (migratedDiff, migratedSat, migratedBeaten) =
+                SaturationTable.MigrateLegacyDifficulty((int)Difficulty);
             Difficulty = (GameDifficulty)migratedDiff;
-            Ascension  = migratedAsc;
-            if (migratedAsc > 0 && HasCompletedAny(LevelOrder[0]))
-                HighestAscensionBeaten = migratedAsc;
+            Saturation = migratedSat;
+            // Le cran n'est crédité que si le joueur a réellement terminé un niveau : jouer en
+            // « Difficile » sans jamais gagner ne débloque rien.
+            if (migratedBeaten > 0 && HasCompletedAny(LevelOrder[0]))
+                HighestSaturationBeaten = migratedBeaten;
         }
 
-        HighestAscensionBeaten = Mathf.Clamp(HighestAscensionBeaten, 0, AscensionTable.MaxRank);
-        Ascension = Mathf.Clamp(Ascension, 0, MaxSelectableAscension);
-        if (Difficulty == GameDifficulty.Facile) Ascension = 0;
+        HighestSaturationBeaten = Mathf.Clamp(HighestSaturationBeaten, 0, SaturationTable.MaxRank);
+        Saturation = Mathf.Clamp(Saturation, 0, MaxSelectableSaturation);
+        if (Difficulty == GameDifficulty.Facile) Saturation = 0;
 
-        // Banc de mesure : --ascension=<n> force le cran sans passer par l'écran de sélection (que le
+        // Banc de mesure : --saturation=<n> force le cran sans passer par l'écran de sélection (que le
         // bot ne traverse jamais) et SANS persister — une campagne ne doit pas laisser le joueur avec
         // un cran qu'il n'a pas choisi. Le déblocage est volontairement ignoré : on mesure un cran
         // avant de l'avoir gagné. Appliqué en dernier pour écraser le clamp ci-dessus.
-        _persistedAscension = Ascension;
-        if (DebugHooks.Ascension.HasValue)
+        _persistedSaturation = Saturation;
+        if (DebugHooks.Saturation.HasValue)
         {
-            Ascension = Mathf.Clamp(DebugHooks.Ascension.Value, 0, AscensionTable.MaxRank);
+            Saturation = Mathf.Clamp(DebugHooks.Saturation.Value, 0, SaturationTable.MaxRank);
             Difficulty = GameDifficulty.Normal;   // l'assistance annulerait tous les crans
-            GD.Print($"[GameSettings] --ascension : cran forcé à {Ascension} (non persisté)");
+            GD.Print($"[GameSettings] --saturation : cran forcé à {Saturation} (non persisté)");
         }
     }
 
@@ -529,7 +532,7 @@ public partial class GameSettings : Node
 
         // ⚠ APRÈS les complétions, et pas plus haut avec les autres réglages de gameplay : la
         // migration a besoin de savoir si le joueur a déjà battu un niveau pour lui créditer le cran 1.
-        LoadOrMigrateAscension(cfg);
+        LoadOrMigrateSaturation(cfg);
 
         _bestTimes.Clear();
         if (cfg.HasSection("highscores"))
@@ -569,11 +572,11 @@ public partial class GameSettings : Node
         _bestDiff.Clear();
         _discovered.Clear();
         _discoveredGrafts.Clear();
-        // L'ascension est de la PROGRESSION, pas une préférence : la laisser survivre à une remise à
+        // La saturation est de la PROGRESSION, pas une préférence : la laisser survivre à une remise à
         // zéro donnerait un cran 5 débloqué à un joueur qui n'a plus aucune victoire à son compte.
-        Ascension = 0;
-        _persistedAscension = 0;
-        HighestAscensionBeaten = 0;
+        Saturation = 0;
+        _persistedSaturation = 0;
+        HighestSaturationBeaten = 0;
         Save();
     }
 
@@ -591,11 +594,11 @@ public partial class GameSettings : Node
         cfg.SetValue("display",  "max_fps",    MaxFps);
         cfg.SetValue("display",  "show_fps",   ShowFps);
         cfg.SetValue("gameplay", "difficulty", (int)Difficulty);
-        // La présence de ces deux clés signale à LoadOrMigrateAscension que le fichier est au format
+        // La présence de ces deux clés signale à LoadOrMigrateSaturation que le fichier est au format
         // 1.25.0 : ne jamais les rendre conditionnelles, sinon la migration se rejouerait à chaque
-        // démarrage et écraserait un choix d'assistance par « Normal + ascension 1 ».
-        cfg.SetValue("gameplay", "ascension",        _persistedAscension);
-        cfg.SetValue("gameplay", "ascension_beaten", HighestAscensionBeaten);
+        // démarrage et écraserait un choix d'assistance par « Normal + saturation 1 ».
+        cfg.SetValue("gameplay", "saturation",        _persistedSaturation);
+        cfg.SetValue("gameplay", "saturation_beaten", HighestSaturationBeaten);
         cfg.SetValue("gameplay", "shake_intensity", ShakeIntensity);
         cfg.SetValue("gameplay", "reduce_flashes",  ReduceFlashes);
         cfg.SetValue("gameplay", "rumble",          Rumble);

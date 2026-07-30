@@ -326,13 +326,13 @@ public static class DebugHooks
         }
     }
 
-    private static bool _ascensionRead;
-    private static int? _ascension;
+    private static bool _saturationRead;
+    private static int? _saturation;
 
     /// <summary>
-    /// Cran d'ascension forcé via <c>--ascension=&lt;n&gt;</c>, ou null (le choix persisté s'applique).
+    /// Cran de saturation forcé via <c>--saturation=&lt;n&gt;</c>, ou null (le choix persisté s'applique).
     ///
-    /// <para>Sans ce flag, <b>aucun cran ne serait mesurable au banc</b> : l'ascension se choisit à
+    /// <para>Sans ce flag, <b>aucun cran ne serait mesurable au banc</b> : la saturation se choisit à
     /// l'écran de sélection de niveau, que le bot ne traverse jamais. Or le plan
     /// (<c>docs/ENDGAME_PLAN.md</c> §5) fait de la mesure la condition d'existence d'un cran — il doit
     /// faire baisser le « temps soutenable » de plus de 6 % pour mériter sa place.</para>
@@ -342,17 +342,17 @@ public static class DebugHooks
     /// choisi. Elle ignore aussi le déblocage, pour pouvoir mesurer un cran avant de l'avoir gagné.
     /// Aucun effet en build normal.</para>
     /// </summary>
-    public static int? Ascension
+    public static int? Saturation
     {
         get
         {
-            if (!_ascensionRead)
+            if (!_saturationRead)
             {
-                var raw = ValueFlag("--ascension=");
-                _ascension = raw != null && int.TryParse(raw, out var v) ? v : null;
-                _ascensionRead = true;
+                var raw = ValueFlag("--saturation=");
+                _saturation = raw != null && int.TryParse(raw, out var v) ? v : null;
+                _saturationRead = true;
             }
-            return _ascension;
+            return _saturation;
         }
     }
 

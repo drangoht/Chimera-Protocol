@@ -328,19 +328,19 @@ POWERUP_CELERITY,Celerity,Célérité,Celeridad
 LEVELSEL_LOCKED,LOCKED,VERROUILLÉ,BLOQUEADO
 LEVELSEL_THREAT,Threat,Menace,Amenaza
 LEVELSEL_ECHO_MULT,Echoes ×{0},Échos ×{0},Ecos ×{0}
-ASC_TITLE,Ascension,Ascension,Ascensión
-ASC_NONE,No extra rules — the standard run.,Aucune règle ajoutée — la partie standard.,Sin reglas añadidas: la partida estándar.
-ASC_LOCKED_HINT,Beat this ascension to unlock the next one.,Battez cette ascension pour débloquer la suivante.,Supera esta ascensión para desbloquear la siguiente.
-ASC_1_NAME,Pack,Meute,Manada
-ASC_1_RULE,"Enemies: +30 % health, +35 % damage, denser waves.","Ennemis : +30 % de PV, +35 % de dégâts, vagues plus denses.","Enemigos: +30 % de vida, +35 % de daño, oleadas más densas."
-ASC_2_NAME,Haemorrhage,Hémorragie,Hemorragia
-ASC_2_RULE,Healing received is cut by 40 % (orbs and lifesteal included).,Les soins reçus sont réduits de 40 % (orbes et vol de vie compris).,La curación recibida se reduce un 40 % (orbes y robo de vida incluidos).
-ASC_3_NAME,Countdown,Compte à rebours,Cuenta atrás
-ASC_3_RULE,Overtime starts around minute 10 instead of 13.,L'overtime commence vers la 10ᵉ minute au lieu de la 13ᵉ.,El tiempo extra empieza hacia el minuto 10 en vez del 13.
-ASC_4_NAME,No Safety Net,Sans filet,Sin red
-ASC_4_RULE,Emergency Core and Adaptive Plate no longer work.,Le Noyau de Secours et la Plaque Adaptative ne fonctionnent plus.,El Núcleo de Emergencia y la Placa Adaptativa dejan de funcionar.
-ASC_5_NAME,Elites Everywhere,Élite ordinaire,Élite ordinaria
-ASC_5_RULE,Elites are three times more common — most of the swarm carries an affix.,Les élites sont trois fois plus fréquentes — la nuée porte des affixes.,Las élites son tres veces más frecuentes: el enjambre lleva afijos.
+SAT_TITLE,Rust Saturation,Saturation de Rouille,Saturación de Herrumbre
+SAT_NONE,No extra rules — the standard run.,Aucune règle ajoutée — la partie standard.,Sin reglas añadidas: la partida estándar.
+SAT_LOCKED_HINT,Beat this saturation to unlock the next one.,Battez cette saturation pour débloquer la suivante.,Supera esta saturación para desbloquear la siguiente.
+SAT_1_NAME,Haemorrhage,Hémorragie,Hemorragia
+SAT_1_RULE,Healing received is cut by 40 % (orbs and lifesteal included).,Les soins reçus sont réduits de 40 % (orbes et vol de vie compris).,La curación recibida se reduce un 40 % (orbes y robo de vida incluidos).
+SAT_2_NAME,Pack,Meute,Manada
+SAT_2_RULE,"Enemies: +30 % health, +35 % damage, denser waves.","Ennemis : +30 % de PV, +35 % de dégâts, vagues plus denses.","Enemigos: +30 % de vida, +35 % de daño, oleadas más densas."
+SAT_3_NAME,Countdown,Compte à rebours,Cuenta atrás
+SAT_3_RULE,Overtime starts around minute 10 instead of 13.,L'overtime commence vers la 10ᵉ minute au lieu de la 13ᵉ.,El tiempo extra empieza hacia el minuto 10 en vez del 13.
+SAT_4_NAME,No Safety Net,Sans filet,Sin red
+SAT_4_RULE,Emergency Core and Adaptive Plate no longer work.,Le Noyau de Secours et la Plaque Adaptative ne fonctionnent plus.,El Núcleo de Emergencia y la Placa Adaptativa dejan de funcionar.
+SAT_5_NAME,Elites Everywhere,Élite ordinaire,Élite ordinaria
+SAT_5_RULE,Elites are three times more common — most of the swarm carries an affix.,Les élites sont trois fois plus fréquentes — la nuée porte des affixes.,Las élites son tres veces más frecuentes: el enjambre lleva afijos.
 RUNEND_TIER,Threat,Menace,Amenaza
 OVERTIME,⚠ OVERTIME ⚠,⚠ OVERTIME ⚠,⚠ TIEMPO EXTRA ⚠
 LEVEL_COMPLETE,LEVEL COMPLETE!,NIVEAU TERMINÉ !,¡NIVEL COMPLETADO!

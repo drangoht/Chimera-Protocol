@@ -19,7 +19,7 @@ public partial class LevelSelectScreen : Control
     private ScrollContainer _scroll = null!;
     private readonly System.Collections.Generic.List<Button> _playButtons = new();
 
-    // Sélecteur d'ascension (cf. docs/ENDGAME_PLAN.md). Null en mode assistance : l'échelle de
+    // Sélecteur de saturation (cf. docs/ENDGAME_PLAN.md). Null en mode assistance : l'échelle de
     // challenge et l'accessibilité ne se mélangent pas.
     private Button? _ascDown;
     private Button? _ascUp;
@@ -47,9 +47,9 @@ public partial class LevelSelectScreen : Control
         title.AddThemeColorOverride("font_color", Cyan);
         root.AddChild(title);
 
-        // Sélecteur d'ascension, AVANT la liste : c'est un choix qui s'applique à toute la run, pas au
-        // niveau. Masqué en mode assistance (« Facile »), où l'ascension est forcée à 0.
-        var ascPanel = BuildAscensionSelector();
+        // Sélecteur de saturation, AVANT la liste : c'est un choix qui s'applique à toute la run, pas au
+        // niveau. Masqué en mode assistance (« Facile »), où la saturation est forcée à 0.
+        var ascPanel = BuildSaturationSelector();
         if (ascPanel != null) root.AddChild(ascPanel);
 
         _scroll = new ScrollContainer { SizeFlagsVertical = SizeFlags.ExpandFill };
@@ -94,15 +94,15 @@ public partial class LevelSelectScreen : Control
     }
 
     /// <summary>
-    /// Panneau de choix du cran d'ascension : valeur, multiplicateur d'Échos et <b>liste des règles
+    /// Panneau de choix du cran de saturation : valeur, multiplicateur d'Échos et <b>liste des règles
     /// actives</b>. Renvoie null en mode assistance.
     ///
     /// <para>La liste des règles n'est pas décorative : tout le parti pris du système est qu'un cran
     /// est une <b>règle nommée qu'on lit avant de jouer</b> (docs/ENDGAME_PLAN.md §2). Un sélecteur qui
-    /// n'afficherait qu'un numéro reproduirait le défaut que l'ascension corrige — une difficulté qui
+    /// n'afficherait qu'un numéro reproduirait le défaut que la saturation corrige — une difficulté qui
     /// monte sans que le joueur sache ce qui a changé.</para>
     /// </summary>
-    private Control? BuildAscensionSelector()
+    private Control? BuildSaturationSelector()
     {
         var gs = GameSettings.Instance;
         if (gs == null || gs.IsAssisted) return null;
@@ -119,7 +119,7 @@ public partial class LevelSelectScreen : Control
         var row = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
         row.AddThemeConstantOverride("separation", 12);
 
-        var caption = new Label { Text = Loc.T("ASC_TITLE"), SizeFlagsVertical = SizeFlags.ShrinkCenter };
+        var caption = new Label { Text = Loc.T("SAT_TITLE"), SizeFlagsVertical = SizeFlags.ShrinkCenter };
         caption.AddThemeFontSizeOverride("font_size", 18);
         caption.AddThemeColorOverride("font_color", Cyan);
         row.AddChild(caption);
@@ -134,7 +134,7 @@ public partial class LevelSelectScreen : Control
             SizeFlagsVertical = SizeFlags.ShrinkCenter,
         };
         StyleButton(_ascDown, Violet);
-        _ascDown.Pressed += () => ChangeAscension(-1);
+        _ascDown.Pressed += () => ChangeSaturation(-1);
         row.AddChild(_ascDown);
 
         _ascValue = new Label
@@ -154,7 +154,7 @@ public partial class LevelSelectScreen : Control
             SizeFlagsVertical = SizeFlags.ShrinkCenter,
         };
         StyleButton(_ascUp, Violet);
-        _ascUp.Pressed += () => ChangeAscension(+1);
+        _ascUp.Pressed += () => ChangeSaturation(+1);
         row.AddChild(_ascUp);
 
         _ascEchoes = new Label { SizeFlagsVertical = SizeFlags.ShrinkCenter };
@@ -168,46 +168,46 @@ public partial class LevelSelectScreen : Control
         _ascRules.AddThemeConstantOverride("separation", 2);
         vb.AddChild(_ascRules);
 
-        RefreshAscension();
+        RefreshSaturation();
         return panel;
     }
 
     /// <summary>Décale le cran choisi (borné par la progression) et rafraîchit l'affichage.</summary>
-    private void ChangeAscension(int delta)
+    private void ChangeSaturation(int delta)
     {
         var gs = GameSettings.Instance;
         if (gs == null) return;
-        gs.SetAscension(gs.Ascension + delta);
+        gs.SetSaturation(gs.Saturation + delta);
         AudioSystem.Instance?.PlaySfx("sfx_ui_click");
-        RefreshAscension();
+        RefreshSaturation();
     }
 
     /// <summary>Met à jour valeur, Échos, règles actives et l'état des deux flèches.</summary>
-    private void RefreshAscension()
+    private void RefreshSaturation()
     {
         var gs = GameSettings.Instance;
         if (gs == null || _ascValue == null || _ascRules == null) return;
 
-        int rank = gs.Ascension;
+        int rank = gs.Saturation;
         _ascValue.Text = rank.ToString();
         if (_ascEchoes != null)
-            _ascEchoes.Text = Loc.T("LEVELSEL_ECHO_MULT", $"{gs.AscensionEchoMult:0.00}");
+            _ascEchoes.Text = Loc.T("LEVELSEL_ECHO_MULT", $"{gs.SaturationEchoMult:0.00}");
 
         if (_ascDown != null) _ascDown.Disabled = rank <= 0;
-        if (_ascUp   != null) _ascUp.Disabled   = rank >= gs.MaxSelectableAscension;
+        if (_ascUp   != null) _ascUp.Disabled   = rank >= gs.MaxSelectableSaturation;
 
         foreach (var child in _ascRules.GetChildren()) child.QueueFree();
 
         if (rank == 0)
         {
-            var none = new Label { Text = Loc.T("ASC_NONE"), HorizontalAlignment = HorizontalAlignment.Center };
+            var none = new Label { Text = Loc.T("SAT_NONE"), HorizontalAlignment = HorizontalAlignment.Center };
             none.AddThemeFontSizeOverride("font_size", 13);
             none.AddThemeColorOverride("font_color", Dim);
             _ascRules.AddChild(none);
             return;
         }
 
-        foreach (var r in AscensionTable.ActiveRanks(rank))
+        foreach (var r in SaturationTable.ActiveRanks(rank))
         {
             var line = new Label
             {
@@ -220,11 +220,11 @@ public partial class LevelSelectScreen : Control
             _ascRules.AddChild(line);
         }
 
-        if (rank < AscensionTable.MaxRank && rank >= gs.MaxSelectableAscension)
+        if (rank < SaturationTable.MaxRank && rank >= gs.MaxSelectableSaturation)
         {
             var next = new Label
             {
-                Text = Loc.T("ASC_LOCKED_HINT"),
+                Text = Loc.T("SAT_LOCKED_HINT"),
                 HorizontalAlignment = HorizontalAlignment.Center,
             };
             next.AddThemeFontSizeOverride("font_size", 12);
@@ -370,9 +370,9 @@ public partial class LevelSelectScreen : Control
     /// </summary>
     private void SetupFocusChain(Button rand, Button back)
     {
-        // Les flèches d'ascension sont en TÊTE de chaîne : sans câblage explicite elles resteraient
+        // Les flèches de saturation sont en TÊTE de chaîne : sans câblage explicite elles resteraient
         // inatteignables à la manette (le focus spatial ne traverse pas les PanelContainer — c'est déjà
-        // la raison d'être de cette méthode), et le cran d'ascension serait un réglage souris seulement.
+        // la raison d'être de cette méthode), et le cran de saturation serait un réglage souris seulement.
         if (_ascDown != null && _ascUp != null)
         {
             _ascDown.FocusNeighborRight = _ascDown.GetPathTo(_ascUp);

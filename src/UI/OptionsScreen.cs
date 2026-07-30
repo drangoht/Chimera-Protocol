@@ -277,11 +277,11 @@ public partial class OptionsScreen : Control
     private void AddDifficulty(VBoxContainer parent, GameSettings.GameDifficulty value)
     {
         // Depuis la 1.25.0, ce réglage ne porte plus que l'ASSISTANCE : le challenge passe par
-        // l'ascension, choisie à l'écran de sélection de niveau (docs/ENDGAME_PLAN.md §7.1). « Difficile »
-        // n'est donc plus proposé — il vaut désormais l'ascension 1, et le laisser ici ferait cohabiter
+        // la saturation, choisie à l'écran de sélection de niveau (docs/ENDGAME_PLAN.md §7.1). « Difficile »
+        // n'est donc plus proposé — il vaut désormais la saturation 1, et le laisser ici ferait cohabiter
         // deux axes de difficulté qui se cumuleraient en silence.
         //
-        // Une sauvegarde d'avant la 1.25.0 est migrée au chargement (Normal + ascension 1), donc `value`
+        // Une sauvegarde d'avant la 1.25.0 est migrée au chargement (Normal + saturation 1), donc `value`
         // ne vaut jamais Difficile ici ; le clamp protège quand même l'index de la liste déroulante.
         int selected = Mathf.Min((int)value, (int)GameSettings.GameDifficulty.Normal);
         var opt = AddDropdown(parent, Loc.T("OPTIONS_DIFFICULTY"),

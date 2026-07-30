@@ -1,7 +1,7 @@
-# ENDGAME_PLAN — Ascension, challenge de fin de partie et rejouabilité
+# ENDGAME_PLAN — Saturation, challenge de fin de partie et rejouabilité
 
 > Plan validé le **2026-07-30** (après la 1.24.0). Trois arbitrages tranchés par l'auteur du jeu :
-> **(a)** l'axe est l'**ascension cumulative** ; **(b)** elle est **choisie et récompensée**, jamais
+> **(a)** l'axe est la **saturation cumulative** ; **(b)** elle est **choisie et récompensée**, jamais
 > imposée ; **(c)** la rejouabilité vient de **nouvelles raisons de rejouer**, pas de nouveau contenu.
 > Design de référence : `docs/GDD.md` §28 (paliers de menace), §31 (overtime), §33 (cartes de
 > surcharge). Mesures citées : `docs/TEST_REPORT.md` (2026-07-29 et 2026-07-30).
@@ -29,9 +29,9 @@ Trois faits mesurés qui interdisent la réponse paresseuse (« remonter les mul
 
 **Conclusion de design.** Il ne manque pas de puissance à la menace, il lui manque des **dimensions**.
 Le joueur n'a qu'un seul type de réponse (plus de PV, plus de DPS) parce que la menace ne pose qu'un
-seul type de question. L'ascension est le cadre qui permet d'en poser d'autres, un cran à la fois.
+seul type de question. La saturation est le cadre qui permet d'en poser d'autres, un cran à la fois.
 
-## 2. L'Ascension — principes de conception
+## 2. La Saturation — principes de conception
 
 **Un cran = une règle nommée, lisible avant de jouer, et qui retire une certitude.** Pas un
 multiplicateur invisible. Le joueur doit pouvoir dire *pourquoi* il est mort et *ce qu'il changera*.
@@ -41,11 +41,11 @@ Trois règles que le plan s'impose :
 1. **Viser en priorité les axes où le joueur est sans plafond** — soins reçus, PV max, régénération,
    temps de construction du build. Un cran qui ajoute des PV aux ennemis est le moins intéressant des
    crans : il alimente l'échange de statistiques que le joueur gagne toujours.
-2. **Cumulatif et ordonné** : l'ascension N applique les crans 1…N. On ne panache pas (ce serait des
+2. **Cumulatif et ordonné** : la saturation N applique les crans 1…N. On ne panache pas (ce serait des
    mutateurs — voir §6, hors périmètre ici).
 3. **Jamais un mur sur le boss.** `LevelThreat.ChampionHpSoftening = 0,55` existe précisément parce que
    battre le boss conditionne le déblocage du niveau suivant, et le boss est calibré sur un **TTK
-   joué** (`rusted_core.maxHp = 5000`, GDD §20.6). L'ascension doit réutiliser cet amortissement, sinon
+   joué** (`rusted_core.maxHp = 5000`, GDD §20.6). La saturation doit réutiliser cet amortissement, sinon
    chaque cran rallonge un TTK déjà mesuré comme long.
 
 ### Les crans proposés
@@ -70,26 +70,26 @@ Le cran **VI** est le plus important du lot : c'est le seul qui répond directem
 60 % du temps ». À l'inverse, **I** est le moins utile — il est là parce qu'un premier cran doit être
 rassurant, pas parce qu'il apporte quelque chose.
 
-### Ce que l'ascension ne doit PAS faire
+### Ce que la saturation ne doit PAS faire
 
 - **Toucher aux i-frames du joueur** (0,45 s, marqué CRITIQUE pour les nuées dans `CLAUDE.md`) : les
   raccourcir ne crée pas de la difficulté, il crée de la mort inexpliquée en nuée.
 - **Réduire la lisibilité** : pas de télégraphe supprimé, pas de VFX retiré. Le cran X supprime un
   filet, il ne cache pas l'information.
 - **Se cumuler avec `DifficultyTuning`** sans réflexion : trois axes multiplicatifs existent déjà
-  (réglage joueur × palier de niveau × overtime). L'ascension est un **quatrième** — décider si elle
+  (réglage joueur × palier de niveau × overtime). La saturation est un **quatrième** — décider si elle
   remplace « Difficile » ou s'y ajoute (voir question ouverte §7).
 
 ## 3. Économie d'Échos
 
 Modèle éprouvé du dépôt : `LevelThreat.EchoMult` (1,00 → 1,45 sur 5 paliers) branché dans
-`EchoFormula`, avec la justification « sans lui, farmer le 1er niveau resterait optimal ». L'ascension
+`EchoFormula`, avec la justification « sans lui, farmer le 1er niveau resterait optimal ». La saturation
 suit le même patron, avec une pente plus forte parce que le coût en compétence l'est aussi :
 
-**+20 % d'Échos par cran, cumulatif** → ascension X ≈ **×3** (recommandé, à ajuster).
+**+20 % d'Échos par cran, cumulatif** → saturation 5 ≈ **×3** (recommandé, à ajuster).
 
-Garde-fou anti-farm à vérifier au moment de l'implémentation : le gain horaire d'une ascension haute
-doit rester supérieur à celui d'une ascension basse **rejouée vite**. Une run d'ascension X qui dure
+Garde-fou anti-farm à vérifier au moment de l'implémentation : le gain horaire d'une saturation haute
+doit rester supérieur à celui d'une saturation basse **rejouée vite**. Une run de saturation 5 qui dure
 deux fois plus longtemps pour ×3 d'Échos est rentable ; à ×1,5 elle ne le serait pas, et le joueur
 optimal redescendrait — exactement le travers que `EchoMult` corrige déjà entre biomes.
 
@@ -97,20 +97,20 @@ optimal redescendrait — exactement le travers que `EchoMult` corrige déjà en
 
 Arbitrage (c) : exploiter ce qui existe déjà (5 biomes, 28 ennemis, 9 fusions, 13 défis, 3 mid-boss).
 
-1. **Records par ascension.** `GameSettings` indexe **déjà** complétions et meilleurs temps par
-   difficulté (`CompletionKey(biomeId, difficulty)`, `_bestDiff`). Étendre la clé à l'ascension donne
+1. **Records par saturation.** `GameSettings` indexe **déjà** complétions et meilleurs temps par
+   difficulté (`CompletionKey(biomeId, difficulty)`, `_bestDiff`). Étendre la clé à la saturation donne
    une grille 5 biomes × N crans à remplir — de la rejouabilité pour le coût d'une clé de dictionnaire.
 2. **Graine du jour.** `--seed` existe et est **journalisé** depuis la 1.24.0 : une graine dérivée de
    la date donne à tous les joueurs la même run, comparable. Le socle technique est déjà là, il ne
    manque que l'entrée de menu et l'affichage du score.
 3. **Défis conditionnels.** `ChallengeSystem` porte déjà 13 défis évalués en fin de run. Ajouter des
-   conditions d'ascension (« battre le Néon en ascension 5 », « gagner sans greffe ») réutilise le
+   conditions de saturation (« battre le Néon en saturation 5 », « gagner sans greffe ») réutilise le
    système entier, y compris les titres cosmétiques.
-4. **Titres d'ascension** — la vitrine, déjà supportée par le flair du menu principal.
+4. **Titres de saturation** — la vitrine, déjà supportée par le flair du menu principal.
 
 ## 5. Comment on validera — et c'est nouveau
 
-L'ascension est **le premier système du projet dont chaque cran est validable au banc**, grâce à
+La saturation est **le premier système du projet dont chaque cran est validable au banc**, grâce à
 l'outillage de la 1.24.0 :
 
 ```
@@ -132,10 +132,10 @@ leur ressenti se juge **en jouant**, le banc n'en mesure que la pression.
 
 Chaque lot est publiable seul et laisse le jeu cohérent.
 
-**Lot 1 — le cadre. ✅ LIVRÉ le 2026-07-30** (commit `30ec10d`, non publié). `AscensionTable` en logique
+**Lot 1 — le cadre. ✅ LIVRÉ le 2026-07-30** (commit `30ec10d`, non publié). `SaturationTable` en logique
 pure sur le patron de `LevelThreat`, sélecteur à l'écran de niveau (liste des règles actives, lisible
 avant de lancer), déblocage global par victoire, persistance + **migration** des anciens `settings.cfg`,
-Échos via une source unique. Crans **I à V**, 21 tests, flag **`--ascension=<n>`** pour le banc.
+Échos via une source unique. Crans **I à V**, 21 tests, flag **`--saturation=<n>`** pour le banc.
 
 **Validé au banc** (`docs/TEST_REPORT.md`, 4 graines appariées) : temps soutenable **60,7 % → 39,9 %**
 (0/4, net) et survie théorique **÷2** — le critère des 6 % est dépassé d'un facteur 5, et 2 runs sur 4
@@ -156,14 +156,14 @@ finissent désormais par une **mort réelle** là où les quatre atteignaient le
 seuil de détection. À instruire avant le lot 2.
 
 ⚠ **Reste au lot 3** : les complétions et records restent indexés par *difficulté* et non par
-ascension. Conséquence temporaire : le badge « vaincu » ne distingue plus les crans (`RecordCompletion`
+saturation. Conséquence temporaire : le badge « vaincu » ne distingue plus les crans (`RecordCompletion`
 reçoit désormais toujours `Normal`).
 
 **Lot 2 — les crans qualitatifs.** **VI** (dégâts en % des PV max), **VII** (corrosion), **VIII**
 (brèche). C'est le cœur du problème mesuré, et le lot le plus risqué : chacun demande du code de
 gameplay neuf et un passage de `game-tester`. À découper si nécessaire.
 
-**Lot 3 — la rejouabilité.** Records et complétions par ascension, graine du jour, défis conditionnels,
+**Lot 3 — la rejouabilité.** Records et complétions par saturation, graine du jour, défis conditionnels,
 titres. Beaucoup de valeur par heure, aucune mécanique neuve.
 
 **Lot 4 — crans de finition.** **IX** (deux champions) et **X** (sans filet), qui ne valent que si les
@@ -171,52 +171,52 @@ lots 1-2 ont tenu.
 
 ## 7. Décisions (tranchées le 2026-07-30, avant le lot 1)
 
-1. **L'ascension absorbe la difficulté.** Quatre axes multiplicatifs simultanés rendraient tout
+1. **La saturation absorbe la difficulté.** Quatre axes multiplicatifs simultanés rendraient tout
    diagnostic impossible — le chantier §31 a mis trois sessions à isoler une cause pour cette raison
    exacte. Donc :
-   - **l'ascension 1 EST l'ancien « Difficile »**, aux mêmes valeurs (PV ×1,30, dégâts ×1,35, spawn
+   - **la saturation 1 EST l'ancien « Difficile »**, aux mêmes valeurs (PV ×1,30, dégâts ×1,35, spawn
      ×1,25). Ce n'est pas une coïncidence exploitée après coup : c'est ce qui rend les **records et
      complétions existants valides sans migration destructrice** ;
-   - **« Facile » survit comme mode d'ASSISTANCE**, pas comme une ascension négative. C'est de
+   - **« Facile » survit comme mode d'ASSISTANCE**, pas comme une saturation négative. C'est de
      l'accessibilité (dégâts ×0,60) et cela ne se mélange pas avec une échelle de challenge ;
    - `GameDifficulty.Difficile` reste dans l'énumération pour **relire les anciens `settings.cfg`**,
-     mais n'est plus proposé : au chargement, il est converti en *Normal + ascension 1*.
+     mais n'est plus proposé : au chargement, il est converti en *Normal + saturation 1*.
 2. **Cinq crans au lancement** (I à V), tous validés au banc. Les crans VI-X viennent aux lots 2 et 4.
    Cinq crans réellement testés valent mieux que dix annoncés.
-3. **Déblocage global, records par biome × ascension.** Le cran maximum atteint est global (battre
-   l'ascension N sur *n'importe quel* biome débloque N+1) : par biome, cinq niveaux × dix crans
-   deviendrait une corvée. En revanche les **records** restent indexés par biome **et** par ascension —
+3. **Déblocage global, records par biome × saturation.** Le cran maximum atteint est global (battre
+   la saturation N sur *n'importe quel* biome débloque N+1) : par biome, cinq niveaux × dix crans
+   deviendrait une corvée. En revanche les **records** restent indexés par biome **et** par saturation —
    la grille à remplir existe pour qui la veut, sans être un péage.
 
 ## 8. Migration des sauvegardes des joueurs déjà en place
 
 La 1.24.0 est **publiée** : des joueurs ont des `settings.cfg` et des `save.json` antérieurs à
-l'ascension. Rien ne doit être perdu ni réinterprété.
+la saturation. Rien ne doit être perdu ni réinterprété.
 
 ### Fait au lot 1
 
 | cas | conversion | pourquoi |
 |---|---|---|
-| `difficulty=2` (Difficile) | → *Normal + ascension 1* | le cran 1 a **les mêmes multiplicateurs** : le record reste exact |
-| `difficulty=0` (Facile) | → assistance, hors échelle | l'accessibilité n'est pas une ascension négative |
-| a déjà terminé un niveau en Difficile | `ascension_beaten = 1` | il jouait effectivement au cran 1 : le lui créditer, plutôt que de le renvoyer au bas de l'échelle |
-| absence de la clé `gameplay/ascension` | déclenche la migration **une seule fois** | l'écriture des deux clés au premier `Save()` fait foi ensuite |
+| `difficulty=2` (Difficile) | → *Normal + saturation 1* | le cran 1 a **les mêmes multiplicateurs** : le record reste exact |
+| `difficulty=0` (Facile) | → assistance, hors échelle | l'accessibilité n'est pas une saturation négative |
+| a déjà terminé un niveau en Difficile | `saturation_beaten = 1` | il jouait effectivement au cran 1 : le lui créditer, plutôt que de le renvoyer au bas de l'échelle |
+| absence de la clé `gameplay/saturation` | déclenche la migration **une seule fois** | l'écriture des deux clés au premier `Save()` fait foi ensuite |
 
-Ces quatre cas sont **testés** (`AscensionTableTests`), et la migration s'exécute *après* le chargement
+Ces quatre cas sont **testés** (`SaturationTableTests`), et la migration s'exécute *après* le chargement
 des complétions — sans elles, le crédit du cran serait perdu.
 
 ### Reste à faire (lot 3) — et à ne pas oublier
 
 1. **Clés de complétion et de records.** Elles sont indexées par *difficulté*
-   (`"biome:2"` = Difficile) et doivent passer à l'ascension. Conversion : `"biome:2"` → cran 1,
+   (`"biome:2"` = Difficile) et doivent passer à la saturation. Conversion : `"biome:2"` → cran 1,
    `"biome:1"` → cran 0, `"biome:0"` → assistance. **Régression temporaire acceptée depuis le lot 1** :
    `RecordCompletion` reçoit toujours `Normal`, donc le badge ne distingue plus les crans.
 2. **Meilleurs temps** (`_bestTimes` / `_bestDiff`) : même conversion, en conservant le temps.
 3. **Écrire une migration versionnée**, pas une détection par clé absente. La parade actuelle (« pas de
-   clé `ascension` ⇒ ancien fichier ») ne fonctionne qu'**une fois** ; le lot 3 en ajoutera d'autres. Un
+   clé `saturation` ⇒ ancien fichier ») ne fonctionne qu'**une fois** ; le lot 3 en ajoutera d'autres. Un
    entier `save_version` dans `settings.cfg` rend les migrations suivantes déterministes et ordonnées.
 4. **Ne jamais faire monter un joueur dans l'échelle sans victoire.** Leçon du 2026-07-30 : les runs de
-   banc sous `--ascension=5` avaient persisté `ascension_beaten=5` dans une sauvegarde réelle, ouvrant
+   banc sous `--saturation=5` avaient persisté `saturation_beaten=5` dans une sauvegarde réelle, ouvrant
    tous les crans. Protéger la valeur *choisie* ne suffisait pas — le **déblocage** est une seconde voie
    d'écriture. Tout nouveau champ de progression doit être audité de la même façon.
 5. **Vérifier sur une sauvegarde réelle avant publication** (copie du `settings.cfg` d'un joueur de la
@@ -225,8 +225,8 @@ des complétions — sans elles, le crédit du cran serait perdu.
 
 ## 9. Hors périmètre (décidé)
 
-- **Mutateurs panachés** (run composée à la carte) : écartés au profit de l'ascension ordonnée. À
-  reconsidérer seulement si l'ascension s'avère trop rigide à l'usage.
+- **Mutateurs panachés** (run composée à la carte) : écartés au profit de la saturation ordonnée. À
+  reconsidérer seulement si la saturation s'avère trop rigide à l'usage.
 - **Nouveau contenu** (armes, greffes, biome, boss) : explicitement reporté. Une arme de plus vaut
-  davantage quand il existe une ascension élevée où la tester.
+  davantage quand il existe une saturation élevée où la tester.
 - **Export web** (`docs/WEB_EXPORT_ANALYSIS.md`) : sans rapport, toujours bloqué par le .NET.

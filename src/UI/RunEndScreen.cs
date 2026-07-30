@@ -136,7 +136,7 @@ public partial class RunEndScreen : CanvasLayer
         int capKills    = meta?.EchoCapKills ?? kills;
         int capCores    = meta?.EchoCapCores ?? cores;
 
-        // Palier de menace ET ascension : chaque composante est majorée EXACTEMENT comme dans
+        // Palier de menace ET saturation : chaque composante est majorée EXACTEMENT comme dans
         // EchoFormula (même helper, même troncature, même facteur combiné via TotalEchoMult) pour que
         // la somme animée tombe pile sur le total crédité.
         double tierMult = GameSettings.Instance?.TotalEchoMult(PendingThreatTier)

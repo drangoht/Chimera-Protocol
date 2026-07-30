@@ -4,14 +4,14 @@ Rapport de sessions de test. Chaque section correspond à une session de test di
 
 ---
 
-## Ascension — le cadre fonctionne : temps soutenable 60,7 % → 39,9 % — 2026-07-30
+## Saturation — le cadre fonctionne : temps soutenable 60,7 % → 39,9 % — 2026-07-30
 
 **Objet :** vérifier que le lot 1 de `docs/ENDGAME_PLAN.md` produit une difficulté réelle, sur le
 critère posé par le plan lui-même (§5) : un cran doit faire baisser le **temps soutenable** de plus de
 **6 %**, sinon il coûte un palier au joueur sans rien changer.
 
 **Protocole :** 4 runs sur les **mêmes graines** (1000-1003) que `docs/bench/ref_overtime_225.json`,
-`--overtime --minutes 20 --ascension 5`, Fournaise. Comparaison **appariée**, test des signes.
+`--overtime --minutes 20 --saturation 5`, Fournaise. Comparaison **appariée**, test des signes.
 
 | métrique | avant (asc. 0) | après (asc. 5) | delta médian | signes | verdict |
 |---|---|---|---|---|---|
@@ -26,7 +26,7 @@ critère posé par le plan lui-même (§5) : un cran doit faire baisser le **tem
 quatre paires poussent dans le même sens. La survie théorique est **divisée par deux**.
 
 Signe le plus parlant : **2 runs sur 4 finissent par une mort réelle** (`seed 1002` à 1:30 d'overtime,
-`seed 1003` à 1:53), alors que les quatre atteignaient le plafond du banc sans ascension. Le bot —
+`seed 1003` à 1:53), alors que les quatre atteignaient le plafond du banc sans saturation. Le bot —
 celui qui tenait 22 minutes d'overtime et « survivait bien mieux qu'un humain » — ne passe plus la
 deuxième minute sur la moitié des graines.
 
@@ -37,7 +37,7 @@ que le changement modifie la longueur de la run.
 
 ### Le cran 1 seul : mesurable, mais au ras du seuil — et le joueur ne le sent pas
 
-Mesuré ensuite sur les mêmes graines, `--ascension 1` (le seul cran accessible à un joueur qui n'a rien
+Mesuré ensuite sur les mêmes graines, `--saturation 1` (le seul cran accessible à un joueur qui n'a rien
 encore battu) :
 
 | métrique | asc. 0 | asc. 1 | delta | signes |
@@ -61,12 +61,12 @@ qui est ce qui rend les records déjà gagnés valides. Le rendre plus perceptib
 
 ### Bug trouvé : le banc débloquait l'échelle dans la sauvegarde réelle
 
-`ascension_beaten=5` a été trouvé dans le `settings.cfg` du testeur **sans aucune victoire à ce cran** :
-les campagnes lancées sous `--ascension=5` appelaient `RecordAscensionBeaten` à la mort du boss, ce qui
-persistait le déblocage. Protéger la valeur *choisie* (`_persistedAscension`, sur le modèle de `--lang`)
-ne suffisait pas — le **déblocage est une seconde voie d'écriture**. Corrigé : sous `--ascension`, le
-déblocage n'est jamais enregistré. Sauvegarde du testeur réparée (`ascension_beaten=0`, ses complétions
-datant d'avant l'ascension).
+`saturation_beaten=5` a été trouvé dans le `settings.cfg` du testeur **sans aucune victoire à ce cran** :
+les campagnes lancées sous `--saturation=5` appelaient `RecordSaturationBeaten` à la mort du boss, ce qui
+persistait le déblocage. Protéger la valeur *choisie* (`_persistedSaturation`, sur le modèle de `--lang`)
+ne suffisait pas — le **déblocage est une seconde voie d'écriture**. Corrigé : sous `--saturation`, le
+déblocage n'est jamais enregistré. Sauvegarde du testeur réparée (`saturation_beaten=0`, ses complétions
+datant d'avant la saturation).
 
 ### Ce qui n'est pas encore mesuré
 

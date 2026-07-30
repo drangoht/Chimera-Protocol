@@ -454,10 +454,10 @@ def run_campaign(args) -> list[Run]:
             cmd.append("--saturate-arsenal")
         if args.start_at:
             cmd.append(f"--start-at={args.start_at}")
-        if args.ascension is not None:
+        if args.saturation is not None:
             # Le cran ne se choisit qu'à l'écran de sélection de niveau, que le bot ne traverse jamais :
-            # sans ce flag, aucun cran d'ascension ne serait mesurable (cf. docs/ENDGAME_PLAN.md §5).
-            cmd.append(f"--ascension={args.ascension}")
+            # sans ce flag, aucun cran de saturation ne serait mesurable (cf. docs/ENDGAME_PLAN.md §5).
+            cmd.append(f"--saturation={args.saturation}")
 
         started = time.time()
         print(f"[{i}/{len(seeds)}] seed {seed} — biome {args.biome}, "
@@ -499,8 +499,8 @@ def main() -> None:
                         "réglage d'overtime — le bot ne survit pas 13 minutes de lui-même.")
     p.add_argument("--overtime", action="store_true",
                    help="raccourci : --start-at 13 --saturate (banc d'overtime standard)")
-    p.add_argument("--ascension", type=int, default=None,
-                   help="force le cran d'ascension (0-5) sans passer par l'écran de sélection ; "
+    p.add_argument("--saturation", type=int, default=None,
+                   help="force le cran de saturation (0-5) sans passer par l'écran de sélection ; "
                         "critère de validation d'un cran : faire baisser le « temps soutenable » de "
                         "plus de 6 %% face à une campagne appariée au cran inférieur")
     p.add_argument("--label", default=None, help="nom de la campagne dans les rapports")

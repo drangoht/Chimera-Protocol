@@ -116,9 +116,9 @@ public partial class Player : CharacterBody2D
         _buffBar = new BuffBar();
         AddChild(_buffBar);
 
-        // Consommables meta rechargés à chaque run. Le cran d'ascension IV « Sans filet » les coupe :
+        // Consommables meta rechargés à chaque run. Le cran de saturation IV « Sans filet » les coupe :
         // ils s'achètent une fois et profitent à TOUTES les runs suivantes, si bien qu'une partie ne
-        // commence jamais vraiment à zéro (cf. AscensionTable.SafetyNetsEnabled).
+        // commence jamais vraiment à zéro (cf. SaturationTable.SafetyNetsEnabled).
         bool safetyNets = GameSettings.Instance?.SafetyNetsEnabled ?? true;
         _extraLivesLeft    = safetyNets ? MetaProgressionSystem.Instance?.GetUpgradeLevel("extra_life")   ?? 0 : 0;
         _absorbChargesLeft = safetyNets ? MetaProgressionSystem.Instance?.GetUpgradeLevel("damage_absorb") ?? 0 : 0;
@@ -527,8 +527,8 @@ public partial class Player : CharacterBody2D
     }
 
     /// <summary>
-    /// Facteur appliqué à tout soin <b>ponctuel</b> reçu — cran d'ascension II « Hémorragie »
-    /// (<see cref="AscensionTable.HealingMult"/>).
+    /// Facteur appliqué à tout soin <b>ponctuel</b> reçu — cran de saturation II « Hémorragie »
+    /// (<see cref="SaturationTable.HealingMult"/>).
     ///
     /// <para>Il ne touche <b>pas</b> la régénération continue, qui a son propre cran (VII, lot 2). Le
     /// ciblage est délibéré : le soin ponctuel est le canal <b>dominant</b> de la défense du joueur —

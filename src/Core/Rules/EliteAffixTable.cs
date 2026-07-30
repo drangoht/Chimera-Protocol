@@ -77,8 +77,8 @@ public static class EliteAffixTable
     /// <summary>
     /// Probabilité qu'un ennemi basique devienne élite au temps <paramref name="tMinutes"/>.
     ///
-    /// <para><paramref name="frequencyMult"/> et <paramref name="cap"/> servent au cran d'ascension
-    /// « Élite ordinaire » (<see cref="AscensionTable.EliteFrequencyMult"/>). Le plafond est un
+    /// <para><paramref name="frequencyMult"/> et <paramref name="cap"/> servent au cran de saturation
+    /// « Élite ordinaire » (<see cref="SaturationTable.EliteFrequencyMult"/>). Le plafond est un
     /// <b>paramètre</b> et non un simple facteur appliqué à <see cref="MaxChance"/> : multiplier 0,28
     /// par 3 donnerait 84 % d'élites, ce qui n'est plus « une texture de nuée » mais une horde — ce que
     /// le plafond d'origine interdit explicitement — et ferait peser les affixes (régénération,

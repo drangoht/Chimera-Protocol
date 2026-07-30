@@ -137,9 +137,9 @@ public partial class RunStatsTracker : Node
         if (biome.Length > 0 && GameSettings.Instance != null)
         {
             GameSettings.Instance.RecordCompletion(biome, GameSettings.Instance.Difficulty);
-            // Le cran d'ascension est validé par la MORT DU BOSS, pas par la durée de survie : c'est
+            // Le cran de saturation est validé par la MORT DU BOSS, pas par la durée de survie : c'est
             // ce qui débloque le cran suivant (déblocage global, tous biomes confondus).
-            GameSettings.Instance.RecordAscensionBeaten(GameSettings.Instance.Ascension);
+            GameSettings.Instance.RecordSaturationBeaten(GameSettings.Instance.Saturation);
         }
 
         Banner.Show(GetTree(), Loc.T("LEVEL_COMPLETE"), new Color(1f, 0.85f, 0.3f));
@@ -231,7 +231,7 @@ public partial class RunStatsTracker : Node
             meta.EchoTimeDiv, meta.EchoKillDiv, meta.EchoCoreMult, meta.EchoBaseBonus,
             RunDurationSeconds, meta.EchoCapKills, meta.EchoCapCores,
             meta.EchoOvertimeDampening, meta.EchoOvertimeBonusCap,
-            // Palier du niveau × ascension, via la source unique (cf. GameSettings.TotalEchoMult) :
+            // Palier du niveau × saturation, via la source unique (cf. GameSettings.TotalEchoMult) :
             // RunEndScreen refait le même calcul pour animer les composantes.
             GameSettings.Instance?.TotalEchoMult(ThreatTier) ?? LevelThreat.EchoMult(ThreatTier));
     }
