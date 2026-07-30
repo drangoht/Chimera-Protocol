@@ -32,6 +32,8 @@ public static class PowerTelemetry
     private static float _sinceSample;
     private static float _dealtWindow;      // dégâts infligés aux ennemis depuis le dernier échantillon
     private static float _takenWindow;      // dégâts encaissés par le joueur depuis le dernier échantillon
+    private static float _regenWindow;      // PV réellement rendus par la régénération continue
+    private static float _healWindow;       // PV réellement rendus par les soins ponctuels
     private static int   _killsAtLastSample;
     private static string _lastBuild = "";  // pour ne marquer que les changements de build
     private static bool  _wasOvertime;      // l'overtime a été atteint (il ne se quitte jamais)
@@ -57,7 +59,8 @@ public static class PowerTelemetry
         // journal dans ces deux cas viderait la mesure de son intérêt.
         Append(ComposeHeader() + "\n");
         Append("t_s;phase;niveau;indice_puissance;dps;degats_subis_ps;kills_fenetre;ennemis;" +
-               "mult_degats;reduc_cd;reduc_degats;pv_max;vitesse;armes;passifs;greffes\n");
+               "mult_degats;reduc_cd;reduc_degats;pv;pv_max;regen_ps;regen_eff_ps;soins_ps;" +
+               "vitesse;armes;passifs;greffes\n");
     }
 
     /// <summary>Dégâts infligés à un ennemi (déjà modulés par ses propres résistances).</summary>
@@ -70,6 +73,28 @@ public static class PowerTelemetry
     public static void NotifyDamageTaken(float amount)
     {
         if (_active) _takenWindow += amount;
+    }
+
+    /// <summary>
+    /// PV <b>réellement</b> rendus par la régénération continue (Auto-Réparation méta, carte de
+    /// surcharge <c>overload_regen</c>, greffes régénérantes) — c'est-à-dire après clamp à
+    /// <c>MaxHp</c>. La distinction avec le taux nominal est le seul moyen de répondre à la question
+    /// posée par le testeur (« son effet ne se voit pas ») : un joueur qui reste à PV pleins régénère
+    /// nominalement beaucoup et effectivement zéro, et le taux nominal seul ne le dirait jamais.
+    /// </summary>
+    public static void NotifyRegen(float amount)
+    {
+        if (_active && amount > 0f) _regenWindow += amount;
+    }
+
+    /// <summary>
+    /// PV réellement rendus par un soin <b>ponctuel</b> (orbe de soin, lifesteal, carte de surcharge
+    /// <c>overload_plating</c> qui soigne de son propre gain). Compté à part de la régénération :
+    /// les deux ne se pilotent pas avec les mêmes leviers.
+    /// </summary>
+    public static void NotifyHealed(float amount)
+    {
+        if (_active && amount > 0f) _healWindow += amount;
     }
 
     /// <summary>
@@ -117,6 +142,10 @@ public static class PowerTelemetry
 
         float dps   = windowSeconds > 0.1f ? _dealtWindow / windowSeconds : 0f;
         float dtps  = windowSeconds > 0.1f ? _takenWindow / windowSeconds : 0f;
+        // Ramenés à la seconde comme les dégâts subis : la seule lecture qui intéresse le design est
+        // « ce que la régénération rend » CONTRE « ce que le contenu retire », dans la même unité.
+        float rgps  = windowSeconds > 0.1f ? _regenWindow / windowSeconds : 0f;
+        float heals = windowSeconds > 0.1f ? _healWindow  / windowSeconds : 0f;
         int killsWin = kills - _killsAtLastSample;
 
         var tree     = Engine.GetMainLoop() as SceneTree;
@@ -131,7 +160,9 @@ public static class PowerTelemetry
                $"{Num(stats?.DamageMultiplier ?? 0f, "0.00")};" +
                $"{Num(stats?.CooldownReduction ?? 0f, "0.00")};" +
                $"{Num(stats?.DamageReduction ?? 0f, "0.00")};" +
-               $"{Num(stats?.MaxHp ?? 0f, "0")};{Num(stats?.Speed ?? 0f, "0")};" +
+               $"{Num(stats?.CurrentHp ?? 0f, "0")};{Num(stats?.MaxHp ?? 0f, "0")};" +
+               $"{Num(stats?.HpRegenPerSecond ?? 0f, "0.00")};{Num(rgps, "0.0")};{Num(heals, "0.0")};" +
+               $"{Num(stats?.Speed ?? 0f, "0")};" +
                build + "\n");
 
         // Un build qui change entre deux échantillons est la seule explication possible d'un saut de
@@ -142,6 +173,8 @@ public static class PowerTelemetry
 
         _dealtWindow = 0f;
         _takenWindow = 0f;
+        _regenWindow = 0f;
+        _healWindow  = 0f;
         _killsAtLastSample = kills;
     }
 
@@ -176,6 +209,10 @@ public static class PowerTelemetry
         sb.AppendLine($"=== Courbe de puissance — {Time.GetDatetimeStringFromSystem()}");
         sb.AppendLine($"# version v{BuildInfo.Version}-{BuildInfo.GitSha} · biome {biome} (palier {tier}) " +
                       $"· difficulté {diff} · échantillon toutes les {SampleInterval:0}s de jeu");
+        // La graine est journalisée pour que le banc multi-run apparie les runs par leur CONTENU et
+        // non par leur ordre d'apparition : une run qui plante sans rien écrire décalerait sinon
+        // silencieusement toute la campagne, et la comparaison appariée deviendrait fausse sans le dire.
+        if (DebugHooks.Seed.HasValue) sb.AppendLine($"# seed {DebugHooks.Seed.Value}");
         if (DebugHooks.AutoPlay)  sb.AppendLine("# --auto-play : choix de cartes ALÉATOIRES (build non représentatif d'un joueur)");
         if (DebugHooks.Invulnerable) sb.AppendLine("# --invuln : dégâts subis nuls, la colonne degats_subis_ps ne veut rien dire");
         if (DebugHooks.TimeScale > 0f) sb.AppendLine($"# --timescale={DebugHooks.TimeScale:0.##}");
@@ -213,6 +250,8 @@ public static class PowerTelemetry
         _sinceSample = 0f;
         _dealtWindow = 0f;
         _takenWindow = 0f;
+        _regenWindow = 0f;
+        _healWindow  = 0f;
         _killsAtLastSample = 0;
         _lastBuild = "";
         _wasOvertime = false;

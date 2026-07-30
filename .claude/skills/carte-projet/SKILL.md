@@ -30,7 +30,7 @@ data/              JSON de tuning (modifiable sans recompiler) — voir §Data
 localization/      ui.csv (source) → ui.{en,fr,es}.translation ; clé via Loc.T("CLÉ")
 assets/            Raw (sprites PNG 32×32, audio OGG/WAV, themes)
 tools/             Générateurs de sprites/audio + captures + release — voir §Outils
-tests/             xUnit — ChimeraProtocol.Tests.csproj (237 tests). `dotnet test tests/...`
+tests/             xUnit — ChimeraProtocol.Tests.csproj (255 tests). `dotnet test tests/...`
 docs/              GDD.md + briefs/plans — voir §Docs
 ```
 
@@ -54,6 +54,9 @@ EchoFormula (+ `ApplyTier` = multiplicateur de palier appliqué composante par c
 **LevelThreat** (paliers de menace par NIVEAU : `Order` = ordre de déblocage — source de vérité de
 `GameSettings.LevelOrder` — et index = palier ; `EnemyHpMult`/`ChampionHpMult`/`EnemyDamageMult`/
 `SpawnMult`/`TimeOffsetMinutes`/`EchoMult`, cf. GDD §28) ·
+**AutoPilotPolicy** (pilote du banc `--auto-play` : `ChooseDirection`/`ScoreDirection` — échantillonne
+16 caps et retient le meilleur score menaces/orbes/murs/inertie ; déterministe, c'est ce qui rend deux
+campagnes comparables) ·
 RarityWeights · CrowdControlCaps · DifficultyTuning · **VersionCompare**
 (comparaison sémantique pour le bandeau de MAJ) · **EliteAffixTable** (affixes d'élite :
 fréquence + tirage + `EliteModifiers`, cf. GDD §22) · **GraftTable** (Assimilation : parse
@@ -85,11 +88,17 @@ Les nœuds délèguent ici (SRP).
   `Die`) et `RunStatsTracker.EndRun` (combat interrompu par la mort du joueur). Toujours active, y
   compris en run normale. Session guidée → `tools/boss_ttk_session.ps1`.
 - **Mesure de la courbe de puissance** : `PowerTelemetry` (statique — échantillon toutes les 15 s de
-  jeu dans `user://power_curve.log`, écrit au fil de l'eau : DPS infligé, dégâts subis, population
-  d'ennemis, indice de puissance du loadout `InventorySystem.PowerIndex()`, build complet).
+  jeu dans `user://power_curve.log`, écrit au fil de l'eau : DPS infligé, dégâts subis, **PV courants,
+  régénération nominale / réellement rendue, soins ponctuels**, population d'ennemis, indice de
+  puissance du loadout `InventorySystem.PowerIndex()`, build complet — 20 colonnes).
   **Flag `--power-curve` uniquement** (contrairement à `BossTelemetry`, toujours active). Hooks :
-  `EnemyBase.TakeDamage`, `Player.TakeDamage`, `RunStatsTracker` (`_Ready`/`_Process`/`EndRun`).
-  Session guidée → `tools/power_curve_session.ps1`.
+  `EnemyBase.TakeDamage`, `Player.TakeDamage`/`Heal`/`HealFlat`/`UpdateHpRegen`, `RunStatsTracker`
+  (`_Ready`/`_Process`/`EndRun`). Session jouée → `tools/power_curve_session.ps1` ;
+  **campagne de N runs → `tools/power_curve_multi.py`** (le seul outil qui distingue un effet de
+  réglage du bruit inter-run).
+- **Pilote du banc automatisé** : `BenchAutoPilot` (pont scène → règle) + **`AutoPilotPolicy`**
+  (§Rules). Actif sous `--auto-play` seulement : le bot kite, ramasse et dashe, donc **meurt pour de
+  vrai** — la survie et les dégâts subis sont mesurables sans `--invuln`.
 - Divers : `AudioSystem`, `GameSettings` (source unique des réglages, persistés dans `user://settings.cfg` : volumes, **mode de fenêtre** `Windowed/Borderless/Fullscreen` + résolution + VSync + limite/compteur d'IPS, difficulté, **intensité des secousses**, **réduction des flashs**, **vibration manette**, langue, **tampon de version**, **Discord on/off**, touches `move_*`/`dash` rebindables ; migration des anciennes clés `display/fullscreen` et `gameplay/shake`), `Loc`, `FusionFlash`, `ScreenShake` (`Enabled` + `Intensity`), `RunStatsTracker`
 - **Musique adaptative** : `MusicDirector` (autoload — alterne `music_run_<biome>_{calm,combat}.ogg` + `music_run_boss.ogg` commun, **une seule audible à la fois**, fondu croisé à puissance constante ; détecte le boss tout seul via `EnemyBase.AssimIsBoss/AssimIsMiniBoss`). Logique pure → `MusicIntensity` (§Rules : `Select` avec hystérésis, `Approach`, `WeightToDb`). Démarré par `RunStatsTracker` (différé d'une frame : `CurrentBiomeId` est posé par `GroundRenderer._Ready`). `AudioSystem.PlayMusic` le coupe — les deux ne coexistent jamais. Direction sonore → `docs/AUDIO_AI_PROMPTS.md` ; pièges → `docs/PITFALLS.md`
 - Input : **`InputRemap`** (statique) — actions `move_up/down/left/right` (défaut ZQSD + flèches + manette), séparées des `ui_*` menu ; le Player lit `Input.GetVector(move_*)`, remap via l'écran Options, persisté dans `GameSettings`. Action **`dash`** (Maj gauche / RB, `EnsureExtraActions()` au boot via GameManager) pour la greffe Servos Erratiques
@@ -200,7 +209,11 @@ Fusions : `FusionBlade`, `RailOvercharged`, `OrbitalSwarm`, `OverloadAegis`,
   chiffres ne valent PAS validation d'équilibrage), **`power_curve_session.ps1`** (courbe de
   puissance d'une run entière : `-Biome <id>` / `-Bench` (banc headless auto-play) / `-Minutes <n>` /
   `-ReportOnly` — tableau minute par minute puis ratio puissance/population entrée-overtime → fin),
-  `test_balance_v2.py`, `test_ui_keyboard.py`, `smoketest_exe.py`
+  **`power_curve_multi.py`** (campagne de N runs : `--runs` / `--biome` / `--minutes` / `--seed-base`
+  / `--saturate` / `--out <json>` / `--compare <json>` / `--report-only` — médiane, p10/p90, bruit
+  relatif et **plus petit écart détectable** ; `--compare` fait la comparaison **appariée par graine**,
+  la seule qui tranche un réglage en quelques runs). `test_balance_v2.py`, `test_ui_keyboard.py`,
+  `smoketest_exe.py`
 - Release : **`release_itch.ps1`** (export → butler push → régénère & push `version.json`) — workflow complet via le skill **`/publier-itch`**
 - Python : `C:\Users\drang\AppData\Local\Programs\Python\Python313\python.exe`
 
@@ -253,6 +266,12 @@ instrumentale, progressions, architecture en stems, mixage, bouclage) ·
   (banc headless). Flag brut : `--power-curve` (+ `--run-limit=<s>` pour borner une run — la survie
   est sans fin, un banc ne s'arrête sinon jamais). Journal :
   `%APPDATA%\Godot\app_userdata\Chimera Protocol\power_curve.log`
+- **Trancher un RÉGLAGE (et non observer une run)** : `py tools/power_curve_multi.py --runs 5
+  --biome fournaise --out avant.json`, modifier la valeur, puis relancer avec `--compare avant.json`.
+  La campagne annonce le **plus petit écart détectable** ; `--compare` apparie run par run via les
+  graines. **Une run isolée — bot ou humaine — ne tranche rien** (variance ×2,4 mesurée).
+- Rendre une run REPRODUCTIBLE (mêmes vagues, mêmes cartes) : flag **`--seed=<n>`** (`DebugHooks.Seed`
+  → `GD.Seed`, + dérive le RNG de `PowerUpSpawner`). Base de l'appariement du banc multi-run.
 - Rendre le joueur invulnérable pour observer un combat long (phases du boss, VFX) : flag `--invuln` (`DebugHooks.Invulnerable`) — à combiner avec `--debug-boss`, qui trace aussi chaque bascule de phase
 - Forcer la langue de l'UI pour une session sans toucher à `user://settings.cfg` (captures/trailer) : flag `--lang=<en|fr|es>` (`DebugHooks.ForcedLanguage` → `GameSettings.ApplyLanguageOverride`)
 - Forcer l'équipement d'une (ou des 5) greffe(s) de base pour valider les props de silhouette : flag `--force-graft=<id|all>` (`DebugHooks.ForcedGraft`) ; capture par PID via `tools/capture_graft_silhouette.py`

@@ -27,7 +27,11 @@ public partial class PowerUpSpawner : Node
     public override void _Ready()
     {
         _powerUpScene ??= GD.Load<PackedScene>("res://scenes/entities/PowerUp.tscn");
-        _rng.Randomize();
+        // Sous --seed (banc multi-run), on dérive du RNG global au lieu de repartir de l'horloge :
+        // sinon les power-ups — qui changent le DPS — resteraient aléatoires et casseraient
+        // l'appariement entre deux campagnes. Cf. DebugHooks.Seed.
+        if (DebugHooks.Seed.HasValue) _rng.Seed = GD.Randi();
+        else                          _rng.Randomize();
 
         var times = new float[SpawnWindows.Length];
         for (int i = 0; i < SpawnWindows.Length; i++)

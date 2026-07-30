@@ -22,11 +22,12 @@
     Défaut : fournaise (celui du relevé de référence).
 
 .PARAMETER Bench
-    Banc automatisé au lieu d'une session jouée : `--headless --auto-play --invuln --timescale=3`.
-    Le bot ne se déplace PAS — sans `--invuln` il meurt en 20 s, et avec, la colonne des dégâts
-    subis vaut zéro. Le DPS y est un DPS de terrain (il monte avec la population d'ennemis) : seule
-    la colonne `indice_puissance` y est comparable dans le temps. Utile pour dégrossir, jamais pour
-    trancher un équilibrage.
+    Banc automatisé au lieu d'une session jouée : `--headless --auto-play --timescale=3`.
+    Le bot est PILOTÉ (AutoPilotPolicy) : il kite, ramasse et dashe, donc il subit de vrais dégâts et
+    meurt pour de vrai — la survie et la colonne `subis/s` sont exploitables. Ses chiffres absolus ne
+    valent toujours pas ceux d'un humain ; sa valeur est d'être REPRODUCTIBLE, donc de permettre de
+    comparer deux réglages. Pour cela, préférer `power_curve_multi.ps1` (N runs agrégées) : une run
+    isolée, humaine ou bot, reste dominée par la variance.
 
 .PARAMETER Minutes
     Durée maximale de la run en minutes de jeu (`--run-limit`). Défaut : 25 (13 min + 12 d'overtime).
@@ -83,7 +84,9 @@ function Show-Report {
     foreach ($line in $lines) {
         if ($line -like '#*' -or $line -like '===*' -or $line -like 't_s;*' -or $line.Trim() -eq '') { continue }
         $f = $line.Split(';')
-        if ($f.Count -lt 16) { continue }
+        # 20 colonnes depuis l'ajout des PV / de la régénération : les relevés antérieurs (16 colonnes)
+        # sont ignorés plutôt que mal lus — leurs index de build ne sont plus au même endroit.
+        if ($f.Count -lt 20) { continue }
         $rows += [pscustomobject]@{
             'min'       = [math]::Round([double]::Parse($f[0], $inv) / 60, 1)
             'phase'     = $f[1]
@@ -91,9 +94,14 @@ function Show-Report {
             'puissance' = [int]$f[3]
             'dps'       = [int]$f[4]
             'subis/s'   = [double]::Parse($f[5], $inv)
+            'pv'        = [int]$f[11]
+            'pv_max'    = [int]$f[12]
+            'regen/s'   = [double]::Parse($f[13], $inv)   # taux nominal du build
+            'rendu/s'   = [double]::Parse($f[14], $inv)   # PV réellement rendus (0 si PV pleins)
+            'soins/s'   = [double]::Parse($f[15], $inv)
             'kills'     = [int]$f[6]
             'ennemis'   = [int]$f[7]
-            'greffes'   = $f[15]
+            'greffes'   = $f[19]
         }
     }
 
@@ -119,6 +127,19 @@ function Show-Report {
         $ratioE  = if ($lastRun.ennemis   -gt 0) { $lastOt.ennemis   / $lastRun.ennemis   } else { 0 }
         Write-Host ('Entrée en overtime → fin de run : puissance ×{0:N2} · population ×{1:N2}' -f $ratioP, $ratioE) -ForegroundColor Cyan
     }
+
+    # L'Auto-réparation était crue inopérante par le testeur (« son effet ne se voit pas »). Le taux
+    # nominal ne tranche pas : c'est le rapport entre PV RENDUS et PV RETIRÉS qui dit si elle pèse.
+    $rendu = ($rows | Measure-Object 'rendu/s' -Average).Average
+    $subis = ($rows | Measure-Object 'subis/s' -Average).Average
+    $nom   = ($rows | Select-Object -Last 1).'regen/s'
+    if ($null -ne $rendu) {
+        $part = if ($subis -gt 0) { 100 * $rendu / $subis } else { 0 }
+        Write-Host ('Régénération : {0:N2} PV/s nominal en fin de run · {1:N2} rendu/s en moyenne · {2:N0} % des dégâts subis' -f $nom, $rendu, $part) -ForegroundColor Cyan
+        if ($nom -gt 0 -and $rendu -lt ($nom * 0.5)) {
+            Write-Host '  → plus de la moitié de la régénération tourne à vide (PV pleins) : le levier est moins fort qu''annoncé.' -ForegroundColor DarkGray
+        }
+    }
 }
 
 function Start-Session {
@@ -133,11 +154,11 @@ function Start-Session {
     $engArgs  = @('--path', $Project)
 
     if ($Bench) {
-        $userArgs += @('--auto-play', '--invuln', '--timescale=3')
+        $userArgs += @('--auto-play', '--timescale=3')
         $engArgs  += '--headless'
         Write-Host ''
         Write-Host "--- Banc automatisé, biome $Biome, $Minutes min de jeu (~$([math]::Round($Minutes/3,1)) min réelles)" -ForegroundColor Cyan
-        Write-Host '    Bot immobile et invulnérable : seule la colonne « puissance » est comparable.'
+        Write-Host '    Bot piloté et mortel : la survie est mesurée. Une run isolée reste du bruit — cf. power_curve_multi.ps1.'
     } else {
         $engArgs += @('--rendering-driver', 'd3d12')
         Write-Host ''

@@ -304,6 +304,15 @@ Trois pièges quand on touche à la difficulté par niveau ou à la formule d'É
   **2,4** sur la survie (1060 PV / 28,9 dégâts/s contre 745 PV / 48,9). Selon que l'arsenal sature
   vers la 11ᵉ ou la 13ᵉ minute, le joueur entre en overtime avec deux à trois fois moins de cartes
   accumulées. Comparer des réglages sur une run chacun, c'est mesurer surtout le bruit.
+  → **Outil dédié : `tools/power_curve_multi.py`** (N runs pilotées + agrégat). Il imprime, à côté de
+  chaque médiane, **le plus petit écart que la campagne sait détecter** : tout réglage dont l'effet
+  attendu est inférieur à ce seuil ne peut pas être validé, quel que soit le nombre de sessions jouées.
+- **Comparer deux réglages : apparier, ne pas empiler les runs.** `--seed=<n>` fixe le RNG global :
+  relancer une campagne sur **les mêmes graines** après avoir changé un réglage compare des runs
+  identiques par ailleurs (mêmes vagues, mêmes tirages de cartes), et le bruit de tirage s'annule dans
+  la différence. Six paires appariées tranchent ce que trente runs libres laisseraient indécis
+  (`--out avant.json` puis `--compare avant.json`). La lecture qui compte n'est pas le delta médian
+  mais le **test des signes** : un effet réel pousse presque toutes les paires dans le même sens.
 
 ## Calques d'écran (`CanvasLayer.Layer`) — les modales passent AU-DESSUS de PostFX
 Ordre en vigueur : `Banner` 85 · **`PostFX` 90** (vignette + liserés d'écran, `scenes/Game.tscn`) ·
@@ -694,7 +703,8 @@ Tout nouveau chemin de sortie de run doit l'appeler aussi.
 - `LevelUpScreen` met l'arbre EN PAUSE → gèle le serveur physique en headless (neutraliser l'XP de départ pour tester le gameplay)
 - `Area2D` ne détecte un corps que via vrai mouvement physique (`MoveAndSlide`) — pas un téléport ni un `Tween`
 - **Un banc doit lancer la scène de jeu explicitement** : `godot --headless --path <projet> res://scenes/Game.tscn -- <flags>`. Sans le chemin de scène, le jeu démarre sur le **menu principal** et y reste indéfiniment — aucun message d'erreur, juste un journal vide et un processus qui tourne pour rien. Les flags de debug vont **après `--`** (`OS.GetCmdlineUserArgs`).
-- **Le bot `--auto-play` ne se déplace pas** : il ne résout que les écrans modaux (level-up, assimilation). Sans `--invuln` il meurt vers 20 s de jeu et aucune mesure de fin de run n'est possible ; avec, tout ce qui touche aux **dégâts subis vaut zéro**. Un banc automatisé mesure donc la puissance du joueur, jamais la pression que le contenu lui oppose — cette moitié-là exige une session jouée.
+- **Le bot `--auto-play` est piloté depuis 2026-07-29** (`AutoPilotPolicy` + `BenchAutoPilot`) : il kite, ramasse les orbes et dashe. Il survit donc **sans `--invuln`**, et la colonne des dégâts subis a enfin un sens. *Avant*, immobile, il mourait vers 20 s sans `--invuln` et affichait zéro dégât subi avec — un banc ne mesurait que la puissance du joueur, jamais la pression du contenu. **Ne plus ajouter `--invuln` à un banc de survie** : cela redonne exactement le trou qu'on vient de boucher.
+- **Une menace n'est pas un projectile** : le pilote ne lit que le groupe `enemies`, les tirs ennemis n'étant dans aucun groupe. Il esquive la foule, pas les balles → un relevé sur un biome à tireurs (Néon) sous-estime légèrement la difficulté ressentie.
 - **La survie est sans fin** : rien n'arrête une run headless une fois le boss de fin battu. Utiliser `--run-limit=<secondes de jeu>` (`RunStatsTracker` termine alors la run avec l'issue `bench_limit`) plutôt que de tuer le processus au chronomètre.
 - **Journaux de mesure : écrire au fil de l'eau, pas à la fin.** `PowerTelemetry` ajoute chaque échantillon au fichier immédiatement — un banc interrompu (processus tué, run sans fin sous `--invuln`) garde ainsi tout ce qui a été mesuré. `BossTelemetry` peut se permettre l'inverse : son relevé n'a de sens que complet.
 

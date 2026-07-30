@@ -89,6 +89,12 @@ public partial class EnemySpawner : Node
         PreloadScenes();
         _timer = 2f; // Premier spawn dans 2 s
 
+        // Banc : --start-at=<minutes> avance aussi l'horloge du spawner (elle est indépendante de
+        // RunStatsTracker). Sans cela, la run se croirait en overtime pendant que la menace resterait
+        // celle de la première minute — le banc mesurerait un overtime qui n'existe pas.
+        if (DebugHooks.StartAtMinutes > 0f)
+            _elapsed = DebugHooks.StartAtMinutes * 60f;
+
         int stabilizerLevel = MetaProgressionSystem.Instance?.GetUpgradeLevel("overtime_stabilizer") ?? 0;
         _overtimeStabilizerFactor = 1f - 0.05f * stabilizerLevel;
     }

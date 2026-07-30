@@ -40,6 +40,12 @@ public partial class RunStatsTracker : Node
         // On relit directement pour ne pas coupler les systèmes sur un champ non exposé
         LoadRunDuration();
 
+        // Banc : --start-at=<minutes> démarre la run à une minute donnée. L'horloge du spawner est
+        // avancée de son côté (EnemySpawner tient son propre compteur) — les deux doivent rester
+        // cohérents, sinon la menace et le décompte d'overtime décrivent deux runs différentes.
+        if (DebugHooks.StartAtMinutes > 0f)
+            ElapsedSeconds = DebugHooks.StartAtMinutes * 60f;
+
         // Abonnement au signal EnemyKilled émis par GameManager
         GameManager.Instance.EnemyKilled += OnEnemyKilled;
 

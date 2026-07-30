@@ -61,6 +61,17 @@ public partial class GameManager : Node
             Engine.TimeScale = Mathf.Clamp(DebugHooks.TimeScale, 0.25f, 4f);
             GD.Print($"[GameManager] --timescale : temps du jeu ×{Engine.TimeScale}");
         }
+
+        // Banc multi-run : --seed=<n> fixe le RNG global. Deux campagnes lancées sur la même liste de
+        // seeds comparent des runs APPARIÉES (mêmes vagues, mêmes tirages de cartes) — l'écart observé
+        // est alors imputable au réglage testé, pas au tirage. C'est le seul moyen de sortir du bruit
+        // sans multiplier les runs à l'infini : sans appariement, la variance inter-run atteint un
+        // facteur 2,4 sur la survie (cf. docs/TEST_REPORT.md, 2026-07-29).
+        if (DebugHooks.Seed.HasValue)
+        {
+            GD.Seed(DebugHooks.Seed.Value);
+            GD.Print($"[GameManager] --seed : RNG global fixé à {DebugHooks.Seed.Value}");
+        }
     }
 
     /// <summary>

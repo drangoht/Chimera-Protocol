@@ -74,6 +74,10 @@ public partial class Player : CharacterBody2D
 
     // Visée : true = stick droit (manette), false = souris. Bascule au dernier périphérique actionné.
     private bool       _gamepadAim = false;
+
+    // Pilote du banc automatisé (--auto-play uniquement) : instancié à la première frame, jamais en
+    // build normal. Cf. BenchAutoPilot / AutoPilotPolicy.
+    private BenchAutoPilot? _autoPilot;
     private Vector2    _lastMousePos;
     private Node2D?    _aimIndicator;   // réticule (petit triangle) autour du joueur
     private const float AimIndicatorRadius = 28f;
@@ -296,6 +300,7 @@ public partial class Player : CharacterBody2D
         float before = Stats.CurrentHp;
         Stats.CurrentHp = Mathf.Min(Stats.MaxHp, Stats.CurrentHp + amount);
         EmitSignal(SignalName.HpChanged, Stats.CurrentHp, Stats.MaxHp);
+        PowerTelemetry.NotifyHealed(Stats.CurrentHp - before);
         if (Stats.CurrentHp > before)
             HitFlash(0.2f, new Color(0.2f, 1f, 0.4f, 1f));
     }
@@ -368,10 +373,18 @@ public partial class Player : CharacterBody2D
         UpdateChill((float)delta);
         UpdateHpRegen(delta);
 
-        var direction = Input.GetVector(InputRemap.Left, InputRemap.Right, InputRemap.Up, InputRemap.Down);
+        // Banc automatisé (--auto-play) : le pilote remplace l'entrée clavier/manette. Sans lui le bot
+        // reste immobile — il mourait en 20 s, ou survivait sous --invuln avec des dégâts subis nuls :
+        // dans les deux cas la survie, seule métrique du chantier d'overtime, était inobservable.
+        var direction = DebugHooks.AutoPlay
+            ? (_autoPilot ??= new BenchAutoPilot()).Steer(this, (float)delta)
+            : Input.GetVector(InputRemap.Left, InputRemap.Right, InputRemap.Up, InputRemap.Down);
 
         // Déclenchement du dash (greffe Servos Erratiques) : ruade brève et invulnérable.
-        if (_dashEnabled && _dashActiveLeft <= 0f && _dashCdTimer <= 0f && Input.IsActionJustPressed("dash"))
+        bool dashPressed = DebugHooks.AutoPlay
+            ? _autoPilot!.WantsDash
+            : Input.IsActionJustPressed("dash");
+        if (_dashEnabled && _dashActiveLeft <= 0f && _dashCdTimer <= 0f && dashPressed)
             StartDash(direction);
 
         if (_dashActiveLeft > 0f)
@@ -516,6 +529,7 @@ public partial class Player : CharacterBody2D
         if (amount <= 0f || Stats.CurrentHp <= 0f) return;
         float before = Stats.CurrentHp;
         Stats.CurrentHp = Mathf.Min(Stats.MaxHp, Stats.CurrentHp + amount);
+        PowerTelemetry.NotifyHealed(Stats.CurrentHp - before);
         if (Stats.CurrentHp != before)
             EmitSignal(SignalName.HpChanged, Stats.CurrentHp, Stats.MaxHp);
     }
@@ -533,6 +547,9 @@ public partial class Player : CharacterBody2D
         if (Stats.HpRegenPerSecond <= 0f || Stats.CurrentHp <= 0f) return;
         float before = Stats.CurrentHp;
         Stats.CurrentHp = Mathf.Min(Stats.MaxHp, Stats.CurrentHp + Stats.HpRegenPerSecond * (float)delta);
+        // Le montant RÉELLEMENT rendu, pas le taux nominal : à PV pleins la régénération tourne à vide
+        // et c'est précisément ce que le journal doit pouvoir montrer (cf. PowerTelemetry.NotifyRegen).
+        PowerTelemetry.NotifyRegen(Stats.CurrentHp - before);
         if (Stats.CurrentHp != before)
             EmitSignal(SignalName.HpChanged, Stats.CurrentHp, Stats.MaxHp);
     }

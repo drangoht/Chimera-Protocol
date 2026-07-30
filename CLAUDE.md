@@ -19,6 +19,35 @@ surcharge). Reste côté utilisateur : **coller les devlogs 1.21.0, 1.22.0 et 1.
 prêts en tête de `docs/DEVLOG.md`). Seul point de contenu encore ouvert : le **ressenti de combat**
 des mid-boss, jamais joués — seule leur taille a été jugée.
 
+**(4) Banc de mesure — sortir du bruit** (2026-07-29, non publié). Les trois chantiers d'équilibrage
+précédents se sont réglés à **une session jouée par valeur**, alors que le relevé (g) a établi que la
+variance inter-run atteint un **facteur 2,4** *à l'entrée en overtime, là où le réglage testé n'a
+encore aucun effet*. Une run isolée — humaine ou bot — ne tranche donc rien. Livré :
+**(a) le bot de banc se déplace** (`AutoPilotPolicy`, logique pure : 16 caps évalués sur un couloir
+de 220 px en 3 points, menaces/orbes/murs/inertie ; pont `BenchAutoPilot`). Il kite, ramasse et dashe,
+donc **meurt pour de vrai** : la survie et les dégâts subis sont mesurables **sans `--invuln`**, ce
+qu'aucun banc ne savait faire — immobile, le bot mourait en 20 s, ou affichait zéro dégât subi.
+Survie portée de 3:51 à **7:18** entre les deux versions du scoring (couloir long > zigzag).
+**(b) `--start-at=<minutes>`**, car 7:18 ne suffit pas : la fenêtre à instruire commence à la 13ᵉ.
+Combiné à `--saturate-arsenal` (raccourci `--overtime`), il démarre la run **à l'entrée en overtime
+avec un état standardisé** — et c'est là l'apport réel : la variance qui empêchait de conclure venait
+justement de cet état d'entrée. La survie ainsi mesurée sert à **comparer des réglages**, pas à
+prédire une durée de vie de joueur.
+**(c) `--seed=<n>`** (`GD.Seed` + RNG de `PowerUpSpawner`, graine journalisée) → **comparaison
+appariée** : relancer une campagne sur les mêmes graines après un changement annule le bruit de
+tirage dans la différence. Quelques paires appariées tranchent ce que trente runs libres laisseraient
+indécis. La lecture qui compte est le **test des signes**, pas le delta médian.
+**(d) `tools/power_curve_multi.py`** : N runs + médiane/p10/p90 et surtout **le plus petit écart que
+la campagne sait détecter** — un réglage dont l'effet attendu est sous ce seuil n'est pas validable,
+quel que soit le nombre de sessions.
+**(e) régénération instrumentée** (point ouvert de la 1.23.0) : `PowerTelemetry` distingue désormais
+le taux **nominal** du **réellement rendu** (nul à PV pleins) et des soins ponctuels. Premier chiffre
+obtenu, qui donne raison au testeur (« son effet ne se voit pas ») : en overtime tardif,
+l'Auto-réparation rend **~15 PV/s effectifs pour 24 nominaux**, face à **~230 dégâts/s** — soit
+**~6 %** de ce qui est encaissé.
+Pièges → `docs/PITFALLS.md` (§Tests headless, §Cartes de surcharge) ; mesures → `docs/TEST_REPORT.md`.
+**256 tests.**
+
 **(3) Survie en overtime — mesurée en jeu, cause réelle trouvée** (2026-07-29). La session jouée de
 validation du chantier (1) l'a **réfuté** : le découplage tient sa métrique (dégâts entrants
 **−33 %**) et n'achète que **14 secondes** (60 s → 74 s de survie, cible 5-10 min). Le relevé montre

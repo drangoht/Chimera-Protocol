@@ -177,10 +177,11 @@ public static class DebugHooks
     /// soit <b>vide dès le premier level-up</b> et que les cartes de <see cref="OverloadCards"/>
     /// soient proposées immédiatement.
     ///
-    /// Sans ce flag, ce chemin de code est inatteignable en banc : le bot <c>--auto-play</c> ne se
-    /// déplace pas, ramasse donc peu d'XP et plafonne au niveau ~73 en 17 minutes de jeu (armes L12-16),
-    /// là où une session jouée atteint le niveau 124 dès la 13ᵉ minute avec tout au maximum. Aucun
-    /// effet en build normal.
+    /// Sans ce flag, ce chemin de code reste très long à atteindre en banc : même piloté
+    /// (<see cref="AutoPilotPolicy"/>), le bot ne joue pas la carte de l'XP comme un humain et
+    /// n'arrive à la saturation qu'en toute fin de run, quand une session jouée y est dès la 13ᵉ
+    /// minute au niveau 124. Historiquement le bot était immobile et plafonnait au niveau ~73 en
+    /// 17 minutes — le flag est né de là. Aucun effet en build normal.
     /// </summary>
     public static bool SaturateArsenal
     {
@@ -241,7 +242,11 @@ public static class DebugHooks
     /// proposées, greffe acceptée. Sans cela, une run headless se fige au premier level-up et il est
     /// impossible de mesurer quoi que ce soit sur une run complète : le build d'un joueur au boss
     /// (niveau atteint, armes, fusions, greffes) ne peut pas être simulé par un loadout figé.
-    /// Aucun effet en build normal.
+    ///
+    /// Le flag pilote <b>aussi le déplacement</b> depuis l'ajout de <see cref="AutoPilotPolicy"/> :
+    /// le bot kite, ramasse et dashe (cf. <c>BenchAutoPilot</c>). Il survit donc sans <c>--invuln</c>,
+    /// ce qui rend la survie et les dégâts subis mesurables — ils ne l'étaient pas quand il restait
+    /// planté au centre. Aucun effet en build normal.
     /// </summary>
     public static bool AutoPlay
     {
@@ -318,6 +323,73 @@ public static class DebugHooks
                 _runLimitRead = true;
             }
             return _runLimit;
+        }
+    }
+
+    private static bool _startAtRead;
+    private static float _startAt;
+
+    /// <summary>
+    /// Avance l'horloge de la run à <c>--start-at=&lt;minutes&gt;</c> (0 si absent) : la run démarre
+    /// directement à cette minute, scaling des ennemis compris.
+    ///
+    /// <para>Répond à un problème de mesure concret. La fenêtre à instruire est l'<b>overtime</b>
+    /// (13ᵉ minute et au-delà), or le bot de banc n'y survit pas de lui-même — il meurt vers la 7ᵉ.
+    /// Attendre un bot capable de jouer 13 minutes comme un humain reviendrait à faire dépendre la
+    /// mesure de la qualité du bot.</para>
+    ///
+    /// <para>Et surtout : combiné à <c>--saturate-arsenal</c>, ce flag <b>fixe l'état d'entrée en
+    /// overtime</b>. C'est là que se logeait la variance qui empêchait de conclure — selon que
+    /// l'arsenal sature vers la 11ᵉ ou la 13ᵉ minute, un joueur entre en overtime avec deux à trois
+    /// fois moins de cartes accumulées (facteur 2,4 sur la survie mesurée entre deux sessions du même
+    /// joueur). En partant d'un état standardisé, l'écart entre deux campagnes est imputable au
+    /// réglage testé, et à lui seul.</para>
+    ///
+    /// <para><b>Ce que le flag ne dit pas</b> : la survie mesurée ainsi n'est pas celle d'un joueur
+    /// qui a construit son build lui-même (il aurait plus de PV, plus de cartes de surcharge). Elle
+    /// sert à <i>comparer</i> des réglages, pas à prédire la durée de vie réelle. Aucun effet en
+    /// build normal.</para>
+    /// </summary>
+    public static float StartAtMinutes
+    {
+        get
+        {
+            if (!_startAtRead)
+            {
+                var raw = ValueFlag("--start-at=");
+                _startAt = raw != null && float.TryParse(raw,
+                    System.Globalization.NumberStyles.Float,
+                    System.Globalization.CultureInfo.InvariantCulture, out var v) ? v : 0f;
+                _startAtRead = true;
+            }
+            return _startAt;
+        }
+    }
+
+    private static bool _seedRead;
+    private static ulong? _seed;
+
+    /// <summary>
+    /// Graine du RNG global via <c>--seed=&lt;n&gt;</c>, ou null. Rend une run <b>reproductible</b> :
+    /// mêmes vagues, mêmes tirages de cartes, mêmes affixes. Sert au banc multi-run
+    /// (<c>tools/power_curve_multi.py</c>) à comparer deux réglages sur des runs APPARIÉES.
+    ///
+    /// Ne couvre que <c>GD.Rand*</c> — les quelques <c>RandomNumberGenerator</c> locaux qui appellent
+    /// <c>Randomize()</c> restent libres, mais ils ne pilotent que du décor (atmosphère, sol, éclair)
+    /// à l'exception de <c>PowerUpSpawner</c>. La reproductibilité est donc forte, pas parfaite.
+    /// Aucun effet en build normal.
+    /// </summary>
+    public static ulong? Seed
+    {
+        get
+        {
+            if (!_seedRead)
+            {
+                var raw = ValueFlag("--seed=");
+                _seed = raw != null && ulong.TryParse(raw, out var v) ? v : null;
+                _seedRead = true;
+            }
+            return _seed;
         }
     }
 
