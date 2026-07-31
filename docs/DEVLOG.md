@@ -4,6 +4,48 @@
 > `release-manager`). Entrées en ordre décroissant (la plus récente en haut). Ton orienté
 > joueur, EN puis FR (audience itch surtout anglophone).
 
+## v1.25.1 — Haemorrhage was sparing the exact channel it aimed at (2026-07-31)
+
+**Fixed — saturation rank I now actually applies to Plating**
+- First report from a real run at rank I: *"I didn't find it any harder."* The reason turned out to be a
+  wiring mistake, not a balance one. **Haemorrhage** cuts healing received by 40 %, and the whole point
+  of putting it first was that it targets the **dominant** healing channel — the **Plating** overload
+  card, taken **44 times against 1** Auto-repair on the session we measured.
+- Plating heals you for the max health it grants. But it was writing your health directly instead of
+  going through the healing path, so it **skipped the penalty entirely** — and wasn't counted in our
+  telemetry either. Rank I was only trimming health orbs and lifesteal: the small channels. Same
+  oversight on the health that comes with Reinforced Plating.
+- Both now go through the healing path. **The max health you gain is not reduced** — the rank cuts
+  healing, not the size of your bar. If you played rank I before this patch, it was doing roughly a
+  third of its job.
+
+**Under the hood**
+- The boss combat log now records the saturation rank (readable block and CSV column). Two kills at
+  different ranks used to be indistinguishable in a log whose entire purpose is calibrating the boss
+  on a *played* time-to-kill.
+
+---
+
+**Corrigé — le cran I de saturation s'applique enfin au Blindage**
+- Premier retour d'une partie réelle au cran I : *« je n'ai pas rencontré de difficulté »*. C'était un
+  défaut de câblage, pas d'équilibrage. **Hémorragie** réduit les soins reçus de 40 %, et toute la
+  raison de la placer en premier était qu'elle vise le canal de soin **dominant** — la carte de
+  surcharge **Blindage**, prise **44 fois contre 1** Auto-réparation sur la session mesurée.
+- Le Blindage vous soigne des PV max qu'il accorde. Sauf qu'il écrivait vos PV directement au lieu de
+  passer par le circuit de soin : il **échappait donc entièrement au malus** — et n'était pas non plus
+  compté dans notre télémétrie. Le cran I ne rognait que les orbes de soin et le vol de vie, c'est-à-dire
+  les petits canaux. Même oubli sur le soin qui accompagne la Plaque Renforcée.
+- Les deux passent désormais par le circuit de soin. **Les PV max gagnés ne sont pas réduits** : le cran
+  réduit les soins, pas la taille de votre barre. Si vous avez joué le cran I avant ce patch, il faisait
+  environ le tiers de son travail.
+
+**Sous le capot**
+- Le journal de combat du boss enregistre maintenant le cran de saturation (bloc lisible et colonne
+  CSV). Deux victoires à des crans différents y étaient indistinguables, dans un journal dont la seule
+  raison d'être est de calibrer le boss sur un temps de mise à mort **joué**.
+
+---
+
 ## v1.25.0 — Rust Saturation: five named rules instead of one bigger number (2026-07-31)
 
 **Added — Rust Saturation, the endgame challenge ladder**
