@@ -14,11 +14,19 @@ cyborgs, robots), inspiré de Vampire Survivors et Everything is Crab.
 - **État d'implémentation détaillé & version courante → `docs/PROJECT_STATE.md`** (évolutif). Résumé de phase ci-dessous.
 - **Synthétiser du volume** (relever/résumer/inventorier à partir de plusieurs gros fichiers : `data/*.json`, docs longues, logs, rapports de test) → déléguer au **MCP local** `mcp__local-llm__local_digest` / `local_map` (outils différés : `ToolSearch` d'abord) plutôt que d'enchaîner les `Read` : le serveur lit les fichiers côté LM Studio, seule la synthèse entre en contexte. Ne pas l'utiliser pour du code que l'on s'apprête à éditer — là, le contenu réel est nécessaire.
 
-**Phase actuelle : 1.25.0 PUBLIÉE le 2026-07-31** (Saturation de Rouille, lot 1) — build butler
-**#1845935**, `version.json` à 1.25.0. **Devlog 1.25.0 rédigé (`docs/DEVLOG.md`), à coller sur itch
-par l'utilisateur.** Points ouverts : l'**arbitrage** de l'Auto-réparation une fois la réserve en
-place (le banc ne peut pas trancher un choix de carte, cf. (5)) ; et la Saturation n'a **jamais été
-jouée par un humain** — seul le banc l'a mesurée, et le **cran III** n'est mesurable par aucun banc.
+**Phase actuelle : 1.25.1 PUBLIÉE le 2026-07-31** (Saturation de Rouille, lot 1 + correctif
+d'Hémorragie) — build butler **#1846002**, `version.json` à 1.25.1. **Devlogs 1.25.0 et 1.25.1 rédigés
+(`docs/DEVLOG.md`), à coller sur itch par l'utilisateur.**
+⚠ **Première partie jouée au cran I (2026-07-31) : « aucune difficulté rencontrée » — et le testeur
+avait raison.** La carte **Blindage** (canal de soin dominant : 44 prises contre 1 d'Auto-réparation)
+écrivait `CurrentHp` **en direct**, donc hors du multiplicateur d'Hémorragie *et* hors de
+`PowerTelemetry` ; même défaut sur le soin du passif `reinforced_plating`. Le cran I ne rognait que les
+orbes et le vol de vie. Corrigé en 1.25.1 (tout passe par `Player.HealFlat`) — **règle générale : un
+soin ne s'écrit jamais dans `CurrentHp`, il passe par `Heal`/`HealFlat`**, seul chemin qui applique les
+crans et journalise. Conséquence : la mesure de **−7,1 pts** du cran I **sous-estime** son effet réel,
+la campagne est **à refaire**. `BossTelemetry` journalise désormais la saturation (bloc + colonne CSV).
+Points ouverts : l'**arbitrage** de l'Auto-réparation (le banc ne peut pas trancher un choix de carte,
+cf. (5)) ; les crans **II à V jamais joués** ; le **cran III** n'est mesurable par aucun banc.
 
 **(6) Saturation — challenge de fin de partie** (2026-07-31, **publié en 1.25.0**). Plan complet →
 **`docs/ENDGAME_PLAN.md`** (validé : saturation cumulative, **choisie et récompensée**, rejouabilité par
