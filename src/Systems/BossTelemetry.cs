@@ -122,7 +122,12 @@ public static class BossTelemetry
         sb.AppendLine($"Version      : v{BuildInfo.Version}-{BuildInfo.GitSha}");
         sb.AppendLine($"Biome        : {biome} (palier {tier}, Échos ×{LevelThreat.EchoMult(tier):0.00}) " +
                       $"— incarnation « {boss.IncarnationId} »");
-        sb.AppendLine($"Difficulté   : {diff}");
+        // La saturation change le combat (« Meute » gonfle les PV du champion, « Hémorragie » ce qu'on
+        // peut encaisser) : sans elle au relevé, deux TTK à des crans différents sont indistinguables —
+        // or ce journal existe pour calibrer le boss sur un TTK JOUÉ (GDD §20.6).
+        int sat = GameSettings.Instance?.Saturation ?? 0;
+        sb.AppendLine($"Difficulté   : {diff} · saturation {sat}" +
+                      (sat > 0 ? $" (×{SaturationTable.ChampionHpMult(sat):0.00} PV de champion)" : ""));
         sb.AppendLine($"Mode         : {ComposeMode()}");
         sb.AppendLine($"PV effectifs : {boss.MaxHp:0}");
         sb.AppendLine($"Build        : {ComposeLoadout()}");
@@ -176,7 +181,8 @@ public static class BossTelemetry
         sb.AppendLine($"→ {(outcome == "kill" ? "TTK" : "durée")} = {seconds:0.0}s " +
                       $"(net hors surcharges : {net:0.0}s) · DPS moyen = {dps:0} · dégâts infligés = {dealt:0}");
 
-        // Ligne agrégeable : date;biome;palier;difficulté;PV;durée;DPS;t_phaseII;t_phaseIII;issue
+        // Ligne agrégeable : date;biome;palier;difficulté;saturation;PV;durée;DPS;t_phaseII;t_phaseIII;issue
+        // ⚠ La colonne `saturation` est apparue en 1.25.1 — les lignes antérieures en ont une de moins.
         // Les deux colonnes de bascule sont toujours présentes (vides si la phase n'a pas été atteinte).
         // Nombres en culture INVARIANTE : sur un poste FR, un « 44,3 » casserait tout tableur et tout
         // parseur qui lit ce fichier (la virgule y est un séparateur de champ usuel).
@@ -186,6 +192,7 @@ public static class BossTelemetry
                       $"{GameManager.Instance?.CurrentBiomeId ?? "?"};" +
                       $"{LevelThreat.TierOf(GameManager.Instance?.CurrentBiomeId)};" +
                       $"{GameSettings.Instance?.Difficulty ?? GameSettings.GameDifficulty.Normal};" +
+                      $"{GameSettings.Instance?.Saturation ?? 0};" +
                       $"{Num(_maxHp, "0")};{Num(seconds, "0.0")};{Num(dps, "0")};" +
                       $"{phaseTwo};{phaseThree};{outcome}");
 

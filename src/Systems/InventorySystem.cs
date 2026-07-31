@@ -387,8 +387,20 @@ public partial class InventorySystem : Node
         {
             // Soigne d'autant : sinon la carte prise à 20 % de vie n'offre qu'une plus grande barre
             // tout aussi vide, au moment précis où le joueur la choisit pour survivre.
-            stats.MaxHp     += card.Delta;
-            stats.CurrentHp  = Mathf.Min(stats.CurrentHp + card.Delta, stats.MaxHp);
+            stats.MaxHp += card.Delta;
+
+            // ⚠ Le soin passe par HealFlat, jamais par une écriture directe de CurrentHp : c'est le
+            // SEUL chemin qui applique « Hémorragie » (cran I de saturation) et qui compte le soin dans
+            // PowerTelemetry. Cette carte EST le canal de soin dominant en fin de partie — 44 prises
+            // contre 1 d'Auto-réparation sur la session relevée du 2026-07-29 —, si bien qu'en écrivant
+            // CurrentHp à la main elle échappait entièrement au cran qui vise précisément ce canal. Le
+            // joueur ne sentait donc « aucune difficulté » au cran I (retour du 2026-07-31), et la
+            // mesure au banc (−7,1 pts de temps soutenable) sous-estimait le cran d'autant.
+            // Le gain de PV MAX n'est pas réduit, lui : le cran réduit les soins reçus, pas la barre.
+            player.HealFlat(card.Delta);
+
+            // Émis même si HealFlat n'a rien soigné (PV déjà pleins) : le HUD doit apprendre le
+            // nouveau MAXIMUM, sinon la barre reste dessinée sur l'ancien.
             player.EmitSignal(Player.SignalName.HpChanged, stats.CurrentHp, stats.MaxHp);
         }
         else if (card == OverloadCards.Regen)
@@ -448,9 +460,12 @@ public partial class InventorySystem : Node
                             // menace quadratique — ils n'ont jamais participé au power-creep que
                             // PassiveScaling corrige. Les amortir plafonnait les PV à 451 et
                             // ramenait la survie en overtime à ~1 min contre 5-10 visées (GDD §31.6).
-                            float hpGain    = Undamped(hpb.GetSingle());
-                            stats.MaxHp    += hpGain;
-                            stats.CurrentHp = Mathf.Min(stats.CurrentHp + hpGain, stats.MaxHp);
+                            float hpGain = Undamped(hpb.GetSingle());
+                            stats.MaxHp += hpGain;
+                            // Même règle que la carte Blindage : le soin qui accompagne le gain passe
+                            // par HealFlat, donc par « Hémorragie » et par la télémétrie. Les PV MAX,
+                            // eux, ne sont pas touchés par le cran.
+                            player.HealFlat(hpGain);
                         }
                         if (lvlData.TryGetProperty("damageReduction", out var dr))
                             stats.DamageReduction = StatCaps.CapDamageReduction(stats.DamageReduction + Damped(dr.GetSingle()));
