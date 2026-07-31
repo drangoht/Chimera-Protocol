@@ -4,6 +4,99 @@
 > `release-manager`). Entrées en ordre décroissant (la plus récente en haut). Ton orienté
 > joueur, EN puis FR (audience itch surtout anglophone).
 
+## v1.25.0 — Rust Saturation: five named rules instead of one bigger number (2026-07-31)
+
+**Added — Rust Saturation, the endgame challenge ladder**
+- The complaint was simple: *with every upgrade unlocked, the game becomes easy*. The measurements
+  agreed, and they said why. Your defence grows **without a ceiling** (overload cards give +45 max
+  health per pick, measured at 270 per minute) while the threat follows a **fixed curve** — spawn
+  density is already maxed out by minute 8, and the old difficulty setting capped at **×1.35**. But
+  the real cause is deeper: the threat only ever asked **one question** — statistics — so you only
+  ever had **one answer**, and you always won that trade.
+- So Saturation doesn't hand the enemies a bigger multiplier. **One rank = one named rule that takes
+  away a certainty**, printed on the level card *before* you launch. You should be able to say why
+  you died and what you'll change.
+  - **I · Haemorrhage** — healing received is cut by 40 %. We measured your dominant healing channel:
+    burst healing, at 86.4 health per second against 8.2 for regeneration. This rank goes straight
+    for it.
+  - **II · Pack** — enemies get +30 % health, +35 % damage, denser waves. (This is exactly the old
+    "Hard" setting, same numbers.)
+  - **III · Countdown** — overtime starts around minute 10 instead of 13. It attacks your **build
+    time**, not your power: you enter overtime with an unfinished arsenal.
+  - **IV · No Safety Net** — levelling up no longer heals you, and the meta safety nets are off. In
+    overtime you gain levels in bursts, so that free heal is the catch-up nobody picks and everybody
+    receives.
+  - **V · Elites Everywhere** — elites become three times more common. Reading the crowd replaces
+    walking through it.
+- **The rank is set and unlocked per level.** Beating saturation N on the Furnace opens N+1 *there*,
+  and only there. Each biome carries its own progression curve, and a late biome (already harder)
+  doesn't come pre-opened at rank 5 because you earned it in the Sanctuary.
+- **Each rank pays**: +20 % Echoes per rank, cumulative (rank 5 ≈ ×2.5).
+
+**Changed — "Hard" became rank 1, and your records stay valid**
+- Saturation **absorbs** the old difficulty axis instead of stacking on top of it: rank 2 has exactly
+  the same numbers "Hard" had. Runs you already won at Hard were played at that level of challenge,
+  so they stay exact — nothing is reinterpreted or erased. Save files are migrated: if you had
+  cleared a level on Hard, the ladder is **unlocked** for you, not switched on without asking.
+- **Easy stays**, as an **assistance** mode. Accessibility is not negative difficulty and doesn't
+  belong on a challenge ladder.
+
+**Measured before shipping**
+- On four paired benchmark runs (identical seeds), the full ladder cuts **sustainable time from
+  60.7 % to 39.9 %** (4 runs out of 4) and halves theoretical survival — and **2 runs out of 4 now
+  end in an actual death**, where all four used to hit the benchmark ceiling. Rank by rank:
+  0 → **60.7 %**, I → **53.6 %**, II → **50.0 %**, IV → **−16 %** relative. Rank I alone carries half
+  of the drop; rank II — the only purely statistical one — weighs half as much. The bias we designed
+  against is visible in the numbers.
+
+---
+
+**Ajouté — la Saturation de Rouille, l'échelle de challenge de fin de partie**
+- Le constat était simple : *avec toutes les évolutions débloquées, le jeu devient facile*. Les
+  mesures le confirment, et disent pourquoi. Votre défense croît **sans plafond** (les cartes de
+  surcharge donnent +45 PV max par prise, 270 PV/min mesurés) alors que la menace suit une **courbe
+  fixe** — la densité est déjà saturée dès la 8ᵉ minute, et l'ancien réglage de difficulté plafonnait
+  à **×1,35**. Mais la vraie cause est plus profonde : la menace ne posait qu'**une seule question** —
+  des statistiques — donc vous n'aviez qu'**une seule réponse**, et vous gagniez toujours cet échange.
+- La Saturation ne donne donc pas un multiplicateur de plus aux ennemis. **Un cran = une règle nommée
+  qui retire une certitude**, affichée sur la carte du niveau *avant* de lancer. Vous devez pouvoir
+  dire pourquoi vous êtes mort et ce que vous changerez.
+  - **I · Hémorragie** — les soins reçus sont réduits de 40 %. On a mesuré votre canal de soin
+    dominant : le soin ponctuel, à 86,4 PV/s contre 8,2 pour la régénération. Ce cran l'attaque
+    directement.
+  - **II · Meute** — ennemis +30 % de PV, +35 % de dégâts, vagues plus denses. (C'est exactement
+    l'ancien « Difficile », aux mêmes valeurs.)
+  - **III · Compte à rebours** — l'overtime commence vers la 10ᵉ minute au lieu de la 13ᵉ. Il attaque
+    votre **temps de construction**, pas votre puissance : vous y entrez avec un arsenal inachevé.
+  - **IV · Sans filet** — monter de niveau ne soigne plus, et les filets méta sont coupés. En
+    overtime les niveaux tombent en rafale : ce soin gratuit est le rattrapage que personne ne
+    choisit et que tout le monde reçoit.
+  - **V · Élite ordinaire** — les élites deviennent trois fois plus fréquentes. Lire la foule
+    remplace la traverser.
+- **Le cran se règle et se débloque par niveau.** Battre la saturation N sur la Fournaise y ouvre le
+  N+1, et seulement là. Chaque biome porte sa propre courbe de progression, et un biome tardif (déjà
+  plus dur) ne se retrouve pas ouvert au cran 5 parce que vous l'avez gagné sur le Sanctuaire.
+- **Chaque cran paie** : +20 % d'Échos par cran, cumulatif (cran 5 ≈ ×2,5).
+
+**Modifié — « Difficile » devient le cran 1, et vos records restent valides**
+- La Saturation **absorbe** l'ancien axe de difficulté au lieu de s'y ajouter : le cran 2 a exactement
+  les valeurs qu'avait « Difficile ». Les parties déjà gagnées en Difficile ont bien été jouées à ce
+  niveau d'exigence — elles restent donc **exactes**, rien n'est réinterprété ni effacé. Les
+  sauvegardes sont migrées : si vous aviez terminé un niveau en Difficile, l'échelle vous est
+  **ouverte**, pas activée sans vous demander.
+- **« Facile » reste**, comme mode d'**assistance**. L'accessibilité n'est pas une difficulté négative
+  et n'a pas sa place sur une échelle de challenge.
+
+**Mesuré avant publication**
+- Sur quatre runs de banc appariées (graines identiques), l'échelle complète fait tomber le **temps
+  soutenable de 60,7 % à 39,9 %** (4 runs sur 4) et divise la survie théorique par deux — et **2 runs
+  sur 4 finissent désormais par une mort réelle**, là où les quatre atteignaient le plafond du banc.
+  Cran par cran : 0 → **60,7 %**, I → **53,6 %**, II → **50,0 %**, IV → **−16 %** relatif. Le cran I
+  porte à lui seul la moitié de la descente ; le cran II — le seul purement statistique — pèse deux
+  fois moins. Le parti pris se lit dans les chiffres.
+
+---
+
 ## v1.24.0 — Auto-repair was throwing away 58 % of what it healed (2026-07-30)
 
 **Changed — Auto-repair now banks what it can't heal**
