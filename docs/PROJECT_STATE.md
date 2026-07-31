@@ -5,6 +5,24 @@
 > `CLAUDE.md` ; le design complet dans `docs/GDD.md` ; la carte du code dans `/carte-projet`.
 
 - Pile technique : **Godot 4.7 .NET (C# / .NET 8 / GodotSharp)**
+- **Saturation de Rouille — lot 1, l'échelle de challenge de fin de partie (2026-07-31, PUBLIÉ en
+  1.25.0).** Plan : `docs/ENDGAME_PLAN.md` ; design : `docs/GDD.md` §34 ; logique pure :
+  `SaturationTable`. **Cinq crans nommés et cumulatifs** — I Hémorragie (soins reçus −40 %) ·
+  II Meute (l'ancien « Difficile », mêmes valeurs) · III Compte à rebours (overtime à la 10ᵉ min) ·
+  IV Sans filet (le passage de niveau ne soigne plus + filets méta coupés) · V Élite ordinaire
+  (élites ×3, plafond relevé à 0,55). **Un cran = une règle lisible avant de lancer**, jamais un
+  multiplicateur de plus : le principe est qu'on doit pouvoir dire *pourquoi* on est mort. Le cran se
+  règle et se débloque **par niveau** (sélecteur sur la carte du biome, la liste défilant), rapporte
+  **+20 % d'Échos** cumulatifs via une source unique (`TotalEchoMult` — `EchoFormula` et
+  `RunEndScreen` doivent appliquer le même facteur), et **absorbe** l'ancien axe de difficulté :
+  « Difficile » disparaît des options, « Facile » survit comme **assistance** hors échelle.
+  `settings.cfg` passe en `save_version=2` (tables `biome:cran`, migrations v0→v1→v2 testées, plus
+  une vérification de bout en bout sur une sauvegarde forgée « Difficile » avant publication).
+  Nouveau flag **`--saturation=<n>`** (sans lui aucun cran n'est mesurable : le bot ne traverse pas
+  l'écran de sélection ; ni le choix ni le déblocage ne sont persistés sous ce flag). **Mesuré au banc
+  apparié** : temps soutenable **60,7 % → 39,9 %** cumulé, progressivité I **53,6 %** → II **50,0 %**
+  → IV **−16 %** relatif ; le **cran III n'est mesurable par aucun banc** (il déplace le temps).
+  ⚠ Aucun cran n'a encore été **joué** par un humain.
 - **Mid-boss par biome — un rendez-vous de mi-run par niveau (2026-07-29, non publié).** Dernier point
   non livré de `docs/EXPANSION_PLAN.md` (B.3). **Trou constaté** : la faune par biome était complète
   (§21) mais les champions n'avaient jamais été répartis — `aether_revenant` (7 min) couvrait aether

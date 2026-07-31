@@ -14,14 +14,13 @@ cyborgs, robots), inspiré de Vampire Survivors et Everything is Crab.
 - **État d'implémentation détaillé & version courante → `docs/PROJECT_STATE.md`** (évolutif). Résumé de phase ci-dessous.
 - **Synthétiser du volume** (relever/résumer/inventorier à partir de plusieurs gros fichiers : `data/*.json`, docs longues, logs, rapports de test) → déléguer au **MCP local** `mcp__local-llm__local_digest` / `local_map` (outils différés : `ToolSearch` d'abord) plutôt que d'enchaîner les `Read` : le serveur lit les fichiers côté LM Studio, seule la synthèse entre en contexte. Ne pas l'utiliser pour du code que l'on s'apprête à éditer — là, le contenu réel est nécessaire.
 
-**Phase actuelle : 1.24.0 PUBLIÉE le 2026-07-30** (réserve de régénération, mid-boss à 72 px, banc de
-mesure apparié) — build butler **#1843179**, `version.json` à 1.24.0, **devlog collé sur itch**
-(tous les devlogs sont à jour, plus rien en attente côté publication).
-**Mid-boss validés en combat** le 2026-07-30. Seul point encore ouvert :
-l'**arbitrage** de l'Auto-réparation une fois la réserve en place — le banc ne peut pas trancher un
-choix de carte (le bot tire au hasard), cf. (5) ci-dessous.
+**Phase actuelle : 1.25.0 PUBLIÉE le 2026-07-31** (Saturation de Rouille, lot 1) — build butler
+**#1845935**, `version.json` à 1.25.0. **Devlog 1.25.0 rédigé (`docs/DEVLOG.md`), à coller sur itch
+par l'utilisateur.** Points ouverts : l'**arbitrage** de l'Auto-réparation une fois la réserve en
+place (le banc ne peut pas trancher un choix de carte, cf. (5)) ; et la Saturation n'a **jamais été
+jouée par un humain** — seul le banc l'a mesurée, et le **cran III** n'est mesurable par aucun banc.
 
-**(6) Saturation — challenge de fin de partie** (2026-07-30, non publié). Plan complet →
+**(6) Saturation — challenge de fin de partie** (2026-07-31, **publié en 1.25.0**). Plan complet →
 **`docs/ENDGAME_PLAN.md`** (validé : saturation cumulative, **choisie et récompensée**, rejouabilité par
 de nouvelles *raisons* de rejouer et non par du contenu neuf). Diagnostic : le jeu devenait facile parce
 que la défense du joueur croît **sans plafond** (Blindage +45 PV/prise) face à une menace à **courbe
@@ -49,8 +48,19 @@ deux fois moins. ⚠ Le **cran III n'est pas mesurable par ce banc** (il déplac
 protocoles biaisent en sens opposés). ⚠ **Un cran ne doit jamais reposer sur un levier optionnel** :
 « Sans filet » ne coupait que deux consommables **achetés**, absents de la sauvegarde de référence après
 84 runs — il ne retirait donc rien, et un bonus *fini* est de toute façon invisible pour une métrique de
-*flux*. Élargi au filet **universel** (soin de passage de niveau). Mesures → `docs/TEST_REPORT.md` ;
-design → `docs/GDD.md` **§34**. **300 tests.**
+*flux*. Élargi au filet **universel** (soin de passage de niveau).
+**Migration vérifiée avant publication** (§8.5 du plan) sur un `settings.cfg` d'avant la saturation
+forgé en « Difficile » + complétions : le binaire exporté démarre et joue sans crash, et **rien n'est
+perdu** — `save.json` (Échos, greffes, perks, défis) est hors périmètre du lot, `IsUnlocked` et le
+badge passent par `HasCompletedAny` (toutes difficultés), donc les anciennes clés `"biome:2"`
+débloquent toujours la suite. La migration ne s'écrit qu'au **premier `Save()`** et se rejoue à
+l'identique d'ici là (idempotente). ⚠ Conséquence assumée : les crans étant **cumulatifs**, un habitué
+du « Difficile » ne retrouve pas son réglage exact — Normal (plus facile) ou cran 2 = Difficile
+**+ Hémorragie** (plus dur). ⚠ Piège d'UI corrigé au dernier moment : le sélecteur **disparaissait
+sans un mot** en mode Assistance (`BuildCardSaturation` sortait sur `IsAssisted`) — un joueur en
+« Facile » ne pouvait pas savoir que l'échelle existait ni où la réactiver → ligne `SAT_ASSISTED`.
+Même famille que le dash sans touche annoncée : **invisible se lit inexistant**.
+Mesures → `docs/TEST_REPORT.md` ; design → `docs/GDD.md` **§34**. **300 tests.**
 
 **(5) Réserve de régénération — la carte ne manquait pas de valeur, elle en perdait 58 %**
 (2026-07-30, **publié en 1.24.0**). Premier réglage instruit **au banc apparié** plutôt qu'à la session jouée.

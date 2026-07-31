@@ -18,6 +18,21 @@ morceau, couplet et refrain, et le jeu passe de l'une à l'autre en fondu selon 
 d'ennemis, temps de survie, points de vie — avant de basculer sur le **thème de boss** quand un
 colosse débarque.
 
+**La Saturation de Rouille — cinq règles nommées plutôt qu'un chiffre plus gros** *(2026-07-31,
+v1.25.0)* — « avec toutes les évolutions, le jeu devient facile » : c'est mesuré, et la cause n'est pas
+un manque de puissance chez l'ennemi. La défense du joueur croît **sans plafond** (270 PV/min mesurés)
+face à une menace à **courbe fixe**, densité saturée dès la 8ᵉ minute et plafond de difficulté à
+**×1,35**. Surtout, la menace ne posait qu'**une question** — des statistiques — donc le joueur n'avait
+qu'**une réponse**, et il gagnait toujours cet échange. La Saturation ne donne donc pas un
+multiplicateur de plus : **un cran = une règle nommée, lue avant de lancer, qui retire une certitude**.
+**I Hémorragie** (soins reçus −40 %, le canal de soin dominant mesuré) · **II Meute** (l'ancien
+« Difficile », aux mêmes valeurs) · **III Compte à rebours** (overtime à la 10ᵉ minute : c'est le
+*temps de build* qui est attaqué) · **IV Sans filet** (monter de niveau ne soigne plus) · **V Élite
+ordinaire**. Le cran **se règle et se débloque par niveau**, et rapporte **+20 % d'Échos** par palier.
+Validé au banc sur quatre graines appariées : temps soutenable **60,7 % → 39,9 %**, et **2 runs sur 4**
+finissent par une mort réelle là où les quatre atteignaient le plafond du banc. Les records gagnés en
+« Difficile » restent **exacts** — la Saturation absorbe l'ancien axe au lieu de s'y ajouter.
+
 **L'Auto-réparation jetait 58 % de ce qu'elle soignait** *(2026-07-30, v1.24.0)* — c'était la carte que
 personne ne prenait : **44 Blindages contre 1 Auto-réparation** sur une partie relevée. On avait cru à
 un défaut de lisibilité et ajouté un indicateur au HUD ; insuffisant, donc cette fois on l'a
