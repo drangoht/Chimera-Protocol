@@ -23,8 +23,17 @@ avait raison.** La carte **Blindage** (canal de soin dominant : 44 prises contre
 `PowerTelemetry` ; même défaut sur le soin du passif `reinforced_plating`. Le cran I ne rognait que les
 orbes et le vol de vie. Corrigé en 1.25.1 (tout passe par `Player.HealFlat`) — **règle générale : un
 soin ne s'écrit jamais dans `CurrentHp`, il passe par `Heal`/`HealFlat`**, seul chemin qui applique les
-crans et journalise. Conséquence : la mesure de **−7,1 pts** du cran I **sous-estime** son effet réel,
-la campagne est **à refaire**. `BossTelemetry` journalise désormais la saturation (bloc + colonne CSV).
+crans et journalise. `BossTelemetry` journalise désormais la saturation (bloc + colonne CSV).
+**Campagne refaite le 2026-07-31 (8 runs, 4 graines × 2 crans, même version)** — et elle a trouvé plus
+gros que le cran : **toute la base de mesure était biaisée**. Le cran 0 relève **89,3 %** de temps
+soutenable contre **60,7 %** dans l'ancienne référence, *sans aucun changement de gameplay* — le soin
+du Blindage n'était pas notifié à `PowerTelemetry`, donc le canal **dominant** était invisible pour
+l'instrument qui sert à régler le jeu. → `docs/bench/ref_overtime_225.json` **périmée**, remplacée par
+**`ref_overtime_1251_sat0.json`** ; la progressivité publiée (60,7 → 39,9 %) est fausse **en valeur
+absolue** (le sens tient) ; et le diagnostic du plan est **pire** qu'annoncé — le joueur est en surplus
+de PV **89 %** du temps d'overtime, pas 60,7 %, ce qui renforce l'urgence du **lot 2** (cran VI).
+Le cran I corrigé vaut **89,3 → 80,4 %** (−10,0 % relatif, 4/4) : il passe le critère des 6 %, mais
+le joueur reste soutenable **80 % du temps** — le ressenti « aucune difficulté » est **exact**.
 Points ouverts : l'**arbitrage** de l'Auto-réparation (le banc ne peut pas trancher un choix de carte,
 cf. (5)) ; les crans **II à V jamais joués** ; le **cran III** n'est mesurable par aucun banc.
 

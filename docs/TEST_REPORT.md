@@ -4,7 +4,69 @@ Rapport de sessions de test. Chaque section correspond à une session de test di
 
 ---
 
+## Cran I remesuré après correctif — et TOUTE la base de mesure était biaisée — 2026-07-31
+
+**Objet :** reprendre la mesure du cran I « Hémorragie » après le correctif de la 1.25.1 (la carte
+Blindage échappait au malus). Question posée : le cran, correctement câblé, dépasse-t-il enfin le
+seuil de perception d'un joueur — qui a rapporté « aucune difficulté rencontrée » deux runs de suite ?
+
+**Protocole :** 8 runs, `--overtime --minutes 20`, Fournaise, graines **1000-1003** jouées **deux
+fois** — au cran 0 puis au cran 1, sous la **même** version (v1.25.1). Comparaison appariée, test des
+signes. La référence historique `ref_overtime_225.json` **n'a pas été réutilisée**, pour la raison
+qui suit.
+
+### Le résultat qui compte n'est pas celui qu'on cherchait
+
+| graine | cran 0 | cran 1 | écart |
+|---|---|---|---|
+| 1000 | 89,3 % | 75,0 % | **−14,3** |
+| 1001 | 89,3 % | 82,1 % | −7,2 |
+| 1002 | 85,7 % | 78,6 % | −7,1 |
+| 1003 | 92,9 % | 85,7 % | −7,2 |
+| **médiane** | **89,3 %** | **80,4 %** | **−8,9 pts (−10,0 % relatif)** |
+
+**Le cran I passe le critère des 6 %** (4/4 en baisse, test des signes net) — mais de peu, et le
+joueur reste **soutenable 80 % du temps d'overtime** avec le cran actif. Son ressenti est donc exact,
+et ce n'est pas un défaut de mesure : c'est ce que le cran vaut.
+
+### ⚠ La découverte : la référence du 2026-07-30 mesurait une comptabilité incomplète
+
+Le cran 0 relève **89,3 %** ici, contre **60,7 %** dans `ref_overtime_225.json`. **Aucun changement de
+gameplay ne sépare ces deux mesures** — au cran 0, `HealingMult` vaut 1, le correctif de la 1.25.1 ne
+change rien à ce qui se passe en jeu. L'écart est **entièrement comptable** : le soin de la carte
+Blindage n'était pas notifié à `PowerTelemetry` (il écrivait `CurrentHp` en direct), donc il
+n'entrait pas dans les « PV rendus » du temps soutenable. Le canal **dominant** de la défense du
+joueur était **invisible pour l'instrument qui sert à régler le jeu**.
+
+Trois conséquences, toutes importantes :
+
+1. **`docs/bench/ref_overtime_225.json` est périmée.** Remplacée par
+   **`docs/bench/ref_overtime_1251_sat0.json`** (4 graines, cran 0, v1.25.1 — temps soutenable médian
+   **89,3 %**, bruit **3 %**, ±1,8 pt). Toute comparaison à l'ancienne référence mélangerait un effet
+   de réglage et un changement d'instrument.
+2. **La progressivité publiée est fausse en valeur absolue** (0 → 60,7 %, I → 53,6 %, II → 50,0 %,
+   IV → −16 % relatif). Le *sens* de chaque mesure tient — les crans font bien baisser le temps
+   soutenable — mais les niveaux, et donc la comparaison entre crans, sont à refaire.
+3. **Le diagnostic de fond du plan est PIRE que ce qu'il annonçait.** `ENDGAME_PLAN.md` §1 s'appuie
+   sur « le joueur est en surplus de PV 60,7 % du temps d'overtime ». Le vrai chiffre est **89,3 %**.
+   L'argument qui a fondé toute la Saturation — la défense croît sans plafond, la menace suit une
+   courbe fixe — en sort renforcé, et l'urgence du **lot 2** (cran VI, dégâts en % des PV max) avec.
+
+### Leçon de méthode
+
+Une règle correctement implémentée sur un canal incomplet **se mesure très bien, et faux** : la
+campagne du 2026-07-30 n'a rien signalé d'anormal, les dispersions étaient basses, le test des signes
+net. Rien dans le rapport ne pouvait alerter. → Avant de mesurer une règle qui module une ressource,
+**vérifier que toutes les écritures de cette ressource passent par le chemin instrumenté**
+(`grep "CurrentHp ="`), cf. `docs/PITFALLS.md` §Soigner le joueur.
+
+---
+
 ## Saturation — le cadre fonctionne : temps soutenable 60,7 % → 39,9 % — 2026-07-30
+
+> ⚠ **Mesures invalidées le 2026-07-31** en valeur absolue : le canal de soin dominant (carte
+> Blindage) n'était pas compté dans `PowerTelemetry`. Voir la session du 2026-07-31 ci-dessus. Le sens
+> des résultats tient, les niveaux non.
 
 **Objet :** vérifier que le lot 1 de `docs/ENDGAME_PLAN.md` produit une difficulté réelle, sur le
 critère posé par le plan lui-même (§5) : un cran doit faire baisser le **temps soutenable** de plus de
