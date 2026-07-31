@@ -107,7 +107,22 @@ public partial class LevelSelectScreen : Control
     private Button[] BuildCardSaturation(VBoxContainer into, string biomeId, Color accent)
     {
         var gs = GameSettings.Instance;
-        if (gs == null || gs.IsAssisted) return System.Array.Empty<Button>();
+        if (gs == null) return System.Array.Empty<Button>();
+
+        // Mode assistance : le sélecteur n'a pas de sens (« Facile » neutralise tous les crans), mais le
+        // faire disparaître SANS un mot était un angle mort — un joueur en assistance ne saurait ni que
+        // l'échelle existe, ni où la réactiver. Même famille de défaut que le dash sans touche annoncée
+        // et l'Auto-réparation crue inactive (docs/PITFALLS.md) : invisible se lit inexistant. On garde
+        // donc la ligne d'explication, et seulement elle — aucun bouton, donc rien à insérer dans la
+        // chaîne de focus.
+        if (gs.IsAssisted)
+        {
+            var assisted = new VBoxContainer();
+            assisted.AddThemeConstantOverride("separation", 1);
+            into.AddChild(assisted);
+            AddRuleLine(assisted, Loc.T("SAT_SHORT") + " — " + Loc.T("SAT_ASSISTED"), Dim, 12);
+            return System.Array.Empty<Button>();
+        }
 
         var row = new HBoxContainer();
         row.AddThemeConstantOverride("separation", 10);
