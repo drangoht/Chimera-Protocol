@@ -34,6 +34,7 @@ public static class PowerTelemetry
     private static float _takenWindow;      // dégâts encaissés par le joueur depuis le dernier échantillon
     private static float _regenWindow;      // PV réellement rendus par la régénération continue
     private static float _healWindow;       // PV réellement rendus par les soins ponctuels
+    private static float _healRawWindow;    // PV OFFERTS par les soins ponctuels (gaspillage inclus)
     private static int   _killsAtLastSample;
     private static string _lastBuild = "";  // pour ne marquer que les changements de build
     private static bool  _wasOvertime;      // l'overtime a été atteint (il ne se quitte jamais)
@@ -60,7 +61,7 @@ public static class PowerTelemetry
         Append(ComposeHeader() + "\n");
         Append("t_s;phase;niveau;indice_puissance;dps;degats_subis_ps;kills_fenetre;ennemis;" +
                "mult_degats;reduc_cd;reduc_degats;pv;pv_max;regen_ps;regen_eff_ps;soins_ps;" +
-               "vitesse;armes;passifs;greffes\n");
+               "soins_bruts_ps;vitesse;armes;passifs;greffes\n");
     }
 
     /// <summary>Dégâts infligés à un ennemi (déjà modulés par ses propres résistances).</summary>
@@ -88,13 +89,30 @@ public static class PowerTelemetry
     }
 
     /// <summary>
-    /// PV réellement rendus par un soin <b>ponctuel</b> (orbe de soin, lifesteal, carte de surcharge
-    /// <c>overload_plating</c> qui soigne de son propre gain). Compté à part de la régénération :
-    /// les deux ne se pilotent pas avec les mêmes leviers.
+    /// Soin <b>ponctuel</b> (orbe de soin, lifesteal, carte de surcharge <c>overload_plating</c> qui
+    /// soigne de son propre gain). Compté à part de la régénération : les deux ne se pilotent pas avec
+    /// les mêmes leviers.
+    ///
+    /// <para><b>Les deux montants sont nécessaires, et les confondre a produit un faux diagnostic</b>
+    /// (2026-08-01). <paramref name="applied"/> est borné par les PV manquants : à PV pleins, un soin
+    /// vaut <b>zéro</b>. Cette grandeur mesure donc une <i>conversion</i>, pas une générosité — et elle
+    /// monte mécaniquement dès que le joueur prend plus de dégâts. Mesuré ainsi, le cran de saturation V
+    /// semblait rendre <b>+41 % de soins</b> (4/4, net) et « annuler Hémorragie » ; supprimer la source
+    /// soupçonnée — les orbes d'élite — n'a rien changé du tout, parce que le surplus n'était que la
+    /// contrepartie de +45 % de dégâts subis. Le rapport soin/dégâts, lui, n'avait pas bougé
+    /// (0,85 → 0,83). <paramref name="attempted"/> mesure ce que le jeu a réellement <b>offert</b>,
+    /// gaspillage compris : c'est la seule des deux qui répond à « ce cran est-il plus généreux ? ».</para>
+    ///
+    /// <para>Même distinction que <see cref="NotifyRegen"/> (nominal) contre le taux rendu — elle
+    /// existait pour la régénération depuis la 1.24.0 et manquait ici.</para>
     /// </summary>
-    public static void NotifyHealed(float amount)
+    /// <param name="applied">PV réellement rendus (après clamp à MaxHp).</param>
+    /// <param name="attempted">PV offerts par la source, avant clamp — gaspillage inclus.</param>
+    public static void NotifyHealed(float applied, float attempted)
     {
-        if (_active && amount > 0f) _healWindow += amount;
+        if (!_active) return;
+        if (applied   > 0f) _healWindow    += applied;
+        if (attempted > 0f) _healRawWindow += attempted;
     }
 
     /// <summary>
@@ -144,8 +162,12 @@ public static class PowerTelemetry
         float dtps  = windowSeconds > 0.1f ? _takenWindow / windowSeconds : 0f;
         // Ramenés à la seconde comme les dégâts subis : la seule lecture qui intéresse le design est
         // « ce que la régénération rend » CONTRE « ce que le contenu retire », dans la même unité.
-        float rgps  = windowSeconds > 0.1f ? _regenWindow / windowSeconds : 0f;
-        float heals = windowSeconds > 0.1f ? _healWindow  / windowSeconds : 0f;
+        float rgps  = windowSeconds > 0.1f ? _regenWindow   / windowSeconds : 0f;
+        float heals = windowSeconds > 0.1f ? _healWindow    / windowSeconds : 0f;
+        // Soin OFFERT (gaspillage inclus) : sans lui, « le joueur reçoit plus de soins » et « le joueur
+        // a plus de PV à remplir » sont indiscernables — confusion qui a produit un faux diagnostic sur
+        // le cran V le 2026-08-01 (cf. NotifyHealed).
+        float healsRaw = windowSeconds > 0.1f ? _healRawWindow / windowSeconds : 0f;
         int killsWin = kills - _killsAtLastSample;
 
         var tree     = Engine.GetMainLoop() as SceneTree;
@@ -162,7 +184,7 @@ public static class PowerTelemetry
                $"{Num(stats?.DamageReduction ?? 0f, "0.00")};" +
                $"{Num(stats?.CurrentHp ?? 0f, "0")};{Num(stats?.MaxHp ?? 0f, "0")};" +
                $"{Num(stats?.HpRegenPerSecond ?? 0f, "0.00")};{Num(rgps, "0.0")};{Num(heals, "0.0")};" +
-               $"{Num(stats?.Speed ?? 0f, "0")};" +
+               $"{Num(healsRaw, "0.0")};{Num(stats?.Speed ?? 0f, "0")};" +
                build + "\n");
 
         // Un build qui change entre deux échantillons est la seule explication possible d'un saut de
@@ -173,8 +195,9 @@ public static class PowerTelemetry
 
         _dealtWindow = 0f;
         _takenWindow = 0f;
-        _regenWindow = 0f;
-        _healWindow  = 0f;
+        _regenWindow   = 0f;
+        _healWindow    = 0f;
+        _healRawWindow = 0f;
         _killsAtLastSample = kills;
     }
 
@@ -256,8 +279,9 @@ public static class PowerTelemetry
         _sinceSample = 0f;
         _dealtWindow = 0f;
         _takenWindow = 0f;
-        _regenWindow = 0f;
-        _healWindow  = 0f;
+        _regenWindow   = 0f;
+        _healWindow    = 0f;
+        _healRawWindow = 0f;
         _killsAtLastSample = 0;
         _lastBuild = "";
         _wasOvertime = false;

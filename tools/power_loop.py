@@ -55,6 +55,10 @@ DEFAULT_LOG = Path.home() / "AppData/Roaming/Godot/app_userdata/Chimera Protocol
 # ancienne comme un nombre. Chaque run porte sa propre ligne de titres.
 NEEDED = ("t_s", "phase", "niveau", "degats_subis_ps", "kills_fenetre", "pv_max", "soins_ps")
 
+# `soins_bruts_ps` (PV OFFERTS, gaspillage inclus) n'existe que depuis le 2026-08-01 : les runs plus
+# anciennes restent lisibles, la colonne est simplement absente de leur rapport.
+OPTIONAL = ("soins_bruts_ps",)
+
 
 class Run:
     """Une run du journal : son en-tête, sa table de colonnes et ses échantillons d'overtime."""
@@ -116,7 +120,12 @@ def parse(path: Path) -> list[Run]:
 METRICS = {
     "niveaux/min":  lambda r: r.per_minute("niveau"),
     "PV max/min":   lambda r: r.per_minute("pv_max"),
-    "soins PV/s":   lambda r: median(r.metric("soins_ps")),
+    # « rendus » mesure une CONVERSION (borné par les PV manquants : à PV pleins, zéro) ; « offerts »
+    # mesure la GÉNÉROSITÉ du jeu. Confondre les deux fait lire « ce cran soigne plus » là où le joueur
+    # a seulement plus de PV à remplir — le faux diagnostic du cran V, le 2026-08-01.
+    "soins rendus": lambda r: median(r.metric("soins_ps")),
+    "soins offerts": lambda r: (median(r.metric("soins_bruts_ps"))
+                                if "soins_bruts_ps" in r.col else None),
     "kills/min":    lambda r: median(r.metric("kills_fenetre")) * 4,
     "subis PV/s":   lambda r: median(r.metric("degats_subis_ps")),
 }

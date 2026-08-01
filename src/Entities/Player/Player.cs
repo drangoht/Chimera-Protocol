@@ -309,7 +309,9 @@ public partial class Player : CharacterBody2D
         float before = Stats.CurrentHp;
         Stats.CurrentHp = Mathf.Min(Stats.MaxHp, Stats.CurrentHp + amount);
         EmitSignal(SignalName.HpChanged, Stats.CurrentHp, Stats.MaxHp);
-        PowerTelemetry.NotifyHealed(Stats.CurrentHp - before);
+        // `amount` est ce qui a été OFFERT, `CurrentHp - before` ce qui a été retenu : à PV pleins le
+        // second vaut zéro. Les deux sont journalisés — cf. PowerTelemetry.NotifyHealed.
+        PowerTelemetry.NotifyHealed(Stats.CurrentHp - before, amount);
         if (Stats.CurrentHp > before)
             HitFlash(0.2f, new Color(0.2f, 1f, 0.4f, 1f));
     }
@@ -550,7 +552,7 @@ public partial class Player : CharacterBody2D
         if (amount <= 0f || Stats.CurrentHp <= 0f) return;
         float before = Stats.CurrentHp;
         Stats.CurrentHp = Mathf.Min(Stats.MaxHp, Stats.CurrentHp + amount);
-        PowerTelemetry.NotifyHealed(Stats.CurrentHp - before);
+        PowerTelemetry.NotifyHealed(Stats.CurrentHp - before, amount);
         if (Stats.CurrentHp != before)
             EmitSignal(SignalName.HpChanged, Stats.CurrentHp, Stats.MaxHp);
     }
