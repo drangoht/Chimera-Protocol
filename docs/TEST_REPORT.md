@@ -4,6 +4,95 @@ Rapport de sessions de test. Chaque section correspond à une session de test di
 
 ---
 
+## L'échelle complète jouée (crans 1→5) — la saturation finance ce qu'elle combat — 2026-08-01
+
+**Objet :** le testeur a joué **tous les crans de 1 à 5** sur le Sanctuaire, jusqu'à débloquer le cran
+maximum (`saturation_beaten_by_level = sanctuaire:5`). Verdict : « **pas de difficulté particulière,
+je n'ai aucun mal à finir le niveau** ». Le lot 1 avait pourtant passé son critère de validation (tout
+cran doit faire baisser le temps soutenable de plus de 6 % ; le cran I valait −10,0 %, 4/4).
+
+### 1. Ce que disent les runs jouées (`boss_ttk.log`, reconstituées en runs)
+
+| cran | boss tués | niveau | TTK médian | fin |
+|---|---|---|---|---|
+| 1 | 8 | 116 → 172 | 16,8 s | quittée |
+| 2 | 6 | 116 → 162 | 12,9 s | quittée |
+| 3 | 13 | 79 → 180 | 19,4 s | **mort** |
+| 5 | 13 | 92 → **208** | 17,6 s | **mort** |
+
+Deux faits qu'aucune métrique du lot 1 ne pouvait produire :
+
+* **le niveau atteint MONTE avec le cran** (172 → 180 → 208). Un cran censé durcir la run la termine
+  *plus puissante* ;
+* le **TTK du boss ne suit aucune monotonie**, et le boss est tué **13 fois dans une même run**
+  (réapparition toutes les ~70 s). Comparaison qui tue : au cran 0 sur la **Fournaise** (palier 4, le
+  biome le plus dur) le TTK va de 9,8 à 37,4 s ; au **cran 5** sur le **Sanctuaire** (palier 0, le
+  plus facile) de 7,9 à 35,8 s. *Les cinq crans cumulés sur le niveau le plus facile n'opposent pas
+  plus de résistance que zéro cran sur le plus dur.* Le cran n'ajoute au boss que **×1,17 PV**
+  (`ChampionHpMult` amorti par `ChampionHpSoftening`).
+
+### 2. Le mécanisme, lu dans les constantes
+
+En overtime la fréquence d'élite est au plafond : **28 %** aux crans 0-4, **55 %** au cran V
+(`SaturationTable.EliteChanceCap`). Or une élite ne fait pas que taper plus fort
+(`EliteAffixTable.Modifiers`) :
+
+| par ennemi tué | basique | élite (moyenne des 5 affixes) |
+|---|---|---|
+| XP (`XpMult`) | ×1 | **×2,8** |
+| chance d'orbe de soin (`hpDropChance`) | 0,08 | **0,27** |
+
+Le cran V **triple donc la source de soin** que le cran I coupe de 40 %.
+
+### 3. Mesure au banc (`tools/power_loop.py`, nouveau)
+
+4 runs au cran 0, 3 au cran 5 (campagne interrompue pendant la 4ᵉ), `--overtime --minutes 20`,
+Fournaise, graines appariées 1000-1003.
+
+| en overtime | cran 0 | cran 5 | écart |
+|---|---|---|---|
+| **soins ponctuels** | 60,3 PV/s | **85,2 PV/s** | **+41 %** |
+| **dégâts subis** | 70,8 PV/s | **102,1 PV/s** | **+44 %** |
+| kills/min | 2008 | 1942 | −3 % |
+| niveaux/min | 18,1 | 17,6 | −3 % |
+| PV max gagnés/min | 290 | 252 | −13 % |
+
+**Le cran 5 soigne 41 % de plus que le cran 0**, malgré Hémorragie. Hors Hémorragie le soin brut vaut
+**×2,36**. Et `kills/min` est **plat** : le plafond de 300 entités absorbe la densité du cran II, donc
+le surplus de soin ne vient pas d'un volume d'ennemis mais de la seule **composition** de la nuée —
+le mécanisme du §2, isolé.
+
+**Pourquoi le testeur ne sent rien** : menace **+44 %**, soin **+41 %**. Les deux courbes montent
+ensemble et le rapport ne bouge pas. Cinq crans cumulés produisent un jeu **plus violent et
+exactement aussi facile**.
+
+Deux réserves, toutes deux **conservatrices** : 3 runs au cran 5 au lieu de 4 (l'écart reste très
+au-dessus du bruit de 7 % et du seuil de détection de 5 %) ; et le cran 5 entre en overtime à la 10ᵉ
+minute, donc sa fenêtre est observée **plus tôt**, avec moins de cartes accumulées — il devrait être
+soigné *moins*. Le +41 % est un **plancher**.
+
+### 4. Ce que ça invalide
+
+* **Le critère de validation d'un cran** (« >6 % de temps soutenable ») mesure une différence, pas une
+  difficulté. Il a validé une échelle qui ne se sent pas. Le temps soutenable compare deux flux à un
+  instant donné ; il est aveugle à la **vitesse d'accumulation**, qui est ce qui décide de la partie.
+* **Le principe « un cran = une règle qui retire une certitude » n'est pas en cause — sa portée l'est.**
+  Un cran borné ne peut pas rattraper une boucle à contre-réaction positive
+  (survivre → niveaux → cartes de surcharge **sans plafond** → survivre mieux). Pire, un cran qui
+  ajoute des ennemis ou des élites ajoute **du même geste** l'XP et les orbes qui alimentent la boucle.
+* **Règle à retenir** : avant d'ajouter un cran, vérifier ce qu'il donne au joueur, pas seulement ce
+  qu'il lui retire. Tout levier qui augmente le nombre ou la qualité des ennemis augmente aussi l'XP
+  et les drops.
+
+**Instrument livré** : `tools/power_loop.py` (niveaux/min, pente des PV max, soins, kills, par cran) et
+le **cran de saturation dans l'en-tête** de `power_curve.log` — sans lui, deux campagnes à des crans
+différents étaient indistinguables (même défaut de classe que le soin du Blindage invisible en 1.25.0).
+
+**Points ouverts** : compléter la 4ᵉ run du cran 5 ; le boss de fin, tué 13 fois par run, n'est plus un
+événement et aucun cran ne le touche ; direction du lot 2 non tranchée.
+
+---
+
 ## Cran I remesuré après correctif — et TOUTE la base de mesure était biaisée — 2026-07-31
 
 **Objet :** reprendre la mesure du cran I « Hémorragie » après le correctif de la 1.25.1 (la carte
