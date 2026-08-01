@@ -87,10 +87,14 @@ Un affixe d'élite porte **trois rôles** dans `EliteAffixTable.Modifiers` : plu
 Mesuré le 2026-08-01 sur 4 graines appariées — le cran de saturation V (élites 28 % → 55 %) rendait au
 joueur **+41,4 % de soins ponctuels**, *annulant le cran I qui les coupe de 40 %*. `kills/min` **baissait**
 de 3,4 % dans la même campagne : le surplus venait de la seule **composition** de la nuée, pas du volume.
-→ `ApplyElite(affix, keepRewards)` sépare les deux ; `SaturationTable.ElitesKeepRewards` décide.
+→ `ApplyElite(affix, keepHealthDrops)` sépare les deux ; `SaturationTable.ElitesKeepHealthDrops` décide.
 **Règle** : tout levier qui touche au nombre ou à la qualité des ennemis doit être vérifié sur ce qu'il
 **donne** au joueur, pas seulement sur ce qu'il lui retire. Mesurer avec
 `tools/power_loop.py --paired <cranA> <cranB>` (test des signes), jamais sur un delta médian seul.
+⚠ **Ne couper que ce que la mesure a incriminé.** Le premier jet retirait aussi l'`XpMult` « par
+symétrie » : `niveaux/min` **−23,6 %** et `PV max/min` **−35,4 %** (0/4, nets), un durcissement bien
+plus gros que celui visé — alors que `niveaux/min` au cran 5 n'était qu'à −3,5 % du cran 0 avant
+correction, donc l'XP d'élite ne finançait aucun excès. Annulé.
 
 ## Boss de fin — phases, incarnations et zones au sol (`RustedCore`, `BossPhases`, `BossHazard`)
 Cf. GDD §29. Le boss est **une** entité (groupe `rusted_core`, condition de victoire des 5 niveaux)

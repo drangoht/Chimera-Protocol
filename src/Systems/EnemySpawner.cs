@@ -372,13 +372,14 @@ public partial class EnemySpawner : Node
         // Cran V « Élite ordinaire » : fréquence ×3 et plafond relevé (cf. SaturationTable.EliteChanceCap).
         float eliteMult = assisted ? 1f : SaturationTable.EliteFrequencyMult(saturation);
         float eliteCap  = assisted ? EliteAffixTable.MaxChance : SaturationTable.EliteChanceCap(saturation);
-        // …et, au même cran, l'élite cesse de PAYER : plus d'XP majorée ni d'orbe de PV privilégié.
-        // Le danger de l'affixe est conservé — seule la prime tombe (SaturationTable.ElitesKeepRewards).
-        bool keepRewards = assisted || SaturationTable.ElitesKeepRewards(saturation);
+        // …et, au même cran, l'élite cesse de NOURRIR : elle ne lâche plus d'orbe de PV privilégié.
+        // Danger et XP conservés — seule la générosité en soins tombe
+        // (cf. SaturationTable.ElitesKeepHealthDrops, qui dit pourquoi l'XP n'est PAS touchée).
+        bool keepHealthDrops = assisted || SaturationTable.ElitesKeepHealthDrops(saturation);
         if (eliteEligible &&
             (DebugHooks.ForceElites ||
              EliteAffixTable.ShouldBeElite(tMinutes, _rng.Randf(), eliteMult, eliteCap)))
-            node.ApplyElite(EliteAffixTable.Pick(_rng.Randf()), keepRewards);
+            node.ApplyElite(EliteAffixTable.Pick(_rng.Randf()), keepHealthDrops);
     }
 
     private Vector2 RandomSpawnPosition()

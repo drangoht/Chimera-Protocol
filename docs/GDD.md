@@ -2862,7 +2862,7 @@ champ de vision.
 | II | **Meute** | PV +30 %, dégâts +35 %, spawn +25 % (ex-« Difficile ») | → **50,0 %** |
 | III | **Compte à rebours** | overtime dès la 10ᵉ minute — attaque le temps de *build* | non mesurable par le banc |
 | IV | **Sans filet** | le passage de niveau ne soigne plus ; Noyau de Secours et Plaque Adaptative coupés | **−16 %** relatif |
-| V | **Élite ordinaire** | élites ×3, plafond relevé à 0,55 — **et l'élite cesse de payer sa prime** (ni XP majorée, ni orbe de PV privilégié) | cumul I→V : **39,9 %** |
+| V | **Élite ordinaire** | élites ×3, plafond relevé à 0,55 — **et l'élite ne lâche plus d'orbe de PV privilégié** | cumul I→V : **39,9 %** |
 
 **La hiérarchie mesurée confirme le parti pris** : le cran I porte à lui seul la moitié de la descente,
 et le cran II — le seul purement statistique — pèse **deux fois moins**. Une règle qui retire une
@@ -2899,12 +2899,21 @@ rôles soudés** — plus *dangereux* (PV, vitesse, dégâts, comportement), plu
 (`XpMult` ×2,8), plus *généreux* (`hpDropChance` 0,08 → ~0,27). Tant qu'ils le restent, **tout** cran
 qui touche à la fréquence d'élite distribue la difficulté **et son antidote** dans le même paquet.
 
-`SaturationTable.ElitesKeepRewards` sépare les deux : au cran V, l'élite garde **tout** son danger et
-perd **toute** sa prime. Le retrait est fidèle à la fiction du cran, ce qui le rend énonçable en une
-phrase — *quand l'élite devient la norme, elle cesse d'être un événement, donc d'en payer la prime* —
-et c'est ce qui autorise à le compter comme **une** règle (même traitement que « Sans filet » et ses
-deux leviers). Un test verrouille les deux sens : les leviers basculent au même rang, et rien dans la
-table d'affixes ne s'adoucit — le cran retire une **récompense**, jamais une menace.
+`SaturationTable.ElitesKeepHealthDrops` sépare le danger de la **générosité** : au cran V, l'élite garde
+tout son danger et cesse de lâcher des orbes de PV privilégiés. Le retrait est fidèle à la fiction du
+cran, ce qui le rend énonçable en une phrase — *quand l'élite devient la norme, elle cesse d'être un
+événement, donc d'en payer la prime* — et c'est ce qui autorise à le compter comme **une** règle (même
+traitement que « Sans filet » et ses deux leviers). Un test verrouille les deux sens : les leviers
+basculent au même rang, et rien dans la table d'affixes ne s'adoucit — le cran retire une
+**récompense**, jamais une menace.
+
+**Ce que le premier jet a coupé en trop, et pourquoi il a été annulé.** Par symétrie de principe, le
+découplage retirait aussi l'**XP** majorée. Mesuré : `niveaux/min` **−23,6 %** et `PV max/min`
+**−35,4 %** (0/4, nets) — un durcissement bien plus gros que celui visé, et que **rien n'avait
+établi** : avant découplage, `niveaux/min` au cran 5 était à −3,5 % du cran 0, donc l'XP d'élite ne
+finançait aucun excès de progression. Le cran V serait devenu un **ralentisseur de build**, rôle déjà
+tenu par le cran III. → **Un cran ne corrige que ce qui a été mesuré.** L'XP d'élite est restaurée ;
+si un ralentissement de progression est un jour souhaité, il mérite son **propre** cran nommé.
 
 Portée : ce découplage vaut bien au-delà du cran V. C'est lui qui rend la **fréquence d'élite**
 utilisable comme levier de difficulté, au lot 2 comme ailleurs.
