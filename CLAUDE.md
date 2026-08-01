@@ -17,6 +17,31 @@ cyborgs, robots), inspiré de Vampire Survivors et Everything is Crab.
 **Phase actuelle : 1.25.1 PUBLIÉE le 2026-07-31** (Saturation de Rouille, lot 1 + correctif
 d'Hémorragie) — build butler **#1846002**, `version.json` à 1.25.1. **Devlogs 1.25.0 et 1.25.1 rédigés
 (`docs/DEVLOG.md`), à coller sur itch par l'utilisateur.**
+
+**(7) L'échelle complète jouée — et le canal des soins est saturé de gaspillage** (2026-08-01, **non
+publié**, aucun changement de gameplay). Le testeur a joué **les crans 1 à 5** : « pas de difficulté
+particulière ». Mesuré (4 graines appariées, `tools/power_loop.py --paired`) : **le joueur jette 80 %
+des soins reçus** — 293,6 PV/s offerts pour **58,8 retenus** au cran 0. **Couper les soins ne peut donc
+pas durcir le jeu** : « Hémorragie » divise l'offre par deux (**−46,4 %**, mieux que ses −40 %
+annoncés) et le joueur en retient *davantage* qu'avant, parce qu'il est plus souvent blessé. → **le
+canal des soins est exclu du lot 2** ; viser ce qui **crée** le surplus (PV max, cartes de surcharge
++45/prise sans plafond). Design → `docs/GDD.md` **§34.4 ter**.
+⚠ **Piège de mesure, à connaître avant tout réglage** : `Player.Heal`/`HealFlat` clampent à `MaxHp`, donc
+un soin reçu à PV pleins vaut **zéro**. La colonne `soins_ps` compte le **retenu** — une *conversion*,
+qui monte mécaniquement avec les dégâts subis — et non la générosité. Lue à l'envers, elle **inverse le
+diagnostic** : le cran V semblait rendre **+41 %** de soins et « annuler Hémorragie », il en donne
+**−46 %**. Deux découplages de l'affixe d'élite ont été écrits, mesurés et **annulés** sur cette
+lecture fausse. Signal manqué : le premier correctif supprimait ~200 orbes/min sans déplacer la
+métrique d'un point (85,3 → 85,0) — *quand ça arrive, c'est l'instrument qu'il faut suspecter*.
+Nouvelle colonne **`soins_bruts_ps`** (PV offerts) ; pièges → `docs/PITFALLS.md` §Soins.
+⚠ **Non expliqué** : le cran 5 fait chuter le temps soutenable de **89,3 % à 67,7 %** et **tue le bot**
+— et reste imperceptible. Le critère « >6 % de temps soutenable » **ne prédit pas le ressenti**.
+**Piste la plus sérieuse, jamais instruite** : le **boss est tué 13 fois par run** (réapparition toutes
+les ~70 s) et son TTK est **insensible aux crans** (7,9-35,8 s au cran 5 sur le biome le plus facile,
+contre 9,8-37,4 s au cran 0 sur le plus dur ; il ne gagne que ×1,17 PV).
+Outils : `tools/power_loop.py` (comparaison appariée + test des signes), cran de saturation dans
+l'en-tête de `power_curve.log`, `tests/AudioAssetReferenceTests.cs`. Mesures → `docs/TEST_REPORT.md`
+(section 2026-08-01, **lire le §5 avant le §3 : le §3 est réfuté**). **302 tests.**
 ⚠ **Première partie jouée au cran I (2026-07-31) : « aucune difficulté rencontrée » — et le testeur
 avait raison.** La carte **Blindage** (canal de soin dominant : 44 prises contre 1 d'Auto-réparation)
 écrivait `CurrentHp` **en direct**, donc hors du multiplicateur d'Hémorragie *et* hors de
