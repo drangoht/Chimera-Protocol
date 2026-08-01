@@ -22,8 +22,10 @@ cran doit faire baisser le temps soutenable de plus de 6 % ; le cran I valait �
 
 Deux faits qu'aucune métrique du lot 1 ne pouvait produire :
 
-* **le niveau atteint MONTE avec le cran** (172 → 180 → 208). Un cran censé durcir la run la termine
-  *plus puissante* ;
+* le niveau atteint monte avec le cran (172 → 180 → 208). ⚠ **Piste écartée par le banc** (§3) :
+  `niveaux/min` est en légère *baisse* au cran 5 (0/4, net). Ces runs durent simplement plus
+  longtemps — au cran ≥ III l'overtime démarre à la 10ᵉ minute. C'est un effet de **durée**, pas
+  d'accumulation ; l'hypothèse « les crans financent la montée en puissance » est **fausse** ;
 * le **TTK du boss ne suit aucune monotonie**, et le boss est tué **13 fois dans une même run**
   (réapparition toutes les ~70 s). Comparaison qui tue : au cran 0 sur la **Fournaise** (palier 4, le
   biome le plus dur) le TTK va de 9,8 à 37,4 s ; au **cran 5** sur le **Sanctuaire** (palier 0, le
@@ -46,50 +48,61 @@ Le cran V **triple donc la source de soin** que le cran I coupe de 40 %.
 
 ### 3. Mesure au banc (`tools/power_loop.py`, nouveau)
 
-4 runs au cran 0, 3 au cran 5 (campagne interrompue pendant la 4ᵉ), `--overtime --minutes 20`,
-Fournaise, graines appariées 1000-1003.
+4 runs par cran, `--overtime --minutes 20`, Fournaise, graines **appariées 1000-1003**. Lecture par
+**test des signes** (`--paired 0 5`), pas par delta médian.
 
-| en overtime | cran 0 | cran 5 | écart |
-|---|---|---|---|
-| **soins ponctuels** | 60,3 PV/s | **85,2 PV/s** | **+41 %** |
-| **dégâts subis** | 70,8 PV/s | **102,1 PV/s** | **+44 %** |
-| kills/min | 2008 | 1942 | −3 % |
-| niveaux/min | 18,1 | 17,6 | −3 % |
-| PV max gagnés/min | 290 | 252 | −13 % |
+| en overtime | cran 0 | cran 5 | écart | signes |
+|---|---|---|---|---|
+| **soins ponctuels** | 60,3 PV/s | **85,3 PV/s** | **+41,4 %** | **4/4 net** |
+| **dégâts subis** | 70,8 PV/s | **104,2 PV/s** | **+47,1 %** | **4/4 net** |
+| kills/min | 2008 | 1939 | −3,4 % | 0/4 net |
+| niveaux/min | 18,1 | 17,5 | −3,5 % | 0/4 net |
+| PV max gagnés/min | 290,4 | 249,9 | −13,9 % | 1/4 — indécidable |
 
-**Le cran 5 soigne 41 % de plus que le cran 0**, malgré Hémorragie. Hors Hémorragie le soin brut vaut
-**×2,36**. Et `kills/min` est **plat** : le plafond de 300 entités absorbe la densité du cran II, donc
-le surplus de soin ne vient pas d'un volume d'ennemis mais de la seule **composition** de la nuée —
-le mécanisme du §2, isolé.
+**Le cran 5 soigne 41 % de plus que le cran 0, malgré Hémorragie qui coupe les soins de 40 %.** Hors
+Hémorragie, le soin brut vaut **×2,36**. Le mécanisme du §2 est isolé proprement : `kills/min`
+**baisse** de 3,4 % (net) pendant que les soins montent de 41,4 % — le surplus ne peut donc pas venir
+du volume de la nuée (le plafond de 300 entités absorbe la densité du cran II), seulement de sa
+**composition**.
 
-**Pourquoi le testeur ne sent rien** : menace **+44 %**, soin **+41 %**. Les deux courbes montent
-ensemble et le rapport ne bouge pas. Cinq crans cumulés produisent un jeu **plus violent et
-exactement aussi facile**.
+**Pourquoi le testeur ne sent rien** : menace **+47 %**, soin **+41 %**. Les deux courbes montent
+ensemble ; le solde net (~6 points) est réel mais mince. Cinq crans cumulés produisent un jeu
+**beaucoup plus violent et à peine plus difficile**.
 
-Deux réserves, toutes deux **conservatrices** : 3 runs au cran 5 au lieu de 4 (l'écart reste très
-au-dessus du bruit de 7 % et du seuil de détection de 5 %) ; et le cran 5 entre en overtime à la 10ᵉ
-minute, donc sa fenêtre est observée **plus tôt**, avec moins de cartes accumulées — il devrait être
-soigné *moins*. Le +41 % est un **plancher**.
+Le cran fait pourtant quelque chose de mesurable : le **temps soutenable tombe de 89,3 % à 67,7 %**
+(−24 % relatif, quatre fois le critère de 6 %) et le bot **meurt** sur la graine 1003 (19:11), là où
+les 4 runs du cran 0 finissent toutes sur la limite de temps. *Un cran peut donc écraser le critère
+de validation et rester imperceptible.*
+
+Réserve **conservatrice** : le cran 5 entre en overtime à la 10ᵉ minute, donc sa fenêtre est observée
+**plus tôt**, avec moins de cartes accumulées — il devrait être soigné *moins*. Le +41,4 % est un
+**plancher**.
 
 ### 4. Ce que ça invalide
 
 * **Le critère de validation d'un cran** (« >6 % de temps soutenable ») mesure une différence, pas une
   difficulté. Il a validé une échelle qui ne se sent pas. Le temps soutenable compare deux flux à un
   instant donné ; il est aveugle à la **vitesse d'accumulation**, qui est ce qui décide de la partie.
-* **Le principe « un cran = une règle qui retire une certitude » n'est pas en cause — sa portée l'est.**
-  Un cran borné ne peut pas rattraper une boucle à contre-réaction positive
-  (survivre → niveaux → cartes de surcharge **sans plafond** → survivre mieux). Pire, un cran qui
-  ajoute des ennemis ou des élites ajoute **du même geste** l'XP et les orbes qui alimentent la boucle.
-* **Règle à retenir** : avant d'ajouter un cran, vérifier ce qu'il donne au joueur, pas seulement ce
-  qu'il lui retire. Tout levier qui augmente le nombre ou la qualité des ennemis augmente aussi l'XP
-  et les drops.
+* **Deux règles du lot 1 se combattent.** Le cran I retire 40 % des soins ; le cran V triple la
+  fréquence d'élite, donc la source d'orbes de PV — et le second l'emporte. Ce n'est pas un défaut
+  d'équilibrage fin : `EliteAffixTable` fait porter à l'affixe **trois rôles soudés** — plus dangereux
+  (PV, dégâts), plus rémunérateur (`XpMult`), **plus généreux** (`hpDropChance`). Tant qu'ils le
+  restent, tout cran qui augmente la fréquence d'élite distribue la difficulté **et son antidote**.
+* **Règle à retenir** : avant d'ajouter un cran, vérifier ce qu'il **donne** au joueur, pas seulement
+  ce qu'il lui retire.
+* ⚠ **Ce que ce relevé n'établit PAS** : que les crans accélèrent la montée en puissance.
+  `niveaux/min` (0/4) et `kills/min` (0/4) *baissent* légèrement. L'hypothèse de départ — une boucle
+  à contre-réaction positive nourrie par les crans — est **infirmée** ; le problème est plus simple
+  et plus localisé : menace et soin montent ensemble.
 
 **Instrument livré** : `tools/power_loop.py` (niveaux/min, pente des PV max, soins, kills, par cran) et
 le **cran de saturation dans l'en-tête** de `power_curve.log` — sans lui, deux campagnes à des crans
 différents étaient indistinguables (même défaut de classe que le soin du Blindage invisible en 1.25.0).
 
-**Points ouverts** : compléter la 4ᵉ run du cran 5 ; le boss de fin, tué 13 fois par run, n'est plus un
-événement et aucun cran ne le touche ; direction du lot 2 non tranchée.
+**Points ouverts** : isoler formellement le cran V par une campagne **cran 4 → cran 5** (seul le V
+touche `hpDropChance` ; le +41,4 % mesuré ici est le solde de « élites ×3 » et d'« Hémorragie ×0,6 ») ;
+le boss de fin, tué 13 fois par run, n'est plus un événement et aucun cran ne le touche ; direction du
+lot 2 non tranchée.
 
 ---
 
