@@ -33,6 +33,11 @@ Deux faits qu'aucune métrique du lot 1 ne pouvait produire :
   plus de résistance que zéro cran sur le plus dur.* Le cran n'ajoute au boss que **×1,17 PV**
   (`ChampionHpMult` amorti par `ChampionHpSoftening`).
 
+> ⚠ **Le §2 et le §3 ci-dessous ont été RÉFUTÉS le jour même.** Le mécanisme qu'ils décrivent
+> (« le cran V annule Hémorragie via les orbes d'élite ») est faux : la métrique lue comptait le soin
+> **retenu** et non **offert**. Ils sont conservés parce que le §5 — le vrai résultat — ne se comprend
+> qu'à partir de l'erreur qui l'a produit. **Lire le §5 avant d'agir sur ce rapport.**
+
 ### 2. Le mécanisme, lu dans les constantes
 
 En overtime la fréquence d'élite est au plafond : **28 %** aux crans 0-4, **55 %** au cran V
@@ -99,10 +104,48 @@ Réserve **conservatrice** : le cran 5 entre en overtime à la 10ᵉ minute, don
 le **cran de saturation dans l'en-tête** de `power_curve.log` — sans lui, deux campagnes à des crans
 différents étaient indistinguables (même défaut de classe que le soin du Blindage invisible en 1.25.0).
 
-**Points ouverts** : isoler formellement le cran V par une campagne **cran 4 → cran 5** (seul le V
-touche `hpDropChance` ; le +41,4 % mesuré ici est le solde de « élites ×3 » et d'« Hémorragie ×0,6 ») ;
-le boss de fin, tué 13 fois par run, n'est plus un événement et aucun cran ne le touche ; direction du
-lot 2 non tranchée.
+### 5. RÉFUTATION — la métrique de soin mesurait l'inverse de ce qu'on croyait
+
+Le §3 accusait les orbes d'élite. Deux implémentations et trois campagnes plus tard, c'était faux.
+
+**① Le correctif n'a pas eu d'effet.** Le découplage a retiré la générosité des élites
+(`hpDropChance` 0,27 → 0,08 sur 55 % de la nuée, soit ~200 orbes/min en moins). Les soins mesurés :
+**85,3 → 85,0 PV/s**. Rien. *Un correctif qui supprime la cause supposée sans rien changer est un
+signal qu'il faut suspecter l'instrument* — signal que je n'ai pas lu tout de suite.
+
+**② L'instrument.** `Player.Heal`/`HealFlat` clampent à `MaxHp`, et ne notifiaient que
+`CurrentHp - before` : **un soin reçu à PV pleins compte zéro**. `soins_ps` mesurait donc une
+**conversion** — qui monte mécaniquement quand le joueur prend plus de dégâts — et non une générosité.
+`PowerTelemetry` faisait déjà cette distinction pour la régénération (`regen_ps` vs `regen_eff_ps`)
+depuis la 1.24.0 ; les soins ponctuels ne l'avaient jamais eue.
+
+**③ Le diagnostic, une fois `soins_bruts_ps` instrumenté** (4 graines appariées, overtime) :
+
+| | cran 0 | cran 5 | écart | signes |
+|---|---|---|---|---|
+| soins **offerts** | **293,6 PV/s** | **157,3 PV/s** | **−46,4 %** | **0/4 net** |
+| soins **retenus** | 58,8 | 84,6 | +43,9 % | 4/4 net |
+| dégâts subis | 65,6 | 101,8 | +55,2 % | 4/4 net |
+| part gaspillée | **80 %** | 46 % | | |
+
+**Exactement l'inverse du §3.** Hémorragie ne fait pas seulement son travail, elle le dépasse : −46 %
+pour −40 % promis. Le cran V ne l'a jamais annulée, et l'affixe d'élite n'était pour rien dans
+l'affaire. Le « +41 % » n'était que la contrepartie de +55 % de dégâts subis.
+
+**Le vrai résultat, qui redirige le lot 2** : au cran 0, le joueur reçoit **293,6 PV/s et n'en retient
+que 58,8** — il **jette 80 %** de ce qu'on lui donne. Un cran qui coupe les soins tape donc dans le
+vide : il faut retirer 80 % de l'offre avant que la première goutte manque. C'est pourquoi Hémorragie
+divise l'offre par deux et laisse le joueur **mieux** soigné qu'avant. → **Ne pas concevoir de cran sur
+le canal des soins**, il est saturé de gaspillage ; viser ce qui **crée** le surplus (PV max, cartes de
+surcharge `+45`/prise sans plafond). Design → `docs/GDD.md` §34.4 ter.
+
+**Revert** : les deux découplages sont annulés, le gameplay est revenu à son état publié. Conservés —
+ce sont les seuls acquis réels de la séquence : la colonne `soins_bruts_ps`, le cran de saturation dans
+l'en-tête du journal, `tools/power_loop.py --paired`, et le piège dans `docs/PITFALLS.md`.
+
+**Points ouverts** : le boss de fin, tué 13 fois par run, n'est plus un événement et aucun cran ne le
+touche ; direction du lot 2 non tranchée, mais le canal des soins en est désormais exclu ; rien de tout
+ceci n'a encore été vérifié manette en main.
 
 ---
 

@@ -79,22 +79,24 @@ les préserve. À `frost=0`, `mix(...,0)=texture` puis `* COLOR` = strictement i
 shader. (Limite connue, non bloquante : l'éclairage 2D d'un biome chaud — Fournaise — désature le bleu
 vers un gris froid ; le rendu reste lisible « gelé » mais moins bleu que dans un biome neutre.)
 
-## Élites — le DANGER et la PRIME sont deux réglages, pas un
-Un affixe d'élite porte **trois rôles** dans `EliteAffixTable.Modifiers` : plus dangereux (`HpMult`,
-`DamageMult`, `SpeedMult`, comportement), plus rémunérateur (**`XpMult` ×2,5 à ×3**) et plus généreux
-(**`hpDropChance` 0,08 → 0,20-0,30**, soit ~3,4× la chance d'orbe de PV d'un ennemi ordinaire).
-**Conséquence non évidente : augmenter la fréquence d'élite augmente aussi les soins et l'XP reçus.**
-Mesuré le 2026-08-01 sur 4 graines appariées — le cran de saturation V (élites 28 % → 55 %) rendait au
-joueur **+41,4 % de soins ponctuels**, *annulant le cran I qui les coupe de 40 %*. `kills/min` **baissait**
-de 3,4 % dans la même campagne : le surplus venait de la seule **composition** de la nuée, pas du volume.
-→ `ApplyElite(affix, keepHealthDrops)` sépare les deux ; `SaturationTable.ElitesKeepHealthDrops` décide.
-**Règle** : tout levier qui touche au nombre ou à la qualité des ennemis doit être vérifié sur ce qu'il
-**donne** au joueur, pas seulement sur ce qu'il lui retire. Mesurer avec
-`tools/power_loop.py --paired <cranA> <cranB>` (test des signes), jamais sur un delta médian seul.
-⚠ **Ne couper que ce que la mesure a incriminé.** Le premier jet retirait aussi l'`XpMult` « par
-symétrie » : `niveaux/min` **−23,6 %** et `PV max/min` **−35,4 %** (0/4, nets), un durcissement bien
-plus gros que celui visé — alors que `niveaux/min` au cran 5 n'était qu'à −3,5 % du cran 0 avant
-correction, donc l'XP d'élite ne finançait aucun excès. Annulé.
+## Soins — mesurer ce qui est OFFERT, jamais ce qui est RETENU
+`Player.Heal`/`HealFlat` clampent à `MaxHp` : **un soin reçu à PV pleins vaut zéro**. La colonne
+`soins_ps` de `PowerTelemetry` compte le soin **retenu**, donc elle mesure une **conversion**, pas une
+générosité — et elle **monte mécaniquement dès que le joueur prend plus de dégâts**, puisqu'il a plus
+de PV à remplir. Utiliser `soins_bruts_ps` (PV offerts, gaspillage inclus) pour toute question de la
+forme « ce réglage soigne-t-il plus ? ». Même distinction que `regen_ps` (nominal) contre
+`regen_eff_ps` (rendu), qui existait pour la régénération depuis la 1.24.0.
+**Ordre de grandeur du piège** (2026-08-01, 4 graines appariées, overtime) : au cran 0 le joueur reçoit
+**293,6 PV/s et n'en retient que 58,8** — *80 % jetés*. Lu en « retenu », le cran de saturation V
+paraissait rendre **+41 % de soins** et « annuler Hémorragie » ; lu en « offert », il en donne
+**−46,4 %** (0/4, net). **Diagnostic exactement inversé.** Deux découplages de l'affixe d'élite ont été
+écrits et annulés sur cette lecture fausse. Le premier a même été *démenti par sa propre mesure de
+validation* : supprimer la source soupçonnée (`hpDropChance` 0,27 → 0,08 sur 55 % de la nuée) n'a pas
+bougé la métrique d'un point (85,3 → 85,0) — signal qu'il fallait suspecter l'instrument, pas insister.
+**Règles** : (1) toujours croiser une métrique de soin avec les dégâts subis sur la même fenêtre ;
+(2) si supprimer une cause supposée ne change rien, c'est la mesure qu'il faut mettre en doute ;
+(3) comparer avec `tools/power_loop.py --paired <cranA> <cranB>` (test des signes), jamais sur un
+delta médian seul.
 
 ## Boss de fin — phases, incarnations et zones au sol (`RustedCore`, `BossPhases`, `BossHazard`)
 Cf. GDD §29. Le boss est **une** entité (groupe `rusted_core`, condition de victoire des 5 niveaux)

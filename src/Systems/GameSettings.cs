@@ -190,13 +190,6 @@ public partial class GameSettings : Node
     /// <summary>Multiplicateur de fréquence des élites (cran V « Élite ordinaire »).</summary>
     public float EliteFrequencyMult => IsAssisted ? 1f : SaturationTable.EliteFrequencyMult(Saturation);
 
-    /// <summary>
-    /// Les élites lâchent-elles encore plus d'orbes de PV qu'un ennemi ordinaire ?
-    /// Cf. <see cref="SaturationTable.ElitesKeepHealthDrops"/> — retiré au cran V, faute de quoi ce cran
-    /// annule « Hémorragie » et le dépasse (+41,4 % de soins mesurés, 4/4).
-    /// </summary>
-    public bool ElitesKeepHealthDrops => IsAssisted || SaturationTable.ElitesKeepHealthDrops(Saturation);
-
     /// <summary>Multiplicateur d'Échos apporté par la saturation (branché dans <c>EchoFormula</c>).</summary>
     public double SaturationEchoMult => IsAssisted ? 1.0 : SaturationTable.EchoMult(Saturation);
 

@@ -186,36 +186,18 @@ public static class SaturationTable
     public static float EliteChanceCap(int rank)
         => Clamp(rank) >= 5 ? 0.55f : EliteAffixTable.MaxChance;
 
-    /// <summary>
-    /// Les élites lâchent-elles encore <b>plus d'orbes de PV</b> qu'un ennemi ordinaire ?
-    /// Non à partir du cran V.
-    ///
-    /// <para><b>Mesuré le 2026-08-01</b> (4 graines appariées, <c>tools/power_loop.py --paired 0 5</c>) :
-    /// au cran 5 le joueur recevait <b>+41,4 % de soins ponctuels</b> qu'au cran 0 — <i>4/4, net</i> —
-    /// alors même qu'« Hémorragie » (cran I) les coupe de 40 %. Le cran V annulait donc le cran I et le
-    /// dépassait. Isolé proprement : <c>kills/min</c> <b>baisse</b> de 3,4 % sur la même campagne, si
-    /// bien que le surplus ne venait pas du volume de la nuée mais de sa seule <b>composition</b> — 55 %
-    /// d'élites au lieu de 28 %, chacune lâchant 3,4× plus d'orbes
-    /// (<see cref="EliteAffixTable"/> : <c>hpDropChance</c> 0,08 → ~0,27).</para>
-    ///
-    /// <para><b>La cause n'était pas une valeur mais un couplage</b> : l'affixe d'élite porte
-    /// <b>trois rôles soudés</b> — plus dangereux (PV, dégâts), plus rémunérateur (<c>XpMult</c> ×2,8),
-    /// plus généreux (<c>hpDropChance</c>). Tant qu'ils le restent, <i>tout</i> cran qui augmente la
-    /// fréquence d'élite distribue la difficulté <b>et son antidote</b>. Le découplage vaut donc bien
-    /// au-delà du cran V : c'est lui qui rend la fréquence d'élite utilisable comme levier.</para>
-    ///
-    /// <para><b>Seule la générosité en soins est retirée — pas l'XP.</b> Le premier jet coupait les deux
-    /// « par symétrie de principe » ; la mesure a sanctionné : <c>niveaux/min</c> <b>−23,6 %</b> et
-    /// <c>PV max/min</c> <b>−35,4 %</b> (0/4, nets), un durcissement bien plus gros que celui visé,
-    /// et que <i>rien n'avait établi</i> — avant découplage, <c>niveaux/min</c> au cran 5 était à −3,5 %
-    /// du cran 0, donc l'XP d'élite ne finançait aucun excès de progression. Le cran V serait devenu un
-    /// <b>ralentisseur de build</b>, rôle déjà tenu par le cran III « Compte à rebours ». Un cran ne
-    /// corrige que ce qui a été mesuré.</para>
-    ///
-    /// <para>Le danger de l'affixe (PV, vitesse, dégâts, comportement) est <b>intégralement conservé</b> :
-    /// ce cran ne rend pas les élites plus faciles, il les rend moins <i>nourrissantes</i>.</para>
-    /// </summary>
-    public static bool ElitesKeepHealthDrops(int rank) => Clamp(rank) < 5;
+    // ⚠ Il a existé ici, le 2026-08-01, un `ElitesKeepHealthDrops` qui retirait aux élites leur orbe de
+    // PV privilégié au cran V. Motif : le cran 5 semblait rendre +41 % de soins qu'au cran 0 (4/4, net)
+    // et « annuler Hémorragie ». RETIRÉ le jour même, le diagnostic étant faux — deux fois :
+    //
+    //   ① supprimer la source soupçonnée (hpDropChance 0,27 → 0,08 sur 55 % de la nuée) n'a pas bougé
+    //     la mesure d'un point (85,3 → 85,0 PV/s) ;
+    //   ② la colonne lue comptait le soin RETENU, borné par les PV manquants. Instrumenté à part
+    //     (`soins_bruts_ps`), le soin OFFERT au cran 5 vaut 157,3 PV/s contre 293,6 au cran 0 :
+    //     **−46,4 %, 0/4** — Hémorragie fait exactement son travail, et un peu plus que promis.
+    //
+    // Le « surplus de soin » n'était que la contrepartie de +55 % de dégâts subis : un joueur plus
+    // souvent blessé convertit des soins qu'il gaspillait. Cf. PowerTelemetry.NotifyHealed.
 
     // ── Économie ────────────────────────────────────────────────────────────────────────────────
 

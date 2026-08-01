@@ -230,7 +230,7 @@ public partial class EnemyBase : CharacterBody2D
     /// avant la 1re frame physique (la vitesse de base est capturée à ce moment-là dans
     /// UpdateStatusEffects). No-op si affix = None.
     /// </summary>
-    public void ApplyElite(EliteAffix affix, bool keepHealthDrops = true)
+    public void ApplyElite(EliteAffix affix)
     {
         if (affix == EliteAffix.None) return;
         _eliteAffix = affix;
@@ -242,18 +242,11 @@ public partial class EnemyBase : CharacterBody2D
         Damage     *= m.DamageMult;
         XpValue     = Mathf.Max(1, Mathf.RoundToInt(XpValue * m.XpMult));
 
-        // La GÉNÉROSITÉ en soins se retire indépendamment du danger : au cran V « Élite ordinaire »,
-        // l'affixe devient la norme et cesse d'être un événement à récompenser d'un orbe de PV
-        // (cf. SaturationTable.ElitesKeepHealthDrops). Sans ce découplage, tripler la fréquence d'élite
-        // triple aussi la source de soin — mesuré : +41,4 % de soins reçus au cran 5 malgré
-        // « Hémorragie ». Non retenu ici : `XpMult`, que la mesure n'a jamais incriminé.
-        // Laissé tel quel, `_hpDropChance` garde la valeur d'un ennemi ordinaire (0,08).
-        if (keepHealthDrops) _hpDropChance = m.HpDropChance;
-
         _damageTakenMult        = m.DamageTakenMult;
         _regenFractionPerSecond = m.RegenFractionPerSecond;
         _lifestealFraction      = m.LifestealFraction;
         _explodeDamageMult      = m.ExplodeDamageMult;
+        _hpDropChance           = m.HpDropChance;
 
         var tint = new Color(m.TintR, m.TintG, m.TintB, 1f);
         _sprite ??= GetNodeOrNull<AnimatedSprite2D>("AnimatedSprite2D");

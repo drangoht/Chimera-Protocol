@@ -2862,7 +2862,7 @@ champ de vision.
 | II | **Meute** | PV +30 %, dégâts +35 %, spawn +25 % (ex-« Difficile ») | → **50,0 %** |
 | III | **Compte à rebours** | overtime dès la 10ᵉ minute — attaque le temps de *build* | non mesurable par le banc |
 | IV | **Sans filet** | le passage de niveau ne soigne plus ; Noyau de Secours et Plaque Adaptative coupés | **−16 %** relatif |
-| V | **Élite ordinaire** | élites ×3, plafond relevé à 0,55 — **et l'élite ne lâche plus d'orbe de PV privilégié** | cumul I→V : **39,9 %** |
+| V | **Élite ordinaire** | élites ×3, plafond relevé à 0,55 | cumul I→V : **39,9 %** |
 
 **La hiérarchie mesurée confirme le parti pris** : le cran I porte à lui seul la moitié de la descente,
 et le cran II — le seul purement statistique — pèse **deux fois moins**. Une règle qui retire une
@@ -2883,40 +2883,39 @@ certitude vaut deux fois un multiplicateur.
 3. **Jamais un mur sur le boss.** Les PV des champions restent amortis par
    `LevelThreat.ChampionHpSoftening` — battre le boss conditionne la progression, et il est calibré sur
    un TTK **joué** (§20.6). Un boss qui gagne 30 % de PV par cran serait un mur de patience.
-4. **Vérifier ce qu'un cran DONNE, pas seulement ce qu'il retire.** (2026-08-01, après que le testeur
-   a joué l'échelle complète : « aucune difficulté ».) Le cran V triplait la fréquence d'élite — donc
-   aussi la source d'orbes de PV — et rendait au joueur **+41,4 % de soins ponctuels** par rapport au
-   cran 0, *4/4 graines appariées*, **annulant Hémorragie et la dépassant**. Le surplus a été isolé
-   proprement : `kills/min` **baisse** de 3,4 % sur la même campagne, donc il ne venait pas du volume
-   de la nuée mais de sa seule **composition** (55 % d'élites au lieu de 28 %, chacune 3,4× plus
-   généreuse en orbes). *Tout levier qui augmente le nombre ou la qualité des ennemis augmente aussi
-   l'XP et les drops.*
+4. **Un soin coupé n'est pas un soin retiré.** (2026-08-01 — voir §34.4 ter, le résultat qui redirige
+   le lot 2.) Le joueur **gaspille 80 % des soins** qu'on lui donne au cran 0 : 293,6 PV/s offerts pour
+   **58,8 retenus**. Un cran qui coupe l'offre tape donc dans le vide tant que le gaspillage absorbe la
+   coupe — Hémorragie divise l'offre par deux et le joueur en **retient davantage** qu'avant.
 
-### 34.4 bis Le découplage de l'affixe d'élite (2026-08-01)
+### 34.4 ter Le canal des soins est saturé de gaspillage (2026-08-01)
 
-La cause n'était pas une valeur mal réglée mais un **couplage** : l'affixe d'élite portait **trois
-rôles soudés** — plus *dangereux* (PV, vitesse, dégâts, comportement), plus *rémunérateur*
-(`XpMult` ×2,8), plus *généreux* (`hpDropChance` 0,08 → ~0,27). Tant qu'ils le restent, **tout** cran
-qui touche à la fréquence d'élite distribue la difficulté **et son antidote** dans le même paquet.
+**Le résultat le plus important de la campagne**, et il redirige le lot 2. Mesuré sur 4 graines
+appariées, en overtime :
 
-`SaturationTable.ElitesKeepHealthDrops` sépare le danger de la **générosité** : au cran V, l'élite garde
-tout son danger et cesse de lâcher des orbes de PV privilégiés. Le retrait est fidèle à la fiction du
-cran, ce qui le rend énonçable en une phrase — *quand l'élite devient la norme, elle cesse d'être un
-événement, donc d'en payer la prime* — et c'est ce qui autorise à le compter comme **une** règle (même
-traitement que « Sans filet » et ses deux leviers). Un test verrouille les deux sens : les leviers
-basculent au même rang, et rien dans la table d'affixes ne s'adoucit — le cran retire une
-**récompense**, jamais une menace.
+| | cran 0 | cran 5 | écart |
+|---|---|---|---|
+| soins **offerts** (PV/s) | **293,6** | **157,3** | **−46,4 %** (0/4, net) |
+| soins **retenus** (PV/s) | 58,8 | 84,6 | +43,9 % (4/4, net) |
+| dégâts subis (PV/s) | 65,6 | 101,8 | +55,2 % (4/4, net) |
+| part gaspillée | **80 %** | 46 % | |
 
-**Ce que le premier jet a coupé en trop, et pourquoi il a été annulé.** Par symétrie de principe, le
-découplage retirait aussi l'**XP** majorée. Mesuré : `niveaux/min` **−23,6 %** et `PV max/min`
-**−35,4 %** (0/4, nets) — un durcissement bien plus gros que celui visé, et que **rien n'avait
-établi** : avant découplage, `niveaux/min` au cran 5 était à −3,5 % du cran 0, donc l'XP d'élite ne
-finançait aucun excès de progression. Le cran V serait devenu un **ralentisseur de build**, rôle déjà
-tenu par le cran III. → **Un cran ne corrige que ce qui a été mesuré.** L'XP d'élite est restaurée ;
-si un ralentissement de progression est un jour souhaité, il mérite son **propre** cran nommé.
+**Hémorragie fonctionne — mieux que promis** (−46 % pour −40 % annoncés). Ce qui ne fonctionne pas,
+c'est l'idée qu'un cran puisse durcir le jeu **en coupant les soins** : au cran 0 le joueur reçoit cinq
+fois plus de PV qu'il ne peut en absorber, si bien qu'il faut retirer 80 % de l'offre avant que la
+première goutte lui manque. Diviser l'offre par deux le laisse *mieux* soigné, parce qu'il est plus
+souvent blessé et convertit ce qu'il jetait.
 
-Portée : ce découplage vaut bien au-delà du cran V. C'est lui qui rend la **fréquence d'élite**
-utilisable comme levier de difficulté, au lot 2 comme ailleurs.
+**Conséquence pour le lot 2** : ne pas concevoir de cran sur le canal des soins — il est saturé. Le
+levier est ce qui **crée** le surplus, c'est-à-dire les PV max (cartes de surcharge, `+45`/prise sans
+plafond) et plus généralement la capacité d'absorption. Corollaire de méthode : **toute métrique de
+soin doit se lire en “offert”, jamais en “retenu”** — la seconde mesure une conséquence des dégâts
+subis, pas une propriété du réglage (`PowerTelemetry.NotifyHealed`, colonne `soins_bruts_ps`).
+
+⚠ **Un diagnostic est mort ici, et il a coûté deux implémentations.** Lu en « retenu », le cran V
+semblait rendre +41 % de soins et « annuler Hémorragie » ; deux découplages de l'affixe d'élite ont été
+écrits et annulés avant que la colonne « offert » ne montre l'inverse exact. Ni l'affixe d'élite ni le
+cran V n'étaient en cause. Récit complet → `docs/TEST_REPORT.md` (2026-08-01).
 
 ### 34.5 Effet de système : les crans se répondent
 
