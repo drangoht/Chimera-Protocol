@@ -207,8 +207,14 @@ public static class PowerTelemetry
 
         sb.AppendLine();
         sb.AppendLine($"=== Courbe de puissance — {Time.GetDatetimeStringFromSystem()}");
+        // Le CRAN DE SATURATION doit figurer ici, au même titre que le biome et la difficulté : il
+        // change les soins reçus, la densité, la fréquence d'élite et l'heure d'entrée en overtime.
+        // Sans lui, deux campagnes à des crans différents sont indistinguables dans le journal — le
+        // défaut exact qui a rendu le soin du Blindage invisible en 1.25.0 (cf. CLAUDE.md § Phase).
+        int sat = GameSettings.Instance?.Saturation ?? 0;
         sb.AppendLine($"# version v{BuildInfo.Version}-{BuildInfo.GitSha} · biome {biome} (palier {tier}) " +
-                      $"· difficulté {diff} · échantillon toutes les {SampleInterval:0}s de jeu");
+                      $"· difficulté {diff} · saturation {sat} " +
+                      $"· échantillon toutes les {SampleInterval:0}s de jeu");
         // La graine est journalisée pour que le banc multi-run apparie les runs par leur CONTENU et
         // non par leur ordre d'apparition : une run qui plante sans rien écrire décalerait sinon
         // silencieusement toute la campagne, et la comparaison appariée deviendrait fausse sans le dire.
