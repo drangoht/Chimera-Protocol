@@ -225,7 +225,7 @@ public partial class LevelSelectScreen : Control
         void Change(int delta)
         {
             gs.SetSaturationFor(biomeId, gs.SaturationFor(biomeId) + delta);
-            AudioSystem.Instance?.PlaySfx("sfx_ui_click");
+            AudioSystem.Instance?.PlaySfx("sfx_ui_button");
             Refresh();
         }
 

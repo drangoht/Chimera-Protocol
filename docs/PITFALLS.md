@@ -346,6 +346,17 @@ Ordre en vigueur : `Banner` 85 · **`PostFX` 90** (vignette + liserés d'écran,
   jeu** — la mesure donne l'ordre de grandeur, pas le réglage final.
 - Ne pas enterrer un son ennemi : il signale un danger hors du champ de vision.
 
+## Id de SFX — un nom inventé ne se voit qu'en jouant l'écran
+- `PlaySfx` prend une **chaîne** : un id qui n'existe pas compile, passe la revue, et n'échoue qu'à
+  l'exécution (`ERROR: [AudioSystem] SFX introuvable : …`) — donc uniquement si quelqu'un ouvre
+  l'écran concerné. Cas réel : le sélecteur de cran de saturation (`LevelSelectScreen`) jouait
+  `sfx_ui_click`, **qui n'a jamais existé** ; le son de clic du projet est `sfx_ui_button`.
+- **Copier l'id depuis un appel voisin**, ne jamais le deviner à partir de l'action (« click »,
+  « hover », « select »). La banque est courte : `ls assets/audio/sfx/`.
+- Garde-fou : `tests/AudioAssetReferenceTests.cs` relit les sources et échoue si un littéral passé à
+  `PlaySfx`/`PreloadSfx` n'a pas de `.wav`. Il ne couvre **que les littéraux** — un id construit à la
+  volée (`$"sfx_enemy_{id}_die"`) lui échappe.
+
 ## Capacités déclenchées par une touche — l'afficher, toujours
 - **Le dash n'a annoncé sa touche nulle part pendant plusieurs versions** : ni HUD, ni description de
   greffe, ni écran d'assimilation. Le voile de recharge du slot disait *quand* il était prêt, jamais
