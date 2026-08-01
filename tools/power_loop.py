@@ -112,12 +112,70 @@ def parse(path: Path) -> list[Run]:
     return [r for r in runs if r.usable]
 
 
+# Les grandeurs comparées, et comment les résumer pour UNE run.
+METRICS = {
+    "niveaux/min":  lambda r: r.per_minute("niveau"),
+    "PV max/min":   lambda r: r.per_minute("pv_max"),
+    "soins PV/s":   lambda r: median(r.metric("soins_ps")),
+    "kills/min":    lambda r: median(r.metric("kills_fenetre")) * 4,
+    "subis PV/s":   lambda r: median(r.metric("degats_subis_ps")),
+}
+
+
+def paired_report(by_sat: dict[str, list[Run]], a: str, b: str) -> int:
+    """Compare deux crans GRAINE PAR GRAINE — la seule lecture qui annule le bruit de tirage.
+
+    Le delta médian entre deux groupes mélange l'effet du réglage et la chance des tirages ; le test
+    des signes ne demande que « la métrique va-t-elle dans le même sens sur chaque paire ? ».
+    C'est la lecture retenue par le projet depuis la campagne du 2026-07-30.
+    """
+    def latest_by_seed(runs: list[Run]) -> dict[int, Run]:
+        # Une graine relancée apparaît deux fois (ex. une run interrompue puis refaite) : le journal
+        # étant chronologique, la dernière écrite est la bonne.
+        out: dict[int, Run] = {}
+        for r in runs:
+            if r.seed is not None:
+                out[r.seed] = r
+        return out
+
+    ra, rb = latest_by_seed(by_sat.get(a, [])), latest_by_seed(by_sat.get(b, []))
+    seeds = sorted(set(ra) & set(rb))
+    if not seeds:
+        print(f"Aucune graine commune aux crans {a} et {b}.", file=sys.stderr)
+        return 1
+
+    print(f"Comparaison appariée — cran {a} → cran {b} · {len(seeds)} graine(s) : "
+          f"{', '.join(map(str, seeds))}\n")
+    print(f"{'métrique':<14} {'cran '+a:>9} {'cran '+b:>9} {'écart':>8} {'signes':>8}")
+    print("-" * 52)
+
+    for name, fn in METRICS.items():
+        va = [fn(ra[s]) for s in seeds]
+        vb = [fn(rb[s]) for s in seeds]
+        if any(v is None for v in va + vb):
+            continue
+        ma, mb = median(va), median(vb)
+        up = sum(1 for x, y in zip(va, vb) if y > x)
+        pct = (mb - ma) / ma * 100 if ma else float("nan")
+        # Un effet n'est retenu que s'il va dans le MÊME sens sur toutes les paires.
+        net = "net" if up in (0, len(seeds)) else ""
+        print(f"{name:<14} {ma:>9.1f} {mb:>9.1f} {pct:>+7.1f}% "
+              f"{up:>4}/{len(seeds)} {net}")
+
+    print("\n« signes » = nombre de graines où la métrique MONTE du premier cran au second.")
+    print("0/N ou N/N = effet net ; toute valeur intermédiaire = indécidable à cette taille.")
+    return 0
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--log", type=Path, default=DEFAULT_LOG)
     ap.add_argument("--min-samples", type=int, default=5,
-                    help="nombre minimal d'échantillons d'overtime pour retenir une run")
+                    help="nombre minimal d'échantillons d'overtime pour retenir une run "
+                         "(monter à ~30 pour écarter les runs interrompues en cours)")
+    ap.add_argument("--paired", nargs=2, metavar=("CRAN_A", "CRAN_B"),
+                    help="comparaison APPARIÉE graine par graine entre deux crans + test des signes")
     args = ap.parse_args()
 
     if not args.log.exists():
@@ -132,6 +190,9 @@ def main() -> int:
     by_sat: dict[str, list[Run]] = {}
     for r in runs:
         by_sat.setdefault("?" if r.sat is None else str(r.sat), []).append(r)
+
+    if args.paired:
+        return paired_report(by_sat, *args.paired)
 
     print(f"{len(runs)} runs · journal {args.log.name}\n")
     print(f"{'cran':>4} {'runs':>4} {'niv/min':>9} {'PVmax/min':>10} {'soins PV/s':>11} "
