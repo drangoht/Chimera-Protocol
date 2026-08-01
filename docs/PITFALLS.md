@@ -79,6 +79,19 @@ les préserve. À `frost=0`, `mix(...,0)=texture` puis `* COLOR` = strictement i
 shader. (Limite connue, non bloquante : l'éclairage 2D d'un biome chaud — Fournaise — désature le bleu
 vers un gris froid ; le rendu reste lisible « gelé » mais moins bleu que dans un biome neutre.)
 
+## Élites — le DANGER et la PRIME sont deux réglages, pas un
+Un affixe d'élite porte **trois rôles** dans `EliteAffixTable.Modifiers` : plus dangereux (`HpMult`,
+`DamageMult`, `SpeedMult`, comportement), plus rémunérateur (**`XpMult` ×2,5 à ×3**) et plus généreux
+(**`hpDropChance` 0,08 → 0,20-0,30**, soit ~3,4× la chance d'orbe de PV d'un ennemi ordinaire).
+**Conséquence non évidente : augmenter la fréquence d'élite augmente aussi les soins et l'XP reçus.**
+Mesuré le 2026-08-01 sur 4 graines appariées — le cran de saturation V (élites 28 % → 55 %) rendait au
+joueur **+41,4 % de soins ponctuels**, *annulant le cran I qui les coupe de 40 %*. `kills/min` **baissait**
+de 3,4 % dans la même campagne : le surplus venait de la seule **composition** de la nuée, pas du volume.
+→ `ApplyElite(affix, keepRewards)` sépare les deux ; `SaturationTable.ElitesKeepRewards` décide.
+**Règle** : tout levier qui touche au nombre ou à la qualité des ennemis doit être vérifié sur ce qu'il
+**donne** au joueur, pas seulement sur ce qu'il lui retire. Mesurer avec
+`tools/power_loop.py --paired <cranA> <cranB>` (test des signes), jamais sur un delta médian seul.
+
 ## Boss de fin — phases, incarnations et zones au sol (`RustedCore`, `BossPhases`, `BossHazard`)
 Cf. GDD §29. Le boss est **une** entité (groupe `rusted_core`, condition de victoire des 5 niveaux)
 qui change de **phase** avec ses PV et d'**incarnation** avec le biome.

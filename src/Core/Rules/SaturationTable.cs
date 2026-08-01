@@ -186,6 +186,31 @@ public static class SaturationTable
     public static float EliteChanceCap(int rank)
         => Clamp(rank) >= 5 ? 0.55f : EliteAffixTable.MaxChance;
 
+    /// <summary>
+    /// Les élites versent-elles encore leur <b>prime</b> — XP majorée et orbe de PV plus probable ?
+    /// Non à partir du cran V.
+    ///
+    /// <para><b>Mesuré le 2026-08-01</b> (4 graines appariées, `tools/power_loop.py --paired 0 5`) :
+    /// au cran 5 le joueur reçoit <b>+41,4 % de soins ponctuels</b> qu'au cran 0 — <i>4/4, net</i> —
+    /// alors même qu'« Hémorragie » (cran I) les coupe de 40 %. Le cran V annulait donc le cran I et le
+    /// dépassait. Isolé proprement : <c>kills/min</c> <b>baisse</b> de 3,4 % sur la même campagne, si
+    /// bien que le surplus ne vient pas du volume de la nuée mais de sa seule <b>composition</b> — 55 %
+    /// d'élites au lieu de 28 %, chacune lâchant 3,4× plus d'orbes
+    /// (<see cref="EliteAffixTable"/> : <c>hpDropChance</c> 0,08 → ~0,27).</para>
+    ///
+    /// <para><b>La cause n'était pas une valeur mais un couplage</b> : l'affixe d'élite portait
+    /// <b>trois rôles soudés</b> — plus dangereux (PV, dégâts), plus rémunérateur (<c>XpMult</c> ×2,8),
+    /// plus généreux (<c>hpDropChance</c>). Tant qu'ils le restent, <i>tout</i> cran qui augmente la
+    /// fréquence d'élite distribue la difficulté <b>et son antidote</b>. Le découplage vaut donc bien
+    /// au-delà du cran V : c'est lui qui rend la fréquence d'élite utilisable comme levier.</para>
+    ///
+    /// <para>Le retrait est <b>fidèle à la fiction du cran</b>, et c'est ce qui le rend énonçable en une
+    /// phrase : quand l'élite devient la norme, elle cesse d'être un événement — donc elle cesse d'en
+    /// payer la prime. Le danger de l'affixe (PV, vitesse, dégâts, comportement) est <b>intégralement
+    /// conservé</b> : ce cran ne rend pas les élites plus faciles, il les rend moins rentables.</para>
+    /// </summary>
+    public static bool ElitesKeepRewards(int rank) => Clamp(rank) < 5;
+
     // ── Économie ────────────────────────────────────────────────────────────────────────────────
 
     /// <summary>

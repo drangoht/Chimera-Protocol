@@ -190,6 +190,13 @@ public partial class GameSettings : Node
     /// <summary>Multiplicateur de fréquence des élites (cran V « Élite ordinaire »).</summary>
     public float EliteFrequencyMult => IsAssisted ? 1f : SaturationTable.EliteFrequencyMult(Saturation);
 
+    /// <summary>
+    /// Les élites versent-elles encore leur prime (XP majorée, orbe de PV plus probable) ?
+    /// Cf. <see cref="SaturationTable.ElitesKeepRewards"/> — retirée au cran V, faute de quoi ce cran
+    /// annule « Hémorragie » et le dépasse (+41,4 % de soins mesurés, 4/4).
+    /// </summary>
+    public bool ElitesKeepRewards => IsAssisted || SaturationTable.ElitesKeepRewards(Saturation);
+
     /// <summary>Multiplicateur d'Échos apporté par la saturation (branché dans <c>EchoFormula</c>).</summary>
     public double SaturationEchoMult => IsAssisted ? 1.0 : SaturationTable.EchoMult(Saturation);
 

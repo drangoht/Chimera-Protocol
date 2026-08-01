@@ -230,7 +230,7 @@ public partial class EnemyBase : CharacterBody2D
     /// avant la 1re frame physique (la vitesse de base est capturée à ce moment-là dans
     /// UpdateStatusEffects). No-op si affix = None.
     /// </summary>
-    public void ApplyElite(EliteAffix affix)
+    public void ApplyElite(EliteAffix affix, bool keepRewards = true)
     {
         if (affix == EliteAffix.None) return;
         _eliteAffix = affix;
@@ -240,13 +240,22 @@ public partial class EnemyBase : CharacterBody2D
         _currentHp  = MaxHp;
         Speed      *= m.SpeedMult;
         Damage     *= m.DamageMult;
-        XpValue     = Mathf.Max(1, Mathf.RoundToInt(XpValue * m.XpMult));
+
+        // La PRIME d'élite (XP majorée, orbe de PV plus probable) se retire indépendamment du danger :
+        // au cran V « Élite ordinaire », l'affixe devient la norme et cesse donc d'être un événement à
+        // récompenser (cf. SaturationTable.ElitesKeepRewards). Sans ce découplage, tripler la fréquence
+        // d'élite triple aussi la source de soin — mesuré : +41,4 % de soins reçus au cran 5 malgré
+        // « Hémorragie ». Les champs non touchés ici gardent la valeur d'un ennemi ordinaire.
+        if (keepRewards)
+        {
+            XpValue       = Mathf.Max(1, Mathf.RoundToInt(XpValue * m.XpMult));
+            _hpDropChance = m.HpDropChance;
+        }
 
         _damageTakenMult        = m.DamageTakenMult;
         _regenFractionPerSecond = m.RegenFractionPerSecond;
         _lifestealFraction      = m.LifestealFraction;
         _explodeDamageMult      = m.ExplodeDamageMult;
-        _hpDropChance           = m.HpDropChance;
 
         var tint = new Color(m.TintR, m.TintG, m.TintB, 1f);
         _sprite ??= GetNodeOrNull<AnimatedSprite2D>("AnimatedSprite2D");

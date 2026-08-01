@@ -343,7 +343,7 @@ SAT_3_RULE,Overtime starts around minute 10 instead of 13.,L'overtime commence v
 SAT_4_NAME,No Safety Net,Sans filet,Sin red
 SAT_4_RULE,"Levelling up no longer heals. Emergency Core and Adaptive Plate are inactive.","Monter de niveau ne soigne plus. Noyau de Secours et Plaque Adaptative inactifs.","Subir de nivel ya no cura. Núcleo de Emergencia y Placa Adaptativa inactivos."
 SAT_5_NAME,Elites Everywhere,Élite ordinaire,Élite ordinaria
-SAT_5_RULE,Elites are three times more common — most of the swarm carries an affix.,Les élites sont trois fois plus fréquentes — la nuée porte des affixes.,Las élites son tres veces más frecuentes: el enjambre lleva afijos.
+SAT_5_RULE,"Elites are three times more common — and no longer pay a premium: no bonus XP, no extra health orbs.","Les élites sont trois fois plus fréquentes — et ne paient plus de prime : ni XP bonus, ni orbes de soin privilégiés.","Las élites son tres veces más frecuentes y ya no pagan prima: ni XP extra, ni orbes de curación privilegiados."
 RUNEND_TIER,Threat,Menace,Amenaza
 OVERTIME,⚠ OVERTIME ⚠,⚠ OVERTIME ⚠,⚠ TIEMPO EXTRA ⚠
 LEVEL_COMPLETE,LEVEL COMPLETE!,NIVEAU TERMINÉ !,¡NIVEL COMPLETADO!

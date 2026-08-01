@@ -71,7 +71,11 @@ public class SaturationTableTests
             if (SaturationTable.EnemyHpMult(r)         != SaturationTable.EnemyHpMult(r - 1))         changed++;
             if (SaturationTable.HealingMult(r)         != SaturationTable.HealingMult(r - 1))         changed++;
             if (SaturationTable.RunDurationMult(r)     != SaturationTable.RunDurationMult(r - 1))     changed++;
-            if (SaturationTable.EliteFrequencyMult(r)  != SaturationTable.EliteFrequencyMult(r - 1))  changed++;
+            // « Élite ordinaire » agit lui aussi sur deux leviers — la fréquence ET la prime (XP majorée,
+            // orbe de PV privilégié) — pour UNE règle : quand l'élite devient la norme, elle cesse d'être
+            // un événement, donc d'en payer la récompense. Même traitement que « Sans filet » ci-dessous.
+            if (SaturationTable.EliteFrequencyMult(r)  != SaturationTable.EliteFrequencyMult(r - 1)
+             || SaturationTable.ElitesKeepRewards(r)   != SaturationTable.ElitesKeepRewards(r - 1))    changed++;
             // « Sans filet » agit sur deux leviers (consommables méta + soin de passage de niveau) mais
             // énonce UNE règle — « plus aucun rattrapage automatique ». Ils comptent donc pour un, et le
             // test ci-dessous vérifie qu'ils basculent bien au même rang : s'ils se séparaient, ce
@@ -134,6 +138,43 @@ public class SaturationTableTests
     {
         Assert.Equal(1.00f, SaturationTable.EliteFrequencyMult(4), 4);
         Assert.Equal(3.00f, SaturationTable.EliteFrequencyMult(5), 4);
+    }
+
+    [Fact]
+    public void Cran5_Retire_La_Prime_Des_Elites()
+    {
+        // Mesuré le 2026-08-01 (4 graines appariées) : sans ce retrait, le cran 5 rendait au joueur
+        // +41,4 % de soins ponctuels par rapport au cran 0 — 4/4, net — alors qu'« Hémorragie » (cran I)
+        // les coupe de 40 %. Tripler la fréquence d'élite triplait aussi la source de soin, parce que
+        // l'affixe soude trois rôles : plus dangereux, plus rémunérateur, plus généreux.
+        Assert.True(SaturationTable.ElitesKeepRewards(4));
+        Assert.False(SaturationTable.ElitesKeepRewards(5));
+    }
+
+    [Fact]
+    public void Les_Deux_Leviers_D_Elite_Ordinaire_Basculent_Au_Meme_Rang()
+    {
+        // S'ils se séparaient, un cran augmenterait la fréquence sans couper la prime — et
+        // redistribuerait la difficulté ET son antidote, ce que la mesure ci-dessus a sanctionné.
+        for (int r = 0; r <= SaturationTable.MaxRank; r++)
+        {
+            bool frequencyRaised = SaturationTable.EliteFrequencyMult(r) > 1f;
+            Assert.Equal(frequencyRaised, !SaturationTable.ElitesKeepRewards(r));
+        }
+    }
+
+    [Fact]
+    public void Cran5_Ne_Rend_Pas_Les_Elites_Moins_Dangereuses()
+    {
+        // Le cran retire une RÉCOMPENSE, jamais une menace : le plafond de fréquence monte, et rien
+        // dans la table d'affixes ne s'adoucit. Verrou contre la dérive inverse (« les élites étant
+        // partout, adoucissons-les ») qui viderait le cran de son sens.
+        Assert.True(SaturationTable.EliteChanceCap(5) > SaturationTable.EliteChanceCap(4));
+        foreach (var affix in EliteAffixTable.All)
+        {
+            var m = EliteAffixTable.Modifiers(affix);
+            Assert.True(m.HpMult > 0f && m.DamageMult > 0f && m.SpeedMult > 0f);
+        }
     }
 
     // ─── Champions : jamais un mur ───────────────────────────────────────────

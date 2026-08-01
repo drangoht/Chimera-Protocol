@@ -2862,7 +2862,7 @@ champ de vision.
 | II | **Meute** | PV +30 %, dégâts +35 %, spawn +25 % (ex-« Difficile ») | → **50,0 %** |
 | III | **Compte à rebours** | overtime dès la 10ᵉ minute — attaque le temps de *build* | non mesurable par le banc |
 | IV | **Sans filet** | le passage de niveau ne soigne plus ; Noyau de Secours et Plaque Adaptative coupés | **−16 %** relatif |
-| V | **Élite ordinaire** | élites ×3, plafond relevé à 0,55 | cumul I→V : **39,9 %** |
+| V | **Élite ordinaire** | élites ×3, plafond relevé à 0,55 — **et l'élite cesse de payer sa prime** (ni XP majorée, ni orbe de PV privilégié) | cumul I→V : **39,9 %** |
 
 **La hiérarchie mesurée confirme le parti pris** : le cran I porte à lui seul la moitié de la descente,
 et le cran II — le seul purement statistique — pèse **deux fois moins**. Une règle qui retire une
@@ -2883,6 +2883,31 @@ certitude vaut deux fois un multiplicateur.
 3. **Jamais un mur sur le boss.** Les PV des champions restent amortis par
    `LevelThreat.ChampionHpSoftening` — battre le boss conditionne la progression, et il est calibré sur
    un TTK **joué** (§20.6). Un boss qui gagne 30 % de PV par cran serait un mur de patience.
+4. **Vérifier ce qu'un cran DONNE, pas seulement ce qu'il retire.** (2026-08-01, après que le testeur
+   a joué l'échelle complète : « aucune difficulté ».) Le cran V triplait la fréquence d'élite — donc
+   aussi la source d'orbes de PV — et rendait au joueur **+41,4 % de soins ponctuels** par rapport au
+   cran 0, *4/4 graines appariées*, **annulant Hémorragie et la dépassant**. Le surplus a été isolé
+   proprement : `kills/min` **baisse** de 3,4 % sur la même campagne, donc il ne venait pas du volume
+   de la nuée mais de sa seule **composition** (55 % d'élites au lieu de 28 %, chacune 3,4× plus
+   généreuse en orbes). *Tout levier qui augmente le nombre ou la qualité des ennemis augmente aussi
+   l'XP et les drops.*
+
+### 34.4 bis Le découplage de l'affixe d'élite (2026-08-01)
+
+La cause n'était pas une valeur mal réglée mais un **couplage** : l'affixe d'élite portait **trois
+rôles soudés** — plus *dangereux* (PV, vitesse, dégâts, comportement), plus *rémunérateur*
+(`XpMult` ×2,8), plus *généreux* (`hpDropChance` 0,08 → ~0,27). Tant qu'ils le restent, **tout** cran
+qui touche à la fréquence d'élite distribue la difficulté **et son antidote** dans le même paquet.
+
+`SaturationTable.ElitesKeepRewards` sépare les deux : au cran V, l'élite garde **tout** son danger et
+perd **toute** sa prime. Le retrait est fidèle à la fiction du cran, ce qui le rend énonçable en une
+phrase — *quand l'élite devient la norme, elle cesse d'être un événement, donc d'en payer la prime* —
+et c'est ce qui autorise à le compter comme **une** règle (même traitement que « Sans filet » et ses
+deux leviers). Un test verrouille les deux sens : les leviers basculent au même rang, et rien dans la
+table d'affixes ne s'adoucit — le cran retire une **récompense**, jamais une menace.
+
+Portée : ce découplage vaut bien au-delà du cran V. C'est lui qui rend la **fréquence d'élite**
+utilisable comme levier de difficulté, au lot 2 comme ailleurs.
 
 ### 34.5 Effet de système : les crans se répondent
 
