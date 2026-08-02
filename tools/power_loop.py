@@ -132,16 +132,40 @@ METRICS = {
     "subis PV/s":   lambda r: median(r.metric("degats_subis_ps")),
     # ── Pression RESSENTIE (2026-08-02) ─────────────────────────────────────────────────────────
     # Les cinq lignes ci-dessus sont des débits moyennés : elles répondent à « le joueur s'use-t-il ? ».
-    # Il ne s'use pas — il jette 80 % des soins offerts et meurt d'un pic. Les trois suivantes comptent
-    # des ÉVÉNEMENTS (cf. PressureMeter) et sont les seules à pouvoir contredire un « je n'ai eu aucun
+    # Il ne s'use pas — il jette 80 % des soins offerts et meurt d'un pic. Les suivantes comptent des
+    # ÉVÉNEMENTS (cf. PressureMeter) et sont les seules à pouvoir contredire un « je n'ai eu aucun
     # mal », parce qu'un plongeon à 10 % suivi d'une remontée ne déplace aucune moyenne.
-    "frôlements/min": lambda r: (median(r.metric("frolements")) * 4
-                                 if "frolements" in r.col else None),
+    #
+    # ⚠ UN ÉVÉNEMENT RARE NE SE RÉSUME PAS PAR UNE MÉDIANE. Sur ~27 fenêtres dont la plupart valent
+    # zéro, `median(frolements)` vaut 0 même dans une run où le bot MEURT — la médiane dirait alors
+    # « aucun danger » d'une run mortelle. Les comptes se SOMMENT et se ramènent au temps ; seul
+    # `pv_min_pct`, qui est déjà un extremum par fenêtre, se résume par une médiane (et par son
+    # minimum, pour le pire moment de la run).
+    "frôlements/min": lambda r: rate_per_minute(r, "frolements"),
     "PV bas %":       lambda r: (median(r.metric("pv_min_pct"))
                                  if "pv_min_pct" in r.col else None),
-    "part danger":    lambda r: (median(r.metric("part_danger"))
-                                 if "part_danger" in r.col else None),
+    "PV bas min %":   lambda r: (min(r.metric("pv_min_pct"))
+                                 if "pv_min_pct" in r.col else None),
+    "part danger":    lambda r: (sum(r.metric("part_danger")) / len(r.samples)
+                                 if "part_danger" in r.col and r.samples else None),
 }
+
+
+def rate_per_minute(run: Run, key: str) -> float | None:
+    """Total d'un COMPTE par échantillon, ramené à la minute d'overtime.
+
+    Volontairement une somme et non une médiane : un frôlement est un événement rare, et la médiane
+    d'une colonne majoritairement nulle est nulle — y compris dans une run où le joueur meurt.
+    """
+    if key not in run.col or len(run.samples) < 2:
+        return None
+    times = run.metric("t_s")
+    span = (times[-1] - times[0]) / 60.0
+    if span <= 0:
+        return None
+    # Le premier échantillon couvre la fenêtre AVANT times[0] : l'exclure aligne le total sur la
+    # durée réellement mesurée par `span`.
+    return sum(run.metric(key)[1:]) / span
 
 
 def paired_report(by_sat: dict[str, list[Run]], a: str, b: str) -> int:
@@ -168,21 +192,32 @@ def paired_report(by_sat: dict[str, list[Run]], a: str, b: str) -> int:
 
     print(f"Comparaison appariée — cran {a} → cran {b} · {len(seeds)} graine(s) : "
           f"{', '.join(map(str, seeds))}\n")
-    print(f"{'métrique':<14} {'cran '+a:>9} {'cran '+b:>9} {'écart':>8} {'signes':>8}")
-    print("-" * 52)
+    print(f"{'métrique':<16} {'cran '+a:>9} {'cran '+b:>9} {'écart':>8} {'signes':>8}")
+    print("-" * 54)
 
     for name, fn in METRICS.items():
-        va = [fn(ra[s]) for s in seeds]
-        vb = [fn(rb[s]) for s in seeds]
-        if any(v is None for v in va + vb):
+        # Filtrage PAIRE PAR PAIRE, et non métrique par métrique : une colonne récente
+        # (`soins_bruts_ps`, puis la pression) n'existe que dans les runs postérieures à son ajout.
+        # Écarter la métrique entière dès qu'UNE paire ancienne y manque la rendrait illisible tant
+        # que le journal contient une seule vieille campagne — c'est-à-dire au moment précis où on
+        # veut s'en servir. Chaque ligne affiche donc le nombre de paires qui la portent.
+        pairs = [(fn(ra[s]), fn(rb[s])) for s in seeds]
+        pairs = [(x, y) for x, y in pairs if x is not None and y is not None]
+        if not pairs:
             continue
+        va = [x for x, _ in pairs]
+        vb = [y for _, y in pairs]
         ma, mb = median(va), median(vb)
         up = sum(1 for x, y in zip(va, vb) if y > x)
-        pct = (mb - ma) / ma * 100 if ma else float("nan")
         # Un effet n'est retenu que s'il va dans le MÊME sens sur toutes les paires.
-        net = "net" if up in (0, len(seeds)) else ""
-        print(f"{name:<14} {ma:>9.1f} {mb:>9.1f} {pct:>+7.1f}% "
-              f"{up:>4}/{len(seeds)} {net}")
+        net = "net" if up in (0, len(pairs)) else ""
+        # Une référence NULLE est le cas normal des métriques d'événement — au cran 0 le joueur ne
+        # frôle jamais la mort. Un pourcentage y vaudrait « nan » ou l'infini : afficher « — » et
+        # laisser lire les deux valeurs, qui disent tout (0,0 → 0,2 est un passage de rien à quelque
+        # chose, pas une variation).
+        ecart = f"{(mb - ma) / ma * 100:+7.1f}%" if ma else f"{'—':>8}"
+        print(f"{name:<16} {ma:>9.1f} {mb:>9.1f} {ecart} "
+              f"{up:>4}/{len(pairs)} {net}")
 
     print("\n« signes » = nombre de graines où la métrique MONTE du premier cran au second.")
     print("0/N ou N/N = effet net ; toute valeur intermédiaire = indécidable à cette taille.")
