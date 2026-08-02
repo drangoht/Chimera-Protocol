@@ -6,7 +6,12 @@ description: Carte/index de Chimera Protocol (Godot 4.7 .NET / C#). À invoquer 
 # Carte du projet — Chimera Protocol
 
 Survivor roguelite vue du dessus, Godot 4.7 **.NET** (C# / .NET 8 / GodotSharp).
-Détail design → `docs/GDD.md`. Mémoire stable → `CLAUDE.md` (racine dépôt).
+
+Cette carte dit **où** se trouve chaque chose. Pour le reste :
+`docs/ARCHITECTURE.md` (**comment** le code est organisé et pourquoi — principe logique-pure/moteur,
+cycle de vie d'une run, contrats, calques d'UI, persistance, dette connue) ·
+`docs/GDD.md` (**pourquoi** le jeu est réglé ainsi) · `docs/PITFALLS.md` (**quels pièges** guettent) ·
+`CLAUDE.md` (phase courante, conventions).
 
 > **Maintenir cette carte à jour** : dès que tu ajoutes / supprimes / renommes un
 > système, un écran, une arme, un ennemi, un fichier `data/*.json`, un singleton

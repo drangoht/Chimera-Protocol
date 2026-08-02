@@ -83,6 +83,10 @@ Prérequis / pièges :
 - **Butler authentifié** via l'app itch (dossier `broth`, auto). Si « not authorized » : lancer une fois
   `"<butler.exe>" login` (chemin affiché par le script).
 - Godot 4.7 .NET laisse souvent `$LASTEXITCODE` vide en fin d'export → ne « durcis » pas le script.
+- ⚠ **Ne teste jamais `$?` après un exe natif en PowerShell 5.1.** `git` écrit sa progression sur
+  **stderr même quand tout va bien**, ce qui met `$?` à `$false` alors que le code retour vaut 0 : le
+  script annonçait « git push echoue » à chaque release réussie (corrigé le 2026-08-02, mais le piège
+  vaut pour tout script que tu écrirais). Seul `$LASTEXITCODE` fait foi.
 
 ## 6. Vérifier la release
 

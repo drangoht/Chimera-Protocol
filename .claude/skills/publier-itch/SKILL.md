@@ -61,5 +61,9 @@ git add -A ; git status --short   # committer les .uid/.import nouveaux
   « not authorized », lancer une fois `"<butler.exe>" login` (chemin affiché par le script).
 - Godot 4.7 .NET laisse souvent `$LASTEXITCODE` vide en fin d'export → le script ne faille
   que sur un code non-zéro explicite + vérifie l'existence de l'exe/runtime (ne pas « durcir »).
+- ⚠ **Ne jamais tester `$?` après un exe natif en PowerShell 5.1** : `git` écrit sa progression sur
+  stderr même quand tout va bien, ce qui met `$?` à `$false` à code retour 0. Le script annonçait
+  ainsi « git push echoue » à chaque release réussie (corrigé le 2026-08-02). Seul `$LASTEXITCODE`
+  fait foi.
 - **Doc de fin de release** (feedback projet) : MAJ `README.md`/`CLAUDE.md` + page store itch
   si la version introduit une phase ou un ajout majeur.

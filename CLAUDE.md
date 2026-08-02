@@ -367,7 +367,9 @@ départ** (greffe offerte / arme sup / +1 slot) ou **titres** cosmétiques. Nouv
 
 Agents dans `.claude/agents/` : `game-designer`, `directeur-artistique`, `graphiste`, `developpeur`,
 `musicien`, `story-teller`, `marketing`, `game-tester`, `release-manager`. Déléguer proactivement à
-l'agent compétent (ordre de lancement : `GUIDE-CLAUDE-CODE.md`).
+l'agent compétent — **qui fait quoi et dans quel ordre : `GUIDE-CLAUDE-CODE.md`**.
+⚠ **Un agent qui décrit un état périmé du projet donne des instructions fausses avec autorité** :
+quand une phase se termine, relire les agents qu'elle concerne (passe faite le 2026-08-02).
 
 - **`game-tester`** : lance Godot (`--rendering-driver d3d12`), joue le jeu, documente les bugs dans `docs/TEST_REPORT.md`. À invoquer après chaque implémentation majeure.
 - **`release-manager`** : publie la release binaire de bout en bout (bump semver, release notes, `tools/release_itch.ps1`, MAJ doc) puis **rédige le devlog** (titre + corps à coller) — l'utilisateur le publie lui-même sur itch (l'agent ne pilote pas le navigateur). Source des notes : `docs/DEVLOG.md`.

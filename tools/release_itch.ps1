@@ -170,9 +170,12 @@ git add version.json
 git diff --cached --quiet
 if ($LASTEXITCODE -ne 0) {
     git commit -m "chore(release): version.json -> $Version (bandeau MAJ web)"
-    if ($?) {
+    # PIEGE PowerShell 5.1 : ne PAS tester $? apres un exe natif. git ecrit sa progression sur
+    # stderr meme quand tout va bien, ce qui met $? a $false alors que le code retour vaut 0 —
+    # le script criait donc "git push echoue" a chaque release reussie. Seul $LASTEXITCODE fait foi.
+    if ($LASTEXITCODE -eq 0) {
         git push
-        if (-not $?) { Write-Host "AVERTISSEMENT : git push echoue — pousse version.json a la main pour activer le bandeau." -ForegroundColor Yellow }
+        if ($LASTEXITCODE -ne 0) { Write-Host "AVERTISSEMENT : git push echoue (code $LASTEXITCODE) — pousse version.json a la main pour activer le bandeau." -ForegroundColor Yellow }
     }
 } else {
     Write-Host "version.json inchange — rien a pousser." -ForegroundColor DarkGray
