@@ -22,10 +22,8 @@ public partial class LevelUpScreen : CanvasLayer
     // Données des 3 cartes actuelles
     private Godot.Collections.Array _currentCards = new();
 
-    // Couleurs de rareté
-    private static readonly Color ColorCommon = new(0.67f, 0.67f, 0.67f);
-    private static readonly Color ColorRare   = new(0.27f, 0.67f, 1.0f);
-    private static readonly Color ColorEpic   = new(0.80f, 0.27f, 1.0f);
+    // (Plus de couleurs de rareté ici : depuis la refonte des cadres « plaque blindée » (1.16.0), la
+    // rareté est portée par le LISERÉ du cadre — cf. FrameRarity / UiStyle.CardFrame.)
 
     public override void _Ready()
     {
@@ -363,25 +361,12 @@ public partial class LevelUpScreen : CanvasLayer
         }
     }
 
-    private new void Hide()
-    {
-        Visible = false;
-    }
-
     private static string RarityLabel(string rarity) => rarity switch
     {
         "common" => Loc.T("RARITY_COMMON"),
         "rare"   => Loc.T("RARITY_RARE"),
         "epic"   => Loc.T("RARITY_EPIC"),
         _        => rarity,
-    };
-
-    private static Color RarityColor(string rarity) => rarity switch
-    {
-        "common" => ColorCommon,
-        "rare"   => ColorRare,
-        "epic"   => ColorEpic,
-        _        => ColorCommon,
     };
 
     private void ConnectCardHover(Button btn)

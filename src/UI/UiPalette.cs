@@ -32,6 +32,12 @@ public static class UiPalette
     /// que les cadres posés dessus ressortent.</summary>
     public static readonly Color BgDeep = new(0.06f, 0.06f, 0.11f, 1f);
 
+    // ⚠ Les deux fonds ci-dessous n'ont plus d'appelant depuis la refonte des cadres « plaque
+    // blindée » (1.16.0) : les panneaux sont désormais des StyleBoxTexture fabriqués par UiStyle.
+    // Ils sont CONSERVÉS parce que ce fichier est la charte de couleurs du jeu, pas un utilitaire —
+    // il documente les valeurs de référence, et une teinte retirée ici se retrouve réinventée en dur
+    // au premier écran qui en aura besoin (ce que les conventions du projet interdisent).
+
     /// <summary>Fond d'un cadre posé sur <see cref="BgDeep"/>.</summary>
     public static readonly Color PanelBg = new(0.10f, 0.10f, 0.18f, 0.92f);
 
@@ -54,7 +60,10 @@ public static class UiPalette
     public static readonly Color SteelShadow = Color.Color8(0x12, 0x12, 0x23);
 
     /// <summary>#0B0B16 — ligne de contact/pose : trait externe qui ancre la plaque sur le fond.
-    /// <c>shade(Steel, "contact")</c>.</summary>
+    /// <c>shade(Steel, "contact")</c>. Sans appelant C# (les cadres sont pré-rendus par
+    /// <c>tools/generate_ui_frames.py</c>) : cette constante complète les <b>quatre faces</b> de
+    /// l'ombrage pseudo-3D et sert de référence au générateur — la retirer briserait la
+    /// correspondance documentée entre la charte et les PNG produits.</summary>
     public static readonly Color SteelContact = Color.Color8(0x0B, 0x0B, 0x16);
 
     /// <summary>#997A1E — ambre sourd : action destructrice/irréversible. Même teinte que

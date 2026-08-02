@@ -266,9 +266,6 @@ public partial class Player : CharacterBody2D
     private float _chillMult = 1f;
     private float _chillTime = 0f;
 
-    /// <summary>Multiplicateur de vitesse dû aux zones de froid (1 = aucun ralentissement).</summary>
-    public float ChillMultiplier => _chillMult;
-
     /// <summary>
     /// Ralentit le joueur pendant <paramref name="duration"/> secondes. Deux sources qui se
     /// chevauchent ne s'additionnent pas : on garde le ralentissement le PLUS FORT et on rafraîchit

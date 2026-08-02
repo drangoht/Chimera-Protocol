@@ -149,11 +149,6 @@ public static class GraftTable
             return null;
         }
 
-        /// <summary>Toutes les clés de jauge connues (ordre stable : ordre des greffes).</summary>
-        public IEnumerable<string> GaugeKeys()
-        {
-            foreach (var g in Grafts) yield return g.Gauge;
-        }
     }
 
     // -------------------------------------------------------------------------

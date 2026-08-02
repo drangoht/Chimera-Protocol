@@ -8,7 +8,6 @@ public static class Constants
     public const int ArenaWidth    = 1920;
     public const int ArenaHeight   = 1216;
     public const int WallThickness = 32;
-    public const int SpawnMargin   = 50;
 
     // MaxEnemies est maintenant dynamique (EnemySpawner le calcule via la formule de scaling).
     // Cette constante reste pour la Phase 1 / tests ; l'EnemySpawner remplace sa valeur au runtime.

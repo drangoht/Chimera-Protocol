@@ -205,12 +205,6 @@ public partial class AssimilationSystem : Node
         return eff;
     }
 
-    /// <summary>Ratio de remplissage [0,1] d'une jauge (pour le HUD, optionnel).</summary>
-    public float GaugeRatio(string gauge)
-    {
-        int th = EffectiveThreshold(gauge);
-        return th > 0 ? Mathf.Clamp(_points.GetValueOrDefault(gauge) / th, 0f, 1f) : 0f;
-    }
 
     // -------------------------------------------------------------------------
     // Résolutions depuis l'AssimilationScreen

@@ -340,23 +340,6 @@ public partial class LevelUpSystem : Node
         return "common";
     }
 
-    private string GetDescription(string id, string section)
-    {
-        if (_weaponsData == null) return "";
-        foreach (var item in _weaponsData.RootElement.GetProperty(section).EnumerateArray())
-            if (item.GetProperty("id").GetString() == id)
-                return item.GetProperty("description").GetString() ?? "";
-        return "";
-    }
-
-    private string GetFusionDesc(string id)
-    {
-        if (_weaponsData == null) return "";
-        foreach (var f in _weaponsData.RootElement.GetProperty("fusions").EnumerateArray())
-            if (f.GetProperty("id").GetString() == id)
-                return f.GetProperty("description").GetString() ?? "";
-        return "";
-    }
 
     private static float RarityWeight(string rarity) => RarityWeights.Weight(rarity);
 

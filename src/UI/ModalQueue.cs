@@ -35,9 +35,6 @@ public static class ModalQueue
         Advance();
     }
 
-    /// <summary>Y a-t-il un écran modal ouvert (ou en attente) ?</summary>
-    public static bool AnyOpen => _busy || _highPriority.Count > 0 || _lowPriority.Count > 0;
-
     /// <summary>Réinitialise l'état (début de run / changement de scène). Ne touche pas à Paused.</summary>
     public static void Reset()
     {

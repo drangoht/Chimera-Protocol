@@ -23,7 +23,7 @@ public partial class MetaProgressionSystem : Node
     private int _echoCoreMult  = 5;
     private int _echoBaseBonus = 10;
 
-    private int _echoCapTimeSecs        = 780;
+    // `capTimeSecs` du JSON n'est volontairement PAS chargé ici : cf. la note sur les accesseurs.
     private int _echoCapKills           = 520;
     private int _echoCapCores           = 22;
     private double _echoOvertimeDampening = 0.15;
@@ -87,7 +87,6 @@ public partial class MetaProgressionSystem : Node
             if (formula.TryGetProperty("coreMult",  out var cm)) _echoCoreMult  = cm.GetInt32();
             if (formula.TryGetProperty("baseBonus", out var bb)) _echoBaseBonus = bb.GetInt32();
 
-            if (formula.TryGetProperty("capTimeSecs",        out var cts)) _echoCapTimeSecs        = cts.GetInt32();
             if (formula.TryGetProperty("capKills",           out var ck))  _echoCapKills           = ck.GetInt32();
             if (formula.TryGetProperty("capCores",           out var cc))  _echoCapCores           = cc.GetInt32();
             if (formula.TryGetProperty("overtimeDampening",  out var od))  _echoOvertimeDampening  = od.GetDouble();
@@ -255,7 +254,10 @@ public partial class MetaProgressionSystem : Node
     public int EchoCoreMult  => _echoCoreMult;
     public int EchoBaseBonus => _echoBaseBonus;
 
-    public int EchoCapTimeSecs          => _echoCapTimeSecs;
+    // Pas d'accesseur pour `capTimeSecs` : la frontière standard/overtime des Échos est
+    // `RunStatsTracker.RunDurationSeconds` (source unique), qui suit déjà l'upgrade méta
+    // `overtime_stabilizer` ET le cran de saturation III. Exposer ici la valeur brute du JSON
+    // créerait une seconde source, muette et fausse dès qu'un de ces deux leviers joue.
     public int EchoCapKills            => _echoCapKills;
     public int EchoCapCores            => _echoCapCores;
     public double EchoOvertimeDampening => _echoOvertimeDampening;
