@@ -129,6 +129,11 @@ public static class SaturationTable
     /// de ×5 à ×1,75, et c'est le premier réglage où la première goutte peut réellement manquer.
     /// Descendre plus bas (0,25 ≈ ×1,25 de marge) ferait basculer la porte d'entrée de l'échelle en
     /// mur, ce que la règle 1 du §34.4 interdit.</para>
+    ///
+    /// <para><b>Ce cran porte DEUX leviers depuis le 2026-08-02</b>, comme « Sans filet » en porte
+    /// plusieurs pour une seule règle : la réduction ci-dessus, et la <b>suppression du soin de passage
+    /// de niveau</b> (<see cref="LevelUpHealsEnabled"/>, venu du cran IV). Les deux attaquent le même
+    /// canal, et le second y pesait à lui seul plus que tout le reste réuni.</para>
     /// </summary>
     public static float HealingMult(int rank) => Clamp(rank) >= 1 ? 0.35f : 1.00f;
 
@@ -176,30 +181,43 @@ public static class SaturationTable
     /// </summary>
     public static bool SafetyNetsEnabled(int rank) => Clamp(rank) < 4;
 
+    // ⚠ Le soin de passage de niveau A APPARTENU À CE CRAN du 2026-07-30 au 2026-08-02, et c'est lui
+    // qui le rendait UNIVERSEL — les trois filets restants s'achètent. Il est parti au cran I (voir
+    // plus bas) parce qu'un rattrapage de ~158 % des PV max par minute rendait tout durcissement de la
+    // faune sans effet en dessous du cran IV. Conséquence à connaître : ce cran ne retire plus rien à
+    // un joueur qui n'a rien acheté au Hub — le défaut exact que la règle 2 du §34.4 interdit. Si un
+    // jour le cas se présente, c'est ici qu'il faudra rendre au cran un levier universel.
+
+    // ── Le soin de passage de niveau appartient au cran I ────────────────────────────────────────
+
     /// <summary>
-    /// Le passage de niveau soigne-t-il encore (25 % des PV max) ? Non à partir du cran IV.
+    /// Le passage de niveau soigne-t-il encore (25 % des PV max) ? Non <b>dès le cran I</b>.
     ///
-    /// <para><b>Pourquoi ce second levier existe.</b> Les deux filets méta ci-dessus <b>s'achètent</b> :
-    /// à un joueur qui ne les possède pas, le cran IV ne retirait <i>rien du tout</i>. Constaté le
-    /// 2026-07-30 sur la sauvegarde de référence — 84 runs, 25 186 Échos en banque, et ni
-    /// <c>extra_life</c> ni <c>damage_absorb</c> achetés. Un cran dont l'effet dépend de l'état de la
-    /// méta n'est pas une règle lisible : c'est exactement le défaut qui a fait descendre « Meute » du
-    /// cran I au cran II (une porte d'entrée qui ne se sent pas fait conclure que toute l'échelle est
-    /// inopérante).</para>
+    /// <para><b>Déplacé du cran IV au cran I le 2026-08-02, sur une run jouée.</b> Le testeur au rang 1 :
+    /// « il a fallu que je reste immobile en overtime pour vraiment mourir ». Le calcul explique
+    /// pourquoi, et il ne laisse aucune place au doute : en overtime les niveaux tombent à
+    /// <b>~18 par minute</b> (mesuré), chacun rendant 25 % des PV max — soit, <i>même après</i>
+    /// Hémorragie (×0,35), de l'ordre de <b>158 % des PV max rendus chaque minute</b>, gratuitement et
+    /// sans décision du joueur. Aucun réglage de la faune ne peut lutter contre un rattrapage de cette
+    /// taille ; le durcir revenait à remplir un seau percé.</para>
     ///
-    /// <para><b>Et pourquoi celui-ci.</b> Le soin de passage de niveau est le filet <b>universel</b> du
-    /// jeu : gratuit, automatique, proportionnel aux PV max — donc il grossit avec les cartes de
-    /// surcharge, sans plafond — et en overtime les niveaux tombent en rafale (124 → 140 en 74 s
-    /// mesurées au §31.7). C'est le rattrapage que personne ne choisit et que tout le monde reçoit.
-    /// Le retirer garde le cran fidèle à son nom, et le rend <b>mesurable</b> : contrairement à deux
-    /// vies et trois coups absorbés (≈1 900 PV, un bonus fini que le « temps soutenable » ne peut pas
-    /// voir puisqu'il compare des flux), c'est un débit de soin qui disparaît.</para>
+    /// <para><b>Pourquoi le cran I et pas un cran intermédiaire.</b> Ce n'est pas une règle de plus mais
+    /// <b>le même canal</b> qu'Hémorragie : l'un réduit les soins reçus, l'autre supprime la source de
+    /// soin la plus grosse du jeu. Les séparer donnait deux crans qui disent la même chose à des
+    /// hauteurs différentes, alors que le §34.4 ter a montré que couper le canal des soins <i>à moitié</i>
+    /// ne retire rien tant que le gaspillage absorbe la coupe. Réunis, ils forment une règle unique et
+    /// lisible : <i>« on ne se soigne presque plus, et monter de niveau ne répare rien »</i>.</para>
     ///
-    /// <para>Ce n'est pas un doublon d'« Hémorragie » (cran I) : celui-ci <b>réduit</b> tous les soins
-    /// (×0,35 depuis le 2026-08-02), celui-là <b>supprime</b> une source entière. Les deux se cumulent —
-    /// le tiers restant du soin de niveau tombe lui aussi.</para>
+    /// <para>⚠ <b>Ce que ce déplacement coûte, et il faut le savoir.</b> Le cran IV ne conserve que des
+    /// filets <b>achetés</b> (Noyau de Secours, Plaque Adaptative, Stabilisateur de Surcharge), ce qui
+    /// contredit la règle 2 du §34.4 : « un cran ne repose jamais sur un levier optionnel ». C'était
+    /// précisément le soin de niveau qui rendait ce cran universel. Régression assumée — on ne peut pas
+    /// avoir le rattrapage aux deux endroits, et un joueur qui atteint le cran IV a forcément assez joué
+    /// pour posséder ces trois achats (la sauvegarde de référence les a tous à leur niveau maximum).
+    /// <b>À surveiller</b> : si un jour un joueur signale que le cran IV ne lui retire rien, c'est ici
+    /// qu'il faudra lui rendre un levier universel.</para>
     /// </summary>
-    public static bool LevelUpHealsEnabled(int rank) => Clamp(rank) < 4;
+    public static bool LevelUpHealsEnabled(int rank) => Clamp(rank) < 1;
 
     /// <summary>
     /// L'upgrade méta <c>overtime_stabilizer</c> (Stabilisateur de Surcharge, −5 %/niveau jusqu'à

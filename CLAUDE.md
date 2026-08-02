@@ -63,6 +63,25 @@ repris — ce relevage calibre un **nouveau** joueur ; sur une save à 56 334 do
 rien. Design → `docs/GDD.md` **§9.6** et **§34.8** ; pièges → `docs/PITFALLS.md` §Tests headless.
 **329 tests.**
 
+**(10 bis) Joué au rang 1 → le soin de passage de niveau descend au cran I** (2026-08-02). « C'est
+mieux avec le blocage de régen de 4 s, malgré cela il a fallu que je **reste immobile** en overtime
+pour vraiment mourir. » Le calcul tranche : ~**18 niveaux/min** en overtime × 25 % des PV max = de
+l'ordre de **158 % des PV max rendus par minute**, *même après* Hémorragie — durcir les crans sous le
+IV revenait à **remplir un seau percé**. `LevelUpHealsEnabled` passe donc du cran IV au **cran I**, non
+comme une règle de plus mais comme le **second levier du même canal** (un test vérifie qu'ils basculent
+ensemble, comme pour « Sans filet »). ⚠ **Coût assumé** : le cran IV ne garde que des filets **achetés**
+et contredit la règle 2 du §34.4 — c'était le soin de niveau qui le rendait universel ; sa règle
+affichée le dit (« aucun filet acheté ne survit »). ⚠ **Invisible au banc** par construction
+(`--start-at --saturate-arsenal` n'enchaîne pas de passages de niveau) — comme le cran III.
+Second retour de la même run : **« on ne distingue pas quand une vie est utilisée »** — exact, le Noyau
+de Secours annulait la mort avec un flash de 0,3 s et `sfx_core_collect`, *le son de ramassage d'un
+Noyau d'Aether*, et rien au HUD n'annonçait ces charges. Corrigé : **pastilles** au HUD (une par charge,
+**éteinte et non retirée** une fois dépensée — sinon « il m'en restait une » ne se distingue pas de « je
+n'en ai jamais eu ») + à la dépense bannière, `sfx_ui_death`, secousse et flash long. Pas de bannière
+sur la Plaque Adaptative (3 charges/run → du bruit), seulement un flash allongé. Vérifié en banc : deux
+Noyaux consommés puis mort réelle, sans erreur. Design → `docs/GDD.md` **§34.9** ; pièges →
+`docs/PITFALLS.md` §Capacités. **331 tests.**
+
 **(9) La régénération était la seule défense sans borne — un débit ne s'oppose pas à un débit**
 (2026-08-02, **non publié**). Première partie jouée au **cran VI** : « la régénération est vraiment
 trop forte, je suis resté immobile un bon moment sans mourir ». **Problème d'espèce, pas de dosage.**

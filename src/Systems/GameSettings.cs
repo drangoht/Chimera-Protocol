@@ -181,9 +181,10 @@ public partial class GameSettings : Node
     public bool SafetyNetsEnabled => IsAssisted || SaturationTable.SafetyNetsEnabled(Saturation);
 
     /// <summary>
-    /// Le passage de niveau soigne-t-il encore ? Faux à partir du cran IV, même cran que les filets
-    /// méta ci-dessus : c'est la <b>même</b> règle (« aucun rattrapage automatique »), exprimée sur le
-    /// levier universel plutôt que sur deux achats que le joueur peut ne pas posséder.
+    /// Le passage de niveau soigne-t-il encore ? Faux <b>dès le cran I</b> (« Hémorragie »), dont il est
+    /// le second levier depuis le 2026-08-02 : c'est la source de soin la plus grosse du jeu — de l'ordre
+    /// de 158 % des PV max rendus par minute d'overtime — et la laisser intacte jusqu'au cran IV rendait
+    /// tout durcissement des crans inférieurs sans effet.
     /// </summary>
     public bool LevelUpHealsEnabled => IsAssisted || SaturationTable.LevelUpHealsEnabled(Saturation);
 

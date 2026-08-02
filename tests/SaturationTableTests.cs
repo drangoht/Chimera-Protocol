@@ -100,16 +100,18 @@ public class SaturationTableTests
         {
             int changed = 0;
             if (SaturationTable.EnemyHpMult(r)         != SaturationTable.EnemyHpMult(r - 1))         changed++;
-            if (SaturationTable.HealingMult(r)         != SaturationTable.HealingMult(r - 1))         changed++;
             if (SaturationTable.RunDurationMult(r)     != SaturationTable.RunDurationMult(r - 1))     changed++;
             if (SaturationTable.EliteFrequencyMult(r)  != SaturationTable.EliteFrequencyMult(r - 1))  changed++;
-            // « Sans filet » agit sur trois leviers (consommables méta + soin de passage de niveau +
-            // Stabilisateur de Surcharge) mais énonce UNE règle — « plus aucun rattrapage automatique ».
-            // Ils comptent donc pour un, et le test ci-dessous vérifie qu'ils basculent bien au même
-            // rang : s'ils se séparaient, ce seraient trois règles déguisées en une, et une mort
-            // cesserait d'être interprétable.
+            // « Hémorragie » agit sur deux leviers (soins reçus + soin de passage de niveau) pour UNE
+            // règle : « on ne se soigne presque plus ». Ils visent le même canal, donc ils comptent
+            // pour un — et le test ci-dessous vérifie qu'ils basculent bien au même rang.
+            if (SaturationTable.HealingMult(r)         != SaturationTable.HealingMult(r - 1)
+             || SaturationTable.LevelUpHealsEnabled(r) != SaturationTable.LevelUpHealsEnabled(r - 1))  changed++;
+            // « Sans filet » agit sur deux leviers (consommables méta + Stabilisateur de Surcharge)
+            // mais énonce UNE règle — « aucun filet acheté ne survit ». Même raisonnement : s'ils se
+            // séparaient, ce seraient deux règles déguisées en une, et une mort cesserait d'être
+            // interprétable.
             if (SaturationTable.SafetyNetsEnabled(r)   != SaturationTable.SafetyNetsEnabled(r - 1)
-             || SaturationTable.LevelUpHealsEnabled(r) != SaturationTable.LevelUpHealsEnabled(r - 1)
              || SaturationTable.MetaOvertimeDampeningEnabled(r)
              != SaturationTable.MetaOvertimeDampeningEnabled(r - 1))                                    changed++;
             if (SaturationTable.ChampionMinDamageFraction(r)
@@ -120,13 +122,29 @@ public class SaturationTableTests
     }
 
     [Fact]
-    public void Les_Trois_Leviers_De_Sans_Filet_Basculent_Au_Meme_Rang()
+    public void Les_Deux_Leviers_De_Sans_Filet_Basculent_Au_Meme_Rang()
     {
         for (int r = 0; r <= SaturationTable.MaxRank; r++)
-        {
-            Assert.Equal(SaturationTable.SafetyNetsEnabled(r), SaturationTable.LevelUpHealsEnabled(r));
             Assert.Equal(SaturationTable.SafetyNetsEnabled(r), SaturationTable.MetaOvertimeDampeningEnabled(r));
-        }
+    }
+
+    [Fact]
+    public void Les_Deux_Leviers_D_Hemorragie_Basculent_Au_Meme_Rang()
+    {
+        // Le soin de passage de niveau appartient au cran I depuis le 2026-08-02 : c'est le même canal
+        // que les soins reçus, et de loin le plus gros (≈158 % des PV max rendus par minute d'overtime,
+        // 25 % par niveau à ~18 niveaux/min). Le laisser au cran IV rendait tout durcissement des crans
+        // inférieurs sans effet — le testeur devait « rester immobile pour vraiment mourir » au rang 1.
+        for (int r = 0; r <= SaturationTable.MaxRank; r++)
+            Assert.Equal(SaturationTable.HealingMult(r) < 1f, !SaturationTable.LevelUpHealsEnabled(r));
+    }
+
+    [Fact]
+    public void Le_Soin_De_Passage_De_Niveau_Tombe_Des_Le_Cran1()
+    {
+        Assert.True(SaturationTable.LevelUpHealsEnabled(0));
+        Assert.False(SaturationTable.LevelUpHealsEnabled(1));
+        Assert.False(SaturationTable.LevelUpHealsEnabled(SaturationTable.MaxRank));
     }
 
     // ─── Les règles elles-mêmes ──────────────────────────────────────────────
@@ -169,14 +187,17 @@ public class SaturationTableTests
     }
 
     [Fact]
-    public void Cran4_Retire_Aussi_Le_Soin_De_Passage_De_Niveau()
+    public void Cran4_Coupe_Aussi_Le_Stabilisateur_De_Surcharge()
     {
-        // Sans ce second levier, le cran ne retirait rien à un joueur n'ayant acheté ni Noyau de Secours
-        // ni Plaque Adaptative — cas de la sauvegarde de référence du 2026-07-30, 84 runs et 25 186 Échos
-        // en banque, aucun des deux acheté. Un cran conditionnel à un achat n'est pas une règle lisible.
-        Assert.True(SaturationTable.LevelUpHealsEnabled(3));
-        Assert.False(SaturationTable.LevelUpHealsEnabled(4));
-        Assert.False(SaturationTable.LevelUpHealsEnabled(SaturationTable.MaxRank));
+        // Troisième filet acheté, et le plus fort sur une run longue : il aplatit la seule courbe du jeu
+        // qui monte sans fin. Il survivait à l'échelle entière jusqu'au 2026-08-02.
+        //
+        // ⚠ Ce cran ne porte plus AUCUN levier universel depuis que le soin de passage de niveau est
+        // parti au cran I : il ne retire rien à un joueur qui n'a rien acheté au Hub. Régression assumée
+        // (cf. SaturationTable.LevelUpHealsEnabled) — ce test la rend visible plutôt que de la masquer.
+        Assert.True(SaturationTable.MetaOvertimeDampeningEnabled(3));
+        Assert.False(SaturationTable.MetaOvertimeDampeningEnabled(4));
+        Assert.False(SaturationTable.MetaOvertimeDampeningEnabled(SaturationTable.MaxRank));
     }
 
     [Fact]

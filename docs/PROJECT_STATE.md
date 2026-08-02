@@ -7,10 +7,12 @@
 - Pile technique : **Godot 4.7 .NET (C# / .NET 8 / GodotSharp)**
 - **Saturation de Rouille — lot 1, l'échelle de challenge de fin de partie (2026-07-31, PUBLIÉ en
   1.25.0).** Plan : `docs/ENDGAME_PLAN.md` ; design : `docs/GDD.md` §34 ; logique pure :
-  `SaturationTable`. **Cinq crans nommés et cumulatifs** — I Hémorragie (soins reçus −65 %) ·
-  II Meute (statistiques : PV ×1,45, dégâts ×1,80, spawn ×1,40) · III Compte à rebours (overtime à la
-  8ᵉ min) · IV Sans filet (le passage de niveau ne soigne plus + les trois filets méta coupés, dont le
-  Stabilisateur de Surcharge) · V Élite ordinaire (élites ×4, plafond relevé à 0,70).
+  `SaturationTable`. **Cinq crans nommés et cumulatifs** — I Hémorragie (soins reçus −65 % **et le
+  passage de niveau ne soigne plus** : le second levier pesait ~158 % des PV max rendus par minute
+  d'overtime) · II Meute (statistiques : PV ×1,45, dégâts ×1,80, spawn ×1,40) · III Compte à rebours
+  (overtime à la 8ᵉ min) · IV Sans filet (les trois filets méta **achetés** coupés, dont le
+  Stabilisateur de Surcharge — ⚠ ce cran n'a plus de levier universel, cf. GDD §34.9) ·
+  V Élite ordinaire (élites ×4, plafond relevé à 0,70).
   ⚠ **Valeurs relevées le 2026-08-02 (GDD §34.8, non publié)** — la 1.25.1 en ligne porte les valeurs
   d'origine (−40 % · 1,30/1,35/1,25 · 10ᵉ min · ×3 et 0,55), auxquelles se rapportent les mesures
   citées plus bas. Conséquence assumée : l'égalité « cran II = ancien Difficile » est rompue.

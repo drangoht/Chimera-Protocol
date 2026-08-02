@@ -335,13 +335,13 @@ SAT_NONE,No extra rules — the standard run.,Aucune règle ajoutée — la part
 SAT_ASSISTED,"unavailable in Assist mode — switch Difficulty back to Normal in the Options to use the ladder.","indisponible en mode Assistance — repassez la difficulté sur Normal dans les Options pour utiliser l'échelle.","no disponible en modo Asistencia: cambia la dificultad a Normal en las Opciones para usar la escala."
 SAT_LOCKED_HINT,Beat this saturation on this level to unlock the next one here.,Battez cette saturation sur ce niveau pour y débloquer la suivante.,Supera esta saturación en este nivel para desbloquear la siguiente aquí.
 SAT_1_NAME,Haemorrhage,Hémorragie,Hemorragia
-SAT_1_RULE,Healing received is cut by 65 % (orbs and lifesteal included).,Les soins reçus sont réduits de 65 % (orbes et vol de vie compris).,La curación recibida se reduce un 65 % (orbes y robo de vida incluidos).
+SAT_1_RULE,"Healing received is cut by 65 % (orbs and lifesteal included), and levelling up no longer heals.","Les soins reçus sont réduits de 65 % (orbes et vol de vie compris), et monter de niveau ne soigne plus.","La curación recibida se reduce un 65 % (orbes y robo de vida incluidos), y subir de nivel ya no cura."
 SAT_2_NAME,Pack,Meute,Manada
 SAT_2_RULE,"Enemies: +45 % health, +80 % damage, denser waves.","Ennemis : +45 % de PV, +80 % de dégâts, vagues plus denses.","Enemigos: +45 % de vida, +80 % de daño, oleadas más densas."
 SAT_3_NAME,Countdown,Compte à rebours,Cuenta atrás
 SAT_3_RULE,Overtime starts around minute 8 instead of 13.,L'overtime commence vers la 8ᵉ minute au lieu de la 13ᵉ.,El tiempo extra empieza hacia el minuto 8 en vez del 13.
 SAT_4_NAME,No Safety Net,Sans filet,Sin red
-SAT_4_RULE,"Levelling up no longer heals. Emergency Core, Adaptive Plate and Overload Stabilizer are inactive.","Monter de niveau ne soigne plus. Noyau de Secours, Plaque Adaptative et Stabilisateur de Surcharge inactifs.","Subir de nivel ya no cura. Núcleo de Emergencia, Placa Adaptativa y Estabilizador de Sobrecarga inactivos."
+SAT_4_RULE,"Emergency Core, Adaptive Plate and Overload Stabilizer are inactive — no bought safety net survives.","Noyau de Secours, Plaque Adaptative et Stabilisateur de Surcharge inactifs — aucun filet acheté ne survit.","Núcleo de Emergencia, Placa Adaptativa y Estabilizador de Sobrecarga inactivos: ninguna red comprada sobrevive."
 SAT_5_NAME,Elites Everywhere,Élite ordinaire,Élite ordinaria
 SAT_5_RULE,Elites are four times more common — most of the swarm carries an affix.,Les élites sont quatre fois plus fréquentes — la nuée porte des affixes.,Las élites son cuatro veces más frecuentes: el enjambre lleva afijos.
 SAT_6_NAME,Purifier,Purificateur,Purificador

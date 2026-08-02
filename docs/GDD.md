@@ -2957,10 +2957,10 @@ champ de vision.
 
 | # | Nom | La certitude retirée | Effet mesuré (temps soutenable) |
 |---|---|---|---|
-| I | **Hémorragie** | soins reçus −65 % — le canal **dominant** (86,4 PV/s contre 8,2) | 60,7 % → **53,6 %** |
+| I | **Hémorragie** | soins reçus −65 % **et le passage de niveau ne soigne plus** — le canal **dominant** (86,4 PV/s contre 8,2) | 60,7 % → **53,6 %** |
 | II | **Meute** | PV +45 %, dégâts +80 %, spawn +40 % (ex-« Difficile ») | → **50,0 %** |
 | III | **Compte à rebours** | overtime dès la 8ᵉ minute — attaque le temps de *build* | non mesurable par le banc |
-| IV | **Sans filet** | le passage de niveau ne soigne plus ; Noyau de Secours, Plaque Adaptative et Stabilisateur de Surcharge coupés | **−16 %** relatif |
+| IV | **Sans filet** | Noyau de Secours, Plaque Adaptative et Stabilisateur de Surcharge coupés — aucun filet **acheté** ne survit | **−16 %** relatif |
 | V | **Élite ordinaire** | élites ×4, plafond relevé à 0,70 | cumul I→V : **39,9 %** |
 
 ⚠ **Les valeurs de ce tableau ont été relevées le 2026-08-02 (§34.8) ; la colonne de mesures date
@@ -3253,3 +3253,38 @@ d'être poussé bien au-delà de ce que « rééquilibrer » suggère.
    est la **condition de déblocage du cran suivant**. Si le cran III rend la victoire inaccessible,
    l'échelle se bloque sur elle-même. Le bot meurt avant de le rencontrer ; **seule une session jouée
    peut trancher ce point**, et c'est le premier à vérifier.
+
+### 34.9 Le soin de passage de niveau descend au cran I (2026-08-02)
+
+**Run jouée au rang 1, après le relevage du §34.8** : « c'est mieux avec le blocage de régen de 4 s,
+malgré cela il a fallu que je reste immobile en overtime pour vraiment mourir ».
+
+**Le calcul suffit à expliquer, et il ne laisse aucune place au doute.** En overtime les niveaux tombent
+à **~18 par minute** (mesuré), et chacun rendait **25 % des PV max**. Même après Hémorragie (×0,35),
+cela fait de l'ordre de **158 % des PV max rendus chaque minute**, gratuitement, sans que le joueur
+décide de quoi que ce soit. Aucun réglage de la faune ne peut lutter contre un rattrapage de cette
+taille — durcir les crans en dessous du IV revenait à **remplir un seau percé**. C'est de très loin la
+plus grosse source de soin du jeu, devant les orbes et devant le vol de vie.
+
+**Le geste : `LevelUpHealsEnabled` passe du cran IV au cran I.** Ce n'est pas une règle de plus mais
+**le même canal** qu'Hémorragie — l'un réduit les soins reçus, l'autre supprime la source principale.
+Les séparer donnait deux crans qui disent la même chose à deux hauteurs, alors que le §34.4 ter a
+montré qu'une coupe *partielle* de ce canal ne retire rien tant que le gaspillage l'absorbe. Réunis,
+ils énoncent une règle unique et lisible : **« on ne se soigne presque plus, et monter de niveau ne
+répare rien »**. Un test vérifie que les deux leviers basculent au même rang, exactement comme pour les
+leviers multiples de « Sans filet ».
+
+⚠ **Ce que ce déplacement coûte.** Le cran IV ne conserve que des filets **achetés** — Noyau de
+Secours, Plaque Adaptative, Stabilisateur de Surcharge — et contredit donc la **règle 2 du §34.4**
+(« un cran ne repose jamais sur un levier optionnel ») : c'était précisément le soin de niveau qui le
+rendait universel. **Régression assumée**, faute de pouvoir placer le rattrapage aux deux endroits, et
+tempérée par le fait qu'un joueur atteignant le cran IV a forcément assez joué pour posséder ces trois
+achats (la sauvegarde de référence les a tous au maximum). Sa règle affichée le dit désormais
+franchement : *« aucun filet acheté ne survit »*. **Signal à guetter** : un joueur pour qui le cran IV
+ne retire rien — il faudra alors lui rendre un levier universel.
+
+⚠ **Non mesuré au banc.** Le protocole `--start-at --saturate-arsenal` ne construit pas de niveaux : il
+téléporte l'horloge et sature l'arsenal d'un coup, si bien que le bot n'enchaîne pas les passages de
+niveau d'un vrai overtime. Le levier retiré ici est donc, par construction, **invisible pour la
+campagne** — c'est le pendant exact du cran III, que le §34.3 note déjà comme non mesurable. Seule une
+session jouée peut dire ce que valent ces 158 %.

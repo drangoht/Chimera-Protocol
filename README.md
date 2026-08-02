@@ -25,10 +25,10 @@ face à une menace à **courbe fixe**, densité saturée dès la 8ᵉ minute et 
 **×1,35**. Surtout, la menace ne posait qu'**une question** — des statistiques — donc le joueur n'avait
 qu'**une réponse**, et il gagnait toujours cet échange. La Saturation ne donne donc pas un
 multiplicateur de plus : **un cran = une règle nommée, lue avant de lancer, qui retire une certitude**.
-**I Hémorragie** (soins reçus −65 %, le canal de soin dominant mesuré) · **II Meute** (statistiques
-d'ennemis) · **III Compte à rebours** (overtime à la 8ᵉ minute : c'est le *temps de build* qui est
-attaqué) · **IV Sans filet** (monter de niveau ne soigne plus, filets méta coupés) · **V Élite
-ordinaire**. Le cran **se règle et se débloque par niveau**, et rapporte **+20 % d'Échos** par palier.
+**I Hémorragie** (soins reçus −65 % et monter de niveau ne soigne plus — le canal de soin dominant
+mesuré) · **II Meute** (statistiques d'ennemis) · **III Compte à rebours** (overtime à la 8ᵉ minute :
+c'est le *temps de build* qui est attaqué) · **IV Sans filet** (aucun filet acheté ne survit) ·
+**V Élite ordinaire**. Le cran **se règle et se débloque par niveau**, et rapporte **+20 % d'Échos** par palier.
 *(Valeurs relevées le 2026-08-02 après que l'échelle entière ait été jouée et gagnée du premier coup —
 GDD §34.8 ; la version publiée 1.25.1 porte encore les valeurs d'origine.)*
 Validé au banc sur quatre graines appariées : temps soutenable **60,7 % → 39,9 %**, et **2 runs sur 4**
