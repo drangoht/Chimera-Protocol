@@ -71,7 +71,20 @@ enum `MusicStem` Bed/Pulse/Lead/Boss) ·
 **irréversible** ; `BurstInterval`/`ShockInterval`/`SignatureRate`/`SpeedMult` par phase ;
 `TransitionSeconds`, `AddsPerWave`, `RomanNumeral` ; cf. GDD §29.3) ·
 **`BossIncarnations`** (les 5 incarnations du boss — `For(biomeId)` → `BossIncarnation` {Id, NameKey,
-`BossSignature`, période, teinte, FramesPath} ; repli sur la souche si biome inconnu ; cf. GDD §29.2).
+`BossSignature`, période, teinte, FramesPath} ; repli sur la souche si biome inconnu ; cf. GDD §29.2) ·
+**`SaturationTable`** (échelle de challenge de fin de partie, `MaxRank` = **6** — un cran = UNE règle
+nommée, cumulative : `HealingMult` I · `EnemyHpMult`/`EnemyDamageMult`/`SpawnMult` II · `RunDurationMult`
+III · `SafetyNetsEnabled`/`LevelUpHealsEnabled` IV · `EliteFrequencyMult`/`EliteChanceCap` V ·
+**`ChampionDamage`/`ChampionMinDamageFraction`/`PurgeFraction` VI** ; + `EchoMult`, `ActiveRanks`,
+`MaxSelectable`/`CanSelect` (déblocage PAR NIVEAU), `MigrateDifficulty`. ⚠ le plancher du cran VI ne
+s'applique qu'aux coups **discrets** — cf. `EnemyBase.DealDiscreteDamage` ; cf. GDD §34) ·
+**`RegenReserve`** (le surplus de régénération perdu à PV pleins devient un tampon anti-pic :
+`Capacity`/`Tick`/`Absorb`, plafond = `ReserveSeconds` × débit borné à `MaxFractionOfMaxHp` ;
+cf. GDD §33.6) ·
+**`PressureMeter`** (mesure de la pression **ressentie** — compte des ÉVÉNEMENTS et non des débits :
+`Observe` à la frame, `CloseCalls`/`LowestRatio`/`DangerFraction`, hystérésis `DangerRatio` 0,30 →
+`SafeRatio` 0,55, `ResetWindow` conserve l'hystérésis. C'est le critère qui décide qu'un cran « se
+sent » ; cf. GDD §34.6).
 Les nœuds délèguent ici (SRP).
 
 ## §Systems — `src/Systems/`
@@ -90,12 +103,18 @@ Les nœuds délèguent ici (SRP).
 - **Mesure de la courbe de puissance** : `PowerTelemetry` (statique — échantillon toutes les 15 s de
   jeu dans `user://power_curve.log`, écrit au fil de l'eau : DPS infligé, dégâts subis, **PV courants,
   régénération nominale / réellement rendue, soins ponctuels**, population d'ennemis, indice de
-  puissance du loadout `InventorySystem.PowerIndex()`, build complet — 20 colonnes).
+  puissance du loadout `InventorySystem.PowerIndex()`, build complet — 23 colonnes).
   **Flag `--power-curve` uniquement** (contrairement à `BossTelemetry`, toujours active). Hooks :
   `EnemyBase.TakeDamage`, `Player.TakeDamage`/`Heal`/`HealFlat`/`UpdateHpRegen`, `RunStatsTracker`
   (`_Ready`/`_Process`/`EndRun`). Session jouée → `tools/power_curve_session.ps1` ;
   **campagne de N runs → `tools/power_curve_multi.py`** (le seul outil qui distingue un effet de
   réglage du bruit inter-run).
+  ⚠ **Deux colonnes se lisent de travers, et les deux ont déjà produit un faux diagnostic** :
+  `soins_ps` compte le soin **retenu** (borné par les PV manquants) — pour « ce réglage soigne-t-il
+  plus ? », lire `soins_bruts_ps` (**offert**) ; et toutes les colonnes de débit sont **moyennées sur
+  15 s**, donc aveugles aux pics — pour « ce réglage se sentira-t-il ? », lire
+  `frolements`/`pv_min_pct`/`part_danger` (**`PressureMeter`**, échantillonnées à la frame).
+  Lecture appariée cran contre cran → **`tools/power_loop.py --paired <A> <B>`** (test des signes).
 - **Pilote du banc automatisé** : `BenchAutoPilot` (pont scène → règle) + **`AutoPilotPolicy`**
   (§Rules). Actif sous `--auto-play` seulement : le bot kite, ramasse et dashe, donc **meurt pour de
   vrai** — la survie et les dégâts subis sont mesurables sans `--invuln`.

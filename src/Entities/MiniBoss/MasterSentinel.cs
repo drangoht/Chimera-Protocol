@@ -129,6 +129,7 @@ public partial class MasterSentinel : EnemyBase
         bullet.Direction = direction;
         bullet.Speed     = 200f;
         bullet.Damage    = Damage;
+        bullet.FromChampion = true;   // plancher du cran VI (le projectile survit à son tireur)
 
         var parent   = GetParent();
         var spawnPos = GlobalPosition;

@@ -93,10 +93,7 @@ public partial class GraftedColossus : EnemyBase
             _meleeTimer -= (float)delta;
             if (_meleeTimer <= 0f)
             {
-                var stats = player.Stats;
-                float reduced = Damage * (1f - stats.DamageReduction);
-                player.TakeDamage(reduced);
-                ApplyLifesteal(reduced);   // affixe Vampirique (élite)
+                DealDiscreteDamage(player, Damage);   // plancher cran VI + DR + affixe Vampirique
                 _meleeTimer = MeleeCooldown;
 
                 // Animation d'attaque — absente des sprites de faune slow_hunter (golems de

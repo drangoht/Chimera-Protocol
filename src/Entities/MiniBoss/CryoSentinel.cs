@@ -153,7 +153,9 @@ public partial class CryoSentinel : EnemyBase
         if (toPlayer.Length() <= ConeReach &&
             Mathf.Abs(_aimDir.AngleTo(toPlayer.Normalized())) <= ConeHalfAngle)
         {
-            player.TakeDamage(ConeDamage * (1f - player.Stats.DamageReduction));
+            // Tir discret (toutes les 4,5 s, télégraphié) → éligible au plancher du cran VI. Les
+            // plaques de givre laissées dans l'axe, elles, sont des PV/seconde et en restent exclues.
+            DealDiscreteDamage(player, ConeDamage);
             player.ApplyChill(ChillMult, ChillDuration);
         }
 

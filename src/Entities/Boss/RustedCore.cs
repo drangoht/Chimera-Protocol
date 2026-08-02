@@ -304,8 +304,10 @@ public partial class RustedCore : EnemyBase
 
         if (GlobalPosition.DistanceTo(player.GlobalPosition) < ContactRadius)
         {
-            var stats = player.Stats;
-            player.TakeDamage(Damage * (1f - stats.DamageReduction));
+            // Sans cooldown propre : la cadence est celle des i-frames du joueur (0,45 s). Le coup
+            // reste donc DISCRET, ce qui autorise le plancher du cran VI — contrairement au faisceau
+            // et aux flaques, qui sont des PV/seconde (cf. SaturationTable.ChampionDamage).
+            DealDiscreteDamage(player, Damage);
         }
     }
 
@@ -335,6 +337,7 @@ public partial class RustedCore : EnemyBase
         bullet.Direction = dir;
         bullet.Speed     = speed;
         bullet.Damage    = Damage;
+        bullet.FromChampion = true;   // plancher du cran VI (le projectile survit à son tireur)
         parent?.CallDeferred(Node.MethodName.AddChild, bullet);
         bullet.SetDeferred("global_position", GlobalPosition + originOffset);
     }

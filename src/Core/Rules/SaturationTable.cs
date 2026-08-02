@@ -28,8 +28,8 @@ using System.Collections.Generic;
 /// </summary>
 public static class SaturationTable
 {
-    /// <summary>Rang maximum livré. Les crans VI-X du plan viendront aux lots 2 et 4.</summary>
-    public const int MaxRank = 5;
+    /// <summary>Rang maximum livré. Les crans VII-X du plan viendront au lot 4.</summary>
+    public const int MaxRank = 6;
 
     /// <summary>Un cran : son identité de loc et la règle qu'il ajoute.</summary>
     public sealed class Rank
@@ -58,6 +58,7 @@ public static class SaturationTable
         new Rank(3, "SAT_3_NAME", "SAT_3_RULE"),   // Compte à rebours — overtime à la 10ᵉ minute
         new Rank(4, "SAT_4_NAME", "SAT_4_RULE"),   // Sans filet  — le niveau ne soigne plus, filets coupés
         new Rank(5, "SAT_5_NAME", "SAT_5_RULE"),   // Élite ordinaire — élites ×3
+        new Rank(6, "SAT_6_NAME", "SAT_6_RULE"),   // Purificateur — les champions frappent en % des PV max
     };
 
     private static int Clamp(int rank) => Math.Clamp(rank, 0, MaxRank);
@@ -198,6 +199,61 @@ public static class SaturationTable
     //
     // Le « surplus de soin » n'était que la contrepartie de +55 % de dégâts subis : un joueur plus
     // souvent blessé convertit des soins qu'il gaspillait. Cf. PowerTelemetry.NotifyHealed.
+
+    // ── Cran VI — « Purificateur » ──────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Part des PV max du joueur qu'un coup de <b>champion</b> inflige au minimum. Le premier cran du
+    /// lot 2, et le premier qui vise la <b>capacité d'absorption</b> plutôt qu'un flux.
+    ///
+    /// <para><b>Pourquoi ce levier, et pas un de plus sur les soins.</b> Le canal des soins est saturé
+    /// de gaspillage : au cran 0 le joueur reçoit <b>293,6 PV/s et n'en retient que 58,8</b> — il en jette
+    /// 80 %. Un cran qui coupe l'offre tape donc dans le vide (Hémorragie la divise par deux et le joueur
+    /// en retient <i>davantage</i>, cf. GDD §34.4 ter). Ce qui <b>crée</b> le surplus, en revanche, n'est
+    /// borné par rien : le joueur gagne <b>277 PV max par minute</b> d'overtime via la carte Blindage
+    /// (+45/prise, sans plafond), soit +2770 PV sur dix minutes — pendant que les dégâts ennemis restent
+    /// des <b>valeurs absolues</b> issues d'une courbe fixe. Un dégât exprimé en fraction des PV max est
+    /// la seule forme qui ne se laisse pas distancer par cette pente.</para>
+    ///
+    /// <para><b>Pourquoi les champions, et eux seuls.</b> Deux raisons qui se rejoignent. La lisibilité
+    /// d'abord : un champion est gros, unique à l'écran et télégraphié, donc le joueur voit <i>ce qui</i>
+    /// le frappe — le même effet porté par la faune de base produirait de la mort inexpliquée en nuée,
+    /// ce que le plan interdit. Et le point aveugle ensuite : le boss de fin est tué <b>13 fois par run</b>
+    /// et son TTK est <b>insensible aux crans</b> (7,9-35,8 s au cran 5 sur le biome le plus facile contre
+    /// 9,8-37,4 s au cran 0 sur le plus dur) ; aucun cran ne le touchait. Un projectile de boss coûte
+    /// aujourd'hui <b>~1,3 %</b> de la barre d'un joueur d'overtime : voilà pourquoi la condition de
+    /// victoire du jeu est devenue un distributeur de récompenses.</para>
+    ///
+    /// <para><b>Il ne gagne aucun PV</b>, à dessein : le boss ne devient pas plus <i>long</i>, il devient
+    /// plus <i>dangereux</i>. C'est le seul geste qui respecte la règle 3 du §34.4 — jamais un mur de
+    /// patience sur le boss, il est calibré sur un TTK joué (§20.6).</para>
+    /// </summary>
+    public const float PurgeFraction = 0.12f;
+
+    /// <summary>Fraction des PV max plancher pour un coup de champion (0 sous le cran VI).</summary>
+    public static float ChampionMinDamageFraction(int rank)
+        => Clamp(rank) >= 6 ? PurgeFraction : 0f;
+
+    /// <summary>
+    /// Dégât <b>brut</b> d'un coup de champion, avant réduction de dégâts : le nominal, ou le plancher en
+    /// fraction des PV max si celui-ci est plus élevé.
+    ///
+    /// <para><b>Le plancher s'applique AVANT la réduction de dégâts</b>, volontairement : la DR, les
+    /// i-frames et la réserve de régénération (§33.6) continuent de fonctionner normalement. Un cran
+    /// retire <b>une</b> certitude — celle de pouvoir encaisser un champion en s'appuyant sur une barre
+    /// de vie sans plafond — et pas trois. La réserve anti-pic est même la réponse que le joueur a le
+    /// droit de construire contre ce cran (effet de système recherché, §34.5).</para>
+    ///
+    /// <para>⚠ <b>À n'appliquer qu'aux coups DISCRETS</b> — contact à intervalle, projectile, attaque
+    /// télégraphiée. Jamais aux dégâts continus exprimés en PV/seconde (faisceau du boss, flaques de
+    /// magma, geysers) : un plancher appliqué à chaque tick d'un DPS × delta tuerait le joueur en
+    /// quelques frames, et transformerait une zone au sol en mort instantanée sans télégraphe utile.</para>
+    /// </summary>
+    public static float ChampionDamage(float nominalDamage, float playerMaxHp, int rank)
+    {
+        if (playerMaxHp <= 0f) return nominalDamage;
+        return Math.Max(nominalDamage, ChampionMinDamageFraction(rank) * playerMaxHp);
+    }
 
     // ── Économie ────────────────────────────────────────────────────────────────────────────────
 

@@ -245,10 +245,13 @@ public partial class LevelSelectScreen : Control
         into.AddChild(line);
     }
 
-    /// <summary>Chiffre romain d'un cran (I..V). Table courte : MaxRank vaut 5.</summary>
+    /// <summary>Chiffre romain d'un cran (I..X). Table courte : le plan plafonne l'échelle au cran X ;
+    /// au-delà, le chiffre arabe évite un affichage muet.</summary>
     private static string RomanNumeral(int n) => n switch
     {
-        1 => "I", 2 => "II", 3 => "III", 4 => "IV", 5 => "V", _ => n.ToString(),
+        1 => "I", 2 => "II", 3 => "III", 4 => "IV", 5 => "V",
+        6 => "VI", 7 => "VII", 8 => "VIII", 9 => "IX", 10 => "X",
+        _ => n.ToString(),
     };
 
     /// <summary>

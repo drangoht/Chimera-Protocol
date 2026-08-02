@@ -773,6 +773,31 @@ Tout nouveau chemin de sortie de run doit l'appeler aussi.
 - **« Temps soutenable » est quantifié** (part d'échantillons sur une fenêtre finie) : deux runs différentes tombent régulièrement sur la **même** valeur, et ces paires ex æquo sortent du test des signes. Sur 4 graines il peut ne rester que 2 paires porteuses — lire alors le **canal visé** par le réglage (ici les soins ponctuels, 0/4) plutôt que le seul verdict du temps soutenable.
 - **Comparer un cran cumulatif au cran précédent, pas au cran 0** : si un cran intermédiaire biaise le protocole (cf. « Compte à rebours », qui déplace l'entrée en overtime), le biais est **commun aux deux campagnes** et s'annule dans la différence. C'est ce qui rend le cran IV mesurable alors que le cran III ne l'est pas.
 
+## Ajouter un cran de saturation — checklist de câblage
+Cinq endroits, et l'oubli d'un seul donne un cran **silencieux** (le défaut exact de la 1.25.0, où le
+cran I ne touchait pas son canal dominant) :
+1. **`SaturationTable`** — remonter `MaxRank`, ajouter le `Rank(n, "SAT_n_NAME", "SAT_n_RULE")` dans
+   `Ranks`, et la fonction de règle. Le déblocage (`MaxSelectable`) et l'UI en dérivent seuls.
+2. **`localization/ui.csv`** — `SAT_n_NAME` et `SAT_n_RULE` en **EN/FR/ES**. La règle est lue *avant*
+   de lancer : c'est elle qui rend une mort interprétable, pas le chiffre du cran.
+3. **Le test « une règle par cran »** (`SaturationTableTests.Chaque_Cran_Ajoute_Exactement_Une_Regle`)
+   compte les dimensions qui changent d'un rang au suivant — y déclarer la nouvelle, sinon il passe
+   au vert en ignorant la règle qu'on vient d'écrire.
+4. **`LevelSelectScreen.RomanNumeral`** — table courte, un cran non listé s'affiche en chiffre arabe.
+5. **Le chemin de la ressource visée**, et lui seul : inventorier ses écritures directes avant
+   (`grep`), cf. §« Soigner le joueur ».
+
+**Le piège propre au cran VI (« Purificateur ») — dégât en % des PV max.** Un plancher exprimé en
+fraction des PV max ne doit **jamais** toucher un dégât **continu** (PV/seconde × delta) : appliqué à
+chaque tick, 12 % des PV max tuent le joueur en quelques frames et transforment une flaque de magma
+en mort instantanée. D'où `EnemyBase.DealDiscreteDamage`, **chemin unique** des coups discrets
+(contact à intervalle, projectile, attaque télégraphiée) : les chemins continus — faisceau du boss,
+`BossHazard`, geysers — ne l'utilisent pas et restent en dégât nominal. Ce même helper absorbe une
+duplication ancienne, la réduction de dégâts recopiée par **huit appelants** (`Damage * (1 - DR)`), où
+un neuvième qui l'oublierait ne se serait vu nulle part.
+**Un projectile survit à son tireur** : `EnemyBullet` ne peut pas demander à l'impact « qui m'a
+tiré ? » (le champion peut être mort). Le drapeau `FromChampion` se pose **au tir**.
+
 ## Migrations de `settings.cfg` (`GameSettings`)
 - **Versionner, ne pas détecter par « clé absente ».** La parade « pas de clé `saturation` ⇒ ancien fichier » ne marche qu'**une** fois : à la deuxième migration (saturation globale → par niveau), il n'y a plus de clé qui distingue les deux formats. Un entier **`gameplay/save_version`** rend les migrations déterministes et ordonnées. Schémas : **0** = avant la saturation · **1** = un cran global · **2** = un cran par niveau.
 - **Écrire `save_version` INCONDITIONNELLEMENT.** C'est lui qui dit que le fichier est déjà migré. Le rendre conditionnel — ou l'oublier sur un chemin de sauvegarde — rejoue la migration à chaque démarrage et **réécrit des choix que le joueur a faits depuis**.

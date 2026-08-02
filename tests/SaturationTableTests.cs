@@ -78,6 +78,8 @@ public class SaturationTableTests
             // seraient deux règles déguisées en une, et une mort cesserait d'être interprétable.
             if (SaturationTable.SafetyNetsEnabled(r)   != SaturationTable.SafetyNetsEnabled(r - 1)
              || SaturationTable.LevelUpHealsEnabled(r) != SaturationTable.LevelUpHealsEnabled(r - 1))  changed++;
+            if (SaturationTable.ChampionMinDamageFraction(r)
+             != SaturationTable.ChampionMinDamageFraction(r - 1))                                      changed++;
 
             Assert.Equal(1, changed);
         }
@@ -148,6 +150,65 @@ public class SaturationTableTests
             var m = EliteAffixTable.Modifiers(affix);
             Assert.True(m.HpMult > 0f && m.DamageMult > 0f && m.SpeedMult > 0f);
         }
+    }
+
+    // ─── Cran VI — « Purificateur » ──────────────────────────────────────────
+
+    [Fact]
+    public void Cran6_Fait_Frapper_Les_Champions_En_Part_Des_Pv_Max()
+    {
+        Assert.Equal(0f, SaturationTable.ChampionMinDamageFraction(5), 4);
+        Assert.Equal(0.12f, SaturationTable.ChampionMinDamageFraction(6), 4);
+    }
+
+    [Fact]
+    public void Sous_Le_Cran6_Le_Degat_Nominal_Est_Inchange()
+    {
+        // Verrou de non-régression : la règle ne doit fuir sur AUCUN cran inférieur, sans quoi les
+        // records et complétions déjà gagnés cesseraient d'être comparables.
+        for (int r = 0; r <= 5; r++)
+            Assert.Equal(50f, SaturationTable.ChampionDamage(50f, 4000f, r), 3);
+    }
+
+    [Fact]
+    public void Le_Plancher_Rend_Inoperant_L_Empilement_De_Pv_Max()
+    {
+        // LE point du cran : le joueur gagne 277 PV max/min en overtime (banc, cran 0) face à des
+        // dégâts qui sont des valeurs ABSOLUES. Le coût d'un coup doit suivre sa barre, sinon la
+        // barre finit toujours par gagner.
+        float petit = SaturationTable.ChampionDamage(50f, 1000f, 6);
+        float gros  = SaturationTable.ChampionDamage(50f, 5000f, 6);
+
+        Assert.Equal(120f, petit, 3);
+        Assert.Equal(600f, gros, 3);
+        // Le nombre de coups pour vider la barre ne dépend PLUS des PV max.
+        Assert.Equal(1000f / petit, 5000f / gros, 3);
+    }
+
+    [Fact]
+    public void Un_Coup_Deja_Plus_Fort_Que_Le_Plancher_N_Est_Pas_Adouci()
+    {
+        // C'est un PLANCHER, jamais un remplacement : un cran ne doit pas pouvoir rendre le jeu plus
+        // facile sur un coup déjà lourd.
+        Assert.Equal(900f, SaturationTable.ChampionDamage(900f, 4000f, 6), 3);
+    }
+
+    [Fact]
+    public void Sans_Pv_Max_Connus_Le_Nominal_Passe_Tel_Quel()
+    {
+        // Entre deux scènes, MaxHp peut valoir 0 : un plancher de 0 % ferait disparaître le coup.
+        Assert.Equal(50f, SaturationTable.ChampionDamage(50f, 0f, 6), 3);
+    }
+
+    [Fact]
+    public void Le_Plancher_Laisse_Au_Joueur_Une_Marge_De_Reaction()
+    {
+        // Garde-fou de conception : le cran doit rendre le contact d'un champion coûteux, jamais
+        // instantanément mortel. Un joueur à PV pleins doit encaisser plusieurs coups — sinon la
+        // règle cesse d'être « ne tanke plus le boss » pour devenir « ne l'approche jamais », ce qui
+        // n'est pas une décision mais une interdiction.
+        int coups = (int)(1f / SaturationTable.PurgeFraction);
+        Assert.True(coups >= 6, $"{coups} coups pour vider la barre — trop peu pour réagir");
     }
 
     // ─── Champions : jamais un mur ───────────────────────────────────────────

@@ -160,6 +160,35 @@ public partial class EnemyBase : CharacterBody2D
         _currentHp = Mathf.Min(MaxHp, _currentHp + dealtDamage * _lifestealFraction);
     }
 
+    /// <summary>Vrai si cet ennemi est un <b>champion</b> — mini-boss ou boss de fin.</summary>
+    public bool IsChampion => AssimIsBoss || AssimIsMiniBoss;
+
+    /// <summary>
+    /// Porte <b>un coup discret</b> au joueur : plancher du cran de saturation VI si l'ennemi est un
+    /// champion, puis réduction de dégâts, puis lifesteal de l'affixe Vampirique.
+    ///
+    /// <para>Chemin unique et obligatoire pour tous les coups d'ennemi, pour deux raisons. La réduction
+    /// de dégâts était appliquée <b>par chaque appelant</b> — huit sites qui recopiaient
+    /// <c>Damage * (1 - DamageReduction)</c> — et un neuvième qui l'oublierait ne se verrait nulle part.
+    /// Et surtout, le plancher du cran VI ne doit <b>jamais</b> toucher un dégât continu (cf.
+    /// <see cref="SaturationTable.ChampionDamage"/>) : le concentrer ici rend le piège impossible à
+    /// reproduire par distraction, puisque les chemins continus (faisceau, magma, geyser) n'utilisent
+    /// pas cette méthode.</para>
+    /// </summary>
+    /// <param name="rawDamage">Dégât nominal, avant tout modificateur défensif.</param>
+    /// <returns>Dégât réellement transmis (après plancher et réduction), pour le lifesteal et les VFX.</returns>
+    protected float DealDiscreteDamage(Player player, float rawDamage)
+    {
+        int rank = GameSettings.Instance?.Saturation ?? 0;
+        float raw = IsChampion
+            ? SaturationTable.ChampionDamage(rawDamage, player.Stats.MaxHp, rank)
+            : rawDamage;
+        float reduced = raw * (1f - player.Stats.DamageReduction);
+        player.TakeDamage(reduced);
+        ApplyLifesteal(reduced);
+        return reduced;
+    }
+
     /// <summary>Ralentit l'ennemi : <paramref name="mult"/> ∈ (0,1]. On garde le slow le plus fort,
     /// avec la durée la plus longue. Plafonné à -40 % (CrowdControlCaps).</summary>
     public void ApplySlow(float mult, float duration)
@@ -196,10 +225,7 @@ public partial class EnemyBase : CharacterBody2D
             _damageCooldown -= (float)delta;
             if (_damageCooldown <= 0f)
             {
-                var stats = player.Stats;
-                float reduced = Damage * (1f - stats.DamageReduction);
-                player.TakeDamage(reduced);
-                ApplyLifesteal(reduced);
+                DealDiscreteDamage(player, Damage);
                 _damageCooldown = DamageInterval;
             }
         }

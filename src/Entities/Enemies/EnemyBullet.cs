@@ -10,6 +10,14 @@ public partial class EnemyBullet : Area2D
     public float Speed  { get; set; } = 180f;
     public float Damage { get; set; } = 12f;
 
+    /// <summary>
+    /// Tiré par un <b>champion</b> (mini-boss ou boss de fin) ? Le projectile survit à son tireur — il
+    /// ne peut donc pas le lui demander au moment de l'impact, et le drapeau doit être posé au tir.
+    /// Détermine l'application du plancher du cran de saturation VI
+    /// (cf. <see cref="SaturationTable.ChampionDamage"/>).
+    /// </summary>
+    public bool FromChampion { get; set; }
+
     private float _lifetime = 3f;
     private bool  _hasHit   = false;
 
@@ -52,7 +60,14 @@ public partial class EnemyBullet : Area2D
 
         _hasHit = true;
         var stats = player.Stats;
-        float reduced = Damage * (1f - stats.DamageReduction);
+        // Impact ponctuel → coup DISCRET, éligible au plancher du cran VI quand le tireur est un
+        // champion. Le calcul ne peut pas passer par EnemyBase.DealDiscreteDamage : le tireur est
+        // peut-être déjà mort, d'où le drapeau posé au moment du tir.
+        int rank = GameSettings.Instance?.Saturation ?? 0;
+        float raw = FromChampion
+            ? SaturationTable.ChampionDamage(Damage, stats.MaxHp, rank)
+            : Damage;
+        float reduced = raw * (1f - stats.DamageReduction);
         player.TakeDamage(reduced);
 
         SpawnImpactBurst();

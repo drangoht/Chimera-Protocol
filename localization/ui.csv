@@ -344,6 +344,8 @@ SAT_4_NAME,No Safety Net,Sans filet,Sin red
 SAT_4_RULE,"Levelling up no longer heals. Emergency Core and Adaptive Plate are inactive.","Monter de niveau ne soigne plus. Noyau de Secours et Plaque Adaptative inactifs.","Subir de nivel ya no cura. Núcleo de Emergencia y Placa Adaptativa inactivos."
 SAT_5_NAME,Elites Everywhere,Élite ordinaire,Élite ordinaria
 SAT_5_RULE,Elites are three times more common — most of the swarm carries an affix.,Les élites sont trois fois plus fréquentes — la nuée porte des affixes.,Las élites son tres veces más frecuentes: el enjambre lleva afijos.
+SAT_6_NAME,Purifier,Purificateur,Purificador
+SAT_6_RULE,"Champion blows hit for at least 12 % of your maximum health — stacking health no longer protects you from them.","Les coups des champions retirent au moins 12 % de vos PV max — empiler des PV ne protège plus d'eux.","Los golpes de los campeones quitan al menos un 12 % de tu vida máxima: acumular vida ya no te protege de ellos."
 RUNEND_TIER,Threat,Menace,Amenaza
 OVERTIME,⚠ OVERTIME ⚠,⚠ OVERTIME ⚠,⚠ TIEMPO EXTRA ⚠
 LEVEL_COMPLETE,LEVEL COMPLETE!,NIVEAU TERMINÉ !,¡NIVEL COMPLETADO!
