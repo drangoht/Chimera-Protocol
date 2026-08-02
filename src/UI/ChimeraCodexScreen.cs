@@ -48,6 +48,32 @@ public partial class ChimeraCodexScreen : CodexScreenBase
                               def.HudIcon, tint);
     }
 
+    /// <summary>
+    /// Une greffe ou une fusion <b>jamais assimilée</b> reste masquée (silhouette grisée, nom et
+    /// description cachés) — même règle que l'Arsenal pour les armes.
+    ///
+    /// <para><b>Pourquoi ce filtre existait à moitié.</b> <c>GameSettings.DiscoverGraft</c> était
+    /// appelé depuis tous les chemins d'acquisition (assimilation, remplacement, fusion, perk de
+    /// départ, <c>--force-graft</c>) et <b>persisté sur disque</b> depuis toujours — mais aucun
+    /// lecteur n'existait : cet écran révélait l'intégralité du contenu dès la première partie. La
+    /// donnée était collectée pour rien, et l'Assimilation perdait sa dimension de découverte alors
+    /// que l'Arsenal la conservait.</para>
+    ///
+    /// <para><b>Aucune progression n'est perdue en branchant ce filtre</b> : les découvertes des
+    /// parties déjà jouées sont dans <c>settings.cfg</c> et sont relues au chargement. Un joueur de
+    /// longue date retrouve donc les greffes qu'il a réellement assimilées, pas un Codex vide.</para>
+    ///
+    /// <para>L'intro de l'écran, elle, reste toujours lisible : elle <i>explique le système</i> (jauges,
+    /// emplacements, fusions) et n'est pas du contenu à découvrir — la masquer rendrait l'écran
+    /// incompréhensible à qui n'a encore rien assimilé.</para>
+    /// </summary>
+    protected override bool IsEntryLocked(CodexEntry e)
+        => !(GameSettings.Instance?.IsGraftDiscovered(e.Id) ?? true);
+
+    /// <summary>Une greffe ne se trouve pas sur une carte de montée de niveau (texte de l'Arsenal) :
+    /// elle s'obtient en remplissant une jauge d'assimilation.</summary>
+    protected override string LockedDescKey => "CHIMERA_LOCKED_DESC";
+
     private static string RarityTag(string rarity) => rarity switch
     {
         "rare" => "RARITY_RARE",

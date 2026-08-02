@@ -355,6 +355,7 @@ RUNEND_BEST,Best,Record,Récord
 RUNEND_NEW_RECORD,NEW RECORD!,NOUVEAU RECORD !,¡NUEVO RÉCORD!
 ARSENAL_LOCKED,Undiscovered,Non découverte,No descubierta
 ARSENAL_LOCKED_DESC,Weapon not yet discovered. Find and equip it in a run (via a level-up card) to reveal it here.,Arme non découverte. Trouve-la et équipe-la en partie (carte de montée de niveau) pour la révéler ici.,Arma no descubierta. Encuéntrala y equípala en una partida (carta de subida de nivel) para revelarla aquí.
+CHIMERA_LOCKED_DESC,"Graft not yet assimilated. Fill the matching assimilation gauge in a run, then graft it to reveal it here.","Greffe non assimilée. Remplis la jauge d'assimilation correspondante en partie, puis greffe-la pour la révéler ici.","Injerto no asimilado. Llena el medidor de asimilación correspondiente en una partida y después injértalo para revelarlo aquí."
 OPTIONS_RESET,Reset everything,Tout réinitialiser,Reiniciar todo
 OPTIONS_RESET_CONFIRM,⚠ Confirm? (irreversible — deletes Echoes & progress),⚠ Confirmer ? (irréversible — efface Échos & progression),⚠ ¿Confirmar? (irreversible — borra Ecos y progreso)
 OPTIONS_RESET_DONE,✓ Reset done,✓ Réinitialisé,✓ Reiniciado

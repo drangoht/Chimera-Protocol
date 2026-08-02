@@ -490,19 +490,29 @@ ont toutes au moins un test.
 
 Constats de l'audit du 2026-08-02, **non corrigés**, avec la raison.
 
-### 12.1 Données persistées jamais lues — `_discoveredGrafts`
+### 12.1 ~~Données persistées jamais lues~~ — **résolu le 2026-08-02**
 
-`GameSettings.DiscoverGraft()` est appelé à chaque première assimilation d'une greffe, **écrit sur
-disque** (`Save()`), et la donnée est sérialisée dans `settings.cfg`. Or `IsGraftDiscovered()`, son
-unique lecteur, **n'est appelé nulle part** : `ChimeraCodexScreen` affiche **toutes** les greffes sans
-filtre.
+`GameSettings.DiscoverGraft()` était appelé depuis tous les chemins d'acquisition et **persisté sur
+disque**, mais `IsGraftDiscovered()` n'avait **aucun appelant** : `ChimeraCodexScreen` révélait tout le
+contenu dès la première partie, là où `ArsenalScreen` masquait bien les armes non découvertes.
 
-L'asymétrie est nette avec les armes : `ArsenalScreen` masque bien les armes non découvertes via
-`GameSettings.IsDiscovered`.
+**Le filtre est branché** : `ChimeraCodexScreen.IsEntryLocked` masque désormais greffes **et** fusions
+non assimilées (silhouette grisée, nom en « ??? », cadre éteint).
 
-**Non corrigé** parce que les deux issues sont des décisions de **design**, pas de technique :
-soit brancher le filtre sur le Codex Chimère (les greffes deviennent une collection à découvrir), soit
-retirer la collecte (les greffes sont un écran explicatif, et on cesse d'écrire sur disque pour rien).
+Deux points relevés en le branchant :
+
+- **Le texte de verrouillage devait être surchargeable.** `ARSENAL_LOCKED_DESC` parle d'une « arme »
+  et d'une « carte de montée de niveau » — faux pour une greffe, qui s'obtient en remplissant une
+  jauge d'assimilation. D'où `CodexScreenBase.LockedDescKey` (virtuel) et la clé
+  `CHIMERA_LOCKED_DESC` en EN/FR/ES. Un écran verrouillé doit dire **comment débloquer**, et la
+  réponse dépend de l'écran.
+- **Aucune progression n'est perdue** : les découvertes des parties déjà jouées sont dans
+  `settings.cfg` depuis toujours et sont relues au chargement. Vérifié sur la sauvegarde de
+  référence (8 greffes/fusions sur 8) — l'écran y est **inchangé**.
+
+⚠ **L'intro de l'écran n'est jamais masquée** : elle explique le *système* (jauges, emplacements,
+fusions), ce n'est pas du contenu à découvrir. La masquer rendrait l'écran incompréhensible à qui n'a
+encore rien assimilé.
 
 ### 12.2 Couleurs de palette sans appelant
 
@@ -515,10 +525,10 @@ complète notamment les *quatre faces* de l'ombrage pseudo-3D et sert de référ
 écran qui en aurait besoin — ce que les conventions du projet interdisent. Le commentaire de chaque
 constante l'indique désormais, pour qu'un futur audit ne les re-signale pas.
 
-### 12.3 Scripts temporaires dans `tools/`
+### 12.3 ~~Scripts temporaires dans `tools/`~~ — **résolu le 2026-08-02**
 
-`tools/_tmp_audio_meter.py` et `tools/_tmp_music_drive.py` (144 lignes) ne sont **pas suivis par git**
-et ne sont référencés nulle part. Reliquats locaux : à supprimer ou à ignorer explicitement.
+`_tmp_audio_meter.py` et `_tmp_music_drive.py` (144 lignes, non suivis par git, référencés nulle part)
+ont été supprimés.
 
 ### 12.4 Fichiers volumineux restants
 

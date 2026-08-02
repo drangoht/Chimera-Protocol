@@ -17,8 +17,18 @@ public abstract partial class CodexScreenBase : Control
     protected virtual string? IntroText => null;
 
     /// <summary>Une entrée doit-elle être affichée « verrouillée » (non découverte) ? Par défaut non
-    /// (Bestiaire). L'Arsenal surcharge pour masquer les armes non encore découvertes.</summary>
+    /// (Bestiaire). L'Arsenal et la Chimère surchargent pour masquer ce qui n'a pas encore été
+    /// rencontré.</summary>
     protected virtual bool IsEntryLocked(CodexEntry e) => false;
+
+    /// <summary>
+    /// Clé de la description affichée à la place d'une entrée verrouillée. Surchargeable parce
+    /// qu'elle doit dire <b>comment débloquer</b> — et que la réponse dépend de l'écran : une arme se
+    /// trouve sur une carte de montée de niveau, une greffe en remplissant une jauge d'assimilation.
+    /// Un texte générique n'aiderait personne, et le texte de l'Arsenal appliqué aux greffes serait
+    /// simplement faux.
+    /// </summary>
+    protected virtual string LockedDescKey => "ARSENAL_LOCKED_DESC";
 
     private ColorRect      _fade = null!;
     private Button         _backButton = null!;
@@ -180,7 +190,7 @@ public abstract partial class CodexScreenBase : Control
 
         var desc = new Label
         {
-            Text         = locked ? Loc.T("ARSENAL_LOCKED_DESC") : Loc.T(e.Description),
+            Text         = locked ? Loc.T(LockedDescKey) : Loc.T(e.Description),
             AutowrapMode = TextServer.AutowrapMode.WordSmart,
         };
         desc.AddThemeFontSizeOverride("font_size", 15);
