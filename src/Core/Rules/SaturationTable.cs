@@ -73,15 +73,29 @@ public static class SaturationTable
     // testeur n'a « vu aucune différence » en jouant une session entière. Un premier pas invisible fait
     // conclure que tout le système est inopérant, si bien que la porte d'entrée est passée à
     // « Hémorragie », qui touche le canal de soin dominant et se sent immédiatement.
+    //
+    // ── Relevage du 2026-08-02 (1,30/1,35/1,25 → 1,45/1,80/1,40) ────────────────────────────────
+    // Motif : l'échelle entière a été jouée jusqu'au cran VI sur le Sanctuaire (palier de menace 0)
+    // et gagnée du premier coup. Les trois multiplicateurs ne montent PAS au même taux, parce qu'ils
+    // n'ont pas le même rendement mesuré :
+    //
+    //   • DÉGÂTS ×1,80 — le seul des trois qui touche la barre de vie, donc le seul qui puisse
+    //     produire un frôlement (§34.6). C'est celui qu'on pousse le plus.
+    //   • PV ×1,45 — allonge le temps de nettoyage, donc l'exposition. Bridé volontairement : il
+    //     traverse ChampionHpMult vers le BOSS (×1,25 ici contre ×1,17 avant), et la règle 3 du
+    //     §34.4 interdit d'en faire un mur de patience — il est calibré sur un TTK joué (§20.6).
+    //   • SPAWN ×1,40 — le moins relevé, et ce n'est pas de la prudence : le cap simultané de 300
+    //     est SATURÉ dès la 8ᵉ minute (§34.1). Au-delà, monter ce facteur ne change rien du tout ;
+    //     son effet réel se joue uniquement sur la phase de construction du build.
 
     /// <summary>Multiplicateur de PV des ennemis basiques.</summary>
-    public static float EnemyHpMult(int rank) => Clamp(rank) >= 2 ? 1.30f : 1.00f;
+    public static float EnemyHpMult(int rank) => Clamp(rank) >= 2 ? 1.45f : 1.00f;
 
     /// <summary>Multiplicateur de dégâts des ennemis (tous, champions inclus).</summary>
-    public static float EnemyDamageMult(int rank) => Clamp(rank) >= 2 ? 1.35f : 1.00f;
+    public static float EnemyDamageMult(int rank) => Clamp(rank) >= 2 ? 1.80f : 1.00f;
 
     /// <summary>Multiplicateur du volume de spawn.</summary>
-    public static float SpawnMult(int rank) => Clamp(rank) >= 2 ? 1.25f : 1.00f;
+    public static float SpawnMult(int rank) => Clamp(rank) >= 2 ? 1.40f : 1.00f;
 
     /// <summary>
     /// PV des CHAMPIONS (mini-boss et boss de fin) : bonus amorti par
@@ -105,8 +119,18 @@ public static class SaturationTable
     /// session entière — le banc lui donne raison, leur effet sur le temps soutenable (−7 %) frôlait le
     /// seuil que la campagne sait détecter. Un premier pas invisible fait conclure que tout le système
     /// est inopérant.</para>
+    ///
+    /// <para><b>0,60 → 0,35 le 2026-08-02.</b> Ce n'est pas un ajustement de dosage mais la
+    /// conséquence directe du §34.4 ter : au cran 0 le joueur reçoit <b>293,6 PV/s et n'en retient que
+    /// 58,8</b> — il en jette 80 %. À 0,60 l'offre tombe à ~176 PV/s, soit <i>encore trois fois</i> ce
+    /// qu'il sait absorber : la coupe disparaissait entièrement dans le gaspillage, et c'est
+    /// précisément ce que la mesure a montré (l'offre baisse de 46 %, le joueur en retient
+    /// <i>davantage</i>). À 0,35 elle vaut ~103 PV/s pour 58,8 retenus — la marge de gaspillage passe
+    /// de ×5 à ×1,75, et c'est le premier réglage où la première goutte peut réellement manquer.
+    /// Descendre plus bas (0,25 ≈ ×1,25 de marge) ferait basculer la porte d'entrée de l'échelle en
+    /// mur, ce que la règle 1 du §34.4 interdit.</para>
     /// </summary>
-    public static float HealingMult(int rank) => Clamp(rank) >= 1 ? 0.60f : 1.00f;
+    public static float HealingMult(int rank) => Clamp(rank) >= 1 ? 0.35f : 1.00f;
 
     // ── Cran III — « Compte à rebours » ─────────────────────────────────────────────────────────
 
@@ -114,14 +138,23 @@ public static class SaturationTable
     /// Multiplicateur de la durée de run avant overtime. Exprimé en facteur et non en minutes fixes :
     /// la durée de référence vit dans <c>data/meta_upgrades.json</c> (780 s aujourd'hui) et l'upgrade
     /// méta <c>overtime_stabilizer</c> la module déjà — une valeur en dur ici les contredirait.
-    /// 0,77 × 13 min ≈ <b>10 minutes</b>.
+    /// 0,62 × 13 min ≈ <b>8 minutes</b> (0,77 ≈ 10 min jusqu'au 2026-08-02).
     ///
     /// <para>Ce cran attaque le <b>temps de construction du build</b>, pas la puissance : entrer en
     /// overtime trois minutes plus tôt, c'est y entrer avec un arsenal non saturé. Le relevé du
     /// 2026-07-29 a montré que l'état d'entrée en overtime explique un facteur <b>2,4</b> sur la survie
     /// — c'est donc l'un des leviers les plus puissants du lot, et le moins coûteux en code.</para>
+    ///
+    /// <para><b>0,77 → 0,62 le 2026-08-02</b>, soit 10 → 8 minutes. C'est le cran relevé le plus
+    /// franchement, et pour la raison inverse de celle du cran II : il ne repose sur <b>aucun
+    /// multiplicateur</b>, donc il échappe au rendement décroissant qui rend les statistiques
+    /// invisibles. Retirer deux minutes de construction retire des niveaux d'arme entiers, pas un
+    /// pourcentage. ⚠ C'est aussi celui qui rapproche le plus le boss d'un mur : il arrive à la fin du
+    /// compte à rebours, donc trois minutes plus tôt qu'en run normale, face à un arsenal d'autant
+    /// moins construit. Le cran III n'étant atteignable qu'après avoir battu I et II, le coût est
+    /// assumé — mais c'est ici qu'il faut regarder si la victoire devient inaccessible.</para>
     /// </summary>
-    public static float RunDurationMult(int rank) => Clamp(rank) >= 3 ? 0.77f : 1.00f;
+    public static float RunDurationMult(int rank) => Clamp(rank) >= 3 ? 0.62f : 1.00f;
 
     // ── Cran IV — « Sans filet » ────────────────────────────────────────────────────────────────
 
@@ -168,24 +201,55 @@ public static class SaturationTable
     /// </summary>
     public static bool LevelUpHealsEnabled(int rank) => Clamp(rank) < 4;
 
+    /// <summary>
+    /// L'upgrade méta <c>overtime_stabilizer</c> (Stabilisateur de Surcharge, −5 %/niveau jusqu'à
+    /// −15 % sur la pente d'escalade d'overtime) est-il actif ? Non à partir du cran IV.
+    ///
+    /// <para><b>Troisième filet coupé par ce cran, ajouté le 2026-08-02.</b> Les deux premiers
+    /// (<see cref="SafetyNetsEnabled"/>) sauvent d'une mort ; celui-ci empêche la mort d'arriver, en
+    /// aplatissant la seule courbe du jeu qui monte sans fin. C'est donc le plus fort des trois sur
+    /// une run longue — exactement le régime où le joueur s'ennuie — et il était intact à tous les
+    /// crans.</para>
+    ///
+    /// <para>Il illustre aussi le motif du chantier : c'est un objet <b>acheté au Hub</b> qui rend le
+    /// jeu plus facile pour toutes les runs suivantes. « Sans filet » est le cran dont le nom promet
+    /// justement d'annuler ces acquis-là, et le voir survivre à l'échelle entière était une
+    /// incohérence. ⚠ La règle 2 du §34.4 (« jamais un levier optionnel ») reste satisfaite : ce cran
+    /// coupe aussi le filet <b>universel</b> qu'est le soin de passage de niveau, donc il retire
+    /// quelque chose même à qui n'a rien acheté.</para>
+    /// </summary>
+    public static bool MetaOvertimeDampeningEnabled(int rank) => Clamp(rank) < 4;
+
     // ── Cran V — « Élite ordinaire » ────────────────────────────────────────────────────────────
 
     /// <summary>
     /// Multiplicateur de la fréquence d'apparition des élites (affixes du §« Affixes d'élite »).
     /// L'élite cesse d'être un événement : les affixes (Blindé, Explosif, Vampirique…) deviennent la
     /// texture normale de la nuée, ce qui demande de lire la foule au lieu de la traverser.
+    ///
+    /// <para><b>×3 → ×4 le 2026-08-02.</b> Ce facteur n'agit qu'en amont d'un plafond
+    /// (<see cref="EliteChanceCap"/>) : le relever seul ne fait que faire <i>atteindre le plafond plus
+    /// tôt</i> dans la run. C'est pour cela qu'il monte peu et que le plafond, lui, monte franchement
+    /// — c'est ce dernier qui décide de la texture de la nuée en fin de partie.</para>
     /// </summary>
-    public static float EliteFrequencyMult(int rank) => Clamp(rank) >= 5 ? 3.00f : 1.00f;
+    public static float EliteFrequencyMult(int rank) => Clamp(rank) >= 5 ? 4.00f : 1.00f;
 
     /// <summary>
     /// Plafond de la probabilité d'élite à ce rang. Relevé <b>explicitement</b> au cran V au lieu de
     /// laisser le facteur ×3 traverser le plafond d'origine : 3 × 0,28 vaudrait 84 % d'élites, soit la
     /// « horde » que <see cref="EliteAffixTable.MaxChance"/> interdit par commentaire, avec le coût des
-    /// affixes sur 200-300 entités. À 0,55 la majorité de la nuée peut être élite, jamais la totalité —
-    /// il reste toujours des ennemis ordinaires pour lire la foule.
+    /// affixes sur 200-300 entités. À 0,70 la grande majorité de la nuée peut être élite, jamais la
+    /// totalité — il reste toujours des ennemis ordinaires pour lire la foule, et la lecture de la
+    /// foule est précisément ce que ce cran demande.
+    ///
+    /// <para><b>0,55 → 0,70 le 2026-08-02</b> — c'est ici que se joue réellement le durcissement du
+    /// cran V, pas dans <see cref="EliteFrequencyMult"/>. ⚠ <b>Point de vigilance performance</b> :
+    /// chaque élite porte un affixe et un <c>EliteAura</c>, sur une cible de 200-300 entités
+    /// simultanées. +27 % d'élites est le seul relevage de ce chantier dont le coût n'est pas
+    /// gratuit — à surveiller en IPS sur une nuée d'overtime, pas seulement en équilibrage.</para>
     /// </summary>
     public static float EliteChanceCap(int rank)
-        => Clamp(rank) >= 5 ? 0.55f : EliteAffixTable.MaxChance;
+        => Clamp(rank) >= 5 ? 0.70f : EliteAffixTable.MaxChance;
 
     // ⚠ Il a existé ici, le 2026-08-01, un `ElitesKeepHealthDrops` qui retirait aux élites leur orbe de
     // PV privilégié au cran V. Motif : le cran 5 semblait rendre +41 % de soins qu'au cran 0 (4/4, net)

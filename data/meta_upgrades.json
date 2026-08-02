@@ -2,6 +2,8 @@
   "_comment": "meta_upgrades.json — Chimera Protocol. Source de vérité pour le système meta (Échos d'Aether). Chargé par MetaProgressionSystem au runtime. Toute modification ici est effective sans recompiler.",
   "_comment_rebalance_2026-07-02": "Rééquilibrage complet suite au passage au modèle « survie sans fin » (docs/LEVEL_PROGRESSION_PLAN.md, 2026-06-30) : après runDurationSeconds (arrivée du boss de fin de niveau), la run entre en overtime et ne se termine plus qu'à la mort — temps/kills/noyaux ne sont plus bornés. L'ancienne formule linéaire sans plafond permettait à une excellente run overtime de rapporter des milliers d'Échos en un seul run, vidant le Hub. Voir docs/GDD.md §9.2 pour le détail et le rationnel complet.",
 
+  "_comment_rebalance_2026-08-02": "GRILLE DE PRIX EN VIGUEUR — les _designNote datés du 2026-07-02 décrivent l'ANCIENNE grille et ne sont conservés que pour leur rationnel de design (effets, statTarget, câblage) : ne pas s'y fier pour les coûts. Motif du relevage : l'arbre entier coûtait 21 550 Échos alors que la sauvegarde de référence en affichait 56 334 DORMANTS après 141 runs, pour 13 750 seulement dépensés — le joueur avait 2,6 fois le prix de l'arbre en banque et n'en avait acheté que 64 %. Une récompense de fin de run qui n'a plus rien à acheter cesse d'être une récompense. Nouveau total : 67 110 Échos (x3,11), soit ~135 runs au revenu moyen relevé (497 Échos/run) contre ~43 auparavant. La COURBE compte autant que le total : les niveaux 1 sont laissés quasi inchangés (90-240 Échos, toujours atteignables en une ou deux runs, pour que la boucle 'je gagne, j'achète' vive dès le début) et la progression par niveau passe d'un facteur ~1,7 à ~2,4 — ce sont les DERNIERS niveaux qui deviennent le puits. Les trois branches les plus chères sont celles qui rendent le jeu facile le plus durablement : damage_boost_2 (11 600), overtime_stabilizer (10 900, qui aplatit la seule courbe du jeu montant sans fin) et damage_boost (6 980). Les GAINS sont volontairement INCHANGÉS : les durcir en même temps que les prix aurait doublé la peine et rendu le début de partie exsangue. ATTENTION, portée limitée : un item déjà acheté n'est pas re-facturé, donc ce relevage ne touche pas les sauvegardes avancées — il calibre la progression d'un nouveau joueur.",
+
   "echoesFormula": {
     "_comment": "Échos = composantes STANDARD (plafonnées à capTimeSecs/capKills/capCores, comme avant) + BONUS DE SURCHARGE (overtime, fortement amorti ET plafonné) + baseBonus. Voir EchoFormula.Calculate (nouvelle signature, cf. docs/GDD.md §9.2) et la note d'implémentation en bas de fichier.",
     "timeDiv": 20,
@@ -81,7 +83,7 @@
       "name": "Corps Renforcé",
       "description": "+20 HP maximum par niveau. Vous partez avec plus de marge de survie.",
       "maxLevel": 4,
-      "costPerLevel": [90, 180, 300, 480],
+      "costPerLevel": [90, 220, 520, 1200],
       "effectPerLevel": [20, 20, 20, 20],
       "statTarget": "MaxHp",
       "_designNote": "Rééquilibré 2026-07-02 (prix +19% en moyenne, effets inchangés) — cf. §9.5/§18 du GDD pour le rationnel global du rééquilibrage post-overtime. Niveau 1 toujours atteignable en 1 run standard généreuse (~90-150 Échos)."
@@ -91,7 +93,7 @@
       "name": "Calibration Offensive",
       "description": "+1 dégât de base par niveau (s'applique à toutes les armes via DamageMultiplier additionnel de +10%).",
       "maxLevel": 5,
-      "costPerLevel": [130, 230, 380, 580, 850],
+      "costPerLevel": [140, 340, 800, 1800, 3900],
       "effectPerLevel": [0.10, 0.10, 0.10, 0.10, 0.10],
       "statTarget": "DamageMultiplier",
       "_designNote": "Rééquilibré 2026-07-02 (prix +29% en moyenne — c'est le stat le plus fort du jeu, on l'étire davantage). Extension possible via damage_boost_2 (tier 2, plus loin dans la liste) pour les joueurs qui ont tout maxé."
@@ -101,7 +103,7 @@
       "name": "Servos Améliorés",
       "description": "+15 px/s à la vitesse de départ par niveau.",
       "maxLevel": 3,
-      "costPerLevel": [100, 220, 380],
+      "costPerLevel": [110, 270, 640],
       "effectPerLevel": [15, 15, 15],
       "statTarget": "Speed",
       "_designNote": "Rééquilibré 2026-07-02 (prix +9% en moyenne, item déjà correctement dimensionné). Plafond Servo-Moteurs en run reste 380 px/s — cet upgrade donne un avantage de manœuvrabilité dès le début sans exploser la courbe."
@@ -111,7 +113,7 @@
       "name": "Synchronisation Aether",
       "description": "-5% de cooldown sur toutes les armes par niveau dès le début de run.",
       "maxLevel": 3,
-      "costPerLevel": [140, 290, 470],
+      "costPerLevel": [150, 380, 920],
       "effectPerLevel": [0.05, 0.05, 0.05],
       "statTarget": "CooldownReduction",
       "_designNote": "Rééquilibré 2026-07-02 (prix +17% en moyenne). Cumulable avec cooldown_reduction_2 (tier 2). Hardcap runtime 0,15 s/arme toujours respecté quel que soit le cumul."
@@ -121,7 +123,7 @@
       "name": "Blindage Composite",
       "description": "-5% de dégâts reçus par niveau (cumulable avec la Plaque Renforcée, hardcap global 40%).",
       "maxLevel": 3,
-      "costPerLevel": [170, 340, 560],
+      "costPerLevel": [180, 450, 1100],
       "effectPerLevel": [0.05, 0.05, 0.05],
       "statTarget": "DamageReduction",
       "_designNote": "Rééquilibré 2026-07-02 (prix +14% en moyenne). Cumulable avec damage_reduction_2 (tier 2) — attention au hardcap global 40% si combiné à la Plaque Renforcée in-run (-20%) : 15%(ici)+8%(tier2)+20%(passif) = 43%, plafonné à 40% dans PlayerStats."
@@ -131,7 +133,7 @@
       "name": "Recalibrage Tactique",
       "description": "Renouvelle les cartes proposées à la montée de niveau. +1 utilisation par run et par niveau (max 3).",
       "maxLevel": 3,
-      "costPerLevel": [160, 320, 520],
+      "costPerLevel": [170, 420, 1000],
       "effectPerLevel": [1, 1, 1],
       "statTarget": "Reroll",
       "_designNote": "Rééquilibré 2026-07-02 (prix +8% en moyenne). Consommable par run (non un stat PlayerStats) : LevelUpSystem.Reset() lit MetaProgressionSystem.GetUpgradeLevel('reroll') pour initialiser RerollsLeft. Bouton « Renouveler » sur le LevelUpScreen."
@@ -141,7 +143,7 @@
       "name": "Esquive de Sélection",
       "description": "Permet de passer une sélection de cartes (vous gardez le niveau, sans choisir d'amélioration). +1 utilisation par run et par niveau (max 3).",
       "maxLevel": 3,
-      "costPerLevel": [130, 270, 450],
+      "costPerLevel": [140, 350, 850],
       "effectPerLevel": [1, 1, 1],
       "statTarget": "Skip",
       "_designNote": "Rééquilibré 2026-07-02 (prix +8% en moyenne). Consommable par run. LevelUpSystem.Reset() initialise SkipsLeft. Bouton « Passer » sur le LevelUpScreen."
@@ -152,7 +154,7 @@
       "name": "Plaque Blindée",
       "description": "+35 HP maximum supplémentaires par niveau (2 niveaux). Extension du Corps Renforcé pour les builds tank.",
       "maxLevel": 2,
-      "costPerLevel": [300, 450],
+      "costPerLevel": [900, 2200],
       "effectPerLevel": [35, 35],
       "statTarget": "MaxHp",
       "_designNote": "NOUVEAU 2026-07-02. Réutilise le champ PlayerStats.MaxHp déjà câblé (statTarget identique à hp_boost) — développeur : ajouter une ligne explicite `stats.MaxHp += GetUpgradeLevel(\"hp_boost_2\") * 35f;` dans ApplyMetaBonusesToStats(), même pattern que hp_boost. Objectif de fin de progression (~750 Échos cumulés), naturellement accessible après avoir déjà investi dans hp_boost."
@@ -162,7 +164,7 @@
       "name": "Calibration Avancée",
       "description": "+8% dégâts supplémentaires par niveau (3 niveaux). Extension de la Calibration Offensive pour les runs longues.",
       "maxLevel": 3,
-      "costPerLevel": [350, 500, 700],
+      "costPerLevel": [1400, 3200, 7000],
       "effectPerLevel": [0.08, 0.08, 0.08],
       "statTarget": "DamageMultiplier",
       "_designNote": "NOUVEAU 2026-07-02. Réutilise PlayerStats.DamageMultiplier (même statTarget que damage_boost) — ligne supplémentaire `stats.DamageMultiplier += GetUpgradeLevel(\"damage_boost_2\") * 0.08f;`. Le plus cher des 4 tier-2 (~1550 Échos cumulés) car c'est le stat le plus fort du jeu — sert de « puits à Échos » de fin de partie pour les joueurs qui veulent tout maxer."
@@ -172,7 +174,7 @@
       "name": "Synchronisation Aether II",
       "description": "-4% de cooldown supplémentaire par niveau (2 niveaux). Extension de la Synchronisation Aether.",
       "maxLevel": 2,
-      "costPerLevel": [320, 480],
+      "costPerLevel": [1000, 2400],
       "effectPerLevel": [0.04, 0.04],
       "statTarget": "CooldownReduction",
       "_designNote": "NOUVEAU 2026-07-02. Réutilise PlayerStats.CooldownReduction — ligne `stats.CooldownReduction += GetUpgradeLevel(\"cooldown_reduction_2\") * 0.04f;`. Cumul permanent max désormais 15%+8%=23% ; hardcap runtime 0,15 s/arme (WeaponBase.GetEffectiveCooldown) inchangé et toujours respecté."
@@ -182,7 +184,7 @@
       "name": "Blindage Composite II",
       "description": "-4% de dégâts reçus supplémentaire par niveau (2 niveaux). Approche le hardcap global de 40% si cumulé avec la Plaque Renforcée in-run.",
       "maxLevel": 2,
-      "costPerLevel": [350, 550],
+      "costPerLevel": [1100, 2700],
       "effectPerLevel": [0.04, 0.04],
       "statTarget": "DamageReduction",
       "_designNote": "NOUVEAU 2026-07-02. Réutilise PlayerStats.DamageReduction — ligne `stats.DamageReduction += GetUpgradeLevel(\"damage_reduction_2\") * 0.04f;` puis Mathf.Min(..., MaxDamageReduction) comme l'existant. À noter honnêtement : 15%(damage_reduction)+8%(ici)+20%(Plaque Renforcée max in-run)=43%, plafonné à 40% — le dernier point de ce tier peut être partiellement 'gâché' pour les builds qui prennent aussi le passif in-run max. Volontaire (chasse aux marges de perfectionnistes, cf. hardcap déjà documenté §9.5)."
@@ -192,7 +194,7 @@
       "name": "Noyau de Secours",
       "description": "Un noyau d'urgence vous ramène à 30% HP au lieu de mourir. +1 charge par niveau, rechargée à chaque run (2 niveaux max).",
       "maxLevel": 2,
-      "costPerLevel": [450, 800],
+      "costPerLevel": [1300, 3100],
       "effectPerLevel": [1, 1],
       "statTarget": "ExtraLifeCharges",
       "_designNote": "NOUVEAU 2026-07-02. PAS un champ PlayerStats — consommable par run, même pattern que reroll/skip : Player.cs lit MetaProgressionSystem.Instance.GetUpgradeLevel(\"extra_life\") au _Ready()/reset de run pour initialiser un compteur ExtraLivesLeft (variable locale à Player, pas dans PlayerStats.Resource pour éviter de la persister par erreur). Dans HandleDeath() : si ExtraLivesLeft > 0, décrémenter, remettre CurrentHp = MaxHp * 0.3f, accorder ~1s d'invulnérabilité (réutiliser le mécanisme d'i-frames existant), et ANNULER la mort (ne pas appeler RunStatsTracker.EndRun). Item cher et fort intentionnellement (jusqu'à 2 vies de secours par run) — c'est le principal outil pour transformer une mort en overtime en un push supplémentaire, sans pour autant rendre la run infinie (le joueur reste vulnérable après usage)."
@@ -202,7 +204,7 @@
       "name": "Plaque Adaptative",
       "description": "Les premiers coups reçus dans la run sont totalement absorbés (0 dégât). +1 charge par niveau, rechargée à chaque run (3 niveaux max).",
       "maxLevel": 3,
-      "costPerLevel": [200, 350, 550],
+      "costPerLevel": [220, 550, 1350],
       "effectPerLevel": [1, 1, 1],
       "statTarget": "DamageAbsorbCharges",
       "_designNote": "NOUVEAU 2026-07-02. PAS un champ PlayerStats — consommable par run, même pattern que reroll/skip/extra_life : Player.cs lit GetUpgradeLevel(\"damage_absorb\") pour initialiser AbsorbChargesLeft ; dans TakeDamage(), si AbsorbChargesLeft > 0, décrémenter et retourner sans appliquer de dégâts (avant le calcul DamageReduction). Complémentaire d'extra_life mais moins fort et moins cher : amortit le chip damage (contact ennemis, projectiles) plutôt que de sauver d'une mort certaine."
@@ -212,7 +214,7 @@
       "name": "Auto-Réparation",
       "description": "Régénère des HP en continu pendant la run. +0.4 HP/s par niveau (3 niveaux, max 1.2 HP/s). À PV pleins, le débit remplit une réserve qui encaisse le prochain coup. Chaque coup encaissé la coupe 4 s : il faut décrocher pour se réparer.",
       "maxLevel": 3,
-      "costPerLevel": [220, 380, 600],
+      "costPerLevel": [240, 600, 1450],
       "effectPerLevel": [0.4, 0.4, 0.4],
       "statTarget": "HpRegenPerSecond",
       "_designNote": "NOUVEAU 2026-07-02. NÉCESSITE un nouveau champ PlayerStats.HpRegenPerSecond (float, défaut 0). ApplyMetaBonusesToStats() : `stats.HpRegenPerSecond = GetUpgradeLevel(\"hp_regen\") * 0.4f;`. Player._PhysicsProcess() (ou _Process) : `CurrentHp = Mathf.Min(MaxHp, CurrentHp + HpRegenPerSecond * delta)` chaque frame. Volontairement modeste (max 1.2 HP/s = 72 HP/min) — aide à encaisser le chip damage d'overtime sans neutraliser la pression d'un Colosse (20+ dégâts/coup) ni remplacer le heal au level-up (25% HP max, §6)."
@@ -222,7 +224,7 @@
       "name": "Résonance de Noyau",
       "description": "Augmente le rayon de ramassage des Noyaux d'Aether. +15/+15/+20 px par niveau (base 20 px → 70 px max).",
       "maxLevel": 3,
-      "costPerLevel": [160, 280, 450],
+      "costPerLevel": [170, 420, 1000],
       "effectPerLevel": [15, 15, 20],
       "statTarget": "CoreCollectionRadiusBonus",
       "_designNote": "NOUVEAU 2026-07-02. PAS un champ PlayerStats — AetherCore.cs lit directement MetaProgressionSystem.Instance.GetUpgradeLevel(\"core_magnetism\") à son _Ready() pour ajuster le rayon de son CollisionShape2D (base 20 px + bonus cumulé selon les niveaux). Reste un ramassage MANUEL (le joueur doit toujours marcher dessus, cf. §9.1) — l'item ne casse pas l'intention de design du risque assumé, il réduit juste la précision du pixel-perfect requis. N'inflate pas la formule d'Échos : capCores (22) plafonne déjà la contribution des noyaux en phase standard, et l'overtimeDampening/overtimeBonusCap contiennent l'excédent en overtime."
@@ -232,7 +234,7 @@
       "name": "Stabilisateur de Surcharge",
       "description": "Réduit l'agressivité de l'escalade en Overtime (spawn et scaling ennemis). -5% par niveau (3 niveaux, max -15%).",
       "maxLevel": 3,
-      "costPerLevel": [450, 750, 1150],
+      "costPerLevel": [1200, 2900, 6800],
       "effectPerLevel": [0.05, 0.05, 0.05],
       "statTarget": "OvertimeRampReduction",
       "_designNote": "NOUVEAU 2026-07-02. PAS un champ PlayerStats — EnemySpawner.cs lit directement MetaProgressionSystem.Instance.GetUpgradeLevel(\"overtime_stabilizer\") pour calculer un facteur de réduction (max -15%) appliqué UNIQUEMENT à la partie 'otMin' (OvertimeSeconds) utilisée par SpawnCurve une fois Overtime==true (ex. otMinEffectif = otMin * (1 - 0.05*niveau)) — ne touche pas la difficulté standard (0-13 min), seulement la pente de l'escalade post-boss. C'est la réponse directe design au problème signalé par les joueurs (overtime trop brutal) : un item permanent, plafonné à -15% pour ne pas trivialiser la phase, qui aide à survivre un peu plus longtemps en overtime et donc à approcher l'overtimeBonusCap plus confortablement. Le plus cher des 10 nouveaux items (2350 Échos cumulés) car son impact touche directement le point de douleur identifié."
@@ -242,7 +244,7 @@
       "name": "Aimant Auxiliaire",
       "description": "+1 apparition de l'Aimant par run et par niveau (2 niveaux, base 3 → jusqu'à 5 par run).",
       "maxLevel": 2,
-      "costPerLevel": [200, 350],
+      "costPerLevel": [220, 550],
       "effectPerLevel": [1, 1],
       "statTarget": "BonusMagnetCharges",
       "_designNote": "NOUVEAU 2026-07-02. PAS un champ PlayerStats — consommable par run, même pattern que reroll/skip : MagnetSpawner.cs lit GetUpgradeLevel(\"bonus_magnet\") à son _Ready() pour ajouter N fenêtres de spawn supplémentaires APRÈS la 3e existante (~11.7-12.7 min), positionnées en overtime (ex. une toutes les ~8 min après le boss, jusqu'à épuisement des charges) — cohérent avec le fait que l'overtime dure potentiellement très longtemps et que l'XP y devient rare à ramasser manuellement dans le chaos. Item bon marché (550 Échos cumulés), pensé comme un objectif court terme alternatif à starting_weapon_alt."
@@ -253,7 +255,7 @@
       "name": "Matrice d'Assimilation",
       "description": "+1 emplacement de greffe (Assimilation). Base 3, jusqu'à 5. Change fondamentalement le pouvoir de la chimère.",
       "maxLevel": 2,
-      "costPerLevel": [500, 950],
+      "costPerLevel": [1500, 3600],
       "effectPerLevel": [1, 1],
       "statTarget": "GraftSlotBonus",
       "_designNote": "NOUVEAU 2026-07-06 (système d'Assimilation, docs/DESIGN_ASSIMILATION.md §17). PAS un champ PlayerStats — valeur lue directement par AssimilationSystem.Reset() via GetUpgradeLevel(\"graft_slots\") au début de run (même pattern que reroll/skip/overtime_stabilizer). Slots = min(3 + niveau, 5). Cher (comme extra_life 450/800) car une chimère à 5 greffes est un autre jeu → objectif long terme."
@@ -263,7 +265,7 @@
       "name": "Métabolisme Vorace",
       "description": "-10% de seuil de jauge d'assimilation par niveau (max -30%). Les greffes arrivent plus vite.",
       "maxLevel": 3,
-      "costPerLevel": [180, 320, 520],
+      "costPerLevel": [200, 500, 1200],
       "effectPerLevel": [0.10, 0.10, 0.10],
       "statTarget": "GraftGaugeSpeedBonus",
       "_designNote": "NOUVEAU 2026-07-06 (système d'Assimilation, docs/DESIGN_ASSIMILATION.md §17). PAS un champ PlayerStats — lu par AssimilationSystem.Reset() : GraftGaugeSpeedBonus = niveau * 0.10 (max 0.30). Seuil effectif = round(threshold * (1 - GraftGaugeSpeedBonus)), cf. GraftTable.EffectiveThreshold. Bon marché (comme reroll 160/320/520). Formule = round (et non ceil) pour reproduire les 5 valeurs cibles du design §17 à -30% : 30->21, 24->17, 14->10, 7->5, 3->2 (ceil aurait laissé stalker à 3, upgrade sans effet sur cette jauge)."

@@ -87,7 +87,7 @@ public partial class RunStatsTracker : Node
         if (doc.RootElement.TryGetProperty("runDurationSeconds", out var prop))
             _runDurationSeconds = prop.GetInt32();
 
-        // Cran III « Compte à rebours » : l'overtime arrive plus tôt (13 → ~10 min). Appliqué ici, sur
+        // Cran III « Compte à rebours » : l'overtime arrive plus tôt (13 → ~8 min). Appliqué ici, sur
         // la valeur du JSON, pour rester compatible avec l'upgrade méta `overtime_stabilizer` qui module
         // la même durée — un seuil en dur ailleurs contredirait l'un des deux.
         //

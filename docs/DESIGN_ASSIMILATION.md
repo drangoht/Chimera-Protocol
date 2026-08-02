@@ -889,6 +889,12 @@ directement** par `AssimilationSystem` — **PAS** des champs `PlayerStats` (mê
 items ne rendent le jeu ni trivial (le scaling ennemi compense) ni obligatoire (les 3 slots de base
 suffisent à jouer).
 
+> ⚠ **Prix périmés depuis le 2026-08-02** (GDD **§9.6**) : `graft_slots` vaut 1500/3600 et
+> `graft_metabolism` 200/500/1200, soit **7 000 Échos** ajoutés à un arbre complet de **67 110**. Le
+> rationnel de conception ci-dessus (pourquoi ces deux items, à quels paliers) reste valable ; seuls
+> les montants ont changé. Motif : l'arbre entier coûtait moins de la moitié du solde dormant d'une
+> sauvegarde avancée, et le Hub n'avait donc plus rien à vendre.
+
 > Codex des greffes : gratuit (pas un upgrade payant), aligné sur l'arsenal/bestiaire à découverte
 > (§9.5) — chaque greffe assimilée une fois se documente dans le Codex, persistée dans
 > `user://settings.cfg` (même mécanique que les armes découvertes).

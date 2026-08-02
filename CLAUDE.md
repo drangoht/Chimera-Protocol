@@ -24,6 +24,45 @@ d'Hémorragie) — build butler **#1846002**, `version.json` à 1.25.1. **Devlog
 (`docs/DEVLOG.md`), à coller sur itch par l'utilisateur.**
 ⚠ **Le lot 2 (cran VI) est dans `main` mais NON PUBLIÉ et NON JOUÉ** — le jeu en ligne est la 1.25.1.
 
+**(10) L'échelle était finie et l'économie terminée — relevage des crans I-V et des prix du Hub**
+(2026-08-02, **non publié**). Le testeur a battu le **cran VI sur le Sanctuaire** — le biome de palier
+**0** — **du premier coup** (`saturation_beaten_by_level = sanctuaire:6`, soit `MaxRank`). Plus rien à
+gravir, et rien n'avait résisté. Sa sauvegarde dit la seconde moitié du problème : **70 084 Échos
+gagnés en 141 runs, 13 750 dépensés, 56 334 dormants** pour un arbre du Hub qui coûtait **21 550** —
+2,6 fois son prix en banque, et **64 %** seulement acheté. *Une récompense qui n'a plus rien à acheter
+cesse d'être une récompense* ; « on s'ennuie » décrit exactement cet état. **Arbitrage de l'auteur** :
+relever les valeurs existantes (plutôt que prolonger l'échelle ou s'attaquer au boss) et rééquilibrer
+les prix (plutôt que changer la nature du Hub).
+**Crans** — I ×0,60→**0,35** · II 1,30/1,35/1,25→**1,45/1,80/1,40** · III ×0,77→**0,62** (10→8 min) ·
+IV **+ le Stabilisateur de Surcharge coupé** (3ᵉ filet, le plus fort sur une run longue : il aplatit la
+seule courbe montant sans fin) · V ×3/0,55→**×4/0,70**. Les trois facteurs du cran II ne montent **pas**
+au même taux : les **dégâts** le plus (seuls à toucher la barre), les **PV** modérément (ils traversent
+`ChampionHpSoftening` jusqu'au boss), le **spawn** le moins — le cap de 300 est saturé dès la 8ᵉ minute,
+au-delà ce facteur ne fait **rien**.
+**Validé au banc** (4 graines appariées, cran 0 → cran 5 durci) : **frôlements/min 0,0 → 2,0**,
+`PV bas %` **94 → 41**, runs mortelles **0/12 → 4/4**, temps soutenable **89,3 → 36,7 %** (0/4 net,
+contre 67,7 % pour le cran 5 d'avant). **C'est la première fois qu'un cran statistique franchit le
+critère du §34.6** — mais il a fallu le pousser bien au-delà de ce que « rééquilibrer » suggère.
+⚠ **Un outil de banc ne recopie jamais une constante de gameplay.** La 1ʳᵉ campagne a rendu « 4/4 morts
+en 10 s » — **entièrement faux** : `power_curve_multi.py` gardait `0.77` en dur pour aligner sa ligne de
+départ sur le cran III, donc il lançait le bot **2 min à l'intérieur** de l'overtime. Un bug de banc qui
+produit non pas du bruit mais un résultat **net, cohérent et flatteur**. Parade : `read_run_duration_mult()`
+lit `SaturationTable.cs` et échoue bruyamment.
+⚠ **Ce que le banc ne dit pas, et qui doit être joué** : ① il ne peut pas dire si c'est **trop** (avec
+`--start-at`, le bot a un arsenal saturé mais un personnage **nu** — borne haute) ; ② le **boss** n'est pas
+mesuré du tout alors qu'il arrive désormais à la **8ᵉ** minute face à un build amputé, et que le battre
+**débloque le cran suivant** — si le cran III rend la victoire inaccessible, l'échelle se bloque sur
+elle-même. ③ L'égalité « cran II = ancien Difficile » est **rompue** (assumé : un ancien record reste
+valide, simplement plus facile qu'aujourd'hui).
+**Hub** : prix ×3,11 (**21 550 → 67 110**), courbe et non facteur plat — niveaux 1 quasi inchangés
+(90-240, la boucle « je gagne, j'achète » doit vivre dès la 1ʳᵉ heure), progression par niveau ~1,7 → ~2,4,
+les branches les plus chères étant celles qui facilitent le plus durablement (`damage_boost_2` 11 600,
+`overtime_stabilizer` 10 900). Gains **inchangés** (le problème est un débouché, pas un robinet).
+⚠ **Portée limitée, dite franchement** : un item acheté n'est pas re-facturé et un stock n'est pas
+repris — ce relevage calibre un **nouveau** joueur ; sur une save à 56 334 dormants il ne change presque
+rien. Design → `docs/GDD.md` **§9.6** et **§34.8** ; pièges → `docs/PITFALLS.md` §Tests headless.
+**329 tests.**
+
 **(9) La régénération était la seule défense sans borne — un débit ne s'oppose pas à un débit**
 (2026-08-02, **non publié**). Première partie jouée au **cran VI** : « la régénération est vraiment
 trop forte, je suis resté immobile un bon moment sans mourir ». **Problème d'espèce, pas de dosage.**

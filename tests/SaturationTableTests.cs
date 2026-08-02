@@ -10,16 +10,47 @@ using Xunit;
 /// </summary>
 public class SaturationTableTests
 {
-    // ─── Rang 1 = l'ancien « Difficile » ─────────────────────────────────────
+    // ─── Rang 2 ≥ l'ancien « Difficile » ─────────────────────────────────────
 
     [Fact]
-    public void Rang2_Reprend_Exactement_Les_Valeurs_De_Lancien_Difficile()
+    public void Rang2_Est_Au_Moins_Aussi_Dur_Que_Lancien_Difficile()
     {
         // « Meute » (les statistiques) est le cran II depuis le 2026-07-30 : mesuré seul en cran I, son
         // effet frôlait le seuil de détection du banc et le testeur ne voyait aucune différence.
-        Assert.Equal(DifficultyTuning.EnemyHp(2),     SaturationTable.EnemyHpMult(2), 4);
-        Assert.Equal(DifficultyTuning.EnemyDamage(2), SaturationTable.EnemyDamageMult(2), 4);
-        Assert.Equal(DifficultyTuning.Spawn(2),       SaturationTable.SpawnMult(2), 4);
+        //
+        // ⚠ L'ÉGALITÉ EXACTE A ÉTÉ ROMPUE LE 2026-08-02, sciemment. Elle existait pour que les records
+        // gagnés en « Difficile » restent interprétables après la migration vers la saturation. Mais
+        // l'échelle entière a été jouée jusqu'au cran VI et gagnée du premier coup : maintenir le cran II
+        // au niveau d'un réglage de 2026-07 revenait à conserver un palier mort au milieu de l'échelle.
+        // Le contrat devient une INÉGALITÉ — un ancien record « Difficile » reste un exploit valide,
+        // simplement plus facile que le cran II d'aujourd'hui. C'est le sens de lecture acceptable :
+        // l'inverse (un cran plus doux que l'ancien mode) invaliderait rétroactivement des records.
+        Assert.True(SaturationTable.EnemyHpMult(2)     >= DifficultyTuning.EnemyHp(2));
+        Assert.True(SaturationTable.EnemyDamageMult(2) >= DifficultyTuning.EnemyDamage(2));
+        Assert.True(SaturationTable.SpawnMult(2)       >= DifficultyTuning.Spawn(2));
+    }
+
+    [Fact]
+    public void Rang2_Pousse_Les_Degats_Plus_Que_Le_Spawn()
+    {
+        // Hiérarchie voulue (§34.3) et non un accident de dosage : les DÉGÂTS sont le seul des trois
+        // facteurs qui touche la barre de vie, donc le seul capable de produire un frôlement (§34.6) ;
+        // le SPAWN est le moins relevé parce que le cap simultané de 300 est saturé dès la 8ᵉ minute,
+        // au-delà de laquelle le monter ne change rien. Si ce test casse, quelqu'un a durci le jeu par
+        // le facteur qui n'a aucun effet en fin de partie.
+        Assert.True(SaturationTable.EnemyDamageMult(2) > SaturationTable.EnemyHpMult(2));
+        Assert.True(SaturationTable.EnemyHpMult(2)     > SaturationTable.SpawnMult(2));
+    }
+
+    [Fact]
+    public void Rang2_Ne_Fait_Pas_Du_Boss_Un_Mur_De_Patience()
+    {
+        // Règle 3 du §34.4 : les PV des champions restent amortis par ChampionHpSoftening, parce que
+        // battre le boss conditionne la progression et qu'il est calibré sur un TTK JOUÉ (§20.6).
+        // Le seuil de 1,30 borne le relevage de EnemyHpMult : au-delà, le TTK du boss dériverait de
+        // plus de 30 % et « plus dur » deviendrait « plus long ».
+        Assert.True(SaturationTable.ChampionHpMult(SaturationTable.MaxRank) < 1.30f);
+        Assert.True(SaturationTable.ChampionHpMult(2) < SaturationTable.EnemyHpMult(2));
     }
 
     [Fact]
@@ -27,7 +58,7 @@ public class SaturationTableTests
     {
         // La porte d'entrée doit se SENTIR : elle coupe le canal de soin dominant, elle n'ajoute pas
         // des points de vie aux ennemis.
-        Assert.Equal(0.60f, SaturationTable.HealingMult(1), 4);
+        Assert.Equal(0.35f, SaturationTable.HealingMult(1), 4);
         Assert.Equal(1.00f, SaturationTable.EnemyHpMult(1), 4);
         Assert.Equal(1.00f, SaturationTable.EnemyDamageMult(1), 4);
         Assert.Equal(1.00f, SaturationTable.SpawnMult(1), 4);
@@ -72,12 +103,15 @@ public class SaturationTableTests
             if (SaturationTable.HealingMult(r)         != SaturationTable.HealingMult(r - 1))         changed++;
             if (SaturationTable.RunDurationMult(r)     != SaturationTable.RunDurationMult(r - 1))     changed++;
             if (SaturationTable.EliteFrequencyMult(r)  != SaturationTable.EliteFrequencyMult(r - 1))  changed++;
-            // « Sans filet » agit sur deux leviers (consommables méta + soin de passage de niveau) mais
-            // énonce UNE règle — « plus aucun rattrapage automatique ». Ils comptent donc pour un, et le
-            // test ci-dessous vérifie qu'ils basculent bien au même rang : s'ils se séparaient, ce
-            // seraient deux règles déguisées en une, et une mort cesserait d'être interprétable.
+            // « Sans filet » agit sur trois leviers (consommables méta + soin de passage de niveau +
+            // Stabilisateur de Surcharge) mais énonce UNE règle — « plus aucun rattrapage automatique ».
+            // Ils comptent donc pour un, et le test ci-dessous vérifie qu'ils basculent bien au même
+            // rang : s'ils se séparaient, ce seraient trois règles déguisées en une, et une mort
+            // cesserait d'être interprétable.
             if (SaturationTable.SafetyNetsEnabled(r)   != SaturationTable.SafetyNetsEnabled(r - 1)
-             || SaturationTable.LevelUpHealsEnabled(r) != SaturationTable.LevelUpHealsEnabled(r - 1))  changed++;
+             || SaturationTable.LevelUpHealsEnabled(r) != SaturationTable.LevelUpHealsEnabled(r - 1)
+             || SaturationTable.MetaOvertimeDampeningEnabled(r)
+             != SaturationTable.MetaOvertimeDampeningEnabled(r - 1))                                    changed++;
             if (SaturationTable.ChampionMinDamageFraction(r)
              != SaturationTable.ChampionMinDamageFraction(r - 1))                                      changed++;
 
@@ -86,10 +120,13 @@ public class SaturationTableTests
     }
 
     [Fact]
-    public void Les_Deux_Leviers_De_Sans_Filet_Basculent_Au_Meme_Rang()
+    public void Les_Trois_Leviers_De_Sans_Filet_Basculent_Au_Meme_Rang()
     {
         for (int r = 0; r <= SaturationTable.MaxRank; r++)
+        {
             Assert.Equal(SaturationTable.SafetyNetsEnabled(r), SaturationTable.LevelUpHealsEnabled(r));
+            Assert.Equal(SaturationTable.SafetyNetsEnabled(r), SaturationTable.MetaOvertimeDampeningEnabled(r));
+        }
     }
 
     // ─── Les règles elles-mêmes ──────────────────────────────────────────────
@@ -98,16 +135,27 @@ public class SaturationTableTests
     public void Cran1_Coupe_Les_Soins_Recus_Et_Le_Reste_Des_Crans_Le_Conserve()
     {
         Assert.Equal(1.00f, SaturationTable.HealingMult(0), 4);
-        Assert.Equal(0.60f, SaturationTable.HealingMult(1), 4);
-        Assert.Equal(0.60f, SaturationTable.HealingMult(SaturationTable.MaxRank), 4);
+        Assert.Equal(0.35f, SaturationTable.HealingMult(1), 4);
+        Assert.Equal(0.35f, SaturationTable.HealingMult(SaturationTable.MaxRank), 4);
     }
 
     [Fact]
-    public void Cran3_Avance_L_Overtime_Autour_De_La_Dixieme_Minute()
+    public void Cran1_Coupe_Assez_Pour_Depasser_Le_Gaspillage_Mesure()
+    {
+        // Le §34.4 ter a mesuré qu'au cran 0 le joueur reçoit 293,6 PV/s et n'en retient que 58,8 : tant
+        // que l'offre coupée reste au-dessus de ce qu'il sait absorber, le cran ne retire RIEN — c'est
+        // ce que faisait 0,60 (176 PV/s, encore trois fois trop). Verrou contre un retour en arrière
+        // « pour adoucir la porte d'entrée » : la coupe doit laisser moins du double du retenu.
+        const float offert = 293.6f, retenu = 58.8f;
+        Assert.True(offert * SaturationTable.HealingMult(1) < 2f * retenu);
+    }
+
+    [Fact]
+    public void Cran3_Avance_L_Overtime_Autour_De_La_Huitieme_Minute()
     {
         // Référence actuelle : 780 s (13 min) dans data/meta_upgrades.json.
         float overtimeAt = 780f * SaturationTable.RunDurationMult(3) / 60f;
-        Assert.InRange(overtimeAt, 9.8f, 10.2f);
+        Assert.InRange(overtimeAt, 7.8f, 8.2f);
     }
 
     [Fact]
@@ -132,10 +180,20 @@ public class SaturationTableTests
     }
 
     [Fact]
-    public void Cran5_Triple_La_Frequence_D_Elites()
+    public void Cran5_Quadruple_La_Frequence_D_Elites()
     {
         Assert.Equal(1.00f, SaturationTable.EliteFrequencyMult(4), 4);
-        Assert.Equal(3.00f, SaturationTable.EliteFrequencyMult(5), 4);
+        Assert.Equal(4.00f, SaturationTable.EliteFrequencyMult(5), 4);
+    }
+
+    [Fact]
+    public void Cran5_Laisse_Toujours_Des_Ennemis_Ordinaires_Dans_La_Nuee()
+    {
+        // Le cran demande de LIRE la foule : une nuée entièrement composée d'élites n'a plus rien à
+        // lire, et le coût des affixes sur 200-300 entités deviendrait un problème d'IPS avant d'être
+        // un problème d'équilibrage. Le plafond peut monter, jamais atteindre 1.
+        Assert.True(SaturationTable.EliteChanceCap(5) < 1.00f);
+        Assert.True(SaturationTable.EliteChanceCap(5) > 0.50f);
     }
 
     [Fact]

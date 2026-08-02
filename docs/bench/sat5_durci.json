@@ -1,0 +1,144 @@
+{
+  "label": "sat5-durci",
+  "biome": "fournaise",
+  "minutes": 20,
+  "timescale": 3.0,
+  "summary": {
+    "survival_s": {
+      "median": 541.0,
+      "p10": 526.0,
+      "p90": 544.1,
+      "cv": 0.021153511976713054
+    },
+    "overtime_s": {
+      "median": 42.0,
+      "p10": 27.0,
+      "p90": 45.1,
+      "cv": 0.30077212062253594
+    },
+    "final_level": {
+      "median": 37.5,
+      "p10": 24.9,
+      "p90": 42.4,
+      "cv": 0.28620678652922193
+    },
+    "final_power": {
+      "median": 4628.5,
+      "p10": 4250.9,
+      "p90": 4799.6,
+      "cv": 0.06803162443154473
+    },
+    "final_hp_max": {
+      "median": 1125.0,
+      "p10": 1048.5,
+      "p90": 1282.0,
+      "cv": 0.11286341619159625
+    },
+    "ot_dps": {
+      "median": 10526.0,
+      "p10": 8941.5,
+      "p90": 11274.35,
+      "cv": 0.12734373366118223
+    },
+    "ot_taken": {
+      "median": 32.25,
+      "p10": 26.115,
+      "p90": 45.315000000000005,
+      "cv": 0.32813476335680863
+    },
+    "ot_regen_eff": {
+      "median": 0.2,
+      "p10": 0.06000000000000001,
+      "p90": 0.34,
+      "cv": 0.8164965809277259
+    },
+    "ot_heal": {
+      "median": 28.700000000000003,
+      "p10": 26.080000000000002,
+      "p90": 32.3,
+      "cv": 0.12448080551652158
+    },
+    "ot_ttl_s": {
+      "median": 29.642857142857142,
+      "p10": 23.248132586367877,
+      "p90": 39.23936170212766,
+      "cv": 0.2841304016532799
+    },
+    "ot_sustain_pct": {
+      "median": 36.66666666666667,
+      "p10": 27.5,
+      "p90": 47.0,
+      "cv": 0.2851365739426858
+    }
+  },
+  "runs": [
+    {
+      "seed": 2000,
+      "outcome": "death",
+      "survival_s": 520.0,
+      "overtime_s": 21.0,
+      "final_level": 21,
+      "final_power": 4127,
+      "final_hp_max": 1035,
+      "ot_dps": 8577.0,
+      "ot_taken": 23.7,
+      "ot_regen_eff": 0.2,
+      "ot_heal": 28.6,
+      "ot_ttl_s": 42.12765957446808,
+      "ot_sustain_pct": 33.333333333333336,
+      "samples": 3,
+      "ot_samples": 3
+    },
+    {
+      "seed": 2001,
+      "outcome": "death",
+      "survival_s": 545.0,
+      "overtime_s": 46.0,
+      "final_level": 43,
+      "final_power": 4717,
+      "final_hp_max": 1330,
+      "ot_dps": 11260.0,
+      "ot_taken": 50.7,
+      "ot_regen_eff": 0.0,
+      "ot_heal": 33.8,
+      "ot_ttl_s": 21.732026143790847,
+      "ot_sustain_pct": 40.0,
+      "samples": 5,
+      "ot_samples": 5
+    },
+    {
+      "seed": 2002,
+      "outcome": "death",
+      "survival_s": 542.0,
+      "overtime_s": 43.0,
+      "final_level": 41,
+      "final_power": 4835,
+      "final_hp_max": 1080,
+      "ot_dps": 11280.5,
+      "ot_taken": 32.75,
+      "ot_regen_eff": 0.2,
+      "ot_heal": 25.0,
+      "ot_ttl_s": 26.785714285714285,
+      "ot_sustain_pct": 25.0,
+      "samples": 4,
+      "ot_samples": 4
+    },
+    {
+      "seed": 2003,
+      "outcome": "death",
+      "survival_s": 540.0,
+      "overtime_s": 41.0,
+      "final_level": 34,
+      "final_power": 4540,
+      "final_hp_max": 1170,
+      "ot_dps": 9792.0,
+      "ot_taken": 31.75,
+      "ot_regen_eff": 0.39999999999999997,
+      "ot_heal": 28.8,
+      "ot_ttl_s": 32.5,
+      "ot_sustain_pct": 50.0,
+      "samples": 4,
+      "ot_samples": 4
+    }
+  ]
+}

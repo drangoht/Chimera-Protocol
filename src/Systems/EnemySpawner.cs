@@ -95,7 +95,12 @@ public partial class EnemySpawner : Node
         if (DebugHooks.StartAtMinutes > 0f)
             _elapsed = DebugHooks.StartAtMinutes * 60f;
 
-        int stabilizerLevel = MetaProgressionSystem.Instance?.GetUpgradeLevel("overtime_stabilizer") ?? 0;
+        // Cran IV « Sans filet » : le Stabilisateur de Surcharge est neutralisé, comme le Noyau de
+        // Secours et la Plaque Adaptative. Lu ici et non au calcul : le cran ne change pas en cours
+        // de run, et cela garde une seule écriture de _overtimeStabilizerFactor.
+        int stabilizerLevel = (GameSettings.Instance?.MetaOvertimeDampeningEnabled ?? true)
+            ? MetaProgressionSystem.Instance?.GetUpgradeLevel("overtime_stabilizer") ?? 0
+            : 0;
         _overtimeStabilizerFactor = 1f - 0.05f * stabilizerLevel;
     }
 

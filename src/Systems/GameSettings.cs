@@ -187,6 +187,13 @@ public partial class GameSettings : Node
     /// </summary>
     public bool LevelUpHealsEnabled => IsAssisted || SaturationTable.LevelUpHealsEnabled(Saturation);
 
+    /// <summary>
+    /// Le Stabilisateur de Surcharge (upgrade méta <c>overtime_stabilizer</c>) amortit-il encore la
+    /// pente d'overtime ? Faux à partir du cran IV — troisième filet coupé par la même règle.
+    /// </summary>
+    public bool MetaOvertimeDampeningEnabled
+        => IsAssisted || SaturationTable.MetaOvertimeDampeningEnabled(Saturation);
+
     /// <summary>Multiplicateur de fréquence des élites (cran V « Élite ordinaire »).</summary>
     public float EliteFrequencyMult => IsAssisted ? 1f : SaturationTable.EliteFrequencyMult(Saturation);
 

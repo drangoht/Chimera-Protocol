@@ -89,6 +89,29 @@ C_HP, C_HPMAX, C_REGEN, C_REGEN_EFF, C_HEAL = 11, 12, 13, 14, 15
 MIN_FIELDS = 20
 
 
+def read_run_duration_mult() -> float:
+    """
+    Facteur de durée de run du cran III, lu DANS `SaturationTable.cs`.
+
+    Cette valeur était recopiée en dur ici (0,77) jusqu'au 2026-08-02, et elle a produit une campagne
+    entièrement fausse le jour où le cran III est passé à 0,62 : le banc alignait la ligne de départ
+    sur une entrée en overtime à la 10ᵉ minute alors que le jeu la déclenchait à la 8ᵉ. Les quatre
+    runs démarraient donc DEUX MINUTES à l'intérieur de l'overtime, escalade déjà lancée, contre un
+    joueur de niveau 13 — et mouraient en une dizaine de secondes. Le durcissement paraissait
+    spectaculaire ; on ne mesurait que le décalage de l'outil.
+
+    Règle générale : **un outil de banc ne recopie jamais une constante de gameplay.** Il la lit, ou
+    il ment silencieusement au premier réglage — et un banc qui ment coûte plus cher que pas de banc,
+    parce qu'on lui fait confiance.
+    """
+    src = PROJECT / "src" / "Core" / "Rules" / "SaturationTable.cs"
+    import re
+    m = re.search(r"RunDurationMult\(int rank\)\s*=>.*?\?\s*([0-9.]+)f", src.read_text(encoding="utf-8"))
+    if not m:
+        sys.exit(f"Impossible de lire RunDurationMult dans {src} — corriger l'expression, pas deviner.")
+    return float(m.group(1))
+
+
 # ---------------------------------------------------------------------------
 # Relevé d'une run
 # ---------------------------------------------------------------------------
@@ -520,9 +543,11 @@ def main() -> None:
         # celle des autres crans, et la mesure devient ininterprétable — relevé le 2026-07-30, bruit à
         # 36 % contre 4-9 % ailleurs, une graine morte en 26 secondes.
         if args.saturation is not None and args.saturation >= 3:
-            args.start_at = round(args.start_at * 0.77, 2)   # cf. SaturationTable.RunDurationMult
+            mult = read_run_duration_mult()
+            args.start_at = round(args.start_at * mult, 2)
             print(f"[saturation {args.saturation}] entrée en overtime avancée → "
-                  f"--start-at={args.start_at} (sinon la run démarrerait en plein overtime)")
+                  f"--start-at={args.start_at} (×{mult:g}, lu dans SaturationTable.cs — "
+                  f"sinon la run démarrerait en plein overtime)")
 
     label = args.label or (
         f"{args.biome} ×{args.runs}" + (f" (dès {args.start_at:g} min)" if args.start_at else ""))

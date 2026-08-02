@@ -454,32 +454,38 @@ progression sur beaucoup plus de runs maintenant que l'économie n'explose plus 
 
 | id | Nom | Stat modifiée | Niveaux | Coûts par niveau | Bonus par niveau |
 |---|---|---|---|---|---|
-| `hp_boost` | Corps Renforcé | `MaxHp` | 4 | 90/180/300/480 | +20 HP |
-| `damage_boost` | Calibration Offensive | `DamageMultiplier` | 5 | 130/230/380/580/850 | +10% dégâts |
-| `speed_boost` | Servos Améliorés | `Speed` | 3 | 100/220/380 | +15 px/s |
-| `cooldown_reduction` | Synchronisation Aether | `CooldownReduction` | 3 | 140/290/470 | -5% cooldown |
-| `damage_reduction` | Blindage Composite | `DamageReduction` | 3 | 170/340/560 | -5% dégâts reçus |
-| `reroll` | Recalibrage Tactique | consommable* | 3 | 160/320/520 | +1 reroll/run |
-| `skip` | Esquive de Sélection | consommable* | 3 | 130/270/450 | +1 skip/run |
+| `hp_boost` | Corps Renforcé | `MaxHp` | 4 | 90/220/520/1200 | +20 HP |
+| `damage_boost` | Calibration Offensive | `DamageMultiplier` | 5 | 140/340/800/1800/3900 | +10% dégâts |
+| `speed_boost` | Servos Améliorés | `Speed` | 3 | 110/270/640 | +15 px/s |
+| `cooldown_reduction` | Synchronisation Aether | `CooldownReduction` | 3 | 150/380/920 | -5% cooldown |
+| `damage_reduction` | Blindage Composite | `DamageReduction` | 3 | 180/450/1100 | -5% dégâts reçus |
+| `reroll` | Recalibrage Tactique | consommable* | 3 | 170/420/1000 | +1 reroll/run |
+| `skip` | Esquive de Sélection | consommable* | 3 | 140/350/850 | +1 skip/run |
 
-Sous-total : **7 740 Échos**.
+Sous-total : **16 140 Échos** (7 740 avant le 2026-08-02, cf. §9.6).
 
 **Les 10 nouvelles améliorations (2026-07-02) :**
 
 | id | Nom | Stat modifiée | Niveaux | Coûts par niveau | Bonus par niveau |
 |---|---|---|---|---|---|
-| `hp_boost_2` | Plaque Blindée | `MaxHp` (tier 2) | 2 | 300/450 | +35 HP |
-| `damage_boost_2` | Calibration Avancée | `DamageMultiplier` (tier 2) | 3 | 350/500/700 | +8% dégâts |
-| `cooldown_reduction_2` | Synchronisation Aether II | `CooldownReduction` (tier 2) | 2 | 320/480 | -4% cooldown |
-| `damage_reduction_2` | Blindage Composite II | `DamageReduction` (tier 2) | 2 | 350/550 | -4% dégâts reçus |
-| `extra_life` | Noyau de Secours | `ExtraLifeCharges`* | 2 | 450/800 | +1 revive à 30% HP/run |
-| `damage_absorb` | Plaque Adaptative | `DamageAbsorbCharges`* | 3 | 200/350/550 | +1 coup absorbé (0 dégât)/run |
-| `hp_regen` | Auto-Réparation | `HpRegenPerSecond`** | 3 | 220/380/600 | +0,4 HP/s (max 1,2 HP/s) |
-| `core_magnetism` | Résonance de Noyau | `CoreCollectionRadiusBonus`* | 3 | 160/280/450 | +15/+15/+20 px (20→70 px) |
-| `overtime_stabilizer` | Stabilisateur de Surcharge | `OvertimeRampReduction`* | 3 | 450/750/1150 | -5% pente overtime (max -15%) |
-| `bonus_magnet` | Aimant Auxiliaire | `BonusMagnetCharges`* | 2 | 200/350 | +1 apparition Aimant/run (3→5) |
+| `hp_boost_2` | Plaque Blindée | `MaxHp` (tier 2) | 2 | 900/2200 | +35 HP |
+| `damage_boost_2` | Calibration Avancée | `DamageMultiplier` (tier 2) | 3 | 1400/3200/7000 | +8% dégâts |
+| `cooldown_reduction_2` | Synchronisation Aether II | `CooldownReduction` (tier 2) | 2 | 1000/2400 | -4% cooldown |
+| `damage_reduction_2` | Blindage Composite II | `DamageReduction` (tier 2) | 2 | 1100/2700 | -4% dégâts reçus |
+| `extra_life` | Noyau de Secours | `ExtraLifeCharges`* | 2 | 1300/3100 | +1 revive à 30% HP/run |
+| `damage_absorb` | Plaque Adaptative | `DamageAbsorbCharges`* | 3 | 220/550/1350 | +1 coup absorbé (0 dégât)/run |
+| `hp_regen` | Auto-Réparation | `HpRegenPerSecond`** | 3 | 240/600/1450 | +0,4 HP/s (max 1,2 HP/s) |
+| `core_magnetism` | Résonance de Noyau | `CoreCollectionRadiusBonus`* | 3 | 170/420/1000 | +15/+15/+20 px (20→70 px) |
+| `overtime_stabilizer` | Stabilisateur de Surcharge | `OvertimeRampReduction`* | 3 | 1200/2900/6800 | -5% pente overtime (max -15%) |
+| `bonus_magnet` | Aimant Auxiliaire | `BonusMagnetCharges`* | 2 | 220/550 | +1 apparition Aimant/run (3→5) |
 
-Sous-total : **11 340 Échos**. **TOTAL ARBRE COMPLET (17 items) : 19 080 Échos.**
+Sous-total : **43 970 Échos** (11 340 avant le 2026-08-02).
+
+**Les 2 améliorations d'Assimilation (2026-07-06)** : `graft_slots` Matrice d'Assimilation
+(2 niveaux, 1500/3600, +1 emplacement de greffe) et `graft_metabolism` Métabolisme Vorace
+(3 niveaux, 200/500/1200, −10 % de seuil de jauge). Sous-total : **7 000 Échos**.
+
+**TOTAL ARBRE COMPLET (19 items) : 67 110 Échos** — 21 550 avant le 2026-08-02, cf. §9.6.
 
 \* Consommables par run ou valeurs lues directement par le système consommateur — **PAS** des
 champs `PlayerStats` (même pattern que `reroll`/`skip` déjà existants). \*\* `HpRegenPerSecond`
@@ -516,6 +522,46 @@ item.
   bien dimensionné) + Servo-Moteurs +100 (in-run) = 345 px/s (sous le plafond soft 380 px/s). ✓
 - `MaxHp` : meta max +80 (`hp_boost`) +70 (`hp_boost_2`) = +150 HP permanents, aucun hardcap
   (le scaling ennemi absorbe la marge sur les runs longues, cf. §17).
+
+### 9.6 L'économie était terminée — relevage des prix (2026-08-02)
+
+**Le constat, sur la sauvegarde de référence après 141 runs :**
+
+| | valeur |
+|---|---|
+| Échos gagnés au total | **70 084** |
+| Échos **dépensés** | 13 750 |
+| Échos **dormants** | **56 334** |
+| Coût de l'arbre entier | **21 550** |
+| Part de l'arbre achetée | **64 %** |
+
+Le joueur avait **2,6 fois le prix de l'arbre complet en banque** — et n'en avait pas acheté les deux
+tiers. `damage_reduction`, `reroll`, `bonus_magnet`, `graft_slots` et `graft_metabolism` étaient à
+zéro. Ce n'est pas un problème de prix mal calibrés : **plus rien n'était désirable**, donc la
+récompense de fin de run avait cessé d'être une récompense. Le retour du testeur — « on s'ennuie » —
+décrit exactement cet état.
+
+**Le geste : ×3,11 sur le total (21 550 → 67 110 Échos), avec une courbe et non un facteur plat.**
+- Les **niveaux 1** sont laissés quasi inchangés (90 à 240 Échos, toujours atteignables en une ou
+  deux runs) : la boucle « je gagne, j'achète » doit vivre dès la première heure, et c'est
+  précisément ce que le §9.5 avait bien calibré.
+- La **progression par niveau** passe d'un facteur ~1,7 à ~2,4 : ce sont les *derniers* niveaux qui
+  deviennent le puits, pas l'entrée.
+- Les trois branches les plus chères sont celles qui rendent le jeu facile le plus **durablement** :
+  `damage_boost_2` (11 600), `overtime_stabilizer` (10 900 — il aplatit la seule courbe du jeu qui
+  monte sans fin) et `damage_boost` (6 980).
+- Au revenu moyen relevé (**497 Échos/run** sur 141 runs), l'arbre complet passe de ~43 à **~135
+  runs**.
+
+**Les gains sont volontairement inchangés.** Durcir les prix *et* les revenus aurait doublé la peine
+et rendu le début de partie exsangue, alors que le problème diagnostiqué est un problème de
+**débouché**, pas de robinet.
+
+⚠ **Portée limitée, à dire franchement** : un item déjà acheté n'est pas re-facturé, et un stock
+d'Échos déjà constitué n'est pas repris. Ce relevage calibre la progression d'un **nouveau** joueur ;
+sur une sauvegarde à 56 334 Échos dormants, il ne change presque rien. Rendre l'économie vivante pour
+un vétéran suppose de changer la *nature* de ce que le Hub vend — arbitrage écarté le 2026-08-02 au
+profit du seul rééquilibrage des prix.
 
 ## 10. Niveau / Arène (MVP = 1 arène complète et soignée)
 
@@ -2911,11 +2957,16 @@ champ de vision.
 
 | # | Nom | La certitude retirée | Effet mesuré (temps soutenable) |
 |---|---|---|---|
-| I | **Hémorragie** | soins reçus −40 % — le canal **dominant** (86,4 PV/s contre 8,2) | 60,7 % → **53,6 %** |
-| II | **Meute** | PV +30 %, dégâts +35 %, spawn +25 % (ex-« Difficile ») | → **50,0 %** |
-| III | **Compte à rebours** | overtime dès la 10ᵉ minute — attaque le temps de *build* | non mesurable par le banc |
-| IV | **Sans filet** | le passage de niveau ne soigne plus ; Noyau de Secours et Plaque Adaptative coupés | **−16 %** relatif |
-| V | **Élite ordinaire** | élites ×3, plafond relevé à 0,55 | cumul I→V : **39,9 %** |
+| I | **Hémorragie** | soins reçus −65 % — le canal **dominant** (86,4 PV/s contre 8,2) | 60,7 % → **53,6 %** |
+| II | **Meute** | PV +45 %, dégâts +80 %, spawn +40 % (ex-« Difficile ») | → **50,0 %** |
+| III | **Compte à rebours** | overtime dès la 8ᵉ minute — attaque le temps de *build* | non mesurable par le banc |
+| IV | **Sans filet** | le passage de niveau ne soigne plus ; Noyau de Secours, Plaque Adaptative et Stabilisateur de Surcharge coupés | **−16 %** relatif |
+| V | **Élite ordinaire** | élites ×4, plafond relevé à 0,70 | cumul I→V : **39,9 %** |
+
+⚠ **Les valeurs de ce tableau ont été relevées le 2026-08-02 (§34.8) ; la colonne de mesures date
+d'avant et se rapporte aux valeurs d'origine** (−40 % / +30 %+35 %+25 % / 10ᵉ minute / ×3 et 0,55).
+Elle est conservée parce que c'est elle qui établit la *hiérarchie* entre les crans, laquelle n'a pas
+changé — pas parce qu'elle décrit le réglage en vigueur.
 
 **La hiérarchie mesurée confirme le parti pris** : le cran I porte à lui seul la moitié de la descente,
 et le cran II — le seul purement statistique — pèse **deux fois moins**. Une règle qui retire une
@@ -3118,3 +3169,87 @@ au hasard. Il mesure la **pression que le contenu exerce**, jamais le talent de 
 cran VI vise précisément un comportement humain (rester au contact d'un champion parce qu'on a les PV
 pour). **À jouer avant publication.** Le lot 1 a été publié sans l'être, et c'est ce qui a coûté la
 séquence du 1ᵉʳ août.
+
+### 34.8 Relevage des crans I à V (2026-08-02)
+
+**Le déclencheur.** L'échelle a été jouée jusqu'au **cran VI sur le Sanctuaire** — le biome de palier
+de menace **0**, celui dont tous les multiplicateurs de `LevelThreat` valent 1,00 — et gagnée **du
+premier coup**. `settings.cfg` le confirme : `saturation_beaten_by_level = sanctuaire:6`, c'est-à-dire
+le dernier cran livré. Il n'y avait plus rien à gravir, et rien n'avait résisté.
+
+**L'arbitrage, et ce qu'il coûte.** Trois voies étaient ouvertes : prolonger l'échelle (crans VII-X du
+lot 4), s'attaquer au boss — tué **13 fois par run** avec un TTK insensible aux crans, donc la
+véritable raison pour laquelle « finir la run » est acquis — ou relever les valeurs existantes. C'est
+la **troisième** qui a été choisie. Elle va contre ce que le §34.3 a mesuré (le cran II, seul cran
+purement statistique, pèse **deux fois moins** qu'une règle qui retire une certitude) : le relevage
+est donc conçu pour extraire le maximum d'un levier à rendement décroissant, pas pour espérer qu'il
+en ait un meilleur.
+
+| Cran | Avant | Après | Pourquoi cette amplitude |
+|---|---|---|---|
+| I **Hémorragie** | soins ×0,60 | **×0,35** | Conséquence directe du §34.4 ter : à 0,60 l'offre restait à ~176 PV/s pour 58,8 retenus — *trois fois* le besoin, donc la coupe disparaissait dans le gaspillage. À 0,35 la marge tombe à ×1,75. |
+| II **Meute** | 1,30 / 1,35 / 1,25 | **1,45 / 1,80 / 1,40** | Les trois ne montent pas au même taux (cf. ci-dessous). |
+| III **Compte à rebours** | ×0,77 (10 min) | **×0,62 (8 min)** | Le plus franchement relevé : il ne passe par **aucun multiplicateur**, donc il échappe au rendement décroissant. Retirer deux minutes de construction retire des niveaux d'arme entiers. |
+| IV **Sans filet** | 2 filets coupés | **+ le Stabilisateur de Surcharge** | Troisième filet, et le plus fort sur une run longue : il aplatit la seule courbe du jeu qui monte sans fin. Il survivait à l'échelle entière. |
+| V **Élite ordinaire** | ×3, plafond 0,55 | **×4, plafond 0,70** | Le durcissement se joue sur le **plafond**, pas sur le facteur : celui-ci n'agit qu'en amont, le relever seul ne fait qu'atteindre le plafond plus tôt. |
+
+**La hiérarchie du cran II est un choix, pas un dosage.** Les **dégâts** montent le plus (+80 %) parce
+qu'ils sont le seul des trois facteurs qui touche la barre de vie, donc le seul capable de produire un
+*frôlement* au sens du §34.6. Les **PV** montent modérément (+45 %) parce qu'ils traversent
+`ChampionHpSoftening` jusqu'au **boss** (×1,25 désormais, contre ×1,17) et que la règle 3 du §34.4
+interdit d'en faire un mur de patience. Le **spawn** monte le moins (+40 %) et ce n'est pas de la
+prudence : le cap simultané de **300 est saturé dès la 8ᵉ minute** (§34.1) — au-delà, ce facteur ne
+change strictement rien, son effet réel se limite à la phase de construction.
+
+**Ce que ce relevage casse, et qui doit être dit.** L'égalité « cran II = ancien Difficile », posée au
+§34.2 pour que les records gagnés à cette difficulté restent interprétables après migration, est
+**rompue**. Le contrat devient une inégalité — un ancien record « Difficile » reste un exploit valide,
+simplement plus facile que le cran II d'aujourd'hui. C'est le seul sens de lecture acceptable :
+l'inverse (un cran plus *doux* que l'ancien mode) invaliderait rétroactivement des records. Un test
+verrouille désormais l'inégalité au lieu de l'égalité.
+
+⚠ **Un banc qui recopie une constante de gameplay ment au premier réglage.** La première campagne de
+validation a rendu un résultat spectaculaire — 4/4 runs mortelles, le bot mort **dix secondes** après
+l'entrée en overtime — et il était entièrement faux. `tools/power_curve_multi.py` codait `0.77` en dur
+pour aligner sa ligne de départ sur l'entrée en overtime du cran III ; passé à 0,62 dans le jeu, le
+banc plaçait toujours le bot à la 10ᵉ minute alors que l'overtime commençait à la 8ᵉ. Les quatre runs
+démarraient **deux minutes à l'intérieur** de l'escalade, contre un joueur de niveau 13. L'outil lit
+désormais la valeur dans `SaturationTable.cs` (`read_run_duration_mult`). C'est le quatrième biais de
+lecture du banc, après `--min-samples`, les comptes d'événements rares et la fenêtre d'observation —
+et le plus dangereux, parce qu'il ne produit pas du bruit mais un résultat **net, cohérent et
+flatteur**.
+
+**Mesures — 4 graines appariées, Fournaise, `--overtime`, cran 0 → cran 5 durci**
+(`docs/bench/sat5_durci.json` contre `docs/bench/pressure_sat0.json`) :
+
+| en overtime | cran 0 | cran 5 **durci** | cran 5 **avant** (pour mémoire) | signes |
+|---|---|---|---|---|
+| **runs mortelles** | 0/12 | **4/4** | 6/22 | |
+| **`frôlements`/min** | **0,0** | **2,0** | **0,0** | |
+| **`PV bas %`** | 94 | **41** | 90 | |
+| temps soutenable | 89,3 % | **36,7 %** | 67,7 % | **0/4 net** |
+| survie théorique (s) | 30,5 | 29,6 | — | 2/4 — bruit |
+
+**Le critère du §34.6 est franchi pour la première fois par un cran statistique.** Avant ce relevage,
+`frôlements/min` valait **zéro** au cran 5 comme au cran 0 : sur une partie entière, la barre de vie du
+joueur ne descendait jamais assez bas pour qu'il se passe quelque chose. Elle tombe désormais à **41 %**
+et le bot **meurt dans les quatre runs**, 21 à 46 secondes après l'entrée en overtime. Le cran II, dont
+le §34.3 disait qu'il pesait deux fois moins qu'une règle, produit enfin de la tension — à condition
+d'être poussé bien au-delà de ce que « rééquilibrer » suggère.
+
+⚠ **Trois précautions de lecture, et elles comptent plus que le chiffre.**
+1. **Toutes les colonnes « après » baissent, y compris les dégâts subis** (67,2 → 32,2 PV/s). Ce n'est
+   pas un adoucissement : le bot **meurt à la 9ᵉ minute**, quand la menace est encore jeune, là où au
+   cran 0 il traversait toute la fenêtre. C'est le biais de survie déjà rencontré avec `--min-samples`,
+   sous une autre forme — une run plus courte parce qu'on meurt fait *baisser* les moyennes de tout.
+   De même, `niv/min` 40,9 et `PV max/min` 606 ne décrivent pas une accumulation folle : ce sont les
+   premiers niveaux, ceux qui coûtent peu d'XP, non dilués par une longue fin de partie.
+2. **Le banc ne peut pas dire si c'est trop.** Le protocole `--start-at --saturate-arsenal` donne au bot
+   un arsenal saturé mais un personnage **nu** (niveau 1, PV de base) ; un joueur qui atteint la 8ᵉ
+   minute y arrive avec plusieurs dizaines de niveaux. La difficulté mesurée ici est donc une borne
+   haute, utile pour **comparer** deux réglages, inutilisable pour prédire une session.
+3. **Le risque n'est pas mesuré du tout : le boss.** Il arrive à la fin du compte à rebours, donc à la
+   8ᵉ minute au lieu de la 13ᵉ, face à un build amputé de deux minutes de construction — et le battre
+   est la **condition de déblocage du cran suivant**. Si le cran III rend la victoire inaccessible,
+   l'échelle se bloque sur elle-même. Le bot meurt avant de le rencontrer ; **seule une session jouée
+   peut trancher ce point**, et c'est le premier à vérifier.
