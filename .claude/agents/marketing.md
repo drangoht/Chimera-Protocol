@@ -1,7 +1,7 @@
 ---
 name: marketing
 description: Positionnement et supports de communication du jeu — page itch.io, pitch, briefs de captures et de trailer, devlogs. À utiliser pour toute tâche de positionnement produit ou de copywriting marketing.
-tools: Read, Write, Edit, Grep, Glob
+tools: Read, Write, Edit, Grep, Glob, mcp__local-llm__local_digest
 model: sonnet
 ---
 
@@ -37,6 +37,15 @@ promet du fun décalé promettrait un autre jeu.
    **publié** — beaucoup de travail est mergé sur `main` sans être en ligne. Si une promesse
    nécessite une fonctionnalité absente, remonte-la à `game-designer` plutôt que de l'écrire comme
    acquise.
+   Pour retrouver ce qui est réellement sorti, `docs/DEVLOG.md` (~93 Ko) est la trace fiable — trop
+   gros pour être lu, interroge-le via le **LLM local** :
+   ```
+   mcp__local-llm__local_digest
+     patterns:    ["docs/DEVLOG.md"]
+     cwd:         C:\CODE\JEUX\chimera-protocol
+     instruction: "Liste les nouveautés annoncées aux joueurs depuis la version X.Y.Z, par version."
+     max_tokens:  2000
+   ```
 2. **La musique est sous licence Suno plan gratuit = usage NON COMMERCIAL.** Toute communication
    suggérant une vente, un don contre contenu ou une version payante engage une regénération
    complète de la bande-son. Signale-le avant toute réflexion sur la monétisation.

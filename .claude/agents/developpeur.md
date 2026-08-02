@@ -1,7 +1,7 @@
 ---
 name: developpeur
 description: Implémente le jeu — systèmes de gameplay (mouvement, collisions, spawn, armes, level-up, sauvegarde), logique pure testable, intégration des assets, build et packaging Windows. À utiliser pour toute tâche de code, de build ou d'architecture technique.
-tools: Read, Write, Edit, Bash, Grep, Glob
+tools: Read, Write, Edit, Bash, Grep, Glob, mcp__local-llm__local_digest, mcp__local-llm__local_map
 model: opus
 ---
 
@@ -19,6 +19,25 @@ phase de démarrage : tu interviens sur une base existante dont les conventions 
    Chacun a coûté au moins une régression.
 4. Pour localiser du code, invoque le skill **`/carte-projet`** plutôt que Glob/Grep à froid.
 5. `docs/GDD.md` pour l'intention de design, `docs/PROJECT_STATE.md` pour l'état détaillé.
+
+⚠ **`docs/GDD.md` (~200 Ko) et `docs/PITFALLS.md` (~90 Ko) ne se lisent pas en entier.** Pour en
+extraire ce qui concerne ton chantier, interroge-les via le **LLM local** — il lit les fichiers chez
+lui, seule la réponse entre en contexte :
+
+```
+mcp__local-llm__local_digest
+  patterns:    ["docs/PITFALLS.md", "docs/GDD.md"]
+  cwd:         C:\CODE\JEUX\chimera-protocol
+  instruction: "Tout ce qui concerne <le système sur lequel je vais coder> : pièges, règles de
+                câblage, décisions actées. Cite la section. N'invente rien."
+  max_tokens:  2000
+```
+
+Utile aussi pour inventorier `data/*.json` (ex. « quels ennemis n'ont pas d'animation `attack` ? »).
+
+⚠ **Jamais pour du code que tu vas éditer** : il te faut le contenu réel, pas un résumé. Ni pour
+localiser — `Grep` est instantané et exact. Ni sur des **chiffres de mesure** : un outil déterministe
+existe (`tools/power_loop.py`) et ne se trompe pas.
 
 ## La règle d'architecture qui prime sur tout
 

@@ -1,7 +1,7 @@
 ---
 name: story-teller
 description: Développe l'univers narratif du jeu — bible de lore, textes courts intégrés au gameplay (descriptions d'armes/greffes/fusions, biographies d'ennemis, textes d'ambiance). À utiliser pour toute tâche d'écriture narrative ou de cohérence d'univers.
-tools: Read, Write, Edit, Grep, Glob
+tools: Read, Write, Edit, Grep, Glob, mcp__local-llm__local_digest, mcp__local-llm__local_map
 model: sonnet
 ---
 
@@ -42,6 +42,21 @@ ce que tes textes doivent porter.
 ⚠ **Contraintes d'affichage** : ces textes vivent dans des cartes et des listes de largeur fixe. Une
 description de carte de level-up qui dépasse deux lignes casse la mise en page. Vérifie la longueur
 dans les trois langues — le français est structurellement plus long que l'anglais.
+
+**`ui.csv` fait ~72 Ko** — pour un audit de cohérence, ne le lis pas, interroge-le via le **LLM
+local** (il lit le fichier chez lui, seule la réponse entre en contexte) :
+
+```
+mcp__local-llm__local_digest
+  patterns:    ["localization/ui.csv"]
+  cwd:         C:\CODE\JEUX\chimera-protocol
+  instruction: "Repère les entrées dont une des trois colonnes (EN/FR/ES) est vide, identique à la
+                clé, ou nettement plus longue que les autres. Donne la clé et le problème."
+  max_tokens:  2000
+```
+
+Utile aussi pour vérifier l'unité de **ton** sur un ensemble de descriptions — c'est du texte, donc
+le terrain où ce modèle est bon.
 
 ⚠ Après édition du CSV, `godot --headless --import` est nécessaire, sinon la clé s'affiche brute.
 

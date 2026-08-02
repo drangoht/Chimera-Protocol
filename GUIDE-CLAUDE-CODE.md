@@ -55,6 +55,46 @@ rien senti.
 3. **Quand un correctif ne déplace pas la métrique, suspecte l'instrument.** Continuer à doser est
    la manière la plus coûteuse de se tromper.
 
+## Le LLM local (LM Studio) — à quoi il sert vraiment
+
+Un serveur MCP `local-llm` expose **qwen3-coder-30b** tournant en local. Il est enregistré en scope
+*user*, donc disponible dans tous les projets, et démarre seul avec Claude Code.
+
+**Le levier n'est pas le coût du modèle, c'est le contexte** : le serveur lit les fichiers **chez
+lui** et ne renvoie que la réponse. Mesuré le 2026-08-02 sur `docs/TEST_REPORT.md` :
+**83 173 tokens lus en local → 675 renvoyés**, soit ~82 500 tokens de contexte cloud jamais consommés.
+
+**Pourquoi il n'a servi à rien pendant des mois** — et c'est instructif : les agents déclarent une
+liste `tools:` **fermée**, qui n'incluait aucun outil MCP. Ils ne *pouvaient pas* l'appeler, quelle
+qu'ait été la consigne dans `CLAUDE.md`. Corrigé le 2026-08-02 : `game-designer`, `game-tester`,
+`developpeur`, `story-teller` et `marketing` déclarent désormais `mcp__local-llm__local_digest`
+(et `local_map` pour les quatre premiers). *Une capacité qu'on documente sans la câbler n'existe pas.*
+
+**Quand l'utiliser** — uniquement quand un fichier est trop gros pour être lu :
+
+| Fichier | Taille | Question type |
+|---|---|---|
+| `docs/TEST_REPORT.md` | ~290 Ko | « cette question a-t-elle déjà été mesurée ? » |
+| `docs/GDD.md` | ~200 Ko | « qu'est-ce qui est acté sur ce système ? » |
+| `docs/DEVLOG.md` | ~93 Ko | « qu'est-ce qui est réellement sorti ? » |
+| `docs/PITFALLS.md` | ~90 Ko | « quels pièges sur ce domaine ? » |
+| `localization/ui.csv` | ~72 Ko | audit de cohérence EN/FR/ES |
+| `data/*.json` | — | inventaire transverse |
+
+**Trois garde-fous, appris par la mesure :**
+
+1. **Lent — ~6-7 min pour 290 Ko** (13,5 tok/s, map-reduce en 6 appels). L'appel bascule seul en
+   tâche de fond après 120 s : lance-le **avant** ce que tu allais faire, pas à la place.
+2. **`max_tokens` trop bas tronque la réponse sans lever d'erreur.** 900 a été insuffisant pour un
+   inventaire ; viser 1500-2500.
+3. **Bon sur du texte, à proscrire sur des chiffres.** Pour `power_curve.log` (1 Mo),
+   `tools/power_loop.py` calcule médianes et tests de signes sans se tromper ; un LLM qui « lit » un
+   CSV de mesures produit des nombres plausibles et faux. **S'il existe un outil déterministe, il
+   gagne.** Jamais non plus pour du code à éditer (il faut le contenu réel), ni pour localiser
+   (`Grep` est instantané et exact).
+
+Diagnostic en cas de souci : `mcp__local-llm__local_status` (modèle chargé, taille de contexte).
+
 ## Documentation — qui répond à quoi
 
 | Question | Document |
