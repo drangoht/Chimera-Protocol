@@ -55,9 +55,11 @@ DEFAULT_LOG = Path.home() / "AppData/Roaming/Godot/app_userdata/Chimera Protocol
 # ancienne comme un nombre. Chaque run porte sa propre ligne de titres.
 NEEDED = ("t_s", "phase", "niveau", "degats_subis_ps", "kills_fenetre", "pv_max", "soins_ps")
 
-# `soins_bruts_ps` (PV OFFERTS, gaspillage inclus) n'existe que depuis le 2026-08-01 : les runs plus
-# anciennes restent lisibles, la colonne est simplement absente de leur rapport.
-OPTIONAL = ("soins_bruts_ps",)
+# Colonnes apparues en cours de route : les runs plus anciennes restent lisibles, la colonne est
+# simplement absente de leur rapport.
+#   `soins_bruts_ps`                        — 2026-08-01 (PV OFFERTS, gaspillage inclus)
+#   `pv_min_pct`, `frolements`, `part_danger` — 2026-08-02 (pression ressentie, cf. PressureMeter)
+OPTIONAL = ("soins_bruts_ps", "pv_min_pct", "frolements", "part_danger")
 
 
 class Run:
@@ -128,6 +130,17 @@ METRICS = {
                                 if "soins_bruts_ps" in r.col else None),
     "kills/min":    lambda r: median(r.metric("kills_fenetre")) * 4,
     "subis PV/s":   lambda r: median(r.metric("degats_subis_ps")),
+    # ── Pression RESSENTIE (2026-08-02) ─────────────────────────────────────────────────────────
+    # Les cinq lignes ci-dessus sont des débits moyennés : elles répondent à « le joueur s'use-t-il ? ».
+    # Il ne s'use pas — il jette 80 % des soins offerts et meurt d'un pic. Les trois suivantes comptent
+    # des ÉVÉNEMENTS (cf. PressureMeter) et sont les seules à pouvoir contredire un « je n'ai eu aucun
+    # mal », parce qu'un plongeon à 10 % suivi d'une remontée ne déplace aucune moyenne.
+    "frôlements/min": lambda r: (median(r.metric("frolements")) * 4
+                                 if "frolements" in r.col else None),
+    "PV bas %":       lambda r: (median(r.metric("pv_min_pct"))
+                                 if "pv_min_pct" in r.col else None),
+    "part danger":    lambda r: (median(r.metric("part_danger"))
+                                 if "part_danger" in r.col else None),
 }
 
 
@@ -173,6 +186,8 @@ def paired_report(by_sat: dict[str, list[Run]], a: str, b: str) -> int:
 
     print("\n« signes » = nombre de graines où la métrique MONTE du premier cran au second.")
     print("0/N ou N/N = effet net ; toute valeur intermédiaire = indécidable à cette taille.")
+    print("\nUn cran QUI SE SENT monte « frôlements/min » et « part danger », et fait BAISSER")
+    print("« PV bas % » — le joueur doit voir sa barre descendre, pas seulement encaisser plus.")
     return 0
 
 
@@ -205,8 +220,8 @@ def main() -> int:
 
     print(f"{len(runs)} runs · journal {args.log.name}\n")
     print(f"{'cran':>4} {'runs':>4} {'niv/min':>9} {'PVmax/min':>10} {'soins PV/s':>11} "
-          f"{'kills/min':>10} {'subis PV/s':>11}")
-    print("-" * 64)
+          f"{'kills/min':>10} {'subis PV/s':>11} {'frôl./min':>10} {'PV bas %':>9}")
+    print("-" * 85)
 
     for sat in sorted(by_sat, key=lambda k: (k == "?", k)):
         group = by_sat[sat]
@@ -215,16 +230,20 @@ def main() -> int:
             vals = [v for v in (fn(r) for r in group) if v is not None]
             return median(vals) if vals else float("nan")
 
-        # kills_fenetre est un compte PAR ÉCHANTILLON (15 s de jeu) : ramené à la minute.
+        # kills_fenetre et frolements sont des comptes PAR ÉCHANTILLON (15 s de jeu) : ramenés à la minute.
         print(f"{sat:>4} {len(group):>4} "
               f"{med(lambda r: r.per_minute('niveau')):>9.1f} "
               f"{med(lambda r: r.per_minute('pv_max')):>10.0f} "
               f"{med(lambda r: median(r.metric('soins_ps'))):>11.1f} "
               f"{med(lambda r: median(r.metric('kills_fenetre')) * 4):>10.0f} "
-              f"{med(lambda r: median(r.metric('degats_subis_ps'))):>11.1f}")
+              f"{med(lambda r: median(r.metric('degats_subis_ps'))):>11.1f} "
+              f"{med(METRICS['frôlements/min']):>10.1f} "
+              f"{med(METRICS['PV bas %']):>9.0f}")
 
     print("\nLecture : un cran qui MONTE la colonne « niv/min » nourrit la boucle de puissance —")
     print("il ajoute de la menace et, du même geste, de quoi l'absorber.")
+    print("Et un cran qui laisse « frôl./min » à zéro ne se sentira pas, quoi que disent les débits :")
+    print("le joueur n'a jamais vu sa barre de vie descendre.")
     return 0
 
 

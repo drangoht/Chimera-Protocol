@@ -39,6 +39,14 @@ public static class PowerTelemetry
     private static string _lastBuild = "";  // pour ne marquer que les changements de build
     private static bool  _wasOvertime;      // l'overtime a été atteint (il ne se quitte jamais)
 
+    /// <summary>
+    /// Pression ressentie — échantillonnée à la <b>frame</b> et non à l'échantillon (cf.
+    /// <see cref="PressureMeter"/>). Toutes les autres colonnes de ce journal sont des débits moyennés
+    /// sur 15 s ; celle-ci compte des <b>événements</b>, parce qu'un plongeon à 10 % des PV suivi d'une
+    /// remontée ne déplace aucune moyenne et est pourtant tout ce qu'un joueur retient.
+    /// </summary>
+    private static readonly PressureMeter _pressure = new();
+
     /// <summary>Vrai si le journal tourne (flag <c>--power-curve</c> et run en cours).</summary>
     public static bool Active => _active;
 
@@ -61,7 +69,7 @@ public static class PowerTelemetry
         Append(ComposeHeader() + "\n");
         Append("t_s;phase;niveau;indice_puissance;dps;degats_subis_ps;kills_fenetre;ennemis;" +
                "mult_degats;reduc_cd;reduc_degats;pv;pv_max;regen_ps;regen_eff_ps;soins_ps;" +
-               "soins_bruts_ps;vitesse;armes;passifs;greffes\n");
+               "soins_bruts_ps;pv_min_pct;frolements;part_danger;vitesse;armes;passifs;greffes\n");
     }
 
     /// <summary>Dégâts infligés à un ennemi (déjà modulés par ses propres résistances).</summary>
@@ -124,6 +132,12 @@ public static class PowerTelemetry
     public static void Tick(float delta)
     {
         if (!_active) return;
+
+        // La pression se relève ICI, à la frame : relevée dans Sample() (toutes les 15 s de jeu), elle
+        // ne verrait qu'un instantané sur ~900 et manquerait précisément les creux qu'elle mesure.
+        var stats = GameManager.Instance?.PlayerInstance?.Stats;
+        if (stats != null) _pressure.Observe(stats.CurrentHp, stats.MaxHp, delta);
+
         _sinceSample += delta;
         if (_sinceSample < SampleInterval) return;
         Sample(_sinceSample);
@@ -184,8 +198,12 @@ public static class PowerTelemetry
                $"{Num(stats?.DamageReduction ?? 0f, "0.00")};" +
                $"{Num(stats?.CurrentHp ?? 0f, "0")};{Num(stats?.MaxHp ?? 0f, "0")};" +
                $"{Num(stats?.HpRegenPerSecond ?? 0f, "0.00")};{Num(rgps, "0.0")};{Num(heals, "0.0")};" +
-               $"{Num(healsRaw, "0.0")};{Num(stats?.Speed ?? 0f, "0")};" +
+               $"{Num(healsRaw, "0.0")};" +
+               $"{Num(_pressure.LowestRatio * 100f, "0")};{_pressure.CloseCalls};" +
+               $"{Num(_pressure.DangerFraction, "0.000")};" +
+               $"{Num(stats?.Speed ?? 0f, "0")};" +
                build + "\n");
+        _pressure.ResetWindow();
 
         // Un build qui change entre deux échantillons est la seule explication possible d'un saut de
         // DPS une fois les cartes plafonnées : on le signale en clair plutôt que d'obliger à differ.
@@ -285,5 +303,6 @@ public static class PowerTelemetry
         _killsAtLastSample = 0;
         _lastBuild = "";
         _wasOvertime = false;
+        _pressure.Reset();
     }
 }

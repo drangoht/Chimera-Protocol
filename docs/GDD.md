@@ -2923,3 +2923,104 @@ Hémorragie **revalorise la réserve de régénération** du §33.6 : en coupant
 joueur cesse de vivre à PV pleins, donc la régénération trouve enfin des PV manquants à rendre
 (8,2 → 18,7 PV/s, 4/4 des graines). Le système le plus récent et le plus ancien de la fin de partie se
 renforcent au lieu de se neutraliser — à conserver comme critère quand un cran du lot 2 sera conçu.
+
+### 34.6 Mesurer ce qui se *sent* — la métrique de frôlement (2026-08-02)
+
+**Le lot 1 a passé son examen et raté son objet.** Le critère de validation d'un cran était « faire
+baisser le *temps soutenable* de plus de 6 % ». Le cran I valait −10,0 % (4/4) ; les cinq crans cumulés
+font tomber le temps soutenable de **89,3 % à 67,7 %** — quatre fois le seuil — et **tuent le bot** là
+où le cran 0 ne le tuait jamais. Le testeur qui a joué l'échelle entière a répondu : « pas de
+difficulté particulière ». **Un critère qu'un réglage peut écraser d'un facteur quatre sans que
+personne ne le sente ne mesure pas la difficulté.**
+
+**Ce qui manquait, et pourquoi c'était structurel.** Le temps soutenable — comme le DPS, les dégâts
+subis, les soins — est un **débit moyenné** sur une fenêtre. Il répond à « le joueur s'use-t-il ? ».
+Or le joueur ne s'use pas : il jette 80 % des soins qu'on lui offre (§34.4 ter) et passe l'overtime
+au-dessus de 90 % de ses PV max (§33.6). Il meurt d'un **pic**. Et un pic est invisible pour une
+moyenne : un plongeon à 10 % des PV suivi d'une remontée complète laisse tous les débits inchangés.
+C'est pourtant, mot pour mot, ce qu'un joueur appelle « c'était difficile ». `PowerTelemetry` ne
+relevait les PV **qu'une fois toutes les 15 s de jeu** — entre deux relevés, le creux n'existait pas.
+
+**Le parti pris : compter des événements, pas des débits.** `PressureMeter` (logique pure) observe la
+barre de vie **à la frame** et relève trois grandeurs par fenêtre :
+
+| colonne | ce qu'elle dit | pourquoi elle |
+|---|---|---|
+| `frolements` | nombre de passages sous **30 %** des PV max | le joueur a-t-il *vu* sa barre plonger ? |
+| `pv_min_pct` | plus bas ratio PV/PV max atteint | à quelle profondeur ? |
+| `part_danger` | part du temps passée sous 30 % | y est-il resté, ou n'a-t-il fait que traverser ? |
+
+Un frôlement est un **épisode**, pas un échantillon : une hystérésis (entrée à 30 %, sortie à 55 %)
+garantit qu'un joueur qui oscille autour du seuil en compte **un** et non des centaines. Sans elle,
+la métrique mesurerait la fréquence de rafraîchissement du jeu et non son danger — et deux campagnes
+lancées à des `--timescale` différents seraient incomparables. L'état d'hystérésis **survit à la
+clôture d'une fenêtre**, pour la même raison : un creux à cheval sur deux échantillons est un seul
+épisode, et le remettre à zéro ferait dépendre le total du réglage de l'instrument.
+
+**Nouveau critère de validation d'un cran** — il remplace le seuil des 6 % de temps soutenable, qui
+reste utile comme mesure de pression mais ne décide plus :
+
+> Un cran est retenu s'il fait **monter `frôlements/min`** et **baisser `PV bas %`** de façon nette
+> (test des signes, N/N sur les graines appariées). Un cran qui laisse `frôlements/min` à zéro ne se
+> sentira pas, quels que soient ses débits : le joueur n'a jamais vu sa barre de vie descendre.
+
+⚠ **Cette métrique doit d'abord se prouver elle-même.** Le premier usage n'est pas de valider un
+réglage mais de vérifier qu'elle distingue ce que l'on sait déjà distinguer : le cran 0 (le bot ne
+meurt jamais) du cran 5 (le bot meurt). Si elle échoue là, elle ne vaut rien — et c'est exactement le
+signal qui n'a pas été lu le 2026-08-01, quand un correctif retirant ~200 orbes/min n'a pas déplacé la
+métrique d'un point (85,3 → 85,0). *Suspecter l'instrument avant la dose.*
+
+Implémentation : `src/Core/Rules/PressureMeter.cs` (11 tests), colonnes dans `PowerTelemetry`, lecture
+par `tools/power_loop.py --paired`. Mesures → `docs/TEST_REPORT.md` (2026-08-02).
+
+### 34.7 Lot 2 — cran VI « Purificateur » (2026-08-02)
+
+Deux points restaient ouverts après le lot 1, et le lot 2 fait le pari qu'**une seule règle les ferme
+tous les deux**.
+
+**Point ouvert n°1 — la capacité d'absorption croît sans plafond.** Le joueur gagne **277 PV max par
+minute** d'overtime (banc, cran 0), par la carte de surcharge Blindage (+45/prise, aucun plafond, §33).
+Sur dix minutes d'overtime, c'est **+2770 PV** — et rien dans le jeu ne frappe assez fort pour rattraper
+cette pente, puisque les dégâts ennemis sont des **valeurs absolues** issues d'une courbe fixe. C'est la
+cause mécanique du « surplus de PV 89 % du temps » : le joueur ne se soigne pas mieux, il possède
+simplement une barre que le contenu ne sait plus entamer.
+
+**Point ouvert n°2 — le boss n'est plus un événement.** Il est tué **13 fois par run** (réapparition
+toutes les ~70 s en overtime) et son TTK est **insensible aux crans** : 7,9-35,8 s au cran 5 sur le
+biome le plus facile, contre 9,8-37,4 s au cran 0 sur le plus dur. Les cinq crans cumulés ne lui
+ajoutent que **×1,17 PV** (amorti par `ChampionHpSoftening`, et pour une bonne raison — règle 3 du
+§34.4 : jamais un mur de patience sur le boss). La condition de victoire du jeu est devenue un
+distributeur de récompenses.
+
+**La règle.** Au cran VI, les **champions** — mini-boss et boss de fin — infligent au minimum une
+**fraction des PV max** du joueur :
+
+> dégât = **max**(dégât nominal, `PurgeFraction` × PV max du joueur)
+
+`PurgeFraction` = **0,12** (valeur de départ, à trancher au banc sur `frôlements/min`).
+
+**Pourquoi cette forme, et pas une autre.**
+
+* **Elle vise ce qui crée le surplus, pas ce qui le compense.** C'est la conséquence directe du
+  §34.4 ter : le canal des soins est saturé de gaspillage, donc inutilisable comme levier. La capacité
+  d'absorption, elle, n'est saturée par rien.
+* **Elle ne touche pas le TTK.** Le boss ne gagne aucun PV : il ne devient pas plus long, il devient
+  plus **dangereux**. C'est le seul geste qui respecte la règle 3 tout en rendant le boss significatif.
+* **Elle est lisible.** Les champions sont gros, uniques à l'écran, télégraphiés — le joueur voit
+  *quoi* le frappe. Le même effet porté par la faune de base serait de la mort inexpliquée en nuée,
+  ce que le plan interdit explicitement (§2 de `ENDGAME_PLAN.md`).
+* **Elle ne donne rien.** Leçon du §34.4 : *avant d'ajouter un cran, vérifier ce qu'il donne au
+  joueur*. Le cran V distribuait la difficulté **et son antidote** (l'affixe d'élite soude danger, XP
+  et générosité en orbes). Un champion qui frappe plus fort ne rapporte pas un Écho de plus.
+* **Elle s'applique à toute partie.** Règle 2 : jamais un levier optionnel. Le boss d'overtime
+  réapparaît quoi qu'il arrive.
+
+**Ce qu'elle ne fait pas, à dessein** : elle ne perce ni la réduction de dégâts, ni les i-frames, ni la
+réserve de régénération (§33.6). Un cran retire **une** certitude, pas trois — et la réserve anti-pic
+est précisément la réponse que le joueur a le droit de construire contre ce cran. C'est l'effet de
+système recherché au §34.5 : le lot 2 doit donner une **raison** de reprendre une carte du §33.6, pas
+l'annuler.
+
+⚠ **À vérifier avant publication, et non après** : que le cran VI monte `frôlements/min` de façon nette
+(§34.6) — c'est-à-dire qu'il produise des barres de vie qui plongent, et pas seulement des chiffres qui
+bougent. Le lot 1 a été publié sur un critère qui n'a pas tenu cette promesse.

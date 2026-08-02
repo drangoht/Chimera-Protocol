@@ -98,6 +98,28 @@ bougé la métrique d'un point (85,3 → 85,0) — signal qu'il fallait suspecte
 (3) comparer avec `tools/power_loop.py --paired <cranA> <cranB>` (test des signes), jamais sur un
 delta médian seul.
 
+## Équilibrage — une moyenne ne voit pas un pic
+**Toutes** les colonnes historiques de `PowerTelemetry` (DPS, dégâts subis, soins, temps soutenable)
+sont des **débits moyennés** sur une fenêtre de 15 s. Elles répondent à « le joueur s'use-t-il ? ».
+Or il ne s'use pas : il jette 80 % des soins offerts, passe l'overtime au-dessus de 90 % de ses PV max,
+et **meurt d'un pic**. Un plongeon à 10 % des PV suivi d'une remontée complète laisse **tous** ces
+débits inchangés — et c'est pourtant, mot pour mot, ce qu'un joueur appelle « c'était difficile ».
+**Conséquence mesurée** : le lot 1 de la saturation a passé son critère de validation (temps soutenable
+−10,0 %, 4/4, seuil à 6 %) ; le cran V l'écrase d'un facteur quatre (89,3 → 67,7 %) et **tue le bot** ;
+le testeur qui a joué les cinq crans a répondu « pas de difficulté particulière ».
+→ Pour toute question de la forme « ce réglage se sentira-t-il ? », lire `frolements` / `pv_min_pct` /
+`part_danger` (`PressureMeter`, colonnes ajoutées le 2026-08-02), qui comptent des **événements**.
+Un cran qui laisse `frôlements/min` à zéro ne se sentira pas, quels que soient ses débits.
+**Deux pièges dans l'instrument lui-même**, et ils s'appliquent à toute métrique d'événement future :
+- **Échantillonner à la frame, pas au relevé.** Mesurée dans `Sample()` (toutes les 15 s de jeu), la
+  pression ne verrait qu'un instantané sur ~900 et manquerait exactement les creux qu'elle mesure.
+- **Hystérésis obligatoire, et elle survit à la fenêtre.** Sans seuil de sortie distinct du seuil
+  d'entrée, un joueur qui oscille autour de 30 % compte un frôlement **par frame** : la métrique
+  mesure alors la fréquence de rafraîchissement, pas le danger, et deux campagnes à des
+  `--timescale` différents deviennent incomparables. Et `ResetWindow()` ne remet **pas** l'état
+  d'hystérésis à zéro, sinon un creux à cheval sur deux échantillons compterait double — le total
+  dépendrait du réglage de l'instrument au lieu du jeu mesuré.
+
 ## Boss de fin — phases, incarnations et zones au sol (`RustedCore`, `BossPhases`, `BossHazard`)
 Cf. GDD §29. Le boss est **une** entité (groupe `rusted_core`, condition de victoire des 5 niveaux)
 qui change de **phase** avec ses PV et d'**incarnation** avec le biome.
