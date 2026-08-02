@@ -17,6 +17,38 @@ cyborgs, robots), inspiré de Vampire Survivors et Everything is Crab.
 **Phase actuelle : 1.25.1 PUBLIÉE le 2026-07-31** (Saturation de Rouille, lot 1 + correctif
 d'Hémorragie) — build butler **#1846002**, `version.json` à 1.25.1. **Devlogs 1.25.0 et 1.25.1 rédigés
 (`docs/DEVLOG.md`), à coller sur itch par l'utilisateur.**
+⚠ **Le lot 2 (cran VI) est dans `main` mais NON PUBLIÉ et NON JOUÉ** — le jeu en ligne est la 1.25.1.
+
+**(8) Mesurer ce qui se *sent* — et le lot 2 livré** (2026-08-02, **non publié**). Le lot 1 avait
+**passé** son critère (temps soutenable −10,0 %, 4/4, seuil 6 %) et le testeur ne sentait rien : cause
+structurelle, **toutes** les colonnes de `PowerTelemetry` sont des **débits moyennés sur 15 s**, donc
+aveugles à un **pic** — un plongeon à 10 % des PV suivi d'une remontée ne déplace aucune moyenne, et
+c'est pourtant ce qu'un joueur appelle « difficile ». → **`PressureMeter`** (logique pure) observe la
+barre **à la frame** et compte des **événements** (`frolements` sous 30 % des PV max, `pv_min_pct`,
+`part_danger`). **Ce qu'il révèle du jeu publié** : au cran 0, sur 6:45 d'overtime, la barre du joueur
+**ne descend jamais sous 76 %** — zéro frôlement, aucun instant de tension dans une partie entière.
+**Cran VI « Purificateur » (lot 2)** : les **champions** infligent au minimum **12 % des PV max**
+(plancher **avant** la DR — les i-frames et la réserve de régénération continuent de jouer). Une seule
+règle ferme les deux points ouverts : elle vise ce qui **crée** le surplus (PV max, +277/min sans
+plafond) au lieu du canal des soins saturé de gaspillage, et rend le boss dangereux **sans toucher son
+TTK** (jamais un mur de patience). **Validé au banc** (4 graines appariées, cran 5 → 6) : runs
+mortelles **1/4 → 4/4**, `PV bas min %` **25,5 → 2,5** (0/4 net), pour **+6,6 %** de dégâts subis
+seulement (indécidable) — *la menace change de nature, pas d'intensité*, là où le cran V ajoutait
++50 % de dégâts sans jamais faire descendre la barre.
+⚠ **Piège d'implémentation** : un plancher en % des PV max ne doit **jamais** toucher un dégât
+**continu** (PV/s × delta) — appliqué à chaque tick il tue en quelques frames. D'où
+`EnemyBase.DealDiscreteDamage`, chemin **unique** des coups discrets (qui absorbe au passage la DR
+recopiée par huit appelants) ; `EnemyBullet.FromChampion` se pose **au tir** (un projectile survit à
+son tireur).
+⚠ **Deux biais de LECTURE, trouvés en route** : ① `--min-samples` est un **biais de survie** — une run
+courte parce que le joueur **meurt vite** est le meilleur résultat du réglage ; la run où le bot meurt
+en 1 min était exclue du verdict du cran qui l'avait tuée, et faisait paraître l'effet **inversé**.
+② un **compte** d'événements rares ne s'arbitre pas (verdict inversé entre 2 et 3 paires) : le critère
+porte sur la **profondeur** (`PV bas min %`), et le **taux de runs mortelles** se lit en premier.
+⚠ **JAMAIS JOUÉ** : le bot kite mécaniquement et tire au hasard, or ce cran vise un comportement
+**humain** (rester au contact d'un champion parce qu'on a les PV pour) ; **0,12 n'est pas calibré**,
+seulement prouvé *effectif*. Design → `docs/GDD.md` **§34.6/§34.7** ; mesures → `docs/TEST_REPORT.md`
+(2026-08-02) ; checklist « ajouter un cran » → `docs/PITFALLS.md`. **319 tests.**
 
 **(7) L'échelle complète jouée — et le canal des soins est saturé de gaspillage** (2026-08-01, **non
 publié**, aucun changement de gameplay). Le testeur a joué **les crans 1 à 5** : « pas de difficulté
