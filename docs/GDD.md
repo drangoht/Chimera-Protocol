@@ -2960,9 +2960,26 @@ clôture d'une fenêtre**, pour la même raison : un creux à cheval sur deux é
 **Nouveau critère de validation d'un cran** — il remplace le seuil des 6 % de temps soutenable, qui
 reste utile comme mesure de pression mais ne décide plus :
 
-> Un cran est retenu s'il fait **monter `frôlements/min`** et **baisser `PV bas %`** de façon nette
-> (test des signes, N/N sur les graines appariées). Un cran qui laisse `frôlements/min` à zéro ne se
-> sentira pas, quels que soient ses débits : le joueur n'a jamais vu sa barre de vie descendre.
+> Un cran est retenu s'il fait **baisser `PV bas min %`** de façon nette (test des signes, 0/N sur les
+> graines appariées) — c'est-à-dire si le joueur descend **plus bas** qu'avant. Le **taux de runs
+> mortelles** se lit en premier : il ne dépend d'aucune convention de résumé.
+
+⚠ **Ce critère a été corrigé par sa première utilisation** (2026-08-02). Il portait d'abord sur
+`frôlements/min` — *le joueur frôle-t-il la mort plus **souvent** ?* Mesuré sur le cran VI, ce compte
+monte de **+226 % mais seulement 3/4** : à 0,1-0,3 frôlement par minute, l'événement est trop rare pour
+que quatre graines le rendent net, et le verdict s'inversait entre 2 et 3 paires. La **profondeur**
+(`PV bas min %`) est nette dès 4 paires (**0/4**) parce que c'est un extremum et non un compte. Un
+compte d'événements rares demande beaucoup plus de graines qu'un extremum — le préférer, c'est
+s'imposer des campagnes qu'on ne fera pas. `frôlements/min` reste **descriptif** (il dit *combien de
+fois*), il n'arbitre plus.
+
+⚠ **Biais de survie dans la lecture, et il a failli coûter le diagnostic.** `power_loop.py --min-samples`
+existe pour écarter les runs interrompues par un banc coupé. Mais une run peut être courte **parce que
+le joueur est mort vite** — et c'est alors le meilleur résultat du réglage testé. Au cran VI, le bot
+meurt en **1 minute d'overtime** sur une graine : run écartée en silence par `--min-samples 20`, donc
+absente du verdict apparié du cran qui l'avait tuée. L'outil signale désormais toute run **mortelle**
+qu'il écarte. *Un filtre de qualité de données qui corrèle avec l'effet mesuré est un biais, pas un
+nettoyage.*
 
 ⚠ **Cette métrique doit d'abord se prouver elle-même.** Le premier usage n'est pas de valider un
 réglage mais de vérifier qu'elle distingue ce que l'on sait déjà distinguer : le cran 0 (le bot ne
@@ -3021,6 +3038,30 @@ est précisément la réponse que le joueur a le droit de construire contre ce c
 système recherché au §34.5 : le lot 2 doit donner une **raison** de reprendre une carte du §33.6, pas
 l'annuler.
 
-⚠ **À vérifier avant publication, et non après** : que le cran VI monte `frôlements/min` de façon nette
-(§34.6) — c'est-à-dire qu'il produise des barres de vie qui plongent, et pas seulement des chiffres qui
-bougent. Le lot 1 a été publié sur un critère qui n'a pas tenu cette promesse.
+**Mesuré au banc — le cran passe** (2026-08-02, 4 graines appariées, comparaison au **cran précédent**
+comme l'exige un cran cumulatif) :
+
+| en overtime | cran 5 | cran 6 | écart | signes |
+|---|---|---|---|---|
+| **runs mortelles** | **1/4** | **4/4** | | |
+| **`PV bas min %`** | 25,5 | **2,5** | **−90,2 %** | **0/4 net** |
+| `PV bas %` (médian) | 87,5 | 74,2 | −15,1 % | **0/4 net** |
+| `frôlements/min` | 0,1 | 0,3 | +226 % | 3/4 |
+| dégâts subis (PV/s) | 93,5 | 99,7 | +6,6 % | 2/4 — indécidable |
+| kills/min | 1977 | 1922 | −2,8 % | 0/4 net |
+
+**Le résultat qui compte n'est pas l'ampleur, c'est sa forme.** Le cran V montait les dégâts subis de
+**+50 %** sans jamais faire descendre la barre de vie ; le cran VI la fait tomber à **2,5 %** en
+n'ajoutant que **+6,6 %** de dégâts — un écart non significatif. *La menace change de nature, pas
+d'intensité.* C'est la première fois qu'un cran produit de la tension plutôt que du volume, et c'est
+exactement ce que le diagnostic du §34.4 ter demandait : viser la capacité d'absorption, pas les flux.
+
+Le joueur compense d'ailleurs comme prévu — PV max +7,8 %, soins retenus +22,1 % (ni l'un ni l'autre
+net) : il achète plus de barre et convertit mieux ses soins, sans que cela suffise. Le canal des soins
+n'est pas touché par ce cran, il **redevient utile** de lui-même.
+
+⚠ **Ce que le banc ne dit pas.** Le bot n'est pas un joueur : il kite mécaniquement et tire ses cartes
+au hasard. Il mesure la **pression que le contenu exerce**, jamais le talent de qui la subit — et le
+cran VI vise précisément un comportement humain (rester au contact d'un champion parce qu'on a les PV
+pour). **À jouer avant publication.** Le lot 1 a été publié sans l'être, et c'est ce qui a coûté la
+séquence du 1ᵉʳ août.

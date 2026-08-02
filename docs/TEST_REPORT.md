@@ -4,6 +4,91 @@ Rapport de sessions de test. Chaque section correspond à une session de test di
 
 ---
 
+## Mesurer ce qui se sent — et le cran VI « Purificateur » — 2026-08-02
+
+**Objet :** le 1ᵉʳ août a laissé une question sans réponse — *le cran 5 fait chuter le temps soutenable
+de 89,3 % à 67,7 %, tue le bot, et reste imperceptible pour un humain*. Avant de concevoir le lot 2, il
+fallait donc un instrument capable de prédire le **ressenti**, sinon le lot 2 se validerait sur le même
+critère défaillant que le lot 1.
+
+### 1. Le diagnostic de l'instrument
+
+Toutes les colonnes historiques de `PowerTelemetry` sont des **débits moyennés sur 15 s**. Elles
+répondent à « le joueur s'use-t-il ? ». Il ne s'use pas : il jette 80 % des soins offerts et meurt d'un
+**pic**. Or un plongeon à 10 % des PV suivi d'une remontée complète ne déplace **aucune** moyenne — et
+c'est mot pour mot ce qu'un joueur appelle « c'était difficile ». Les PV n'étaient relevés qu'une fois
+toutes les 15 s : entre deux relevés, le creux n'existait pas.
+
+→ `PressureMeter` (logique pure, 11 tests) : observation **à la frame**, comptage d'**événements**
+(`frolements` sous 30 % des PV max, `pv_min_pct`, `part_danger`). Hystérésis 30 % → 55 %, conservée à
+la clôture d'une fenêtre — sans quoi la métrique mesurerait la fréquence de rafraîchissement.
+
+### 2. Ce que l'instrument révèle du jeu publié (cran 0, 4 graines, overtime)
+
+| | valeur |
+|---|---|
+| `PV bas min %` (pire moment de **toute** la run) | **76 %** |
+| `frôlements/min` | **0,0** |
+| `part danger` | **0,0** |
+| runs mortelles | **0/4** |
+
+**En 6:45 d'overtime, la barre de vie du joueur ne descend jamais sous 76 %.** Pas un instant de
+tension dans une partie entière. Le « aucune difficulté particulière » du testeur n'était pas une
+impression : c'est une propriété mesurable du jeu. Au cran 5, `PV bas min %` tombe à 25,5 % — l'instrument
+distingue donc ce qu'il devait distinguer.
+
+### 3. Cran VI « Purificateur » — les champions frappent en % des PV max
+
+Règle : `dégât = max(nominal, 12 % des PV max)`, **champions seulement**, plancher appliqué **avant** la
+réduction de dégâts (DR, i-frames et réserve de régénération continuent de jouer). Design → `docs/GDD.md`
+§34.7. Mesure sur 4 graines appariées, comparaison au **cran précédent** (cran cumulatif) :
+
+| en overtime | cran 5 | cran 6 | écart | signes |
+|---|---|---|---|---|
+| **runs mortelles** | **1/4** | **4/4** | | |
+| **`PV bas min %`** | 25,5 | **2,5** | **−90,2 %** | **0/4 net** |
+| `PV bas %` (médian) | 87,5 | 74,2 | −15,1 % | **0/4 net** |
+| `frôlements/min` | 0,1 | 0,3 | +226 % | 3/4 |
+| dégâts subis (PV/s) | 93,5 | 99,7 | +6,6 % | 2/4 — indécidable |
+| kills/min | 1977 | 1922 | −2,8 % | 0/4 net |
+
+**Le résultat n'est pas l'ampleur, c'est la forme.** Le cran V ajoutait **+50 %** de dégâts subis sans
+jamais faire descendre la barre ; le cran VI la fait tomber à **2,5 %** en n'ajoutant que **+6,6 %** de
+dégâts — écart non significatif. *La menace change de nature, pas d'intensité.*
+
+### 4. Deux défauts de méthode trouvés en route (les deux dans MA lecture, pas dans le jeu)
+
+**① Un événement rare ne se résume pas par une médiane.** `median(frolements)` vaut 0 sur ~27 fenêtres
+majoritairement nulles — **y compris dans une run où le bot meurt**. La médiane qualifiait de « sans
+danger » une run mortelle. Les comptes se somment et se ramènent au temps.
+
+**② Biais de survie dans le filtre de qualité.** `--min-samples 20` écarte les runs interrompues par un
+banc coupé. Mais au cran VI, le bot meurt **en 1 minute d'overtime** sur la graine 2002 : run écartée en
+silence — donc la run où le cran a le mieux fonctionné était absente du verdict de ce cran. Le premier
+relevé (3 graines) donnait `frôlements/min` **en baisse** ; toutes runs incluses, il monte de 226 %.
+*Un filtre de qualité de données qui corrèle avec l'effet mesuré est un biais, pas un nettoyage.*
+`power_loop.py` signale désormais toute run **mortelle** qu'il écarte, et affiche le **taux de morts**
+en tête de rapport — la seule mesure qu'aucune convention de résumé ne peut déformer.
+
+**③ Le critère de validation a été corrigé par sa première utilisation.** Il portait sur
+`frôlements/min` (« frôle-t-il la mort plus **souvent** ? ») ; à 0,1-0,3 par minute l'événement est trop
+rare pour être net à 4 graines, et le verdict s'inversait entre 2 et 3 paires. Le critère porte
+désormais sur `PV bas min %` (**profondeur**, un extremum, net dès 4 paires).
+
+### 5. Ce qui reste ouvert
+
+* **Le cran VI n'a pas été joué.** Le bot kite mécaniquement et tire ses cartes au hasard ; or ce cran
+  vise un comportement **humain** — rester au contact d'un champion parce qu'on a les PV pour. Publier
+  sans jouer est exactement ce qui a coûté la séquence du 1ᵉʳ août.
+* **La valeur 0,12 n'est pas calibrée**, seulement validée comme *effective*. Un test verrouille le
+  garde-fou (≥ 6 coups pour vider la barre) mais le bon dosage se juge manette en main.
+* **Le TTK du boss reste inchangé** — c'était l'intention (jamais un mur de patience). Reste que le boss
+  est toujours tué ~13 fois par run : le cran le rend dangereux, il ne le rend pas rare.
+* Campagne cran 5 incomplète en tâche de fond (tuée deux fois) — les runs ont été refaites **au premier
+  plan**, une par une, comme le recommande `PITFALLS.md`.
+
+---
+
 ## L'échelle complète jouée (crans 1→5) — la saturation finance ce qu'elle combat — 2026-08-01
 
 **Objet :** le testeur a joué **tous les crans de 1 à 5** sur le Sanctuaire, jusqu'à débloquer le cran

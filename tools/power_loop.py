@@ -72,6 +72,13 @@ class Run:
         self.biome = m.group(1) if m else "?"
         self.col = {name: i for i, name in enumerate(columns)}
         self.samples: list[list[str]] = []
+        # Issue de la run (« death », « bench_limit », « victory »…). C'est la mesure la moins
+        # discutable du lot : elle ne dépend d'aucune convention de résumé.
+        self.outcome: str | None = None
+
+    @property
+    def died(self) -> bool:
+        return self.outcome == "death"
 
     @property
     def usable(self) -> bool:
@@ -101,6 +108,13 @@ def parse(path: Path) -> list[Run]:
     for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
         if line.startswith("=== Courbe de puissance"):
             header, cur = [line], None
+            continue
+        if line.startswith("# fin de run"):
+            # Doit être testé AVANT le cas « # » général : cette ligne clôt la run courante et ne
+            # fait pas partie de l'en-tête de la suivante. Absorbée dans le header, l'issue était
+            # perdue — et avec elle la seule mesure qui ne dépend d'aucune convention de résumé.
+            if cur is not None:
+                cur.outcome = line.split(":", 1)[-1].strip()
             continue
         if line.startswith("#"):
             header.append(line)
@@ -192,6 +206,14 @@ def paired_report(by_sat: dict[str, list[Run]], a: str, b: str) -> int:
 
     print(f"Comparaison appariée — cran {a} → cran {b} · {len(seeds)} graine(s) : "
           f"{', '.join(map(str, seeds))}\n")
+
+    # LE résultat, avant toute métrique de résumé : le bot est-il mort ? Affiché en premier parce
+    # qu'aucune convention de lecture ne peut le déformer — contrairement aux médianes, aux taux et
+    # au choix de la fenêtre. ⚠ Il porte sur les runs RETENUES : voir l'avertissement de `main`, une
+    # run trop courte pour le seuil d'échantillons est justement une run où le joueur est mort vite.
+    ma_morts = sum(1 for s in seeds if ra[s].died)
+    mb_morts = sum(1 for s in seeds if rb[s].died)
+    print(f"{'runs mortelles':<16} {ma_morts:>9}/{len(seeds)} {mb_morts:>7}/{len(seeds)}\n")
     print(f"{'métrique':<16} {'cran '+a:>9} {'cran '+b:>9} {'écart':>8} {'signes':>8}")
     print("-" * 54)
 
@@ -241,10 +263,28 @@ def main() -> int:
         print(f"Journal introuvable : {args.log}", file=sys.stderr)
         return 1
 
-    runs = [r for r in parse(args.log) if len(r.samples) >= args.min_samples]
+    toutes = parse(args.log)
+    runs = [r for r in toutes if len(r.samples) >= args.min_samples]
     if not runs:
         print("Aucune run exploitable.", file=sys.stderr)
         return 1
+
+    # ⚠ BIAIS DE SURVIE DANS LA LECTURE. `--min-samples` existe pour écarter les runs interrompues
+    # par un banc coupé — mais une run PEUT être courte parce que le joueur est mort vite, et c'est
+    # alors le meilleur résultat du réglage testé. Écartées en silence, les runs les plus mortelles
+    # disparaissent de la comparaison et le réglage paraît plus doux qu'il n'est. Cas réel
+    # (2026-08-02) : au cran VI le bot meurt en 1 min d'overtime sur une graine — run exclue par
+    # `--min-samples 20`, donc invisible dans le verdict apparié du cran qui l'avait tuée.
+    # Les runs sans cran ni graine identifiés viennent de campagnes antérieures à ces en-têtes : elles
+    # ne sont comparables à rien, les signaler n'apporterait que du bruit.
+    ecartees = [r for r in toutes
+                if len(r.samples) < args.min_samples and r.died
+                and r.sat is not None and r.seed is not None]
+    if ecartees:
+        detail = ", ".join(f"cran {r.sat}/graine {r.seed} ({len(r.samples)} éch.)" for r in ecartees)
+        print(f"⚠ {len(ecartees)} run(s) MORTELLE(S) écartée(s) par --min-samples={args.min_samples} : "
+              f"{detail}.\n  Une run courte parce que le joueur MEURT est un résultat, pas un déchet — "
+              f"baisser le seuil pour les inclure.\n", file=sys.stderr)
 
     by_sat: dict[str, list[Run]] = {}
     for r in runs:
@@ -254,9 +294,9 @@ def main() -> int:
         return paired_report(by_sat, *args.paired)
 
     print(f"{len(runs)} runs · journal {args.log.name}\n")
-    print(f"{'cran':>4} {'runs':>4} {'niv/min':>9} {'PVmax/min':>10} {'soins PV/s':>11} "
+    print(f"{'cran':>4} {'runs':>4} {'morts':>6} {'niv/min':>9} {'PVmax/min':>10} {'soins PV/s':>11} "
           f"{'kills/min':>10} {'subis PV/s':>11} {'frôl./min':>10} {'PV bas %':>9}")
-    print("-" * 85)
+    print("-" * 92)
 
     for sat in sorted(by_sat, key=lambda k: (k == "?", k)):
         group = by_sat[sat]
@@ -266,7 +306,8 @@ def main() -> int:
             return median(vals) if vals else float("nan")
 
         # kills_fenetre et frolements sont des comptes PAR ÉCHANTILLON (15 s de jeu) : ramenés à la minute.
-        print(f"{sat:>4} {len(group):>4} "
+        morts = sum(1 for r in group if r.died)
+        print(f"{sat:>4} {len(group):>4} {morts:>3}/{len(group):<2} "
               f"{med(lambda r: r.per_minute('niveau')):>9.1f} "
               f"{med(lambda r: r.per_minute('pv_max')):>10.0f} "
               f"{med(lambda r: median(r.metric('soins_ps'))):>11.1f} "
