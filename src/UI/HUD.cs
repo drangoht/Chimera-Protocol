@@ -62,6 +62,14 @@ public partial class HUD : CanvasLayer
 	// Rappel de la touche d'esquive, sous la rangée de greffes (masqué sans greffe de dash).
 	private Label        _dashHint = null!;
 	private string       _dashHintKey = "";
+	// Filets de survie meta (Noyau de Secours, Plaque Adaptative) : une pastille par charge, à droite
+	// de la barre de vie. Créées une fois au premier affichage, quand les maxima du Player sont connus.
+	private HBoxContainer _safetyRow  = null!;
+	private ColorRect[]   _lifePips   = System.Array.Empty<ColorRect>();
+	private ColorRect[]   _absorbPips = System.Array.Empty<ColorRect>();
+	private int           _lastLivesLeft  = -1;
+	private int           _lastAbsorbLeft = -1;
+	private bool          _safetyPipsBuilt;
 
 	private const float HpBarW = 222f;
 	private const float XpBarW = 296f;
@@ -137,6 +145,21 @@ public partial class HUD : CanvasLayer
 		(_reserveBar, _reserveFill, _) = MakeBar(root, new Vector2(30, 70),
 			new Vector2(HpBarW, 4), new Color(0.08f, 0.09f, 0.14f, 0.6f), ReserveColor);
 		_reserveBar.Visible = false;
+
+		// Filets de survie meta : une pastille par charge achetée, allumée tant qu'elle est disponible
+		// et ÉTEINTE (et non retirée) une fois dépensée — c'est la différence entre « il m'en restait
+		// une » et « je n'en ai jamais eu ». Sans cet indicateur le joueur ignorait jusqu'à leur
+		// existence : deux Noyaux de Secours et trois Plaques Adaptatives se consommaient en silence,
+		// ce qui rendait sa propre mort inexplicable (« il a fallu que je reste immobile pour vraiment
+		// mourir », 2026-08-02). Masqué entièrement s'il n'a rien acheté, ou au cran IV qui les coupe.
+		_safetyRow = new HBoxContainer
+		{
+			Position = new Vector2(30 + HpBarW + 8, 66),
+			MouseFilter = Control.MouseFilterEnum.Ignore,
+			Visible = false,
+		};
+		_safetyRow.AddThemeConstantOverride("separation", 3);
+		root.AddChild(_safetyRow);
 
 		(_, _xpFill, _xpFillStyle) = MakeBar(root, new Vector2(30, 82), new Vector2(XpBarW, 6),
 			new Color(0.08f, 0.09f, 0.14f, 0.95f), _accent);
@@ -519,6 +542,7 @@ public partial class HUD : CanvasLayer
 	{
 		var dashPlayer = GameManager.Instance?.PlayerInstance;
 		UpdateDashHint(dashPlayer != null && dashPlayer.DashEnabled);
+		UpdateSafetyPips(dashPlayer);
 
 		if (_dashCdVeil == null || !IsInstanceValid(_dashCdVeil)) return;
 		var player = dashPlayer;
@@ -528,6 +552,77 @@ public partial class HUD : CanvasLayer
 		if (ready >= 1f) { _dashCdVeil.Visible = false; return; }
 		_dashCdVeil.Visible = true;
 		_dashCdVeil.Size = new Vector2(_dashSlotSize, _dashSlotSize * (1f - ready)); // couvre par le haut
+	}
+
+	/// <summary>
+	/// Dessine les filets de survie meta : une pastille par charge achetée, vive tant qu'elle est
+	/// disponible, éteinte une fois dépensée.
+	///
+	/// <para>Les pastilles ne sont construites qu'une fois, au premier appel où le Player existe : leurs
+	/// maxima sont figés au début de la run (<c>ExtraLivesMax</c>/<c>AbsorbChargesMax</c>) et le cran IV
+	/// « Sans filet » les met à zéro — auquel cas la rangée reste simplement invisible, sans rien annoncer
+	/// (la règle du cran est déjà lue avant de lancer, la redire ici serait du bruit).</para>
+	/// </summary>
+	private void UpdateSafetyPips(Player? player)
+	{
+		if (_safetyRow == null || !IsInstanceValid(_safetyRow)) return;
+		if (player == null) { _safetyRow.Visible = false; return; }
+
+		if (!_safetyPipsBuilt)
+		{
+			_safetyPipsBuilt = true;
+			_lifePips   = BuildPips(player.ExtraLivesMax,    new Color(0.55f, 1f, 0.65f));
+			_absorbPips = BuildPips(player.AbsorbChargesMax, new Color(0.45f, 0.72f, 1f));
+			_safetyRow.Visible = _lifePips.Length > 0 || _absorbPips.Length > 0;
+			if (_safetyRow.Visible)
+				_safetyRow.TooltipText = Loc.T("HUD_SAFETY_NETS");
+		}
+		if (!_safetyRow.Visible) return;
+
+		if (player.ExtraLivesLeft != _lastLivesLeft)
+		{
+			_lastLivesLeft = player.ExtraLivesLeft;
+			PaintPips(_lifePips, _lastLivesLeft);
+		}
+		if (player.AbsorbChargesLeft != _lastAbsorbLeft)
+		{
+			_lastAbsorbLeft = player.AbsorbChargesLeft;
+			PaintPips(_absorbPips, _lastAbsorbLeft);
+		}
+	}
+
+	/// <summary>Crée <paramref name="count"/> pastilles de la teinte donnée dans la rangée des filets.</summary>
+	private ColorRect[] BuildPips(int count, Color tint)
+	{
+		var pips = new ColorRect[Mathf.Max(0, count)];
+		for (int i = 0; i < pips.Length; i++)
+		{
+			// Les Noyaux de Secours sont plus hauts que les Plaques : une charge qui sauve d'une mort ne
+			// doit pas se lire comme une charge qui absorbe un coup, même du coin de l'œil.
+			bool isLife = tint.G > tint.B;
+			pips[i] = new ColorRect
+			{
+				CustomMinimumSize = new Vector2(6, isLife ? 12 : 8),
+				Color = tint,
+				MouseFilter = Control.MouseFilterEnum.Ignore,
+			};
+			_safetyRow.AddChild(pips[i]);
+		}
+		return pips;
+	}
+
+	/// <summary>Allume les <paramref name="left"/> premières pastilles, éteint les suivantes.</summary>
+	private static void PaintPips(ColorRect[] pips, int left)
+	{
+		for (int i = 0; i < pips.Length; i++)
+		{
+			if (!IsInstanceValid(pips[i])) continue;
+			var c = pips[i].Color;
+			// Dépensée : on la garde à l'écran, très assombrie. Elle disparaîtrait sinon, et le joueur
+			// ne saurait pas qu'il vient d'en perdre une — c'est le défaut même qu'on corrige.
+			pips[i].Modulate = i < left ? Colors.White : new Color(1, 1, 1, 0.18f);
+			pips[i].Color = c;
+		}
 	}
 
 	/// <summary>Charge la texture d'icône d'une greffe si la ressource existe (repli null → carré teinté).

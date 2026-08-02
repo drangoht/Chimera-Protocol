@@ -391,6 +391,8 @@ GRAFT_ERRATIC_SERVOS_NAME,Erratic Servos,Servos Erratiques,Servos Erráticos
 GRAFT_ERRATIC_SERVOS_DESC,"Drone reflexes grafted to your legs: a brief invulnerable dodge dash, on cooldown.","Les réflexes du drone greffés à tes jambes : une ruade d'esquive brève et invulnérable, à recharge.","Los reflejos del dron injertados en tus piernas: una embestida de esquiva breve e invulnerable, con recarga."
 HINT_ACTIVE_KEY,▸ Press  {0}  to use it.,▸ Appuie sur  {0}  pour l'utiliser.,▸ Pulsa  {0}  para usarla.
 HUD_DASH_HINT,{0} — dodge,{0} — esquive,{0} — esquiva
+HUD_SAFETY_NETS,"Safety nets: Emergency Cores (tall) and Adaptive Plates (short). A dimmed pip is spent.","Filets de survie : Noyaux de Secours (hauts) et Plaques Adaptatives (basses). Une pastille éteinte est consommée.","Redes de seguridad: Núcleos de Emergencia (altos) y Placas Adaptativas (bajas). Un punto apagado está gastado."
+BANNER_EXTRA_LIFE,"EMERGENCY CORE — {0} LEFT","NOYAU DE SECOURS — {0} RESTANT(S)","NÚCLEO DE EMERGENCIA — QUEDAN {0}"
 GRAFT_AIMING_EYE_NAME,Aiming Eye,Œil de Visée,Ojo de Puntería
 GRAFT_AIMING_EYE_DESC,A sentinel's eye grafted into your skull fires on its own at the nearest enemy.,Un œil de sentinelle greffé dans ton crâne tire seul sur l'ennemi le plus proche.,Un ojo de centinela injertado en tu cráneo dispara solo al enemigo más cercano.
 GRAFT_GRAFTED_CARAPACE_NAME,Grafted Carapace,Carapace Greffée,Caparazón Injertado

@@ -439,6 +439,19 @@ Ordre en vigueur : `Banner` 85 · **`PostFX` 90** (vignette + liserés d'écran,
 - Symétriquement, **un effet passif doit se voir** : l'Auto-réparation (+0,6 PV/s) était si invisible
   que le testeur la croyait *active* et la cherchait une touche à la main — donc ne la prenait jamais
   (1 fois sur 80). Toute stat continue a besoin d'un indicateur (ici `♥ +X/s` au HUD).
+- **Un consommable qui se dépense TOUT SEUL doit s'annoncer deux fois : en stock, et à la dépense.**
+  Le Noyau de Secours (`extra_life`) annulait la mort du joueur en ne signalant qu'un flash de 0,3 s et
+  `sfx_core_collect` — le son de ramassage d'un Noyau d'Aether, entendu des dizaines de fois par run.
+  Rien au HUD n'indiquait qu'on possédait ces charges. Résultat rapporté le 2026-08-02 : « on ne
+  distingue pas très bien quand une vie est utilisée » et « il a fallu que je reste immobile pour
+  vraiment mourir » — cinq sauvetages invisibles (2 Noyaux + 3 Plaques Adaptatives) rendaient sa propre
+  mort inexplicable. Parades en place : rangée de **pastilles** au HUD (une par charge achetée, éteinte
+  et **non retirée** une fois dépensée — sinon on ne peut pas distinguer « il m'en restait une » de « je
+  n'en ai jamais eu »), et à la dépense d'une vie : bannière + `sfx_ui_death` (un son qui ne joue nulle
+  part ailleurs en run) + secousse + flash long. ⚠ **Ne pas mettre de bannière sur un consommable
+  fréquent** : la Plaque Adaptative se dépense trois fois par run, l'interruption y deviendrait du
+  bruit — son flash est simplement allongé (0,1 → 0,25 s, à 0,1 s il se confondait avec les i-frames)
+  et le compteur porte l'information.
 
 ## VFX/projectiles parentés à la racine — purge à la sortie de run
 Les entités éphémères de gameplay (balles, flammes, death bursts, anneaux de choc, explosions

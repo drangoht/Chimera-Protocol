@@ -196,8 +196,8 @@ public static class SaturationTable
     /// voir puisqu'il compare des flux), c'est un débit de soin qui disparaît.</para>
     ///
     /// <para>Ce n'est pas un doublon d'« Hémorragie » (cran I) : celui-ci <b>réduit</b> tous les soins
-    /// de 40 %, celui-là <b>supprime</b> une source entière. Les deux se cumulent — la moitié restante
-    /// du soin de niveau tombe elle aussi.</para>
+    /// (×0,35 depuis le 2026-08-02), celui-là <b>supprime</b> une source entière. Les deux se cumulent —
+    /// le tiers restant du soin de niveau tombe lui aussi.</para>
     /// </summary>
     public static bool LevelUpHealsEnabled(int rank) => Clamp(rank) < 4;
 

@@ -27,6 +27,15 @@ public partial class Player : CharacterBody2D
     private int _extraLivesLeft   = 0;
     private int _absorbChargesLeft = 0;
 
+    /// <summary>Noyaux de Secours encore disponibles (lu par le HUD).</summary>
+    public int ExtraLivesLeft => _extraLivesLeft;
+    /// <summary>Charges de Plaque Adaptative encore disponibles (lu par le HUD).</summary>
+    public int AbsorbChargesLeft => _absorbChargesLeft;
+    /// <summary>Nombre de Noyaux de Secours au départ de la run — le HUD dessine aussi les dépensés.</summary>
+    public int ExtraLivesMax { get; private set; }
+    /// <summary>Nombre de charges de Plaque Adaptative au départ de la run.</summary>
+    public int AbsorbChargesMax { get; private set; }
+
     private static Texture2D? _playerLightTex;
 
     // ── Power-ups temporaires (buffs à durée limitée, aucun power-creep permanent) ──
@@ -122,6 +131,10 @@ public partial class Player : CharacterBody2D
         bool safetyNets = GameSettings.Instance?.SafetyNetsEnabled ?? true;
         _extraLivesLeft    = safetyNets ? MetaProgressionSystem.Instance?.GetUpgradeLevel("extra_life")   ?? 0 : 0;
         _absorbChargesLeft = safetyNets ? MetaProgressionSystem.Instance?.GetUpgradeLevel("damage_absorb") ?? 0 : 0;
+        // Les maxima sont figés ici pour que le HUD puisse dessiner les charges DÉPENSÉES en plus des
+        // restantes : une pastille qui s'éteint se lit, une pastille qui disparaît ne se lit pas.
+        ExtraLivesMax    = _extraLivesLeft;
+        AbsorbChargesMax = _absorbChargesLeft;
 
         _lastMousePos = GetGlobalMousePosition();
         BuildAimIndicator();
@@ -711,7 +724,10 @@ public partial class Player : CharacterBody2D
         if (_absorbChargesLeft > 0)
         {
             _absorbChargesLeft--;
-            HitFlash(0.1f, new Color(1.2f, 1.6f, 2f, 1f));
+            // Flash allongé (0,1 → 0,25 s) : à 0,1 s il se confondait avec le clignotement d'i-frames.
+            // Pas de bannière ici, contrairement au Noyau de Secours — trois charges par run, une
+            // interruption à chaque fois deviendrait du bruit. Le compteur du HUD porte l'information.
+            HitFlash(0.25f, new Color(1.2f, 1.6f, 2f, 1f));
             return;
         }
         // Égide (power-up) : invulnérabilité totale le temps du buff — absorbe le coup (flash doré).
@@ -798,8 +814,19 @@ public partial class Player : CharacterBody2D
             Stats.CurrentHp = Stats.MaxHp * 0.3f;
             _invulnTimer = InvulnWindow;
             EmitSignal(SignalName.HpChanged, Stats.CurrentHp, Stats.MaxHp);
-            HitFlash(0.3f, new Color(1.6f, 2f, 1.2f, 1f));
-            AudioSystem.Instance?.PlaySfx("sfx_core_collect");
+
+            // Le joueur VIENT DE MOURIR et ne le sait pas : c'est l'événement le plus lourd de
+            // conséquence de toute la run, et il ne se signalait que par un flash de 0,3 s et le son de
+            // ramassage d'un Noyau d'Aether — celui qu'on entend des dizaines de fois par partie.
+            // Rapporté le 2026-08-02 : « on ne distingue pas très bien quand une vie est utilisée ».
+            // Il faut donc l'annoncer comme une mort évitée, pas comme un pickup : bannière, secousse,
+            // flash long, et un son qui n'existe nulle part ailleurs pendant une run.
+            HitFlash(0.8f, new Color(1.6f, 2f, 1.2f, 1f));
+            AudioSystem.Instance?.PlaySfx("sfx_ui_death");
+            ScreenShake.Instance?.Shake(16f, 0.45f);
+            Banner.Show(GetTree(),
+                        string.Format(Loc.T("BANNER_EXTRA_LIFE"), _extraLivesLeft),
+                        new Color(0.55f, 1f, 0.65f));
             GD.Print($"[Player] Noyau de Secours consommé. Charges restantes : {_extraLivesLeft}");
             return;
         }
