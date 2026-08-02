@@ -2817,6 +2817,59 @@ l'allongement de l'overtime (8:36 mesurés sont dans la fenêtre de 5-10 min du 
 validation au banc : « temps soutenable » doit rester dans la bande de **60,7 % ± 6 %** (le plus petit
 écart que la campagne sache détecter). Au-delà, réduire `ReserveSeconds` avant toute autre valeur.
 
+### 33.7 Suspension sous le feu — un débit ne s'oppose pas à un débit (2026-08-02)
+
+**Le retour de jeu.** Première partie jouée au cran VI, en fin de partie : *« la régénération est
+vraiment trop forte, je suis resté immobile un bon moment sans mourir »*.
+
+**Ce n'était pas un problème de dosage, mais d'espèce.** Les PV max sont un **stock** — ça se vide, et
+une menace qui monte finit toujours par le vider. La régénération est un **débit**. Opposer un débit à
+un débit ne produit pas une difficulté graduée mais un **seuil binaire** : tant que la régénération est
+sous les dégâts nets reçus par seconde, elle ne change presque rien ; dès qu'elle passe au-dessus, le
+joueur devient invulnérable **pour toujours**, sans bouger. Il n'existe aucune valeur qui rende ce
+seuil intéressant — seulement des valeurs qui décident du moment où on le franchit.
+
+Et on le franchissait mécaniquement : la régénération était **la seule stat défensive sans borne**.
+`StatCaps` plafonne la réduction de dégâts (0,40), la réduction de recharge (0,75) et la vitesse (380) ;
+`HpRegenPerSecond` n'y figure pas, et `OverloadCards.Regen` est linéaire, sans plafond, explicitement
+exemptée de `PassiveScaling`. À ~13 niveaux par minute d'overtime, toute run assez longue y arrive.
+
+**La règle retenue** : chaque coup encaissé coupe **entièrement** la régénération pendant
+`RegenReserve.SuppressionSeconds` = **4 s** — PV rendus *et* remplissage de la réserve. La réserve déjà
+constituée continue d'absorber : on coupe la source, on ne confisque pas ce qui a été gagné.
+
+**Pourquoi pas un plafond.** Un plafond (même indexé sur les PV max) recréerait la défense bornée que
+les cartes de surcharge existent pour supprimer (§33, et §31.4.3 : *une menace non bornée exige une
+défense non bornée*) — et il ne supprimerait pas le seuil, il le **déplacerait** : au-dessus du DPS
+entrant, l'immobilité redeviendrait gratuite. La suspension laisse le débit strictement illimité. Elle
+ne retire pas de la puissance, elle retire une **certitude** — celle de pouvoir encaisser sans jamais
+se désengager — ce qui est exactement la grammaire de l'échelle de saturation (§34.2).
+
+**Ce qu'elle rend au jeu.** La carte cesse d'être un compteur qui monte et redevient une décision de
+placement : décrocher 4 s est un acte, au milieu d'une nuée qui ne le permet pas gratuitement. Elle
+reprend aussi le sens que la réserve lui avait donné (§33.6) — un tampon gagné **en restant intact**,
+puisque c'est désormais le seul moment où il se remplit.
+
+**Effet de bord voulu sur le cran VI** : le plancher des champions vaut 12 % des PV max quand la
+réserve monte à 25 % (`MaxFractionOfMaxHp`). Une réserve pleine absorbait donc **deux coups planchers
+entiers** sans que la barre bouge — le cran avait été calibré *sous* le tampon censé n'amortir qu'un pic
+isolé. Sous le feu, la réserve ne se recharge plus et le cran retrouve sa morsure.
+
+**Lisibilité** (§33.5 encore) : le HUD bascule `♥ +38,0/s` sur un décompte grisé `♥ 2,4s`, et le liseré
+de réserve se grise. Sans cela, le joueur ne lit pas une règle, il lit une carte cassée. Les
+descriptions (carte de surcharge et upgrade méta `hp_regen`) annoncent la coupure.
+
+**⚠ Ce que le banc ne pouvait pas voir.** La campagne qui a validé le cran VI tourne sur ~7 min
+d'overtime depuis `--overtime` : elle n'atteint jamais le cumul de cartes d'une fin de partie réelle,
+donc jamais le seuil. Ce n'est pas un défaut de protocole mais **une limite de portée** à connaître —
+troisième biais de lecture du banc, après `--min-samples` (biais de survie) et les comptes d'événements
+rares (§34.7). Tout réglage qui dépend d'un **cumul sans plafond** doit être instruit sur une run
+longue, pas sur la fenêtre standard.
+
+**Valeur non calibrée.** 4 s ≈ 9 fenêtres d'invulnérabilité (0,45 s) : assez pour que rester au contact
+coupe tout, assez court pour qu'un décrochage franc paie. Réglage à confirmer en jouant — c'est un
+ressenti de placement, que ni le banc ni un bot qui kite mécaniquement ne savent juger.
+
 ---
 
 ## 34. Saturation de Rouille — l'échelle de challenge de fin de partie (2026-07-30)

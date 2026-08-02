@@ -565,14 +565,22 @@ public partial class Player : CharacterBody2D
     /// Auto-Réparation (upgrade meta hp_regen, carte de surcharge <c>overload_regen</c>, greffes) :
     /// soigne d'abord, puis met le surplus en <see cref="RegenReserve"/> au lieu de le perdre — 58 % du
     /// débit était jeté à PV pleins (mesure du 2026-07-30, cf. GDD §33.6).
+    ///
+    /// <para>Coupée pendant <see cref="RegenReserve.SuppressionSeconds"/> après chaque coup encaissé
+    /// (GDD §33.7) : sans quoi un débit non borné finit par dépasser les dégâts entrants et rend
+    /// l'immobilité gratuite — constaté en jeu le 2026-08-02.</para>
     /// </summary>
     private void UpdateHpRegen(double delta)
     {
+        // Décompté avant tout retour anticipé : le compteur doit courir même sans régénération, sinon
+        // une carte prise juste après un coup repartirait avec une suspension figée.
+        Stats.RegenSuppressLeft = RegenReserve.TickSuppression(Stats.RegenSuppressLeft, (float)delta);
+
         if (Stats.HpRegenPerSecond <= 0f || Stats.CurrentHp <= 0f) return;
 
         var (healed, stored, reserve) = RegenReserve.ApplyRegen(
             Stats.CurrentHp, Stats.MaxHp, Stats.RegenReserveCharge,
-            Stats.HpRegenPerSecond, (float)delta);
+            Stats.HpRegenPerSecond, (float)delta, Stats.RegenSuppressLeft);
 
         Stats.CurrentHp += healed;
         Stats.RegenReserveCharge = reserve;
@@ -712,6 +720,13 @@ public partial class Player : CharacterBody2D
         // d'ennemis collés. C'est le levier qui rend les grosses nuées jouables.
         if (_invulnTimer > 0f) return;
         _invulnTimer = InvulnWindow;
+
+        // Suspension de la régénération : réarmée ici, c'est-à-dire seulement quand un coup passe
+        // RÉELLEMENT — i-frames, égide et plaque adaptative sont déjà sortis plus haut, et un coup
+        // annulé ne doit pas punir. Réarmée AVANT l'absorption, donc un coup entièrement encaissé par
+        // la réserve coupe quand même la source : sans cela, tenir au contact resterait gratuit, ce
+        // qui est exactement le défaut corrigé (cf. RegenReserve.SuppressionSeconds).
+        Stats.RegenSuppressLeft = RegenReserve.Suppress();
 
         // Réserve de régénération : dernier rempart avant les PV, jamais un substitut aux i-frames —
         // d'où sa place APRÈS tous les retours anticipés ci-dessus (cf. RegenReserve).

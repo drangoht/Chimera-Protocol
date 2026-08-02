@@ -355,6 +355,33 @@ Trois pièges quand on touche à la difficulté par niveau ou à la formule d'É
   (`--out avant.json` puis `--compare avant.json`). La lecture qui compte n'est pas le delta médian
   mais le **test des signes** : un effet réel pousse presque toutes les paires dans le même sens.
 
+## Défense du joueur — un DÉBIT ne s'oppose pas à un DÉBIT (`RegenReserve`, `StatCaps`)
+- **Un stock et un débit ne se règlent pas de la même façon.** Des PV max sans plafond restent
+  gouvernables : une menace qui monte finit toujours par vider un stock. Une **régénération** sans
+  plafond, non — dès qu'elle dépasse les dégâts nets reçus par seconde, le joueur est invulnérable
+  **pour toujours** et sans bouger. Il n'y a pas de « bonne valeur » : seulement le moment où le seuil
+  est franchi. Constaté en jeu le 2026-08-02 (« resté immobile un bon moment sans mourir »).
+- **Avant d'ajouter une stat défensive, se demander si elle est un stock ou un débit.** Un débit se
+  borne par une **condition** (suspendu sous le feu, § GDD 33.7), jamais par un plafond de valeur : un
+  plafond replafonne la défense — le défaut corrigé en 1.23.0 — et ne fait que déplacer le seuil.
+- **`StatCaps` n'est pas la liste des stats bornées.** La réduction de dégâts, la recharge et la
+  vitesse y sont ; `HpRegenPerSecond` n'y a jamais figuré et personne ne l'avait remarqué. En ajouter
+  une nouvelle sans l'y déclarer *ni* lui donner une condition, c'est rouvrir ce bug.
+- **Un tampon défensif doit rester plus petit que le coup qu'un cran garantit.** La réserve monte à
+  25 % des PV max (`MaxFractionOfMaxHp`) quand le plancher du cran VI vaut 12 % : elle encaissait
+  **deux coups planchers entiers**. En ajoutant un cran ou un tampon, comparer explicitement les deux
+  fractions — sinon le cran est calibré sous le tampon et son effet est nul en jeu, *même quand le banc
+  le valide*.
+- **Portée du banc.** La campagne `--overtime` couvre ~7 min : elle n'atteint aucun cumul de fin de
+  partie réelle. Tout réglage qui dépend d'un **cumul sans plafond** (cartes de surcharge) doit être
+  instruit sur une run longue ou en jouant — un verdict de banc y est vrai *dans sa fenêtre* et muet
+  au-delà.
+- **Ne pas comparer un compteur de temps accumulé à `0f`.** 240 soustractions de `1/60f` à partir de
+  4 s laissent ~1e-7 : un `> 0f` strict gardait la régénération éteinte indéfiniment. Seuil à `1e-4f`
+  (cf. `RegenReserve.IsSuppressed`). Vaut pour tout timer décrémenté frame par frame.
+- Côté xUnit : le 3ᵉ argument d'`Assert.Equal(attendu, obtenu, n)` est un **nombre de décimales**, pas
+  une tolérance absolue. Pour une somme accumulée frame par frame, utiliser `Assert.InRange`.
+
 ## Calques d'écran (`CanvasLayer.Layer`) — les modales passent AU-DESSUS de PostFX
 Ordre en vigueur : `Banner` 85 · **`PostFX` 90** (vignette + liserés d'écran, `scenes/Game.tscn`) ·
 `HUD` 95 · `BuffBar` 96 · **`LevelUpScreen` 97** · **`AssimilationScreen` 97** ·

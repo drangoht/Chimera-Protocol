@@ -210,7 +210,7 @@
     {
       "id": "hp_regen",
       "name": "Auto-Réparation",
-      "description": "Régénère des HP en continu pendant la run. +0.4 HP/s par niveau (3 niveaux, max 1.2 HP/s). À PV pleins, le débit remplit une réserve qui encaisse le prochain coup.",
+      "description": "Régénère des HP en continu pendant la run. +0.4 HP/s par niveau (3 niveaux, max 1.2 HP/s). À PV pleins, le débit remplit une réserve qui encaisse le prochain coup. Chaque coup encaissé la coupe 4 s : il faut décrocher pour se réparer.",
       "maxLevel": 3,
       "costPerLevel": [220, 380, 600],
       "effectPerLevel": [0.4, 0.4, 0.4],

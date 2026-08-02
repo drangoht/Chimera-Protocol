@@ -53,10 +53,12 @@ public partial class HUD : CanvasLayer
 	// Régénération PV/s, à droite de la barre de vie (masqué si nulle).
 	private Label        _regenLabel = null!;
 	private float        _lastRegenShown = -1f;
+	private bool         _regenWasSuppressed;
 	// Réserve de régénération (RegenReserve) : liseré sous la barre de vie, masqué sans régénération.
 	private Panel        _reserveBar  = null!;
 	private Panel        _reserveFill = null!;
 	private float        _lastReserveRatio = -1f;
+	private bool         _reserveWasSuppressed;
 	// Rappel de la touche d'esquive, sous la rangée de greffes (masqué sans greffe de dash).
 	private Label        _dashHint = null!;
 	private string       _dashHintKey = "";
@@ -559,16 +561,39 @@ public partial class HUD : CanvasLayer
 	/// <summary>
 	/// Affiche la régénération continue à droite de la barre de vie (« ♥ +2,4/s »), masquée si nulle.
 	/// Ne se met à jour que sur changement : ce label ne bouge qu'à la prise d'une carte.
+	///
+	/// <para>Sous le feu, la régénération est coupée (<see cref="RegenReserve.SuppressionSeconds"/>) et
+	/// le label bascule sur un décompte grisé. Sans cet affichage la règle serait invisible, donc
+	/// inexistante pour le joueur — même famille que le dash qui n'annonçait pas sa touche : il croirait
+	/// simplement que sa carte ne marche plus.</para>
 	/// </summary>
-	private void UpdateRegenLabel(float regenPerSecond)
+	private void UpdateRegenLabel(PlayerStats stats)
 	{
 		if (_regenLabel == null || !IsInstanceValid(_regenLabel)) return;
-		if (Mathf.IsEqualApprox(regenPerSecond, _lastRegenShown)) return;
+
+		float regenPerSecond = stats.HpRegenPerSecond;
+		bool suppressed = RegenReserve.IsSuppressed(stats.RegenSuppressLeft);
+		// Le décompte bouge à chaque frame : le cache ne vaut que pour l'état stable.
+		if (!suppressed && !_regenWasSuppressed && Mathf.IsEqualApprox(regenPerSecond, _lastRegenShown)) return;
 		_lastRegenShown = regenPerSecond;
+		_regenWasSuppressed = suppressed;
 
 		if (regenPerSecond <= 0.01f) { _regenLabel.Visible = false; return; }
 		_regenLabel.Visible = true;
-		_regenLabel.Text = "♥ +" + regenPerSecond.ToString("0.0") + "/s";
+
+		if (suppressed)
+		{
+			// Le débit disparaît de l'affichage — c'est bien lui qui est suspendu — et cède la place au
+			// temps restant avant reprise : l'information actionnable est « dans combien de temps »,
+			// pas « combien ». Glyphes volontairement limités à ceux que porte Share Tech Mono.
+			_regenLabel.Text = "♥ " + stats.RegenSuppressLeft.ToString("0.0") + "s";
+			_regenLabel.AddThemeColorOverride("font_color", UiPalette.Dim);
+		}
+		else
+		{
+			_regenLabel.Text = "♥ +" + regenPerSecond.ToString("0.0") + "/s";
+			_regenLabel.AddThemeColorOverride("font_color", HpHigh);
+		}
 	}
 
 	/// <summary>
@@ -589,6 +614,15 @@ public partial class HUD : CanvasLayer
 		}
 		if (!show) return;
 
+		// Grisé tant que la régénération est coupée : le liseré cesse alors de se remplir, et un
+		// tampon figé sans explication se lirait comme un bug.
+		bool suppressed = RegenReserve.IsSuppressed(stats.RegenSuppressLeft);
+		if (suppressed != _reserveWasSuppressed)
+		{
+			_reserveWasSuppressed = suppressed;
+			_reserveFill.Modulate = suppressed ? UiPalette.Dim : Colors.White;
+		}
+
 		float ratio = Mathf.Clamp(stats.RegenReserveCharge / capacity, 0f, 1f);
 		if (Mathf.IsEqualApprox(ratio, _lastReserveRatio)) return;
 		_lastReserveRatio = ratio;
@@ -603,7 +637,7 @@ public partial class HUD : CanvasLayer
 		float cur = player.Stats.CurrentHp, max = player.Stats.MaxHp;
 		float target = max > 0f ? Mathf.Clamp(cur / max, 0f, 1f) : 0f;
 
-		UpdateRegenLabel(player.Stats.HpRegenPerSecond);
+		UpdateRegenLabel(player.Stats);
 		UpdateReserveBar(player.Stats);
 
 		if (target >= _displayHpRatio) _displayHpRatio = target;

@@ -23,6 +23,12 @@ public partial class PlayerStats : Resource
     /// de run, pas un réglage.
     /// </summary>
     public float RegenReserveCharge { get; set; } = 0.0f;
+    /// <summary>
+    /// Secondes restantes de suspension de la régénération après un coup encaissé
+    /// (<see cref="RegenReserve.SuppressionSeconds"/>). État de run, comme
+    /// <see cref="RegenReserveCharge"/> : ni exporté, ni sauvegardé.
+    /// </summary>
+    public float RegenSuppressLeft { get; set; } = 0.0f;
 
     // Vitesse de base sauvegardée pour les recalculs servo_motors
     [Export] public float BaseSpeed { get; set; } = 200f;

@@ -24,6 +24,35 @@ d'Hémorragie) — build butler **#1846002**, `version.json` à 1.25.1. **Devlog
 (`docs/DEVLOG.md`), à coller sur itch par l'utilisateur.**
 ⚠ **Le lot 2 (cran VI) est dans `main` mais NON PUBLIÉ et NON JOUÉ** — le jeu en ligne est la 1.25.1.
 
+**(9) La régénération était la seule défense sans borne — un débit ne s'oppose pas à un débit**
+(2026-08-02, **non publié**). Première partie jouée au **cran VI** : « la régénération est vraiment
+trop forte, je suis resté immobile un bon moment sans mourir ». **Problème d'espèce, pas de dosage.**
+Les PV max sont un **stock** (une menace qui monte finit par le vider) ; la régénération est un
+**débit**, et opposer un débit à un débit produit un **seuil binaire** — sous les dégâts nets/s elle ne
+change presque rien, au-dessus le joueur est invulnérable *pour toujours*, immobile. Aucune valeur ne
+rend ce seuil intéressant, elle ne décide que du moment où on le franchit. Et il était franchi
+mécaniquement : `StatCaps` borne la DR (0,40), la recharge (0,75) et la vitesse (380), mais
+**`HpRegenPerSecond` n'y a jamais figuré**, et `OverloadCards.Regen` est linéaire, sans plafond,
+exemptée de `PassiveScaling` — à ~13 niveaux/min d'overtime, toute run assez longue y arrive. →
+**suspension sous le feu** : chaque coup encaissé coupe la régénération **et** le remplissage de la
+réserve pendant **4 s** (`RegenReserve.SuppressionSeconds`) ; la réserve déjà constituée continue
+d'absorber (on coupe la source, on ne confisque pas). **Pas un plafond** : ce serait recréer la défense
+bornée que les cartes de surcharge existent pour supprimer (§31.4.3) et seulement *déplacer* le seuil.
+La règle ne retire pas de la puissance, elle retire une **certitude** — celle d'encaisser sans jamais
+se désengager — soit la grammaire même de l'échelle de saturation.
+⚠ **Le cran VI était calibré SOUS son propre contre-feu** : son plancher vaut **12 %** des PV max quand
+la réserve monte à **25 %** (`MaxFractionOfMaxHp`) — une réserve pleine absorbait **deux coups
+planchers entiers**. Règle : comparer explicitement les deux fractions en ajoutant un cran ou un
+tampon.
+⚠ **Troisième biais de lecture du banc** (après `--min-samples` et les comptes d'événements rares) :
+la campagne `--overtime` couvre ~7 min et **n'atteint aucun cumul de fin de partie** — elle a validé le
+cran VI sans mentir, mais son verdict est muet au-delà de sa fenêtre. Tout réglage qui dépend d'un
+**cumul sans plafond** s'instruit sur une run longue ou en jouant.
+⚠ **4 s n'est pas calibré** (≈ 9 fenêtres d'i-frames) : ressenti de placement, à confirmer en jouant.
+Lisibilité : le HUD bascule `♥ +38,0/s` sur un décompte grisé `♥ 2,4s` + liseré de réserve grisé, et
+les deux descriptions annoncent la coupure — sans quoi le joueur lit une carte cassée, pas une règle.
+Design → `docs/GDD.md` **§33.7** ; pièges → `docs/PITFALLS.md` §Défense du joueur. **325 tests.**
+
 **(8) Mesurer ce qui se *sent* — et le lot 2 livré** (2026-08-02, **non publié**). Le lot 1 avait
 **passé** son critère (temps soutenable −10,0 %, 4/4, seuil 6 %) et le testeur ne sentait rien : cause
 structurelle, **toutes** les colonnes de `PowerTelemetry` sont des **débits moyennés sur 15 s**, donc
@@ -50,10 +79,10 @@ courte parce que le joueur **meurt vite** est le meilleur résultat du réglage 
 en 1 min était exclue du verdict du cran qui l'avait tuée, et faisait paraître l'effet **inversé**.
 ② un **compte** d'événements rares ne s'arbitre pas (verdict inversé entre 2 et 3 paires) : le critère
 porte sur la **profondeur** (`PV bas min %`), et le **taux de runs mortelles** se lit en premier.
-⚠ **JAMAIS JOUÉ** : le bot kite mécaniquement et tire au hasard, or ce cran vise un comportement
-**humain** (rester au contact d'un champion parce qu'on a les PV pour) ; **0,12 n'est pas calibré**,
-seulement prouvé *effectif*. Design → `docs/GDD.md` **§34.6/§34.7** ; mesures → `docs/TEST_REPORT.md`
-(2026-08-02) ; checklist « ajouter un cran » → `docs/PITFALLS.md`. **319 tests.**
+⚠ **0,12 n'est pas calibré**, seulement prouvé *effectif* (le bot kite mécaniquement et tire au
+hasard, or ce cran vise un comportement **humain**). **Joué le 2026-08-02 → voir (9)** : le cran est
+passé inaperçu, mais pour une cause qui n'est pas la sienne. Design → `docs/GDD.md` **§34.6/§34.7** ;
+mesures → `docs/TEST_REPORT.md` (2026-08-02) ; checklist « ajouter un cran » → `docs/PITFALLS.md`.
 
 **(7) L'échelle complète jouée — et le canal des soins est saturé de gaspillage** (2026-08-01, **non
 publié**, aucun changement de gameplay). Le testeur a joué **les crans 1 à 5** : « pas de difficulté
