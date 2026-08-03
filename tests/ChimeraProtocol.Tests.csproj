@@ -21,6 +21,11 @@
   -->
   <ItemGroup>
     <Compile Include="..\unity\Assets\Scripts\Shared\Rules\*.cs" />
+    <!--
+      Socle du port Unity (Pcg32…) : pur lui aussi, donc couvert par cette même suite. Sous Unity
+      il vit dans l'assembly ChimeraProtocol.PlatformCore, également en noEngineReferences.
+    -->
+    <Compile Include="..\unity\Assets\Scripts\Shared\PlatformCore\*.cs" />
   </ItemGroup>
 
 </Project>

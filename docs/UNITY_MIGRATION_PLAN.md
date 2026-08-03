@@ -182,6 +182,30 @@ comparables (méthode appariée, test des signes). Trois faits :
 validation de parité de « comparer des distributions sur N graines » à « comparer deux runs sur la
 même graine ».
 
+> **✅ FAIT au Lot 1** — `Pcg32` (logique pure, 21 tests). La fidélité a été établie **par mesure**
+> et non par lecture des sources : `tools/unity/dump_godot_rng.gd` extrait des valeurs du moteur, et
+> des formulations candidates leur sont confrontées. Trois résultats qu'aucune lecture de code
+> n'aurait donnés :
+>
+> 1. **L'amorçage n'est pas `state = seed`** mais `pcg32_srandom_r(seed, PCG_DEFAULT_INC_64)` :
+>    l'état part de 0 et absorbe la graine *entre deux avancements*. La version naïve produit une
+>    toute autre suite (et un premier tirage **nul** pour `seed = 1`).
+> 2. **`randf()` de Godot est en simple précision.** Le même calcul mené en `double` — qui paraît
+>    strictement meilleur — diverge d'environ **1e-8 dès le premier tirage**. Un test verrouille ce
+>    piège, qui serait sinon « corrigé » un jour par quelqu'un cherchant de la précision.
+> 3. **`randi_range` procède par modulo** sur le tirage brut (`from + rand() % span`), pas via
+>    `randf()`.
+>
+> ⚠ **Une lacune assumée** : `randf_range` (surcharge `double` de `GD.RandRange`) **n'a pas pu être
+> reproduite** — onze formulations candidates ont été testées, aucune ne correspond ; les mesures
+> montrent que Godot consomme *plusieurs* tirages par appel. Poursuivre serait disproportionné : les
+> **8 sites d'appel** ne pilotent que des positions et instants d'apparition de **ramassables**
+> (`PowerUpSpawner`, `MagnetSpawner`, `AetherCoreSpawner`) — ni tirages de cartes, ni tables
+> d'ennemis. **Conséquence à rappeler avant toute comparaison inter-moteurs (§8.2) : les runs Unity
+> restent parfaitement reproductibles entre elles, mais une comparaison Godot↔Unity sur une même
+> graine divergera dès le premier appel à cette fonction.** Un test verrouille la divergence connue
+> plutôt que de la laisser se découvrir en production.
+
 ⚠ **Limite à dire tout de suite** : même RNG identique, les runs ne seront pas *identiques*. Le
 nombre d'appels à la RNG dépend du nombre de frames, et la cadence de simulation diffère entre les
 deux moteurs. Ce qui devient comparable, ce sont les **tirages** (cartes de level-up, tables de
@@ -204,9 +228,17 @@ et les murs. **Recommandation : mouvement par transform + la séparation manuell
 moteur physique n'est pas une optimisation prématurée mais la reproduction fidèle de ce que le jeu
 fait déjà.
 
-⚠ **Point ouvert P1** : recenser précisément avec quoi `MoveAndSlide` entre en collision
-(`BiomeObstacles`, murs d'arène, joueur↔ennemi ?). Tant que ce recensement n'est pas fait, la
-conception du mouvement Unity est une hypothèse. **À traiter en Lot 2, avant d'écrire le Player.**
+> **✅ P1 TRANCHÉ au Lot 1** — et le code Godot le dit lui-même, en commentaire de
+> `EnemyBase._Ready` : « *les ennemis traversent les murs (layer 1) mais sont BLOQUÉS par les
+> obstacles infranchissables (bit 2). mask = 2 → collision avec les obstacles uniquement* ».
+>
+> Donc : les ennemis **ne collisionnent ni entre eux, ni avec le joueur** — uniquement avec les
+> `StaticBody2D` de `BiomeObstacles` (`CollisionLayer = 3`). Il n'y a **aucune physique dynamique à
+> n corps** à reproduire. Combiné au fait que les dégâts de contact se calculent par **distance** et
+> que la séparation est **manuelle et en O(n)** (joueur↔ennemi seulement, `PushEnemiesAside`), la
+> charge à 300 entités est **linéaire et légère** — ce que le prototype confirme (§6.2, R3).
+> Le mouvement Unity peut donc se faire **par transform**, avec des colliders sur les seuls
+> obstacles statiques.
 
 ### 4.5 La pause : un piège connu du projet qui change de forme
 
@@ -349,6 +381,44 @@ Chaque lot a un **critère de sortie vérifiable**. Un lot n'est pas « fini » 
 **Les deux lots les plus lourds sont l'UI (22 %) et le duo bestiaire/cœur (28 %).** L'UI est le plus
 volumineux mais le plus mécanique ; le bestiaire est celui où le *comportement* peut diverger sans
 que rien ne le signale.
+
+### 6.2 Lot 1 — prototypes de risque : les trois verdicts
+
+Exécutés le 2026-08-03 **avant** d'écrire le moindre shim, conformément au §13. Prototype :
+`unity/Assets/Scripts/Bench/BenchProto.cs` (reproduit la charge réelle établie au §4.4) ; build par
+`unity/Assets/Editor/BuildBench.cs` (`-executeMethod`, scène générée par code).
+
+| Risque | Question | Verdict |
+|---|---|---|
+| **R2** | Le banc tourne-t-il headless plus vite que le temps réel ? | ✅ **×94,8** — 60 s simulées en **0,63 s**, 300 entités, `-batchmode -nographics`, sans fenêtre, sortie 0. Godot plafonnait à **×1,0**. |
+| **R3** | 300 entités tiennent-elles la cadence ? | ✅ **0,168 ms/pas** de simulation, soit ~**5 960 IPS** pour la simulation seule ; avec 300 sprites rendus, **×42,5** le temps réel (~2 500 images/s). Coût de simulation **identique** avec et sans rendu. |
+| **R7** | Un build IL2CPP passe-t-il ? | ❌ **Impossible sur cette machine** — voir ci-dessous. |
+
+**Contrôle de sanité** : le compte de contacts est **identique** (785) avec et sans rendu, ce qui
+vérifie que le pas de simulation est bien fixe et indépendant de la cadence d'affichage — sans quoi
+les deux mesures ne seraient pas comparables.
+
+⚠ **Ce que ces chiffres ne disent pas.** Le prototype simule le **déplacement, la séparation et les
+dégâts de contact** — pas les armes, les projectiles, les VFX, l'IA par archétype, l'UI ni l'audio.
+C'est donc une **borne haute**, à la manière de `--start-at` (§4.3). Ce qu'il établit vraiment :
+le mode headless fonctionne et n'est pas bridé, et le coût par entité est linéaire et faible.
+La marge (×42 sur la cadence requise) est assez large pour retirer R2 et R3 de la liste des risques
+structurants, pas pour promettre une cadence finale.
+
+**R7 — IL2CPP : blocage d'environnement, et une simplification à la clé**
+
+Le build échoue sur `ToolchainNotFoundException` : IL2CPP compile du C++ et exige **Visual Studio
+2019+ avec les compilateurs C++** et le **Windows SDK 10.0.19041+**, absents de cette machine. Ce
+n'est pas un défaut du code.
+
+→ **Recommandation : livrer en backend Mono**, qui build et tourne (les mesures ci-dessus en
+viennent). Ce n'est pas un pis-aller : l'export .NET de Godot est lui aussi en **JIT**, donc Mono est
+l'analogue **le plus proche** de ce qui est publié aujourd'hui. Et cela **retire tout le risque
+AOT** — dont la sérialisation par réflexion de `SaveManager` (§5.2), qui redevient un non-sujet.
+
+IL2CPP ne redevient nécessaire que pour **console, mobile ou WebGL** — c'est-à-dire l'argument de
+portabilité (§12), hors du périmètre « parité stricte ». Si ce cap est visé un jour, installer les
+outils de build C++ **et refaire ce test en premier**.
 
 ### 6.1 Lot 0 — terminé le 2026-08-03
 
@@ -556,12 +626,12 @@ prochaine publication de la page itch.
 | # | Risque | Impact | Parade |
 |---|---|---|---|
 | **R1** | Un bug bloquant de la 1.26.0 (cran III inbattable, IPS au cran V) apparaît **pendant** le gel | Les joueurs restent bloqués des semaines | Rompre le gel **volontairement** pour ce seul correctif, le porter immédiatement côté Unity, et le noter ici |
-| **R2** | Le banc Unity ne tourne pas headless plus vite que le temps réel (§9.1) | Toute la méthodologie de mesure s'effondre | **Prototyper au Lot 1**, avant d'avoir écrit du gameplay |
-| **R3** | Les 200-300 entités ne tiennent pas les IPS sous Unity | Le jeu devient injouable au cran V, là où il est déjà tendu | Mesurer les IPS avec 300 entités **dès le Lot 2**, sur un prototype nu |
+| ~~**R2**~~ | ~~Le banc Unity ne tourne pas headless plus vite que le temps réel~~ | — | ✅ **RETIRÉ** (§6.2) — mesuré **×94,8** |
+| ~~**R3**~~ | ~~Les 200-300 entités ne tiennent pas les IPS sous Unity~~ | — | ✅ **RETIRÉ** (§6.2) — 0,168 ms/pas ; borne haute, marge ×42 |
 | **R4** | Divergence de comportement silencieuse (une arme, un affixe, une phase de boss) | Un jeu qui « marche » mais n'est plus le même | §8.2 + §8.3 + §8.4. C'est précisément pourquoi la parité doit être **prouvée**, pas supposée |
 | **R5** | Perte des sauvegardes joueurs (§9.3) | Irréversible, visible, et le pire retour possible | Migration au premier lancement, testée sur une vraie save |
 | **R6** | Le port s'arrête à mi-chemin | Un dépôt à deux moteurs, aucun des deux fini | Les lots 0-4 livrent un jeu **jouable** ; en cas d'arrêt, Godot reste publiable puisqu'il est intact |
-| **R7** | Sérialisation JSON cassée en IL2CPP (§5.2) | Ne se voit qu'au build final | Newtonsoft (officiel Unity) + un build IL2CPP de contrôle **dès le Lot 0** |
+| **R7** | Sérialisation JSON cassée en IL2CPP (§5.2) | Ne se voit qu'au build final | **Sans objet si on livre en Mono** (§6.2), ce qui est la recommandation — l'export Godot actuel est lui aussi en JIT. Redevient actif seulement si console/mobile/WebGL est visé : il faudra alors installer les outils C++ et refaire le test **en premier** |
 
 **R6 mérite d'être souligné** : le gel de Godot est un choix de méthode, pas une destruction. À tout
 instant, la 1.26.0 reste exportable et publiable. La migration est réversible tant qu'elle n'est pas
