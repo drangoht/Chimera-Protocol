@@ -74,6 +74,36 @@ function Wait-DirStable($dir, $stableReads = 3, $intervalMs = 800, $timeoutSec =
     Write-Host "AVERTISSEMENT : stabilite du runtime non confirmee apres $timeoutSec s (on continue, la verif DLL tranchera)." -ForegroundColor Yellow
 }
 
+# Attend que l'exe ET l'assembly C# aient ete REECRITS depuis le debut de l'export.
+#
+# ⚠ Ce garde-fou existe parce que son absence a pousse une build PERIMEE en ligne (2026-08-03,
+# release 1.26.0) : Godot rend la main immediatement, `Wait-DirStable` a constate un runtime
+# "stable" AVANT que dotnet publish n'ait commence a ecrire, les DLL critiques du build precedent
+# etaient toutes la — et butler a expedie le binaire de la version d'avant, sans une erreur. Le
+# gameplay etait bon, mais l'exe s'annoncait 1.25.1 face a un version.json a 1.26.0 (bandeau MAJ
+# perpetuel pour les joueurs web).
+#
+# La stabilite ne prouve rien : un artefact perime est parfaitement stable. Seule la FRAICHEUR
+# distingue un export reussi d'un export fantome. On attend donc, au lieu de renoncer a verifier
+# (ce que faisait le commentaire d'origine pour eviter un faux negatif) — et on echoue dur, car
+# expedier l'ancienne version est strictement pire que ne rien expedier.
+function Wait-FreshArtifacts($exe, $dataDir, $since, $timeoutSec = 1200) {
+    $probe = Join-Path $dataDir "ChimeraProtocol.dll"   # ecrit par dotnet publish, le plus tardif
+    $deadline = (Get-Date).AddSeconds($timeoutSec)
+    while ((Get-Date) -lt $deadline) {
+        $exeOk = (Test-Path $exe)   -and ((Get-Item $exe).LastWriteTime   -ge $since)
+        $dllOk = (Test-Path $probe) -and ((Get-Item $probe).LastWriteTime -ge $since)
+        if ($exeOk -and $dllOk) {
+            Write-Host "Artefacts frais (exe + assembly reecrits pendant cet export)." -ForegroundColor DarkGray
+            return
+        }
+        Start-Sleep -Milliseconds 1000
+    }
+    Fail ("Export fantome : l'exe ou l'assembly n'a pas ete reecrit en $timeoutSec s (exe = " +
+          "$(if (Test-Path $exe) { (Get-Item $exe).LastWriteTime } else { 'absent' }), export lance a $since). " +
+          "Rien n'a ete pousse. Verifie que le projet est indexe (--headless --path . --import) puis relance.")
+}
+
 # Verifie la presence des DLL critiques dans un dossier runtime donne ; Fail sinon.
 function Assert-CriticalDlls($dataDir, $label) {
     foreach ($dll in $CriticalDlls) {
@@ -119,20 +149,31 @@ if (-not $SkipExport) {
     if (-not (Test-Path (Join-Path $ProjectRoot "ChimeraProtocol.sln"))) {
         Fail "ChimeraProtocol.sln absent a la racine — recree-le (cf. CLAUDE.md) avant d'exporter."
     }
+    # Un export lance sur un projet jamais indexe echoue SANS RIEN DIRE (code 0, exe intact).
+    # Un --import prealable rend l'echec impossible a manquer : cf. docs/PITFALLS.md §Export .NET.
+    Write-Host "Indexation du projet..." -ForegroundColor Yellow
+    & $Godot --headless --path $ProjectRoot --import
+    $exportStart = Get-Date
     Write-Host "Export release en cours..." -ForegroundColor Yellow
     & $Godot --headless --export-release "Windows Desktop" $Exe
     # Godot 4.7 .NET laisse souvent $LASTEXITCODE VIDE/null en fin d'export headless
-    # ($null -ne 0 -> faux echec). On ne fail que sur un code non-zero EXPLICITE ; l'existence
-    # de l'exe + du runtime .NET est verifiee juste apres (garde-fou reel contre un echec).
-    # NB : pas de comparaison de timestamp — Godot rend la main a PowerShell avant d'avoir
-    # flush l'exe (course), ce qui provoquait un faux "echec silencieux".
+    # ($null -ne 0 -> faux echec). On ne fail que sur un code non-zero EXPLICITE ; la FRAICHEUR
+    # de l'exe + du runtime .NET est verifiee juste apres (garde-fou reel contre un export
+    # fantome, cf. Wait-FreshArtifacts) — Godot rend la main bien avant la fin de dotnet publish.
     if ($LASTEXITCODE -and $LASTEXITCODE -ne 0) { Fail "Export Godot echoue (code $LASTEXITCODE)" }
 }
 if (-not (Test-Path $Exe))     { Fail "Exe manquant : $Exe" }
 if (-not (Test-Path $DataDir)) { Fail "Runtime .NET manquant : $DataDir" }
 
 # Garde-fou course dotnet publish : on n'attend/verifie que si on vient d'exporter.
-if (-not $SkipExport) { Wait-DirStable $DataDir }
+# L'ordre compte — FRAICHEUR d'abord (les artefacts ont-ils ete reecrits ?), stabilite ensuite
+# (l'ecriture est-elle finie ?). Sonder la stabilite en premier la constate sur les artefacts de
+# la release PRECEDENTE, avant meme que l'export courant n'ait commence a ecrire : c'est ce qui a
+# laisse passer la build perimee du 2026-08-03.
+if (-not $SkipExport) {
+    Wait-FreshArtifacts $Exe $DataDir $exportStart
+    Wait-DirStable $DataDir
+}
 Assert-CriticalDlls $DataDir "runtime source"
 
 # --- 3. Dossier de distribution propre (exe + runtime uniquement) -------------------
