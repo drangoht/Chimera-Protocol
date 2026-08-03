@@ -392,7 +392,7 @@ Exécutés le 2026-08-03 **avant** d'écrire le moindre shim, conformément au �
 |---|---|---|
 | **R2** | Le banc tourne-t-il headless plus vite que le temps réel ? | ✅ **×94,8** — 60 s simulées en **0,63 s**, 300 entités, `-batchmode -nographics`, sans fenêtre, sortie 0. Godot plafonnait à **×1,0**. |
 | **R3** | 300 entités tiennent-elles la cadence ? | ✅ **0,168 ms/pas** de simulation, soit ~**5 960 IPS** pour la simulation seule ; avec 300 sprites rendus, **×42,5** le temps réel (~2 500 images/s). Coût de simulation **identique** avec et sans rendu. |
-| **R7** | Un build IL2CPP passe-t-il ? | ❌ **Impossible sur cette machine** — voir ci-dessous. |
+| **R7** | Un build IL2CPP passe-t-il, et la sérialisation survit-elle à l'AOT ? | ✅ **RETIRÉ** — build IL2CPP réussi et **14/14 vérifications passent**, `System.Text.Json` compris. |
 
 **Contrôle de sanité** : le compte de contacts est **identique** (785) avec et sans rendu, ce qui
 vérifie que le pas de simulation est bien fixe et indépendant de la cadence d'affichage — sans quoi
@@ -434,20 +434,31 @@ est fragile sous IL2CPP et invisible au compilateur ; un renommage devient une e
 au lieu d'une animation qui cesse silencieusement de fonctionner.
 ② `Gd.RandRange(double, double)` ne reproduit pas les valeurs de Godot (§4.3).
 
-**R7 — IL2CPP : blocage d'environnement, et une simplification à la clé**
+**R7 — IL2CPP : résolu, après trois causes distinctes**
 
-Le build échoue sur `ToolchainNotFoundException` : IL2CPP compile du C++ et exige **Visual Studio
-2019+ avec les compilateurs C++** et le **Windows SDK 10.0.19041+**, absents de cette machine. Ce
-n'est pas un défaut du code.
+Le chemin mérite d'être noté, parce que chaque étape ressemblait à un échec définitif et n'en était
+pas une :
 
-→ **Recommandation : livrer en backend Mono**, qui build et tourne (les mesures ci-dessus en
-viennent). Ce n'est pas un pis-aller : l'export .NET de Godot est lui aussi en **JIT**, donc Mono est
-l'analogue **le plus proche** de ce qui est publié aujourd'hui. Et cela **retire tout le risque
-AOT** — dont la sérialisation par réflexion de `SaveManager` (§5.2), qui redevient un non-sujet.
+1. **`ToolchainNotFoundException`** — IL2CPP compile du C++ et exige Visual Studio avec les
+   compilateurs C++ et le Windows SDK, absents au départ. Installation des **Build Tools 2022**.
+2. **`vcruntime.h` introuvable** — deux toolsets MSVC coexistaient et Unity retient **le plus
+   récent** : celui de VS 2026 (14.51), dont l'installation C++ était **incomplète** (`bin` et `lib`,
+   mais **aucun dossier `include`**). Complété via l'installeur Visual Studio.
+3. **Échec du cache de build** — Bee signalait des en-têtes implicites « non connus statiquement »
+   pour la chaîne VS 2026. **Purger `Library/Bee` a suffi** : le build passe alors en 39 s. ⚠ Piège à
+   retenir : après ce genre d'échec, Bee **met l'échec en cache** et les tentatives suivantes
+   « échouent » en 1,3 s sans rien recompiler. Un échec instantané n'est pas un échec, c'est un
+   cache — le réflexe est de purger `Library/Bee` avant de conclure quoi que ce soit.
 
-IL2CPP ne redevient nécessaire que pour **console, mobile ou WebGL** — c'est-à-dire l'argument de
-portabilité (§12), hors du périmètre « parité stricte ». Si ce cap est visé un jour, installer les
-outils de build C++ **et refaire ce test en premier**.
+**Vérifié à l'exécution, backend IL2CPP** : **14/14**, dont l'aller-retour `System.Text.Json` par
+réflexion (collections, dictionnaire, imbrication) **et** la préservation de la convention camelCase
+— celle qui décide si les sauvegardes existantes des joueurs restent lisibles (§9.3). La même
+vérification passe **14/14 en Mono**.
+
+→ **Le risque AOT du §5.2 est donc levé, mesuré et non supposé.** Les deux backends restent ouverts.
+Mono conserve un avantage de principe pour la parité (l'export .NET de Godot est lui aussi en JIT),
+mais ce n'est plus une contrainte : le choix peut se faire sur d'autres critères (temps de build,
+performances, cap console/mobile).
 
 ### 6.1 Lot 0 — terminé le 2026-08-03
 
@@ -660,7 +671,7 @@ prochaine publication de la page itch.
 | **R4** | Divergence de comportement silencieuse (une arme, un affixe, une phase de boss) | Un jeu qui « marche » mais n'est plus le même | §8.2 + §8.3 + §8.4. C'est précisément pourquoi la parité doit être **prouvée**, pas supposée |
 | **R5** | Perte des sauvegardes joueurs (§9.3) | Irréversible, visible, et le pire retour possible | Migration au premier lancement, testée sur une vraie save |
 | **R6** | Le port s'arrête à mi-chemin | Un dépôt à deux moteurs, aucun des deux fini | Les lots 0-4 livrent un jeu **jouable** ; en cas d'arrêt, Godot reste publiable puisqu'il est intact |
-| **R7** | Sérialisation JSON cassée en IL2CPP (§5.2) | Ne se voit qu'au build final | **Sans objet si on livre en Mono** (§6.2), ce qui est la recommandation — l'export Godot actuel est lui aussi en JIT. Redevient actif seulement si console/mobile/WebGL est visé : il faudra alors installer les outils C++ et refaire le test **en premier** |
+| ~~**R7**~~ | ~~Sérialisation JSON cassée en IL2CPP~~ | — | ✅ **RETIRÉ** (§6.2) — build IL2CPP réussi, **14/14** à l'exécution, aller-retour `System.Text.Json` et camelCase compris |
 
 **R6 mérite d'être souligné** : le gel de Godot est un choix de méthode, pas une destruction. À tout
 instant, la 1.26.0 reste exportable et publiable. La migration est réversible tant qu'elle n'est pas

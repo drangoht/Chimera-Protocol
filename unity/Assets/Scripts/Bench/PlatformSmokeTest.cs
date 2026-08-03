@@ -35,6 +35,7 @@ public sealed class PlatformSmokeTest : MonoBehaviour
         yield return RunUnscaledTweenSurvivesPause();
         yield return RunTimers();
         yield return RunDeferredOrdering();
+        RunJsonRoundTrip();
 
         var sb = new StringBuilder();
         sb.AppendLine("=== VERIFICATION DE LA COUCHE D'ADAPTATION ===");
@@ -156,5 +157,78 @@ public sealed class PlatformSmokeTest : MonoBehaviour
 
         Check("differe : chainage resolu dans le meme vidage",
               chain.Count == 2 && chain[1] == "second", string.Join(",", chain));
+    }
+
+    /// <summary>Forme représentative de <c>SaveData</c> : collections, dictionnaire, imbrication.</summary>
+    private sealed class FakeSaveData
+    {
+        public int Echoes { get; set; }
+        public long LifetimeKills { get; set; }
+        public List<string> UnlockedChallenges { get; set; } = new();
+        public Dictionary<string, int> BiomeRanks { get; set; } = new();
+        public NestedBlock Meta { get; set; } = new();
+
+        public sealed class NestedBlock
+        {
+            public string EquippedPerk { get; set; } = "";
+            public bool[] Flags { get; set; } = System.Array.Empty<bool>();
+        }
+    }
+
+    /// <summary>
+    /// Le seul point du portage signalé comme fragile en AOT : <c>SaveManager</c> sérialise par
+    /// <b>réflexion</b> (<c>JsonSerializer.Serialize&lt;SaveData&gt;</c>). Sous IL2CPP, la
+    /// réflexion sur génériques peut échouer <b>à l'exécution seulement</b> — jamais dans l'éditeur,
+    /// jamais à la compilation. C'est exactement le mode de défaillance qu'on ne veut pas découvrir
+    /// après publication, avec des sauvegardes de joueurs en jeu (§5.2, R7).
+    /// </summary>
+    private void RunJsonRoundTrip()
+    {
+        try
+        {
+            var options = new System.Text.Json.JsonSerializerOptions
+            {
+                PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,
+                WriteIndented = false,
+            };
+
+            var original = new FakeSaveData
+            {
+                Echoes = 70084,
+                LifetimeKills = 1234567L,
+                UnlockedChallenges = new List<string> { "first_boss", "no_hit" },
+                BiomeRanks = new Dictionary<string, int> { { "sanctuaire", 6 }, { "neon", 3 } },
+                Meta = new FakeSaveData.NestedBlock
+                {
+                    EquippedPerk = "start_extra_slot",
+                    Flags = new[] { true, false, true },
+                },
+            };
+
+            string json = System.Text.Json.JsonSerializer.Serialize(original, options);
+            var back = System.Text.Json.JsonSerializer.Deserialize<FakeSaveData>(json, options);
+
+            bool ok = back != null
+                      && back.Echoes == 70084
+                      && back.LifetimeKills == 1234567L
+                      && back.UnlockedChallenges.Count == 2
+                      && back.BiomeRanks.TryGetValue("sanctuaire", out int r) && r == 6
+                      && back.Meta.EquippedPerk == "start_extra_slot"
+                      && back.Meta.Flags.Length == 3 && back.Meta.Flags[2];
+
+            Check("System.Text.Json : aller-retour complet (risque AOT)", ok,
+                  ok ? $"{json.Length} octets" : "valeurs incorrectes au retour");
+
+            // La convention camelCase doit survivre : c'est elle qui détermine si les sauvegardes
+            // existantes des joueurs restent lisibles.
+            Check("System.Text.Json : convention camelCase preservee",
+                  json.Contains("\"echoes\"") && json.Contains("\"biomeRanks\""),
+                  json.Substring(0, System.Math.Min(80, json.Length)));
+        }
+        catch (System.Exception e)
+        {
+            Check("System.Text.Json : aller-retour complet (risque AOT)", false,
+                  e.GetType().Name + " : " + e.Message);
+        }
     }
 }

@@ -20,7 +20,8 @@ public static class BuildBench
 {
     private const string OutDirMono   = "Build/bench-mono";
     private const string OutDirIl2cpp = "Build/bench-il2cpp";
-    private const string OutDirSmoke  = "Build/platform-smoke";
+    private const string OutDirSmoke       = "Build/platform-smoke";
+    private const string OutDirSmokeIl2cpp = "Build/platform-smoke-il2cpp";
 
     [MenuItem("Chimera/Build banc (Mono)")]
     public static void Windows64Mono()
@@ -38,6 +39,15 @@ public static class BuildBench
     [MenuItem("Chimera/Build verification plateforme (Mono)")]
     public static void Windows64PlatformSmoke()
         => Build<PlatformSmokeTest>(ScriptingImplementation.Mono2x, OutDirSmoke, "PlatformSmoke");
+
+    /// <summary>
+    /// Même vérification, compilée en IL2CPP. C'est la seule façon de savoir si la sérialisation
+    /// par réflexion de System.Text.Json survit à l'AOT : elle échoue à l'exécution uniquement,
+    /// jamais dans l'éditeur ni à la compilation (§5.2, R7).
+    /// </summary>
+    [MenuItem("Chimera/Build verification plateforme (IL2CPP)")]
+    public static void Windows64PlatformSmokeIl2cpp()
+        => Build<PlatformSmokeTest>(ScriptingImplementation.IL2CPP, OutDirSmokeIl2cpp, "PlatformSmoke");
 
     private static void Build<T>(ScriptingImplementation backend, string outDir, string sceneName)
         where T : MonoBehaviour
