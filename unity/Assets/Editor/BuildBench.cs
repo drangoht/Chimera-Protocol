@@ -22,6 +22,7 @@ public static class BuildBench
     private const string OutDirIl2cpp = "Build/bench-il2cpp";
     private const string OutDirSmoke       = "Build/platform-smoke";
     private const string OutDirSmokeIl2cpp = "Build/platform-smoke-il2cpp";
+    private const string OutDirRunSmoke    = "Build/run-smoke";
 
     [MenuItem("Chimera/Build banc (Mono)")]
     public static void Windows64Mono()
@@ -48,6 +49,11 @@ public static class BuildBench
     [MenuItem("Chimera/Build verification plateforme (IL2CPP)")]
     public static void Windows64PlatformSmokeIl2cpp()
         => Build<PlatformSmokeTest>(ScriptingImplementation.IL2CPP, OutDirSmokeIl2cpp, "PlatformSmoke");
+
+    /// <summary>Critère de sortie du Lot 2 : le cœur de run, vérifié headless.</summary>
+    [MenuItem("Chimera/Build verification coeur de run (Mono)")]
+    public static void Windows64RunSmoke()
+        => Build<RunSmokeTest>(ScriptingImplementation.Mono2x, OutDirRunSmoke, "RunSmoke");
 
     private static void Build<T>(ScriptingImplementation backend, string outDir, string sceneName)
         where T : MonoBehaviour

@@ -68,6 +68,11 @@ public static class Spawner
         if (prefab == null) return null;
 
         var go = Object.Instantiate(prefab, position, Quaternion.identity, parent);
+
+        // Godot rend toujours actif un nœud instancié puis ajouté à l'arbre ; Unity, lui, conserve
+        // l'état du gabarit. On aligne sur Godot : sinon un prefab désactivé produit des objets
+        // silencieusement inertes — présents en hiérarchie, absents du jeu.
+        go.SetActive(true);
         return go;
     }
 

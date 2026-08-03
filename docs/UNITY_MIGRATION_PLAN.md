@@ -479,6 +479,38 @@ Mono conserve un avantage de principe pour la parité (l'export .NET de Godot es
 mais ce n'est plus une contrainte : le choix peut se faire sur d'autres critères (temps de build,
 performances, cap console/mobile).
 
+### 6.3 Lot 2 — cœur de run : tranche verticale livrée
+
+**Rendu tranché par la mesure, pas par préférence** : le jeu Godot utilise **108 `PointLight2D`** et
+26 `ShaderMaterial`. Le pipeline intégré d'Unity n'a **aucune** notion de lumière 2D → **URP 17.5.0
+avec le renderer 2D**, installé et actif. ⚠ Les **11 `.gdshader`** devront être réécrits en
+ShaderLab/Shader Graph, aux lots VFX et UI — chantier identifié, non entamé.
+
+**Porté** (assembly `ChimeraProtocol.Gameplay`) : `PlayerStats`, `Player`, `EnemyBase`, `XpSystem`,
+`EnemySpawner`, `GameManager`, `WeaponBase` + `ImpulseCannon` + `Bullet`.
+
+**Vérifié headless — 8/8** (`RunSmokeTest`, critère de sortie) : apparition, tir, mort, crédit d'XP,
+**2 montées de niveau**, dégâts de contact, clôture de run.
+
+> **Le résultat le plus parlant** : le joueur collé à un ennemi de 7 dégâts perd **exactement
+> 21 PV en 1 seconde**, soit **3 coups** — précisément ce que la fenêtre d'i-frames de 0,45 s
+> autorise (t ≈ 0 / 0,45 / 0,90). La constante la plus critique du projet pour la survie en nuée est
+> donc fidèle **au chiffre près**, pas seulement « présente ».
+
+**Aucune constante d'équilibrage n'a été recopiée** : `XpCurve`, `SpawnCurve`, `EnemyScaling`,
+`StatCaps` et `RegenReserve` sont appelés depuis la logique pure **partagée avec Godot**. Cela exclut
+par construction la classe de bugs la plus vicieuse d'une migration — une valeur retranscrite de
+travers, qui produit un jeu « qui marche » mais n'est plus le même.
+
+⚠ **Divergence de sémantique trouvée en route, et corrigée en trois endroits** : Godot rend
+**toujours actif** un nœud instancié puis ajouté à l'arbre ; Unity **conserve l'état du gabarit**.
+Symptôme observé au premier essai : « 4 ennemis créés, 0 vivants » — des objets présents en
+hiérarchie, absents du jeu, et qui ne signalent rien. `Spawner`, `EnemySpawner` et `ImpulseCannon`
+alignent désormais explicitement sur la sémantique Godot.
+
+**Reste pour clore le Lot 2** : scènes et prefabs authorés (tout est assemblé par code pour l'instant),
+HUD, entrées rebindables via `InputRemap`, et le second `record struct` hors `Rules/`.
+
 ### 6.1 Lot 0 — terminé le 2026-08-03
 
 **Livré**
