@@ -13,9 +13,12 @@
   (overtime à la 8ᵉ min) · IV Sans filet (les trois filets méta **achetés** coupés, dont le
   Stabilisateur de Surcharge — ⚠ ce cran n'a plus de levier universel, cf. GDD §34.9) ·
   V Élite ordinaire (élites ×4, plafond relevé à 0,70).
-  ⚠ **Valeurs relevées le 2026-08-02 (GDD §34.8, non publié)** — la 1.25.1 en ligne porte les valeurs
-  d'origine (−40 % · 1,30/1,35/1,25 · 10ᵉ min · ×3 et 0,55), auxquelles se rapportent les mesures
-  citées plus bas. Conséquence assumée : l'égalité « cran II = ancien Difficile » est rompue.
+  ⚠ **Valeurs relevées le 2026-08-02 (GDD §34.8), publiées en 1.26.0 le 2026-08-03** — les valeurs
+  d'origine (−40 % · 1,30/1,35/1,25 · 10ᵉ min · ×3 et 0,55) sont celles auxquelles se rapportent les
+  mesures citées plus bas, et non ce qui est en ligne.
+  ⚠ **Publié sans avoir été joué** (décision de l'auteur) : à surveiller en priorité, le **cran III**
+  (le boss arrive à la 8ᵉ minute face à un arsenal amputé, et le battre débloque le cran suivant —
+  s'il devient inbattable, l'échelle se bloque) puis les **IPS au cran V** (0,70 d'élites). Conséquence assumée : l'égalité « cran II = ancien Difficile » est rompue.
   **Un cran = une règle lisible avant de lancer**, jamais un
   multiplicateur de plus : le principe est qu'on doit pouvoir dire *pourquoi* on est mort. Le cran se
   règle et se débloque **par niveau** (sélecteur sur la carte du biome, la liste défilant), rapporte

@@ -19,13 +19,23 @@ cyborgs, robots), inspiré de Vampire Survivors et Everything is Crab.
   - ⚠ **Bon sur du TEXTE, à proscrire sur des CHIFFRES.** Pour `power_curve.log`, `tools/power_loop.py` calcule des médianes et des tests de signes **sans se tromper** ; un LLM qui « lit » un CSV de mesures produit des nombres plausibles et faux. Règle : *s'il existe un outil déterministe, il gagne*.
   - ⚠ **Jamais pour du code qu'on s'apprête à éditer** — là, il faut le contenu réel. Ni pour localiser (`Grep` est instantané et exact).
 
-**Phase actuelle : 1.25.1 PUBLIÉE le 2026-07-31** (Saturation de Rouille, lot 1 + correctif
-d'Hémorragie) — build butler **#1846002**, `version.json` à 1.25.1. **Devlogs 1.25.0 et 1.25.1 rédigés
-(`docs/DEVLOG.md`), à coller sur itch par l'utilisateur.**
-⚠ **Le lot 2 (cran VI) est dans `main` mais NON PUBLIÉ et NON JOUÉ** — le jeu en ligne est la 1.25.1.
+**Phase actuelle : 1.26.0 PUBLIÉE le 2026-08-03** (Saturation lot 2 — cran VI, échelle relevée,
+régénération suspendue sous le feu, feedback des vies de secours) — build butler **#1854540**,
+`version.json` à 1.26.0. **Devlogs 1.25.0, 1.25.1 et 1.26.0 rédigés (`docs/DEVLOG.md`), à coller sur
+itch par l'utilisateur.**
+⚠ **PUBLIÉE SANS AVOIR ÉTÉ JOUÉE** (décision de l'auteur, 2026-08-03, après signalement du risque).
+Aucun des changements des chantiers (8) à (10 bis) n'a été validé en jouant. **Le point à surveiller
+en priorité est le cran III** : l'overtime à la 8ᵉ minute amène le boss face à un arsenal amputé de
+deux niveaux d'arme, et le battre est ce qui **débloque le cran suivant** — s'il devient inbattable,
+l'échelle se bloque sur elle-même chez tous les joueurs. Second point : les IPS au cran V (plafond
+d'élites 0,55 → **0,70** sur 200-300 entités portant chacune un affixe et une `EliteAura`).
+⚠ **Le premier push de cette release a expédié le binaire de la 1.25.1** — `Wait-DirStable` a
+constaté « stable » le runtime de la release *précédente* avant que `dotnet publish` n'ait commencé à
+écrire. Réparé par `-SkipExport` ; garde-fou `Wait-FreshArtifacts` ajouté. **La stabilité d'un
+artefact ne prouve pas sa fraîcheur** → `docs/PITFALLS.md` §Export .NET.
 
 **(10) L'échelle était finie et l'économie terminée — relevage des crans I-V et des prix du Hub**
-(2026-08-02, **non publié**). Le testeur a battu le **cran VI sur le Sanctuaire** — le biome de palier
+(2026-08-02, **publié en 1.26.0**). Le testeur a battu le **cran VI sur le Sanctuaire** — le biome de palier
 **0** — **du premier coup** (`saturation_beaten_by_level = sanctuaire:6`, soit `MaxRank`). Plus rien à
 gravir, et rien n'avait résisté. Sa sauvegarde dit la seconde moitié du problème : **70 084 Échos
 gagnés en 141 runs, 13 750 dépensés, 56 334 dormants** pour un arbre du Hub qui coûtait **21 550** —
@@ -83,7 +93,7 @@ Noyaux consommés puis mort réelle, sans erreur. Design → `docs/GDD.md` **§3
 `docs/PITFALLS.md` §Capacités. **331 tests.**
 
 **(9) La régénération était la seule défense sans borne — un débit ne s'oppose pas à un débit**
-(2026-08-02, **non publié**). Première partie jouée au **cran VI** : « la régénération est vraiment
+(2026-08-02, **publié en 1.26.0**). Première partie jouée au **cran VI** : « la régénération est vraiment
 trop forte, je suis resté immobile un bon moment sans mourir ». **Problème d'espèce, pas de dosage.**
 Les PV max sont un **stock** (une menace qui monte finit par le vider) ; la régénération est un
 **débit**, et opposer un débit à un débit produit un **seuil binaire** — sous les dégâts nets/s elle ne
@@ -111,7 +121,7 @@ Lisibilité : le HUD bascule `♥ +38,0/s` sur un décompte grisé `♥ 2,4s` + 
 les deux descriptions annoncent la coupure — sans quoi le joueur lit une carte cassée, pas une règle.
 Design → `docs/GDD.md` **§33.7** ; pièges → `docs/PITFALLS.md` §Défense du joueur. **325 tests.**
 
-**(8) Mesurer ce qui se *sent* — et le lot 2 livré** (2026-08-02, **non publié**). Le lot 1 avait
+**(8) Mesurer ce qui se *sent* — et le lot 2 livré** (2026-08-02, **publié en 1.26.0**). Le lot 1 avait
 **passé** son critère (temps soutenable −10,0 %, 4/4, seuil 6 %) et le testeur ne sentait rien : cause
 structurelle, **toutes** les colonnes de `PowerTelemetry` sont des **débits moyennés sur 15 s**, donc
 aveugles à un **pic** — un plongeon à 10 % des PV suivi d'une remontée ne déplace aucune moyenne, et
@@ -142,8 +152,8 @@ hasard, or ce cran vise un comportement **humain**). **Joué le 2026-08-02 → v
 passé inaperçu, mais pour une cause qui n'est pas la sienne. Design → `docs/GDD.md` **§34.6/§34.7** ;
 mesures → `docs/TEST_REPORT.md` (2026-08-02) ; checklist « ajouter un cran » → `docs/PITFALLS.md`.
 
-**(7) L'échelle complète jouée — et le canal des soins est saturé de gaspillage** (2026-08-01, **non
-publié**, aucun changement de gameplay). Le testeur a joué **les crans 1 à 5** : « pas de difficulté
+**(7) L'échelle complète jouée — et le canal des soins est saturé de gaspillage** (2026-08-01,
+**publié en 1.26.0**, aucun changement de gameplay). Le testeur a joué **les crans 1 à 5** : « pas de difficulté
 particulière ». Mesuré (4 graines appariées, `tools/power_loop.py --paired`) : **le joueur jette 80 %
 des soins reçus** — 293,6 PV/s offerts pour **58,8 retenus** au cran 0. **Couper les soins ne peut donc
 pas durcir le jeu** : « Hémorragie » divise l'offre par deux (**−46,4 %**, mieux que ses −40 %

@@ -30,7 +30,7 @@ mesuré) · **II Meute** (statistiques d'ennemis) · **III Compte à rebours** (
 c'est le *temps de build* qui est attaqué) · **IV Sans filet** (aucun filet acheté ne survit) ·
 **V Élite ordinaire**. Le cran **se règle et se débloque par niveau**, et rapporte **+20 % d'Échos** par palier.
 *(Valeurs relevées le 2026-08-02 après que l'échelle entière ait été jouée et gagnée du premier coup —
-GDD §34.8 ; la version publiée 1.25.1 porte encore les valeurs d'origine.)*
+GDD §34.8 ; en ligne depuis la 1.26.0, avec le cran **VI Purificateur** en haut d'échelle.)*
 Validé au banc sur quatre graines appariées : temps soutenable **60,7 % → 39,9 %**, et **2 runs sur 4**
 finissent par une mort réelle là où les quatre atteignaient le plafond du banc. Les records gagnés en
 « Difficile » restent **exacts** — la Saturation absorbe l'ancien axe au lieu de s'y ajouter.
