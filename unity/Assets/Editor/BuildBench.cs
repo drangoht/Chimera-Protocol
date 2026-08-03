@@ -18,19 +18,31 @@ using UnityEngine.SceneManagement;
 /// </summary>
 public static class BuildBench
 {
-    private const string SceneAssetPath = "Assets/Scenes/BenchProto.unity";
-    private const string OutDirMono     = "Build/bench-mono";
-    private const string OutDirIl2cpp   = "Build/bench-il2cpp";
+    private const string OutDirMono   = "Build/bench-mono";
+    private const string OutDirIl2cpp = "Build/bench-il2cpp";
+    private const string OutDirSmoke  = "Build/platform-smoke";
 
     [MenuItem("Chimera/Build banc (Mono)")]
-    public static void Windows64Mono() => Build(ScriptingImplementation.Mono2x, OutDirMono);
+    public static void Windows64Mono()
+        => Build<BenchProto>(ScriptingImplementation.Mono2x, OutDirMono, "BenchProto");
 
     [MenuItem("Chimera/Build banc (IL2CPP)")]
-    public static void Windows64Il2cpp() => Build(ScriptingImplementation.IL2CPP, OutDirIl2cpp);
+    public static void Windows64Il2cpp()
+        => Build<BenchProto>(ScriptingImplementation.IL2CPP, OutDirIl2cpp, "BenchProto");
 
-    private static void Build(ScriptingImplementation backend, string outDir)
+    /// <summary>
+    /// Build de la vérification à l'exécution de la couche d'adaptation. Elle ne peut pas tourner
+    /// dans la suite xUnit : elle dépend du cycle de vie Unity (Update/LateUpdate, timeScale,
+    /// destruction d'objets), c'est-à-dire précisément de ce que les tests purs ne couvrent pas.
+    /// </summary>
+    [MenuItem("Chimera/Build verification plateforme (Mono)")]
+    public static void Windows64PlatformSmoke()
+        => Build<PlatformSmokeTest>(ScriptingImplementation.Mono2x, OutDirSmoke, "PlatformSmoke");
+
+    private static void Build<T>(ScriptingImplementation backend, string outDir, string sceneName)
+        where T : MonoBehaviour
     {
-        string scene = EnsureScene();
+        string scene = EnsureScene<T>(sceneName);
 
         PlayerSettings.SetScriptingBackend(NamedBuildTarget.Standalone, backend);
         PlayerSettings.companyName    = "drangoht";
@@ -65,18 +77,19 @@ public static class BuildBench
         }
     }
 
-    /// <summary>Crée (ou recrée) la scène de banc : un seul GameObject portant <see cref="BenchProto"/>.</summary>
-    private static string EnsureScene()
+    /// <summary>Crée (ou recrée) une scène ne contenant qu'un GameObject portant le composant demandé.</summary>
+    private static string EnsureScene<T>(string sceneName) where T : MonoBehaviour
     {
         Directory.CreateDirectory(Path.Combine(Application.dataPath, "Scenes"));
+        string path = $"Assets/Scenes/{sceneName}.unity";
 
         Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-        var go = new GameObject("BenchProto");
-        go.AddComponent<BenchProto>();
+        var go = new GameObject(sceneName);
+        go.AddComponent<T>();
         EditorSceneManager.MoveGameObjectToScene(go, scene);
-        EditorSceneManager.SaveScene(scene, SceneAssetPath);
+        EditorSceneManager.SaveScene(scene, path);
 
-        Debug.Log("[BUILD] scene de banc generee : " + SceneAssetPath);
-        return SceneAssetPath;
+        Debug.Log("[BUILD] scene generee : " + path);
+        return path;
     }
 }

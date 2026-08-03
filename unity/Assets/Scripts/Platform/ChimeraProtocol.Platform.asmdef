@@ -1,0 +1,17 @@
+{
+    "name": "ChimeraProtocol.Platform",
+    "rootNamespace": "",
+    "references": [
+        "ChimeraProtocol.PlatformCore",
+        "ChimeraProtocol.Rules"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

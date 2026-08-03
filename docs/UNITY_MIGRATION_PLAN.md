@@ -405,6 +405,35 @@ le mode headless fonctionne et n'est pas bridé, et le coût par entité est lin
 La marge (×42 sur la cadence requise) est assez large pour retirer R2 et R3 de la liste des risques
 structurants, pas pour promettre une cadence finale.
 
+**Couche `Platform/` — livrée et vérifiée**
+
+Noyaux **purs** (assembly `ChimeraProtocol.PlatformCore`, `noEngineReferences`), couverts par la
+suite xUnit — **457 tests** au total :
+
+| Noyau | Remplace | Sites | Fidélité |
+|---|---|---:|---|
+| `Pcg32` | `GD.Randi/Randf/Seed` | 162 | bit-exact (§4.3) |
+| `Easing` | courbes de `Tween` | — | 48 courbes à 1e-6 |
+| `TweenTimeline` | séquencement de `Tween` | 502 | étapes, parallèle, boucles, valeur finale exacte |
+| `TimerWheel` | `CreateTimer`, nœuds `Timer` | 163 | 3 règles de sémantique testées |
+| `DeferredQueue` | `CallDeferred` | 57 | drainage jusqu'à épuisement, borné |
+
+Adaptateurs moteur (assembly `ChimeraProtocol.Platform`) : `PlatformHost` (ordonnancement explicite —
+minuteries et interpolations en `Update`, différé en `LateUpdate`), `GTween`, `Gd`, `SceneRoot`.
+
+⚠ **« Ça compile » n'est pas « ça marche »** : les tests purs ne peuvent rien dire des adaptateurs,
+qui dépendent du cycle de vie Unity (`Update`/`LateUpdate`, `timeScale`, destruction d'objets) —
+c'est-à-dire précisément de ce qui casse lors d'un portage. D'où
+`unity/Assets/Scripts/Bench/PlatformSmokeTest.cs`, qui tourne **en build headless** :
+**12/12 vérifications passent**, dont la plus importante — pendant la pause, l'interpolation d'UI
+atteint 1,000 pendant que celle du jeu reste à 0,000 (le piège du §4.5, prouvé traité).
+
+**Deux écarts assumés par rapport à Godot**, tous deux documentés dans le code :
+① `GTween` désigne les propriétés par **lambda** et non par chaîne (`"modulate:a"`) — la réflexion
+est fragile sous IL2CPP et invisible au compilateur ; un renommage devient une erreur de compilation
+au lieu d'une animation qui cesse silencieusement de fonctionner.
+② `Gd.RandRange(double, double)` ne reproduit pas les valeurs de Godot (§4.3).
+
 **R7 — IL2CPP : blocage d'environnement, et une simplification à la clé**
 
 Le build échoue sur `ToolchainNotFoundException` : IL2CPP compile du C++ et exige **Visual Studio
