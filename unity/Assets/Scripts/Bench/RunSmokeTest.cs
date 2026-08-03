@@ -40,8 +40,19 @@ public sealed class RunSmokeTest : MonoBehaviour
         var playerGo = new GameObject("Player");
         var player = playerGo.AddComponent<Player>();
 
-        var bulletPrefab = BuildBulletPrefab();
-        var enemyPrefab  = BuildEnemyPrefab();
+        // Les VRAIS prefabs, chargés par le même chemin logique que le code de jeu : c'est la
+        // chaîne réelle qu'on veut valider, pas des gabarits fabriqués pour le test.
+        var bulletPrefab = Spawner.Load("res://scenes/entities/Bullet.tscn");
+        var enemyPrefab  = Spawner.Load("res://scenes/entities/Enemy.tscn");
+        var orbPrefab    = Spawner.Load("res://scenes/entities/XpOrb.tscn");
+
+        Check("prefabs : charges depuis Resources par chemin Godot",
+              bulletPrefab != null && enemyPrefab != null && orbPrefab != null);
+        if (bulletPrefab == null || enemyPrefab == null || orbPrefab == null)
+        {
+            Report();
+            yield break;
+        }
 
         var cannon = playerGo.AddComponent<ImpulseCannon>();
         cannon.BaseDamage = 25f;
@@ -49,9 +60,13 @@ public sealed class RunSmokeTest : MonoBehaviour
         cannon.Range = 500f;
         cannon.BulletPrefab = bulletPrefab;
 
+        Check("arme : prefab de projectile assigne", cannon.BulletPrefab != null,
+              cannon.BulletPrefab != null ? cannon.BulletPrefab.name : "NULL");
+
         var spawnerGo = new GameObject("Spawner");
         var spawner = spawnerGo.AddComponent<EnemySpawner>();
         spawner.EnemyPrefab = enemyPrefab;
+        spawner.XpOrbPrefab = orbPrefab;
         spawner.SpawnRadius = 320f;   // resserré : le banc doit voir du combat vite
 
         gm.StartRun();
@@ -70,20 +85,56 @@ public sealed class RunSmokeTest : MonoBehaviour
         Check("spawner : des ennemis apparaissent", spawner.TotalSpawned > 0,
               $"{spawner.TotalSpawned} crees, {EnemyBase.Active.Count} vivants");
 
-        // ─── Combat : l'arme doit tuer, l'XP doit monter ───────────────────────
+        // ─── Combat : l'arme doit tuer, les orbes doivent tomber puis être ramassés ──
         float t = 0f;
-        while (t < 12f)
+        int maxOrbsSeen = 0;
+        int maxBulletsSeen = 0;
+        float nearestSeen = float.MaxValue;
+
+        while (t < 14f)
         {
-            // Kite circulaire : le joueur bouge vraiment.
+            // Kite circulaire : le joueur bouge vraiment, donc il traverse les orbes tombés.
             float a = Time.time * 1.1f;
             playerGo.transform.position = new Vector3(Mathf.Cos(a), Mathf.Sin(a), 0f) * 260f;
+
+            maxOrbsSeen = Mathf.Max(maxOrbsSeen, FindObjectsByType<XpOrb>(FindObjectsSortMode.None).Length);
+            maxBulletsSeen = Mathf.Max(maxBulletsSeen, FindObjectsByType<Bullet>(FindObjectsSortMode.None).Length);
+
+            if (EnemyBase.Active.Count > 0)
+            {
+                float near = float.MaxValue;
+                foreach (var e in EnemyBase.Active)
+                    if (e != null) near = Mathf.Min(near, Vector2.Distance(e.transform.position, playerGo.transform.position));
+                nearestSeen = Mathf.Min(nearestSeen, near);
+            }
+
             t += Time.deltaTime;
             yield return null;
         }
 
-        Check("arme : des ennemis sont tues", xp.CurrentXp > 0 || xp.CurrentLevel > 1,
+        // Reproduction de la recherche de cible, pour distinguer « pas de cible » d'un défaut de
+        // l'arme elle-même.
+        int inRange = 0;
+        foreach (var e in EnemyBase.Active)
+            if (e != null && !e.IsDead &&
+                Vector2.Distance(e.transform.position, playerGo.transform.position) < cannon.Range)
+                inRange++;
+
+        Check("arme : l'arme tourne", cannon.TicksRun > 0, $"{cannon.TicksRun} ticks");
+        Check("arme : au moins une cible a portee", inRange > 0,
+              $"portee={cannon.Range}, {inRange} cibles sur {EnemyBase.Active.Count} vivants");
+        Check("arme : des projectiles sont tires", cannon.ShotsFired > 0,
+              $"{cannon.ShotsFired} tirs, {maxBulletsSeen} en vol au max, " +
+              $"ennemi le plus proche a {nearestSeen:F0}");
+
+        Check("mort : des orbes d'XP tombent", maxOrbsSeen > 0, $"{maxOrbsSeen} orbes vus simultanement");
+
+        // L'XP ne peut plus monter que par RAMASSAGE : si elle monte, toute la boucle
+        // tuer → laisser tomber → attirer → ramasser fonctionne de bout en bout.
+        Check("orbes : ramasses et credites", xp.CurrentXp > 0 || xp.CurrentLevel > 1,
               $"niveau={xp.CurrentLevel} xp={xp.CurrentXp}");
         Check("xp : au moins une montee de niveau", levelUps > 0, $"{levelUps} montees");
+        Check("run : des victimes comptabilisees", gm.Kills > 0, $"{gm.Kills} elim.");
 
         // ─── Dégâts de contact et i-frames ─────────────────────────────────────
         // On colle un ennemi au joueur : un seul coup doit passer par fenêtre de 0,45 s.
@@ -113,6 +164,11 @@ public sealed class RunSmokeTest : MonoBehaviour
         Check("run : cloturee proprement", gm.RunEnded && gm.RunTime > 0f,
               $"{gm.RunTime:F1} s");
 
+        Report();
+    }
+
+    private void Report()
+    {
         var sb = new StringBuilder();
         sb.AppendLine("=== VERIFICATION DU CŒUR DE RUN (LOT 2) ===");
         foreach (string r in _results) sb.AppendLine(r);
@@ -122,27 +178,5 @@ public sealed class RunSmokeTest : MonoBehaviour
         Debug.Log(sb.ToString());
 
         Application.Quit(_failures == 0 ? 0 : 1);
-    }
-
-    // ─── Prefabs construits à la volée ────────────────────────────────────────
-
-    private static GameObject BuildEnemyPrefab()
-    {
-        var go = new GameObject("Enemy");
-        var enemy = go.AddComponent<EnemyBase>();
-        enemy.MaxHp = 20f;
-        enemy.Speed = 120f;
-        enemy.Damage = 5f;
-        enemy.XpValue = 1;
-        go.SetActive(false);   // sert de gabarit, ne vit pas dans la scène
-        return go;
-    }
-
-    private static GameObject BuildBulletPrefab()
-    {
-        var go = new GameObject("Bullet");
-        go.AddComponent<Bullet>();
-        go.SetActive(false);
-        return go;
     }
 }

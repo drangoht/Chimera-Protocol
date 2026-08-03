@@ -38,6 +38,13 @@ public sealed class Player : MonoBehaviour
     /// <summary>Vitesse courante, en unités par seconde.</summary>
     public Vector2 Velocity { get; private set; }
 
+    /// <summary>
+    /// Direction imposée de l'extérieur, court-circuitant le clavier. Sert au <b>banc</b>
+    /// (<c>--auto-play</c>) : le pilote automatique doit traverser exactement le même chemin de
+    /// mouvement qu'un joueur humain, sinon la mesure porte sur autre chose que le jeu.
+    /// </summary>
+    public Vector2? ExternalMoveOverride { get; set; }
+
     /// <summary>Émis à chaque changement de PV : <c>(courant, max)</c>.</summary>
     public event Action<float, float>? HealthChanged;
 
@@ -74,13 +81,9 @@ public sealed class Player : MonoBehaviour
 
     private void UpdateMovement(float dt)
     {
-        var input = new Vector2(
-            (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow) ? 1f : 0f) -
-            (Input.GetKey(KeyCode.Q) || Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow) ? 1f : 0f),
-            (Input.GetKey(KeyCode.Z) || Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow) ? 1f : 0f) -
-            (Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow) ? 1f : 0f));
-
-        if (input.sqrMagnitude > 1f) input.Normalize();
+        // Les touches passent par InputRemap : elles sont rebindables depuis les Options, et le
+        // libellé affiché au joueur doit venir de la même source (cf. InputRemap).
+        Vector2 input = ExternalMoveOverride ?? InputRemap.MoveVector();
 
         // La vitesse est plafonnée par StatCaps — la même source que côté Godot.
         float speed = Mathf.Min(Stats.Speed * SpeedMultiplier, StatCaps.MaxSpeed);

@@ -1,0 +1,30 @@
+using UnityEngine;
+
+/// <summary>
+/// Canon à Impulsion — arme de départ de la Chimère. Tire un projectile sur l'ennemi le plus
+/// proche. Portée ici comme arme témoin du Lot 2 : elle valide toute la chaîne
+/// « viser → tirer → toucher → tuer → créditer l'XP ».
+/// </summary>
+public sealed class ImpulseCannon : WeaponBase
+{
+    [Header("Projectile")]
+    public GameObject? BulletPrefab;
+    public float BulletSpeed = 600f;
+
+    protected override bool TryFire()
+    {
+        var target = FindNearestEnemy();
+        if (target == null || BulletPrefab == null) return false;
+
+        Vector2 dir = ((Vector2)target.transform.position - (Vector2)transform.position).normalized;
+
+        var go = Instantiate(BulletPrefab, transform.position, Quaternion.identity);
+        go.SetActive(true);   // sémantique Godot : un nœud instancié est toujours actif
+
+        var bullet = go.GetComponent<Bullet>();
+        if (bullet == null) { Destroy(go); return false; }
+
+        bullet.Launch(dir * BulletSpeed, EffectiveDamage, Range);
+        return true;
+    }
+}

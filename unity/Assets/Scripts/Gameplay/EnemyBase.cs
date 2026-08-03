@@ -137,15 +137,47 @@ public class EnemyBase : MonoBehaviour
         if (_currentHp <= 0f) Die();
     }
 
-    /// <summary>Mort : crédite l'XP puis retire l'ennemi.</summary>
+    /// <summary>
+    /// Mort : fait tomber un orbe d'XP, puis retire l'ennemi.
+    /// </summary>
+    /// <remarks>
+    /// L'XP n'est <b>pas</b> créditée directement : elle passe par un orbe à ramasser. C'est une
+    /// boucle de gameplay, pas un détail de présentation — elle oblige le joueur à entrer dans la
+    /// zone qu'il vient de nettoyer. Court-circuiter l'orbe rendrait le jeu plus sûr et changerait
+    /// son rythme.
+    /// </remarks>
     protected virtual void Die()
     {
         if (_isDead) return;
         _isDead = true;
 
         Died?.Invoke(XpValue);
-        XpSystem.Instance?.AddXp(XpValue);
+        SpawnXpOrb();
+        GameManager.Instance?.RegisterKill();
 
         Destroy(gameObject);
     }
+
+    /// <summary>Prefab d'orbe d'XP, injecté par le spawner à la création.</summary>
+    public GameObject? XpOrbPrefab { get; set; }
+
+    private void SpawnXpOrb()
+    {
+        if (XpOrbPrefab == null) return;
+
+        var go = Instantiate(XpOrbPrefab, transform.position, Quaternion.identity);
+        go.SetActive(true);   // sémantique Godot : un nœud instancié est toujours actif
+
+        var orb = go.GetComponent<XpOrb>();
+        if (orb != null) orb.Configure(XpValue, GetOrbTier());
+    }
+
+    /// <summary>Palier visuel de l'orbe, dérivé de la valeur — comme sous Godot.</summary>
+    protected virtual int GetOrbTier() => XpValue switch
+    {
+        >= 50 => 3,
+        >= 20 => 2,
+        >= 5  => 1,
+        _     => 0,
+    };
 }

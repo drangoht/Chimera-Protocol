@@ -4,7 +4,8 @@
     "references": [
         "ChimeraProtocol.Platform",
         "ChimeraProtocol.PlatformCore",
-        "ChimeraProtocol.Rules"
+        "ChimeraProtocol.Rules",
+        "UnityEngine.UI"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

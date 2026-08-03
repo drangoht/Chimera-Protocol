@@ -25,6 +25,12 @@ public abstract class WeaponBase : MonoBehaviour
 
     private float _cooldownLeft;
 
+    /// <summary>Tirs effectués — statistique de run, et point d'observation pour les bancs.</summary>
+    public int ShotsFired { get; private set; }
+
+    /// <summary>Appels à <c>Update</c> — sert à distinguer « n'a pas tiré » de « ne tourne pas ».</summary>
+    public int TicksRun { get; private set; }
+
     /// <summary>
     /// Recharge effective, bornée par <see cref="StatCaps"/>. Le plancher est ce qui a empêché,
     /// côté Godot, qu'un passif porte toutes les armes à la cadence maximale.
@@ -56,12 +62,17 @@ public abstract class WeaponBase : MonoBehaviour
 
     protected virtual void Update()
     {
+        TicksRun++;
+
         if (Player.Instance == null || Player.Instance.IsDead) return;
 
         _cooldownLeft -= Time.deltaTime;
         if (_cooldownLeft > 0f) return;
 
-        if (TryFire()) _cooldownLeft = EffectiveCooldown;
+        if (!TryFire()) return;
+
+        ShotsFired++;
+        _cooldownLeft = EffectiveCooldown;
     }
 
     /// <summary>Tente de tirer. Renvoie faux si rien n'était à portée (la recharge ne repart pas).</summary>
@@ -84,80 +95,5 @@ public abstract class WeaponBase : MonoBehaviour
             if (sqr < bestSqr) { bestSqr = sqr; best = e; }
         }
         return best;
-    }
-}
-
-/// <summary>
-/// Canon à Impulsion — arme de départ de la Chimère. Tire un projectile sur l'ennemi le plus
-/// proche. Portée ici comme arme témoin du Lot 2 : elle valide toute la chaîne
-/// « viser → tirer → toucher → tuer → créditer l'XP ».
-/// </summary>
-public sealed class ImpulseCannon : WeaponBase
-{
-    [Header("Projectile")]
-    public GameObject? BulletPrefab;
-    public float BulletSpeed = 600f;
-
-    protected override bool TryFire()
-    {
-        var target = FindNearestEnemy();
-        if (target == null || BulletPrefab == null) return false;
-
-        Vector2 dir = ((Vector2)target.transform.position - (Vector2)transform.position).normalized;
-
-        var go = Instantiate(BulletPrefab, transform.position, Quaternion.identity);
-        go.SetActive(true);   // sémantique Godot : un nœud instancié est toujours actif
-
-        var bullet = go.GetComponent<Bullet>();
-        if (bullet == null) { Destroy(go); return false; }
-
-        bullet.Launch(dir * BulletSpeed, EffectiveDamage, Range);
-        return true;
-    }
-}
-
-/// <summary>
-/// Projectile — port de <c>Bullet</c>. Touche par <b>distance</b>, comme tout le reste du jeu :
-/// aucun collider, donc aucun coût de physique pour les centaines de projectiles simultanés.
-/// </summary>
-public sealed class Bullet : MonoBehaviour
-{
-    [Tooltip("Rayon de collision avec un ennemi.")]
-    public float HitRadius = 12f;
-
-    private Vector2 _velocity;
-    private float   _damage;
-    private float   _rangeLeft;
-
-    /// <summary>Arme le projectile. À appeler juste après l'instanciation.</summary>
-    public void Launch(Vector2 velocity, float damage, float range)
-    {
-        _velocity  = velocity;
-        _damage    = damage;
-        _rangeLeft = range;
-    }
-
-    private void Update()
-    {
-        float dt = Time.deltaTime;
-        Vector2 step = _velocity * dt;
-
-        transform.position += (Vector3)step;
-
-        _rangeLeft -= step.magnitude;
-        if (_rangeLeft <= 0f) { Destroy(gameObject); return; }
-
-        Vector2 me = transform.position;
-        float sqr = HitRadius * HitRadius;
-
-        foreach (var e in EnemyBase.Active)
-        {
-            if (e == null || e.IsDead) continue;
-            if (((Vector2)e.transform.position - me).sqrMagnitude > sqr) continue;
-
-            e.TakeDamage(_damage);
-            Destroy(gameObject);
-            return;
-        }
     }
 }

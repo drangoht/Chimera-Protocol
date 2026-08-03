@@ -21,6 +21,9 @@ public sealed class EnemySpawner : MonoBehaviour
     [Tooltip("Prefab d'ennemi à instancier.")]
     public GameObject? EnemyPrefab;
 
+    [Tooltip("Prefab d'orbe d'XP laissé par les ennemis à leur mort.")]
+    public GameObject? XpOrbPrefab;
+
     [Tooltip("Distance d'apparition autour du joueur, hors champ.")]
     public float SpawnRadius = 700f;
 
@@ -92,6 +95,8 @@ public sealed class EnemySpawner : MonoBehaviour
 
         var enemy = go.GetComponent<EnemyBase>();
         if (enemy == null) return;
+
+        enemy.XpOrbPrefab = XpOrbPrefab;
 
         // Le scaling vient de la logique pure : mêmes chiffres que sous Godot, par construction.
         enemy.ApplyScaling(
