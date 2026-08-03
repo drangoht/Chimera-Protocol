@@ -160,6 +160,7 @@ public sealed class RunSmokeTest : MonoBehaviour
         if (gluedEnemy != null) Destroy(gluedEnemy.gameObject);
 
         // ─── Arsenal et fusions (critère de sortie du Lot 3) ──────────────────
+        yield return RunArchetypeChecks(enemyPrefab, bulletPrefab);
         yield return RunFusionChecks(systems);
 
         // ─── Fin de run ───────────────────────────────────────────────────────
@@ -168,6 +169,60 @@ public sealed class RunSmokeTest : MonoBehaviour
               $"{gm.RunTime:F1} s");
 
         Report();
+    }
+
+    /// <summary>
+    /// Vérifie que chaque <b>archétype</b> d'arme frappe réellement. Chacun a une géométrie de visée
+    /// différente — arc orienté, chaîne de rebonds, aura radiale, orbite, éventail — et c'est cette
+    /// géométrie, pas la boucle de tir, qui casse silencieusement lors d'un portage.
+    /// </summary>
+    private IEnumerator RunArchetypeChecks(GameObject enemyPrefab, GameObject bulletPrefab)
+    {
+        var host = new GameObject("ArchetypeHost");
+        host.transform.position = Vector3.zero;
+
+        // Trois cibles serrées autour de l'origine : dans l'arc, dans l'aura, et à portée de chaîne.
+        var targets = new List<EnemyBase>();
+        foreach (var offset in new[] { new Vector3(40f, 0f), new Vector3(0f, 40f), new Vector3(60f, 30f) })
+        {
+            var go = Instantiate(enemyPrefab, offset, Quaternion.identity);
+            go.SetActive(true);
+            var e = go.GetComponent<EnemyBase>();
+            e.ApplyScaling(100000f, 0f);   // encaissent sans mourir : on mesure la portée, pas les dégâts
+            e.Speed = 0f;                  // immobiles : la géométrie doit être déterministe
+            targets.Add(e);
+        }
+        yield return null;
+
+        var blade  = host.AddComponent<PlasmaBlade>();
+        var coil   = host.AddComponent<TeslaCoil>();
+        var field  = host.AddComponent<OverloadField>();
+        var volley = host.AddComponent<ScatterVolley>();
+        volley.BulletPrefab = bulletPrefab;
+        var swarm  = host.AddComponent<DroneSwarm>();
+
+        // Assez de temps pour que chaque arme franchisse sa recharge au moins une fois.
+        yield return new WaitForSeconds(3.0f);
+
+        Check("archetype arc : la lame touche dans son arc", blade.LastSweepHits > 0,
+              $"{blade.LastSweepHits} touches");
+        Check("archetype chaine : la bobine rebondit", coil.LastChainLength > 1,
+              $"chaine de {coil.LastChainLength}");
+        Check("archetype aura : l'impulsion touche autour du porteur", field.LastPulseHits > 0,
+              $"{field.LastPulseHits} touches");
+        Check("archetype salve : plusieurs projectiles partent", volley.LastVolleySize > 1,
+              $"{volley.LastVolleySize} projectiles");
+        Check("archetype orbital : les drones existent et tournent", swarm.enabled);
+
+        // La valeur de fiche doit être celle de la sous-classe, pas le défaut du socle : c'est
+        // l'ordre d'appel de base.Awake() qui en décide.
+        Check("armes : valeur de fiche capturee apres reglage de la sous-classe",
+              Mathf.Approximately(blade.SheetDamage, 18f) && Mathf.Approximately(coil.SheetDamage, 14f),
+              $"lame={blade.SheetDamage}, bobine={coil.SheetDamage}");
+
+        foreach (var e in targets) if (e != null) Destroy(e.gameObject);
+        Destroy(host);
+        yield return null;
     }
 
     /// <summary>

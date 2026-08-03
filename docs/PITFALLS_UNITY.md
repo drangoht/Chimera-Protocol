@@ -42,6 +42,19 @@ recopie l'état du prefab.
 **Parade** : `go.SetActive(true)` après chaque `Instantiate` de gabarit — fait dans `Spawner`,
 `EnemySpawner` et `ImpulseCannon`.
 
+### `base.Awake()` doit rester **en dernier** — la règle Godot revient, pour une autre raison
+
+**Symptôme** : une arme inflige les dégâts du socle (10) au lieu des siens (18, 14, 8…), et la
+progression des fusions part d'une valeur fausse.
+
+**Cause** : `WeaponBase.Awake()` **fige la valeur de fiche** (`SheetDamage`). Appelé *avant* que la
+sous-classe ne pose ses valeurs, il capture le défaut.
+
+**Parade** : dans chaque sous-classe, régler les champs puis appeler `base.Awake()` **en dernier**.
+C'est exactement la contrainte d'ordre que Godot imposait sur `base._Ready()` — mais là-bas il
+s'agissait d'initialisation, ici de **capture**. La règle survit à la migration, sa justification
+non : ne pas supposer qu'un piège disparu ne revient pas sous un autre visage.
+
 ### L'ordre d'initialisation n'est pas garanti
 
 Godot garantit l'ordre des AutoLoads (déclaré dans `project.godot`) ; Unity ne garantit rien entre

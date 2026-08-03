@@ -479,6 +479,33 @@ Mono conserve un avantage de principe pour la parité (l'export .NET de Godot es
 mais ce n'est plus une contrainte : le choix peut se faire sur d'autres critères (temps de build,
 performances, cap console/mobile).
 
+### 6.4 Lot 3 — arsenal : machinerie livrée, comportements en cours
+
+**Le critère de sortie a été traité en premier** — « les fusions héritent bien du niveau, le bug de
+la 1.21.0 ne doit pas réapparaître » — et à deux niveaux :
+
+- **En logique pure** : `WeaponFusion` (`Shared/Rules`), **16 tests**. Sous Godot, la règle vivait
+  dans un `Node`, donc hors de portée des tests — c'est exactement là que le déséquilibre s'était
+  logé. Un portage est le moment idéal pour réintroduire ce bug, **la valeur fautive (1) étant aussi
+  une valeur parfaitement plausible**.
+- **De bout en bout**, en build headless : arme montée au niveau 5 → fusion → **niveau hérité 5, pas
+  1**, arme source retirée, fusion non reforgeable. C'est la différence entre « la règle est juste »
+  et « le jeu l'utilise ».
+
+**Données** : `WeaponTable` lit `weapons.json` sans rien recopier — **7 tests portant sur le vrai
+fichier du jeu** (12 armes, 9 fusions, chaque fusion désigne une arme existante, aucune cadence
+nulle, et au-delà des paliers décrits les dégâts montent tandis que les **mécaniques plafonnent**).
+`DataFiles` charge depuis **`StreamingAssets`** : le tuning doit rester modifiable sans recompiler.
+
+**Archétypes portés et vérifiés** (29/29 headless) : projectile ciblé (`ImpulseCannon`), arc de
+mêlée (`PlasmaBlade`), chaîne (`TeslaCoil`), aura pulsée (`OverloadField`), salve (`ScatterVolley`),
+orbital (`DroneSwarm`). C'est la **géométrie de visée** qui est vérifiée — arc orienté, rebonds,
+rayon, éventail — parce que c'est elle, et non la boucle de tir, qui casse silencieusement.
+
+⚠ **Reste** : les 6 autres archétypes (`Glaive`, `SeekerSwarm`, `CryoLance`, `PyreStream`,
+`VectorLance`, `Singularity`) et les 9 classes de fusion. Volume, plus que difficulté — les données,
+l'inventaire et les règles de fusion tiennent déjà.
+
 ### 6.3 Lot 2 — cœur de run : tranche verticale livrée
 
 **Rendu tranché par la mesure, pas par préférence** : le jeu Godot utilise **108 `PointLight2D`** et
