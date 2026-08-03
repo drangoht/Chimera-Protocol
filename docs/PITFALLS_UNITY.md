@@ -149,6 +149,23 @@ l'AssetDatabase : faux en silence, avec pour seul symptôme des animations à tr
 jouant. → conversion en **deux temps** : Python produit des manifestes neutres, un script d'éditeur
 Unity résout les références.
 
+### `enemies_biome_expansion.json` **n'est pas un fichier de données** — ne pas le charger
+
+**Symptôme potentiel** : 20 ennemis de biome deviennent **invisibles**, sans la moindre erreur.
+
+**Cause** : le fichier ressemble à un jeu de données à fusionner avec `enemies.json`. Il n'en est
+pas un — **aucun code du jeu ne le lit** ; il sert de document de conception à
+`tools/generate_new_enemies.py`. Ses 20 entrées existent **déjà** dans `enemies.json`, à une
+différence près : elles n'y portent **pas** de `framesPath`. Le fusionner « pour être complet »
+écrase donc les chemins de sprites du fichier principal.
+
+**Parade** : ne charger que `enemies.json`. Un test verrouille la découverte
+(`EnemyTableTests.LeFichierDExtensionNeDoitPasEtreFusionne`) et signalera si le fichier change de
+nature.
+
+⚠ Cas général à retenir : dans `data/`, **tous les fichiers ne sont pas des entrées du moteur**.
+Vérifier qui les lit (`grep -rn <fichier> src/`) avant de les porter.
+
 ### Cohabitation des deux importeurs
 
 `unity/.gdignore` (Godot n'y descend pas) **et** `<Compile Remove="unity/**/*.cs" />` dans le

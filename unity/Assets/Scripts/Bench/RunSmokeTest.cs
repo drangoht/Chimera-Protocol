@@ -85,11 +85,18 @@ public sealed class RunSmokeTest : MonoBehaviour
         Check("spawner : des ennemis apparaissent", spawner.TotalSpawned > 0,
               $"{spawner.TotalSpawned} crees, {EnemyBase.Active.Count} vivants");
 
+        Check("bestiaire : enemies.json charge", spawner.BestiarySize >= 31,
+              $"{spawner.BestiarySize} types");
+
+        // La variété se mesure plus loin, sur la phase de combat : à 2 secondes de jeu, deux
+        // ennemis vivants ne constituent pas un échantillon.
+
         // ─── Combat : l'arme doit tuer, les orbes doivent tomber puis être ramassés ──
         float t = 0f;
         int maxOrbsSeen = 0;
         int maxBulletsSeen = 0;
         float nearestSeen = float.MaxValue;
+        var distinctProfiles = new HashSet<int>();
 
         while (t < 14f)
         {
@@ -98,6 +105,7 @@ public sealed class RunSmokeTest : MonoBehaviour
             playerGo.transform.position = new Vector3(Mathf.Cos(a), Mathf.Sin(a), 0f) * 260f;
 
             maxOrbsSeen = Mathf.Max(maxOrbsSeen, FindObjectsByType<XpOrb>(FindObjectsSortMode.None).Length);
+            foreach (var e in EnemyBase.Active) if (e != null) distinctProfiles.Add(Mathf.RoundToInt(e.MaxHp));
             maxBulletsSeen = Mathf.Max(maxBulletsSeen, FindObjectsByType<Bullet>(FindObjectsSortMode.None).Length);
 
             if (EnemyBase.Active.Count > 0)
@@ -128,6 +136,11 @@ public sealed class RunSmokeTest : MonoBehaviour
               $"ennemi le plus proche a {nearestSeen:F0}");
 
         Check("mort : des orbes d'XP tombent", maxOrbsSeen > 0, $"{maxOrbsSeen} orbes vus simultanement");
+
+        // Variete du bestiaire : si tous les ennemis sortaient identiques, la table de donnees
+        // serait chargee mais ignoree — une panne parfaitement muette.
+        Check("bestiaire : le tirage produit des ennemis varies", distinctProfiles.Count > 1,
+              $"{distinctProfiles.Count} profils de PV distincts observes");
 
         // L'XP ne peut plus monter que par RAMASSAGE : si elle monte, toute la boucle
         // tuer → laisser tomber → attirer → ramasser fonctionne de bout en bout.
@@ -162,6 +175,7 @@ public sealed class RunSmokeTest : MonoBehaviour
         // ─── Arsenal et fusions (critère de sortie du Lot 3) ──────────────────
         yield return RunArchetypeChecks(enemyPrefab, bulletPrefab);
         yield return RunAllWeaponsFire(enemyPrefab, bulletPrefab);
+        yield return RunEliteChecks(enemyPrefab);
         yield return RunFusionChecks(systems);
 
         // ─── Fin de run ───────────────────────────────────────────────────────
@@ -249,6 +263,85 @@ public sealed class RunSmokeTest : MonoBehaviour
 
         Destroy(missilePrefab);
         Destroy(glaivePrefab);
+    }
+
+    /// <summary>
+    /// Vérifie les <b>affixes d'élite</b> : chacun doit produire un effet observable. Un affixe qui
+    /// se pose sans rien changer est le mode de défaillance le plus probable ici — l'ennemi est bien
+    /// marqué « élite », teinté et agrandi, mais se comporte comme un ennemi ordinaire.
+    /// </summary>
+    private IEnumerator RunEliteChecks(GameObject enemyPrefab)
+    {
+        EnemyBase Make(EliteAffix affix, float hp = 100f, float dmg = 5f)
+        {
+            var go = Instantiate(enemyPrefab, new Vector3(400f, 400f), Quaternion.identity);
+            go.SetActive(true);
+            var e = go.GetComponent<EnemyBase>();
+            e.ApplyScaling(hp, dmg);
+            e.Speed = 0f;
+            e.ApplyElite(affix);
+            return e;
+        }
+
+        // Blindé : encaisse nettement mieux à dégâts identiques.
+        var plain   = Make(EliteAffix.None);
+        var armored = Make(EliteAffix.Armored);
+        float plainBefore = plain.CurrentHp, armoredBefore = armored.CurrentHp;
+        plain.TakeDamage(50f);
+        armored.TakeDamage(50f);
+
+        float plainLost = plainBefore - plain.CurrentHp;
+        float armoredLost = armoredBefore - armored.CurrentHp;
+        Check("elite Blinde : encaisse mieux", armoredLost < plainLost,
+              $"ordinaire -{plainLost:F0}, blinde -{armoredLost:F0}");
+
+        // Régénérant : remonte s'il n'est plus frappé.
+        var regen = Make(EliteAffix.Regenerating, hp: 500f);
+        regen.TakeDamage(200f);
+        float afterHit = regen.CurrentHp;
+        yield return new WaitForSeconds(2.5f);
+        Check("elite Regenerant : se soigne s'il n'est pas frappe", regen.CurrentHp > afterHit,
+              $"{afterHit:F0} -> {regen.CurrentHp:F0}");
+
+        // Frénétique : plus rapide et plus fragile que l'ordinaire.
+        var frenzied = Make(EliteAffix.Frenzied);
+        Check("elite Frenetique : marque l'ennemi comme elite", frenzied.IsElite);
+        Check("elite : l'affixe est conserve", frenzied.Affix == EliteAffix.Frenzied);
+
+        // Explosif : blesse le joueur à la mort s'il est à portée.
+        var player = Player.Instance;
+        if (player != null)
+        {
+            // Isoler le joueur : l'explosion passe par TakeDamage, donc respecte les i-frames.
+            // Tant que la nuée le frappe, le test mesurerait l'absorption et non l'affixe — on vide
+            // donc l'arène, ce qu'aucun autre contrôle ne fait car ils veulent justement la nuée.
+            foreach (var e in EnemyBase.Active.ToArray())
+                if (e != null) Destroy(e.gameObject);
+            yield return null;
+
+            player.transform.position = new Vector3(900f, 550f, 0f);
+            player.HealFlat(player.Stats.MaxHp);
+            yield return new WaitForSeconds(Player.InvulnWindow + 0.15f);
+
+            // Placé ENTRE le rayon de contact (24) et le rayon d'explosion (84) : posé sur le
+            // joueur, il le frapperait d'abord au contact, ce qui déclencherait les i-frames et
+            // ferait absorber l'explosion — on mesurerait alors l'inverse de ce qu'on veut.
+            var explosive = Make(EliteAffix.Explosive, hp: 10f, dmg: 20f);
+            explosive.transform.position = player.transform.position + new Vector3(50f, 0f, 0f);
+            yield return null;
+
+            float hpBefore = player.Stats.CurrentHp;
+            explosive.TakeDamage(100000f);   // mort immédiate → explosion
+            yield return null;
+
+            Check("elite Explosif : blesse a la mort", player.Stats.CurrentHp < hpBefore,
+                  $"{hpBefore:F0} -> {player.Stats.CurrentHp:F0}");
+        }
+
+        foreach (var e in new[] { plain, armored, regen, frenzied })
+            if (e != null) Destroy(e.gameObject);
+
+        yield return null;
     }
 
     /// <summary>Injecte les prefabs de projectile attendus par chaque famille d'arme.</summary>

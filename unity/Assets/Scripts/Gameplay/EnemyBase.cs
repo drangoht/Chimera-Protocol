@@ -71,6 +71,8 @@ public class EnemyBase : MonoBehaviour
         if (_isDead) return;          // la brûlure a pu tuer entre-temps
 
         var player = Player.Instance;
+        UpdateEliteEffects(dt, player);
+
         if (player == null || player.IsDead) return;
 
         UpdateMovement(player, dt);
@@ -130,20 +132,29 @@ public class EnemyBase : MonoBehaviour
         }
     }
 
-    /// <summary>Poursuite directe. Les sous-classes changent ce comportement (kite, erratique…).</summary>
+    /// <summary>Comportement de déplacement, issu des données (<c>ai.type</c>).</summary>
+    public EnemyTable.AiType Ai { get; set; } = EnemyTable.AiType.StraightChase;
+
+    /// <summary>
+    /// Phase de déplacement propre à cette entité. Sans état <b>par ennemi</b>, une nuée entière
+    /// zigzaguerait à l'unisson — un défaut immédiatement visible à l'écran.
+    /// </summary>
+    private float _aiPhase;
+
+    /// <summary>Déplacement délégué à <see cref="EnemyAi"/> selon le comportement des données.</summary>
     protected virtual void UpdateMovement(Player player, float dt)
     {
-        Vector2 to = (Vector2)player.transform.position - (Vector2)transform.position;
-        float dist = to.magnitude;
-        if (dist < 0.001f) return;
+        Vector2 self = transform.position;
+        Vector2 target = player.transform.position;
 
-        Vector2 dir = to / dist;
-        transform.position += (Vector3)(dir * Speed * SlowMultiplier * dt);
+        Vector2 next = EnemyAi.Step(Ai, self, target, Speed * SlowMultiplier, dt, ref _aiPhase);
+        transform.position = next;
 
         if (_animator != null)
         {
-            _animator.FlipX = dir.x < 0f;
-            _animator.Play("move");
+            Vector2 moved = next - self;
+            if (Mathf.Abs(moved.x) > 0.001f) _animator.FlipX = moved.x < 0f;
+            _animator.Play(moved.sqrMagnitude > 0.0001f ? "move" : "idle");
         }
     }
 
@@ -164,7 +175,95 @@ public class EnemyBase : MonoBehaviour
     /// exprimé en pourcentage des PV max ne doit <b>jamais</b> toucher un dégât continu — appliqué
     /// à chaque tick, il tuerait en quelques frames.
     /// </summary>
-    protected void DealDiscreteDamage(Player player, float amount) => player.TakeDamage(amount);
+    protected void DealDiscreteDamage(Player player, float amount)
+    {
+        player.TakeDamage(amount);
+        OnDealtDamage(amount);
+    }
+
+    // ─── Affixes d'élite ──────────────────────────────────────────────────────
+
+    private EliteAffix _affix = EliteAffix.None;
+    private EliteModifiers _mods;
+    private float _regenAccumulator;
+    private float _timeSinceHit;
+
+    /// <summary>Affixe porté, <see cref="EliteAffix.None"/> pour un ennemi ordinaire.</summary>
+    public EliteAffix Affix => _affix;
+
+    /// <summary>Cet ennemi est-il une élite ?</summary>
+    public bool IsElite => _affix != EliteAffix.None;
+
+    /// <summary>
+    /// Promeut l'ennemi en élite. Les multiplicateurs viennent d'<see cref="EliteAffixTable"/> —
+    /// logique pure partagée avec Godot, donc mêmes chiffres par construction.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ À appeler <b>avant</b> <see cref="ApplyScaling"/> ou juste après, mais jamais deux fois :
+    /// les multiplicateurs s'appliqueraient en cascade.
+    /// </remarks>
+    public void ApplyElite(EliteAffix affix)
+    {
+        if (affix == EliteAffix.None || IsElite) return;
+
+        _affix = affix;
+        _mods = EliteAffixTable.Modifiers(affix);
+
+        MaxHp *= _mods.HpMult;
+        _currentHp = MaxHp;
+        Speed *= _mods.SpeedMult;
+        Damage *= _mods.DamageMult;
+        XpValue = Mathf.Max(1, Mathf.RoundToInt(XpValue * _mods.XpMult));
+
+        transform.localScale *= EliteAffixTable.VisualScale;
+
+        var sr = GetComponentInChildren<SpriteRenderer>();
+        if (sr != null) sr.color = new Color(_mods.TintR, _mods.TintG, _mods.TintB);
+    }
+
+    /// <summary>Régénération et vol de vie propres aux affixes.</summary>
+    private void UpdateEliteEffects(float dt, Player? player)
+    {
+        if (!IsElite) return;
+
+        _timeSinceHit += dt;
+
+        // Régénérant : ne se soigne que s'il n'a pas été frappé récemment. C'est ce délai qui
+        // impose un pic de dégâts plutôt qu'une attrition — sans lui, l'affixe serait un simple
+        // sac de PV.
+        if (_mods.RegenFractionPerSecond > 0f && _timeSinceHit > 1.5f && _currentHp < MaxHp)
+        {
+            _regenAccumulator += MaxHp * _mods.RegenFractionPerSecond * dt;
+            if (_regenAccumulator >= 1f)
+            {
+                _currentHp = Mathf.Min(MaxHp, _currentHp + _regenAccumulator);
+                _regenAccumulator = 0f;
+            }
+        }
+    }
+
+    /// <summary>Vol de vie : appelé quand cet ennemi blesse le joueur.</summary>
+    private void OnDealtDamage(float amount)
+    {
+        if (!IsElite || _mods.LifestealFraction <= 0f) return;
+        _currentHp = Mathf.Min(MaxHp, _currentHp + amount * _mods.LifestealFraction);
+    }
+
+    /// <summary>Explosion de mort de l'affixe Explosif. Sans effet sans l'affixe.</summary>
+    private void TriggerEliteExplosion()
+    {
+        if (!IsElite || _mods.ExplodeDamageMult <= 0f) return;
+
+        var player = Player.Instance;
+        if (player == null) return;
+
+        float dist = Vector2.Distance(transform.position, player.transform.position);
+        if (dist > EliteAffixTable.ExplosionRadius) return;
+
+        // Passe par TakeDamage du joueur, donc respecte ses i-frames : une explosion ne doit pas
+        // contourner la seule protection qui rend les nuées survivables.
+        player.TakeDamage(Damage * _mods.ExplodeDamageMult);
+    }
 
     /// <summary>Applique le scaling de vague — voir <c>EnemyScaling</c> (logique pure partagée).</summary>
     public void ApplyScaling(float scaledMaxHp, float scaledDamage)
@@ -189,6 +288,12 @@ public class EnemyBase : MonoBehaviour
     {
         if (_isDead || amount <= 0f) return;
 
+        // Affixe Blindé : la réduction s'applique ici, en un seul point, pour qu'aucune source de
+        // dégâts ne puisse l'oublier.
+        if (IsElite && _mods.DamageTakenMult != 1f) amount *= _mods.DamageTakenMult;
+
+        _timeSinceHit = 0f;   // toute frappe suspend la régénération de l'affixe Régénérant
+
         _currentHp -= amount;
         if (_currentHp <= 0f) Die();
     }
@@ -208,6 +313,7 @@ public class EnemyBase : MonoBehaviour
         _isDead = true;
 
         Died?.Invoke(XpValue);
+        TriggerEliteExplosion();
         SpawnXpOrb();
         GameManager.Instance?.RegisterKill();
 
