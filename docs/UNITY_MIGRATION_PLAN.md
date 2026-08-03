@@ -1,0 +1,547 @@
+# Plan de migration Godot 4.7 .NET → Unity 6.5
+
+**Statut** : plan validé, non commencé · **Rédigé le** 2026-08-03 · **Version de référence** : 1.26.0
+**Éditeur cible** : `C:\Program Files\Unity\Hub\Editor\6000.5.6f1\Editor` (Unity 6.5, Windows)
+
+> Ce document est la **source de vérité** de la migration. Il se met à jour à chaque lot terminé
+> (état, mesures réelles, points ouverts résolus). Le plan de design (`docs/GDD.md`) et l'équilibrage
+> ne sont **pas** concernés : la migration ne change aucune règle de jeu.
+
+---
+
+## 1. Les quatre arbitrages retenus
+
+| Question | Décision | Conséquence directe |
+|---|---|---|
+| **Périmètre** | **Parité stricte 1.26.0** | Aucune nouveauté, aucune refonte de gameplay. On sait dire « c'est fini » : voir §8. |
+| **Emplacement** | **`chimera-protocol/unity/`** | Un seul dépôt, un seul historique ; le code Godot reste lisible côté à côte comme référence vivante. |
+| **Stack UI** | **uGUI + code procédural** | Les 7 381 lignes d'UI se **traduisent** (RectTransform/LayoutGroup ↔ Control/Container) au lieu de se réinventer. |
+| **Godot pendant le port** | **Gel complet** | La 1.26.0 devient une cible **fixe**. Sans gel, la parité n'est jamais atteignable. |
+
+**Conséquence du gel, à assumer explicitement** : les points laissés ouverts par la 1.26.0 — le
+**cran III** (boss à la 8ᵉ minute face à un arsenal amputé, et le battre débloque le cran suivant) et
+les **IPS au cran V** — ne seront **pas corrigés côté Godot**. S'ils s'avèrent bloquants pour les
+joueurs, le gel doit être rompu volontairement, pas subi : voir §10, risque R1.
+
+---
+
+## 2. Inventaire : ce qui survit, ce qui est à réécrire
+
+Mesuré sur l'arbre au 2026-08-03.
+
+### 2.1 Ce qui traverse la migration **sans être réécrit**
+
+| Actif | Volume | Pourquoi il survit |
+|---|---|---|
+| **Logique pure** `src/Core/Rules/` | **25 fichiers, 2 693 lignes** | Zéro `using Godot` — vérifié fichier par fichier. |
+| **Tests xUnit** | **331 tests, 2 868 lignes** | Le `.csproj` de tests ne référence **pas** Godot : il inclut `src/Core/Rules/*.cs` et compile seul. Il valide déjà les deux moteurs. |
+| Autres fichiers sans dépendance moteur | 7 fichiers (`Constants`, `SaveData`, `EnemySpawnData`, `LevelUpCardData`, `MetaUpgradeDefinition`, `StartingPerks`, `Titles`) | ~800 lignes de données/registres purs. |
+| **Sprites** | **905 PNG** | Format neutre. Réglages d'import à rejouer (§7.1), pas les images. |
+| **Audio** | **41 OGG/WAV** | Format neutre. |
+| **Tuning** | **8 `data/*.json`** | Format neutre ; le chemin de lecture change (§7.4). |
+| **Localisation** | `localization/ui.csv` | Le CSV est la source ; seul le *lecteur* change (§7.5). |
+| **Générateurs Python** | ~40 outils de `tools/` | Ils produisent des PNG/OGG : **strictement moteur-agnostiques**, zéro travail. |
+| **Événements C#** | tout le projet | **0 occurrence de `[Signal]`/`EmitSignal`** — la communication passe par des `event` C# standard. Portables tels quels. |
+
+**Total qui survit : ~3 500 lignes de C# + la totalité des assets + la totalité des tests.**
+
+### 2.2 Ce qui est à réécrire
+
+| Dossier | Lignes | Nature du travail |
+|---|---|---|
+| `src/Systems/` | 7 450 | Singletons AutoLoad → bootstrap `DontDestroyOnLoad` ordonné ; spawn, audio, biome, télémétrie. |
+| `src/UI/` | 7 381 | 18 écrans Control → uGUI. Le plus gros lot en volume, mais le plus **mécanique**. |
+| `src/Entities/` | 5 364 | `CharacterBody2D` → MonoBehaviour ; joueur, 11 ennemis, 6 mini-boss, boss. |
+| `src/Core/` | 3 718 − 2 693 = **1 025** | `GameManager`, `SaveManager` (hors Rules). |
+| `src/Weapons/` | 2 725 | 12 armes + 9 fusions + projectiles. |
+| `src/VFX/` | 326 | Effets. |
+| **Total** | **~24 300** | |
+| `scenes/*.tscn` | **65 scènes** | → Prefabs + Scenes Unity. Une bonne partie de l'UI étant construite **en code**, beaucoup de `.tscn` sont des coquilles quasi vides : à vérifier scène par scène (§4.6). |
+| `assets/**/*.tres` | **41 SpriteFrames** | **Mécanisable** : format régulier (1 PNG par frame + manifeste). Convertisseur automatique (§7.2). |
+
+### 2.3 Densité d'API Godot — ce qui pilote la méthode
+
+C'est **cette table** qui dicte l'existence de la couche d'adaptation du §4. Cinq idiomes couvrent la
+grande majorité des points de contact avec le moteur :
+
+| Idiome Godot | Occurrences | Réparties surtout dans |
+|---|---:|---|
+| **`Tween`** | **502** | UI 280 · Entities 79 · Weapons 73 · Systems 54 · VFX 16 |
+| `Button` / `Label` / `Control` / `TextureRect` | 807 | UI |
+| `Timer` | 163 | partout |
+| `GD.*` (`Print`, `Randf`, `Randi`, `Seed`) | 162 | partout |
+| `GetTree()` | 112 | partout |
+| `Node2D` / `Sprite2D` / `PackedScene` / `AnimatedSprite2D` | 301 | Entities, Weapons, VFX |
+| `CallDeferred` | 57 | partout |
+| `CharacterBody2D` / `Area2D` / `CollisionShape2D` | 33 | Entities |
+
+**Le fait marquant** : `Tween` est le premier point de contact du projet avec Godot, devant la
+physique d'un facteur 15. Une migration qui se concentre sur « le moteur physique » se tromperait de
+chantier.
+
+---
+
+## 3. Structure cible du dépôt
+
+```
+chimera-protocol/
+├── src/  scenes/  project.godot        ← Godot, GELÉ, référence de parité
+├── tests/                              ← INCHANGÉ, valide les DEUX moteurs
+├── unity/                              ← nouveau
+│   ├── .gdignore                       ← ⚠ CRITIQUE : voir §3.1
+│   ├── Assets/
+│   │   ├── Scripts/
+│   │   │   ├── Shared/Rules/           ← src/Core/Rules DÉPLACÉ ici (§3.2)
+│   │   │   ├── Platform/               ← couche d'adaptation (§4)
+│   │   │   ├── Core/ Systems/ UI/ Weapons/ Entities/ VFX/
+│   │   │   └── *.asmdef
+│   │   ├── Art/  Audio/  Prefabs/  Scenes/  Resources/
+│   │   └── StreamingAssets/data/       ← les 8 JSON de tuning
+│   ├── Packages/  ProjectSettings/
+│   └── Build/                          ← ignoré par git
+├── tools/
+│   ├── unity/                          ← convertisseurs & build (§7, §9)
+│   └── (les ~40 générateurs Python : inchangés)
+└── docs/
+```
+
+### 3.1 Le piège de la cohabitation, à traiter au premier commit
+
+Deux importeurs vont scanner le même arbre. Chacun ignore l'autre, mais **il faut le leur dire** :
+
+- **Godot descendrait dans `unity/`** et tenterait d'importer 905 PNG + les `.meta` Unity comme des
+  ressources → un fichier **`unity/.gdignore`** (vide) arrête l'importeur Godot net.
+- **`Godot.NET.Sdk` globbe `**/*.cs`** et compilerait donc le code Unity dans l'assembly du jeu Godot
+  → ajouter `<Compile Remove="unity/**/*.cs" />` dans `ChimeraProtocol.csproj`. Le projet **applique
+  déjà exactement ce motif** pour `tests/**` : c'est une ligne à dupliquer, pas une invention.
+- Unity, lui, ne regarde que `unity/Assets/` : l'arbre Godot lui est **invisible**, rien à faire.
+
+### 3.2 Un seul exemplaire de la logique pure
+
+`src/Core/Rules/` **déménage** vers `unity/Assets/Scripts/Shared/Rules/`. Les deux moteurs et les
+tests le compilent **par chemin**, sans copie :
+
+- Unity le compile nativement (il est sous `Assets/`), isolé dans un `.asmdef`
+  `ChimeraProtocol.Rules` **sans référence à `UnityEngine`** — ainsi le compilateur *interdit
+  physiquement* qu'une dépendance moteur s'y glisse. C'est un garde-fou plus fort que la convention
+  actuelle.
+- `ChimeraProtocol.csproj` (Godot) : `<Compile Include="unity/Assets/Scripts/Shared/Rules/*.cs" />`.
+- `tests/ChimeraProtocol.Tests.csproj` : même changement de chemin, une ligne.
+
+**Zéro duplication, donc zéro dérive possible.** Les 331 tests continuent de couvrir la seule et
+unique copie des règles, quel que soit le moteur qui la consomme.
+
+---
+
+## 4. La couche d'adaptation (`Assets/Scripts/Platform/`) — le cœur de la méthode
+
+**Le principe** : plutôt que de traduire 24 300 lignes au cas par cas, on écrit ~1 200 lignes qui
+**rejouent la forme des API Godot les plus utilisées** sur des fondations Unity. Les 24 300 lignes se
+portent alors par recherche/remplacement mécanique plutôt que par réinterprétation.
+
+Ce n'est pas une couche d'abstraction pérenne : c'est un **échafaudage de migration**, assumé comme
+tel. Il peut être démantelé plus tard, ou pas.
+
+### 4.1 `GTween` — le morceau qui décide du coût du port
+
+502 sites d'appel. Deux voies :
+
+| Voie | Coût | Verdict |
+|---|---|---|
+| **Shim `GTween` reproduisant l'API Godot** (`CreateTween()`, `TweenProperty`, `SetParallel`, `Chain`, `SetEase/SetTrans`, `TweenCallback`) | ~350 lignes à écrire **une fois** | ✅ **Recommandé.** Les 502 sites se portent quasi sans édition. |
+| **DOTween** (mature, gratuit) | 0 ligne d'infra, mais **502 sites à réécrire** dans un autre idiome | ❌ Coût déplacé au mauvais endroit. |
+
+DOTween reste un bon choix pour un projet neuf ; ici il transforme un travail d'infrastructure borné
+en un travail de traduction diffus sur 5 dossiers.
+
+### 4.2 Les autres shims
+
+| Shim | Remplace | Volume visé | Note |
+|---|---|---|---|
+| `Gd` | `GD.Print/Randf/Randi/Seed` | 162 | ⚠ **La RNG est un sujet à part entière** : voir §4.3. |
+| `GTimer` | `Timer`, `SceneTreeTimer` | 163 | Coroutines + file de timers en `Update`. |
+| `SceneRoot` | `GetTree()`, changement de scène, **pause** | 112 | ⚠ La pause est un piège majeur : §4.5. |
+| `Deferred` | `CallDeferred` | 57 | File vidée en fin de frame (`LateUpdate`). |
+| `ScenePaths` + `Spawner` | `PackedScene` + `Instantiate()` | 65 | Registre de prefabs adressés par chemin logique. |
+| `FrameAnimator` | `AnimatedSprite2D` + `SpriteFrames` | 55 | §7.2. |
+| `UiKit` | `Label`, `Button`, `Container`, `TextureRect` | 807 | Fabriques uGUI aux signatures des fabriques `UiStyle` existantes. |
+
+### 4.3 La RNG : le point technique le plus lourd de conséquences
+
+Le banc de mesure **entier** repose sur `--seed=<n>` → `GD.Seed` : c'est ce qui rend deux campagnes
+comparables (méthode appariée, test des signes). Trois faits :
+
+1. Un shim naïf sur `UnityEngine.Random` donne une reproductibilité **interne** (Unity vs Unity) —
+   suffisant pour continuer à régler le jeu **après** la migration.
+2. Mais il rend **impossible** de rejouer une graine Godot sous Unity, donc de comparer les deux
+   moteurs run à run. Or c'est exactement l'outil de validation de parité le plus puissant dont on
+   dispose (§8.2).
+3. Godot 4 utilise **PCG32**, spécification publique, ~40 lignes de C#.
+
+→ **Recommandation : réimplémenter PCG32 dans le shim `Gd`.** Coût dérisoire, et cela convertit la
+validation de parité de « comparer des distributions sur N graines » à « comparer deux runs sur la
+même graine ».
+
+⚠ **Limite à dire tout de suite** : même RNG identique, les runs ne seront pas *identiques*. Le
+nombre d'appels à la RNG dépend du nombre de frames, et la cadence de simulation diffère entre les
+deux moteurs. Ce qui devient comparable, ce sont les **tirages** (cartes de level-up, tables de
+spawn, affixes d'élite) — c'est-à-dire la source de variance que le banc cherchait justement à
+neutraliser. C'est beaucoup, ce n'est pas tout.
+
+### 4.4 Physique : ce que la mesure autorise à **ne pas** porter
+
+Lecture du code réel :
+
+- `Player` et `EnemyBase` sont des `CharacterBody2D` avec `MoveAndSlide()`.
+- **Mais les dégâts de contact sont calculés par distance**, pas par collision :
+  `GlobalPosition.DistanceTo(player.GlobalPosition) < ContactRadius` (`EnemyBase.cs:223`).
+- **Et la séparation entre ennemis est manuelle** : `Player.cs:446-455` repositionne les ennemis à la
+  main.
+
+→ La physique Godot ne sert donc, pour les ennemis, qu'à la collision avec les **obstacles de biome**
+et les murs. **Recommandation : mouvement par transform + la séparation manuelle existante, et
+`Rigidbody2D`/colliders uniquement là où les obstacles l'exigent.** À 200-300 entités, éviter le
+moteur physique n'est pas une optimisation prématurée mais la reproduction fidèle de ce que le jeu
+fait déjà.
+
+⚠ **Point ouvert P1** : recenser précisément avec quoi `MoveAndSlide` entre en collision
+(`BiomeObstacles`, murs d'arène, joueur↔ennemi ?). Tant que ce recensement n'est pas fait, la
+conception du mouvement Unity est une hypothèse. **À traiter en Lot 2, avant d'écrire le Player.**
+
+### 4.5 La pause : un piège connu du projet qui change de forme
+
+Godot : `GetTree().Paused` + `ProcessMode` par nœud. Unity : `Time.timeScale = 0f`.
+
+Ce n'est pas équivalent. Les conséquences concrètes, toutes déjà présentes dans le projet :
+
+- `ModalQueue` coordonne `LevelUpScreen` + `AssimilationScreen` avec **un seul** `Paused` → sous
+  Unity, l'écran modal doit tourner en `unscaledDeltaTime`, sinon ses `GTween` se figent avec le jeu.
+  **`GTween` doit donc porter un drapeau `IgnoreTimeScale`** (l'équivalent de `ProcessMode.Always`).
+- Le projet documente déjà que « la pause du `LevelUpScreen` gèle la physique » dans les tests
+  headless. Sous Unity le symptôme diffère mais la classe de bug est la même.
+- `PauseScreen` ouvre `OptionsScreen` en surcouche **sans changer de scène** : à conserver tel quel,
+  c'est plus simple sous Unity que sous Godot.
+
+### 4.6 Autoloads → bootstrap ordonné
+
+15 AutoLoads. Godot garantit l'ordre de déclaration ; **Unity ne garantit rien** entre MonoBehaviours
+sans configuration.
+
+→ **Une scène `Boot` unique**, avec un seul `MonoBehaviour` qui instancie les 15 systèmes **dans
+l'ordre exact du `project.godot`** puis charge le menu. Ordre explicite, lisible, testable — plutôt
+que 15 entrées de *Script Execution Order* dispersées dans les ProjectSettings.
+
+⚠ Le contrat `NomSystem.Instance` utilisé partout dans le code est **conservé tel quel** : c'est ce
+qui permet aux 7 450 lignes de `src/Systems/` de se porter sans réécrire leurs appelants.
+
+⚠ Piège inversé à noter : Godot impose `base._Ready()` **en dernier** dans `WeaponBase` (documenté
+dans `PITFALLS.md`). Ce piège **disparaît**, remplacé par le couple `Awake`/`OnEnable`/`Start`
+d'Unity, dont l'ordre relatif entre objets est différent. Ne pas supposer que la traduction est
+neutre : les 19 armes héritant de `WeaponBase` sont le premier endroit où ça se verra.
+
+---
+
+## 5. Deux blocages sur le code **partagé**, à lever avant tout le reste
+
+Trouvés en inspectant les sources. Ils touchent `Rules/`, donc les 331 tests, donc ils bloquent la
+fondation. Les traiter en **Lot 0**, côté Godot, avec les tests comme filet — **avant** que Unity
+n'existe.
+
+### 5.1 `ImplicitUsings` n'existe pas sous Unity
+
+7 fichiers de `Rules/` n'ont **aucune** directive `using` et dépendent de `<ImplicitUsings>enable`
+du `.csproj` : `CrowdControlCaps`, `DifficultyTuning`, `EliteAffixTable`, `RarityWeights`,
+`VersionCompare`, `WeaponLeveling`, `XpCurve`.
+
+Unity génère ses propres `.csproj`, sans cette option → **ces 7 fichiers ne compileront pas**.
+Correctif : ajouter les `using` explicites. Inoffensif côté Godot (redondance), vérifié par les tests.
+
+### 5.2 `System.Text.Json` n'est pas fourni par Unity
+
+Utilisé dans **9 fichiers**, dont **2 dans `Rules/`** (`ChallengeTable`, `GraftTable`) — c'est-à-dire
+dans le code partagé et testé. Plus `SaveManager` et 5 systèmes.
+
+| Option | Verdict |
+|---|---|
+| **`com.unity.nuget.newtonsoft-json`** (package **officiel** Unity, sûr en IL2CPP) | ✅ **Recommandé** |
+| `System.Text.Json` via NuGetForUnity | ⚠ Réflexion + IL2CPP = risque AOT réel, et un échec ne se voit qu'au build final |
+| Sortir tout parsing de `Rules/` (les règles reçoivent des DTO) | Plus propre architecturalement, mais c'est une **refonte de contrat** — hors périmètre « parité stricte » |
+
+**Méthode recommandée, et elle est élégante** : basculer sur Newtonsoft **dans le projet Godot**, en
+Lot 0, et vérifier que **les 331 tests passent toujours**. La migration de dépendance est ainsi
+validée par la suite de tests existante, sur un moteur qui marche, avant que Unity n'entre en jeu.
+Ensuite, une seule dépendance JSON des deux côtés.
+
+⚠ Piège concret : `SaveManager` utilise `PropertyNamingPolicy = JsonNamingPolicy.CamelCase`.
+Newtonsoft ne fait **pas** ça par défaut → `CamelCasePropertyNamesContractResolver`. **Un test de
+non-régression doit désérialiser une vraie sauvegarde 1.26.0 existante** (celle du testeur, 141 runs,
+70 084 Échos, est le meilleur cas de test disponible).
+
+---
+
+## 6. Les lots
+
+Chaque lot a un **critère de sortie vérifiable**. Un lot n'est pas « fini » parce qu'il compile.
+
+| # | Lot | Poids | Critère de sortie |
+|---|---|---:|---|
+| **0** | **Socle partagé** — §5.1, §5.2, déménagement de `Rules/` (§3.2), `.gdignore` + `Compile Remove` (§3.1), projet Unity vide qui ouvre | 3 % | **Les 331 tests passent** ; le jeu **Godot tourne toujours** ; Unity compile `Rules/` via son `.asmdef` sans `UnityEngine` |
+| **1** | **Couche Platform** (§4) — `GTween`, `Gd`+PCG32, `GTimer`, `SceneRoot`, `Deferred`, `Spawner`, `FrameAnimator` | 8 % | Tests unitaires **neufs** sur les shims (PCG32 vs valeurs de référence Godot, ordonnancement `Deferred`, `GTween` en `timeScale=0`) |
+| **2** | **Cœur de run** — `GameManager`, `Player`, `EnemyBase`, spawn, XP, un ennemi, une arme | 14 % | Une run se joue : bouger, tuer, ramasser, monter de niveau. **P1 (§4.4) tranché et documenté** |
+| **3** | **Arsenal complet** — 12 armes, 9 fusions, projectiles, VFX | 12 % | Les 21 armes tirent ; les fusions héritent bien du niveau (le bug de la 1.21.0 **ne doit pas réapparaître** : un test le verrouille) |
+| **4** | **Bestiaire complet** — 11 ennemis, affixes d'élite, 6 mini-boss, `RustedCore` (3 phases × 5 incarnations) | 14 % | Chaque entité apparaît, agit et meurt correctement ; les 5 incarnations tirent leur signature |
+| **5** | **UI & écrans** — 18 écrans, HUD, `UiStyle`/`UiPalette`, navigation clavier/manette, `ModalQueue` | 22 % | **Parité visuelle prouvée par captures avant/après** sur les 18 écrans (§8.3) ; navigation manette complète sans souris |
+| **6** | **Méta & persistance** — Hub, Assimilation, Défis, Codex, `SaveManager`, `GameSettings`, localisation | 13 % | Une **sauvegarde 1.26.0 réelle** se charge sans perte (§9.3) ; les 3 langues s'affichent |
+| **7** | **Banc & télémétrie** — flags CLI, `PowerTelemetry`, `BossTelemetry`, `PressureMeter`, `BenchAutoPilot` | 9 % | Une campagne headless tourne et produit un `power_curve.log` exploitable par `tools/power_loop.py` **sans modifier l'outil** |
+| **8** | **Build & release** — build Unity par script, `release_itch.ps1` adapté, `version.json`, icône | 5 % | Un `.exe` exporté démarre, joue une run complète et se pousse sur itch en canal de test |
+
+**Les deux lots les plus lourds sont l'UI (22 %) et le duo bestiaire/cœur (28 %).** L'UI est le plus
+volumineux mais le plus mécanique ; le bestiaire est celui où le *comportement* peut diverger sans
+que rien ne le signale.
+
+---
+
+## 7. Pipeline d'assets — ce qui est mécanisable
+
+### 7.1 Sprites (905 PNG) — un `AssetPostprocessor`, pas 905 clics
+
+Le projet impose `texture_filter = Nearest` global, grille 32×32. Sous Unity, ces réglages sont
+**par fichier** et le défaut (bilinéaire + compression) **détruirait le pixel art**.
+
+→ `Assets/Editor/SpriteImportPostprocessor.cs` : `filterMode = Point`,
+`textureCompression = Uncompressed`, `spritePixelsPerUnit = 32`, pivot centre, `mipmapEnabled = false`.
+Un script, appliqué à tout `Assets/Art/`, exécuté à chaque import. **C'est le tout premier fichier
+Unity à écrire du Lot 1** : importer 905 sprites avant lui, c'est les réimporter après.
+
+### 7.2 Les 41 `SpriteFrames` — convertisseur automatique
+
+Le format est régulier et lisible : un `ext_resource` par PNG, puis un tableau d'animations
+(`name`, `speed`, `loop`, liste de frames). → `tools/unity/convert_spriteframes.py` génère un
+`ScriptableObject` `SpriteFramesAsset` par ennemi.
+
+**Recommandation : ne pas passer par Mecanim.** Le code appelle `PlayAnim("attack")` de façon
+data-driven, avec repli si l'animation manque (le projet a déjà connu 144 erreurs/session sur une
+animation `attack` absente). Un `FrameAnimator` de ~120 lignes lisant le `ScriptableObject` reproduit
+exactement ce contrat, là où 41 `AnimatorController` seraient à la fois plus lourds et moins
+tolérants.
+
+### 7.3 Audio (41 fichiers)
+
+Copie directe. Réglages d'import : musique en `Streaming`, SFX en `Decompress on Load`.
+⚠ `MusicDirector` fait des **fondus croisés à puissance constante** entre deux `AudioStreamPlayer` :
+sous Unity, deux `AudioSource` + la même courbe. La table `AudioSystem.MixGainDb` (dont le −12 dB des
+tirs de sentinelle, réglé à l'oreille sur trois itérations) se porte **telle quelle** — elle est en dB,
+donc indépendante du moteur.
+
+### 7.4 Les 8 JSON de tuning
+
+Destination : **`Assets/StreamingAssets/data/`** — et non `Resources/`. Raison : la convention du
+projet est explicite, « tuning modifiable **sans recompiler** ». `StreamingAssets` conserve des
+fichiers lisibles sur disque dans le build ; `Resources` les empaquette. Shim `DataFiles.Load(name)`.
+
+### 7.5 Localisation
+
+Unity n'a pas d'équivalent au `TranslationServer`. Bonne nouvelle : **tout le jeu passe par
+`Loc.T(key)`**, un unique point d'entrée d'une ligne. → un lecteur CSV de ~60 lignes chargeant
+`ui.csv`, plus le flag `--lang=<en|fr|es>` (utilisé par le trailer et les captures). Le paquet
+officiel `com.unity.localization` serait **surdimensionné** ici et imposerait de reconstruire les
+tables.
+
+### 7.6 Polices
+
+Share Tech Mono (AA on, size 16), VT323 en réserve → assets **TextMeshPro** à générer. ⚠ La police
+étant utilisée à taille fixe sur une UI pixel, l'atlas TMP doit être généré en conséquence, sans quoi
+le rendu du texte sera flou là où le reste est net.
+
+---
+
+## 8. Comment on **prouve** la parité
+
+Le périmètre choisi (parité stricte) n'a de sens que s'il est mesurable. Quatre niveaux, du moins
+coûteux au plus décisif.
+
+### 8.1 Les 331 tests — nécessaire, très loin de suffisant
+
+Ils passent dès le Lot 0 et couvrent **2 693 lignes sur 27 000, soit 10 %**. Ils garantissent que les
+*règles* sont intactes ; ils ne disent **rien** des 24 300 lignes portées. Les prendre pour une
+validation de migration serait la faute de raisonnement la plus facile à commettre ici.
+
+### 8.2 Comparaison de bancs sur graines appariées — l'outil principal
+
+Conditionné à PCG32 (§4.3). On lance la même campagne (`--overtime`, mêmes graines) sous Godot puis
+sous Unity, et on compare les colonnes de `power_curve.log` avec `tools/power_loop.py --paired` —
+**l'outil existant, sans le modifier**.
+
+⚠ **Ce qui est comparable et ce qui ne l'est pas** : les tirages (cartes, spawns, affixes) le sont ;
+la cadence de simulation ne l'est pas. Un écart de quelques pourcents sur un débit ne prouve pas une
+régression. Le projet dispose déjà du bon critère : le **test des signes** sur graines appariées, et
+le **plus petit écart détectable** annoncé par `power_curve_multi.py`.
+
+⚠ **Toutes les références de banc existantes sont invalidées** —
+`docs/bench/ref_overtime_1251_sat0.json` mesure un moteur qui ne sera plus le moteur cible. **Une
+nouvelle référence Unity doit être établie (≈28 min de banc) avant la première décision de réglage
+post-migration.** À défaut, on réglerait le jeu contre une base fausse — exactement le piège qui a
+déjà coûté au projet une campagne entière et un diagnostic inversé (« le soin du Blindage n'était pas
+notifié à `PowerTelemetry` »).
+
+### 8.3 Captures avant/après sur les 18 écrans
+
+Le projet a déjà cette pratique et son outillage (`tools/screenshot_*.py`, planches-contact). Deux
+séries d'images, même résolution, même langue, écran par écran. C'est le seul contrôle praticable
+pour un lot d'UI de 7 381 lignes.
+
+### 8.4 Une run jouée — le juge de dernière instance
+
+L'historique du projet est sans ambiguïté sur ce point : **chaque conclusion de banc a été précisée,
+déplacée ou réfutée par une session jouée** (le découplage d'overtime réfuté, le cran I « aucune
+difficulté », la régénération « immobile sans mourir », les vies de secours indistinguables). Le banc
+mesure des débits ; il ne mesure ni le ressenti, ni la lisibilité, ni la latence d'entrée.
+
+→ La migration n'est **déclarée finie** qu'après une run complète jouée jusqu'au boss, sur les deux
+moteurs, par le testeur.
+
+---
+
+## 9. Points à ne pas oublier (et qui se paient cher si on les oublie)
+
+### 9.1 Le banc de mesure est ~30 % de la valeur d'ingénierie du projet
+
+`PowerTelemetry` (23 colonnes), `BossTelemetry`, `PressureMeter`, `BenchAutoPilot`,
+`AutoPilotPolicy`, les flags `--seed`/`--saturation`/`--start-at`/`--saturate-arsenal`/`--auto-play`,
+`power_loop.py`, `power_curve_multi.py`. C'est ce qui permet de **régler le jeu sans deviner**. Un
+port qui livre un jeu jouable mais sans banc livre un jeu qu'on ne saura plus équilibrer.
+
+Bonne nouvelle technique : `AutoPilotPolicy` est déjà de la **logique pure** (elle survit intacte),
+et les arguments de ligne de commande fonctionnent en build Unity standalone
+(`Environment.GetCommandLineArgs()`). Le travail est de rebrancher, pas de reconcevoir.
+
+⚠ **Risque à vérifier tôt** : `-batchmode -nographics` sous Unity n'est pas l'équivalent exact de
+`--headless` Godot. Le banc doit tourner **sans fenêtre et plus vite que le temps réel**. À
+**prototyper dès le Lot 1**, pas à découvrir au Lot 7 — si c'est impossible, toute la méthodologie de
+mesure change de forme.
+
+### 9.2 `--timescale` a une limite connue
+
+Le projet documente : au-delà de ×4, les projectiles traversent leurs cibles. Sous Unity, avec un
+mouvement par transform (§4.4), **la même limite existera à un seuil différent**, à re-mesurer.
+
+### 9.3 Les sauvegardes des joueurs existants
+
+`user://save.json` (Godot) vit dans `%APPDATA%\Godot\app_userdata\Chimera Protocol\`.
+`Application.persistentDataPath` (Unity) vit dans `%USERPROFILE%\AppData\LocalLow\<Company>\<Product>\`.
+
+**Chemins différents.** Sans action, un joueur qui met à jour via l'app itch perd Échos, greffes,
+perks, défis, records et complétions. → **une migration ponctuelle au premier lancement Unity** :
+détecter l'ancien chemin, lire, réécrire au nouveau. `settings.cfg` (format Godot `ConfigFile`, avec
+son `save_version=2` et sa table `biome:cran`) demande en plus un **parseur dédié** — il n'existe pas
+sous Unity.
+
+C'est le point le plus facile à oublier et le seul dont l'échec est **visible par les joueurs** et
+**irréversible pour eux**. À traiter dans le Lot 6, avec la sauvegarde du testeur comme cas de test.
+
+### 9.4 Ce qui disparaît ou change de nature
+
+- **Discord Rich Presence** : le paquet NuGet `DiscordRichPresence` fonctionne sous Unity (Mono), à
+  vérifier en IL2CPP.
+- **`VersionStamp`** lit `config/version` de `project.godot` → devient `Application.version`.
+- **`BuildInfo.GitSha`** est généré par `tools/gen_build_info.ps1` → à rebrancher sur le build Unity.
+- **Le bandeau de mise à jour web** (`version.json` sur GitHub) est **indépendant du moteur** : seul
+  le `HttpRequest` Godot devient `UnityWebRequest`. `VersionCompare` est déjà de la logique pure.
+
+### 9.5 Le trailer et les captures store
+
+`record_trailer.py` pilote le **Movie Maker de Godot** (`--write-movie`), qui n'a **pas
+d'équivalent direct** sous Unity — il faudra soit Unity Recorder, soit une capture externe. Les
+timecodes de l'EDL (`build_trailer.py`) ne survivront pas au changement de moteur : le trailer est à
+**recapturer intégralement**, pas à reporter. Hors périmètre du port, mais à budgéter avant la
+prochaine publication de la page itch.
+
+---
+
+## 10. Risques
+
+| # | Risque | Impact | Parade |
+|---|---|---|---|
+| **R1** | Un bug bloquant de la 1.26.0 (cran III inbattable, IPS au cran V) apparaît **pendant** le gel | Les joueurs restent bloqués des semaines | Rompre le gel **volontairement** pour ce seul correctif, le porter immédiatement côté Unity, et le noter ici |
+| **R2** | Le banc Unity ne tourne pas headless plus vite que le temps réel (§9.1) | Toute la méthodologie de mesure s'effondre | **Prototyper au Lot 1**, avant d'avoir écrit du gameplay |
+| **R3** | Les 200-300 entités ne tiennent pas les IPS sous Unity | Le jeu devient injouable au cran V, là où il est déjà tendu | Mesurer les IPS avec 300 entités **dès le Lot 2**, sur un prototype nu |
+| **R4** | Divergence de comportement silencieuse (une arme, un affixe, une phase de boss) | Un jeu qui « marche » mais n'est plus le même | §8.2 + §8.3 + §8.4. C'est précisément pourquoi la parité doit être **prouvée**, pas supposée |
+| **R5** | Perte des sauvegardes joueurs (§9.3) | Irréversible, visible, et le pire retour possible | Migration au premier lancement, testée sur une vraie save |
+| **R6** | Le port s'arrête à mi-chemin | Un dépôt à deux moteurs, aucun des deux fini | Les lots 0-4 livrent un jeu **jouable** ; en cas d'arrêt, Godot reste publiable puisqu'il est intact |
+| **R7** | Sérialisation JSON cassée en IL2CPP (§5.2) | Ne se voit qu'au build final | Newtonsoft (officiel Unity) + un build IL2CPP de contrôle **dès le Lot 0** |
+
+**R6 mérite d'être souligné** : le gel de Godot est un choix de méthode, pas une destruction. À tout
+instant, la 1.26.0 reste exportable et publiable. La migration est réversible tant qu'elle n'est pas
+publiée.
+
+---
+
+## 11. Documentation des agents et skills — la nouvelle stack
+
+Mesure de l'empreinte moteur dans la doc existante :
+
+| Fichier | Mentions moteur | Traitement |
+|---|---:|---|
+| `.claude/skills/carte-projet/SKILL.md` | **25** | **Réécriture complète** → nouvelle carte de `unity/` (arborescence, prefabs, asmdef, checklists de câblage revues) |
+| `.claude/skills/publier-itch/SKILL.md` | 6 | Réécriture du pipeline (build Unity par `-executeMethod`, butler inchangé) |
+| `.claude/agents/release-manager.md` | 7 | Réécriture de la procédure d'export |
+| `.claude/agents/game-tester.md` | 5 | Réécriture (lancement Unity, flags, chemins de logs) |
+| `.claude/agents/developpeur.md` | 4 | Réécriture (conventions Unity, couche Platform, pièges) |
+| `.claude/agents/musicien.md` | 2 | Retouche (import audio Unity) |
+| `.claude/agents/graphiste.md` | 1 | Retouche (postprocessor d'import, §7.1) |
+| `.claude/agents/directeur-artistique.md` | 1 | Retouche |
+| `.claude/agents/story-teller.md` | 1 | Retouche |
+| **`.claude/agents/game-designer.md`** | **0** | ✅ **Aucun changement** — le design est moteur-agnostique |
+| **`.claude/agents/marketing.md`** | **0** | ✅ **Aucun changement** |
+
+Docs projet : `docs/ARCHITECTURE.md` (23) et `docs/PITFALLS.md` (54) sont à **doubler**, pas à
+remplacer — les pièges Godot restent vrais tant que la branche Godot existe et sert de référence.
+
+→ **`docs/ARCHITECTURE_UNITY.md`** et **`docs/PITFALLS_UNITY.md`**, neufs, qui se remplissent **au fil
+des lots** et non à la fin. Un piège Unity se documente le jour où il coûte une heure, pas trois
+semaines plus tard.
+
+`docs/GDD.md` (91 mentions) : ce sont presque toutes des **références de chemins de code** dans un
+document de design. Le design lui-même ne bouge pas. → passe de mise à jour des chemins en fin de
+Lot 6, pas de réécriture.
+
+⚠ **Règle du projet à appliquer ici** : « un agent qui décrit un état périmé du projet donne des
+instructions fausses avec autorité ». Pendant la migration, **les agents décriront forcément un état
+périmé** — soit Godot alors qu'on code en Unity, soit l'inverse. → chaque agent réécrit doit porter,
+en tête, **quel moteur il décrit et à quel lot il a été mis à jour**.
+
+---
+
+## 12. Ce que cette migration coûte, et ce qu'elle rapporte
+
+Dit franchement, pour que la décision reste éclairée à mi-parcours :
+
+**Coût** : ~24 300 lignes réécrites, 65 scènes reconstruites, 18 écrans revalidés visuellement, tout
+l'outillage de banc rebranché, toutes les références de mesure refaites, 9 agents et 2 skills
+réécrits, un trailer à recapturer.
+
+**Gain de gameplay** : **aucun.** À la fin, le joueur doit voir *exactement* le même jeu — c'est la
+définition même du périmètre choisi.
+
+Ce que la migration apporte réellement est ailleurs : écosystème Unity, portabilité (console, mobile),
+disponibilité des assets et de la main-d'œuvre, et — spécifique à ce projet — la **contrainte
+d'`asmdef` qui rend l'invariant « la logique pure ne dépend pas du moteur » impossible à violer, là
+où il repose aujourd'hui sur la discipline.
+
+Ces raisons sont valables. Elles ne sont simplement pas des raisons de *gameplay*, et le plan ne
+prétend pas le contraire.
+
+---
+
+## 13. Prochaine action
+
+**Lot 0**, dans cet ordre (chaque étape validée par `dotnet test` avant la suivante) :
+
+1. Ajouter les `using` explicites aux 7 fichiers de `Rules/` (§5.1) → 331 tests verts.
+2. Basculer `System.Text.Json` → Newtonsoft.Json **dans le projet Godot** (§5.2) → 331 tests verts
+   **+ une vraie sauvegarde 1.26.0 qui se recharge**.
+3. Déplacer `src/Core/Rules/` → `unity/Assets/Scripts/Shared/Rules/`, ajuster les deux `.csproj`
+   (§3.2) → 331 tests verts, **et le jeu Godot démarre toujours**.
+4. Créer `unity/.gdignore` + `<Compile Remove="unity/**/*.cs" />` (§3.1).
+5. Créer le projet Unity 6.5 (URP 2D), l'`asmdef` `ChimeraProtocol.Rules` **sans référence
+   `UnityEngine`**, et un **build IL2CPP de contrôle** (R7).
