@@ -371,7 +371,7 @@ Chaque lot a un **critère de sortie vérifiable**. Un lot n'est pas « fini » 
 | **0** ✅ | **Socle partagé** — §5, déménagement de `Rules/` (§3.2), `.gdignore` + `Compile Remove` (§3.1), projet Unity qui compile | 3 % | **✅ TERMINÉ le 2026-08-03** — voir §6.1 |
 | **1** ✅ | **Couche Platform** (§4) — `GTween`, `Gd`+PCG32, `GTimer`, `SceneRoot`, `Deferred`, `Spawner`, `FrameAnimator` | 8 % | **✅ TERMINÉ le 2026-08-03** — voir §6.2 |
 | **2** | **Cœur de run** — `GameManager`, `Player`, `EnemyBase`, spawn, XP, un ennemi, une arme | 14 % | Une run se joue : bouger, tuer, ramasser, monter de niveau. **P1 (§4.4) tranché et documenté** |
-| **3** | **Arsenal complet** — 12 armes, 9 fusions, projectiles, VFX | 12 % | Les 21 armes tirent ; les fusions héritent bien du niveau (le bug de la 1.21.0 **ne doit pas réapparaître** : un test le verrouille) |
+| **3** ⬤ | **Arsenal complet** — 12 armes, 9 fusions, projectiles, VFX | 12 % | **Logique ✅** — 21 armes tirent, fusions verrouillées (§6.4). Restent les visuels et sons. |
 | **4** | **Bestiaire complet** — 11 ennemis, affixes d'élite, 6 mini-boss, `RustedCore` (3 phases × 5 incarnations) | 14 % | Chaque entité apparaît, agit et meurt correctement ; les 5 incarnations tirent leur signature |
 | **5** | **UI & écrans** — 18 écrans, HUD, `UiStyle`/`UiPalette`, navigation clavier/manette, `ModalQueue` | 22 % | **Parité visuelle prouvée par captures avant/après** sur les 18 écrans (§8.3) ; navigation manette complète sans souris |
 | **6** | **Méta & persistance** — Hub, Assimilation, Défis, Codex, `SaveManager`, `GameSettings`, localisation | 13 % | Une **sauvegarde 1.26.0 réelle** se charge sans perte (§9.3) ; les 3 langues s'affichent |
@@ -497,14 +497,23 @@ fichier du jeu** (12 armes, 9 fusions, chaque fusion désigne une arme existante
 nulle, et au-delà des paliers décrits les dégâts montent tandis que les **mécaniques plafonnent**).
 `DataFiles` charge depuis **`StreamingAssets`** : le tuning doit rester modifiable sans recompiler.
 
-**Archétypes portés et vérifiés** (29/29 headless) : projectile ciblé (`ImpulseCannon`), arc de
-mêlée (`PlasmaBlade`), chaîne (`TeslaCoil`), aura pulsée (`OverloadField`), salve (`ScatterVolley`),
-orbital (`DroneSwarm`). C'est la **géométrie de visée** qui est vérifiée — arc orienté, rebonds,
-rayon, éventail — parce que c'est elle, et non la boucle de tir, qui casse silencieusement.
+**Les 12 armes et les 9 fusions sont portées.** Critère de sortie **atteint** : « les 21 armes
+tirent — aucune silencieuse » (30/30 headless). Chaque arme est montée seule face à des cibles et
+doit franchir sa recharge : **une arme muette ne lève aucune erreur**, elle rate simplement sa cible
+ou attend une condition qui n'arrive jamais, et seul un compteur de tirs le détecte.
 
-⚠ **Reste** : les 6 autres archétypes (`Glaive`, `SeekerSwarm`, `CryoLance`, `PyreStream`,
-`VectorLance`, `Singularity`) et les 9 classes de fusion. Volume, plus que difficulté — les données,
-l'inventaire et les règles de fusion tiennent déjà.
+La **géométrie de visée** de chaque archétype est vérifiée séparément — arc orienté, rebonds de
+chaîne, couloir, cône, rayon, éventail, orbite — parce que c'est elle, et non la boucle de tir, qui
+casse silencieusement lors d'un portage.
+
+**Effets de statut** ajoutés à `EnemyBase` (ralentissement, brûlure), avec deux règles de cumul qui
+évitent des dérives : un ralentissement plus fort remplace un plus faible au lieu de s'y multiplier
+(sinon deux sources de gel immobilisent totalement), et la brûlure retient la source la plus forte.
+⚠ La brûlure inflige des dégâts **continus** : elle ne doit jamais emprunter le chemin des coups
+discrets ni subir un plancher en pourcentage des PV max.
+
+⚠ **Reste au Lot 3** : les visuels et sons des armes (VFX, sprites de projectiles, mixage) —
+la logique est complète, la présentation appartient aux lots VFX/UI.
 
 ### 6.3 Lot 2 — cœur de run : tranche verticale livrée
 

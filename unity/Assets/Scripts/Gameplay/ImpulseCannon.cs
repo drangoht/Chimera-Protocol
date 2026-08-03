@@ -5,11 +5,23 @@ using UnityEngine;
 /// proche. Portée ici comme arme témoin du Lot 2 : elle valide toute la chaîne
 /// « viser → tirer → toucher → tuer → créditer l'XP ».
 /// </summary>
-public sealed class ImpulseCannon : WeaponBase
+public class ImpulseCannon : WeaponBase
 {
     [Header("Projectile")]
     public GameObject? BulletPrefab;
     public float BulletSpeed = 600f;
+
+    [Tooltip("Le projectile traverse ses cibles au lieu de s'arrêter à la première.")]
+    public bool Piercing;
+
+    protected override void Awake()
+    {
+        BaseDamage = 10f;
+        BaseCooldown = 0.8f;
+        Range = 400f;
+
+        base.Awake();   // en dernier : il fige la valeur de fiche
+    }
 
     protected override bool TryFire()
     {
@@ -24,6 +36,7 @@ public sealed class ImpulseCannon : WeaponBase
         var bullet = go.GetComponent<Bullet>();
         if (bullet == null) { Destroy(go); return false; }
 
+        bullet.Piercing = Piercing;
         bullet.Launch(dir * BulletSpeed, EffectiveDamage, Range);
         return true;
     }

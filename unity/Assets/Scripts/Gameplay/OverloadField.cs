@@ -12,7 +12,7 @@ using UnityEngine;
 /// dégât continu — appliqué à chaque tick, il tuerait en quelques frames. Une arme pulsée comme
 /// celle-ci relève bien du chemin discret.</para>
 /// </summary>
-public sealed class OverloadField : WeaponBase
+public class OverloadField : WeaponBase
 {
     [Header("Champ")]
     public float Radius = 100f;

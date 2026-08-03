@@ -66,12 +66,68 @@ public class EnemyBase : MonoBehaviour
     {
         if (_isDead) return;
 
+        float dt = Time.deltaTime;
+        UpdateStatusEffects(dt);
+        if (_isDead) return;          // la brûlure a pu tuer entre-temps
+
         var player = Player.Instance;
         if (player == null || player.IsDead) return;
 
-        float dt = Time.deltaTime;
         UpdateMovement(player, dt);
         HandleContactDamage(player, dt);
+    }
+
+    // ─── Effets de statut ─────────────────────────────────────────────────────
+
+    private float _slowMult = 1f;
+    private float _slowLeft;
+    private float _burnDps;
+    private float _burnLeft;
+
+    /// <summary>Multiplicateur de vitesse courant (1 = intact). Lu par les déplacements.</summary>
+    public float SlowMultiplier => _slowLeft > 0f ? _slowMult : 1f;
+
+    /// <summary>L'ennemi brûle-t-il ?</summary>
+    public bool IsBurning => _burnLeft > 0f;
+
+    /// <summary>
+    /// Ralentit l'ennemi. Un ralentissement plus fort <b>remplace</b> un plus faible ; à force
+    /// égale, seule la durée est prolongée — sinon deux sources de gel empileraient leurs
+    /// multiplicateurs jusqu'à l'immobilité totale.
+    /// </summary>
+    public void ApplySlow(float mult, float duration)
+    {
+        mult = Mathf.Clamp(mult, 0.05f, 1f);
+
+        if (_slowLeft <= 0f || mult < _slowMult) _slowMult = mult;
+        _slowLeft = Mathf.Max(_slowLeft, duration);
+    }
+
+    /// <summary>
+    /// Applique une brûlure. Les dégâts par seconde sont <b>continus</b> : ils ne passent donc
+    /// jamais par le chemin des coups discrets, et surtout jamais par un plancher exprimé en
+    /// pourcentage des PV max — appliqué à chaque frame, il tuerait en quelques images.
+    /// </summary>
+    public void ApplyBurn(float dps, float duration)
+    {
+        _burnDps = Mathf.Max(_burnDps, dps);   // la source la plus forte l'emporte
+        _burnLeft = Mathf.Max(_burnLeft, duration);
+    }
+
+    private void UpdateStatusEffects(float dt)
+    {
+        if (_slowLeft > 0f)
+        {
+            _slowLeft -= dt;
+            if (_slowLeft <= 0f) _slowMult = 1f;
+        }
+
+        if (_burnLeft > 0f)
+        {
+            _burnLeft -= dt;
+            TakeDamage(_burnDps * dt);
+            if (_burnLeft <= 0f) _burnDps = 0f;
+        }
     }
 
     /// <summary>Poursuite directe. Les sous-classes changent ce comportement (kite, erratique…).</summary>
@@ -82,7 +138,7 @@ public class EnemyBase : MonoBehaviour
         if (dist < 0.001f) return;
 
         Vector2 dir = to / dist;
-        transform.position += (Vector3)(dir * Speed * dt);
+        transform.position += (Vector3)(dir * Speed * SlowMultiplier * dt);
 
         if (_animator != null)
         {

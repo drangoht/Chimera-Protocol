@@ -161,6 +161,7 @@ public sealed class RunSmokeTest : MonoBehaviour
 
         // ─── Arsenal et fusions (critère de sortie du Lot 3) ──────────────────
         yield return RunArchetypeChecks(enemyPrefab, bulletPrefab);
+        yield return RunAllWeaponsFire(enemyPrefab, bulletPrefab);
         yield return RunFusionChecks(systems);
 
         // ─── Fin de run ───────────────────────────────────────────────────────
@@ -169,6 +170,98 @@ public sealed class RunSmokeTest : MonoBehaviour
               $"{gm.RunTime:F1} s");
 
         Report();
+    }
+
+    /// <summary>
+    /// <b>Critère de sortie du Lot 3 : « les 21 armes tirent ».</b> Chaque arme est montée seule,
+    /// face à des cibles, et doit franchir sa recharge au moins une fois.
+    ///
+    /// <para>Une arme silencieuse ne lève aucune erreur : elle rate simplement sa cible, ou attend
+    /// une condition qui n'arrive jamais. C'est un mode de défaillance parfaitement muet, et le seul
+    /// moyen de le détecter est de compter les tirs.</para>
+    /// </summary>
+    private IEnumerator RunAllWeaponsFire(GameObject enemyPrefab, GameObject bulletPrefab)
+    {
+        // Prefabs de projectiles spécialisés, construits à la volée : leur apparence appartient aux
+        // lots suivants, seule leur logique compte ici.
+        var missilePrefab = new GameObject("Missile", typeof(SeekerMissile));
+        missilePrefab.SetActive(false);
+        var glaivePrefab = new GameObject("Glaive", typeof(GlaiveProjectile));
+        glaivePrefab.SetActive(false);
+
+        var types = new (string Name, System.Type Type)[]
+        {
+            ("impulse_cannon",  typeof(ImpulseCannon)),  ("plasma_blade",   typeof(PlasmaBlade)),
+            ("drone_swarm",     typeof(DroneSwarm)),     ("overload_field", typeof(OverloadField)),
+            ("tesla_coil",      typeof(TeslaCoil)),      ("scatter_volley", typeof(ScatterVolley)),
+            ("glaive",          typeof(Glaive)),         ("seeker_swarm",   typeof(SeekerSwarm)),
+            ("cryo_lance",      typeof(CryoLance)),      ("pyre_stream",    typeof(PyreStream)),
+            ("vector_lance",    typeof(VectorLance)),    ("singularity",    typeof(Singularity)),
+            ("fusion_blade",    typeof(FusionBlade)),    ("rail_overcharged", typeof(RailOvercharged)),
+            ("orbital_swarm",   typeof(OrbitalSwarm)),   ("overload_aegis", typeof(OverloadAegis)),
+            ("ionic_storm",     typeof(IonicStorm)),     ("solar_column",   typeof(SolarColumn)),
+            ("hornet_swarm",    typeof(HornetSwarm)),    ("vector_beam",    typeof(VectorBeam)),
+            ("frost_veil",      typeof(FrostVeil)),
+        };
+
+        var silent = new List<string>();
+
+        foreach (var (name, type) in types)
+        {
+            var host = new GameObject("W_" + name);
+            host.transform.position = Vector3.zero;
+
+            var dummies = new List<GameObject>();
+            foreach (var off in new[] { new Vector3(50f, 0f), new Vector3(80f, 40f), new Vector3(30f, -60f) })
+            {
+                var go = Instantiate(enemyPrefab, off, Quaternion.identity);
+                go.SetActive(true);
+                var e = go.GetComponent<EnemyBase>();
+                e.ApplyScaling(1000000f, 0f);
+                e.Speed = 0f;
+                dummies.Add(go);
+            }
+
+            var weapon = (WeaponBase)host.AddComponent(type);
+            InjectPrefabs(weapon, bulletPrefab, missilePrefab, glaivePrefab);
+
+            // Le porteur doit rester vivant : toute arme cesse de tirer quand le joueur meurt, et
+            // les quatre dernières testées passeraient sinon pour silencieuses sans l'être.
+            if (Player.Instance != null)
+            {
+                Player.Instance.transform.position = Vector3.zero;
+                Player.Instance.HealFlat(Player.Instance.Stats.MaxHp);
+            }
+
+            yield return new WaitForSeconds(1.6f);
+
+            // L'essaim orbital n'a volontairement pas de tir global : ses drones blessent seuls.
+            bool ok = weapon is DroneSwarm || weapon.ShotsFired > 0;
+            if (!ok) silent.Add(name);
+
+            foreach (var d in dummies) if (d != null) Destroy(d);
+            Destroy(host);
+            yield return null;
+        }
+
+        Check($"arsenal : les {types.Length} armes tirent", silent.Count == 0,
+              silent.Count == 0 ? "aucune silencieuse" : "silencieuses : " + string.Join(", ", silent));
+
+        Destroy(missilePrefab);
+        Destroy(glaivePrefab);
+    }
+
+    /// <summary>Injecte les prefabs de projectile attendus par chaque famille d'arme.</summary>
+    private static void InjectPrefabs(WeaponBase w, GameObject bullet, GameObject missile, GameObject glaive)
+    {
+        switch (w)
+        {
+            case ImpulseCannon c:  c.BulletPrefab = bullet; break;
+            case ScatterVolley s:  s.BulletPrefab = bullet; break;
+            case VectorLance v:    v.BulletPrefab = bullet; break;
+            case SeekerSwarm k:    k.MissilePrefab = missile; break;
+            case Glaive g:         g.GlaivePrefab = glaive; break;
+        }
     }
 
     /// <summary>

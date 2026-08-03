@@ -12,7 +12,7 @@ using UnityEngine;
 /// <para>Les drones sont positionnés en <c>Update</c> plutôt que parentés au joueur : c'est ce qui
 /// leur permet d'orbiter sans hériter de son miroir horizontal ni de ses effets de teinte.</para>
 /// </summary>
-public sealed class DroneSwarm : WeaponBase
+public class DroneSwarm : WeaponBase
 {
     [Header("Orbite")]
     public int   DroneCount     = 2;

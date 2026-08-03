@@ -12,7 +12,7 @@ using UnityEngine;
 /// <para>La portée de rebond est mesurée <b>depuis la cible précédente</b>, pas depuis le joueur :
 /// c'est ce qui permet à la chaîne de progresser dans la nuée au lieu de rester collée au porteur.</para>
 /// </summary>
-public sealed class TeslaCoil : WeaponBase
+public class TeslaCoil : WeaponBase
 {
     [Header("Chaîne")]
     [Tooltip("Rebonds après la cible initiale.")]

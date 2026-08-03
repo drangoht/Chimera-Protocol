@@ -11,7 +11,7 @@ using UnityEngine;
 /// suit pas la direction de marche. Un joueur qui recule continue donc de frapper ce qui le
 /// poursuit.</para>
 /// </summary>
-public sealed class PlasmaBlade : WeaponBase
+public class PlasmaBlade : WeaponBase
 {
     [Header("Arc")]
     [Tooltip("Ouverture totale de l'arc, en degrés.")]
