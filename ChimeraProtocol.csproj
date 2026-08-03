@@ -9,6 +9,18 @@
   <ItemGroup>
     <Compile Remove="tests/**/*.cs" />
   </ItemGroup>
+  <!--
+    Migration Unity (docs/UNITY_MIGRATION_PLAN.md §3) — le port vit dans unity/.
+    Godot.NET.Sdk globbe **/*.cs : sans ce Remove, tout le code Unity atterrirait dans
+    l'assembly du jeu Godot. On réinclut ensuite la SEULE logique pure partagée, qui a
+    déménagé sous unity/Assets/ pour n'exister qu'en un exemplaire (§3.2) — les deux
+    moteurs et les tests la compilent par chemin, donc aucune dérive n'est possible.
+    Symétrique : unity/.gdignore empêche l'importeur de ressources Godot d'y descendre.
+  -->
+  <ItemGroup>
+    <Compile Remove="unity/**/*.cs" />
+    <Compile Include="unity/Assets/Scripts/Shared/Rules/*.cs" />
+  </ItemGroup>
   <!-- Discord Rich Presence (client managé, IPC vers le client Discord local). -->
   <ItemGroup>
     <PackageReference Include="DiscordRichPresence" Version="1.2.1.24" />

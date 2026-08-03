@@ -13,9 +13,14 @@
     <PackageReference Include="xunit.runner.visualstudio" Version="2.5.6" />
   </ItemGroup>
 
-  <!-- Logique pure (sans dépendance Godot) testée directement, en la liant à l'assembly de test. -->
+  <!--
+    Logique pure (sans dépendance moteur) testée directement, en la liant à l'assembly de test.
+    Elle vit désormais sous unity/Assets/ (docs/UNITY_MIGRATION_PLAN.md §3.2) : un seul
+    exemplaire, compilé par chemin par Godot, par Unity et par ces tests. Ces tests valident
+    donc les DEUX moteurs.
+  -->
   <ItemGroup>
-    <Compile Include="..\src\Core\Rules\*.cs" />
+    <Compile Include="..\unity\Assets\Scripts\Shared\Rules\*.cs" />
   </ItemGroup>
 
 </Project>

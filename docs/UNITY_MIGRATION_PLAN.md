@@ -241,41 +241,92 @@ neutre : les 19 armes héritant de `WeaponBase` sont le premier endroit où ça 
 
 ---
 
-## 5. Deux blocages sur le code **partagé**, à lever avant tout le reste
+## 5. Contraintes du code partagé — **mesurées** au Lot 0, non supposées
 
-Trouvés en inspectant les sources. Ils touchent `Rules/`, donc les 331 tests, donc ils bloquent la
-fondation. Les traiter en **Lot 0**, côté Godot, avec les tests comme filet — **avant** que Unity
-n'existe.
+> **Cette section a été réécrite le 2026-08-03 après exécution du Lot 0.** Sa version initiale
+> annonçait deux blocages ; **les deux étaient faux**, et le vrai blocage n'y figurait pas. La leçon
+> vaut d'être notée : ces trois points se tranchent par une compilation de 30 secondes, et aucun
+> n'était devinable en lisant le code.
 
-### 5.1 `ImplicitUsings` n'existe pas sous Unity
+### 5.1 ~~`ImplicitUsings`~~ — **non-problème** (hypothèse réfutée)
 
-7 fichiers de `Rules/` n'ont **aucune** directive `using` et dépendent de `<ImplicitUsings>enable`
-du `.csproj` : `CrowdControlCaps`, `DifficultyTuning`, `EliteAffixTable`, `RarityWeights`,
-`VersionCompare`, `WeaponLeveling`, `XpCurve`.
+Hypothèse initiale : les 7 fichiers de `Rules/` sans directive `using` dépendraient de
+`<ImplicitUsings>enable` et ne compileraient pas sous Unity.
 
-Unity génère ses propres `.csproj`, sans cette option → **ces 7 fichiers ne compileront pas**.
-Correctif : ajouter les `using` explicites. Inoffensif côté Godot (redondance), vérifié par les tests.
+**Faux.** Compilé avec `ImplicitUsings=disable` : **0 erreur, 0 avertissement**, DLL de 45 Ko
+produite. Ces fichiers n'ont besoin d'aucun `using` — ils n'emploient que des types primitifs.
+Aucune action.
 
-### 5.2 `System.Text.Json` n'est pas fourni par Unity
+### 5.2 `System.Text.Json` — **fourni par Unity 6.5** (hypothèse réfutée)
 
-Utilisé dans **9 fichiers**, dont **2 dans `Rules/`** (`ChallengeTable`, `GraftTable`) — c'est-à-dire
-dans le code partagé et testé. Plus `SaveManager` et 5 systèmes.
+Hypothèse initiale : Unity ne fournit pas `System.Text.Json`, donc bascule vers Newtonsoft.
 
-| Option | Verdict |
-|---|---|
-| **`com.unity.nuget.newtonsoft-json`** (package **officiel** Unity, sûr en IL2CPP) | ✅ **Recommandé** |
-| `System.Text.Json` via NuGetForUnity | ⚠ Réflexion + IL2CPP = risque AOT réel, et un échec ne se voit qu'au build final |
-| Sortir tout parsing de `Rules/` (les règles reçoivent des DTO) | Plus propre architecturalement, mais c'est une **refonte de contrat** — hors périmètre « parité stricte » |
+**Faux depuis Unity 6.** Unity 6.5 embarque un jeu d'**extensions BCL** référencées par défaut :
 
-**Méthode recommandée, et elle est élégante** : basculer sur Newtonsoft **dans le projet Godot**, en
-Lot 0, et vérifier que **les 331 tests passent toujours**. La migration de dépendance est ainsi
-validée par la suite de tests existante, sur un moteur qui marche, avant que Unity n'entre en jeu.
-Ensuite, une seule dépendance JSON des deux côtés.
+```
+Editor/Data/BCLExtensions/runtime/netstandard2.1/System.Text.Json.dll
+Editor/Data/BCLExtensions/TargetingPacks/netstandard2.1/ref/System.Text.Json.dll
+```
 
-⚠ Piège concret : `SaveManager` utilise `PropertyNamingPolicy = JsonNamingPolicy.CamelCase`.
-Newtonsoft ne fait **pas** ça par défaut → `CamelCasePropertyNamesContractResolver`. **Un test de
-non-régression doit désérialiser une vraie sauvegarde 1.26.0 existante** (celle du testeur, 141 runs,
-70 084 Échos, est le meilleur cas de test disponible).
+(`AllAssemblies.txt` liste aussi `System.Collections.Immutable`, `System.Text.Encodings.Web`,
+`Microsoft.Extensions.Logging.Abstractions`…) **Vérifié à la compilation** : les 25 fichiers de
+`Rules/`, dont `ChallengeTable` et `GraftTable` qui utilisent `JsonElement`, compilent sous Unity
+sans la moindre erreur JSON.
+
+→ **Aucune migration de bibliothèque JSON.** `SaveManager`, `GraftTable`, `ChallengeTable` et les
+5 systèmes concernés restent inchangés, et le risque de casser la désérialisation des sauvegardes
+existantes disparaît. C'est la plus grosse économie du Lot 0.
+
+⚠ **Ce qui reste vrai, et qui est un point de vigilance et non un blocage** : `SaveManager` sérialise
+par **réflexion** (`JsonSerializer.Serialize<SaveData>`). En **IL2CPP**, la réflexion sur génériques
+peut échouer à l'exécution — et l'échec ne se voit qu'au build final, jamais dans l'éditeur. Parade
+si le cas se présente : les **générateurs de source** de `System.Text.Json`
+(`JsonSerializerContext`), compatibles AOT. À traiter au Lot 6 avec la persistance, à valider sur un
+build IL2CPP réel.
+
+### 5.3 **Le vrai blocage : Unity 6.5 compile en C# 9**
+
+Non anticipé, découvert à la première compilation :
+
+```
+error CS8773: Feature 'record structs' is not available in C# 9.0. Please use language version 10.0 or greater.
+error CS0518: Predefined type 'System.Runtime.CompilerServices.IsExternalInit' is not defined or imported
+```
+
+Unity 6.5 livre pourtant le SDK .NET 8.0.318 et son Roslyn, mais **fige le langage à C# 9** et cible
+le profil d'API **netstandard2.1** — où `IsExternalInit` (requis par tout accesseur `init`, donc par
+tout `record`) n'existe pas.
+
+**C'est une contrainte de portée projet, pas un détail de `Rules/`** : les ~24 300 lignes restant à
+porter doivent elles aussi être C# 9. Audit du code réel :
+
+| Fonctionnalité | Version | Occurrences dans `src/` |
+|---|---|---:|
+| `record struct` | C# 10 | **2** |
+| `namespace X;` (fichier) | C# 10 | 0 |
+| `global using` | C# 10 | 0 |
+| `required` | C# 11 | 0 |
+| chaînes brutes `"""` | C# 11 | 0 |
+| motifs de liste `is [..]` | C# 11 | 0 |
+| expressions de collection `= []` | C# 12 | 0 |
+| accesseurs `{ get; init; }` | C# 9 + polyfill | **0** |
+| `record class` | C# 9 ✅ | 8 (compatibles) |
+
+**Bilan : 2 occurrences à traiter sur tout le projet.** Le code est, de fait, déjà quasi C# 9.
+
+**Correctif appliqué (Lot 0)** — `ChallengeTable.ChallengeContext` :
+`readonly record struct` → `readonly struct` + constructeur explicite, **noms de paramètres
+conservés à l'identique** (les appels par argument nommé continuent de compiler).
+Conversion vérifiée sans effet de bord : les sémantiques de record (égalité par valeur, `with`,
+déconstruction) ne sont utilisées **nulle part** — `ChallengeContext` n'a que **2 sites de
+construction**. 331 tests verts après conversion.
+
+⚠ **La seconde occurrence de `record struct` est hors `Rules/`** et sera traitée au lot qui porte son
+fichier. Recenser à ce moment-là, ne pas y toucher maintenant (Godot est gelé, pas le code à porter).
+
+**Alternative écartée** : forcer `-langversion:10` via un `csc.rsp` + un polyfill `IsExternalInit`.
+Non supporté officiellement par Unity, et pour **2 occurrences** le remède serait plus risqué que le
+mal.
 
 ---
 
@@ -285,7 +336,7 @@ Chaque lot a un **critère de sortie vérifiable**. Un lot n'est pas « fini » 
 
 | # | Lot | Poids | Critère de sortie |
 |---|---|---:|---|
-| **0** | **Socle partagé** — §5.1, §5.2, déménagement de `Rules/` (§3.2), `.gdignore` + `Compile Remove` (§3.1), projet Unity vide qui ouvre | 3 % | **Les 331 tests passent** ; le jeu **Godot tourne toujours** ; Unity compile `Rules/` via son `.asmdef` sans `UnityEngine` |
+| **0** ✅ | **Socle partagé** — §5, déménagement de `Rules/` (§3.2), `.gdignore` + `Compile Remove` (§3.1), projet Unity qui compile | 3 % | **✅ TERMINÉ le 2026-08-03** — voir §6.1 |
 | **1** | **Couche Platform** (§4) — `GTween`, `Gd`+PCG32, `GTimer`, `SceneRoot`, `Deferred`, `Spawner`, `FrameAnimator` | 8 % | Tests unitaires **neufs** sur les shims (PCG32 vs valeurs de référence Godot, ordonnancement `Deferred`, `GTween` en `timeScale=0`) |
 | **2** | **Cœur de run** — `GameManager`, `Player`, `EnemyBase`, spawn, XP, un ennemi, une arme | 14 % | Une run se joue : bouger, tuer, ramasser, monter de niveau. **P1 (§4.4) tranché et documenté** |
 | **3** | **Arsenal complet** — 12 armes, 9 fusions, projectiles, VFX | 12 % | Les 21 armes tirent ; les fusions héritent bien du niveau (le bug de la 1.21.0 **ne doit pas réapparaître** : un test le verrouille) |
@@ -298,6 +349,48 @@ Chaque lot a un **critère de sortie vérifiable**. Un lot n'est pas « fini » 
 **Les deux lots les plus lourds sont l'UI (22 %) et le duo bestiaire/cœur (28 %).** L'UI est le plus
 volumineux mais le plus mécanique ; le bestiaire est celui où le *comportement* peut diverger sans
 que rien ne le signale.
+
+### 6.1 Lot 0 — terminé le 2026-08-03
+
+**Livré**
+
+- `src/Core/Rules/` → **`unity/Assets/Scripts/Shared/Rules/`** (25 fichiers, via `git mv`, historique
+  préservé). Les 25 `.cs.uid` orphelins de Godot ont été retirés — aucune scène ne référençait ces
+  classes, elles ne sont jamais attachées à un nœud.
+- **`ChimeraProtocol.Rules.asmdef`** avec **`noEngineReferences: true`**.
+- `ChimeraProtocol.csproj` : `<Compile Remove="unity/**/*.cs" />` + réinclusion explicite de `Rules/`.
+- `tests/ChimeraProtocol.Tests.csproj` : repointé sur le nouveau chemin.
+- `unity/.gdignore` + section Unity du `.gitignore` (⚠ les `.meta` **ne sont pas** ignorés — ils
+  portent les GUID d'assets ; les perdre casse toutes les références de prefabs et de scènes).
+- Projet Unity 6.5 créé (`-createProject`, licence OK).
+- **Correctif C# 9** : `ChallengeContext` en `readonly struct` (§5.3).
+
+**Critères de sortie — tous vérifiés**
+
+| Critère | Résultat |
+|---|---|
+| Les 331 tests passent depuis le nouveau chemin | ✅ **331/331**, 0 échec |
+| Le projet Godot compile | ✅ 0 erreur, 0 avertissement |
+| Le jeu Godot **tourne** encore | ✅ run headless de 25 s : 15 autoloads démarrés, `grafts/meta/challenges/enemies` chargés, 7 kills, Échos crédités, sauvegarde écrite, sortie 0 |
+| Unity compile `Rules/` | ✅ **`ChimeraProtocol.Rules.dll`, 42 Ko**, 0 erreur |
+| L'`asmdef` interdit vraiment le moteur | ✅ **prouvé par sonde** : un fichier `using UnityEngine;` déposé dans `Rules/` échoue en `CS0246 — 'UnityEngine' could not be found`. Sonde retirée. |
+
+**L'invariant central du projet est désormais imposé par le compilateur.** Sous Godot, « la logique
+pure ne dépend pas du moteur » reposait sur la discipline et se vérifiait par un `grep -L "using
+Godot"`. Il est maintenant **impossible à violer** : le code ne compile pas.
+
+**Ce que le Lot 0 n'a pas prouvé, et qu'il ne faut pas croire acquis**
+
+- **`.gdignore` n'a pas été testé pour de bon.** `unity/Assets/` ne contient encore que du `.cs` et
+  un `.asmdef` — rien d'importable par Godot. Le vrai test arrive au **Lot 1**, quand 905 PNG y
+  atterriront. Vérifier alors que `.godot/imported/` ne contient **rien** venant de `unity/`.
+- **Aucun `record struct` hors `Rules/` n'a été traité** (il en reste **1**) : Godot est gelé, le code
+  à porter ne l'est pas — il se traitera au lot qui porte son fichier.
+- Les avertissements `ObjectDB instances were leaked` / `resources still in use at exit` en fin de
+  processus headless sont **antérieurs** à ce lot : ils sont déjà documentés comme bruit d'arrêt
+  bénin dans `docs/TEST_REPORT.md`.
+- Le projet Unity est **volontairement nu** : ni URP, ni 2D, ni TextMeshPro. Le rendu se choisit au
+  Lot 2, quand il aura une conséquence observable.
 
 ---
 
@@ -533,15 +626,26 @@ prétend pas le contraire.
 
 ---
 
-## 13. Prochaine action
+## 13. Prochaine action — Lot 1
 
-**Lot 0**, dans cet ordre (chaque étape validée par `dotnet test` avant la suivante) :
+**Lot 0 est terminé (§6.1).** Le Lot 1 construit la couche `Platform/` (§4), mais il commence par
+**deux prototypes qui peuvent invalider la méthode entière**. Les faire *avant* d'écrire du code
+qu'ils rendraient inutile :
 
-1. Ajouter les `using` explicites aux 7 fichiers de `Rules/` (§5.1) → 331 tests verts.
-2. Basculer `System.Text.Json` → Newtonsoft.Json **dans le projet Godot** (§5.2) → 331 tests verts
-   **+ une vraie sauvegarde 1.26.0 qui se recharge**.
-3. Déplacer `src/Core/Rules/` → `unity/Assets/Scripts/Shared/Rules/`, ajuster les deux `.csproj`
-   (§3.2) → 331 tests verts, **et le jeu Godot démarre toujours**.
-4. Créer `unity/.gdignore` + `<Compile Remove="unity/**/*.cs" />` (§3.1).
-5. Créer le projet Unity 6.5 (URP 2D), l'`asmdef` `ChimeraProtocol.Rules` **sans référence
-   `UnityEngine`**, et un **build IL2CPP de contrôle** (R7).
+1. **R2 — le banc headless** (§9.1). Un projet Unity nu, `-batchmode -nographics`, qui simule une
+   boucle fixe et écrit un log. Question à trancher : **tourne-t-il sans fenêtre et plus vite que le
+   temps réel ?** Si non, toute la méthodologie de mesure change de forme, et cela doit se savoir
+   maintenant, pas au Lot 7.
+2. **R3 — 300 entités** (§10). Prototype nu : 300 sprites qui se déplacent vers une cible avec la
+   séparation manuelle du jeu (§4.4). Mesurer les **IPS**. Le jeu est déjà tendu au cran V ; si Unity
+   ne tient pas la charge, la conception du mouvement se décide ici.
+3. **Le postprocessor d'import** (§7.1) — *premier fichier Unity à écrire*, avant tout import
+   d'assets, sinon les 905 sprites seront à réimporter.
+4. **Les shims**, par ordre de dépendance : `Gd` (+ **PCG32**, §4.3) → `GTimer` → `Deferred` →
+   `SceneRoot` → `GTween` → `Spawner` → `FrameAnimator`.
+5. **Un build IL2CPP de contrôle**, même sur un projet quasi vide — il coûte peu et fait remonter tôt
+   les surprises d'AOT (R7).
+
+**Critère de sortie** : des tests unitaires **neufs** sur les shims — PCG32 comparé à des valeurs de
+référence produites par Godot, ordonnancement de `Deferred`, et `GTween` qui progresse bien à
+`timeScale = 0`.

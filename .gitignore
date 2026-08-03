@@ -2,6 +2,20 @@
 .godot/
 *.translation
 
+# Unity (migration — docs/UNITY_MIGRATION_PLAN.md)
+# ⚠ Les fichiers .meta NE SONT PAS ignorés : Unity y stocke les GUID d'assets.
+# Les perdre casse toutes les références de prefabs et de scènes.
+unity/[Ll]ibrary/
+unity/[Tt]emp/
+unity/[Oo]bj/
+unity/[Bb]uild/
+unity/[Bb]uilds/
+unity/[Ll]ogs/
+unity/[Uu]serSettings/
+unity/[Mm]emoryCaptures/
+unity/*.csproj
+unity/*.sln
+
 # Build
 build/
 *.exe
