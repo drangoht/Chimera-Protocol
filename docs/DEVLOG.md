@@ -4,6 +4,143 @@
 > `release-manager`). Entrées en ordre décroissant (la plus récente en haut). Ton orienté
 > joueur, EN puis FR (audience itch surtout anglophone).
 
+## v1.26.0 — The ladder had a top, and you reached it on the easiest biome (2026-08-03)
+
+**Added — VI · Purifier, the new top rank**
+- The whole ladder was beaten. Rank VI didn't exist yet, ranks I to V went down *on the Sanctuary* —
+  the tier-0 biome — and nothing had resisted. So the top of the ladder gets a new rung, and every
+  rung below it gets raised.
+- **Champion hits now land for at least 12 % of your max health.** Mid-bosses and the final boss only —
+  never the regular swarm, so you always see *what* hit you.
+- Why a fraction instead of a bigger number: your max health grows **without a ceiling** (+277 per
+  minute of overtime, via Plating), while enemy damage stays a fixed value on a fixed curve. A boss
+  projectile had drifted to about **1.3 %** of a late-game health bar — the win condition of the game
+  had quietly become a vending machine. A hit expressed as a fraction of your bar is the only kind
+  that can't be outgrown.
+- **The boss gains no health from this.** It doesn't become *longer*, it becomes *dangerous*. Damage
+  reduction, i-frames and the regeneration reserve all still work against it.
+
+**Changed — regeneration is suspended while you're under fire**
+- Reported from a rank VI run: *"regeneration is far too strong, I stood still for a long while
+  without dying."* Correct, and it was a problem of kind rather than of dosage. Max health is a
+  **stock** — a rising threat eventually empties it. Regeneration is a **flow**, and putting a flow
+  against a flow produces a binary threshold: below the incoming damage it barely matters, above it
+  you are invulnerable *forever*, standing still.
+- Every hit you take now suspends regeneration — and the filling of the reserve — for **4 seconds**.
+  The reserve you already built keeps absorbing: we cut the source, we don't confiscate what you
+  earned. This isn't a cap; a cap would only move the threshold. What the rule removes is the
+  certainty of never having to disengage.
+- The health readout switches to a greyed countdown while suppressed, and both card descriptions say
+  so — otherwise you'd read a broken card instead of a rule.
+
+**Changed — ranks I to V raised**
+- **I · Haemorrhage** — healing received cut to **35 %** (was 60 %), **and levelling up no longer
+  heals you** (this moved down from rank IV). In overtime you gain roughly **18 levels per minute**,
+  each one restoring a quarter of your bar: on the order of **150 % of your max health handed back
+  every minute**, for free. No amount of tuning elsewhere survives a catch-up that size.
+- **II · Pack** — +45 % health, **+80 % damage**, +40 % spawn volume. The three don't rise at the same
+  rate: damage is the only one of them that touches your health bar, so it rises the most.
+- **III · Countdown** — overtime now starts around minute **8** (was 10).
+- **IV · No Safety Net** — now also disables the **Overload Stabiliser** bought at the Hub. The other
+  two nets save you from a death; this one stops death from arriving, by flattening the only curve in
+  the game that rises forever. It was the strongest of the three on a long run, and it survived the
+  entire ladder.
+- **V · Elites Everywhere** — elite frequency ×4 and the cap raised to **70 %** of the swarm.
+- On our automated bench (4 paired seeds), rank 0 versus the new rank V: runs where the bar drops
+  below 30 % health went from **never** to **twice a minute**, and 4 runs out of 4 ended in death
+  where 12 out of 12 used to survive.
+
+**Changed — Hub prices**
+- The full upgrade tree cost **21 550** Echoes. A reference save had **56 334** sitting unspent — 2.6
+  times the price of everything, with only 64 % of the tree bought. A reward with nothing left to buy
+  stops being a reward.
+- The tree now costs **67 110**. It's a curve, not a flat multiplier: **level 1 of each branch is
+  nearly unchanged** (the "I win, I buy" loop has to work in your first hour), and the branches that
+  help the most durably are the ones that get expensive.
+- **Said plainly**: if you already have a large stockpile, this changes very little for you — nothing
+  is re-charged and nothing is taken back. It calibrates a **new** player.
+
+**Fixed — you couldn't tell when a spare life was spent**
+- The Emergency Core cancelled your death with a 0.3 s flash and the *pickup* sound of an Aether Core,
+  and nothing on the HUD announced you had charges at all. Now: one pip per charge on the HUD — a
+  spent pip goes **dark instead of disappearing**, because "I had one left" and "I never had any"
+  must not look alike — plus a banner, a distinct sound, a shake and a longer flash when one is
+  consumed.
+
+**Also**
+- The Chimera codex no longer shows grafts you haven't assimilated yet.
+- The saturation selector no longer tries to play a sound effect that never existed.
+
+---
+
+**Ajouté — VI · Purificateur, le nouveau cran haut**
+- L'échelle entière a été battue. Le cran VI n'existait pas encore, les crans I à V sont tombés *sur
+  le Sanctuaire* — le biome de palier 0 — et rien n'avait résisté. L'échelle gagne donc un barreau, et
+  tous ceux du dessous sont relevés.
+- **Un coup de champion inflige désormais au minimum 12 % de vos PV max.** Mini-boss et boss de fin
+  uniquement — jamais la faune ordinaire, pour que vous voyiez toujours *ce qui* vous frappe.
+- Pourquoi une fraction plutôt qu'un plus gros chiffre : vos PV max croissent **sans plafond**
+  (+277 par minute d'overtime via le Blindage), pendant que les dégâts ennemis restent des valeurs
+  absolues sur une courbe fixe. Un projectile de boss en était arrivé à coûter **~1,3 %** d'une barre
+  de fin de partie — la condition de victoire du jeu était devenue un distributeur de récompenses. Un
+  dégât exprimé en fraction de votre barre est le seul qui ne se laisse pas distancer.
+- **Le boss ne gagne aucun PV.** Il ne devient pas plus *long*, il devient *dangereux*. Réduction de
+  dégâts, i-frames et réserve de régénération continuent de jouer contre lui.
+
+**Modifié — la régénération est suspendue sous le feu**
+- Retour d'une partie au cran VI : *« la régénération est vraiment trop forte, je suis resté immobile
+  un bon moment sans mourir »*. Exact — et c'était un problème d'espèce, pas de dosage. Les PV max
+  sont un **stock** : une menace qui monte finit par le vider. La régénération est un **débit**, et
+  opposer un débit à un débit produit un seuil binaire : sous les dégâts entrants elle ne change
+  presque rien, au-dessus vous êtes invulnérable *pour toujours*, immobile.
+- Chaque coup encaissé coupe désormais la régénération — et le remplissage de la réserve — pendant
+  **4 secondes**. La réserve déjà constituée continue d'absorber : on coupe la source, on ne confisque
+  pas ce que vous avez gagné. Ce n'est pas un plafond ; un plafond ne ferait que déplacer le seuil. Ce
+  que la règle retire, c'est la certitude de n'avoir jamais à se désengager.
+- L'indicateur de vie bascule sur un décompte grisé pendant la coupure, et les deux descriptions de
+  carte l'annoncent — sans quoi vous liriez une carte cassée au lieu d'une règle.
+
+**Modifié — crans I à V relevés**
+- **I · Hémorragie** — soins reçus ramenés à **35 %** (contre 60 %), **et le passage de niveau ne
+  soigne plus** (descendu du cran IV). En overtime vous gagnez de l'ordre de **18 niveaux par
+  minute**, chacun rendant un quart de votre barre : soit environ **150 % de vos PV max rendus chaque
+  minute**, gratuitement. Aucun réglage ailleurs ne survit à un rattrapage de cette taille.
+- **II · Meute** — +45 % de PV, **+80 % de dégâts**, +40 % de volume de spawn. Les trois ne montent
+  pas au même taux : les dégâts sont les seuls à toucher votre barre de vie, donc ce sont eux qui
+  montent le plus.
+- **III · Compte à rebours** — l'overtime commence désormais vers la **8ᵉ** minute (contre la 10ᵉ).
+- **IV · Sans filet** — coupe aussi le **Stabilisateur de Surcharge** acheté au Hub. Les deux autres
+  filets vous sauvent d'une mort ; celui-ci empêche la mort d'arriver, en aplatissant la seule courbe
+  du jeu qui monte sans fin. C'était le plus fort des trois sur une run longue, et il survivait à
+  l'échelle entière.
+- **V · Élite ordinaire** — fréquence d'élites ×4 et plafond relevé à **70 %** de la nuée.
+- Sur notre banc automatisé (4 graines appariées), cran 0 contre le nouveau cran V : les passages sous
+  30 % de PV passent de **jamais** à **deux fois par minute**, et 4 runs sur 4 se terminent par une
+  mort là où 12 sur 12 survivaient.
+
+**Modifié — prix du Hub**
+- L'arbre d'améliorations complet coûtait **21 550** Échos. Une sauvegarde de référence en avait
+  **56 334** qui dormaient — 2,6 fois le prix de tout, pour 64 % de l'arbre seulement acheté. Une
+  récompense qui n'a plus rien à acheter cesse d'être une récompense.
+- L'arbre coûte désormais **67 110**. C'est une courbe, pas un facteur plat : le **niveau 1 de chaque
+  branche est quasi inchangé** (la boucle « je gagne, j'achète » doit fonctionner dès la première
+  heure), et ce sont les branches qui facilitent le plus durablement qui deviennent chères.
+- **Dit franchement** : si vous avez déjà un gros stock, cela ne change presque rien pour vous — rien
+  n'est re-facturé, rien n'est repris. Ce relevage calibre un **nouveau** joueur.
+
+**Corrigé — on ne distinguait pas quand une vie de secours était utilisée**
+- Le Noyau de Secours annulait votre mort avec un flash de 0,3 s et le son de *ramassage* d'un Noyau
+  d'Aether, et rien au HUD n'annonçait que vous aviez des charges. Désormais : une pastille par charge
+  au HUD — une pastille dépensée **s'éteint au lieu de disparaître**, parce que « il m'en restait une »
+  et « je n'en ai jamais eu » ne doivent pas se ressembler — plus une bannière, un son distinct, une
+  secousse et un flash allongé à la dépense.
+
+**Aussi**
+- Le codex Chimère n'affiche plus les greffes que vous n'avez pas encore assimilées.
+- Le sélecteur de saturation ne tente plus de jouer un effet sonore qui n'a jamais existé.
+
+---
+
 ## v1.25.1 — Haemorrhage was sparing the exact channel it aimed at (2026-07-31)
 
 **Fixed — saturation rank I now actually applies to Plating**
