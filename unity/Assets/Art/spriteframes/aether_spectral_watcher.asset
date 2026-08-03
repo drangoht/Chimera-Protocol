@@ -1,0 +1,45 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4f4c9b07fb01ab3489d8a641c09620ae, type: 3}
+  m_Name: aether_spectral_watcher
+  m_EditorClassIdentifier: ChimeraProtocol.Platform::SpriteFramesAsset
+  Id: aether_spectral_watcher
+  Animations:
+  - Name: idle
+    Speed: 5
+    Loop: 1
+    Frames:
+    - {fileID: 21300000, guid: 211ac4fc54af0194390af76f87995d27, type: 3}
+    - {fileID: 21300000, guid: 46dcc0ca333aa6d4ebe495325b3b03b1, type: 3}
+    - {fileID: 21300000, guid: 91910d965ea67e6458d0c4c94b4e4a60, type: 3}
+  - Name: move
+    Speed: 8
+    Loop: 1
+    Frames:
+    - {fileID: 21300000, guid: ac0bee15bfbc75a4486d723ab9f23497, type: 3}
+    - {fileID: 21300000, guid: 7fed9590fc799484491fe5bea1ec8c5a, type: 3}
+    - {fileID: 21300000, guid: 93cc780fc8fc3ef4ca460cc97a5fed93, type: 3}
+    - {fileID: 21300000, guid: ab83ea4eddefb6d4e828cc3981544087, type: 3}
+  - Name: attack
+    Speed: 4
+    Loop: 0
+    Frames:
+    - {fileID: 21300000, guid: e7dc4a2671b7a8b4f88ad2267ccfedd0, type: 3}
+  - Name: death
+    Speed: 9
+    Loop: 0
+    Frames:
+    - {fileID: 21300000, guid: c8965c2d846744749a2d3d92976d5ed0, type: 3}
+    - {fileID: 21300000, guid: baa1a07020740d64ca1c1a3c3cec4367, type: 3}
+    - {fileID: 21300000, guid: 2e1ffca8861598d49a6da724d5787e4a, type: 3}
+    - {fileID: 21300000, guid: 0054d062a797e934eaaeb5dfa0fd9d38, type: 3}
+    - {fileID: 21300000, guid: 018d9d488ba69dc4f9bd895d3459a5d6, type: 3}

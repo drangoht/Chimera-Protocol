@@ -1,0 +1,45 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4f4c9b07fb01ab3489d8a641c09620ae, type: 3}
+  m_Name: neon_laser_turret
+  m_EditorClassIdentifier: ChimeraProtocol.Platform::SpriteFramesAsset
+  Id: neon_laser_turret
+  Animations:
+  - Name: idle
+    Speed: 5
+    Loop: 1
+    Frames:
+    - {fileID: 21300000, guid: 3806be1686b175e44ad967b2657b6a10, type: 3}
+    - {fileID: 21300000, guid: 70c06d4440082d24eaea1e6c0b85097c, type: 3}
+    - {fileID: 21300000, guid: e4eec5121a8d46940a018ea6c4156191, type: 3}
+  - Name: move
+    Speed: 8
+    Loop: 1
+    Frames:
+    - {fileID: 21300000, guid: 69229aee15c551a4a91046c46cbb7ef4, type: 3}
+    - {fileID: 21300000, guid: 4e0befa2d813a83449933027930a7426, type: 3}
+    - {fileID: 21300000, guid: 96b3795cbbb1d0e4988f3f7140ab681d, type: 3}
+    - {fileID: 21300000, guid: c5350d689bed0504e95932bb689c1083, type: 3}
+  - Name: attack
+    Speed: 4
+    Loop: 0
+    Frames:
+    - {fileID: 21300000, guid: 4c456fad2203b2b429f0a543db52e132, type: 3}
+  - Name: death
+    Speed: 9
+    Loop: 0
+    Frames:
+    - {fileID: 21300000, guid: 9bdbc730a85bc9c478794a2f61f18fa4, type: 3}
+    - {fileID: 21300000, guid: 3007730a0e5f27e4696719d626e7e43d, type: 3}
+    - {fileID: 21300000, guid: 0b79b546af33b344da6102afce383672, type: 3}
+    - {fileID: 21300000, guid: b26b949a8f2a5fa4581e46c3b8d13505, type: 3}
+    - {fileID: 21300000, guid: 4c3feb0a6fa4fa34ba8af3299ed731ab, type: 3}

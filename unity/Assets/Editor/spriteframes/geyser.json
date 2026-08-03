@@ -1,0 +1,22 @@
+{
+  "id": "geyser",
+  "animations": [
+    {
+      "name": "idle",
+      "speed": 4.0,
+      "loop": true,
+      "frames": [
+        "Assets/Art/sprites/tileset/tile_aether_geyser_01.png"
+      ]
+    },
+    {
+      "name": "active",
+      "speed": 4.0,
+      "loop": true,
+      "frames": [
+        "Assets/Art/sprites/tileset/tile_aether_geyser_02.png",
+        "Assets/Art/sprites/tileset/tile_aether_geyser_03.png"
+      ]
+    }
+  ]
+}

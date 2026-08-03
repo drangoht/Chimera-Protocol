@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4f4c9b07fb01ab3489d8a641c09620ae, type: 3}
+  m_Name: sanctuary_scout_drone
+  m_EditorClassIdentifier: ChimeraProtocol.Platform::SpriteFramesAsset
+  Id: sanctuary_scout_drone
+  Animations:
+  - Name: idle
+    Speed: 8
+    Loop: 1
+    Frames:
+    - {fileID: 21300000, guid: 85dac3acd8b591b42bf7c21b6b967192, type: 3}
+    - {fileID: 21300000, guid: c26d87c099630ac45bea04ef70067cb5, type: 3}
+    - {fileID: 21300000, guid: 9d5502825be809041bb9e137bdfa0b6e, type: 3}
+  - Name: move
+    Speed: 14
+    Loop: 1
+    Frames:
+    - {fileID: 21300000, guid: c403ba0fc07b7ca4db61280042f44c5d, type: 3}
+    - {fileID: 21300000, guid: 58afe1c494a89b24f9e1d3a29d9656e7, type: 3}
+    - {fileID: 21300000, guid: a7597837f36c8eb428b3ac1b1381126e, type: 3}
+    - {fileID: 21300000, guid: 85f482b57c900b343ab6988f8bdfd111, type: 3}
+  - Name: death
+    Speed: 10
+    Loop: 0
+    Frames:
+    - {fileID: 21300000, guid: 54ea6e3ac5e0d2b4b8b786fa90a273be, type: 3}
+    - {fileID: 21300000, guid: 9f30d5450cceb7e4fa035fd143c8dcc7, type: 3}
+    - {fileID: 21300000, guid: a9246887705b03e4f999de44c4cdb058, type: 3}
+    - {fileID: 21300000, guid: e40f9a534cb755a4aa3abd764ad4f56f, type: 3}
+    - {fileID: 21300000, guid: af807d39ff1e66841b988b3e4c8542d5, type: 3}

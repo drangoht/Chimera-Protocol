@@ -1,0 +1,62 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4f4c9b07fb01ab3489d8a641c09620ae, type: 3}
+  m_Name: rusted_core_frost
+  m_EditorClassIdentifier: ChimeraProtocol.Platform::SpriteFramesAsset
+  Id: rusted_core_frost
+  Animations:
+  - Name: idle
+    Speed: 4
+    Loop: 1
+    Frames:
+    - {fileID: 21300000, guid: 2f5422fdbe7dbd64eb88589096ce66d5, type: 3}
+    - {fileID: 21300000, guid: 30f3df80f421a86448058df9b4e8eaf3, type: 3}
+    - {fileID: 21300000, guid: b13d53b4993e04d4685ae1a806778c8d, type: 3}
+    - {fileID: 21300000, guid: 00ebd54dfae0cdf4ca00223803c26347, type: 3}
+  - Name: move
+    Speed: 7
+    Loop: 1
+    Frames:
+    - {fileID: 21300000, guid: 15717dfec333fa142a7000e93981e743, type: 3}
+    - {fileID: 21300000, guid: de642af0e303f08419cff2de000fdeb3, type: 3}
+    - {fileID: 21300000, guid: 679e44fc8829fc74ea103a732aa59c3d, type: 3}
+    - {fileID: 21300000, guid: 679af0cdc28b50c46b87b38bc7412e4d, type: 3}
+    - {fileID: 21300000, guid: 7ecab7981612d3e4f9d04f6ab5a2b4c1, type: 3}
+    - {fileID: 21300000, guid: 9e8f4ff9847b2a244a9de76c3fb3021a, type: 3}
+  - Name: attack
+    Speed: 12
+    Loop: 0
+    Frames:
+    - {fileID: 21300000, guid: 802d8acddb48290449b5db82554cedab, type: 3}
+    - {fileID: 21300000, guid: 382022e8389b0fc4d9e305ba8e67a3cf, type: 3}
+    - {fileID: 21300000, guid: 740816f334239644a97b48c043d4faa6, type: 3}
+    - {fileID: 21300000, guid: dd268b2b2e7197143ad54f45ee15ad1a, type: 3}
+    - {fileID: 21300000, guid: 07279058dbb77f44c804e79e866aa2f4, type: 3}
+    - {fileID: 21300000, guid: 62c78f184d9830745bc0ede082a3f1cc, type: 3}
+  - Name: death
+    Speed: 13
+    Loop: 0
+    Frames:
+    - {fileID: 21300000, guid: 2ebf1e73f82b2b04b8e8252aca3743d2, type: 3}
+    - {fileID: 21300000, guid: 7187c954fd194474b9e9089b5137df06, type: 3}
+    - {fileID: 21300000, guid: 1fb35111569b75b4ca2b1538cbc15e49, type: 3}
+    - {fileID: 21300000, guid: 718e5ba91f807534a9af22ed778050c5, type: 3}
+    - {fileID: 21300000, guid: 064e330285d44f949a5db5830b252ecc, type: 3}
+    - {fileID: 21300000, guid: 6ea28ecaf5d086241aef1f8cf57cef93, type: 3}
+    - {fileID: 21300000, guid: cdb83bb73cf04d04f93462ec2fc57952, type: 3}
+    - {fileID: 21300000, guid: 2cf74294ceaceec4d9f52e224fc66b94, type: 3}
+    - {fileID: 21300000, guid: 8983d7193871c6047859cf3a62e659b8, type: 3}
+    - {fileID: 21300000, guid: 15153c95b84f63d4c9720fa3ba99125f, type: 3}
+    - {fileID: 21300000, guid: 9c97fa900948ccb4982f711ba52daffe, type: 3}
+    - {fileID: 21300000, guid: c7bdd3d7da304194abd890937afcc174, type: 3}
+    - {fileID: 21300000, guid: 31a5d593603588841a2eeea78f9ec176, type: 3}
+    - {fileID: 21300000, guid: 3c625e42009450f40bd582f15cfbe56a, type: 3}

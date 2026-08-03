@@ -1,0 +1,59 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4f4c9b07fb01ab3489d8a641c09620ae, type: 3}
+  m_Name: aether_revenant
+  m_EditorClassIdentifier: ChimeraProtocol.Platform::SpriteFramesAsset
+  Id: aether_revenant
+  Animations:
+  - Name: idle
+    Speed: 5
+    Loop: 1
+    Frames:
+    - {fileID: 21300000, guid: 2ab1ce674c4137b4ea9631552f146dcb, type: 3}
+    - {fileID: 21300000, guid: a3f6d124092cc0c45984dd467b07de5a, type: 3}
+    - {fileID: 21300000, guid: 29d37ac3c19f5a64a9a15ac20e2a53cb, type: 3}
+    - {fileID: 21300000, guid: e9b79582d844bbb4eb1b392e86e2ae97, type: 3}
+  - Name: move
+    Speed: 9
+    Loop: 1
+    Frames:
+    - {fileID: 21300000, guid: 402d586345ddafd40998ea6e91e97cb3, type: 3}
+    - {fileID: 21300000, guid: 7e464450421b5754fab9ef72c582bc58, type: 3}
+    - {fileID: 21300000, guid: 47c236c410080774591cb9266c39bec0, type: 3}
+    - {fileID: 21300000, guid: 506364de86e4b4949a58ded240815edf, type: 3}
+    - {fileID: 21300000, guid: d3b9d9a94dd31ed4a9c7be4bbbd37cc7, type: 3}
+    - {fileID: 21300000, guid: c027b7835440a2f47934d185f2643add, type: 3}
+  - Name: attack
+    Speed: 11
+    Loop: 0
+    Frames:
+    - {fileID: 21300000, guid: 6bb1498bfa84c4d43af3122827e45282, type: 3}
+    - {fileID: 21300000, guid: 30177601fce3a674bab27bbd2c38d744, type: 3}
+    - {fileID: 21300000, guid: c946ac340f286f94ca90d59e386c57db, type: 3}
+    - {fileID: 21300000, guid: 63d27eebed2888743aad343c38a6bf14, type: 3}
+    - {fileID: 21300000, guid: d1b3502c40b9f8942af92feb56227372, type: 3}
+  - Name: death
+    Speed: 12
+    Loop: 0
+    Frames:
+    - {fileID: 21300000, guid: f0e9eecf1bb107947bf8412af048364b, type: 3}
+    - {fileID: 21300000, guid: 1cde94570c2d4aa4b92d8f19e05d7489, type: 3}
+    - {fileID: 21300000, guid: 1c79171a5f95a2a4baca3f875ffee09d, type: 3}
+    - {fileID: 21300000, guid: 69965dad7ed415741a172ce3c362c35d, type: 3}
+    - {fileID: 21300000, guid: 001b71e69e13b7a48860efa5317e9842, type: 3}
+    - {fileID: 21300000, guid: c8c29c1b082dac7469d0255d52d9cded, type: 3}
+    - {fileID: 21300000, guid: 948480c428b30434fbb337b375e0adeb, type: 3}
+    - {fileID: 21300000, guid: 42e19622b49c5124786eea40e7437290, type: 3}
+    - {fileID: 21300000, guid: 8086b966533a3374f80ebdd33caf8ec9, type: 3}
+    - {fileID: 21300000, guid: 21c191b692985b2418c20f345b65b3d7, type: 3}
+    - {fileID: 21300000, guid: 1c37c7ed3e4d6f243ad7f801ba9d1b8d, type: 3}
+    - {fileID: 21300000, guid: f902902a248faf94e924679577affd88, type: 3}

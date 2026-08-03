@@ -369,7 +369,7 @@ Chaque lot a un **critère de sortie vérifiable**. Un lot n'est pas « fini » 
 | # | Lot | Poids | Critère de sortie |
 |---|---|---:|---|
 | **0** ✅ | **Socle partagé** — §5, déménagement de `Rules/` (§3.2), `.gdignore` + `Compile Remove` (§3.1), projet Unity qui compile | 3 % | **✅ TERMINÉ le 2026-08-03** — voir §6.1 |
-| **1** | **Couche Platform** (§4) — `GTween`, `Gd`+PCG32, `GTimer`, `SceneRoot`, `Deferred`, `Spawner`, `FrameAnimator` | 8 % | Tests unitaires **neufs** sur les shims (PCG32 vs valeurs de référence Godot, ordonnancement `Deferred`, `GTween` en `timeScale=0`) |
+| **1** ✅ | **Couche Platform** (§4) — `GTween`, `Gd`+PCG32, `GTimer`, `SceneRoot`, `Deferred`, `Spawner`, `FrameAnimator` | 8 % | **✅ TERMINÉ le 2026-08-03** — voir §6.2 |
 | **2** | **Cœur de run** — `GameManager`, `Player`, `EnemyBase`, spawn, XP, un ennemi, une arme | 14 % | Une run se joue : bouger, tuer, ramasser, monter de niveau. **P1 (§4.4) tranché et documenté** |
 | **3** | **Arsenal complet** — 12 armes, 9 fusions, projectiles, VFX | 12 % | Les 21 armes tirent ; les fusions héritent bien du niveau (le bug de la 1.21.0 **ne doit pas réapparaître** : un test le verrouille) |
 | **4** | **Bestiaire complet** — 11 ennemis, affixes d'élite, 6 mini-boss, `RustedCore` (3 phases × 5 incarnations) | 14 % | Chaque entité apparaît, agit et meurt correctement ; les 5 incarnations tirent leur signature |
@@ -425,8 +425,27 @@ minuteries et interpolations en `Update`, différé en `LateUpdate`), `GTween`, 
 qui dépendent du cycle de vie Unity (`Update`/`LateUpdate`, `timeScale`, destruction d'objets) —
 c'est-à-dire précisément de ce qui casse lors d'un portage. D'où
 `unity/Assets/Scripts/Bench/PlatformSmokeTest.cs`, qui tourne **en build headless** :
-**12/12 vérifications passent**, dont la plus importante — pendant la pause, l'interpolation d'UI
-atteint 1,000 pendant que celle du jeu reste à 0,000 (le piège du §4.5, prouvé traité).
+**23/23 vérifications passent** (Mono **et** IL2CPP), dont la plus importante — pendant la pause,
+l'interpolation d'UI atteint 1,000 pendant que celle du jeu reste à 0,000 (le piège du §4.5, prouvé
+traité).
+
+**Pipeline d'assets (§7.1, §7.2) — livré et vérifié**
+
+- **905 PNG** importés sous `unity/Assets/Art/sprites/`, réglages appliqués automatiquement par
+  `SpriteImportPostprocessor` — vérifié sur les `.meta` : `filterMode: 0` (Point),
+  **`spritePixelsToUnits: 1`**, `alignment: 0` (centre), compression désactivée.
+- **40 `SpriteFrames`** converties : `tools/unity/convert_spriteframes.py` produit des manifestes
+  JSON neutres, puis `BuildSpriteFrames.Run` (côté Unity) construit les `ScriptableObject` en
+  résolvant les références. **141 animations, 724 images**, comptes identiques des deux côtés, zéro
+  référence manquante. ⚠ La résolution des références **doit** rester côté Unity : un `.asset`
+  référence ses sprites par GUID géré par l'AssetDatabase, et les fabriquer depuis Python
+  reviendrait à deviner des identifiants — faux en silence, avec pour seul symptôme des animations
+  à trous visibles en jouant.
+
+> **✅ Le `.gdignore` est enfin VRAIMENT testé** (point laissé ouvert au §6.1). Avec 905 PNG présents
+> sous `unity/Assets/`, un réimport complet de Godot laisse son cache **inchangé — 3 720 entrées
+> avant et après, zéro venant de `unity/`**, et aucun chemin `unity/Assets` nulle part dans
+> `.godot/`. La cohabitation des deux importeurs est prouvée, plus supposée.
 
 **Deux écarts assumés par rapport à Godot**, tous deux documentés dans le code :
 ① `GTween` désigne les propriétés par **lambda** et non par chaîne (`"modulate:a"`) — la réflexion

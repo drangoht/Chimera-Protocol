@@ -1,0 +1,52 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4f4c9b07fb01ab3489d8a641c09620ae, type: 3}
+  m_Name: sentinel
+  m_EditorClassIdentifier: ChimeraProtocol.Platform::SpriteFramesAsset
+  Id: sentinel
+  Animations:
+  - Name: idle
+    Speed: 5
+    Loop: 1
+    Frames:
+    - {fileID: 21300000, guid: ec84638849fb1d94ebb01c5bd964ff6b, type: 3}
+    - {fileID: 21300000, guid: d107d6890f084a649b5d99aa50c65986, type: 3}
+    - {fileID: 21300000, guid: bd9a58fd18bee774aba12f2e6801bbf4, type: 3}
+    - {fileID: 21300000, guid: 8866129748016d747a9dd2891b268f37, type: 3}
+  - Name: move
+    Speed: 8
+    Loop: 1
+    Frames:
+    - {fileID: 21300000, guid: 5bd3ca4539364ba448afa77f5459c2ab, type: 3}
+    - {fileID: 21300000, guid: 717509cd8577f104b8d0e3b6127ee477, type: 3}
+    - {fileID: 21300000, guid: e43cb981f5a16d6449f030ca121a3703, type: 3}
+    - {fileID: 21300000, guid: a47b5b6ba61d77e4396a2f0b333785f5, type: 3}
+    - {fileID: 21300000, guid: 778ebcd6bdf350543b613a4b6c5742c0, type: 3}
+    - {fileID: 21300000, guid: 53ebd155181005b4a9d1aa7bb69130d8, type: 3}
+  - Name: attack
+    Speed: 12
+    Loop: 0
+    Frames:
+    - {fileID: 21300000, guid: 15fb209527194194eb9c00a055df2bd2, type: 3}
+    - {fileID: 21300000, guid: a74c44c28b2bc074989569edb5a744c6, type: 3}
+    - {fileID: 21300000, guid: f3a0d89ba753ee9459840bcf34504af6, type: 3}
+    - {fileID: 21300000, guid: c11e0fbe875b3a442aa9e6ae5f747445, type: 3}
+  - Name: death
+    Speed: 10
+    Loop: 0
+    Frames:
+    - {fileID: 21300000, guid: 1f4c8dd80aae56c4f95dd31a9b317545, type: 3}
+    - {fileID: 21300000, guid: e507d9081aa5c8842a7d2b0f9870bc28, type: 3}
+    - {fileID: 21300000, guid: 68d635a0cf8bbe040a276170ae8e48fb, type: 3}
+    - {fileID: 21300000, guid: bc66ecbbcb2c9634dbd4a655c587b51e, type: 3}
+    - {fileID: 21300000, guid: 987d4c3056a54d247a3872bedcf840df, type: 3}
+    - {fileID: 21300000, guid: 20d19f908f085914c8068726da91af97, type: 3}

@@ -1,0 +1,57 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4f4c9b07fb01ab3489d8a641c09620ae, type: 3}
+  m_Name: colossus
+  m_EditorClassIdentifier: ChimeraProtocol.Platform::SpriteFramesAsset
+  Id: colossus
+  Animations:
+  - Name: idle
+    Speed: 4
+    Loop: 1
+    Frames:
+    - {fileID: 21300000, guid: 1dbbf6558a0e354478a2a7df82a04d0e, type: 3}
+    - {fileID: 21300000, guid: 5fc176f7faceffb4eab4101296bd8766, type: 3}
+    - {fileID: 21300000, guid: 412845d3241c73d44a210b1de1abef7f, type: 3}
+    - {fileID: 21300000, guid: 9d4085d0dc63eaf43a71931444563773, type: 3}
+  - Name: move
+    Speed: 6.5
+    Loop: 1
+    Frames:
+    - {fileID: 21300000, guid: 22382431a5a1db14bb06b18c15384a84, type: 3}
+    - {fileID: 21300000, guid: 7a02a25337cb02c41a1048f71fff6ae0, type: 3}
+    - {fileID: 21300000, guid: 22776e056e4d37647bb88c425d8c24a2, type: 3}
+    - {fileID: 21300000, guid: 6adb03d73cb7161449583519544d2234, type: 3}
+    - {fileID: 21300000, guid: a1611f95b844dd042abdf2d060d94cdf, type: 3}
+    - {fileID: 21300000, guid: ea4ff530d66f5fa449b3c501d7d1dfd6, type: 3}
+  - Name: attack
+    Speed: 10
+    Loop: 0
+    Frames:
+    - {fileID: 21300000, guid: 65477cb604c7ee84481c26174910d411, type: 3}
+    - {fileID: 21300000, guid: 57c701e0d5434484185a43c79726bade, type: 3}
+    - {fileID: 21300000, guid: 7472671ff5acdc14abb9da4adc020873, type: 3}
+    - {fileID: 21300000, guid: 3ab18e323eed9ee4ca35b862507113a6, type: 3}
+    - {fileID: 21300000, guid: 9ba6c5fc864ea8a488666b2a1fc14b57, type: 3}
+  - Name: death
+    Speed: 10
+    Loop: 0
+    Frames:
+    - {fileID: 21300000, guid: cbdbc752b62724d40b117e355d381d2e, type: 3}
+    - {fileID: 21300000, guid: 7b1cb976825b27d49bcbdeacf407ea91, type: 3}
+    - {fileID: 21300000, guid: e9c379c33bc36544babf0d1b8fda3bb7, type: 3}
+    - {fileID: 21300000, guid: f0568859584b3e04e85a49add7986226, type: 3}
+    - {fileID: 21300000, guid: 0c98fed53f5faec4a8eb3e8b3ab29996, type: 3}
+    - {fileID: 21300000, guid: a7d53d3f7b21fa343a4bd49ad3f89909, type: 3}
+    - {fileID: 21300000, guid: 53bce12cabf9aa94097ed284355d9e9d, type: 3}
+    - {fileID: 21300000, guid: 8bfd99d5818e4f746b1b27fcd74a2676, type: 3}
+    - {fileID: 21300000, guid: 58182c06bf1e0e447a6d11a16695ae21, type: 3}
+    - {fileID: 21300000, guid: 2883787f821ed9c41a45a797e25a310a, type: 3}

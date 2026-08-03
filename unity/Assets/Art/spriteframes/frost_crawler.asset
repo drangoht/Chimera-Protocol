@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4f4c9b07fb01ab3489d8a641c09620ae, type: 3}
+  m_Name: frost_crawler
+  m_EditorClassIdentifier: ChimeraProtocol.Platform::SpriteFramesAsset
+  Id: frost_crawler
+  Animations:
+  - Name: idle
+    Speed: 6
+    Loop: 1
+    Frames:
+    - {fileID: 21300000, guid: 2570e77253c1009458b02be8c2ac6335, type: 3}
+    - {fileID: 21300000, guid: 82d8ceafc85d0e24f98c494eb26d3f40, type: 3}
+    - {fileID: 21300000, guid: 68e46c1877e65d043a2db8e337fc569a, type: 3}
+  - Name: move
+    Speed: 10
+    Loop: 1
+    Frames:
+    - {fileID: 21300000, guid: f91817c08d0018a4ebe618f0cd61f744, type: 3}
+    - {fileID: 21300000, guid: 304f7c52a7b5dab459e31fb704b87755, type: 3}
+    - {fileID: 21300000, guid: a738cdfa07e0f124e98677692307b806, type: 3}
+    - {fileID: 21300000, guid: a3e56e3c87ccb3f479c8581b466a6fe1, type: 3}
+  - Name: death
+    Speed: 9
+    Loop: 0
+    Frames:
+    - {fileID: 21300000, guid: 1fa711f83079bc043b13aaf381fb4ca0, type: 3}
+    - {fileID: 21300000, guid: 093a7de9675023541bd7e65c2787b4e0, type: 3}
+    - {fileID: 21300000, guid: 1fa9f97dcef7b6b4d901f9f90afab519, type: 3}
+    - {fileID: 21300000, guid: bdab8b0f2e3342b45855c58ef020a5bc, type: 3}
+    - {fileID: 21300000, guid: de512520a379dbc4b8a9f8163cfa42f4, type: 3}

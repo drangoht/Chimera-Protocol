@@ -19,6 +19,13 @@ using UnityEngine;
 /// </summary>
 public sealed class PlatformSmokeTest : MonoBehaviour
 {
+    /// <summary>
+    /// Jeu d'animations réel, injecté au moment du build (voir <c>BuildBench</c>). Il ne peut pas
+    /// être chargé ici : un asset hors <c>Resources/</c> n'existe pas à l'exécution s'il n'est
+    /// référencé par aucune scène — c'est justement ce lien qu'on veut vérifier.
+    /// </summary>
+    public SpriteFramesAsset? TestFrames;
+
     private readonly List<string> _results = new();
     private int _failures;
 
@@ -36,6 +43,8 @@ public sealed class PlatformSmokeTest : MonoBehaviour
         yield return RunTimers();
         yield return RunDeferredOrdering();
         RunJsonRoundTrip();
+        RunSpawnerPathMapping();
+        yield return RunFrameAnimator();
 
         var sb = new StringBuilder();
         sb.AppendLine("=== VERIFICATION DE LA COUCHE D'ADAPTATION ===");
@@ -157,6 +166,70 @@ public sealed class PlatformSmokeTest : MonoBehaviour
 
         Check("differe : chainage resolu dans le meme vidage",
               chain.Count == 2 && chain[1] == "second", string.Join(",", chain));
+    }
+
+    /// <summary>
+    /// Les chemins Godot doivent se traduire sans réécriture des 65 sites d'appel — c'est tout
+    /// l'intérêt de garder les chaînes identiques entre les deux moteurs.
+    /// </summary>
+    private void RunSpawnerPathMapping()
+    {
+        Check("spawner : chemin de scene Godot traduit",
+              Spawner.ToResourcePath("res://scenes/entities/XpOrb.tscn") == "Prefabs/entities/XpOrb",
+              Spawner.ToResourcePath("res://scenes/entities/XpOrb.tscn"));
+
+        Check("spawner : sous-dossier profond preserve",
+              Spawner.ToResourcePath("res://scenes/entities/MiniBoss/CryoSentinel.tscn")
+                  == "Prefabs/entities/MiniBoss/CryoSentinel");
+
+        Check("spawner : prefab absent signale sans crasher",
+              Spawner.Load("res://scenes/entities/NExistePas.tscn") == null);
+    }
+
+    /// <summary>
+    /// Le lecteur d'animations doit boucler, signaler la fin d'une animation non bouclée (c'est ce
+    /// qui fait disparaître un ennemi après sa mort) et tolérer une animation absente.
+    /// </summary>
+    private IEnumerator RunFrameAnimator()
+    {
+        if (TestFrames == null)
+        {
+            Check("animateur : jeu d'animations injecte", false, "TestFrames non assigne au build");
+            yield break;
+        }
+
+        Check("animateur : jeu d'animations injecte", true,
+              $"{TestFrames.Id}, {TestFrames.Animations.Length} animations");
+
+        var go = new GameObject("anim", typeof(SpriteRenderer), typeof(FrameAnimator));
+        var renderer = go.GetComponent<SpriteRenderer>();
+        var anim = go.GetComponent<FrameAnimator>();
+        anim.SetSpriteFrames(TestFrames);
+
+        // Boucle : l'image doit changer, et la lecture continuer.
+        anim.Play("idle");
+        Sprite first = renderer.sprite;
+        yield return new WaitForSeconds(0.6f);
+
+        Check("animateur : image affichee", first != null);
+        Check("animateur : animation bouclee continue", anim.IsPlaying);
+
+        // Non bouclée : signal de fin, puis arrêt sur la dernière image.
+        string finished = "";
+        anim.AnimationFinished += n => finished = n;
+        anim.Play("death");
+        yield return new WaitForSeconds(2.0f);
+
+        Check("animateur : fin d'animation non bouclee signalee", finished == "death", $"recu='{finished}'");
+        Check("animateur : arret apres la derniere image", !anim.IsPlaying);
+
+        // Animation absente : ne doit ni crasher ni interrompre ce qui tourne.
+        anim.Play("idle");
+        anim.Play("cette_animation_nexiste_pas");
+        Check("animateur : animation absente toleree", anim.CurrentAnimation == "idle",
+              $"courante='{anim.CurrentAnimation}'");
+
+        Destroy(go);
     }
 
     /// <summary>Forme représentative de <c>SaveData</c> : collections, dictionnaire, imbrication.</summary>

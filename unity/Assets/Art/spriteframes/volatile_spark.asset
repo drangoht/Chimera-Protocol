@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4f4c9b07fb01ab3489d8a641c09620ae, type: 3}
+  m_Name: volatile_spark
+  m_EditorClassIdentifier: ChimeraProtocol.Platform::SpriteFramesAsset
+  Id: volatile_spark
+  Animations:
+  - Name: idle
+    Speed: 8
+    Loop: 1
+    Frames:
+    - {fileID: 21300000, guid: 7e418f04c6927af4b98df858bd597e55, type: 3}
+    - {fileID: 21300000, guid: b9def02c08a70bf4f90cbded18584af9, type: 3}
+    - {fileID: 21300000, guid: 39ff7147ed21f164f88910049f88e9b9, type: 3}
+  - Name: move
+    Speed: 14
+    Loop: 1
+    Frames:
+    - {fileID: 21300000, guid: 4a2f5e73f03e77b4393d374a1aef7840, type: 3}
+    - {fileID: 21300000, guid: c6d73db039cd0794980c49acff85b9b5, type: 3}
+    - {fileID: 21300000, guid: bceeba30f0c0e8e4f8b850252365cb4f, type: 3}
+    - {fileID: 21300000, guid: 4083d6b954a0b194bb4024dc777b4aea, type: 3}
+  - Name: death
+    Speed: 10
+    Loop: 0
+    Frames:
+    - {fileID: 21300000, guid: c5fc2fabf7cd58b438bf59d0618c407d, type: 3}
+    - {fileID: 21300000, guid: b2dbb3ab76b45d646aa8de3af7f493ea, type: 3}
+    - {fileID: 21300000, guid: 116fc66049142224cbc3164269ca32b0, type: 3}
+    - {fileID: 21300000, guid: 00622ad8face11248a900ffe7a13cbb1, type: 3}
+    - {fileID: 21300000, guid: 377fe58090b378c438e71c1005d792ad, type: 3}

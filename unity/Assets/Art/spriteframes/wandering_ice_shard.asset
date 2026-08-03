@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4f4c9b07fb01ab3489d8a641c09620ae, type: 3}
+  m_Name: wandering_ice_shard
+  m_EditorClassIdentifier: ChimeraProtocol.Platform::SpriteFramesAsset
+  Id: wandering_ice_shard
+  Animations:
+  - Name: idle
+    Speed: 8
+    Loop: 1
+    Frames:
+    - {fileID: 21300000, guid: ec6e3626de7717446b1ec5545e9ca4df, type: 3}
+    - {fileID: 21300000, guid: 71cd9615a1849cb468426291716fddc7, type: 3}
+    - {fileID: 21300000, guid: a72e720aa0aba5646af8bf1da7368020, type: 3}
+  - Name: move
+    Speed: 14
+    Loop: 1
+    Frames:
+    - {fileID: 21300000, guid: 9f3d51c1e57e64240b4bdb48b1fcb493, type: 3}
+    - {fileID: 21300000, guid: f32354efb2ab2da4f866cf6683b509af, type: 3}
+    - {fileID: 21300000, guid: f86bee1619983314894f612119cc3a5e, type: 3}
+    - {fileID: 21300000, guid: b64ca20fe792b4f438daceccfabeb5b9, type: 3}
+  - Name: death
+    Speed: 10
+    Loop: 0
+    Frames:
+    - {fileID: 21300000, guid: a6e905a7b036d2d4583ff58a59dff740, type: 3}
+    - {fileID: 21300000, guid: 22ac3677fe25cf147a32ef1a6cbdb5a4, type: 3}
+    - {fileID: 21300000, guid: ad0cdfaa971a9a54d9cb03d2f75ecf94, type: 3}
+    - {fileID: 21300000, guid: d05c1be01d872104899f66d160d1b38d, type: 3}
+    - {fileID: 21300000, guid: ae65f19319aed8a4d9016e4494bb7c10, type: 3}

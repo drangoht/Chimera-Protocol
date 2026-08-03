@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4f4c9b07fb01ab3489d8a641c09620ae, type: 3}
+  m_Name: aether_drifting_wraith
+  m_EditorClassIdentifier: ChimeraProtocol.Platform::SpriteFramesAsset
+  Id: aether_drifting_wraith
+  Animations:
+  - Name: idle
+    Speed: 8
+    Loop: 1
+    Frames:
+    - {fileID: 21300000, guid: abb19b2b4bad7154daf899dd2a903960, type: 3}
+    - {fileID: 21300000, guid: f76983b6d9fb02141942613ea9fec1e0, type: 3}
+    - {fileID: 21300000, guid: 7608fb859d040714db7d144155def726, type: 3}
+  - Name: move
+    Speed: 14
+    Loop: 1
+    Frames:
+    - {fileID: 21300000, guid: 9b72bc3ebdcc177479a523e483cacf3c, type: 3}
+    - {fileID: 21300000, guid: 5a96012d27a101b4680bff6371bf393f, type: 3}
+    - {fileID: 21300000, guid: 6fd63dd1802f22e4494c9be6ad5a6511, type: 3}
+    - {fileID: 21300000, guid: aa12f5a6b78867a4b8932c2ad2806b90, type: 3}
+  - Name: death
+    Speed: 10
+    Loop: 0
+    Frames:
+    - {fileID: 21300000, guid: af0b415ebaed2bf4388844784838111b, type: 3}
+    - {fileID: 21300000, guid: bdc9386e062f09442bae1cb26a4a3761, type: 3}
+    - {fileID: 21300000, guid: 87ccdfd43e96d1d4888e231c26969af4, type: 3}
+    - {fileID: 21300000, guid: a5ee6ce164937104abb7966c6220d038, type: 3}
+    - {fileID: 21300000, guid: dfdc372b849527244b269622e8af4a1d, type: 3}

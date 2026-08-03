@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4f4c9b07fb01ab3489d8a641c09620ae, type: 3}
+  m_Name: magma_colossus
+  m_EditorClassIdentifier: ChimeraProtocol.Platform::SpriteFramesAsset
+  Id: magma_colossus
+  Animations:
+  - Name: idle
+    Speed: 4
+    Loop: 1
+    Frames:
+    - {fileID: 21300000, guid: 1920384ec99c2454e92d5d8406019730, type: 3}
+    - {fileID: 21300000, guid: 314be62edd13c864f87e44f66963dd34, type: 3}
+    - {fileID: 21300000, guid: d737bdb166b4b294385b5ece2e647847, type: 3}
+  - Name: move
+    Speed: 6
+    Loop: 1
+    Frames:
+    - {fileID: 21300000, guid: bbfd52c755569ad47b15de5bbaf73bff, type: 3}
+    - {fileID: 21300000, guid: 371d55fdcd5435240b33aeb6ce9a53c3, type: 3}
+    - {fileID: 21300000, guid: db33b00a4047dfc4ab9c28ca90c00fa8, type: 3}
+    - {fileID: 21300000, guid: b02c36f619d3c134f9bcfc7cf4e04bac, type: 3}
+  - Name: death
+    Speed: 7
+    Loop: 0
+    Frames:
+    - {fileID: 21300000, guid: 1d968417a7e481b4da77ff712b000355, type: 3}
+    - {fileID: 21300000, guid: bcbb5e310a59acb4bacd5a27d39a0e20, type: 3}
+    - {fileID: 21300000, guid: 22e5f52a1bfee614682d4dfe1917e6d9, type: 3}
+    - {fileID: 21300000, guid: 989e99ec108fb4347965f23f95dde589, type: 3}
+    - {fileID: 21300000, guid: d34c1f57264052740a087eebe0ff5d17, type: 3}

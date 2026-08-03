@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4f4c9b07fb01ab3489d8a641c09620ae, type: 3}
+  m_Name: holographic_glitch
+  m_EditorClassIdentifier: ChimeraProtocol.Platform::SpriteFramesAsset
+  Id: holographic_glitch
+  Animations:
+  - Name: idle
+    Speed: 8
+    Loop: 1
+    Frames:
+    - {fileID: 21300000, guid: 0fead83fb9e03a9488d489d7b640e53e, type: 3}
+    - {fileID: 21300000, guid: 27b4d6e907587024a8393fd05c27c5f6, type: 3}
+    - {fileID: 21300000, guid: 961145ad95731c149b0b77c94ae09eec, type: 3}
+  - Name: move
+    Speed: 14
+    Loop: 1
+    Frames:
+    - {fileID: 21300000, guid: d80a284d917239344b14c972d02157b7, type: 3}
+    - {fileID: 21300000, guid: 1719e1f1e74c5fa4fa17223efdb5c1a7, type: 3}
+    - {fileID: 21300000, guid: ee17f01b04725fa418eb42b8498964af, type: 3}
+    - {fileID: 21300000, guid: 3ce7347163d0af549b44f8a95082fb96, type: 3}
+  - Name: death
+    Speed: 10
+    Loop: 0
+    Frames:
+    - {fileID: 21300000, guid: 39901ffa80e4c13409b9f88e178b4eaf, type: 3}
+    - {fileID: 21300000, guid: a14fd8a1a51471b4988c10bc525b67d5, type: 3}
+    - {fileID: 21300000, guid: 531bd635ab3fe0b459f15ce3e563d47f, type: 3}
+    - {fileID: 21300000, guid: 2ff98e34e99cc5e4d99ad5db4e2375f3, type: 3}
+    - {fileID: 21300000, guid: 662c8c52ad04cb7419dda9b23b086578, type: 3}

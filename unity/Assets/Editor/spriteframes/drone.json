@@ -1,0 +1,37 @@
+{
+  "id": "drone",
+  "animations": [
+    {
+      "name": "idle",
+      "speed": 5.5,
+      "loop": true,
+      "frames": [
+        "Assets/Art/sprites/enemies/drone/enemy_drone_idle_01.png",
+        "Assets/Art/sprites/enemies/drone/enemy_drone_idle_02.png",
+        "Assets/Art/sprites/enemies/drone/enemy_drone_idle_03.png"
+      ]
+    },
+    {
+      "name": "move",
+      "speed": 11.0,
+      "loop": true,
+      "frames": [
+        "Assets/Art/sprites/enemies/drone/enemy_drone_move_01.png",
+        "Assets/Art/sprites/enemies/drone/enemy_drone_move_02.png",
+        "Assets/Art/sprites/enemies/drone/enemy_drone_move_03.png",
+        "Assets/Art/sprites/enemies/drone/enemy_drone_move_04.png"
+      ]
+    },
+    {
+      "name": "death",
+      "speed": 10.0,
+      "loop": false,
+      "frames": [
+        "Assets/Art/sprites/enemies/drone/enemy_drone_death_01.png",
+        "Assets/Art/sprites/enemies/drone/enemy_drone_death_02.png",
+        "Assets/Art/sprites/enemies/drone/enemy_drone_death_03.png",
+        "Assets/Art/sprites/enemies/drone/enemy_drone_death_04.png"
+      ]
+    }
+  ]
+}

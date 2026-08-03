@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4f4c9b07fb01ab3489d8a641c09620ae, type: 3}
+  m_Name: aether_golem
+  m_EditorClassIdentifier: ChimeraProtocol.Platform::SpriteFramesAsset
+  Id: aether_golem
+  Animations:
+  - Name: idle
+    Speed: 4
+    Loop: 1
+    Frames:
+    - {fileID: 21300000, guid: 02a881304fbeb2b4992707a13e3da82c, type: 3}
+    - {fileID: 21300000, guid: 7e8cf7a6c63eef44991c1cf211a1365d, type: 3}
+    - {fileID: 21300000, guid: 583d803f72b4b01488d8185075e68d03, type: 3}
+  - Name: move
+    Speed: 6
+    Loop: 1
+    Frames:
+    - {fileID: 21300000, guid: 6b481f2d7db87594f81ec7bb080ed2e7, type: 3}
+    - {fileID: 21300000, guid: 800011c94ed7a3046af44fead5332546, type: 3}
+    - {fileID: 21300000, guid: c55250b1479c57940bd16d7efd063e8e, type: 3}
+    - {fileID: 21300000, guid: c41c79f3e5591e146b2f2d376b37d139, type: 3}
+  - Name: death
+    Speed: 7
+    Loop: 0
+    Frames:
+    - {fileID: 21300000, guid: 044ef9aff5dfbe749a6ebbb52e431dfd, type: 3}
+    - {fileID: 21300000, guid: 93fa7789fcea25945b9056e098e28d14, type: 3}
+    - {fileID: 21300000, guid: d0df99d50d1acb4488377e35134ea7e5, type: 3}
+    - {fileID: 21300000, guid: 3633e4129bc8422418438ebb117190eb, type: 3}
+    - {fileID: 21300000, guid: ab739abaf88ab7b48a9623bb34e8f2e3, type: 3}

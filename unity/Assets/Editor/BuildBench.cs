@@ -95,7 +95,19 @@ public static class BuildBench
 
         Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
         var go = new GameObject(sceneName);
-        go.AddComponent<T>();
+        var component = go.AddComponent<T>();
+
+        // Injection d'un vrai jeu d'animations : hors Resources/, un asset n'existe à l'exécution
+        // que s'il est référencé par une scène. Ce lien fait partie de ce qu'on vérifie.
+        if (component is PlatformSmokeTest smoke)
+        {
+            smoke.TestFrames = AssetDatabase.LoadAssetAtPath<SpriteFramesAsset>(
+                "Assets/Art/spriteframes/aether_golem.asset");
+            if (smoke.TestFrames == null)
+                Debug.LogWarning("[BUILD] SpriteFrames de test introuvable — lancer " +
+                                 "BuildSpriteFrames.Run d'abord.");
+        }
+
         EditorSceneManager.MoveGameObjectToScene(go, scene);
         EditorSceneManager.SaveScene(scene, path);
 

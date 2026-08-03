@@ -1,0 +1,45 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4f4c9b07fb01ab3489d8a641c09620ae, type: 3}
+  m_Name: cryo_marksman
+  m_EditorClassIdentifier: ChimeraProtocol.Platform::SpriteFramesAsset
+  Id: cryo_marksman
+  Animations:
+  - Name: idle
+    Speed: 5
+    Loop: 1
+    Frames:
+    - {fileID: 21300000, guid: 4dbb968da16f22e449e17e6ddffa74d2, type: 3}
+    - {fileID: 21300000, guid: 79347c6f39b64f04b9dec73761b69d68, type: 3}
+    - {fileID: 21300000, guid: 6be5fd8ded96a5e4b9758b5213cb2b43, type: 3}
+  - Name: move
+    Speed: 8
+    Loop: 1
+    Frames:
+    - {fileID: 21300000, guid: 293cd6e41887349458da5160e192f03c, type: 3}
+    - {fileID: 21300000, guid: e80f272fea57e41408b47fb2730d46ae, type: 3}
+    - {fileID: 21300000, guid: bd48c50582a32ed45aba8f07596649e3, type: 3}
+    - {fileID: 21300000, guid: acb25ccd1bd2eb844a13fa204d49241d, type: 3}
+  - Name: attack
+    Speed: 4
+    Loop: 0
+    Frames:
+    - {fileID: 21300000, guid: 6af9b380aa64cfb4882c38314d554e38, type: 3}
+  - Name: death
+    Speed: 9
+    Loop: 0
+    Frames:
+    - {fileID: 21300000, guid: e6aa848c3b897164893ac7b567027a9c, type: 3}
+    - {fileID: 21300000, guid: cb83b23dc225c84478606139051f3816, type: 3}
+    - {fileID: 21300000, guid: 4d166a1d6ccf6b94e945158b69295f10, type: 3}
+    - {fileID: 21300000, guid: 9e7467cf3e89d054b8f419ba25f09c24, type: 3}
+    - {fileID: 21300000, guid: 196419b4aa2eb2a439dbee19e88c43ff, type: 3}
