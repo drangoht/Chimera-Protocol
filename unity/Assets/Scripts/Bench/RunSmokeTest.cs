@@ -159,12 +159,50 @@ public sealed class RunSmokeTest : MonoBehaviour
 
         if (gluedEnemy != null) Destroy(gluedEnemy.gameObject);
 
+        // ─── Arsenal et fusions (critère de sortie du Lot 3) ──────────────────
+        yield return RunFusionChecks(systems);
+
         // ─── Fin de run ───────────────────────────────────────────────────────
         gm.EndRun();
         Check("run : cloturee proprement", gm.RunEnded && gm.RunTime > 0f,
               $"{gm.RunTime:F1} s");
 
         Report();
+    }
+
+    /// <summary>
+    /// Vérifie l'arsenal <b>de bout en bout</b>, en particulier l'héritage de niveau des fusions.
+    /// La règle est déjà couverte en logique pure par <c>WeaponFusionTests</c> ; ici on s'assure
+    /// que le chemin réel — données lues depuis <c>StreamingAssets</c>, arme montée, passif acquis,
+    /// fusion forgée — l'applique vraiment. C'est la différence entre « la règle est juste » et
+    /// « le jeu l'utilise ».
+    /// </summary>
+    private IEnumerator RunFusionChecks(GameObject systems)
+    {
+        var inv = systems.AddComponent<InventorySystem>();
+        yield return null;   // laisse Awake charger les données
+
+        Check("arsenal : weapons.json charge depuis StreamingAssets",
+              inv.AcquireOrLevelUp("impulse_cannon") > 0);
+
+        // Monte l'arme jusqu'au niveau requis par la fusion.
+        for (int i = 1; i < 5; i++) inv.AcquireOrLevelUp("impulse_cannon");
+        int weaponLevel = inv.LevelOf("impulse_cannon");
+        Check("arsenal : une arme monte en niveau", weaponLevel == 5, $"niveau={weaponLevel}");
+
+        Check("fusion : verrouillee sans le passif requis", !inv.CanFuse("rail_overcharged"));
+
+        inv.AddPassive("capacitor");
+        Check("fusion : deblocable avec arme montee + passif", inv.CanFuse("rail_overcharged"));
+
+        int inherited = inv.ApplyFusion("rail_overcharged");
+
+        // LE critère : la fusion reprend le niveau investi, elle ne repart pas de 1.
+        Check("fusion : herite du niveau de l'arme remplacee (regression 1.21.0)",
+              inherited == weaponLevel, $"herite={inherited}, attendu={weaponLevel}");
+        Check("fusion : l'arme source est retiree de l'arsenal", !inv.Has("impulse_cannon"));
+        Check("fusion : enregistree comme forgee", inv.AppliedFusions.Count == 1);
+        Check("fusion : non reforgeable", inv.ApplyFusion("rail_overcharged") == 0);
     }
 
     private void Report()

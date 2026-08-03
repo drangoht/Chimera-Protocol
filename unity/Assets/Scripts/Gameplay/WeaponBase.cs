@@ -23,6 +23,27 @@ public abstract class WeaponBase : MonoBehaviour
     /// <summary>Niveau courant (1 à 5 dans les données, extrapolé au-delà).</summary>
     public int Level { get; private set; } = 1;
 
+    /// <summary>
+    /// Dégâts de <b>fiche</b>, capturés une seule fois avant toute modification.
+    /// </summary>
+    /// <remarks>
+    /// Indispensable pour les fusions : leur valeur d'origine est posée par leur propre classe, et
+    /// le recalcul (niveau × multiplicateur) doit toujours repartir d'elle. Repartir de la valeur
+    /// <i>courante</i> cumulerait les multiplicateurs à chaque achat de passif, jusqu'à des dégâts
+    /// absurdes — le miroir exact du bug de 1.21.0, dans l'autre sens.
+    /// </remarks>
+    public float SheetDamage { get; private set; }
+
+    private bool _sheetCaptured;
+
+    /// <summary>Fige les dégâts de fiche. Idempotent : les appels suivants sont sans effet.</summary>
+    public void CaptureSheetDamage()
+    {
+        if (_sheetCaptured) return;
+        SheetDamage = BaseDamage;
+        _sheetCaptured = true;
+    }
+
     private float _cooldownLeft;
 
     /// <summary>Tirs effectués — statistique de run, et point d'observation pour les bancs.</summary>
@@ -58,7 +79,13 @@ public abstract class WeaponBase : MonoBehaviour
     }
 
     /// <summary>Règle l'arme à un niveau donné.</summary>
-    public virtual void Configure(int level) => Level = Mathf.Max(1, level);
+    public virtual void Configure(int level)
+    {
+        CaptureSheetDamage();   // avant toute modification, sinon la fiche est déjà perdue
+        Level = Mathf.Max(1, level);
+    }
+
+    protected virtual void Awake() => CaptureSheetDamage();
 
     protected virtual void Update()
     {

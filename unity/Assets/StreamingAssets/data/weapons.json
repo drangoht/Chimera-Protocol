@@ -1,0 +1,896 @@
+{
+  "weapons": [
+    {
+      "id": "impulse_cannon",
+      "name": "Canon à Impulsions",
+      "type": "active",
+      "rarity": "common",
+      "description": "Projectile unique qui cible l'ennemi le plus proche. Perfore à partir du niveau 3.",
+      "maxLevel": 20,
+      "levels": [
+        {
+          "level": 1,
+          "damage": 10,
+          "cooldown": 0.8,
+          "projectileCount": 1,
+          "piercing": false,
+          "projectileSpeed": 400
+        },
+        {
+          "level": 2,
+          "damage": 14,
+          "cooldown": 0.75,
+          "projectileCount": 1,
+          "piercing": false,
+          "projectileSpeed": 420
+        },
+        {
+          "level": 3,
+          "damage": 18,
+          "cooldown": 0.7,
+          "projectileCount": 1,
+          "piercing": true,
+          "projectileSpeed": 440
+        },
+        {
+          "level": 4,
+          "damage": 22,
+          "cooldown": 0.65,
+          "projectileCount": 2,
+          "piercing": true,
+          "projectileSpeed": 460,
+          "note": "2 projectiles vers les 2 ennemis les plus proches"
+        },
+        {
+          "level": 5,
+          "damage": 28,
+          "cooldown": 0.55,
+          "projectileCount": 2,
+          "piercing": true,
+          "projectileSpeed": 480
+        }
+      ],
+      "fusionRequires": {
+        "passive": "capacitor"
+      },
+      "fusionResult": "rail_overcharged"
+    },
+    {
+      "id": "plasma_blade",
+      "name": "Lame Plasma",
+      "type": "active",
+      "rarity": "common",
+      "description": "Arc de mêlée tranchant dans un cône devant le joueur.",
+      "maxLevel": 20,
+      "levels": [
+        {
+          "level": 1,
+          "damage": 18,
+          "cooldown": 1.2,
+          "arcAngleDegrees": 180,
+          "arcRadius": 80
+        },
+        {
+          "level": 2,
+          "damage": 24,
+          "cooldown": 1.1,
+          "arcAngleDegrees": 200,
+          "arcRadius": 90
+        },
+        {
+          "level": 3,
+          "damage": 30,
+          "cooldown": 1.0,
+          "arcAngleDegrees": 220,
+          "arcRadius": 100
+        },
+        {
+          "level": 4,
+          "damage": 38,
+          "cooldown": 0.9,
+          "arcAngleDegrees": 260,
+          "arcRadius": 110
+        },
+        {
+          "level": 5,
+          "damage": 48,
+          "cooldown": 0.8,
+          "arcAngleDegrees": 320,
+          "arcRadius": 120
+        }
+      ],
+      "fusionRequires": {
+        "passive": "thermal_core"
+      },
+      "fusionResult": "fusion_blade"
+    },
+    {
+      "id": "drone_swarm",
+      "name": "Essaim de Drones",
+      "type": "active",
+      "rarity": "rare",
+      "description": "Drones en orbite autour du joueur. Dégâts de contact à chaque ennemi touché.",
+      "maxLevel": 20,
+      "orbitRadius": 70,
+      "levels": [
+        {
+          "level": 1,
+          "damage": 12,
+          "droneCount": 2,
+          "orbitSpeedDegPerSec": 120,
+          "damageInterval": 0.5
+        },
+        {
+          "level": 2,
+          "damage": 15,
+          "droneCount": 2,
+          "orbitSpeedDegPerSec": 140,
+          "damageInterval": 0.45
+        },
+        {
+          "level": 3,
+          "damage": 18,
+          "droneCount": 3,
+          "orbitSpeedDegPerSec": 160,
+          "damageInterval": 0.4
+        },
+        {
+          "level": 4,
+          "damage": 22,
+          "droneCount": 3,
+          "orbitSpeedDegPerSec": 180,
+          "damageInterval": 0.35
+        },
+        {
+          "level": 5,
+          "damage": 28,
+          "droneCount": 4,
+          "orbitSpeedDegPerSec": 200,
+          "damageInterval": 0.3
+        }
+      ],
+      "fusionRequires": null,
+      "fusionResult": null
+    },
+    {
+      "id": "overload_field",
+      "name": "Champ de Surcharge",
+      "type": "active",
+      "rarity": "rare",
+      "description": "Pulse de zone centrée sur le joueur. Repousse les ennemis (knockback) en plus des dégâts.",
+      "maxLevel": 20,
+      "levels": [
+        {
+          "level": 1,
+          "damage": 8,
+          "cooldown": 2.5,
+          "radius": 100,
+          "knockbackPx": 40
+        },
+        {
+          "level": 2,
+          "damage": 12,
+          "cooldown": 2.2,
+          "radius": 120,
+          "knockbackPx": 45
+        },
+        {
+          "level": 3,
+          "damage": 16,
+          "cooldown": 2.0,
+          "radius": 145,
+          "knockbackPx": 50
+        },
+        {
+          "level": 4,
+          "damage": 22,
+          "cooldown": 1.8,
+          "radius": 170,
+          "knockbackPx": 55
+        },
+        {
+          "level": 5,
+          "damage": 30,
+          "cooldown": 1.5,
+          "radius": 200,
+          "knockbackPx": 60
+        }
+      ],
+      "fusionRequires": null,
+      "fusionResult": null
+    },
+    {
+      "id": "tesla_coil",
+      "name": "Bobine Tesla",
+      "type": "active",
+      "rarity": "rare",
+      "description": "Éclair en chaîne qui rebondit d'ennemi en ennemi. Foudre cyan éblouissante.",
+      "maxLevel": 20,
+      "levels": [
+        {
+          "level": 1,
+          "damage": 14,
+          "cooldown": 1.2,
+          "chainCount": 2,
+          "chainRange": 160
+        },
+        {
+          "level": 2,
+          "damage": 18,
+          "cooldown": 1.1,
+          "chainCount": 3,
+          "chainRange": 170
+        },
+        {
+          "level": 3,
+          "damage": 23,
+          "cooldown": 1.0,
+          "chainCount": 4,
+          "chainRange": 185
+        },
+        {
+          "level": 4,
+          "damage": 29,
+          "cooldown": 0.9,
+          "chainCount": 5,
+          "chainRange": 200
+        },
+        {
+          "level": 5,
+          "damage": 38,
+          "cooldown": 0.8,
+          "chainCount": 7,
+          "chainRange": 230
+        }
+      ],
+      "fusionRequires": null,
+      "fusionResult": null
+    },
+    {
+      "id": "scatter_volley",
+      "name": "Volée Multiple",
+      "type": "active",
+      "rarity": "rare",
+      "description": "Tir multi-cible : un projectile vers chacun des ennemis les plus proches. 2 projectiles, +1 par niveau.",
+      "maxLevel": 20,
+      "levels": [
+        {
+          "level": 1,
+          "damage": 8,
+          "cooldown": 0.9,
+          "projectileCount": 2,
+          "piercing": false,
+          "projectileSpeed": 420
+        },
+        {
+          "level": 2,
+          "damage": 10,
+          "cooldown": 0.85,
+          "projectileCount": 3,
+          "piercing": false,
+          "projectileSpeed": 440
+        },
+        {
+          "level": 3,
+          "damage": 13,
+          "cooldown": 0.8,
+          "projectileCount": 4,
+          "piercing": false,
+          "projectileSpeed": 460
+        },
+        {
+          "level": 4,
+          "damage": 16,
+          "cooldown": 0.75,
+          "projectileCount": 5,
+          "piercing": true,
+          "projectileSpeed": 480
+        },
+        {
+          "level": 5,
+          "damage": 20,
+          "cooldown": 0.7,
+          "projectileCount": 6,
+          "piercing": true,
+          "projectileSpeed": 500
+        }
+      ],
+      "fusionRequires": null,
+      "fusionResult": null
+    },
+    {
+      "id": "glaive",
+      "name": "Lame Boomerang",
+      "type": "active",
+      "rarity": "common",
+      "description": "Lance des glaives qui partent vers les ennemis puis reviennent (2 coups par cible). 1 glaive, +1 aux niveaux supérieurs.",
+      "maxLevel": 20,
+      "levels": [
+        {
+          "level": 1,
+          "damage": 10,
+          "cooldown": 1.3,
+          "glaiveCount": 1,
+          "range": 220
+        },
+        {
+          "level": 2,
+          "damage": 13,
+          "cooldown": 1.2,
+          "glaiveCount": 1,
+          "range": 240
+        },
+        {
+          "level": 3,
+          "damage": 16,
+          "cooldown": 1.1,
+          "glaiveCount": 2,
+          "range": 260
+        },
+        {
+          "level": 4,
+          "damage": 20,
+          "cooldown": 1.0,
+          "glaiveCount": 2,
+          "range": 280
+        },
+        {
+          "level": 5,
+          "damage": 25,
+          "cooldown": 0.9,
+          "glaiveCount": 3,
+          "range": 300
+        }
+      ],
+      "fusionRequires": null,
+      "fusionResult": null
+    },
+    {
+      "id": "seeker_swarm",
+      "name": "Essaim Traqueur",
+      "type": "active",
+      "rarity": "rare",
+      "description": "Lance des missiles à tête chercheuse qui pourchassent les ennemis. 2 missiles, +1 par niveau (jusqu'à 5).",
+      "maxLevel": 20,
+      "levels": [
+        {
+          "level": 1,
+          "damage": 7,
+          "cooldown": 1.1,
+          "missileCount": 2,
+          "projectileSpeed": 300
+        },
+        {
+          "level": 2,
+          "damage": 9,
+          "cooldown": 1.0,
+          "missileCount": 3,
+          "projectileSpeed": 320
+        },
+        {
+          "level": 3,
+          "damage": 12,
+          "cooldown": 0.95,
+          "missileCount": 3,
+          "projectileSpeed": 340
+        },
+        {
+          "level": 4,
+          "damage": 15,
+          "cooldown": 0.9,
+          "missileCount": 4,
+          "projectileSpeed": 360
+        },
+        {
+          "level": 5,
+          "damage": 19,
+          "cooldown": 0.85,
+          "missileCount": 5,
+          "projectileSpeed": 380
+        }
+      ],
+      "fusionRequires": null,
+      "fusionResult": null
+    },
+    {
+      "id": "cryo_lance",
+      "name": "Lance Cryo",
+      "type": "active",
+      "rarity": "rare",
+      "description": "Rayon perçant glacé qui touche tous les ennemis en ligne et les ralentit (jusqu'à -40%).",
+      "maxLevel": 20,
+      "levels": [
+        {
+          "level": 1,
+          "damage": 9,
+          "cooldown": 1.4,
+          "range": 360,
+          "slowMult": 0.8,
+          "slowDuration": 1.5
+        },
+        {
+          "level": 2,
+          "damage": 12,
+          "cooldown": 1.3,
+          "range": 380,
+          "slowMult": 0.78,
+          "slowDuration": 1.6
+        },
+        {
+          "level": 3,
+          "damage": 15,
+          "cooldown": 1.2,
+          "range": 400,
+          "slowMult": 0.75,
+          "slowDuration": 1.8
+        },
+        {
+          "level": 4,
+          "damage": 19,
+          "cooldown": 1.1,
+          "range": 420,
+          "slowMult": 0.72,
+          "slowDuration": 2.0
+        },
+        {
+          "level": 5,
+          "damage": 24,
+          "cooldown": 1.0,
+          "range": 460,
+          "slowMult": 0.68,
+          "slowDuration": 2.2
+        }
+      ],
+      "fusionRequires": {
+        "passive": "reinforced_plating"
+      },
+      "fusionResult": "frost_veil"
+    },
+    {
+      "id": "pyre_stream",
+      "name": "Jet de Pyre",
+      "type": "active",
+      "rarity": "rare",
+      "description": "Cône de flammes courte portée : faibles dégâts directs mais brûlure (DoT) qui s'accumule dans le temps.",
+      "maxLevel": 20,
+      "levels": [
+        {
+          "level": 1,
+          "damage": 3,
+          "cooldown": 0.5,
+          "coneAngle": 50,
+          "range": 130,
+          "burnDps": 6,
+          "burnDuration": 2.0
+        },
+        {
+          "level": 2,
+          "damage": 4,
+          "cooldown": 0.5,
+          "coneAngle": 55,
+          "range": 140,
+          "burnDps": 8,
+          "burnDuration": 2.2
+        },
+        {
+          "level": 3,
+          "damage": 5,
+          "cooldown": 0.45,
+          "coneAngle": 60,
+          "range": 150,
+          "burnDps": 11,
+          "burnDuration": 2.4
+        },
+        {
+          "level": 4,
+          "damage": 6,
+          "cooldown": 0.45,
+          "coneAngle": 65,
+          "range": 160,
+          "burnDps": 14,
+          "burnDuration": 2.6
+        },
+        {
+          "level": 5,
+          "damage": 8,
+          "cooldown": 0.4,
+          "coneAngle": 70,
+          "range": 175,
+          "burnDps": 18,
+          "burnDuration": 3.0
+        }
+      ],
+      "fusionRequires": null,
+      "fusionResult": null
+    },
+    {
+      "id": "vector_lance",
+      "name": "Lance Vectorielle",
+      "type": "active",
+      "rarity": "rare",
+      "description": "Arme dirigée : tire un trait perforant là où TU VISES (souris, ou stick droit à la manette), pas vers l'ennemi le plus proche. Un réticule montre la direction. Récompense la visée.",
+      "maxLevel": 20,
+      "levels": [
+        {
+          "level": 1,
+          "damage": 16,
+          "cooldown": 0.75,
+          "projectileCount": 1,
+          "piercing": true,
+          "projectileSpeed": 520,
+          "spreadDegrees": 0
+        },
+        {
+          "level": 2,
+          "damage": 20,
+          "cooldown": 0.7,
+          "projectileCount": 1,
+          "piercing": true,
+          "projectileSpeed": 540,
+          "spreadDegrees": 0
+        },
+        {
+          "level": 3,
+          "damage": 26,
+          "cooldown": 0.65,
+          "projectileCount": 1,
+          "piercing": true,
+          "projectileSpeed": 560,
+          "spreadDegrees": 0
+        },
+        {
+          "level": 4,
+          "damage": 32,
+          "cooldown": 0.6,
+          "projectileCount": 2,
+          "piercing": true,
+          "projectileSpeed": 580,
+          "spreadDegrees": 14
+        },
+        {
+          "level": 5,
+          "damage": 40,
+          "cooldown": 0.55,
+          "projectileCount": 3,
+          "piercing": true,
+          "projectileSpeed": 620,
+          "spreadDegrees": 20
+        }
+      ],
+      "fusionRequires": {
+        "passive": "servo_motors"
+      },
+      "fusionResult": "vector_beam"
+    },
+    {
+      "id": "singularity",
+      "name": "Singularité",
+      "type": "active",
+      "rarity": "epic",
+      "description": "Déploie un puits gravitationnel qui aspire les ennemis vers son centre et les blesse par à-coups. Contrôle de zone (épique).",
+      "maxLevel": 20,
+      "levels": [
+        {
+          "level": 1,
+          "damage": 6,
+          "cooldown": 6.0,
+          "radius": 120,
+          "pullSpeed": 90,
+          "duration": 2.2,
+          "tickInterval": 0.4
+        },
+        {
+          "level": 2,
+          "damage": 8,
+          "cooldown": 5.5,
+          "radius": 130,
+          "pullSpeed": 100,
+          "duration": 2.4,
+          "tickInterval": 0.4
+        },
+        {
+          "level": 3,
+          "damage": 10,
+          "cooldown": 5.0,
+          "radius": 140,
+          "pullSpeed": 110,
+          "duration": 2.6,
+          "tickInterval": 0.38
+        },
+        {
+          "level": 4,
+          "damage": 13,
+          "cooldown": 4.5,
+          "radius": 150,
+          "pullSpeed": 120,
+          "duration": 2.8,
+          "tickInterval": 0.36
+        },
+        {
+          "level": 5,
+          "damage": 16,
+          "cooldown": 4.0,
+          "radius": 160,
+          "pullSpeed": 130,
+          "duration": 3.0,
+          "tickInterval": 0.34
+        }
+      ],
+      "fusionRequires": null,
+      "fusionResult": null
+    }
+  ],
+  "passives": [
+    {
+      "id": "thermal_core",
+      "name": "Noyau Thermique",
+      "type": "passive",
+      "rarity": "common",
+      "description": "Augmente les dégâts de toutes les armes actives.",
+      "maxLevel": 20,
+      "levels": [
+        {
+          "level": 1,
+          "damageMultiplierBonus": 0.15
+        },
+        {
+          "level": 2,
+          "damageMultiplierBonus": 0.15
+        },
+        {
+          "level": 3,
+          "damageMultiplierBonus": 0.15
+        }
+      ],
+      "applicationNote": "Multiplie le damage de chaque arme active par (1 + somme des bonus). Prérequis fusion Lame à Fusion."
+    },
+    {
+      "id": "reinforced_plating",
+      "name": "Plaque Renforcée",
+      "type": "passive",
+      "rarity": "common",
+      "description": "Augmente les PV max et réduit les dégâts reçus.",
+      "maxLevel": 20,
+      "levels": [
+        {
+          "level": 1,
+          "maxHpBonus": 25,
+          "damageReduction": 0.0
+        },
+        {
+          "level": 2,
+          "maxHpBonus": 25,
+          "damageReduction": 0.1
+        },
+        {
+          "level": 3,
+          "maxHpBonus": 25,
+          "damageReduction": 0.1
+        }
+      ],
+      "applicationNote": "damageReduction est cumulatif et plafonne a 0.40 (hardcap tous passifs confondus)."
+    },
+    {
+      "id": "servo_motors",
+      "name": "Servo-Moteurs",
+      "type": "passive",
+      "rarity": "common",
+      "description": "Augmente la vitesse de déplacement du joueur.",
+      "maxLevel": 20,
+      "levels": [
+        {
+          "level": 1,
+          "speedBonus": 30
+        },
+        {
+          "level": 2,
+          "speedBonus": 30
+        },
+        {
+          "level": 3,
+          "speedBonus": 40
+        }
+      ],
+      "applicationNote": "Plafond soft : 380 px/s."
+    },
+    {
+      "id": "capacitor",
+      "name": "Capaciteur",
+      "type": "passive",
+      "rarity": "rare",
+      "description": "Réduit le cooldown de toutes les armes actives.",
+      "maxLevel": 20,
+      "levels": [
+        {
+          "level": 1,
+          "cooldownReduction": 0.12
+        },
+        {
+          "level": 2,
+          "cooldownReduction": 0.12
+        },
+        {
+          "level": 3,
+          "cooldownReduction": 0.14
+        }
+      ],
+      "applicationNote": "Multiplie le cooldown de chaque arme par (1 - somme). Cooldown minimum par arme : 0.15 s (hardcap). Prérequis fusion Rail Surchargé."
+    }
+  ],
+  "fusions": [
+    {
+      "id": "fusion_blade",
+      "name": "Lame à Fusion",
+      "rarity": "epic",
+      "description": "L'arc devient un anneau de flammes d'Aether actif en continu autour du joueur. Plus de cooldown.",
+      "requires": {
+        "weapon": "plasma_blade",
+        "weaponLevel": 5,
+        "passive": "thermal_core"
+      },
+      "stats": {
+        "damagePerSecond": 55,
+        "radius": 130,
+        "type": "continuous_ring",
+        "damageInterval": 0.15
+      },
+      "replaces": "plasma_blade"
+    },
+    {
+      "id": "rail_overcharged",
+      "name": "Rail Surchargé",
+      "rarity": "epic",
+      "description": "Tire en rafale automatique de 3 projectiles perforants qui traversent toute la ligne d'ennemis.",
+      "requires": {
+        "weapon": "impulse_cannon",
+        "weaponLevel": 5,
+        "passive": "capacitor"
+      },
+      "stats": {
+        "damage": 22,
+        "burstCount": 3,
+        "burstInterval": 0.12,
+        "cooldownBetweenBursts": 0.6,
+        "projectileSpeed": 600,
+        "piercing": true,
+        "piercingLimit": 0
+      },
+      "replaces": "impulse_cannon"
+    },
+    {
+      "id": "orbital_swarm",
+      "name": "Essaim Orbital",
+      "rarity": "epic",
+      "description": "L'essaim devient un tourbillon de 6 drones ultra-rapides en orbite large. Bouclier offensif permanent.",
+      "requires": {
+        "weapon": "drone_swarm",
+        "weaponLevel": 5,
+        "passive": "servo_motors"
+      },
+      "stats": {
+        "droneCount": 6,
+        "orbitSpeedDegPerSec": 280,
+        "orbitRadius": 95,
+        "damage": 24,
+        "damageInterval": 0.22
+      },
+      "replaces": "drone_swarm"
+    },
+    {
+      "id": "overload_aegis",
+      "name": "Égide de Surcharge",
+      "rarity": "epic",
+      "description": "Le champ devient une forteresse : rayon massif, knockback brutal, et chaque pulse régénère des PV.",
+      "requires": {
+        "weapon": "overload_field",
+        "weaponLevel": 5,
+        "passive": "reinforced_plating"
+      },
+      "stats": {
+        "damage": 18,
+        "radius": 200,
+        "knockbackPx": 80,
+        "cooldown": 1.0,
+        "healPercentPerPulse": 0.02
+      },
+      "replaces": "overload_field"
+    },
+    {
+      "id": "ionic_storm",
+      "name": "Tempête Ionique",
+      "rarity": "epic",
+      "description": "L'arc de la Bobine ne s'arrête plus : un chapelet d'éclairs frappe et rebondit en continu sur une longue chaîne d'ennemis.",
+      "requires": {
+        "weapon": "tesla_coil",
+        "weaponLevel": 5,
+        "passive": "capacitor"
+      },
+      "stats": {
+        "damage": 20,
+        "chainCount": 5,
+        "chainRange": 220,
+        "cooldown": 0.4,
+        "type": "continuous_chain"
+      },
+      "replaces": "tesla_coil"
+    },
+    {
+      "id": "solar_column",
+      "name": "Colonne Solaire",
+      "rarity": "epic",
+      "description": "Le jet dirigé devient une éruption solaire : dégâts et brûlure massive à tous les ennemis autour, dans une couronne de flammes.",
+      "requires": {
+        "weapon": "pyre_stream",
+        "weaponLevel": 5,
+        "passive": "thermal_core"
+      },
+      "stats": {
+        "damage": 10,
+        "radius": 155,
+        "burnDps": 18,
+        "burnDuration": 3.0,
+        "cooldown": 0.7,
+        "type": "radial_burn"
+      },
+      "replaces": "pyre_stream"
+    },
+    {
+      "id": "hornet_swarm",
+      "name": "Nuée de Frelons",
+      "rarity": "epic",
+      "description": "L'essaim sature l'écran : 7 missiles chercheurs par salve, plus rapides et plus mordants, qui re-ciblent sans relâche.",
+      "requires": {
+        "weapon": "seeker_swarm",
+        "weaponLevel": 5,
+        "passive": "servo_motors"
+      },
+      "stats": {
+        "damage": 12,
+        "missileCount": 7,
+        "projectileSpeed": 420,
+        "cooldown": 0.7
+      },
+      "replaces": "seeker_swarm"
+    },
+    {
+      "id": "vector_beam",
+      "name": "Rayon Vecteur",
+      "rarity": "epic",
+      "description": "La lance dirigée devient un rayon perforant continu pointé là où tu vises (souris / stick droit) : plus de cooldown, il balaie et traverse toute la ligne d'ennemis. Skill de visée à son paroxysme.",
+      "requires": {
+        "weapon": "vector_lance",
+        "weaponLevel": 5,
+        "passive": "servo_motors"
+      },
+      "stats": {
+        "damagePerTick": 11,
+        "tickInterval": 0.13,
+        "beamLength": 520,
+        "hitRadius": 34,
+        "piercing": true,
+        "type": "continuous_beam"
+      },
+      "replaces": "vector_lance"
+    },
+    {
+      "id": "frost_veil",
+      "name": "Voile de Givre",
+      "rarity": "epic",
+      "description": "Le rayon glacé devient un voile de givre continu autour de toi : dégâts et ralentissement massif à tout ennemi à portée, réappliqués sans relâche. La nuée reste engluée au ralenti — ta meilleure armure, c'est le froid.",
+      "requires": {
+        "weapon": "cryo_lance",
+        "weaponLevel": 5,
+        "passive": "reinforced_plating"
+      },
+      "stats": {
+        "damagePerTick": 8.4,
+        "tickInterval": 0.2,
+        "radius": 150,
+        "slowMult": 0.55,
+        "slowDuration": 0.5,
+        "type": "continuous_frost_aura"
+      },
+      "replaces": "cryo_lance"
+    }
+  ]
+}
