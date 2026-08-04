@@ -1,94 +1,84 @@
-# Godot
-.godot/
-*.translation
 
-# Unity (migration — docs/UNITY_MIGRATION_PLAN.md)
-# ⚠ Les fichiers .meta NE SONT PAS ignorés : Unity y stocke les GUID d'assets.
-# Les perdre casse toutes les références de prefabs et de scènes.
-unity/[Ll]ibrary/
-unity/[Tt]emp/
-unity/[Oo]bj/
-unity/[Bb]uild/
-unity/[Bb]uilds/
-unity/[Ll]ogs/
-unity/[Uu]serSettings/
-unity/[Mm]emoryCaptures/
-unity/*.csproj
-unity/*.sln
-
+!music_ai/LISEZ-MOI.md
+# Artefacts de tests (dotnet test / CI)
+# Boite d'entree des musiques generees par IA (sources brutes mp3/wav, lourdes et
 # Build
-build/
+# C# / .NET
+# Captures de travail pour comparer l'UI avant/apres (regenerables via
+# Captures jetables (frames de debug / variantes one-off)
+# Godot
+# Les perdre casse toutes les références de prefabs et de scènes.
+# Mono / Rider
+# OS
+# Scratch du chantier audio (mesures, logs de vumetre, scripts jetables) et cache Python
+# Test screenshots
+# Trailer video : rushes AVI du Movie Maker Godot (plusieurs Go), plans intermediaires et
+# Unity (migration — docs/UNITY_MIGRATION_PLAN.md)
+# installes par tools/import_ai_music.py dans assets/audio/music/ sont versionnes.
+# mp4 final. Tout est regenerable via tools/record_trailer.py puis tools/build_trailer.py.
+# regenerables depuis les prompts de docs/AUDIO_AI_PROMPTS.md). Seuls les OGG finaux
+# tools/capture_ui_set.py). Seule une planche-contact retenue est commitee, au cas par cas.
+# ⚠ Les fichiers .meta NE SONT PAS ignorés : Unity y stocke les GUID d'assets.
 *.exe
 *.pck
-*.zip
-
-# C# / .NET
-bin/
-obj/
-*.user
-.vs/
-.idea/
 *.suo
+*.translation
+*.user
 *.userprefs
-
-# Mono / Rider
-.mono/
-data_*/
-
-# OS
+*.zip
 .DS_Store
-Thumbs.db
-
-# Test screenshots
-docs/test_screenshots/
-docs/balance_screenshots/
-docs/balance_v2_screenshots/
-docs/boss_ttk/
-docs/hud_review.png
-docs/menu_review.png
-docs/swarm_review.png
-docs/bestiary_review.png
-docs/arsenal_review.png
-docs/scene_review.png
-docs/*.png.import
-
-# Captures jetables (frames de debug / variantes one-off)
-docs/*_test.png
-docs/biome_label.png
-docs/hud_anim.png
-docs/hud_new.png
-docs/hud_new_zoom.png
-docs/hud_style_zoom.png
-docs/levelselect_badge.png
-docs/options2.png
-tests/*.uid
-
-# Trailer video : rushes AVI du Movie Maker Godot (plusieurs Go), plans intermediaires et
-# mp4 final. Tout est regenerable via tools/record_trailer.py puis tools/build_trailer.py.
-trailer/
-
-# Artefacts de tests (dotnet test / CI)
+.godot/
+.idea/
+.mono/
+.vs/
 TestResults/
-test-output.txt
-
-# Captures de travail pour comparer l'UI avant/apres (regenerables via
-# tools/capture_ui_set.py). Seule une planche-contact retenue est commitee, au cas par cas.
-docs/ui_before_*.png
-docs/ui_after_*.png
-docs/ui_sheet_*.png
-docs/ui_fix_*.png
-docs/ui_step*.png
-docs/verif_*.png
-
-# Boite d'entree des musiques generees par IA (sources brutes mp3/wav, lourdes et
-# regenerables depuis les prompts de docs/AUDIO_AI_PROMPTS.md). Seuls les OGG finaux
-# installes par tools/import_ai_music.py dans assets/audio/music/ sont versionnes.
-music_ai/*
-!music_ai/LISEZ-MOI.md
-
-# Scratch du chantier audio (mesures, logs de vumetre, scripts jetables) et cache Python
-tools/__pycache__/
-tools/_tmp_*.py
+Thumbs.db
+bin/
+build/
+data_*/
+docs/*.png.import
+docs/*_test.png
 docs/_log_*.txt
 docs/_meter_*.csv
 docs/_meter_*.csv.import
+docs/arsenal_review.png
+docs/balance_screenshots/
+docs/balance_v2_screenshots/
+docs/bestiary_review.png
+docs/biome_label.png
+docs/boss_ttk/
+docs/hud_anim.png
+docs/hud_new.png
+docs/hud_new_zoom.png
+docs/hud_review.png
+docs/hud_style_zoom.png
+docs/levelselect_badge.png
+docs/menu_review.png
+docs/options2.png
+docs/scene_review.png
+docs/swarm_review.png
+docs/test_screenshots/
+docs/ui_after_*.png
+docs/ui_before_*.png
+docs/ui_fix_*.png
+docs/ui_sheet_*.png
+docs/ui_step*.png
+docs/verif_*.png
+music_ai/*
+obj/
+test-output.txt
+tests/*.uid
+tools/__pycache__/
+tools/_tmp_*.py
+trailer/
+unity/*.csproj
+unity/*.sln
+unity/Build/
+unity/[Bb]uild/
+unity/[Bb]uilds/
+unity/[Ll]ibrary/
+unity/[Ll]ogs/
+unity/[Mm]emoryCaptures/
+unity/[Oo]bj/
+unity/[Tt]emp/
+unity/[Uu]serSettings/

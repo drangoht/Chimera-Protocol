@@ -125,6 +125,27 @@ l'id au composant et fabrique l'arme sur le porteur — plus rien à tenir synch
 fichier et une classe. **Le banc consomme la même table**, sinon une arme absente du banc est une
 arme dont on ne sait pas si elle tire.
 
+### Juger une interface sans la **regarder** ne marche pas
+
+Verdict en jouant : « le design est horrible ». Toutes les vérifications d'UI écrites jusque-là
+répondaient à « l'écran s'ouvre-t-il ? » et « la ligne existe-t-elle ? » — **aucune** à « à quoi ça
+ressemble ? ». D'où `--screenshots` : le jeu se photographie lui-même (8 écrans). Ce qui a été trouvé
+**en regardant les images**, et qu'aucun test n'aurait vu :
+
+| Symptôme sur l'image | Cause |
+|---|---|
+| Cadres énormes, coins en bouillie | Une `Image` uGUI met ses bordures 9-slice à l'échelle de `referencePixelsPerUnit / spritePixelsPerUnit`. Les sprites du projet sont importés en **PPU 1** (1 px = 1 unité) → bordures ×100 |
+| Liserés fluo, fonds teintés | La texture portait **déjà** son accent, et le code la multipliait par la même couleur |
+| Réglages qui se chevauchent | 8 lignes de 64 px dans un panneau de 660 sans défilement |
+| Le menu par-dessus la partie | Les outils (`SceneDiagnostic`, `ScreenshotTour`) étaient posés **sur l'objet du menu** : leur `DontDestroyOnLoad` faisait survivre le menu entier |
+| Sol uni là où on attend des tuiles | `SpriteDrawMode.Tiled` exige un maillage **`FullRect`** ; sinon Unity **étire** une tuile de 32 px sur toute l'arène |
+| Sol noir, motif disparu | La couleur d'un `SpriteRenderer` **multiplie** : une teinte sombre sur une tuile déjà sombre l'écrase |
+| Tout rendu aux ⅔, joueur hors champ | `orthographicSize` figée à 540 (1080 unités) quelle que soit la fenêtre, et **aucune caméra de suivi** |
+
+⚠ Un réglage d'import ne s'applique pas à un asset **déjà importé** : `touch` ne suffit pas, il faut
+supprimer le `.meta` (ou forcer la réimportation). Le symptôme est un postprocessor qui « ne fait
+rien ».
+
 ### Sans **`AudioListener`**, tout le système audio tourne et le jeu reste muet
 
 **Signalé en jouant** : « je n'ai rien entendu ». Pourtant les 41 clips étaient importés, les
