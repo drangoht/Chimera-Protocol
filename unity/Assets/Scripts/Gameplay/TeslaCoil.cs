@@ -54,10 +54,19 @@ public class TeslaCoil : WeaponBase
             _alreadyHit.Add(current);
             Vector2 from = current.transform.position;
 
+            // Le rebond est TOUT l'intérêt de cette arme : sans le trait, le joueur ne voit ni où
+            // part la décharge ni jusqu'où elle chaîne.
+            WeaponVfx.Line(i == 0 ? (Vector2)transform.position : from, from,
+                           new Color(0.27f, 1f, 0.93f), 8f, 0.12f);
+
             current.TakeDamage(damage);
             LastChainLength++;
 
-            current = FindNearestUnhit(from);
+            var next = FindNearestUnhit(from);
+            if (next != null)
+                WeaponVfx.Line(from, next.transform.position, new Color(0.55f, 0.85f, 1f), 7f, 0.12f);
+
+            current = next;
         }
 
         return true;

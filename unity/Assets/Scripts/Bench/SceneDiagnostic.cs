@@ -85,6 +85,8 @@ public sealed class SceneDiagnostic : MonoBehaviour
         int orbs = FindObjectsByType<XpOrb>(FindObjectsSortMode.None).Length;
         sb.AppendLine($"orbes presents       : {orbs}");
 
+        yield return AuditWeapons(sb);
+
         // ─── Progression sur 30 s : c'est la DUREE qui manquait au premier relevé ──
         sb.AppendLine();
         sb.AppendLine("--- progression (t, ennemis, elim., xp, PV, orbes, dist. ennemi le + proche) ---");
@@ -144,6 +146,47 @@ public sealed class SceneDiagnostic : MonoBehaviour
 
     private int _cardsPicked;
     private bool _bossSeen;
+
+    /// <summary>
+    /// Acquiert quelques armes <b>dans la scène réelle</b> et relève, pour chacune : existe-t-elle,
+    /// tourne-t-elle, tire-t-elle, et <b>se voit-elle</b> ?
+    ///
+    /// <para>Signalé en jouant : « je ne vois pas les autres armes, ni leurs projectiles ». Trois
+    /// pannes très différentes donnent ce même symptôme — l'arme n'est pas créée, elle est créée mais
+    /// ne tire pas, ou elle tire sans rien d'affichable. Ce relevé les sépare.</para>
+    /// </summary>
+    private IEnumerator AuditWeapons(StringBuilder sb)
+    {
+        var inv = InventorySystem.Instance;
+        var player = Player.Instance;
+        if (inv == null || player == null) yield break;
+
+        string[] tested = { "scatter_volley", "glaive", "seeker_swarm", "plasma_blade", "tesla_coil" };
+        foreach (string id in tested) inv.AcquireOrLevelUp(id);
+
+        yield return new WaitForSecondsRealtime(4f);
+
+        sb.AppendLine();
+        sb.AppendLine("--- armes acquises en jeu (composant / ticks / tirs / sprite) ---");
+
+        foreach (string id in tested)
+        {
+            WeaponBase? found = null;
+            foreach (var w in player.GetComponentsInChildren<WeaponBase>())
+                if (w.gameObject.name == "W_" + id) found = w;
+
+            if (found == null) { sb.AppendLine($"{id,-16} : ABSENTE (aucun objet W_{id})"); continue; }
+
+            var sprite = found.GetComponentInChildren<SpriteRenderer>();
+            sb.AppendLine($"{id,-16} : niv {inv.LevelOf(id)}  ticks={found.TicksRun,5}  " +
+                          $"tirs={found.ShotsFired,4}  degats={found.BaseDamage,6:F1}  " +
+                          $"sprite={(sprite != null ? "oui" : "AUCUN")}");
+        }
+
+        sb.AppendLine($"projectiles en vol   : bullets={FindObjectsByType<Bullet>(FindObjectsSortMode.None).Length}, " +
+                      $"missiles={FindObjectsByType<SeekerMissile>(FindObjectsSortMode.None).Length}, " +
+                      $"glaives={FindObjectsByType<GlaiveProjectile>(FindObjectsSortMode.None).Length}");
+    }
 
     /// <summary>
     /// Choisit la première carte dès qu'un écran de montée de niveau s'ouvre — l'équivalent headless

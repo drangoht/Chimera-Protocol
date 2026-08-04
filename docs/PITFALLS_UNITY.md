@@ -125,6 +125,29 @@ l'id au composant et fabrique l'arme sur le porteur — plus rien à tenir synch
 fichier et une classe. **Le banc consomme la même table**, sinon une arme absente du banc est une
 arme dont on ne sait pas si elle tire.
 
+### Une arme qui tue **sans laisser de trace** se lit « la carte n'a rien fait »
+
+**Signalé en jouant** : « je ne vois pas les autres armes, ni leurs projectiles ». Le relevé en scène
+réelle a montré qu'elles fonctionnaient **toutes** — 95 éliminations en 30 s contre 1 avec le seul
+canon — mais que **8 sur 12 n'affichaient rien** : arcs, chaînes, auras, faisceaux, cônes et zones
+étaient de la logique pure, et les drones de l'Essaim étaient des `new GameObject("Drone0")` sans le
+moindre `SpriteRenderer`.
+
+**Ce n'est pas de la finition.** Une progression dont l'effet est invisible est indiscernable d'une
+progression cassée, et c'est le pire retour possible sur un choix de carte. → `WeaponVfx` (points de
+sprite recyclés : ni shader ni matériau, donc rien qui puisse être supprimé du build) + un critère au
+banc : **toute arme qui ne se voit ni par un projectile ni par un drone doit laisser une trace**.
+
+### Un ennemi qui **ne poursuit pas** doit apparaître dans le champ
+
+Le boss (`ai.type = boss_core`) tient sa position — c'est un combat d'espace, pas de course. Apparu
+au rayon d'apparition ordinaire (700 px), il restait **hors écran pour toute la run** : le joueur
+kite ailleurs, ne le croise jamais, et conclut qu'il n'arrive pas. Le mécanisme, lui, fonctionnait
+parfaitement.
+
+**Parade** : rayon d'apparition dédié (`BossSpawnRadius`, 380 px) **et** un repère au HUD — barre de
+boss avec la phase, plus un cap et une distance. La barre seule dit « il existe » sans dire « où ».
+
 ### L'ordre d'initialisation n'est pas garanti
 
 Godot garantit l'ordre des AutoLoads (déclaré dans `project.godot`) ; Unity ne garantit rien entre

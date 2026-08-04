@@ -29,6 +29,13 @@ public sealed class HUD : MonoBehaviour
     private Image? _xpFill;
     private Text?  _levelLabel;
     private Text?  _timerLabel;
+    private Text?  _arsenalLabel;
+    private Text?  _bannerLabel;
+    private Text?  _bossLabel;
+    private Image? _bossFill;
+    private GameObject? _bossPanel;
+
+    private float _bannerLeft;
 
     private void Start()
     {
@@ -39,12 +46,74 @@ public sealed class HUD : MonoBehaviour
             Player.Instance.HealthChanged += OnHealthChanged;
             OnHealthChanged(Player.Instance.Stats.CurrentHp, Player.Instance.Stats.MaxHp);
         }
+
+        var inv = InventorySystem.Instance;
+        if (inv != null)
+        {
+            inv.WeaponChanged  += OnArsenalChanged;
+            inv.FusionApplied  += OnArsenalChanged;
+            inv.PassiveChanged += OnArsenalChanged;
+        }
+
+        var gm = GameManager.Instance;
+        if (gm != null) gm.OvertimeStarted += OnOvertimeStarted;
+
+        RefreshArsenal();
     }
 
     private void OnDestroy()
     {
         if (Player.Instance != null) Player.Instance.HealthChanged -= OnHealthChanged;
+
+        var inv = InventorySystem.Instance;
+        if (inv != null)
+        {
+            inv.WeaponChanged  -= OnArsenalChanged;
+            inv.FusionApplied  -= OnArsenalChanged;
+            inv.PassiveChanged -= OnArsenalChanged;
+        }
+
+        var gm = GameManager.Instance;
+        if (gm != null) gm.OvertimeStarted -= OnOvertimeStarted;
     }
+
+    private void OnArsenalChanged(string id, int level) => RefreshArsenal();
+
+    private void OnOvertimeStarted() => Announce("LE NOYAU ROUILLÉ ARRIVE");
+
+    /// <summary>Affiche un bandeau temporaire au centre de l'écran.</summary>
+    public void Announce(string message, float seconds = 4f)
+    {
+        if (_bannerLabel == null) return;
+        _bannerLabel.text = message;
+        _bannerLeft = seconds;
+    }
+
+    /// <summary>
+    /// Liste ce que le joueur porte. <b>Sans elle, prendre une carte ne se voit nulle part</b> : le
+    /// joueur ne peut ni savoir ce qu'il a, ni constater qu'une arme est montée de niveau — et une
+    /// arme sans effet visible devient alors indiscernable d'une arme absente.
+    /// </summary>
+    private void RefreshArsenal()
+    {
+        if (_arsenalLabel == null) return;
+
+        var inv = InventorySystem.Instance;
+        if (inv == null) { _arsenalLabel.text = ""; return; }
+
+        var sb = new System.Text.StringBuilder();
+        foreach (var (id, level) in inv.WeaponLevels) sb.AppendLine($"{Pretty(id)}  {level}");
+        foreach (var (id, level) in inv.PassiveLevels) sb.AppendLine($"· {Pretty(id)}  {level}");
+
+        _arsenalLabel.text = sb.ToString();
+    }
+
+    /// <summary>
+    /// Rend un identifiant lisible faute de traduction : <c>tesla_coil</c> → <c>TESLA COIL</c>. La
+    /// vraie table de localisation appartient au lot d'interface ; afficher l'id brut vaut toujours
+    /// mieux que de n'afficher rien.
+    /// </summary>
+    private static string Pretty(string id) => id.Replace('_', ' ').ToUpperInvariant();
 
     private void Update()
     {
@@ -59,9 +128,72 @@ public sealed class HUD : MonoBehaviour
         var gm = GameManager.Instance;
         if (gm != null && _timerLabel != null)
         {
-            int total = Mathf.FloorToInt(gm.RunTime);
-            _timerLabel.text = $"{total / 60:00}:{total % 60:00}   {gm.Kills} elim.";
+            // En overtime, le chrono compte le temps PASSÉ au-delà du temps imparti : c'est ce
+            // dépassement qui est récompensé, et ne rien afficher laisserait croire que rien n'a
+            // changé au moment le plus dangereux de la run.
+            if (gm.Overtime)
+            {
+                int ot = Mathf.FloorToInt(gm.OvertimeSeconds);
+                _timerLabel.text = $"SURCHARGE +{ot / 60:00}:{ot % 60:00}   {gm.Kills} elim.";
+                _timerLabel.color = Gold;
+            }
+            else
+            {
+                int left = Mathf.Max(0, gm.RunDurationSeconds - Mathf.FloorToInt(gm.RunTime));
+                _timerLabel.text = $"{left / 60:00}:{left % 60:00}   {gm.Kills} elim.";
+            }
         }
+
+        UpdateBossBar();
+        UpdateBanner();
+    }
+
+    /// <summary>
+    /// Barre du boss : elle n'apparaît que s'il vit. <b>C'est elle qui rend le boss trouvable</b> —
+    /// il ne poursuit pas le joueur, donc sans repère à l'écran, une run entière peut se dérouler
+    /// sans jamais le croiser, et il paraît ne jamais arriver.
+    /// </summary>
+    private void UpdateBossBar()
+    {
+        RustedCore? boss = null;
+        foreach (var e in EnemyBase.Active)
+            if (e is RustedCore rc && !rc.IsDead) { boss = rc; break; }
+
+        if (_bossPanel != null) _bossPanel.SetActive(boss != null);
+        if (boss == null) return;
+
+        if (_bossFill != null) _bossFill.fillAmount = boss.HpRatio;
+
+        if (_bossLabel != null)
+        {
+            var player = Player.Instance;
+            string bearing = "";
+            if (player != null)
+            {
+                Vector2 d = (Vector2)boss.transform.position - (Vector2)player.transform.position;
+                // Un cap et une distance, parce que la barre seule dit « il existe » sans dire « où ».
+                bearing = $"   {Compass(d)} {d.magnitude:F0}";
+            }
+
+            _bossLabel.text = $"{boss.DisplayName}   PHASE {boss.Phase + 1}{bearing}";
+        }
+    }
+
+    private static string Compass(Vector2 d)
+    {
+        float angle = Mathf.Atan2(d.y, d.x) * Mathf.Rad2Deg;
+        if (angle < 0f) angle += 360f;
+
+        string[] points = { "E", "NE", "N", "NO", "O", "SO", "S", "SE" };
+        return points[Mathf.RoundToInt(angle / 45f) % 8];
+    }
+
+    private void UpdateBanner()
+    {
+        if (_bannerLabel == null) return;
+
+        if (_bannerLeft <= 0f) { _bannerLabel.text = ""; return; }
+        _bannerLeft -= Time.unscaledDeltaTime;
     }
 
     private void OnHealthChanged(float current, float max)
@@ -96,7 +228,36 @@ public sealed class HUD : MonoBehaviour
                                  new Vector2(24f, -76f), new Vector2(220f, 26f), Gold, TextAnchor.UpperLeft);
 
         _timerLabel = BuildLabel(canvasGo.transform, "Timer", new Vector2(0.5f, 1f),
-                                 new Vector2(-110f, -24f), new Vector2(220f, 26f), OffWhite, TextAnchor.UpperCenter);
+                                 new Vector2(-160f, -24f), new Vector2(320f, 26f), OffWhite, TextAnchor.UpperCenter);
+
+        // Arsenal en bas à gauche : la liste grandit vers le haut depuis un pivot bas, sinon elle
+        // sortirait de l'écran dès la sixième arme.
+        _arsenalLabel = BuildLabel(canvasGo.transform, "Arsenal", new Vector2(0f, 0f),
+                                   new Vector2(24f, 320f), new Vector2(320f, 300f), OffWhite, TextAnchor.LowerLeft);
+        _arsenalLabel.fontSize = 16;
+
+        BuildBossPanel(canvasGo.transform);
+
+        _bannerLabel = BuildLabel(canvasGo.transform, "Banner", new Vector2(0.5f, 0.5f),
+                                  new Vector2(-320f, 160f), new Vector2(640f, 40f), Gold, TextAnchor.MiddleCenter);
+        _bannerLabel.fontSize = 30;
+    }
+
+    private void BuildBossPanel(Transform parent)
+    {
+        var panel = new GameObject("BossPanel", typeof(RectTransform));
+        panel.transform.SetParent(parent, false);
+        Place(panel, new Vector2(0.5f, 1f), new Vector2(-400f, -64f), new Vector2(800f, 46f));
+
+        _bossLabel = BuildLabel(panel.transform, "BossName", new Vector2(0f, 1f),
+                                new Vector2(0f, 0f), new Vector2(800f, 22f), Gold, TextAnchor.UpperCenter);
+        _bossLabel.fontSize = 18;
+
+        _bossFill = BuildBar(panel.transform, "Boss", new Vector2(0f, 1f),
+                             new Vector2(0f, -24f), new Vector2(800f, 18f), HealthRed);
+
+        _bossPanel = panel;
+        panel.SetActive(false);
     }
 
     /// <summary>Barre à deux couches : un fond sombre, un remplissage horizontal par-dessus.</summary>

@@ -23,6 +23,11 @@ public sealed class RunBootstrap : MonoBehaviour
         if (Seed != 0UL) Gd.Seed(Seed);
         else             Gd.Randomize();
 
+        // Le vivier de traces garde des références sur des objets détruits avec la scène précédente :
+        // sans cette remise à zéro, les premiers tirs de la run les réutiliseraient — donc
+        // n'afficheraient rien.
+        WeaponVfx.Reset();
+
         GameManager.Instance?.StartRun();
         ApplyCommandLine();
         WireInventory();

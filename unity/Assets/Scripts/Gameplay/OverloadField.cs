@@ -62,6 +62,12 @@ public class OverloadField : WeaponBase
             LastPulseHits++;
         }
 
+        // L'anneau n'est dessiné que si l'impulsion part vraiment : TryFire est appelée à chaque
+        // frame une fois la recharge prête, donc dessiner ici sans condition afficherait une aura
+        // permanente qui ne dirait plus rien du rythme de l'arme.
+        if (LastPulseHits > 0)
+            WeaponVfx.Ring(center, Radius, new Color(0.67f, 0.27f, 1f), 10f, 0.22f);
+
         // Une impulsion dans le vide ne doit pas consommer la recharge : sinon l'arme se déclenche
         // sans effet pendant les creux et se retrouve en recharge quand la nuée revient.
         return LastPulseHits > 0;

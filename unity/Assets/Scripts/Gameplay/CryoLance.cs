@@ -44,6 +44,11 @@ public sealed class CryoLance : WeaponBase
 
         LastBeamHits = 0;
         float damage = EffectiveDamage;
+
+        // Le couloir de gel se dessine sur toute sa portée : c'est un tir de zone, pas un projectile,
+        // et rien d'autre n'en signale la largeur ni l'axe.
+        WeaponVfx.Line(origin, origin + dir * Range, new Color(0.55f, 0.9f, 1f), 12f, 0.2f, 16f);
+
         var snapshot = EnemyBase.Active.ToArray();
 
         foreach (var e in snapshot)

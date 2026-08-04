@@ -32,6 +32,10 @@ public sealed class FrostVeil : WeaponBase
         float damage = EffectiveDamage;
 
         LastAuraHits = 0;
+
+        // Voile permanent : l'anneau redessiné à chaque battement tient lieu d'aura continue.
+        WeaponVfx.Ring(center, Radius, new Color(0.6f, 0.92f, 1f), 9f, 0.25f);
+
         var snapshot = EnemyBase.Active.ToArray();
 
         foreach (var e in snapshot)

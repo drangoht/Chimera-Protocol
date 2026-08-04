@@ -45,6 +45,10 @@ public class PyreStream : WeaponBase
         float damage = EffectiveDamage;
 
         LastConeHits = 0;
+
+        // Le cône est dessiné bords compris : un simple arc extérieur ne dirait pas d'où part le jet.
+        WeaponVfx.Cone(origin, dir, half, Range, new Color(1f, 0.55f, 0.2f), 0.16f);
+
         var snapshot = EnemyBase.Active.ToArray();
 
         foreach (var e in snapshot)

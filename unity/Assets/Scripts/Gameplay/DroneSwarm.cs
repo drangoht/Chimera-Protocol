@@ -97,7 +97,16 @@ public class DroneSwarm : WeaponBase
 
         for (int i = 0; i < DroneCount; i++)
         {
-            var go = new GameObject($"Drone{i}");
+            // ⚠ Un drone SANS SpriteRenderer orbite, frappe et tue — totalement invisible. L'essaim
+            // passait alors pour une carte sans effet, alors qu'il est l'une des armes les plus
+            // actives du jeu.
+            var go = new GameObject($"Drone{i}", typeof(SpriteRenderer));
+            var sr = go.GetComponent<SpriteRenderer>();
+            sr.sprite = UiPrimitives.White;
+            sr.color = new Color(0.27f, 1f, 0.93f);
+            sr.sortingOrder = 18;
+            go.transform.localScale = new Vector3(12f, 12f, 1f);
+
             go.transform.SetParent(transform.parent, worldPositionStays: true);
             _drones.Add(go.transform);
             _cooldowns.Add(0f);

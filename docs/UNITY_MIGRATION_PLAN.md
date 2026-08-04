@@ -545,9 +545,32 @@ l'exécution** (contre 67) et **514 tests unitaires** (contre 506).
 cercle (immobile, le joueur meurt en ~15 s) et relève cartes choisies / armes portées / overtime /
 boss vu. Avec `--run-duration=15`, le Noyau Rouillé **apparaît dans la scène réelle**, sans exception.
 
+### 6.8 Session jouée — « je ne vois pas les autres armes, ni le boss » (2026-08-04)
+
+**Les deux reproches portaient sur du visible, pas sur du fonctionnel** — et c'est exactement ce qui
+les rendait indiscernables de pannes.
+
+| Reproche | Ce que la machine mesurait | Ce que le joueur voyait |
+|---|---|---|
+| « je ne vois pas les autres armes » | 5 armes acquises, 92 195 ticks, 16 tirs, **95 éliminations en 30 s** (contre 1 avec le seul canon) | rien : 8 armes sur 12 n'affichent aucun effet, et le HUD ne liste pas l'arsenal |
+| « je n'ai pas vu le boss à 60 s » | boss instancié, incarné, phasé, une seule instance | rien : `boss_core` **ne poursuit pas**, il apparaissait à 700 px et n'était jamais croisé |
+
+**Livré** : `WeaponVfx` (traces faites de sprites recyclés — arcs, chaînes, anneaux, faisceaux,
+cônes ; ni shader ni matériau, donc rien de strippable au build), drones enfin visibles, arsenal
+listé au HUD, **barre de boss** avec phase, cap et distance, bandeau d'entrée en surcharge, chrono
+qui décompte puis compte le dépassement, et rayon d'apparition dédié au boss (380 px).
+
+Sept fusions sur neuf héritent des traces de leur arme de base — seules `FrostVeil` et `VectorBeam`
+ont demandé leur propre appel.
+
+**Deux critères ajoutés au banc** (90 vérifications) : *aucune arme n'est invisible* — toute arme qui
+ne se voit ni par un projectile ni par un drone doit laisser une trace — et *le boss apparaît dans le
+champ de vision*.
+
 ⚠ **Ce que cela ne dit toujours pas** : personne n'a encore *joué* une run jusqu'au boss. Le
-diagnostic ne ramasse presque aucun orbe (1 élimination en 30 s), donc la boucle
-« monter de niveau → choisir → sentir la différence » n'est vérifiée **qu'au banc**.
+diagnostic ne ramasse presque aucun orbe, donc la boucle « monter de niveau → choisir → sentir la
+différence » n'est vérifiée **qu'au banc**. Et les traces sont un **placeholder assumé** : les VFX
+d'origine (dessin procédural, 11 shaders, particules) restent à porter.
 
 ### 6.5 Lot 4 — bestiaire : logique complète (46/46)
 

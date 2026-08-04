@@ -240,9 +240,20 @@ public sealed class RunSmokeTest : MonoBehaviour
         };
 
         var silent = new List<string>();
+        var invisible = new List<string>();
+
+        // Armes qui se voient par leurs PROJECTILES ou leurs drones : elles n'ont pas à laisser de
+        // trace. Toutes les autres frappent à distance sans rien lancer — sans trace, elles tuent
+        // sans que rien n'apparaisse à l'écran, et le joueur lit « la carte n'a rien fait ».
+        var rendersWithoutTrace = new HashSet<string>
+        {
+            "impulse_cannon", "scatter_volley", "vector_lance", "seeker_swarm", "glaive",
+            "rail_overcharged", "hornet_swarm", "drone_swarm", "orbital_swarm",
+        };
 
         foreach (var (name, type) in types)
         {
+            int dotsBefore = WeaponVfx.DotsCreated;
             var host = new GameObject("W_" + name);
             host.transform.position = Vector3.zero;
 
@@ -274,6 +285,9 @@ public sealed class RunSmokeTest : MonoBehaviour
             bool ok = weapon is DroneSwarm || weapon.ShotsFired > 0;
             if (!ok) silent.Add(name);
 
+            if (ok && !rendersWithoutTrace.Contains(name) && WeaponVfx.DotsCreated == dotsBefore)
+                invisible.Add(name);
+
             foreach (var d in dummies) if (d != null) Destroy(d);
             Destroy(host);
             yield return null;
@@ -281,6 +295,13 @@ public sealed class RunSmokeTest : MonoBehaviour
 
         Check($"arsenal : les {types.Length} armes tirent", silent.Count == 0,
               silent.Count == 0 ? "aucune silencieuse" : "silencieuses : " + string.Join(", ", silent));
+
+        // Signalé en jouant : « je ne vois pas les autres armes ». Une arme qui tue sans laisser de
+        // trace est indiscernable d'une carte sans effet — donc c'est un défaut, pas une finition.
+        Check("arsenal : aucune arme n'est invisible", invisible.Count == 0,
+              invisible.Count == 0
+                  ? $"{WeaponVfx.DotsCreated} traces dessinees"
+                  : "sans trace : " + string.Join(", ", invisible));
 
         Destroy(missilePrefab);
         Destroy(glaivePrefab);
@@ -841,6 +862,13 @@ public sealed class RunSmokeTest : MonoBehaviour
         if (boss == null) yield break;
 
         Check("boss : incarnation choisie", !string.IsNullOrEmpty(boss.DisplayName), boss.DisplayName);
+
+        // Il ne poursuit PAS le joueur : apparu hors champ, il n'est jamais rencontré et paraît ne
+        // jamais arriver. Sa distance d'apparition est donc un critère, pas un détail.
+        float spawnDist = Player.Instance != null
+            ? Vector2.Distance(boss.transform.position, Player.Instance.transform.position)
+            : float.MaxValue;
+        Check("boss : apparait dans le champ de vision", spawnDist <= 520f, $"{spawnDist:F0} px du joueur");
 
         // Un second Noyau ne doit pas s'ajouter tant que le premier vit.
         yield return new WaitForSeconds(3f);

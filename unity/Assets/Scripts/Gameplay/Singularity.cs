@@ -70,7 +70,15 @@ public sealed class Singularity : WeaponBase
             w.TickLeft -= dt;
 
             bool tick = w.TickLeft <= 0f;
-            if (tick) w.TickLeft = TickInterval;
+            if (tick)
+            {
+                w.TickLeft = TickInterval;
+
+                // Le puits est une zone qui PERSISTE : redessiné à chaque battement, il reste visible
+                // toute sa durée sans qu'on ait à gérer un objet d'effet séparé.
+                WeaponVfx.Ring(w.Center, Radius, new Color(0.67f, 0.27f, 1f), 10f, TickInterval);
+                WeaponVfx.Dot(w.Center, new Color(0.85f, 0.6f, 1f), 16f, TickInterval);
+            }
 
             var snapshot = EnemyBase.Active.ToArray();
             foreach (var e in snapshot)
