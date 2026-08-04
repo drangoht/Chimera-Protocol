@@ -593,6 +593,10 @@ avec un build de niveau 9, il encaisse ~11 PV/s, soit **sept minutes** de mise �
 affiche désormais le pourcentage en chiffres — une barre qui descend de 0,2 %/s se lit « elle ne
 bouge pas ».
 
+✅ **Validé en jouant le 2026-08-04** : « boss bouge et vaincu ». La run est désormais complète de
+bout en bout — se déplacer, tuer, ramasser, monter de niveau, **choisir une carte qui a un effet
+visible**, affronter le boss et le battre.
+
 ⚠ **Écart d'équilibrage à traiter au lot de réglage** : ce TTK très court est aussi le signe que les
 multiplicateurs de difficulté ne sont **pas encore portés** — `EnemySpawner` appelle
 `EnemyScaling.Scaled(..., 1f)`, donc ni `LevelThreat` (palier du biome), ni `DifficultyTuning`, ni
