@@ -19,6 +19,13 @@ public static class Gd
     /// Réamorce le générateur global — équivalent de <c>GD.Seed</c>. Point d'entrée du drapeau
     /// <c>--seed</c> du banc.
     /// </summary>
+    /// <summary>
+    /// Le générateur lui-même, pour la logique pure qui en prend un en paramètre (disposition de
+    /// l'arène, par exemple). <b>Le même flux que <see cref="Randf"/></b> : deux générateurs
+    /// distincts rendraient une graine incapable de reproduire une run entière.
+    /// </summary>
+    public static Pcg32 Rng => _rng;
+
     public static void Seed(ulong seed) => _rng.Seed(seed);
 
     /// <summary>Réamorce depuis l'horloge, pour une partie normale — équivalent de <c>randomize()</c>.</summary>

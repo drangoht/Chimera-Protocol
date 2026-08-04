@@ -114,6 +114,10 @@ public sealed class Player : MonoBehaviour
         Vector3 next = transform.position + (Vector3)(Velocity * dt);
         next.x = Mathf.Clamp(next.x, -Arena.HalfWidth, Arena.HalfWidth);
         next.y = Mathf.Clamp(next.y, -Arena.HalfHeight, Arena.HalfHeight);
+
+        // Les obstacles écartent au lieu d'arrêter net : un mur qui bloque brutalement transforme
+        // chaque angle en piège, alors que le jeu demande de circuler entre les masses en permanence.
+        next = ArenaObstacles.Resolve(next, PlayerBodyRadius);
         transform.position = next;
 
         if (Mathf.Abs(input.x) > 0.01f) FacingLeft = input.x < 0f;

@@ -91,6 +91,7 @@ public sealed class SceneDiagnostic : MonoBehaviour
         int listeners = FindObjectsByType<AudioListener>(FindObjectsSortMode.None).Length;
         sb.AppendLine($"AudioListener        : {(listeners == 1 ? "present" : listeners == 0 ? "ABSENT — LE JEU SERA MUET" : $"{listeners} (un seul attendu)")}");
         sb.AppendLine($"sources audio        : {FindObjectsByType<AudioSource>(FindObjectsSortMode.None).Length}");
+        sb.AppendLine($"obstacles d'arene    : {ArenaObstacles.Count}");
         sb.AppendLine($"sons joues           : {AudioSystem.PlayedCount}");
         sb.AppendLine($"musique              : {(MusicDirector.Instance != null ? MusicDirector.Instance.CurrentTrack : "AUCUN MusicDirector")}");
 

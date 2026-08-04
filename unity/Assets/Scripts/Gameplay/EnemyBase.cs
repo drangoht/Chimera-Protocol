@@ -163,6 +163,11 @@ public class EnemyBase : MonoBehaviour
         Vector2 target = player.transform.position;
 
         Vector2 next = EnemyAi.Step(Ai, self, target, Speed * SlowMultiplier, dt, ref _aiPhase);
+
+        // La faune contourne les mêmes masses que le joueur : sous Godot, un seul calque de collision
+        // bloquait les deux. Des ennemis qui traversent un pilier retireraient tout intérêt à s'y
+        // abriter.
+        next = ArenaObstacles.Resolve(next, ContactRadius * 0.5f);
         transform.position = next;
 
         if (_animator != null)

@@ -1384,6 +1384,25 @@ public sealed class RunSmokeTest : MonoBehaviour
         AudioSystem.PlaySfx("sfx_ui_button");
         Check("audio : un son est effectivement joue", AudioSystem.PlayedCount == before + 1);
 
+        // ─── Obstacles de l'arène ─────────────────────────────────────────────
+        // Un obstacle qui ne bloque pas est PIRE qu'aucun obstacle : le joueur le voit, le contourne,
+        // et découvre en le traversant que le décor mentait.
+        var obstacle = new Vector2(300f, 0f);
+        ArenaObstacles.Set(new[] { obstacle });
+
+        var pushed = ArenaObstacles.Resolve(obstacle + new Vector2(4f, 0f), 13f);
+        float distance = Vector2.Distance(pushed, obstacle);
+
+        Check("arene : un obstacle repousse ce qui s'y enfonce",
+              distance >= ArenaObstacles.Radius + 13f - 0.01f,
+              $"repousse a {distance:F0} px du centre (rayon {ArenaObstacles.Radius} + corps 13)");
+
+        var free = new Vector2(800f, 0f);
+        Check("arene : hors de l'obstacle, rien ne bouge",
+              ArenaObstacles.Resolve(free, 13f) == free);
+
+        ArenaObstacles.Clear();
+
         // ─── Police de l'interface ────────────────────────────────────────────
         // Une police absente donnerait une interface SANS TEXTE — ce qui se lit comme un écran
         // cassé, pas comme un asset manquant. Le repli existe pour ça ; ce contrôle vérifie qu'on

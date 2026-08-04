@@ -34,7 +34,50 @@ public sealed class ArenaRenderer : MonoBehaviour
         BuildBar("BordBas",    new Vector2(0f, -h), new Vector2(Arena.Width, BorderThickness), border);
         BuildBar("BordGauche", new Vector2(-w, 0f), new Vector2(BorderThickness, Arena.Height), border);
         BuildBar("BordDroite", new Vector2( w, 0f), new Vector2(BorderThickness, Arena.Height), border);
+
+        BuildObstacles(biomeId, border);
     }
+
+    /// <summary>
+    /// Obstacles : quelques masses lisibles qui créent des couloirs et des angles morts. Leur
+    /// disposition vient de <see cref="ArenaLayout"/> (logique pure, testée) et ne dépend que de la
+    /// graine — deux runs de même graine donnent la même arène.
+    /// </summary>
+    private void BuildObstacles(string? biomeId, Color accent)
+    {
+        var sprite = Resources.Load<Sprite>(DecorFor(biomeId));
+        var centers = new System.Collections.Generic.List<Vector2>();
+
+        foreach (var spot in ArenaLayout.Positions(Gd.Randf, Arena.HalfWidth, Arena.HalfHeight))
+        {
+            var position = new Vector2(spot.X, spot.Y);
+            centers.Add(position);
+
+            var go = new GameObject("Obstacle", typeof(SpriteRenderer));
+            go.transform.SetParent(transform, false);
+            go.transform.position = position;
+            go.transform.localScale = new Vector3(2f, 2f, 1f);   // masses lisibles, pas du gravier
+
+            var sr = go.GetComponent<SpriteRenderer>();
+            sr.sprite = sprite != null ? sprite : UiPrimitives.White;
+            sr.color = sprite != null ? Color.white : accent;
+
+            // Au-dessus des entités : un obstacle « infranchissable » doit OCCULTER ce qui passe
+            // derrière, sinon il se lit comme un décor au sol qu'on peut survoler.
+            sr.sortingOrder = 20;
+        }
+
+        ArenaObstacles.Set(centers);
+    }
+
+    /// <summary>Décor d'obstacle propre au biome, avec repli sur le pilier de pierre.</summary>
+    private static string DecorFor(string? biomeId) => biomeId switch
+    {
+        "fournaise" => "Environment/tile_wreck_machine",
+        "neon"      => "Environment/tile_terminal_corrupt_01",
+        "aether"    => "Environment/decor_column",
+        _           => "Environment/tile_pillar_stone",
+    };
 
     /// <summary>
     /// Sol : la tuile de pierre répétée sur toute l'arène. <c>SpriteDrawMode.Tiled</c> évite d'avoir à
