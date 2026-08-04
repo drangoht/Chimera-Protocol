@@ -374,7 +374,7 @@ Chaque lot a un **critère de sortie vérifiable**. Un lot n'est pas « fini » 
 | **3** ⬤ | **Arsenal complet** — 12 armes, 9 fusions, projectiles, VFX | 12 % | **Logique ✅** — 21 armes tirent, fusions verrouillées (§6.4). Restent les visuels et sons. |
 | **4** ⬤ | **Bestiaire complet** — 11 ennemis, affixes d'élite, 6 mini-boss, `RustedCore` (3 phases × 5 incarnations) | 14 % | Chaque entité apparaît, agit et meurt correctement ; les 5 incarnations tirent leur signature. **Le boss apparaît en jeu depuis le 2026-08-04** (§6.7) ; restent 3 mini-boss globaux et les visuels |
 | **5** ⬤ | **UI & écrans** — 18 écrans, HUD, `UiStyle`/`UiPalette`, navigation clavier/manette, `ModalQueue` | 22 % | **Parité visuelle prouvée par captures avant/après** sur les 18 écrans (§8.3) ; navigation manette complète sans souris. **La boucle de progression est branchée** (§6.7) |
-| **6** ⬤ | **Méta & persistance** — Hub, Assimilation, Défis, Codex, `SaveManager`, `GameSettings`, localisation | 13 % | Une **sauvegarde 1.26.0 réelle** se charge sans perte (§9.3) ✅ **fait** ; boucle Échos → Hub → bonus ✅ **fait** (§6.10). Restent Assimilation, Défis, Codex, les 3 langues |
+| **6** ✅ | **Méta & persistance** — Hub, Assimilation, Défis, Codex, `SaveManager`, `GameSettings`, localisation | 13 % | **✅ TERMINÉ le 2026-08-04** (§6.10) — sauvegarde 1.26.0 réelle reprise sans perte (§9.3), boucle Échos → Hub → bonus, choix du niveau et les 3 axes de difficulté, défis, Assimilation, esquive, perks de départ, options, Codex. **140 vérifications · 558 tests** |
 | **7** | **Banc & télémétrie** — flags CLI, `PowerTelemetry`, `BossTelemetry`, `PressureMeter`, `BenchAutoPilot` | 9 % | Une campagne headless tourne et produit un `power_curve.log` exploitable par `tools/power_loop.py` **sans modifier l'outil** |
 | **8** | **Build & release** — build Unity par script, `release_itch.ps1` adapté, `version.json`, icône | 5 % | Un `.exe` exporté démarre, joue une run complète et se pousse sur itch en canal de test |
 
@@ -627,8 +627,19 @@ Vérifié en scène réelle : le joueur démarre à **175 PV** au lieu de 100 (`
 `hp_boost_2` 1 → +35), donc les achats du Hub se retrouvent bien dans la run. **101 vérifications**,
 **540 tests**.
 
-⚠ Non encore vu en jouant : le **crédit des Échos en fin de run** (le banc le couvre, mais aucune run
-jouée ne s'est terminée depuis).
+✅ Crédit des Échos et choix des niveaux **validés en jouant** le 2026-08-04, ainsi que l'Assimilation.
+
+**Le reste du lot, livré le même jour** : défis et récompenses (`ChallengeSystem`, évalué **après**
+les compteurs de run, sinon les conditions cumulées se déclenchent une partie trop tard) ·
+**Assimilation** (jauges par archétype, refus qui relève le seuil, `GraftManager`) · l'**esquive** du
+joueur, jamais portée — d'où trois effets de greffe inertes, maintenant 9 sur 9 · **perks de départ**
+équipables au Hub · **options** (langue, assistance, plein écran, vsync, IPS — et *rien* qui ne
+pilote quelque chose) · **Codex** à trois onglets, avec enregistrement des découvertes.
+
+⚠ **Ce que le lot 6 n'a pas apporté, et qu'il faut savoir avant de juger le jeu** : l'**audio n'est
+pas porté du tout** — ni `AudioSystem`, ni `MusicDirector`, ni les 14 pistes, ni la banque SFX. Le
+jeu est **entièrement muet**. C'est pourquoi l'écran d'options ne propose aucun volume : un curseur
+qui ne pilote rien serait le défaut des armes invisibles appliqué à l'interface.
 
 **Puis le choix du niveau — et les trois axes de difficulté enfin branchés.** `EnemySpawner`
 multipliait tout par `1f` : le palier du biome, le réglage du joueur et le cran de saturation étaient
