@@ -11,11 +11,14 @@ public enum FrameAccent { Cyan, Violet, Gold, Steel, Danger }
 /// ici. C'est ce qui a permis, côté Godot, de refondre l'habillage complet de 18 écrans sans les
 /// rouvrir un par un.</para>
 ///
-/// <para><b>Écart assumé avec Godot</b> : les cadres « plaque blindée » y sont des textures
-/// 9-slice générées par un script Python. Ils sont reproduits ici par des <c>Image</c> superposées
-/// (fond, liseré, ombre portée) plutôt que par les mêmes textures : cela évite de dépendre d'assets
-/// dont la découpe 9-slice devrait être re-paramétrée à la main, et reste modifiable en un point.
-/// La texture d'origine pourra remplacer ce rendu sans changer aucun appelant.</para>
+/// <para><b>Les cadres « plaque blindée » sont les textures d'origine</b> — chanfreins, biseau,
+/// rivets — découpées en neuf zones (bordures réglées à l'import, cf.
+/// <c>UiFrameImportPostprocessor</c>). Un rectangle plat approché à la main était le rendu provisoire
+/// du lot 5 ; il donnait une interface juste en couleurs et en ancrages, mais qui ne ressemblait pas
+/// au jeu. Aucun appelant n'a eu à changer.</para>
+///
+/// <para>⚠ Le repli sur le rendu plat subsiste, et il est <b>volontaire</b> : une texture absente
+/// donnerait sinon des panneaux invisibles — c'est-à-dire des écrans qui paraissent vides.</para>
 /// </summary>
 public static class UiStyle
 {
@@ -45,7 +48,21 @@ public static class UiStyle
     public static GameObject Panel(Transform parent, string name, FrameAccent accent = FrameAccent.Steel)
     {
         var border = NewUiObject(name, parent);
-        border.AddComponent<Image>().color = ColorOf(accent);
+        var image = border.AddComponent<Image>();
+
+        var frame = Frame($"ui_frame_popup_{Slug(accent)}", "ui_frame_popup_cyan");
+        if (frame != null)
+        {
+            // 9-slice : les coins gardent leur taille, seuls les bords se répètent. C'est ce qui
+            // permet au même cadre de 48 px d'habiller un panneau de 1280.
+            image.sprite = frame;
+            image.type = Image.Type.Sliced;
+            image.color = ColorOf(accent);
+            return border;
+        }
+
+        // Repli plat — voir la note en tête de classe.
+        image.color = ColorOf(accent);
 
         var fill = NewUiObject("Fill", border.transform);
         fill.AddComponent<Image>().color = UiPalette.PanelBg;
@@ -54,14 +71,58 @@ public static class UiStyle
         return border;
     }
 
+    private static readonly System.Collections.Generic.Dictionary<string, Sprite?> _frames = new();
+
+    /// <summary>
+    /// Cadre par nom, avec repli. Chargé depuis <c>Resources/</c> : une texture rangée ailleurs
+    /// n'existe pas à l'exécution — le piège qui avait rendu 40 jeux d'animations introuvables.
+    /// </summary>
+    private static Sprite? Frame(string name, string fallbackName)
+    {
+        if (_frames.TryGetValue(name, out var cached)) return cached;
+
+        var sprite = Resources.Load<Sprite>("UiFrames/" + name)
+                  ?? Resources.Load<Sprite>("UiFrames/" + fallbackName);
+
+        if (sprite == null)
+            Debug.LogWarning($"[UiStyle] cadre '{name}' introuvable — rendu plat.");
+
+        _frames[name] = sprite;
+        return sprite;
+    }
+
+    private static string Slug(FrameAccent accent) => accent switch
+    {
+        FrameAccent.Cyan   => "cyan",
+        FrameAccent.Violet => "violet",
+        FrameAccent.Gold   => "or",
+        FrameAccent.Danger => "danger",
+        _                  => "disabled",
+    };
+
     /// <summary>Bouton stylé, avec ses états de survol et de pression.</summary>
     public static Button TextButton(Transform parent, string label, FrameAccent accent = FrameAccent.Cyan)
     {
-        var go = Panel(parent, "Button_" + label, accent);
-        var button = go.AddComponent<Button>();
+        var go = NewUiObject("Button_" + label, parent);
+        var image = go.AddComponent<Image>();
 
-        var fill = go.transform.GetChild(0).GetComponent<Image>();
-        button.targetGraphic = fill;
+        var frame = Frame($"ui_frame_button_{Slug(accent)}", "ui_frame_button_cyan");
+        if (frame != null)
+        {
+            image.sprite = frame;
+            image.type = Image.Type.Sliced;
+        }
+        else
+        {
+            image.color = ColorOf(accent);
+
+            var flat = NewUiObject("Fill", go.transform);
+            flat.AddComponent<Image>().color = UiPalette.PanelBg;
+            Stretch(flat, BorderWidth);
+        }
+
+        var button = go.AddComponent<Button>();
+        button.targetGraphic = image;
 
         // Transition par couleur du fond : les cadres restent stables, seul le remplissage réagit —
         // sans quoi le liseré d'accent « clignoterait » au survol.
@@ -89,7 +150,7 @@ public static class UiStyle
         // ⚠ Police intégrée : la police définitive (Share Tech Mono) demande un asset TextMeshPro,
         // travail identifié au §7.6 du plan. Tout le reste — corps, couleur, alignement — est déjà
         // à sa valeur finale.
-        text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        text.font = UiFonts.Main;
         text.fontSize = size;
         text.color = color ?? UiPalette.OffWhite;
         text.alignment = anchor;

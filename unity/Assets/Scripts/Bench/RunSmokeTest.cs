@@ -1384,6 +1384,41 @@ public sealed class RunSmokeTest : MonoBehaviour
         AudioSystem.PlaySfx("sfx_ui_button");
         Check("audio : un son est effectivement joue", AudioSystem.PlayedCount == before + 1);
 
+        // ─── Police de l'interface ────────────────────────────────────────────
+        // Une police absente donnerait une interface SANS TEXTE — ce qui se lit comme un écran
+        // cassé, pas comme un asset manquant. Le repli existe pour ça ; ce contrôle vérifie qu'on
+        // n'y est pas.
+        Check("interface : la police du jeu est chargee",
+              UiFonts.Main != null && UiFonts.Main.name.Contains("ShareTech"),
+              UiFonts.Main != null ? UiFonts.Main.name : "AUCUNE");
+
+        // Les cadres « plaque blindée » : présents ET découpés en neuf zones. Sans bordure, Unity
+        // étire chanfreins et rivets avec le reste — des coins en bouillie sur tout panneau large.
+        var frameNames = new[]
+        {
+            "ui_frame_popup_cyan", "ui_frame_popup_violet", "ui_frame_button_cyan",
+            "ui_frame_button_or", "ui_frame_button_violet", "ui_frame_button_danger",
+            "ui_frame_button_disabled",
+        };
+
+        var missingFrames = new List<string>();
+        var unsliced = new List<string>();
+
+        foreach (string name in frameNames)
+        {
+            var sprite = Resources.Load<Sprite>("UiFrames/" + name);
+            if (sprite == null) { missingFrames.Add(name); continue; }
+            if (sprite.border == Vector4.zero) unsliced.Add(name);
+        }
+
+        Check("interface : les cadres blindes sont presents", missingFrames.Count == 0,
+              missingFrames.Count == 0 ? $"{frameNames.Length} cadres"
+                                       : "manquants : " + string.Join(", ", missingFrames));
+
+        Check("interface : les cadres sont decoupes en neuf zones", unsliced.Count == 0,
+              unsliced.Count == 0 ? "bordures reglees"
+                                  : "sans bordure : " + string.Join(", ", unsliced));
+
         // ─── Musique adaptative ───────────────────────────────────────────────
         var musicGo = new GameObject("MusicHost");
         var music = musicGo.AddComponent<MusicDirector>();

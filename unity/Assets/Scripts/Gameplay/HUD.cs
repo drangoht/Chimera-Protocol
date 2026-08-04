@@ -8,10 +8,9 @@ using UnityEngine.UI;
 /// projet Godot est elle aussi bâtie en C#, ce qui rend la traduction quasi mécanique — un
 /// <c>Control</c> + <c>anchors</c> devient un <c>RectTransform</c> + ancres.</para>
 ///
-/// <para>⚠ <b>Provisoire sur un point</b> : le texte utilise la police intégrée d'Unity. La vraie
-/// police du jeu (Share Tech Mono, AA activé, corps 16) demande un asset TextMeshPro à générer —
-/// c'est un travail du lot d'interface, pas du cœur de run. Le reste (barres, ancrages, couleurs)
-/// est déjà à sa place définitive.</para>
+/// <para>Le texte utilise la police du jeu (Share Tech Mono) via <see cref="UiFonts"/> — la police
+/// par défaut d'Unity donnait une interface qui ne « ressemblait » plus au jeu, même avec des
+/// couleurs et des ancrages justes.</para>
 ///
 /// <para>Les couleurs viennent de la palette du projet : fond <c>#1A1A2E</c>, cyan <c>#44FFEE</c>,
 /// violet <c>#AA44FF</c>, or <c>#FFCC44</c>, blanc cassé <c>#D9D9F2</c>.</para>
@@ -361,7 +360,7 @@ public sealed class HUD : MonoBehaviour
         Place(go, anchor, offset, size);
 
         var text = go.GetComponent<Text>();
-        text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        text.font = UiFonts.Main;
         text.fontSize = 20;
         text.color = color;
         text.alignment = alignment;
