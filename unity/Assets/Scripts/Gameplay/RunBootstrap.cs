@@ -29,6 +29,11 @@ public sealed class RunBootstrap : MonoBehaviour
         WeaponVfx.Reset();
 
         GameManager.Instance?.StartRun();
+
+        // Les bonus permanents s'appliquent APRÈS StartRun — qui remet les statistiques à leur état
+        // de début de partie et effacerait donc tout ce que le joueur a acheté au Hub.
+        if (Player.Instance != null) MetaProgression.ApplyTo(Player.Instance.Stats);
+
         ApplyCommandLine();
         WireInventory();
 

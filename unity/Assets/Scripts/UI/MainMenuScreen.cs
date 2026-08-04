@@ -92,8 +92,10 @@ public sealed class MainMenuScreen : MonoBehaviour
         });
         _firstButton = play;
 
+        var hub = AddEntry(column.transform, "Hub", FrameAccent.Gold, enabled: true);
+        hub.onClick.AddListener(OpenHub);
+
         // Portées plus tard — grisées mais présentes, pour dire « pas encore » et non « jamais ».
-        AddEntry(column.transform, "Hub",     FrameAccent.Gold,   enabled: false);
         AddEntry(column.transform, "Codex",   FrameAccent.Violet, enabled: false);
         AddEntry(column.transform, "Options", FrameAccent.Steel,  enabled: false);
 
@@ -101,6 +103,27 @@ public sealed class MainMenuScreen : MonoBehaviour
         quit.onClick.AddListener(SceneRoot.Quit);
 
         BuildFocusChain(column.transform);
+    }
+
+    private HubScreen? _hub;
+
+    /// <summary>
+    /// Ouvre le Hub par-dessus le menu. Il est créé à la première demande : le construire d'emblée
+    /// ferait lire la sauvegarde et le catalogue avant même que le joueur ne s'y intéresse.
+    /// </summary>
+    private void OpenHub()
+    {
+        if (_hub == null)
+        {
+            _hub = gameObject.AddComponent<HubScreen>();
+            _hub.Closed += () =>
+            {
+                if (_firstButton != null && EventSystem.current != null)
+                    EventSystem.current.SetSelectedGameObject(_firstButton.gameObject);
+            };
+        }
+
+        _hub.Show();
     }
 
     private Button AddEntry(Transform parent, string label, FrameAccent accent, bool enabled)

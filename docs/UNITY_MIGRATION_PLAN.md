@@ -374,7 +374,7 @@ Chaque lot a un **critère de sortie vérifiable**. Un lot n'est pas « fini » 
 | **3** ⬤ | **Arsenal complet** — 12 armes, 9 fusions, projectiles, VFX | 12 % | **Logique ✅** — 21 armes tirent, fusions verrouillées (§6.4). Restent les visuels et sons. |
 | **4** ⬤ | **Bestiaire complet** — 11 ennemis, affixes d'élite, 6 mini-boss, `RustedCore` (3 phases × 5 incarnations) | 14 % | Chaque entité apparaît, agit et meurt correctement ; les 5 incarnations tirent leur signature. **Le boss apparaît en jeu depuis le 2026-08-04** (§6.7) ; restent 3 mini-boss globaux et les visuels |
 | **5** ⬤ | **UI & écrans** — 18 écrans, HUD, `UiStyle`/`UiPalette`, navigation clavier/manette, `ModalQueue` | 22 % | **Parité visuelle prouvée par captures avant/après** sur les 18 écrans (§8.3) ; navigation manette complète sans souris. **La boucle de progression est branchée** (§6.7) |
-| **6** | **Méta & persistance** — Hub, Assimilation, Défis, Codex, `SaveManager`, `GameSettings`, localisation | 13 % | Une **sauvegarde 1.26.0 réelle** se charge sans perte (§9.3) ; les 3 langues s'affichent |
+| **6** ⬤ | **Méta & persistance** — Hub, Assimilation, Défis, Codex, `SaveManager`, `GameSettings`, localisation | 13 % | Une **sauvegarde 1.26.0 réelle** se charge sans perte (§9.3) ✅ **fait** ; boucle Échos → Hub → bonus ✅ **fait** (§6.10). Restent Assimilation, Défis, Codex, les 3 langues |
 | **7** | **Banc & télémétrie** — flags CLI, `PowerTelemetry`, `BossTelemetry`, `PressureMeter`, `BenchAutoPilot` | 9 % | Une campagne headless tourne et produit un `power_curve.log` exploitable par `tools/power_loop.py` **sans modifier l'outil** |
 | **8** | **Build & release** — build Unity par script, `release_itch.ps1` adapté, `version.json`, icône | 5 % | Un `.exe` exporté démarre, joue une run complète et se pousse sur itch en canal de test |
 
@@ -601,6 +601,34 @@ visible**, affronter le boss et le battre.
 multiplicateurs de difficulté ne sont **pas encore portés** — `EnemySpawner` appelle
 `EnemyScaling.Scaled(..., 1f)`, donc ni `LevelThreat` (palier du biome), ni `DifficultyTuning`, ni
 l'échelle de saturation ne s'appliquent. Aucune mesure d'équilibrage n'a de sens avant.
+
+### 6.10 Lot 6 — persistance et boucle méta (2026-08-04)
+
+**La sauvegarde d'abord**, parce que c'est le seul point du portage dont l'échec est irréversible pour
+un joueur (§9.3, R5) : `user://` et `Application.persistentDataPath` sont deux dossiers différents.
+`GodotConfig` lit le format `ConfigFile` (y compris les `PackedStringArray` et les tables
+`biome:cran`), `SaveMigration` convertit, `UserData` fait l'accès disque — et la conversion, étant
+pure, se vérifie **sur la vraie sauvegarde du testeur** figée dans `tests/fixtures/`.
+Vérifié à l'exécution : *« progression Godot reprise : 60946 Echos, 14 ameliorations, 5 completions,
+5 records »*, et le second lancement ne remigre rien.
+
+⚠ La reprise ne s'exécute **que si aucune donnée Unity n'existe** — sans quoi une partie Unity déjà
+entamée serait écrasée par une vieille sauvegarde Godot, soit l'inverse exact du défaut corrigé. Et
+elle se déclenche au **premier accès** aux réglages, depuis le menu principal : une seule lecture
+prématurée créerait un fichier vierge et la condamnerait définitivement.
+
+**Puis la boucle de rétention, fermée** : `MetaUpgradeTable` (pure) lit `meta_upgrades.json` — prix du
+prochain niveau, remboursement, bonus permanents ; `MetaProgression` en est le propriétaire unique en
+mémoire ; le **Hub** s'ouvre par-dessus le menu (liste défilante des 19 améliorations, prix, niveau,
+bouton grisé hors budget) ; la fin de run crédite les Échos **affichés** — jamais un second calcul,
+qui finirait par diverger de ce que le joueur a vu.
+
+Vérifié en scène réelle : le joueur démarre à **175 PV** au lieu de 100 (`hp_boost` 2 → +40,
+`hp_boost_2` 1 → +35), donc les achats du Hub se retrouvent bien dans la run. **101 vérifications**,
+**540 tests**.
+
+⚠ Non encore vu en jouant : le **crédit des Échos en fin de run** (le banc le couvre, mais aucune run
+jouée ne s'est terminée depuis).
 
 ### 6.5 Lot 4 — bestiaire : logique complète (46/46)
 

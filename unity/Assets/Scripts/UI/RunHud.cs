@@ -113,6 +113,18 @@ public sealed class RunHud : MonoBehaviour
         // « Victoire » = le Noyau Rouillé est tombé. La run, elle, ne s'arrête qu'à la mort : battre
         // le boss marque la complétion du niveau, il ne met pas fin à la partie.
         bool victory = GameManager.Instance?.BossDefeated ?? false;
-        _runEnd?.Show(victory, runSeconds: Mathf.RoundToInt(runTime), kills: kills, cores: 0);
+        int seconds = Mathf.RoundToInt(runTime);
+
+        _runEnd?.Show(victory, runSeconds: seconds, kills: kills, cores: 0);
+
+        // ⚠ Le montant crédité est celui que l'écran AFFICHE, pas un second calcul : deux formules
+        // pour un même total finissent toujours par diverger, et le joueur voit alors une somme qu'il
+        // ne reçoit pas.
+        if (_runEnd != null) MetaProgression.AddEchoes(_runEnd.EchoesEarned);
+
+        MetaProgression.RegisterRun(kills);
+
+        string biome = GameManager.Instance?.CurrentBiomeId ?? "sanctuaire";
+        GameSettings.ReportRun(biome, seconds, victory, GameSettings.SaturationFor(biome));
     }
 }

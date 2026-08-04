@@ -198,6 +198,7 @@ public sealed class RunSmokeTest : MonoBehaviour
         yield return RunFusionChecks(systems);
         yield return RunProgressionChecks(playerGo);
         yield return RunBossSpawnChecks(gm, spawner);
+        yield return RunMetaChecks();
 
         // ─── Fin de run ───────────────────────────────────────────────────────
         gm.EndRun();
@@ -896,6 +897,82 @@ public sealed class RunSmokeTest : MonoBehaviour
         yield return null;
         Check("boss : sa chute marque la completion du niveau", gm.BossDefeated);
         Check("boss : la run continue apres sa mort", !gm.RunEnded);
+    }
+
+    /// <summary>
+    /// Vérifie la <b>boucle de rétention</b> de bout en bout : une run rapporte des Échos, les Échos
+    /// achètent une amélioration au Hub, et l'amélioration se retrouve dans les statistiques de la
+    /// run suivante. Chaque maillon est inutile sans les deux autres.
+    ///
+    /// <para>⚠ Le banc écrit dans son propre dossier utilisateur (produit
+    /// <c>ChimeraProtocolBench</c>) : il ne touche jamais la sauvegarde du joueur.</para>
+    /// </summary>
+    private IEnumerator RunMetaChecks()
+    {
+        Check("meta : le catalogue d'ameliorations se charge",
+              MetaProgression.All.Count >= 14, $"{MetaProgression.All.Count} ameliorations");
+
+        if (MetaProgression.All.Count == 0) yield break;
+
+        // ─── Gagner ───────────────────────────────────────────────────────────
+        int before = MetaProgression.CurrentEchoes;
+        MetaProgression.AddEchoes(50_000);
+        Check("meta : les Echos gagnes sont credites",
+              MetaProgression.CurrentEchoes == before + 50_000,
+              $"{before} -> {MetaProgression.CurrentEchoes}");
+
+        // ─── Dépenser ─────────────────────────────────────────────────────────
+        const string upgradeId = "hp_boost";
+        int levelBefore = MetaProgression.LevelOf(upgradeId);
+        int cost = MetaProgression.NextCost(upgradeId);
+        int walletBefore = MetaProgression.CurrentEchoes;
+
+        bool bought = MetaProgression.TryPurchase(upgradeId);
+
+        Check("meta : une amelioration s'achete", bought && MetaProgression.LevelOf(upgradeId) == levelBefore + 1,
+              $"niveau {levelBefore} -> {MetaProgression.LevelOf(upgradeId)}, prix {cost}");
+        Check("meta : l'achat debite exactement son prix",
+              MetaProgression.CurrentEchoes == walletBefore - cost,
+              $"{walletBefore} -> {MetaProgression.CurrentEchoes} pour {cost}");
+
+        // ─── Sentir ───────────────────────────────────────────────────────────
+        var stats = new PlayerStats();
+        stats.ResetForRun();
+        float baseHp = stats.MaxHp;
+        MetaProgression.ApplyTo(stats);
+
+        Check("meta : le bonus achete se retrouve dans les statistiques", stats.MaxHp > baseHp,
+              $"{baseHp:F0} -> {stats.MaxHp:F0} PV max");
+        Check("meta : les plafonds tiennent malgre le Hub",
+              stats.CooldownReduction <= StatCaps.MaxCooldownReduction + 0.001f &&
+              stats.DamageReduction <= StatCaps.MaxDamageReduction + 0.001f &&
+              stats.Speed <= StatCaps.MaxSpeed + 0.001f);
+
+        // ─── Persister ────────────────────────────────────────────────────────
+        int expected = MetaProgression.CurrentEchoes;
+        int expectedLevel = MetaProgression.LevelOf(upgradeId);
+        MetaProgression.Persist();
+        MetaProgression.Reset();   // force une relecture depuis le disque
+
+        Check("meta : l'achat survit a un rechargement",
+              MetaProgression.CurrentEchoes == expected && MetaProgression.LevelOf(upgradeId) == expectedLevel,
+              $"{MetaProgression.CurrentEchoes} Echos, niveau {MetaProgression.LevelOf(upgradeId)}");
+
+        // ─── Le Hub ───────────────────────────────────────────────────────────
+        var hubGo = new GameObject("HubHost");
+        var hub = hubGo.AddComponent<HubScreen>();
+        yield return null;
+
+        Check("hub : une ligne par amelioration", hub.RowCount == MetaProgression.All.Count,
+              $"{hub.RowCount} lignes pour {MetaProgression.All.Count} ameliorations");
+
+        hub.Show();
+        Check("hub : s'ouvre", hub.IsVisible);
+        hub.Hide();
+        Check("hub : se ferme", !hub.IsVisible);
+
+        Destroy(hubGo);
+        yield return null;
     }
 
     private void Report()
