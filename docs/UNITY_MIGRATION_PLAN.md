@@ -479,6 +479,43 @@ Mono conserve un avantage de principe pour la parité (l'export .NET de Godot es
 mais ce n'est plus une contrainte : le choix peut se faire sur d'autres critères (temps de build,
 performances, cap console/mobile).
 
+### 6.6 Première session jouée — 2026-08-04
+
+**Le jeu tourne, et la boucle est jugée fidèle.** Verdict du testeur sur le ressenti :
+« **cohérent avec la version Godot** ». C'est la seule chose qu'aucun test ne peut établir, et
+c'était le principal risque de toute la migration (§8.4).
+
+Validé en jouant : déplacement (ZQSD et flèches, retournement du sprite), barre de vie, barre d'XP
+qui se remplit et se remet à zéro par niveau, chrono et compteur d'éliminations, montée de niveau,
+pause et abandon. Et surtout : **les PV descendent par paliers**, ce qui confirme les i-frames de
+0,45 s en conditions réelles.
+
+**Trois bugs trouvés, tous invisibles à l'automatisation.** Ils méritent d'être listés ensemble,
+parce qu'ils disent la même chose :
+
+| Bug | Symptôme | Cause |
+|---|---|---|
+| Sprites absents | Seuls les projectiles visibles | Les 40 jeux d'animations étaient **hors de `Resources/`** — donc introuvables à l'exécution |
+| Joueur inerte | Ne bouge pas, aucun dégât, mais visible et animé | Une **exception dans `Awake`** (ordre des composants) empêche Unity d'appeler `Update` |
+| Barres figées | « Pas de perte de PV » | `Image.Type.Filled` **sans sprite** : Unity ignore `fillAmount` |
+
+> **Ce que ces trois bugs ont en commun** : aucun n'était détectable par les **506 tests unitaires**
+> ni par les **67 vérifications à l'exécution**. Les deux premiers tiennent à l'assemblage d'une
+> **scène réelle** — que le banc, qui construit ses objets par code, ne rencontre jamais. Le
+> troisième est un défaut d'**affichage** qui inverse le diagnostic : le symptôme se lit « les
+> valeurs ne changent pas » alors que le jeu fonctionne parfaitement.
+>
+> Le §8.4 annonçait que la session jouée serait le juge de dernière instance. Elle a trouvé trois
+> bugs bloquants en trois lancements, là où toute l'automatisation en avait trouvé zéro.
+
+⚠ **Limite du diagnostic headless, découverte à cette occasion** : la scène se fige à la première
+montée de niveau, l'écran modal mettant le jeu en pause sans que personne ne le ferme. Un relevé
+automatique ne peut donc pas dépasser ~5 s de jeu sans traitement particulier.
+
+**Outil ajouté** : `SceneDiagnostic` (`--diagnostic`) relève l'état réel de la scène de jeu —
+échelle de temps, singletons, statistiques, progression sur 30 s — et sépare deux questions que les
+symptômes confondent : « le déplacement fonctionne-t-il ? » et « l'entrée arrive-t-elle ? ».
+
 ### 6.5 Lot 4 — bestiaire : logique complète (46/46)
 
 **Bestiaire data-driven conservé** : `EnemyTable` lit `enemies.json` — **31 ennemis pour 9
