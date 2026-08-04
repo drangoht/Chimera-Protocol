@@ -54,10 +54,20 @@ public sealed class Player : MonoBehaviour
     private float _invulnTimer;
     private bool  _dead;
 
+    private FrameAnimator? _animator;
+
     private void Awake()
     {
         Instance = this;
         Stats.ResetForRun();
+
+        _animator = GetComponentInChildren<FrameAnimator>();
+        if (_animator != null)
+        {
+            var frames = SpriteFramesLibrary.Get("player");
+            if (frames != null) _animator.SetSpriteFrames(frames);
+            _animator.Play("idle");
+        }
     }
 
     private void OnDestroy()
@@ -96,6 +106,12 @@ public sealed class Player : MonoBehaviour
 
         if (Mathf.Abs(input.x) > 0.01f) FacingLeft = input.x < 0f;
         if (Velocity.sqrMagnitude > 1f) AimDirection = Velocity.normalized;
+
+        if (_animator != null)
+        {
+            _animator.FlipX = FacingLeft;
+            _animator.Play(Velocity.sqrMagnitude > 1f ? "move" : "idle");
+        }
     }
 
     /// <summary>

@@ -162,7 +162,8 @@ public static class BuildGameScene
             typeof(XpSystem), typeof(GameManager), typeof(InventorySystem),
             typeof(HUD), typeof(RunHud));
 
-        var playerGo = new GameObject("Player", typeof(SpriteRenderer), typeof(Player), typeof(ImpulseCannon));
+        var playerGo = new GameObject("Player",
+            typeof(SpriteRenderer), typeof(FrameAnimator), typeof(Player), typeof(ImpulseCannon));
         playerGo.GetComponent<SpriteRenderer>().sortingOrder = 15;
 
         var cannon = playerGo.GetComponent<ImpulseCannon>();

@@ -138,6 +138,10 @@ public sealed class EnemySpawner : MonoBehaviour
             enemy.Ai = def.Ai;
             hpPerMinute = def.HpScalingPerMinute;
             dmgPerMinute = def.DamageScalingPerMinute;
+
+            // Sans ce câblage, l'ennemi se déplace, frappe et meurt — totalement INVISIBLE.
+            var frames = SpriteFramesLibrary.ForEnemy(def.Id, def.FramesPath);
+            if (frames != null) enemy.SetSpriteFrames(frames);
         }
 
         // Le scaling vient de la logique pure : mêmes chiffres que sous Godot, par construction.

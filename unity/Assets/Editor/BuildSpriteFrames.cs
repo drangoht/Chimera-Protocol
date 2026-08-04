@@ -20,7 +20,10 @@ using UnityEngine;
 public static class BuildSpriteFrames
 {
     private const string ManifestDir = "Assets/Editor/spriteframes";
-    private const string OutputDir   = "Assets/Art/spriteframes";
+    // Sous Resources/ : c'est la SEULE façon de charger un asset par son nom à l'exécution.
+    // Rangés ailleurs, les jeux d'animations existent dans le projet mais restent inaccessibles au
+    // spawner — des ennemis parfaitement fonctionnels, et parfaitement invisibles.
+    private const string OutputDir   = "Assets/Resources/SpriteFrames";
 
     [Serializable] private sealed class Manifest
     {
