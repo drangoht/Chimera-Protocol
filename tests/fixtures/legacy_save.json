@@ -1,0 +1,48 @@
+{
+  "meta": {
+    "currentEchoes": 60946,
+    "totalEchoesEarned": 74696,
+    "totalEchoesSpent": 13750,
+    "upgrades": {
+      "damage_boost": 5,
+      "speed_boost": 3,
+      "hp_boost": 2,
+      "cooldown_reduction": 1,
+      "hp_boost_2": 1,
+      "skip": 1,
+      "cooldown_reduction_2": 2,
+      "damage_reduction_2": 2,
+      "damage_boost_2": 3,
+      "extra_life": 2,
+      "damage_absorb": 3,
+      "hp_regen": 3,
+      "core_magnetism": 3,
+      "overtime_stabilizer": 3
+    },
+    "unlockedChallenges": [
+      "first_blood",
+      "survivor_5min",
+      "survivor_13min",
+      "core_harvester",
+      "first_graft",
+      "full_chimera",
+      "forge_fusion",
+      "first_clear",
+      "exterminator",
+      "veteran",
+      "all_biomes"
+    ],
+    "unlockedPerks": [
+      "start_graft_swarm",
+      "start_extra_slot"
+    ],
+    "equippedPerk": "start_extra_slot",
+    "unlockedCosmetics": [
+      "title_chimera",
+      "title_exterminator"
+    ],
+    "equippedCosmetic": "title_exterminator",
+    "lifetimeKills": 1657399,
+    "lifetimeRuns": 155
+  }
+}

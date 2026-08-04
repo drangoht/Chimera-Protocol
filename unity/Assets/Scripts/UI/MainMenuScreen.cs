@@ -28,6 +28,11 @@ public sealed class MainMenuScreen : MonoBehaviour
 
     private void Start()
     {
+        // Premier accès aux réglages : c'est lui qui déclenche, une fois pour toutes, la reprise
+        // d'une installation Godot. Le faire ici — avant toute scène de jeu — garantit qu'aucune
+        // écriture n'a pu créer un fichier vierge et condamner la migration.
+        _ = GameSettings.Current;
+
         BuildUi();
 
         // La pause ne survit jamais à un retour au menu : rester à timeScale 0 produirait un menu
