@@ -47,15 +47,54 @@ public sealed class RunBootstrap : MonoBehaviour
         }
 
         Assimilation.ResetForRun();
-
         ApplyCommandLine();
         WireInventory();
 
-        // Après le câblage : la saturation a besoin du point de montage pour créer les armes.
+        // ⚠ APRÈS le câblage de l'inventaire, et pas avant : celui-ci déclare l'arme de départ en
+        // prenant la première arme trouvée sur le joueur. Un perk qui aurait déjà ajouté le Glaive
+        // ferait enregistrer CELUI-CI comme arme de départ — le canon deviendrait alors une arme
+        // fantôme, qui tire sans jamais monter de niveau.
+        ApplyStartingPerk();
+
+        // La saturation a besoin du point de montage pour créer les armes.
         if (_saturateArsenal) SaturateArsenal();
     }
 
     private bool _saturateArsenal;
+
+    /// <summary>
+    /// Applique le perk de départ équipé au Hub. C'est ce qui referme la boucle des défis : sans lui,
+    /// une récompense se débloque, s'équipe… et ne se voit jamais en jeu.
+    ///
+    /// <para><b>Défensif</b> : seul un perk réellement débloqué s'applique — une sauvegarde éditée ne
+    /// doit pas accorder un bonus qui n'a pas été gagné.</para>
+    /// </summary>
+    private void ApplyStartingPerk()
+    {
+        string perk = MetaProgression.EquippedPerk;
+        if (perk.Length == 0 || !MetaProgression.HasPerk(perk)) return;
+
+        switch (perk)
+        {
+            case "start_graft_swarm":
+                Assimilation.GrantStartingGraft("swarm_symbiote");
+                break;
+
+            case "start_weapon_glaive":
+                InventorySystem.Instance?.AcquireOrLevelUp("glaive");
+                break;
+
+            case "start_extra_slot":
+                Assimilation.AddBonusSlots(1);
+                break;
+
+            default:
+                Debug.LogWarning($"[RunBootstrap] perk de depart inconnu : '{perk}' — aucun effet.");
+                break;
+        }
+
+        Debug.Log($"[RunBootstrap] perk de depart applique : {perk}.");
+    }
 
     /// <summary>
     /// Donne au joueur un arsenal de fin de partie. <b>Indispensable dès qu'on raccourcit le temps

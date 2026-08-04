@@ -969,8 +969,10 @@ public sealed class RunSmokeTest : MonoBehaviour
         var hub = hubGo.AddComponent<HubScreen>();
         yield return null;
 
-        Check("hub : une ligne par amelioration", hub.RowCount == MetaProgression.All.Count,
-              $"{hub.RowCount} lignes pour {MetaProgression.All.Count} ameliorations");
+        // Une ligne par amélioration, plus celle du perk de départ en tête.
+        Check("hub : une ligne par amelioration, plus le perk de depart",
+              hub.RowCount == MetaProgression.All.Count + 1,
+              $"{hub.RowCount} lignes pour {MetaProgression.All.Count} ameliorations + 1 perk");
 
         hub.Show();
         Check("hub : s'ouvre", hub.IsVisible);
@@ -1160,6 +1162,44 @@ public sealed class RunSmokeTest : MonoBehaviour
 
         Destroy(screenGo);
         yield return null;
+
+        // ─── Perks de départ : le dernier maillon de la boucle des défis ──────
+        // Un perk débloqué mais inéquipable — ou équipé sans effet — laisserait la récompense d'un
+        // défi sans aucune conséquence en jeu.
+        Check("perks : les defis en debloquent", MetaProgression.UnlockedPerks.Count > 0,
+              $"{MetaProgression.UnlockedPerks.Count} perk(s) debloque(s)");
+
+        if (MetaProgression.UnlockedPerks.Count > 0)
+        {
+            string perk = MetaProgression.UnlockedPerks[0];
+            Check("perks : un perk debloque s'equipe", MetaProgression.EquipPerk(perk) &&
+                  MetaProgression.EquippedPerk == perk, perk);
+
+            Check("perks : un perk NON debloque est refuse",
+                  !MetaProgression.EquipPerk("perk_invente") && MetaProgression.EquippedPerk == perk,
+                  "une sauvegarde editee ne doit pas accorder un bonus non gagne");
+
+            Check("perks : chaque perk du registre a un id connu du jeu",
+                  StartingPerks.ById("start_graft_swarm") != null &&
+                  StartingPerks.ById("start_weapon_glaive") != null &&
+                  StartingPerks.ById("start_extra_slot") != null);
+
+            // L'effet « emplacement bonus » se mesure : il s'ajoute aux emplacements de la run.
+            Assimilation.ResetForRun();
+            int slotsBefore = Assimilation.SlotCount;
+            Assimilation.AddBonusSlots(1);
+            Check("perks : l'emplacement bonus s'ajoute vraiment",
+                  Assimilation.SlotCount == slotsBefore + 1,
+                  $"{slotsBefore} -> {Assimilation.SlotCount} emplacements");
+
+            // Et la greffe offerte occupe bien une place, au lieu d'être gratuite.
+            int equippedBefore = Assimilation.Equipped.Count;
+            Check("perks : la greffe offerte occupe un emplacement",
+                  Assimilation.GrantStartingGraft("swarm_symbiote") &&
+                  Assimilation.Equipped.Count == equippedBefore + 1);
+
+            MetaProgression.EquipPerk("");   // état neutre pour la suite du banc
+        }
     }
 
     /// <summary>

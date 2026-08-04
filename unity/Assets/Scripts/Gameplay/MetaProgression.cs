@@ -102,6 +102,28 @@ public static class MetaProgression
         Persist();
     }
 
+    /// <summary>Perks de départ débloqués par les défis.</summary>
+    public static IReadOnlyList<string> UnlockedPerks => Save.Meta.UnlockedPerks;
+
+    /// <summary>Ce perk a-t-il été gagné ?</summary>
+    public static bool HasPerk(string perkId) => Save.Meta.UnlockedPerks.Contains(perkId);
+
+    /// <summary>Perk de départ équipé, ou chaîne vide.</summary>
+    public static string EquippedPerk => Save.Meta.EquippedPerk;
+
+    /// <summary>
+    /// Équipe un perk de départ (ou le retire avec une chaîne vide). <b>Défensif</b> : un perk non
+    /// débloqué est refusé — une sauvegarde éditée ne doit pas donner un bonus qui n'a pas été gagné.
+    /// </summary>
+    public static bool EquipPerk(string perkId)
+    {
+        if (perkId.Length > 0 && !Save.Meta.UnlockedPerks.Contains(perkId)) return false;
+
+        Save.Meta.EquippedPerk = perkId;
+        Persist();
+        return true;
+    }
+
     /// <summary>Comptabilise une run terminée — base des défis « cumulés ».</summary>
     public static void RegisterRun(int kills)
     {

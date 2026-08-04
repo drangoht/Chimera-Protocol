@@ -154,6 +154,36 @@ public static class Assimilation
     /// <summary>Une greffe est-elle portée ?</summary>
     public static bool Has(string graftId) => _equipped.Contains(graftId);
 
+    /// <summary>
+    /// Perk de départ « emplacement bonus » : ajoute des emplacements pour la run courante, au-dessus
+    /// de ceux dérivés de la méta. Remis à zéro au prochain <see cref="ResetForRun"/>.
+    /// </summary>
+    public static void AddBonusSlots(int count)
+    {
+        if (count <= 0) return;
+        _slotCount += count;
+    }
+
+    /// <summary>
+    /// Perk de départ « greffe offerte » : équipe d'office une greffe au début de la run. Elle occupe
+    /// un emplacement — c'est une avance, pas un cadeau gratuit.
+    /// </summary>
+    public static bool GrantStartingGraft(string graftId)
+    {
+        if (_equipped.Contains(graftId)) return false;
+
+        var def = Config.GraftById(graftId);
+        if (def == null)
+        {
+            Debug.LogError($"[Assimilation] perk : greffe inconnue '{graftId}'.");
+            return false;
+        }
+
+        _equipped.Add(graftId);
+        GraftEquipped?.Invoke(def);
+        return true;
+    }
+
     /// <summary>Oublie la configuration chargée — réservé aux bancs.</summary>
     public static void Reset()
     {

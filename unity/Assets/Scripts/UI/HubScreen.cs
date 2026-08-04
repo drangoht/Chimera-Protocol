@@ -77,6 +77,8 @@ public sealed class HubScreen : MonoBehaviour
         if (_echoLabel != null)
             _echoLabel.text = $"{MetaProgression.CurrentEchoes} ÉCHOS D'AETHER";
 
+        RefreshPerkRow();
+
         foreach (var (def, button, label) in _rows)
         {
             int level = MetaProgression.LevelOf(def.Id);
@@ -173,6 +175,7 @@ public sealed class HubScreen : MonoBehaviour
         scroll.viewport = scrollRect;
         _list = content.transform;
 
+        BuildPerkRow();
         BuildRows();
 
         var close = UiStyle.TextButton(panel.transform, "Retour", FrameAccent.Steel);
@@ -186,6 +189,69 @@ public sealed class HubScreen : MonoBehaviour
 
         _firstButton = close;
     }
+
+    /// <summary>
+    /// Perk de départ : un seul à la fois, choisi ici parmi ceux que les défis ont débloqués.
+    ///
+    /// <para>Sans ce bouton, la récompense d'un défi se débloque et <b>ne sert jamais</b> — la boucle
+    /// « accomplir → gagner → jouer autrement » reste ouverte sur son dernier maillon.</para>
+    /// </summary>
+    private void BuildPerkRow()
+    {
+        if (_list == null) return;
+
+        _perkButton = UiStyle.TextButton(_list, "", FrameAccent.Violet);
+
+        var element = _perkButton.gameObject.AddComponent<LayoutElement>();
+        element.minHeight = 72f;
+
+        _perkLabel = _perkButton.GetComponentInChildren<Text>();
+        _perkButton.onClick.AddListener(CyclePerk);
+        RowCount++;
+    }
+
+    /// <summary>
+    /// Fait défiler les perks débloqués, « aucun » compris. Un cycle plutôt qu'une liste : ils sont
+    /// au plus trois, et un sous-écran pour trois entrées coûterait plus au joueur qu'il ne rapporte.
+    /// </summary>
+    private void CyclePerk()
+    {
+        var available = new List<string> { "" };
+        foreach (var perk in StartingPerks.All)
+            if (MetaProgression.HasPerk(perk.Id)) available.Add(perk.Id);
+
+        int index = available.IndexOf(MetaProgression.EquippedPerk);
+        MetaProgression.EquipPerk(available[(index + 1) % available.Count]);
+
+        Refresh();
+    }
+
+    private void RefreshPerkRow()
+    {
+        if (_perkLabel == null || _perkButton == null) return;
+
+        int unlocked = 0;
+        foreach (var perk in StartingPerks.All)
+            if (MetaProgression.HasPerk(perk.Id)) unlocked++;
+
+        if (unlocked == 0)
+        {
+            _perkLabel.text = $"{Loc.T("HUB_PERKS")} : {Loc.T("HUB_PERK_NONE")}\n" +
+                              "Accomplir des défis pour en débloquer";
+            _perkButton.interactable = false;
+            return;
+        }
+
+        var def = StartingPerks.ById(MetaProgression.EquippedPerk);
+        _perkLabel.text = def == null
+            ? $"{Loc.T("HUB_PERKS")} : {Loc.T("HUB_PERK_NONE")}   ({unlocked} disponible(s))"
+            : $"{Loc.T("HUB_PERKS")} : {Loc.T(def.NameKey)}\n{Loc.T(def.DescKey)}";
+
+        _perkButton.interactable = true;
+    }
+
+    private Button? _perkButton;
+    private Text? _perkLabel;
 
     private void BuildRows()
     {
