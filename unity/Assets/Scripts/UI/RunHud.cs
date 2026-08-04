@@ -128,7 +128,19 @@ public sealed class RunHud : MonoBehaviour
 
         MetaProgression.RegisterRun(kills);
 
-        string biome = GameManager.Instance?.CurrentBiomeId ?? "sanctuaire";
-        GameSettings.ReportRun(biome, seconds, victory, GameSettings.SaturationFor(biome));
+        string biome = GameManager.Instance?.CurrentBiomeId ?? RunConfig.BiomeId;
+        GameSettings.ReportRun(biome, seconds, victory, RunConfig.Saturation);
+
+        // ⚠ Après RegisterRun et ReportRun : les défis cumulés (« 100 runs », « N biomes terminés »)
+        // doivent voir la run qui vient de finir, sinon ils se déclenchent une partie trop tard.
+        var inv = InventorySystem.Instance;
+        var earned = ChallengeSystem.EvaluateRunEnd(
+            runSeconds: seconds, kills: kills, cores: 0, levelCompleted: victory, biomeId: biome,
+            difficultyRank: RunConfig.Saturation,
+            graftsEquipped: 0,
+            fusionForged: inv != null && inv.AppliedFusions.Count > 0);
+
+        foreach (var def in earned)
+            Debug.Log($"[RunHud] defi accompli : {def.Id}");
     }
 }

@@ -914,6 +914,11 @@ public sealed class RunSmokeTest : MonoBehaviour
 
         if (MetaProgression.All.Count == 0) yield break;
 
+        // ⚠ Repartir d'un état CONNU. Sans cela, le banc rejoue sur sa propre sauvegarde accumulée :
+        // au bout de quelques campagnes l'amélioration testée atteint son niveau maximum, et la
+        // vérification échoue pour une raison qui n'a rien à voir avec ce qu'elle mesure.
+        MetaProgression.HardReset();
+
         // ─── Gagner ───────────────────────────────────────────────────────────
         int before = MetaProgression.CurrentEchoes;
         MetaProgression.AddEchoes(50_000);
@@ -975,6 +980,62 @@ public sealed class RunSmokeTest : MonoBehaviour
         yield return null;
 
         yield return RunLevelSelectChecks();
+        yield return RunChallengeChecks();
+    }
+
+    /// <summary>
+    /// Vérifie les <b>défis</b> : ils s'évaluent en fin de run, versent leur récompense, et
+    /// <b>ne se paient qu'une fois</b>. C'est cet invariant qui protège l'économie — un défi
+    /// re-crédité à chaque run donnerait une source d'Échos infinie.
+    /// </summary>
+    private IEnumerator RunChallengeChecks()
+    {
+        Check("defis : la table se charge", ChallengeSystem.All.Count > 0,
+              $"{ChallengeSystem.All.Count} defis");
+        if (ChallengeSystem.All.Count == 0) yield break;
+
+        int doneBefore = ChallengeSystem.UnlockedCount();
+        int walletBefore = MetaProgression.CurrentEchoes;
+
+        // Une run volontairement généreuse : de quoi satisfaire plusieurs conditions d'un coup.
+        var first = ChallengeSystem.EvaluateRunEnd(
+            runSeconds: 900, kills: 900, cores: 30, levelCompleted: true,
+            biomeId: LevelThreat.Order[0], difficultyRank: 2, graftsEquipped: 3, fusionForged: true);
+
+        Check("defis : une run remplit des conditions",
+              ChallengeSystem.UnlockedCount() > doneBefore || first.Count > 0,
+              $"{doneBefore} -> {ChallengeSystem.UnlockedCount()} accomplis");
+
+        int walletAfter = MetaProgression.CurrentEchoes;
+        int doneAfter = ChallengeSystem.UnlockedCount();
+
+        // La MÊME run rejouée ne doit plus rien rapporter.
+        var second = ChallengeSystem.EvaluateRunEnd(
+            runSeconds: 900, kills: 900, cores: 30, levelCompleted: true,
+            biomeId: LevelThreat.Order[0], difficultyRank: 2, graftsEquipped: 3, fusionForged: true);
+
+        Check("defis : un defi ne se paie qu'une fois",
+              second.Count == 0 && MetaProgression.CurrentEchoes == walletAfter &&
+              ChallengeSystem.UnlockedCount() == doneAfter,
+              $"{second.Count} nouveaux, {MetaProgression.CurrentEchoes} Echos");
+
+        Check("defis : la recompense est versee", walletAfter >= walletBefore,
+              $"{walletBefore} -> {walletAfter} Echos");
+
+        // ─── L'écran ──────────────────────────────────────────────────────────
+        var screenGo = new GameObject("ChallengeHost");
+        var screen = screenGo.AddComponent<ChallengeScreen>();
+        yield return null;
+
+        Check("defis : une ligne par defi", screen.RowCount == ChallengeSystem.All.Count,
+              $"{screen.RowCount} lignes pour {ChallengeSystem.All.Count} defis");
+
+        screen.Show();
+        Check("defis : l'ecran s'ouvre", screen.IsVisible);
+        screen.Hide();
+
+        Destroy(screenGo);
+        yield return null;
     }
 
     /// <summary>

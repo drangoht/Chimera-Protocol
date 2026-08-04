@@ -154,6 +154,17 @@ public static class MetaProgression
         return refund;
     }
 
+    /// <summary>
+    /// Remet toute la méta-progression à zéro — Échos, améliorations, défis, compteurs.
+    /// <b>Irréversible.</b> Sert au banc, qui doit repartir d'un état connu à chaque campagne, et à
+    /// l'option de remise à zéro du joueur.
+    /// </summary>
+    public static void HardReset()
+    {
+        _save = new SaveData();
+        Persist();
+    }
+
     /// <summary>Écrit la sauvegarde. Point d'écriture unique.</summary>
     public static void Persist() => UserData.SaveGame(Save);
 

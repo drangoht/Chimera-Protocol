@@ -95,8 +95,11 @@ public sealed class MainMenuScreen : MonoBehaviour
         var hub = AddEntry(column.transform, "Hub", FrameAccent.Gold, enabled: true);
         hub.onClick.AddListener(OpenHub);
 
+        var challenges = AddEntry(column.transform, Loc.T("CHALLENGES_TITLE"), FrameAccent.Violet, enabled: true);
+        challenges.onClick.AddListener(OpenChallenges);
+
         // Portées plus tard — grisées mais présentes, pour dire « pas encore » et non « jamais ».
-        AddEntry(column.transform, "Codex",   FrameAccent.Violet, enabled: false);
+        AddEntry(column.transform, "Codex",   FrameAccent.Steel, enabled: false);
         AddEntry(column.transform, "Options", FrameAccent.Steel,  enabled: false);
 
         var quit = AddEntry(column.transform, "Quitter", FrameAccent.Danger, enabled: true);
@@ -121,6 +124,19 @@ public sealed class MainMenuScreen : MonoBehaviour
         }
 
         _levelSelect.Show();
+    }
+
+    private ChallengeScreen? _challenges;
+
+    private void OpenChallenges()
+    {
+        if (_challenges == null)
+        {
+            _challenges = gameObject.AddComponent<ChallengeScreen>();
+            _challenges.Closed += RestoreFocus;
+        }
+
+        _challenges.Show();
     }
 
     private void RestoreFocus()
