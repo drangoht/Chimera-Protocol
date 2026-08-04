@@ -33,6 +33,21 @@ public class EnemyBase : MonoBehaviour
     public float Damage = 5f;
     public int   XpValue = 1;
 
+    /// <summary>
+    /// Identité de l'entrée de bestiaire qui a produit cet ennemi. Posée par le spawner ; c'est elle
+    /// qui permet de compter les exemplaires vivants d'un champion.
+    /// </summary>
+    public string DefId { get; set; } = "";
+
+    /// <summary>Exemplaires vivants portant cet id — plafond simultané des champions.</summary>
+    public static int CountOf(string defId)
+    {
+        int n = 0;
+        foreach (var e in Active)
+            if (e != null && !e.IsDead && e.DefId == defId) n++;
+        return n;
+    }
+
     /// <summary>Rayon des dégâts de contact. Surchargeable — les champions frappent plus large.</summary>
     protected virtual float ContactRadius => 24f;
 

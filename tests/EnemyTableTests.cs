@@ -126,6 +126,26 @@ public class EnemyTableTests
         Assert.True(late > early, $"le pool devrait s'élargir ({early} → {late})");
     }
 
+    /// <summary>
+    /// Les champions déclarent un plafond d'exemplaires simultanés, la faune non. Sans ce champ,
+    /// le spawner ne peut pas distinguer un mini-boss d'un ennemi ordinaire — et le boss lui-même
+    /// s'empilerait, ce qui rendait autrefois sa mise à mort impossible.
+    /// </summary>
+    [Fact]
+    public void LesChampionsDeclarentUnPlafondDExemplaires()
+    {
+        var all = All();
+
+        Assert.Equal(1, all["rusted_core"].MaxSimultaneous);
+        Assert.True(all["molten_colossus"].IsChampion);
+        Assert.False(all["sanctuary_marked_walker"].IsChampion);
+
+        // La faune ordinaire est majoritaire : si l'inverse devenait vrai, le champ aurait changé de sens.
+        int champions = all.Values.Count(d => d.IsChampion);
+        Assert.True(champions > 0 && champions < all.Count / 2,
+            $"{champions} champions sur {all.Count} entrées");
+    }
+
     [Fact]
     public void UnEnnemiDeBiomeNApparaitQueDansLeSien()
     {

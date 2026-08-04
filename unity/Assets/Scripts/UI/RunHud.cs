@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -23,6 +24,7 @@ public sealed class RunHud : MonoBehaviour
 
         _pause.QuitRequested += () => SceneRoot.ChangeScene(GameScenes.MainMenu);
         _runEnd.Dismissed    += () => SceneRoot.ChangeScene(GameScenes.MainMenu);
+        _levelUp.CardChosen  += OnCardChosen;
 
         if (GameManager.Instance != null)
             GameManager.Instance.RunFinished += OnRunFinished;
@@ -50,15 +52,67 @@ public sealed class RunHud : MonoBehaviour
         if (_levelUp == null) return;
 
         var inv = InventorySystem.Instance;
+
+        // Sans inventaire, les cartes de surcharge restent le filet : une montée de niveau ne doit
+        // JAMAIS proposer un choix vide, sous peine de bloquer la run derrière une modale sans bouton.
         if (inv == null) { _levelUp.Present(LevelUpPool.BuildOverload()); return; }
 
-        // Le pool réel viendra du câblage complet de l'inventaire ; à ce stade, les cartes de
-        // surcharge garantissent qu'une montée de niveau ne propose JAMAIS un choix vide.
-        _levelUp.Present(LevelUpPool.BuildOverload());
+        // Les passifs saturés sont retirés de la liste avant le tirage — proposer une carte qui ne
+        // rapporte rien est un choix mort, indiscernable d'un bug par le joueur.
+        var passiveIds = new List<string>();
+        foreach (string id in inv.AllPassiveIds)
+            if (!inv.IsPassiveSaturated(id)) passiveIds.Add(id);
+
+        var weaponIds = inv.AllWeaponIds;
+        int weaponMax = weaponIds.Count > 0 ? inv.WeaponMaxLevel(weaponIds[0]) : 20;
+        int passiveMax = passiveIds.Count > 0 ? inv.PassiveMaxLevel(passiveIds[0]) : 20;
+
+        var cards = LevelUpPool.Build(
+            inv.WeaponLevels, weaponIds, weaponMax,
+            inv.PassiveLevels, passiveIds, passiveMax,
+            InventorySystem.MaxWeapons,
+            inv.AvailableFusions,
+            n => (int)(Gd.Randi() % (uint)Mathf.Max(1, n)));
+
+        _levelUp.Present(cards);
+    }
+
+    /// <summary>
+    /// Applique la carte choisie. <b>C'est ici que le choix devient un effet</b> : sans ce
+    /// branchement, l'écran se ferme, la run reprend, et rien n'a changé — le mode de défaillance le
+    /// plus muet du jeu, puisque tout continue de fonctionner.
+    /// </summary>
+    private void OnCardChosen(LevelUpCard card)
+    {
+        var inv = InventorySystem.Instance;
+        if (inv == null) return;
+
+        switch (card.Kind)
+        {
+            case LevelUpCardKind.NewWeapon:
+            case LevelUpCardKind.WeaponUpgrade:
+                inv.AcquireOrLevelUp(card.Id);
+                break;
+
+            case LevelUpCardKind.Passive:
+                inv.AddOrUpgradePassive(card.Id);
+                break;
+
+            case LevelUpCardKind.Fusion:
+                inv.ApplyFusion(card.Id);
+                break;
+
+            case LevelUpCardKind.Overload:
+                inv.ApplyOverload(card.Id);
+                break;
+        }
     }
 
     private void OnRunFinished(float runTime, int kills)
     {
-        _runEnd?.Show(victory: false, runSeconds: Mathf.RoundToInt(runTime), kills: kills, cores: 0);
+        // « Victoire » = le Noyau Rouillé est tombé. La run, elle, ne s'arrête qu'à la mort : battre
+        // le boss marque la complétion du niveau, il ne met pas fin à la partie.
+        bool victory = GameManager.Instance?.BossDefeated ?? false;
+        _runEnd?.Show(victory, runSeconds: Mathf.RoundToInt(runTime), kills: kills, cores: 0);
     }
 }

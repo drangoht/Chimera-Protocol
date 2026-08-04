@@ -45,7 +45,9 @@ public sealed class Bullet : MonoBehaviour
         Vector2 me = transform.position;
         float sqr = HitRadius * HitRadius;
 
-        foreach (var e in EnemyBase.Active)
+        // Copie de sécurité : un projectile perforant poursuit sa course après avoir touché, donc la
+        // boucle survit à une mise à mort — laquelle retire de EnemyBase.Active pendant l'énumération.
+        foreach (var e in EnemyBase.Active.ToArray())
         {
             if (e == null || e.IsDead) continue;
             if (((Vector2)e.transform.position - me).sqrMagnitude > sqr) continue;

@@ -36,6 +36,11 @@ public sealed class SceneDiagnostic : MonoBehaviour
         Debug.Log("[DIAG] chargement de la scene de jeu…");
         SceneRoot.ChangeScene(GameScenes.Game);
 
+        // Sans ce pilote, le relevé s'arrête à la première montée de niveau : la modale met le jeu en
+        // pause et personne ne la ferme en headless. Tout ce qui vient après — l'arsenal qui se
+        // construit, l'overtime, l'arrivée du boss — restait donc invérifiable hors session jouée.
+        StartCoroutine(AutoPickCards());
+
         yield return new WaitForSecondsRealtime(3f);
 
         var sb = new StringBuilder();
@@ -95,6 +100,12 @@ public sealed class SceneDiagnostic : MonoBehaviour
             {
                 if (player != null)
                 {
+                    // Kite circulaire : immobile, le joueur meurt en ~15 s et le relevé s'arrête avant
+                    // tout ce qu'on cherche à observer. Il ne s'agit pas de bien jouer, mais de rester
+                    // en vie assez longtemps pour que la run existe.
+                    float a = Time.realtimeSinceStartup * 1.1f;
+                    player.ExternalMoveOverride = new Vector2(Mathf.Cos(a), Mathf.Sin(a));
+
                     foreach (var e in EnemyBase.Active)
                         if (e != null)
                             minContactDist = Mathf.Min(minContactDist,
@@ -117,7 +128,48 @@ public sealed class SceneDiagnostic : MonoBehaviour
         sb.AppendLine($"coups encaisses      : {damageEvents}");
         sb.AppendLine($"distance mini vue    : {minContactDist:F1} (rayon de contact = 24)");
 
+        // ─── Ce que la run a réellement produit ───────────────────────────────
+        var inv = InventorySystem.Instance;
+        sb.AppendLine($"cartes choisies      : {_cardsPicked}");
+        sb.AppendLine($"armes portees        : {(inv != null ? inv.WeaponCount : 0)} " +
+                      $"(objets sur le joueur : {(player != null ? player.GetComponentsInChildren<WeaponBase>().Length : 0)})");
+        sb.AppendLine($"overtime             : {(gm != null && gm.Overtime ? "OUI" : "non")} " +
+                      $"(impartis {(gm != null ? gm.RunDurationSeconds : 0)} s)");
+        sb.AppendLine($"boss vu              : {(_bossSeen ? "OUI" : "NON")}");
+        sb.AppendLine($"boss vaincu          : {(gm != null && gm.BossDefeated ? "oui" : "non")}");
+
         Debug.Log(sb.ToString());
         Application.Quit(0);
+    }
+
+    private int _cardsPicked;
+    private bool _bossSeen;
+
+    /// <summary>
+    /// Choisit la première carte dès qu'un écran de montée de niveau s'ouvre — l'équivalent headless
+    /// d'un joueur qui clique. Le choix n'est pas éclairé, et n'a pas à l'être : ce qu'on vérifie est
+    /// que la run <b>continue</b> et que l'arsenal se construit vraiment.
+    /// </summary>
+    private IEnumerator AutoPickCards()
+    {
+        while (true)
+        {
+            // En temps réel : la modale met le jeu en pause (timeScale 0), donc une attente asservie
+            // au temps de jeu ne se réveillerait jamais.
+            yield return new WaitForSecondsRealtime(0.2f);
+
+            foreach (var e in EnemyBase.Active)
+                if (e is RustedCore) { _bossSeen = true; break; }
+
+            var screen = FindFirstObjectByType<LevelUpScreen>();
+            if (screen == null || !screen.IsVisible) continue;
+
+            foreach (var button in screen.GetComponentsInChildren<UnityEngine.UI.Button>())
+            {
+                button.onClick.Invoke();
+                _cardsPicked++;
+                break;
+            }
+        }
     }
 }

@@ -18,12 +18,26 @@ public sealed class EnemySpawner : MonoBehaviour
     /// <summary>Plafond d'entités simultanées — repris de <c>Constants.MaxEnemies</c>.</summary>
     public const int MaxEnemies = 200;
 
+    /// <summary>Association d'un id de bestiaire à son prefab — pour les champions et le boss.</summary>
+    [System.Serializable]
+    public sealed class NamedPrefab
+    {
+        public string Id = "";
+        public GameObject? Prefab;
+    }
+
     [Header("Apparition")]
     [Tooltip("Prefab d'ennemi à instancier.")]
     public GameObject? EnemyPrefab;
 
     [Tooltip("Prefab d'orbe d'XP laissé par les ennemis à leur mort.")]
     public GameObject? XpOrbPrefab;
+
+    [Tooltip("Prefabs dédiés des champions et du boss, par id de bestiaire.")]
+    public NamedPrefab[] ChampionPrefabs = System.Array.Empty<NamedPrefab>();
+
+    [Tooltip("Prefab de repli des champions sans classe dédiée (mini-boss globaux).")]
+    public GameObject? MiniBossPrefab;
 
     [Tooltip("Distance d'apparition autour du joueur, hors champ.")]
     public float SpawnRadius = 700f;
@@ -45,6 +59,15 @@ public sealed class EnemySpawner : MonoBehaviour
     public int TotalSpawned { get; private set; }
 
     private float _spawnTimer;
+
+    /// <summary>Prochaine vague massive (le « horde » périodique).</summary>
+    private float _waveTimer = 25f;
+
+    /// <summary>
+    /// Prochain boss. Démarre à 4 s : le premier Noyau arrive donc <b>à l'instant</b> où le décompte
+    /// atteint zéro, ce qui est exactement ce que le HUD annonce au joueur.
+    /// </summary>
+    private float _bossTimer = 4f;
 
     private Dictionary<string, EnemyTable.EnemyDef> _bestiary = new();
     private readonly Pcg32 _rng = new(0UL);
@@ -78,30 +101,78 @@ public sealed class EnemySpawner : MonoBehaviour
         ElapsedSeconds += dt;
         float minutes = ElapsedSeconds / 60f;
 
+        // ── Overtime : le temps imparti est écoulé → escalade ─────────────────
+        // Les deux temps de référence sont DÉCOUPLÉS (OvertimeEscalation) : la densité reçoit une
+        // accélération franche, le scaling des PV/dégâts une pente bien plus douce. Les confondre
+        // déversait l'accélérateur destiné à la densité — déjà saturée — sur les statistiques, à
+        // travers un terme quadratique (GDD §31).
+        var gm = GameManager.Instance;
+        bool overtime = gm?.Overtime ?? false;
+        float otMin   = overtime ? gm!.OvertimeSeconds / 60f : 0f;
+
+        float tDensity = minutes + OvertimeEscalation.DensityMinutes(otMin);
+        float tStat    = minutes + OvertimeEscalation.StatMinutes(otMin);
+
         // Cadence pilotée par un INTERVALLE décroissant, comme sous Godot — et non par un débit :
         // les deux ne produisent pas la même distribution dans le temps.
         _spawnTimer += dt;
-        float interval = SpawnCurve.SpawnInterval(minutes);
-        if (_spawnTimer < interval) return;
+        if (_spawnTimer >= SpawnCurve.SpawnInterval(tDensity))
+        {
+            _spawnTimer = 0f;
+            TrySpawnBatch(tDensity, tStat, SpawnCurve.BatchCount(tDensity));
+        }
 
-        _spawnTimer = 0f;
-        TrySpawnBatch(minutes, SpawnCurve.BatchCount(minutes));
+        // Vagues : surcharge périodique d'un gros essaim (le « horde » de Vampire Survivors).
+        _waveTimer -= dt;
+        if (_waveTimer <= 0f)
+        {
+            TrySpawnBatch(tDensity, tStat, SpawnCurve.WaveSize(tDensity, TotalSpawnMult));
+            _waveTimer = overtime ? Mathf.Max(8f, 18f - otMin * 2f) : 25f;
+        }
+
+        if (!overtime) return;
+
+        // ── Boucle de fin de partie ───────────────────────────────────────────
+        _bossTimer -= dt;
+        if (_bossTimer <= 0f)
+        {
+            SpawnBoss(tStat);
+            _bossTimer = Mathf.Max(28f, 50f - otMin * 2f);
+        }
     }
 
-    private void TrySpawnBatch(float minutes, int count)
+    private void TrySpawnBatch(float tDensity, float tStat, int count)
     {
-        int cap = Mathf.Min(SpawnCurve.MaxEnemies(minutes, TotalSpawnMult), MaxEnemies);
+        int cap = Mathf.Min(SpawnCurve.MaxEnemies(tDensity, TotalSpawnMult), MaxEnemies);
 
         for (int i = 0; i < count; i++)
         {
             if (EnemyBase.Active.Count >= cap) return;
-            SpawnOne(minutes);
+            SpawnOne(tStat);
         }
     }
 
     private void SpawnOne(float minutes)
     {
-        if (EnemyPrefab == null) return;
+        // Identité tirée des données : c'est ce qui donne 31 ennemis pour une poignée de
+        // comportements. Sans bestiaire chargé, on retombe sur les valeurs du prefab générique.
+        var def = PickDefinition(minutes);
+
+        // Plafond d'exemplaires d'un champion : sans lui, un mini-boss réapparaît à chaque lot et
+        // l'arène finit peuplée de champions plutôt que de faune.
+        if (def != null && def.IsChampion && EnemyBase.CountOf(def.Id) >= def.MaxSimultaneous) return;
+
+        Spawn(def, minutes, elitePromotion: true);
+    }
+
+    /// <summary>
+    /// Fait apparaître un ennemi. <paramref name="def"/> nul retombe sur le prefab générique et ses
+    /// valeurs d'inspecteur — le cœur de run reste jouable même sans bestiaire.
+    /// </summary>
+    private EnemyBase? Spawn(EnemyTable.EnemyDef? def, float minutes, bool elitePromotion)
+    {
+        var prefab = PrefabFor(def);
+        if (prefab == null) return null;
 
         // Apparition sur un cercle autour du joueur : hors champ, mais jamais dans son dos immédiat.
         float angle = Gd.Randf() * Mathf.PI * 2f;
@@ -111,7 +182,7 @@ public sealed class EnemySpawner : MonoBehaviour
         pos.x = Mathf.Clamp(pos.x, -Arena.HalfWidth, Arena.HalfWidth);
         pos.y = Mathf.Clamp(pos.y, -Arena.HalfHeight, Arena.HalfHeight);
 
-        var go = Instantiate(EnemyPrefab, pos, Quaternion.identity, transform);
+        var go = Instantiate(prefab, pos, Quaternion.identity, transform);
 
         // Unity conserve l'état actif du gabarit ; Godot, lui, produit TOUJOURS un nœud actif avec
         // Instantiate() + AddChild(). On reproduit la sémantique d'origine — sans quoi un gabarit
@@ -119,18 +190,16 @@ public sealed class EnemySpawner : MonoBehaviour
         go.SetActive(true);
 
         var enemy = go.GetComponent<EnemyBase>();
-        if (enemy == null) return;
+        if (enemy == null) return null;
 
         enemy.XpOrbPrefab = XpOrbPrefab;
 
-        // Identité tirée des données : c'est ce qui donne 31 ennemis pour une poignée de
-        // comportements. Sans bestiaire chargé, on retombe sur les valeurs du prefab.
-        var def = PickDefinition(minutes);
         float hpPerMinute = HpScalingPerMinute;
         float dmgPerMinute = DamageScalingPerMinute;
 
         if (def != null)
         {
+            enemy.DefId = def.Id;
             enemy.MaxHp = def.MaxHp;
             enemy.Speed = def.Speed;
             enemy.Damage = def.DamagePerSecond;
@@ -149,12 +218,53 @@ public sealed class EnemySpawner : MonoBehaviour
             EnemyScaling.Scaled(enemy.MaxHp,  minutes, hpPerMinute,  1f),
             EnemyScaling.Scaled(enemy.Damage, minutes, dmgPerMinute, 1f));
 
+        // Le boss prend l'incarnation de son biome — sprite, teinte et signature d'attaque.
+        if (enemy is RustedCore boss)
+        {
+            boss.SetBiome(Biome ?? GameManager.Instance?.CurrentBiomeId);
+            boss.AddPrefab = EnemyPrefab;
+        }
+
         // Promotion en élite APRÈS le scaling : les multiplicateurs d'affixe s'appliquent aux
-        // valeurs de la minute courante, pas aux valeurs de fiche.
-        TryPromoteToElite(enemy, minutes);
+        // valeurs de la minute courante, pas aux valeurs de fiche. Jamais sur un champion : leur
+        // TTK est calibré séparément.
+        if (elitePromotion && (def == null || !def.IsChampion)) TryPromoteToElite(enemy, minutes);
 
         TotalSpawned++;
+        return enemy;
     }
+
+    /// <summary>
+    /// Prefab d'un type d'ennemi : sa classe dédiée si elle existe, le repli des champions pour un
+    /// mini-boss non encore porté, la faune générique sinon.
+    /// </summary>
+    private GameObject? PrefabFor(EnemyTable.EnemyDef? def)
+    {
+        if (def == null) return EnemyPrefab;
+
+        foreach (var entry in ChampionPrefabs)
+            if (entry != null && entry.Id == def.Id && entry.Prefab != null) return entry.Prefab;
+
+        if (def.IsChampion && MiniBossPrefab != null) return MiniBossPrefab;
+        return EnemyPrefab;
+    }
+
+    /// <summary>
+    /// Fait apparaître le Noyau Rouillé — l'arrivée du boss est ce que <b>signifie</b> la fin du
+    /// décompte. Le plafond d'exemplaires est respecté : un second boss avant la mort du premier
+    /// rendait autrefois la mise à mort impossible.
+    /// </summary>
+    private void SpawnBoss(float tStat)
+    {
+        if (!_bestiary.TryGetValue(BossId, out var def)) return;
+        if (EnemyBase.CountOf(BossId) >= Mathf.Max(1, def.MaxSimultaneous)) return;
+
+        Spawn(def, tStat, elitePromotion: false);
+        Debug.Log($"[EnemySpawner] Noyau Rouille invoque a t={ElapsedSeconds:F0}s.");
+    }
+
+    /// <summary>Id du boss de fin de niveau — condition de victoire des cinq biomes.</summary>
+    public const string BossId = "rusted_core";
 
     /// <summary>
     /// Tire une définition d'ennemi dans le pool éligible, pondérée par <c>spawnWeight</c>.
@@ -215,5 +325,7 @@ public sealed class EnemySpawner : MonoBehaviour
         TotalSpawned = 0;
         ElitesSpawned = 0;
         _spawnTimer = 0f;
+        _waveTimer = 25f;
+        _bossTimer = 4f;
     }
 }

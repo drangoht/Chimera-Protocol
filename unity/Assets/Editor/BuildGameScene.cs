@@ -30,7 +30,15 @@ public static class BuildGameScene
         GameObject bulletPrefab = BuildBulletPrefab();
         GameObject orbPrefab    = BuildXpOrbPrefab();
 
-        BuildScene(enemyPrefab, bulletPrefab, orbPrefab);
+        // Projectiles des armes à munition : sans eux, trois familles d'armes épuisent leur recharge
+        // et ne tirent rien — silencieusement.
+        BuildMissilePrefab();
+        BuildGlaivePrefab();
+
+        var champions = BuildChampionPrefabs();
+        GameObject miniBossPrefab = BuildMiniBossPrefab();
+
+        BuildScene(enemyPrefab, bulletPrefab, orbPrefab, champions, miniBossPrefab);
         BuildMainMenu();
         RegisterScenes();
 
@@ -65,6 +73,68 @@ public static class BuildGameScene
         sr.color = new Color(0.267f, 1f, 0.933f);
         sr.sortingOrder = 20;
         return SaveAsPrefab(go, "Bullet");
+    }
+
+    private static GameObject BuildMissilePrefab()
+    {
+        var go = new GameObject("Missile", typeof(SpriteRenderer), typeof(SeekerMissile));
+        var sr = go.GetComponent<SpriteRenderer>();
+        sr.sprite = LoadSprite("Assets/Art/sprites/weapons");
+        sr.color = new Color(1f, 0.8f, 0.27f);
+        sr.sortingOrder = 20;
+        return SaveAsPrefab(go, "Missile");
+    }
+
+    private static GameObject BuildGlaivePrefab()
+    {
+        var go = new GameObject("Glaive", typeof(SpriteRenderer), typeof(GlaiveProjectile));
+        var sr = go.GetComponent<SpriteRenderer>();
+        sr.sprite = LoadSprite("Assets/Art/sprites/weapons");
+        sr.color = new Color(0.67f, 0.27f, 1f);
+        sr.sortingOrder = 20;
+        return SaveAsPrefab(go, "Glaive");
+    }
+
+    /// <summary>
+    /// Prefabs des champions qui ont une <b>classe dédiée</b> : les trois mid-boss de biome et le
+    /// boss de fin. Chacun porte sa mécanique propre — le boss ne se réduit pas à un champion plus
+    /// gros, et un champion de biome demande le réflexe inverse de l'incarnation finale du sien.
+    /// </summary>
+    private static EnemySpawner.NamedPrefab[] BuildChampionPrefabs()
+    {
+        var molten = SaveAsPrefab(NewChampion("MoltenColossus", typeof(MoltenColossus)), "MoltenColossus");
+        var cryo   = SaveAsPrefab(NewChampion("CryoSentinel",   typeof(CryoSentinel)),   "CryoSentinel");
+        var neon   = SaveAsPrefab(NewChampion("NeonWarden",     typeof(NeonWarden)),     "NeonWarden");
+
+        // Le boss est rendu bien plus grand que tout le reste : faune 32 px · mini-boss globaux 64 ·
+        // champions de biome 72 · boss 154.
+        var bossGo = NewChampion("RustedCore", typeof(RustedCore));
+        bossGo.transform.localScale = new Vector3(2.4f, 2.4f, 1f);
+        var boss = SaveAsPrefab(bossGo, "RustedCore");
+
+        return new[]
+        {
+            new EnemySpawner.NamedPrefab { Id = "molten_colossus", Prefab = molten },
+            new EnemySpawner.NamedPrefab { Id = "cryo_sentinel",   Prefab = cryo   },
+            new EnemySpawner.NamedPrefab { Id = "neon_warden",     Prefab = neon   },
+            new EnemySpawner.NamedPrefab { Id = EnemySpawner.BossId, Prefab = boss },
+        };
+    }
+
+    /// <summary>
+    /// Repli des champions <b>sans</b> classe dédiée (les trois mini-boss globaux, non encore
+    /// portés). Ils gardent ainsi leurs PV, leur taille et leur rayon de contact de champion, à
+    /// défaut de leur mécanique propre — ce qui vaut mieux que de les voir passer pour de la faune.
+    /// </summary>
+    private static GameObject BuildMiniBossPrefab()
+        => SaveAsPrefab(NewChampion("MiniBoss", typeof(MiniBoss)), "MiniBoss");
+
+    private static GameObject NewChampion(string name, System.Type type)
+    {
+        var go = new GameObject(name, typeof(SpriteRenderer), typeof(FrameAnimator), type);
+        go.GetComponent<SpriteRenderer>().sortingOrder = 12;   // au-dessus de la faune
+        go.transform.localScale = new Vector3(1.5f, 1.5f, 1f); // champions de biome : 72 px
+        return go;
     }
 
     private static GameObject BuildXpOrbPrefab()
@@ -143,7 +213,8 @@ public static class BuildGameScene
 
     // ─── Scène ────────────────────────────────────────────────────────────────
 
-    private static void BuildScene(GameObject enemyPrefab, GameObject bulletPrefab, GameObject orbPrefab)
+    private static void BuildScene(GameObject enemyPrefab, GameObject bulletPrefab, GameObject orbPrefab,
+                                   EnemySpawner.NamedPrefab[] champions, GameObject miniBossPrefab)
     {
         Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
@@ -176,6 +247,8 @@ public static class BuildGameScene
         var spawner = spawnerGo.GetComponent<EnemySpawner>();
         spawner.EnemyPrefab = enemyPrefab;
         spawner.XpOrbPrefab = orbPrefab;
+        spawner.ChampionPrefabs = champions;
+        spawner.MiniBossPrefab = miniBossPrefab;
 
         var bootGo = new GameObject("RunBootstrap", typeof(RunBootstrap));
 

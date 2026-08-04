@@ -81,6 +81,50 @@ une animation qu'on lui **donne** ; jamais qu'un `Player` **issu de la scène r�
 sans exception. Un banc qui assemble ses objets par code ne rencontre pas les ordres d'initialisation
 d'une scène authorée. **Le premier lancement humain reste irremplaçable.**
 
+### `Destroy(weapon.gameObject)` **supprime le joueur** quand l'arme est un composant du joueur
+
+**Le cas** : l'arme de départ n'est pas un objet créé pour elle — c'est un composant posé sur le
+`GameObject` du joueur, dans la scène. Une fusion remplace l'arme source par la fusion, et le port
+détruisait l'objet de l'arme remplacée : forger sa **première fusion** aurait donc détruit le joueur
+au milieu de la run.
+
+**Parade** : ne détruire l'objet que s'il a été créé pour porter cette arme — sinon détruire le
+**composant** seul (`InventorySystem.RemoveWeapon`). La question à se poser à chaque `Destroy` porté
+depuis Godot : *cet objet m'appartient-il, ou est-ce que je partage celui de quelqu'un d'autre ?*
+Sous Godot, une arme était toujours un nœud enfant, donc la question ne se posait pas.
+
+### Une destruction Unity n'est effective qu'à la **fin de la frame**
+
+Deux conséquences opposées, rencontrées le même jour :
+
+- **Mesurer trop tôt** : compter des composants juste après un `Destroy` renvoie l'objet condamné.
+  Une vérification pourtant correcte échouait pour cette seule raison — il manquait un
+  `yield return null` avant la mesure.
+- **Compter sur la destruction** pour retirer d'une liste : `OnDisable`/`OnDestroy` n'ont pas encore
+  tourné, donc l'objet est toujours dans `EnemyBase.Active`, `null`-comparable mais présent.
+
+### Une boucle qui **inflige des dégâts** ne parcourt jamais `EnemyBase.Active` directement
+
+**Symptôme** : `InvalidOperationException: Collection was modified` au milieu d'une passe d'arme —
+le reste de l'attaque est perdu et l'arme paraît simplement **rater ses cibles**, sans que rien ne
+saute aux yeux en jouant.
+
+**Cause** : frapper peut tuer, et une mort retire de la liste statique pendant l'énumération.
+
+**Parade** : `EnemyBase.Active.ToArray()` avant toute boucle qui frappe **et continue** (aura, arc,
+essaim, glaive, projectile perforant). Les boucles qui *cherchent* une cible sans frapper, ou qui
+sortent au premier impact, n'en ont pas besoin. Idiome déjà en place dans `OverloadField`,
+`PlasmaBlade`, `CryoLance`, `PyreStream`, `Singularity` — il a fallu l'étendre à `Bullet`,
+`DroneSwarm` et `GlaiveProjectile`.
+
+### Une arme est un **composant**, pas un prefab — le registre remplace `res://scenes/weapons/`
+
+Le port avait conservé l'appel `GD.Load("res://scenes/weapons/<id>.tscn")`, mais ces 21 prefabs
+n'existaient pas : le seul symptôme était une carte prise **sans effet**. `WeaponRegistry` associe
+l'id au composant et fabrique l'arme sur le porteur — plus rien à tenir synchronisé entre un id, un
+fichier et une classe. **Le banc consomme la même table**, sinon une arme absente du banc est une
+arme dont on ne sait pas si elle tire.
+
 ### L'ordre d'initialisation n'est pas garanti
 
 Godot garantit l'ordre des AutoLoads (déclaré dans `project.godot`) ; Unity ne garantit rien entre
@@ -236,3 +280,15 @@ Voir `tools/unity/dump_godot_rng.gd` et `dump_godot_easing.gd`.
 Les tests unitaires couvrent la logique pure — **10 % du code**. Ils n'auraient vu **aucun** des
 pièges de scène ci-dessus. D'où les vérifications qui tournent en **build headless**
 (`PlatformSmokeTest`, `RunSmokeTest`) : c'est là que les erreurs de portage se voient.
+
+### Un diagnostic qui s'arrête à la première modale ne diagnostique que le début
+
+`SceneDiagnostic` plafonnait à ~5 s : la première montée de niveau ouvre une modale qui met le jeu en
+pause, et **personne ne la ferme en headless**. Tout ce qui vient après — l'arsenal qui se construit,
+l'overtime, l'arrivée du boss — restait donc invérifiable hors session jouée. Il choisit désormais la
+première carte automatiquement et **kite en cercle** (immobile, le joueur meurt en ~15 s et le relevé
+s'arrête avant ce qu'on cherche à voir). Il relève en fin de course : cartes choisies, armes portées,
+overtime, boss vu, boss vaincu.
+
+⚠ Corollaire : `--run-duration=<secondes>` existe pour la même raison. Sans elle, **vérifier
+l'arrivée du boss coûte treize minutes de jeu réel** — c'est-à-dire qu'on ne la vérifie jamais.

@@ -372,8 +372,8 @@ Chaque lot a un **critère de sortie vérifiable**. Un lot n'est pas « fini » 
 | **1** ✅ | **Couche Platform** (§4) — `GTween`, `Gd`+PCG32, `GTimer`, `SceneRoot`, `Deferred`, `Spawner`, `FrameAnimator` | 8 % | **✅ TERMINÉ le 2026-08-03** — voir §6.2 |
 | **2** | **Cœur de run** — `GameManager`, `Player`, `EnemyBase`, spawn, XP, un ennemi, une arme | 14 % | Une run se joue : bouger, tuer, ramasser, monter de niveau. **P1 (§4.4) tranché et documenté** |
 | **3** ⬤ | **Arsenal complet** — 12 armes, 9 fusions, projectiles, VFX | 12 % | **Logique ✅** — 21 armes tirent, fusions verrouillées (§6.4). Restent les visuels et sons. |
-| **4** | **Bestiaire complet** — 11 ennemis, affixes d'élite, 6 mini-boss, `RustedCore` (3 phases × 5 incarnations) | 14 % | Chaque entité apparaît, agit et meurt correctement ; les 5 incarnations tirent leur signature |
-| **5** | **UI & écrans** — 18 écrans, HUD, `UiStyle`/`UiPalette`, navigation clavier/manette, `ModalQueue` | 22 % | **Parité visuelle prouvée par captures avant/après** sur les 18 écrans (§8.3) ; navigation manette complète sans souris |
+| **4** ⬤ | **Bestiaire complet** — 11 ennemis, affixes d'élite, 6 mini-boss, `RustedCore` (3 phases × 5 incarnations) | 14 % | Chaque entité apparaît, agit et meurt correctement ; les 5 incarnations tirent leur signature. **Le boss apparaît en jeu depuis le 2026-08-04** (§6.7) ; restent 3 mini-boss globaux et les visuels |
+| **5** ⬤ | **UI & écrans** — 18 écrans, HUD, `UiStyle`/`UiPalette`, navigation clavier/manette, `ModalQueue` | 22 % | **Parité visuelle prouvée par captures avant/après** sur les 18 écrans (§8.3) ; navigation manette complète sans souris. **La boucle de progression est branchée** (§6.7) |
 | **6** | **Méta & persistance** — Hub, Assimilation, Défis, Codex, `SaveManager`, `GameSettings`, localisation | 13 % | Une **sauvegarde 1.26.0 réelle** se charge sans perte (§9.3) ; les 3 langues s'affichent |
 | **7** | **Banc & télémétrie** — flags CLI, `PowerTelemetry`, `BossTelemetry`, `PressureMeter`, `BenchAutoPilot` | 9 % | Une campagne headless tourne et produit un `power_curve.log` exploitable par `tools/power_loop.py` **sans modifier l'outil** |
 | **8** | **Build & release** — build Unity par script, `release_itch.ps1` adapté, `version.json`, icône | 5 % | Un `.exe` exporté démarre, joue une run complète et se pousse sur itch en canal de test |
@@ -510,11 +510,44 @@ parce qu'ils disent la même chose :
 
 ⚠ **Limite du diagnostic headless, découverte à cette occasion** : la scène se fige à la première
 montée de niveau, l'écran modal mettant le jeu en pause sans que personne ne le ferme. Un relevé
-automatique ne peut donc pas dépasser ~5 s de jeu sans traitement particulier.
+automatique ne pouvait donc pas dépasser ~5 s de jeu. **Levée le 2026-08-04** (§6.7).
 
 **Outil ajouté** : `SceneDiagnostic` (`--diagnostic`) relève l'état réel de la scène de jeu —
 échelle de temps, singletons, statistiques, progression sur 30 s — et sépare deux questions que les
 symptômes confondent : « le déplacement fonctionne-t-il ? » et « l'entrée arrive-t-elle ? ».
+
+### 6.7 La run complète — 2026-08-04
+
+Une partie pouvait se jouer, mais elle ne pouvait pas **aboutir** : le choix de niveau ne proposait
+que les cartes de surcharge, aucun choix n'était appliqué, et rien ne faisait apparaître le boss.
+Autrement dit, ni l'arsenal ni la condition de victoire n'existaient en jeu. **88 vérifications à
+l'exécution** (contre 67) et **514 tests unitaires** (contre 506).
+
+| Livré | Détail |
+|---|---|
+| **Vrai pool de cartes** | `RunHud` construit `LevelUpPool.Build(...)` depuis l'inventaire réel — armes, passifs non saturés, fusions déblocables — et **applique** la carte choisie. Le repli sur les surcharges reste le filet du pool vide. |
+| **Passifs** | `PassiveTable` (logique pure, 7 tests) lit la section `passives` de `weapons.json`. L'amortissement de `PassiveScaling` s'applique partout **sauf sur les PV max** — l'exception du §31.6, désormais portée par une seule fonction (`IsDamped`) au lieu d'être noyée dans un `switch`. |
+| **Armes réelles** | `WeaponRegistry` : id → composant, plus aucun prefab par arme. Le banc consomme la même table. |
+| **Champions et boss** | `EnemyTable` lit `maxSimultaneous` ; le spawner respecte le plafond par id, découple densité et scaling (`OvertimeEscalation`) et lance la **boucle de boss** en overtime. `GameManager` porte `RunDurationSeconds` (780 s, lu dans `meta_upgrades.json`), `Overtime` et `BossDefeated`. |
+| **Prefabs** | `Missile`, `Glaive`, `MoltenColossus`, `CryoSentinel`, `NeonWarden`, `RustedCore` (×2,4) et un `MiniBoss` de repli pour les trois champions globaux non encore portés. |
+
+**Trois défauts trouvés par ce lot, tous muets :**
+
+1. `ApplyFusion` ne créait la fusion **que si** un point de montage lui était passé — or `RunHud`
+   n'en passe pas. La carte la plus spectaculaire du jeu aurait **supprimé une arme sans rien mettre
+   à la place**.
+2. Détruire l'objet de l'arme remplacée aurait **détruit le joueur** : l'arme de départ est un
+   composant du joueur, pas un objet à elle.
+3. `GlaiveProjectile` parcourait `EnemyBase.Active` en frappant — `InvalidOperationException` au
+   milieu de la passe, et l'arme paraît rater ses cibles.
+
+**Le diagnostic va désormais jusqu'au boss** : il choisit la première carte automatiquement, kite en
+cercle (immobile, le joueur meurt en ~15 s) et relève cartes choisies / armes portées / overtime /
+boss vu. Avec `--run-duration=15`, le Noyau Rouillé **apparaît dans la scène réelle**, sans exception.
+
+⚠ **Ce que cela ne dit toujours pas** : personne n'a encore *joué* une run jusqu'au boss. Le
+diagnostic ne ramasse presque aucun orbe (1 élimination en 30 s), donc la boucle
+« monter de niveau → choisir → sentir la différence » n'est vérifiée **qu'au banc**.
 
 ### 6.5 Lot 4 — bestiaire : logique complète (46/46)
 

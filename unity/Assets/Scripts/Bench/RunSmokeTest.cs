@@ -69,6 +69,22 @@ public sealed class RunSmokeTest : MonoBehaviour
         spawner.XpOrbPrefab = orbPrefab;
         spawner.SpawnRadius = 320f;   // resserré : le banc doit voir du combat vite
 
+        // Les prefabs de champions viennent de Resources, par le même chemin que le jeu : un
+        // champion dont le prefab manque retomberait silencieusement sur la faune générique.
+        var bossPrefab = Spawner.Load("res://scenes/entities/RustedCore.tscn");
+        spawner.MiniBossPrefab = Spawner.Load("res://scenes/entities/MiniBoss.tscn");
+        spawner.ChampionPrefabs = new[]
+        {
+            new EnemySpawner.NamedPrefab { Id = "molten_colossus", Prefab = Spawner.Load("res://scenes/entities/MoltenColossus.tscn") },
+            new EnemySpawner.NamedPrefab { Id = "cryo_sentinel",   Prefab = Spawner.Load("res://scenes/entities/CryoSentinel.tscn") },
+            new EnemySpawner.NamedPrefab { Id = "neon_warden",     Prefab = Spawner.Load("res://scenes/entities/NeonWarden.tscn") },
+            new EnemySpawner.NamedPrefab { Id = EnemySpawner.BossId, Prefab = bossPrefab },
+        };
+
+        Check("prefabs : champions et boss presents dans Resources",
+              bossPrefab != null && spawner.MiniBossPrefab != null &&
+              System.Array.TrueForAll(spawner.ChampionPrefabs, p => p.Prefab != null));
+
         gm.StartRun();
 
         int levelUps = 0;
@@ -180,6 +196,8 @@ public sealed class RunSmokeTest : MonoBehaviour
         yield return RunModalChecks();
         yield return RunScreenChecks();
         yield return RunFusionChecks(systems);
+        yield return RunProgressionChecks(playerGo);
+        yield return RunBossSpawnChecks(gm, spawner);
 
         // ─── Fin de run ───────────────────────────────────────────────────────
         gm.EndRun();
@@ -665,6 +683,176 @@ public sealed class RunSmokeTest : MonoBehaviour
         Check("fusion : l'arme source est retiree de l'arsenal", !inv.Has("impulse_cannon"));
         Check("fusion : enregistree comme forgee", inv.AppliedFusions.Count == 1);
         Check("fusion : non reforgeable", inv.ApplyFusion("rail_overcharged") == 0);
+    }
+
+    /// <summary>
+    /// Vérifie la boucle de progression <b>de bout en bout</b> : le choix de niveau propose de vraies
+    /// cartes, et chaque nature de carte produit un effet observable.
+    ///
+    /// <para>C'est le mode de défaillance le plus muet du jeu : tant que le choix n'est pas appliqué,
+    /// l'écran s'ouvre, le joueur choisit, l'écran se ferme — et rien ne change. Aucune erreur, aucun
+    /// symptôme, une run entière qui n'avance pas.</para>
+    /// </summary>
+    private IEnumerator RunProgressionChecks(GameObject playerGo)
+    {
+        var inv = InventorySystem.Instance;
+        var player = Player.Instance;
+        if (inv == null || player == null) { Check("progression : inventaire disponible", false); yield break; }
+
+        inv.Mount = playerGo.transform;
+
+        // ⚠ Une destruction Unity n'est effective qu'à la FIN de la frame : sans cette attente, la
+        // fusion forgée juste avant laisse son arme source encore comptée, et la mesure « avant »
+        // est fausse d'une unité — ce qui faisait échouer une vérification pourtant correcte.
+        yield return null;
+
+        // ─── Le pool réel ─────────────────────────────────────────────────────
+        var passiveIds = new List<string>();
+        foreach (string id in inv.AllPassiveIds)
+            if (!inv.IsPassiveSaturated(id)) passiveIds.Add(id);
+
+        var cards = LevelUpPool.Build(
+            inv.WeaponLevels, inv.AllWeaponIds, 20,
+            inv.PassiveLevels, passiveIds, 20,
+            InventorySystem.MaxWeapons, inv.AvailableFusions,
+            n => 0);
+
+        Check("niveau : le choix propose bien trois cartes", cards.Count == LevelUpPool.CardsPerLevel,
+              $"{cards.Count} cartes");
+
+        bool onlyOverload = cards.Count > 0;
+        foreach (var c in cards) if (c.Kind != LevelUpCardKind.Overload) onlyOverload = false;
+        Check("niveau : le pool ordinaire n'est pas vide en debut de run", !onlyOverload,
+              "sinon les cartes de surcharge masquent un pool qui ne se construit pas");
+
+        // ─── Une carte d'arme fait vraiment apparaître l'arme ─────────────────
+        int before = playerGo.GetComponentsInChildren<WeaponBase>().Length;
+        int level = inv.AcquireOrLevelUp("tesla_coil");
+        yield return null;
+        int after = playerGo.GetComponentsInChildren<WeaponBase>().Length;
+
+        Check("niveau : une arme acquise existe reellement sur le joueur",
+              level == 1 && after == before + 1, $"{before} -> {after} armes portees");
+
+        // La monter ne doit pas en créer une seconde : c'est la même arme qui progresse.
+        inv.AcquireOrLevelUp("tesla_coil");
+        yield return null;
+        Check("niveau : monter une arme ne la duplique pas",
+              playerGo.GetComponentsInChildren<WeaponBase>().Length == after,
+              $"{playerGo.GetComponentsInChildren<WeaponBase>().Length} armes");
+
+        // ─── Passifs ──────────────────────────────────────────────────────────
+        float hpBefore = player.Stats.MaxHp, curBefore = player.Stats.CurrentHp;
+        inv.AddOrUpgradePassive("reinforced_plating");
+        float hpGain = player.Stats.MaxHp - hpBefore;
+
+        Check("passif : la Plaque Renforcee donne des PV max", hpGain > 0f, $"+{hpGain:F0} PV max");
+        Check("passif : elle soigne d'autant (sinon la barre grandit a vide)",
+              player.Stats.CurrentHp - curBefore >= hpGain - 0.01f,
+              $"+{player.Stats.CurrentHp - curBefore:F0} PV rendus pour +{hpGain:F0} max");
+
+        // Le Capaciteur doit monter, puis se plafonner — c'est ce plafond qui empêche toutes les
+        // armes de tomber à la même cadence (régression 1.22.0).
+        for (int i = 0; i < 25; i++) inv.AddOrUpgradePassive("capacitor");
+        Check("passif : la reduction de recharge se plafonne",
+              player.Stats.CooldownReduction <= StatCaps.MaxCooldownReduction + 0.001f &&
+              player.Stats.CooldownReduction > 0f,
+              $"{player.Stats.CooldownReduction:F2} (plafond {StatCaps.MaxCooldownReduction:F2})");
+        Check("passif : un passif au plafond est declare sature",
+              inv.IsPassiveSaturated("capacitor"));
+
+        // ─── Cartes de surcharge ──────────────────────────────────────────────
+        float maxHpBefore = player.Stats.MaxHp;
+        inv.ApplyOverload(OverloadCards.Plating.Id);
+        inv.ApplyOverload(OverloadCards.Plating.Id);
+        Check("surcharge : deux prises cumulent sans plafond",
+              Mathf.Approximately(player.Stats.MaxHp - maxHpBefore, OverloadCards.Plating.Delta * 2f),
+              $"+{player.Stats.MaxHp - maxHpBefore:F0} PV pour deux prises");
+
+        float regenBefore = player.Stats.HpRegenPerSecond;
+        inv.ApplyOverload(OverloadCards.Regen.Id);
+        Check("surcharge : la regeneration monte",
+              player.Stats.HpRegenPerSecond > regenBefore);
+
+        yield return FuseStartingWeaponChecks(playerGo, inv);
+    }
+
+    /// <summary>
+    /// Fusionne l'<b>arme de départ</b> — celle qui est un composant du joueur lui-même, et non un
+    /// objet créé pour elle.
+    ///
+    /// <para>Deux façons de tout casser se cachent ici, et aucune ne se voit à la compilation :
+    /// détruire l'objet de l'arme remplacée <b>supprimerait le joueur</b> ; et ne créer la fusion que
+    /// lorsqu'un point de montage est fourni ferait <b>disparaître l'arme sans rien mettre à la
+    /// place</b> — la carte la plus spectaculaire du jeu deviendrait une perte sèche.</para>
+    /// </summary>
+    private IEnumerator FuseStartingWeaponChecks(GameObject playerGo, InventorySystem inv)
+    {
+        // Reproduit le câblage de la scène : l'arme de départ vit SUR le joueur.
+        var starting = playerGo.AddComponent<PlasmaBlade>();
+        inv.Register("plasma_blade", starting);
+        for (int i = 1; i < 5; i++) inv.AcquireOrLevelUp("plasma_blade");
+        inv.AddOrUpgradePassive("thermal_core");
+
+        Check("fusion : la fusion de l'arme de depart est deblocable", inv.CanFuse("fusion_blade"));
+
+        int inherited = inv.ApplyFusion("fusion_blade");
+        yield return null;
+
+        Check("fusion : forgee depuis l'arme de depart", inherited > 0, $"niveau herite {inherited}");
+        Check("fusion : le JOUEUR survit a la fusion de son arme de depart",
+              playerGo != null && Player.Instance != null);
+
+        bool fusionPresent = false;
+        foreach (var w in playerGo.GetComponentsInChildren<WeaponBase>())
+            if (w is FusionBlade) fusionPresent = true;
+
+        Check("fusion : l'arme fusionnee existe reellement (pas une perte seche)", fusionPresent);
+    }
+
+    /// <summary>
+    /// Vérifie l'arrivée du <b>boss de fin</b> : le décompte à zéro le fait apparaître, il n'apparaît
+    /// jamais en double, et sa chute marque la complétion du niveau.
+    ///
+    /// <para>L'empilement était un défaut réel du jeu d'origine : un second Noyau toutes les 28-50 s
+    /// avant la mort du premier rendait la mise à mort littéralement impossible.</para>
+    /// </summary>
+    private IEnumerator RunBossSpawnChecks(GameManager gm, EnemySpawner spawner)
+    {
+        // Attendre 13 minutes réelles rendrait cette partie du jeu invérifiable.
+        gm.OverrideRunDuration(1);
+        yield return null;
+
+        Check("overtime : le decompte ecoule fait basculer la run", gm.Overtime,
+              $"t={gm.RunTime:F0}s, impartis={gm.RunDurationSeconds}s");
+
+        float waited = 0f;
+        RustedCore? boss = null;
+        while (waited < 8f && boss == null)
+        {
+            foreach (var e in EnemyBase.Active)
+                if (e is RustedCore rc) { boss = rc; break; }
+
+            waited += Time.deltaTime;
+            yield return null;
+        }
+
+        Check("boss : le Noyau Rouille arrive en overtime", boss != null, $"apres {waited:F1} s");
+        if (boss == null) yield break;
+
+        Check("boss : incarnation choisie", !string.IsNullOrEmpty(boss.DisplayName), boss.DisplayName);
+
+        // Un second Noyau ne doit pas s'ajouter tant que le premier vit.
+        yield return new WaitForSeconds(3f);
+        int alive = 0;
+        foreach (var e in EnemyBase.Active) if (e is RustedCore) alive++;
+        Check("boss : jamais deux Noyaux en meme temps", alive == 1, $"{alive} vivants");
+
+        // Sa chute complète le niveau — sans terminer la run.
+        boss.TakeDamage(boss.MaxHp * 10f);
+        yield return null;
+        Check("boss : sa chute marque la completion du niveau", gm.BossDefeated);
+        Check("boss : la run continue apres sa mort", !gm.RunEnded);
     }
 
     private void Report()

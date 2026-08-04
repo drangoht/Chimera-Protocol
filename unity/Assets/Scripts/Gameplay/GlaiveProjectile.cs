@@ -63,7 +63,12 @@ public sealed class GlaiveProjectile : MonoBehaviour
     {
         float sqr = HitRadius * HitRadius;
 
-        foreach (var e in EnemyBase.Active)
+        // ⚠ Copie de sécurité, comme toutes les armes qui frappent en boucle : TakeDamage peut tuer,
+        // une mort retire de EnemyBase.Active, et l'énumérateur lève alors « Collection was modified »
+        // AU MILIEU de la passe — le reste de l'attaque est perdu, et l'arme paraît simplement rater
+        // ses cibles. Observé au banc : le glaive est la seule arme qui poursuit sa course après avoir
+        // touché, donc la seule à déclencher le défaut.
+        foreach (var e in EnemyBase.Active.ToArray())
         {
             if (e == null || e.IsDead || _hitThisPhase.Contains(e)) continue;
             if (((Vector2)e.transform.position - pos).sqrMagnitude > sqr) continue;

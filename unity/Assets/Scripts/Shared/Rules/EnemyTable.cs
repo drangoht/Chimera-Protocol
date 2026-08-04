@@ -46,6 +46,19 @@ public static class EnemyTable
         public AiType Ai = AiType.StraightChase;
         public string FramesPath = "";
         public string Biome = "";
+
+        /// <summary>
+        /// Nombre maximal d'exemplaires vivants simultanément. <b>0 = faune ordinaire</b> (aucune
+        /// limite propre, seul le plafond global s'applique) ; 1 = champion.
+        ///
+        /// <para>C'est le garde-fou qui a un jour manqué au boss : sans lui, un second Noyau Rouillé
+        /// apparaissait toutes les 28-50 s avant que le premier soit mort, et le combat devenait
+        /// littéralement impossible à finir.</para>
+        /// </summary>
+        public int MaxSimultaneous;
+
+        /// <summary>Ce type est-il un champion (mini-boss ou boss) ?</summary>
+        public bool IsChampion => MaxSimultaneous > 0;
     }
 
     /// <summary>Analyse un ou plusieurs fichiers de bestiaire et les fusionne.</summary>
@@ -79,6 +92,7 @@ public static class EnemyTable
                     DamageScalingPerMinute = Flt(e, "damageScalingPerMinute", 0.06f),
                     FramesPath = Str(e, "framesPath"),
                     Biome = Str(e, "biome"),
+                    MaxSimultaneous = Int(e, "maxSimultaneous"),
                 };
 
                 if (e.TryGetProperty("ai", out var ai)) def.Ai = ParseAi(Str(ai, "type"));

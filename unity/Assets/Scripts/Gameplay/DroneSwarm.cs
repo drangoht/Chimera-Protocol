@@ -76,7 +76,9 @@ public class DroneSwarm : WeaponBase
         float sqr = DroneRadius * DroneRadius;
         bool hit = false;
 
-        foreach (var e in EnemyBase.Active)
+        // Copie de sécurité : un drone frappe tous les ennemis de son rayon, donc la boucle continue
+        // après une mise à mort — et une mort retire de EnemyBase.Active pendant l'énumération.
+        foreach (var e in EnemyBase.Active.ToArray())
         {
             if (e == null || e.IsDead) continue;
             if (((Vector2)e.transform.position - pos).sqrMagnitude > sqr) continue;

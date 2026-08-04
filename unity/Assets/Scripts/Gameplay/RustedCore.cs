@@ -150,6 +150,17 @@ public sealed class RustedCore : EnemyBase
         }
     }
 
+    /// <summary>
+    /// Sa chute <b>complète le niveau</b> — elle ne met pas fin à la run, qui ne s'arrête qu'à la
+    /// mort du joueur. C'est la seule condition de victoire des cinq biomes.
+    /// </summary>
+    protected override void Die()
+    {
+        if (IsDead) return;
+        GameManager.Instance?.RegisterBossDefeated();
+        base.Die();
+    }
+
     private void UpdateAdds(float dt)
     {
         if (!BossPhases.SummonsAdds(Phase) || AddPrefab == null) return;
