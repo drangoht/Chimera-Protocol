@@ -178,6 +178,7 @@ public sealed class RunSmokeTest : MonoBehaviour
         yield return RunEliteChecks(enemyPrefab);
         yield return RunBossChecks(enemyPrefab);
         yield return RunModalChecks();
+        yield return RunScreenChecks();
         yield return RunFusionChecks(systems);
 
         // ─── Fin de run ───────────────────────────────────────────────────────
@@ -498,6 +499,69 @@ public sealed class RunSmokeTest : MonoBehaviour
 
         Destroy(screenGo);
         ModalQueue.Reset();
+        yield return null;
+    }
+
+    /// <summary>
+    /// Vérifie l'écran de pause et le bilan de fin de run — chacun sur SON piège documenté.
+    /// </summary>
+    private IEnumerator RunScreenChecks()
+    {
+        // ─── Pause ────────────────────────────────────────────────────────────
+        var pauseGo = new GameObject("PauseScreen");
+        var pause = pauseGo.AddComponent<PauseScreen>();
+        yield return null;
+
+        Check("pause : masquee au demarrage", !pause.IsVisible && !SceneRoot.Paused);
+
+        pause.Open("Contenu de test");
+        yield return null;
+        Check("pause : ouvre et fige le jeu", pause.IsVisible && SceneRoot.Paused);
+
+        // Le piege historique : avec un contenu tres long, les boutons doivent RESTER atteignables.
+        // Ils vivent hors de la zone de defilement, donc leur nombre ne bouge pas.
+        var longBody = string.Join(System.Environment.NewLine,
+            System.Linq.Enumerable.Repeat("arme niveau 20 — passif — greffe", 80));
+        pause.Open(longBody);
+        yield return null;
+
+        var pauseButtons = pauseGo.GetComponentsInChildren<UnityEngine.UI.Button>(true);
+        Check("pause : les boutons survivent a un contenu tres long", pauseButtons.Length == 2,
+              $"{pauseButtons.Length} boutons");
+
+        pause.Resume();
+        yield return null;
+        Check("pause : la reprise leve la pause", !pause.IsVisible && !SceneRoot.Paused);
+
+        Destroy(pauseGo);
+
+        // ─── Fin de run ───────────────────────────────────────────────────────
+        var endGo = new GameObject("RunEndScreen");
+        var end = endGo.AddComponent<RunEndScreen>();
+        yield return null;
+
+        end.Show(victory: false, runSeconds: 600, kills: 320, cores: 7);
+        yield return null;
+
+        Check("fin de run : s'affiche", end.IsVisible);
+        Check("fin de run : des Echos sont gagnes", end.EchoesEarned > 0, $"{end.EchoesEarned}");
+
+        // LE piege : la somme animee doit atterrir EXACTEMENT sur le total credite. Sous Godot,
+        // les deux venaient de calculs differents et divergeaient des qu'un multiplicateur entrait
+        // en jeu — le joueur voyait un chiffre et en recevait un autre.
+        yield return new WaitForSecondsRealtime(1.2f);
+        Check("fin de run : la somme animee egale le total credite",
+              end.DisplayedEchoes == end.EchoesEarned,
+              $"affiche={end.DisplayedEchoes}, credite={end.EchoesEarned}");
+
+        // Meme exigence avec un multiplicateur de palier, la ou la divergence apparaissait.
+        end.Show(victory: true, runSeconds: 600, kills: 320, cores: 7, tierMult: 1.6);
+        end.SkipAnimation();
+        Check("fin de run : egalite maintenue avec un multiplicateur de palier",
+              end.DisplayedEchoes == end.EchoesEarned,
+              $"affiche={end.DisplayedEchoes}, credite={end.EchoesEarned}");
+
+        Destroy(endGo);
         yield return null;
     }
 
