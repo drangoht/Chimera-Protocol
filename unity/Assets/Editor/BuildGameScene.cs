@@ -111,7 +111,7 @@ public static class BuildGameScene
         camGo.transform.position = new Vector3(0f, 0f, -10f);
         camGo.tag = "MainCamera";
 
-        var menuGo = new GameObject("MainMenu", typeof(MainMenuScreen));
+        var menuGo = new GameObject("MainMenu", typeof(MainMenuScreen), typeof(SceneDiagnostic));
 
         // Un EventSystem est INDISPENSABLE : sans lui, aucun bouton ne reçoit de clic ni de focus,
         // et le menu paraît simplement inerte — sans la moindre erreur.

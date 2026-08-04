@@ -23,7 +23,22 @@ public sealed class FrameAnimator : MonoBehaviour
     /// <summary>Couples (sprite, animation) déjà signalés — pour ne pas répéter l'avertissement.</summary>
     private static readonly HashSet<string> _warned = new();
 
-    private SpriteRenderer _renderer = null!;
+    private SpriteRenderer? _rendererCache;
+
+    /// <summary>
+    /// Rendu associé, résolu <b>à la demande</b>.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Ne pas remplacer par un champ assigné dans <c>Awake</c>. Unity ne garantit aucun ordre
+    /// entre les <c>Awake</c> de deux composants : un appelant dont l'<c>Awake</c> tourne en premier
+    /// obtiendrait <c>null</c> et lèverait une exception. Le coût réel de cette erreur est
+    /// disproportionné — <b>une exception dans <c>Awake</c> empêche Unity d'appeler <c>Update</c>
+    /// sur le composant</b>, qui devient donc entièrement inerte, sans que rien ne le signale
+    /// ailleurs que dans le journal.
+    /// </remarks>
+    private SpriteRenderer? Renderer => _rendererCache != null
+        ? _rendererCache
+        : _rendererCache = GetComponent<SpriteRenderer>();
     private SpriteFramesAsset? _frames;
     private SpriteFramesAsset.Animation? _current;
 
@@ -38,8 +53,8 @@ public sealed class FrameAnimator : MonoBehaviour
     /// <summary>Miroir horizontal — équivalent de <c>flip_h</c>.</summary>
     public bool FlipX
     {
-        get => _renderer != null && _renderer.flipX;
-        set { if (_renderer != null) _renderer.flipX = value; }
+        get => Renderer != null && Renderer.flipX;
+        set { if (Renderer != null) Renderer.flipX = value; }
     }
 
     /// <summary>Nom de l'animation en cours, chaîne vide s'il n'y en a pas.</summary>
@@ -53,8 +68,6 @@ public sealed class FrameAnimator : MonoBehaviour
     /// d'un ennemi après son animation de mort.
     /// </summary>
     public event Action<string>? AnimationFinished;
-
-    private void Awake() => _renderer = GetComponent<SpriteRenderer>();
 
     /// <summary>
     /// Installe le jeu d'animations — équivalent de <c>SetSpriteFrames</c>. Réinitialise la lecture.
@@ -150,8 +163,11 @@ public sealed class FrameAnimator : MonoBehaviour
     private void ApplyFrame()
     {
         if (_current == null || _current.Frames.Length == 0) return;
+        var renderer = Renderer;
+        if (renderer == null) return;
+
         int i = Mathf.Clamp(_frameIndex, 0, _current.Frames.Length - 1);
-        _renderer.sprite = _current.Frames[i];
+        renderer.sprite = _current.Frames[i];
     }
 
     private void WarnOnce(string animName)

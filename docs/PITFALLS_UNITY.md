@@ -55,6 +55,32 @@ C'est exactement la contrainte d'ordre que Godot imposait sur `base._Ready()` �
 s'agissait d'initialisation, ici de **capture**. La règle survit à la migration, sa justification
 non : ne pas supposer qu'un piège disparu ne revient pas sous un autre visage.
 
+### Une exception dans `Awake` rend le composant **entièrement inerte** — le pire piège rencontré
+
+**Symptôme observé en jouant** : le joueur ne se déplace plus du tout, ne perd aucun PV, sa
+régénération ne tourne pas — mais il est **visible et animé**, et les orbes continuent de l'attirer.
+Aucun message à l'écran.
+
+**Cause** : `Player.Awake()` appelait `_animator.Play("idle")` alors que `FrameAnimator.Awake()`
+n'avait pas encore tourné — son `SpriteRenderer` valait `null`. L'exception interrompt `Awake`, et
+**Unity cesse alors d'appeler `Update` sur ce composant**. Comme `Instance = this` était affecté
+*avant* le point de rupture, tout ce qui interroge le joueur de l'extérieur (orbes, ennemis, HUD)
+continuait de fonctionner : d'où un faisceau de symptômes qui ne désigne aucune cause commune.
+
+**Parade** : ne jamais résoudre une dépendance de composant dans `Awake` pour la consommer depuis un
+autre `Awake`. Résoudre **à la demande** :
+
+```csharp
+private SpriteRenderer? _cache;
+private SpriteRenderer? Renderer => _cache != null ? _cache : _cache = GetComponent<SpriteRenderer>();
+```
+
+⚠ **Ce qu'il faut en retenir pour la méthode** : ce bug est passé au travers de **506 tests
+unitaires et 67 vérifications à l'exécution**. Les vérifications testaient que `FrameAnimator` joue
+une animation qu'on lui **donne** ; jamais qu'un `Player` **issu de la scène réelle** s'initialise
+sans exception. Un banc qui assemble ses objets par code ne rencontre pas les ordres d'initialisation
+d'une scène authorée. **Le premier lancement humain reste irremplaçable.**
+
 ### L'ordre d'initialisation n'est pas garanti
 
 Godot garantit l'ordre des AutoLoads (déclaré dans `project.godot`) ; Unity ne garantit rien entre
