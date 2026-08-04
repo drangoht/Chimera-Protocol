@@ -90,8 +90,12 @@ public static class EnemyAi
                 break;
 
             case EnemyTable.AiType.BossCore:
-                // Le boss ne poursuit pas : il tient sa position et attaque à distance.
-                return self;
+                // ⚠ Le boss AVANCE vers le joueur — lentement (46 px/s de fiche), mais sans jamais
+                // s'arrêter. Le port l'avait figé sur place, et le symptôme en jeu était sans appel :
+                // « le boss se voit mais n'approche pas, il reste bloqué en haut de l'écran ». Sa
+                // lenteur EST sa signature : elle laisse le temps de manœuvrer sans jamais offrir de
+                // répit, là où un boss immobile se contourne et s'oublie.
+                break;
 
             case EnemyTable.AiType.StraightChase:
             default:

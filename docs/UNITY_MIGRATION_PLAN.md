@@ -567,10 +567,36 @@ ont demandé leur propre appel.
 ne se voit ni par un projectile ni par un drone doit laisser une trace — et *le boss apparaît dans le
 champ de vision*.
 
-⚠ **Ce que cela ne dit toujours pas** : personne n'a encore *joué* une run jusqu'au boss. Le
-diagnostic ne ramasse presque aucun orbe, donc la boucle « monter de niveau → choisir → sentir la
-différence » n'est vérifiée **qu'au banc**. Et les traces sont un **placeholder assumé** : les VFX
-d'origine (dessin procédural, 11 shaders, particules) restent à porter.
+⚠ **Ce que cela ne dit toujours pas** : personne n'a encore *joué* une run complète de treize
+minutes. Et les traces sont un **placeholder assumé** : les VFX d'origine (dessin procédural,
+11 shaders, particules) restent à porter.
+
+### 6.9 « Le boss n'approche pas », « sa barre ne baisse pas » (2026-08-04)
+
+Deux retours de la même session, deux natures opposées — et c'est ce qui les rend instructifs.
+
+**Le premier était un vrai défaut de portage.** `EnemyAi` figeait `BossCore` sur place
+(`return self`), commentaire à l'appui : « le boss ne poursuit pas ». **C'est faux** :
+`src/Entities/Boss/RustedCore.cs` calcule `Velocity = toPlayer * Speed` avec
+`Speed = _baseSpeed × BossPhases.SpeedMult(phase)` — 46 px/s, ×1,18 en phase III — et ne s'arrête
+que pendant la surcharge de bascule. Un commentaire affirmatif avait remplacé une lecture du code
+d'origine, et rien ne le contredisait : phases, incarnations, signatures et adds fonctionnaient tous.
+→ le boss avance, s'immobilise en surcharge, et une vérification l'exige désormais
+(*« boss : il AVANCE vers le joueur »* — 600 px → 213 px en 2 s).
+
+**Le second n'était pas un défaut du jeu, mais de l'outil.** Mesuré dans la scène réelle : la barre
+descend bien, de **99,6 % à 95,3 % en 20 s**. Le Noyau a 5 115 PV et son TTK a été arrêté côté Godot
+sur une session jouée à **~488 DPS** (trois armes L20 + fusion, GDD §20.6) ; affronté à la 60ᵉ seconde
+avec un build de niveau 9, il encaisse ~11 PV/s, soit **sept minutes** de mise à mort.
+**`--run-duration` abrège le décompte, pas la construction du build.** → `--saturate-arsenal`
+(les deux vont ensemble) : avec un arsenal réel, le même boss tombe **en moins de 15 s**. Et le HUD
+affiche désormais le pourcentage en chiffres — une barre qui descend de 0,2 %/s se lit « elle ne
+bouge pas ».
+
+⚠ **Écart d'équilibrage à traiter au lot de réglage** : ce TTK très court est aussi le signe que les
+multiplicateurs de difficulté ne sont **pas encore portés** — `EnemySpawner` appelle
+`EnemyScaling.Scaled(..., 1f)`, donc ni `LevelThreat` (palier du biome), ni `DifficultyTuning`, ni
+l'échelle de saturation ne s'appliquent. Aucune mesure d'équilibrage n'a de sens avant.
 
 ### 6.5 Lot 4 — bestiaire : logique complète (46/46)
 

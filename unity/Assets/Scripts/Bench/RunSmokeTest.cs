@@ -863,12 +863,27 @@ public sealed class RunSmokeTest : MonoBehaviour
 
         Check("boss : incarnation choisie", !string.IsNullOrEmpty(boss.DisplayName), boss.DisplayName);
 
-        // Il ne poursuit PAS le joueur : apparu hors champ, il n'est jamais rencontré et paraît ne
-        // jamais arriver. Sa distance d'apparition est donc un critère, pas un détail.
+        // Son arrivée doit se voir : elle est un événement, pas un ajout silencieux à la nuée.
         float spawnDist = Player.Instance != null
             ? Vector2.Distance(boss.transform.position, Player.Instance.transform.position)
             : float.MaxValue;
         Check("boss : apparait dans le champ de vision", spawnDist <= 520f, $"{spawnDist:F0} px du joueur");
+
+        // ⚠ LE critère manquant, et signalé en jouant : « le boss se voit mais n'approche pas ».
+        // Le port l'avait figé sur place, alors que l'original avance à 46 px/s. Un boss immobile se
+        // contourne et s'oublie — et rien, dans les phases ni les signatures, ne le signalait.
+        if (Player.Instance != null)
+        {
+            Player.Instance.transform.position = (Vector2)boss.transform.position + new Vector2(600f, 0f);
+            float before = Vector2.Distance(boss.transform.position, Player.Instance.transform.position);
+
+            // Joueur immobile : c'est bien le boss qui doit combler l'écart.
+            yield return new WaitForSeconds(2f);
+
+            float after = Vector2.Distance(boss.transform.position, Player.Instance.transform.position);
+            Check("boss : il AVANCE vers le joueur", after < before - 20f,
+                  $"{before:F0} px -> {after:F0} px en 2 s");
+        }
 
         // Un second Noyau ne doit pas s'ajouter tant que le premier vit.
         yield return new WaitForSeconds(3f);

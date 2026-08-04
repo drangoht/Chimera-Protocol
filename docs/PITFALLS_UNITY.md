@@ -138,15 +138,33 @@ progression cassée, et c'est le pire retour possible sur un choix de carte. →
 sprite recyclés : ni shader ni matériau, donc rien qui puisse être supprimé du build) + un critère au
 banc : **toute arme qui ne se voit ni par un projectile ni par un drone doit laisser une trace**.
 
-### Un ennemi qui **ne poursuit pas** doit apparaître dans le champ
+### Un commentaire affirmatif n'est pas une lecture du code d'origine
 
-Le boss (`ai.type = boss_core`) tient sa position — c'est un combat d'espace, pas de course. Apparu
-au rayon d'apparition ordinaire (700 px), il restait **hors écran pour toute la run** : le joueur
-kite ailleurs, ne le croise jamais, et conclut qu'il n'arrive pas. Le mécanisme, lui, fonctionnait
-parfaitement.
+Le port avait figé le boss sur place — `case BossCore: return self;` — avec le commentaire « le boss
+ne poursuit pas : il tient sa position ». **C'était faux.** `src/Entities/Boss/RustedCore.cs` fait
+`Velocity = toPlayer * Speed` à 46 px/s (×1,18 en phase III) et ne s'arrête que pendant la surcharge.
+Symptôme en jouant : « le boss se voit mais n'approche pas, il reste bloqué en haut de l'écran ».
 
-**Parade** : rayon d'apparition dédié (`BossSpawnRadius`, 380 px) **et** un repère au HUD — barre de
-boss avec la phase, plus un cap et une distance. La barre seule dit « il existe » sans dire « où ».
+Rien ne le contredisait : phases, incarnations, signatures et adds fonctionnaient tous, et
+`enemies.json` déclarait pourtant une vitesse de **46** — une donnée qui n'aurait aucun sens pour une
+entité immobile. **Une valeur de données inutilisée est un indice de portage manquant.**
+
+**Parade** : rayon d'apparition dédié (`BossSpawnRadius`, 380 px — son arrivée est un événement) et
+un repère au HUD (phase, cap, distance). La barre seule dit « il existe » sans dire « où ».
+
+### Raccourcir le temps imparti n'abrège pas la construction du build
+
+« La barre de vie du boss ne baisse pas » — mesuré : elle descend de **99,6 % à 95,3 % en 20 s**. Le
+Noyau a 5 115 PV et son TTK a été calibré côté Godot sur ~488 DPS (trois armes L20 + fusion) ;
+affronté à la 60ᵉ seconde avec un build de niveau 9, il encaisse ~11 PV/s, soit **sept minutes**.
+
+`--run-duration` doit donc s'employer **avec** `--saturate-arsenal` : avec un arsenal réel, le même
+boss tombe en moins de 15 s. Un outil qui abrège une dimension du jeu sans abréger les autres ne
+mesure plus ce qu'on croit — même famille que `--start-at`, qui donne un arsenal saturé sur un
+personnage nu, donc une **borne haute**.
+
+Et une barre qui descend de 0,2 %/s se lit « elle ne bouge pas » : afficher le **pourcentage en
+chiffres** ne relève pas du confort, c'est ce qui distingue « lent » de « cassé ».
 
 ### L'ordre d'initialisation n'est pas garanti
 

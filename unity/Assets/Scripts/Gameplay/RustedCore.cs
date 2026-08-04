@@ -14,8 +14,10 @@ using UnityEngine;
 /// surcharge de bascule se rejouerait en boucle. <see cref="BossPhases.Advance"/> porte cette
 /// garantie.</para>
 ///
-/// <para>⚠ Le boss ne poursuit pas le joueur (<c>ai.type = boss_core</c>) : il tient sa position et
-/// attaque à distance. C'est ce qui fait de lui un combat d'espace, pas de course.</para>
+/// <para>⚠ Le boss <b>avance</b> vers le joueur, mais lentement (46 px/s de fiche, ×1,18 en phase
+/// III) : c'est un combat d'espace, pas de course — il laisse le temps de manœuvrer sans jamais
+/// offrir de répit. Le port l'avait figé sur place, et un boss immobile se contourne et s'oublie.
+/// Il ne s'arrête que pendant la <b>surcharge</b> de bascule de phase, qui est le télégraphe.</para>
 /// </summary>
 public sealed class RustedCore : EnemyBase
 {
@@ -52,6 +54,23 @@ public sealed class RustedCore : EnemyBase
     private float _surchargeLeft;
     private float _signatureTimer;
     private float _addsTimer;
+
+    /// <summary>Vitesse de fiche, avant le facteur de phase. Figée à la première apparition.</summary>
+    private float _baseSpeed;
+
+    /// <summary>
+    /// Déplacement du boss : il avance vers le joueur à sa vitesse de phase, et <b>s'immobilise
+    /// pendant la surcharge</b> — c'est ce qui rend la bascule lisible.
+    /// </summary>
+    protected override void UpdateMovement(Player player, float dt)
+    {
+        if (_baseSpeed <= 0f) _baseSpeed = Speed;
+
+        if (IsSurcharging) return;
+
+        Speed = _baseSpeed * BossPhases.SpeedMult(Phase);
+        base.UpdateMovement(player, dt);
+    }
 
     /// <summary>Prefab des renforts invoqués en phase III.</summary>
     public GameObject? AddPrefab;

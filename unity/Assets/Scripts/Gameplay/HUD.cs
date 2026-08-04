@@ -149,9 +149,9 @@ public sealed class HUD : MonoBehaviour
     }
 
     /// <summary>
-    /// Barre du boss : elle n'apparaît que s'il vit. <b>C'est elle qui rend le boss trouvable</b> —
-    /// il ne poursuit pas le joueur, donc sans repère à l'écran, une run entière peut se dérouler
-    /// sans jamais le croiser, et il paraît ne jamais arriver.
+    /// Barre du boss : elle n'apparaît que s'il vit. Elle porte sa phase, son cap et sa distance —
+    /// il avance lentement (46 px/s), donc savoir <b>d'où</b> il vient vaut autant que savoir qu'il
+    /// est là.
     /// </summary>
     private void UpdateBossBar()
     {
@@ -175,7 +175,10 @@ public sealed class HUD : MonoBehaviour
                 bearing = $"   {Compass(d)} {d.magnitude:F0}";
             }
 
-            _bossLabel.text = $"{boss.DisplayName}   PHASE {boss.Phase + 1}{bearing}";
+            // Le pourcentage est affiché en toutes lettres : contre un boss à 5 000 PV, une barre qui
+            // descend de 0,2 % par seconde se lit « elle ne bouge pas ». Le chiffre, lui, bouge.
+            _bossLabel.text = $"{boss.DisplayName}   PHASE {BossPhases.RomanNumeral(boss.Phase)}   " +
+                              $"{boss.HpRatio * 100f:F1} %{bearing}";
         }
     }
 

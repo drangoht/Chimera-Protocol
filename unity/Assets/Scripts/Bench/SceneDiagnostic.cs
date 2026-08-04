@@ -118,12 +118,22 @@ public sealed class SceneDiagnostic : MonoBehaviour
                 yield return null;
             }
 
+            // Suivi du boss : « sa barre ne baisse pas » peut vouloir dire deux choses très
+            // différentes — la barre est cassée, ou le boss encaisse trop pour un build de ce niveau.
+            RustedCore? boss = null;
+            foreach (var e in EnemyBase.Active)
+                if (e is RustedCore rc && !rc.IsDead) { boss = rc; break; }
+
+            string bossInfo = boss != null
+                ? $"  BOSS {boss.CurrentHp,7:F0}/{boss.MaxHp,7:F0} ({boss.HpRatio * 100f,5:F1} %)"
+                : "";
+
             sb.AppendLine($"t={step * 5,2}s  ennemis={EnemyBase.Active.Count,3}  " +
                           $"elim.={(gm != null ? gm.Kills : 0),3}  " +
                           $"xp={(xp != null ? xp.CurrentXp : 0),3}/niv {(xp != null ? xp.CurrentLevel : 0)}  " +
                           $"PV={(player != null ? player.Stats.CurrentHp : 0),6:F1}  " +
                           $"orbes={FindObjectsByType<XpOrb>(FindObjectsSortMode.None).Length,3}  " +
-                          $"dmin={minContactDist,6:F0}");
+                          $"dmin={minContactDist,6:F0}{bossInfo}");
         }
 
         sb.AppendLine();

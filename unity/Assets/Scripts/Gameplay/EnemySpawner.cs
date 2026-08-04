@@ -42,7 +42,7 @@ public sealed class EnemySpawner : MonoBehaviour
     [Tooltip("Distance d'apparition autour du joueur, hors champ.")]
     public float SpawnRadius = 700f;
 
-    [Tooltip("Distance d'apparition du boss — dans le champ, puisqu'il ne se déplace pas.")]
+    [Tooltip("Distance d'apparition du boss — dans le champ : son arrivée doit se voir.")]
     public float BossSpawnRadius = 380f;
 
     [Header("Scaling (repris de enemies.json)")]
@@ -179,9 +179,9 @@ public sealed class EnemySpawner : MonoBehaviour
 
         // Apparition sur un cercle autour du joueur : hors champ, mais jamais dans son dos immédiat.
         //
-        // ⚠ Le boss est l'exception, et elle est nécessaire : son IA `boss_core` **ne poursuit pas**
-        // — il tient sa position. Apparu au rayon ordinaire, il restait hors écran jusqu'à la fin de
-        // la run, et le joueur concluait qu'il n'arrivait jamais. On le pose donc dans le champ.
+        // ⚠ Le boss apparaît plus près, dans le champ : son arrivée est un ÉVÉNEMENT, et elle doit se
+        // voir. Il avance ensuite de lui-même — lentement (46 px/s) — donc la rencontre est garantie
+        // dans tous les cas ; le rayon ne décide que de la mise en scène.
         float radius = def != null && def.Ai == EnemyTable.AiType.BossCore ? BossSpawnRadius : SpawnRadius;
 
         float angle = Gd.Randf() * Mathf.PI * 2f;

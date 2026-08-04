@@ -31,17 +31,58 @@ public sealed class RunBootstrap : MonoBehaviour
         GameManager.Instance?.StartRun();
         ApplyCommandLine();
         WireInventory();
+
+        // Après le câblage : la saturation a besoin du point de montage pour créer les armes.
+        if (_saturateArsenal) SaturateArsenal();
+    }
+
+    private bool _saturateArsenal;
+
+    /// <summary>
+    /// Donne au joueur un arsenal de fin de partie. <b>Indispensable dès qu'on raccourcit le temps
+    /// imparti</b> : abréger le décompte n'abrège pas la construction du build, et le boss — calibré
+    /// sur un TTK joué avec trois armes de niveau 20 — devient alors un mur de patience. Mesuré :
+    /// 4,7 % de ses PV en 20 s avec un build de niveau 9, soit ~7 minutes de mise à mort.
+    ///
+    /// <para>⚠ Ce n'est pas une aide de jeu : c'est un <b>outil de mesure</b>, et il donne une borne
+    /// haute — l'arsenal est saturé alors que le personnage n'a ni les PV ni les cartes de surcharge
+    /// qu'une vraie run de treize minutes aurait accumulés.</para>
+    /// </summary>
+    private void SaturateArsenal()
+    {
+        var inv = InventorySystem.Instance;
+        if (inv == null) return;
+
+        foreach (string id in inv.AllWeaponIds)
+        {
+            if (!inv.Has(id) && inv.WeaponCount >= InventorySystem.MaxWeapons) continue;
+            for (int level = 0; level < inv.WeaponMaxLevel(id); level++) inv.AcquireOrLevelUp(id);
+        }
+
+        foreach (string id in inv.AllPassiveIds)
+            for (int level = 0; level < 10; level++) inv.AddOrUpgradePassive(id);
+
+        Debug.Log($"[RunBootstrap] arsenal sature : {inv.WeaponCount} armes.");
     }
 
     /// <summary>
-    /// Options de ligne de commande. <c>--run-duration=&lt;secondes&gt;</c> raccourcit le temps
-    /// imparti : sans elle, <b>vérifier l'arrivée du boss coûte treize minutes de jeu réel</b>, ce qui
-    /// revient en pratique à ne jamais la vérifier.
+    /// Options de ligne de commande.
+    ///
+    /// <list type="bullet">
+    ///   <item><c>--run-duration=&lt;secondes&gt;</c> raccourcit le temps imparti : sans elle,
+    ///         <b>vérifier l'arrivée du boss coûte treize minutes de jeu réel</b>, ce qui revient en
+    ///         pratique à ne jamais la vérifier.</item>
+    ///   <item><c>--saturate-arsenal</c> donne un arsenal de fin de partie. <b>Les deux vont
+    ///         ensemble</b> : raccourcir le décompte sans donner le build correspondant fait affronter
+    ///         le boss avec les moyens de la première minute.</item>
+    /// </list>
     /// </summary>
     private void ApplyCommandLine()
     {
         foreach (string arg in System.Environment.GetCommandLineArgs())
         {
+            if (arg == "--saturate-arsenal") { _saturateArsenal = true; continue; }
+
             if (!arg.StartsWith("--run-duration=", System.StringComparison.Ordinal)) continue;
 
             if (int.TryParse(arg.Substring("--run-duration=".Length), out int seconds) && seconds > 0)
