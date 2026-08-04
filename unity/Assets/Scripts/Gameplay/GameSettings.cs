@@ -31,8 +31,26 @@ public static class GameSettings
             // Gameplay sans créer un cycle entre assemblies.
             Loc.Language = _current.Language;
 
+            ApplyDisplay(_current);
             return _current;
         }
+    }
+
+    /// <summary>
+    /// Applique les réglages d'affichage au démarrage. Sans cet appel, un joueur qui avait choisi le
+    /// plein écran le retrouverait décoché au lancement suivant : la préférence serait bien
+    /// enregistrée, mais jamais rejouée — l'un des rares défauts qu'un test ne voit pas et qu'un
+    /// joueur remarque à chaque lancement.
+    /// </summary>
+    private static void ApplyDisplay(SettingsData settings)
+    {
+        if (Application.isBatchMode) return;   // rien à régler sans fenêtre
+
+        Screen.fullScreenMode = settings.DisplayMode == 2
+            ? FullScreenMode.FullScreenWindow
+            : FullScreenMode.Windowed;
+
+        QualitySettings.vSyncCount = settings.Vsync ? 1 : 0;
     }
 
     /// <summary>Écrit les réglages sur disque.</summary>

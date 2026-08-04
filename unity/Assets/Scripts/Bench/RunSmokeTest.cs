@@ -1223,6 +1223,37 @@ public sealed class RunSmokeTest : MonoBehaviour
         select.Hide();
         Destroy(selectGo);
 
+        // ─── Options ──────────────────────────────────────────────────────────
+        var optionsGo = new GameObject("OptionsHost");
+        var options = optionsGo.AddComponent<OptionsScreen>();
+        yield return null;
+
+        Check("options : les reglages sont proposes", options.RowCount >= 5,
+              $"{options.RowCount} reglages");
+
+        options.Show();
+        Check("options : l'ecran s'ouvre", options.IsVisible);
+        options.Hide();
+        Destroy(optionsGo);
+        yield return null;
+
+        // La langue doit changer POUR DE BON : la table est relue, donc un même libellé change.
+        string languageBefore = GameSettings.Current.Language;
+        string labelBefore = Loc.T("MENU_PLAY");
+
+        GameSettings.Current.Language = languageBefore == "fr" ? "en" : "fr";
+        Loc.Language = GameSettings.Current.Language;
+        Loc.Reset();
+
+        Check("options : changer de langue change les libelles",
+              Loc.T("MENU_PLAY") != labelBefore,
+              $"'{labelBefore}' ({languageBefore}) -> '{Loc.T("MENU_PLAY")}' ({Loc.Language})");
+
+        // Remise dans la langue d'origine : le banc ne doit pas laisser d'effet de bord.
+        GameSettings.Current.Language = languageBefore;
+        Loc.Language = languageBefore;
+        Loc.Reset();
+
         // ─── Les trois axes agissent-ils vraiment ? ───────────────────────────
         RunConfig.Choose(LevelThreat.Order[0], 0);
         float baseSpawn = RunConfig.SpawnMult;

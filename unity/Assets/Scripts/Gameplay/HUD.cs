@@ -31,6 +31,7 @@ public sealed class HUD : MonoBehaviour
     private Text?  _timerLabel;
     private Text?  _arsenalLabel;
     private Text?  _dashLabel;
+    private Text?  _fpsLabel;
     private Text?  _bannerLabel;
     private Text?  _bossLabel;
     private Image? _bossFill;
@@ -148,6 +149,31 @@ public sealed class HUD : MonoBehaviour
         UpdateBossBar();
         UpdateBanner();
         UpdateDash();
+        UpdateFps();
+    }
+
+    private float _fpsAccumulator;
+    private int _fpsFrames;
+
+    /// <summary>
+    /// Compteur d'images, si le joueur l'a demandé dans les options. <b>Moyenné sur une demi-seconde</b> :
+    /// afficher la valeur instantanée donne un nombre qui saute trop pour être lu, et rend le
+    /// diagnostic d'une chute de cadence plus difficile, pas plus facile.
+    /// </summary>
+    private void UpdateFps()
+    {
+        if (_fpsLabel == null) return;
+
+        if (!GameSettings.Current.ShowFps) { _fpsLabel.text = ""; return; }
+
+        _fpsAccumulator += Time.unscaledDeltaTime;
+        _fpsFrames++;
+
+        if (_fpsAccumulator < 0.5f) return;
+
+        _fpsLabel.text = $"{_fpsFrames / _fpsAccumulator:F0} IPS";
+        _fpsAccumulator = 0f;
+        _fpsFrames = 0;
     }
 
     /// <summary>
@@ -266,6 +292,10 @@ public sealed class HUD : MonoBehaviour
         _dashLabel = BuildLabel(canvasGo.transform, "Dash", new Vector2(1f, 0f),
                                 new Vector2(-320f, 60f), new Vector2(300f, 26f), Cyan, TextAnchor.LowerRight);
         _dashLabel.fontSize = 18;
+
+        _fpsLabel = BuildLabel(canvasGo.transform, "Fps", new Vector2(1f, 1f),
+                               new Vector2(-140f, -24f), new Vector2(120f, 26f), OffWhite, TextAnchor.UpperRight);
+        _fpsLabel.fontSize = 16;
 
         BuildBossPanel(canvasGo.transform);
 

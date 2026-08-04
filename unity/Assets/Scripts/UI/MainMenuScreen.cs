@@ -98,9 +98,11 @@ public sealed class MainMenuScreen : MonoBehaviour
         var challenges = AddEntry(column.transform, Loc.T("CHALLENGES_TITLE"), FrameAccent.Violet, enabled: true);
         challenges.onClick.AddListener(OpenChallenges);
 
-        // Portées plus tard — grisées mais présentes, pour dire « pas encore » et non « jamais ».
-        AddEntry(column.transform, "Codex",   FrameAccent.Steel, enabled: false);
-        AddEntry(column.transform, "Options", FrameAccent.Steel,  enabled: false);
+        var options = AddEntry(column.transform, Loc.T("OPTIONS_TITLE"), FrameAccent.Steel, enabled: true);
+        options.onClick.AddListener(OpenOptions);
+
+        // Porté plus tard — grisé mais présent, pour dire « pas encore » et non « jamais ».
+        AddEntry(column.transform, "Codex", FrameAccent.Steel, enabled: false);
 
         var quit = AddEntry(column.transform, "Quitter", FrameAccent.Danger, enabled: true);
         quit.onClick.AddListener(SceneRoot.Quit);
@@ -124,6 +126,24 @@ public sealed class MainMenuScreen : MonoBehaviour
         }
 
         _levelSelect.Show();
+    }
+
+    private OptionsScreen? _options;
+
+    private void OpenOptions()
+    {
+        if (_options == null)
+        {
+            _options = gameObject.AddComponent<OptionsScreen>();
+            _options.Closed += RestoreFocus;
+
+            // Changer de langue doit se voir IMMÉDIATEMENT, y compris sur le menu qui est dessous.
+            // Recharger la scène est le moyen le plus sûr : chaque écran se reconstruit avec la
+            // nouvelle table, sans qu'aucun d'eux n'ait à connaître le mécanisme.
+            _options.LanguageChanged += () => SceneRoot.ChangeScene(GameScenes.MainMenu);
+        }
+
+        _options.Show();
     }
 
     private ChallengeScreen? _challenges;
