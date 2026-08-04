@@ -154,6 +154,10 @@ public sealed class InventorySystem : MonoBehaviour
         int next = current + 1;
         _weaponLevels[weaponId] = next;
 
+        // Première acquisition : l'arme entre au Codex. C'est la seule façon dont l'arsenal se
+        // dévoile — une arme jamais portée doit rester une découverte à faire.
+        if (current == 0) GameSettings.DiscoverWeapon(weaponId);
+
         if (_weaponNodes.TryGetValue(weaponId, out var weapon))
             ApplyWeaponStats(weaponId, next, weapon);
         else

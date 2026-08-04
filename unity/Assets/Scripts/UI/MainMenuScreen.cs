@@ -101,8 +101,8 @@ public sealed class MainMenuScreen : MonoBehaviour
         var options = AddEntry(column.transform, Loc.T("OPTIONS_TITLE"), FrameAccent.Steel, enabled: true);
         options.onClick.AddListener(OpenOptions);
 
-        // Porté plus tard — grisé mais présent, pour dire « pas encore » et non « jamais ».
-        AddEntry(column.transform, "Codex", FrameAccent.Steel, enabled: false);
+        var codex = AddEntry(column.transform, Loc.T("MENU_CODEX"), FrameAccent.Violet, enabled: true);
+        codex.onClick.AddListener(OpenCodex);
 
         var quit = AddEntry(column.transform, "Quitter", FrameAccent.Danger, enabled: true);
         quit.onClick.AddListener(SceneRoot.Quit);
@@ -126,6 +126,19 @@ public sealed class MainMenuScreen : MonoBehaviour
         }
 
         _levelSelect.Show();
+    }
+
+    private CodexScreen? _codex;
+
+    private void OpenCodex()
+    {
+        if (_codex == null)
+        {
+            _codex = gameObject.AddComponent<CodexScreen>();
+            _codex.Closed += RestoreFocus;
+        }
+
+        _codex.Show();
     }
 
     private OptionsScreen? _options;

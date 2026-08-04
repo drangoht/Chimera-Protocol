@@ -60,6 +60,41 @@ public static class GameSettings
         UserData.SaveSettings(_current);
     }
 
+    /// <summary>
+    /// Armes de signature des personnages : toujours considérées découvertes. Sans cette exception,
+    /// le Codex s'ouvrirait entièrement vide pour un joueur qui vient de finir sa première run avec
+    /// l'arme de départ — il aurait pourtant vu cette arme pendant treize minutes.
+    /// </summary>
+    public static readonly string[] SignatureWeapons =
+        { "impulse_cannon", "drone_swarm", "plasma_blade", "vector_lance" };
+
+    /// <summary>L'arme a-t-elle déjà été portée (ou est-elle une arme de signature) ?</summary>
+    public static bool IsWeaponDiscovered(string weaponId)
+        => System.Array.IndexOf(SignatureWeapons, weaponId) >= 0
+        || Current.DiscoveredWeapons.Contains(weaponId);
+
+    /// <summary>Marque une arme comme découverte, à sa première acquisition.</summary>
+    public static void DiscoverWeapon(string weaponId)
+    {
+        if (weaponId.Length == 0 || Current.DiscoveredWeapons.Contains(weaponId)) return;
+
+        Current.DiscoveredWeapons.Add(weaponId);
+        Save();
+    }
+
+    /// <summary>La greffe a-t-elle déjà été assimilée au moins une fois ?</summary>
+    public static bool IsGraftDiscovered(string graftId)
+        => Current.DiscoveredGrafts.Contains(graftId);
+
+    /// <summary>Marque une greffe comme découverte, à sa première assimilation.</summary>
+    public static void DiscoverGraft(string graftId)
+    {
+        if (graftId.Length == 0 || Current.DiscoveredGrafts.Contains(graftId)) return;
+
+        Current.DiscoveredGrafts.Add(graftId);
+        Save();
+    }
+
     /// <summary>Cran de saturation choisi pour un biome (0 si jamais réglé).</summary>
     public static int SaturationFor(string biomeId)
         => Current.SaturationByLevel.TryGetValue(biomeId, out int v) ? v : 0;

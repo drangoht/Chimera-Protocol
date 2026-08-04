@@ -134,6 +134,7 @@ public static class Assimilation
         }
 
         _equipped.Add(def.Id);
+        GameSettings.DiscoverGraft(def.Id);
         GraftEquipped?.Invoke(def);
 
         Debug.Log($"[Assimilation] greffe equipee : {def.Id} ({_equipped.Count}/{_slotCount}).");

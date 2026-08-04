@@ -1254,6 +1254,49 @@ public sealed class RunSmokeTest : MonoBehaviour
         Loc.Language = languageBefore;
         Loc.Reset();
 
+        // ─── Codex ────────────────────────────────────────────────────────────
+        var codexGo = new GameObject("CodexHost");
+        var codex = codexGo.AddComponent<CodexScreen>();
+        yield return null;
+
+        codex.Show();
+        Check("codex : le bestiaire est peuple", codex.EntryCount >= 31,
+              $"{codex.DiscoveredCount}/{codex.EntryCount} ennemis connus");
+
+        codex.SelectTab(CodexScreen.Tab.Arsenal);
+        int arsenalEntries = codex.EntryCount;
+        int arsenalKnown = codex.DiscoveredCount;
+        Check("codex : l'arsenal liste les armes", arsenalEntries >= 12,
+              $"{arsenalKnown}/{arsenalEntries} armes decouvertes");
+
+        // ⚠ LE point du Codex : il ne dévoile que ce qui a été rencontré. Sur cette machine la
+        // sauvegarde reprise a déjà tout découvert — constater « tout est connu » ne prouverait donc
+        // rien. On retire une arme de la liste et on vérifie qu'elle DISPARAÎT vraiment.
+        const string hidden = "singularity";
+        bool wasKnown = GameSettings.Current.DiscoveredWeapons.Remove(hidden);
+
+        codex.SelectTab(CodexScreen.Tab.Bestiary);
+        codex.SelectTab(CodexScreen.Tab.Arsenal);
+
+        Check("codex : une arme jamais portee reste masquee",
+              codex.DiscoveredCount == arsenalKnown - (wasKnown ? 1 : 0),
+              $"{arsenalKnown} -> {codex.DiscoveredCount} armes connues apres masquage de '{hidden}'");
+
+        if (wasKnown) GameSettings.Current.DiscoveredWeapons.Add(hidden);   // aucun effet de bord
+
+        codex.SelectTab(CodexScreen.Tab.Chimera);
+        Check("codex : la chimere liste greffes et fusions",
+              codex.EntryCount == Assimilation.Config.Grafts.Count + Assimilation.Config.Fusions.Count,
+              $"{codex.DiscoveredCount}/{codex.EntryCount} greffes assimilees");
+
+        // La découverte s'enregistre : une greffe assimilée dans cette campagne doit y figurer.
+        Check("codex : une greffe assimilee est enregistree",
+              GameSettings.IsGraftDiscovered("swarm_symbiote"));
+
+        codex.Hide();
+        Destroy(codexGo);
+        yield return null;
+
         // ─── Les trois axes agissent-ils vraiment ? ───────────────────────────
         RunConfig.Choose(LevelThreat.Order[0], 0);
         float baseSpawn = RunConfig.SpawnMult;
