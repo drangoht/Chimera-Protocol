@@ -176,6 +176,7 @@ public sealed class RunSmokeTest : MonoBehaviour
         yield return RunArchetypeChecks(enemyPrefab, bulletPrefab);
         yield return RunAllWeaponsFire(enemyPrefab, bulletPrefab);
         yield return RunEliteChecks(enemyPrefab);
+        yield return RunBossChecks(enemyPrefab);
         yield return RunFusionChecks(systems);
 
         // ─── Fin de run ───────────────────────────────────────────────────────
@@ -341,6 +342,77 @@ public sealed class RunSmokeTest : MonoBehaviour
         foreach (var e in new[] { plain, armored, regen, frenzied })
             if (e != null) Destroy(e.gameObject);
 
+        yield return null;
+    }
+
+    /// <summary>
+    /// Vérifie le <b>Noyau Rouillé</b> : phases, incarnations, irréversibilité, renforts.
+    ///
+    /// <para>Le boss est la <b>condition de victoire des cinq niveaux</b> : une bascule de phase qui
+    /// ne se déclenche pas, ou qui recule, casserait la progression de tout le jeu sans produire la
+    /// moindre erreur.</para>
+    /// </summary>
+    private IEnumerator RunBossChecks(GameObject enemyPrefab)
+    {
+        // Arène vide : on mesure le boss, pas la nuée.
+        foreach (var e in EnemyBase.Active.ToArray()) if (e != null) Destroy(e.gameObject);
+        yield return null;
+
+        var go = new GameObject("RustedCore", typeof(SpriteRenderer), typeof(RustedCore));
+        go.transform.position = new Vector3(-800f, -500f, 0f);
+        var boss = go.GetComponent<RustedCore>();
+        boss.AddPrefab = enemyPrefab;
+        boss.ApplyScaling(1000f, 5f);
+
+        // Une incarnation par biome, avec sa propre signature.
+        boss.SetBiome("givre");
+        Check("boss : incarnation choisie par le biome", boss.Incarnation.BiomeId == "givre",
+              $"{boss.Incarnation.Id} / {boss.Incarnation.Signature}");
+
+        boss.SetBiome("fournaise");
+        Check("boss : les incarnations different", boss.Incarnation.Signature == BossSignature.MagmaPools,
+              boss.Incarnation.Signature.ToString());
+
+        // Un biome inconnu doit retomber sur la souche plutôt que d'échouer.
+        boss.SetBiome("biome_inexistant");
+        Check("boss : biome inconnu retombe sur la souche",
+              boss.Incarnation.Id == BossIncarnations.Root.Id, boss.Incarnation.Id);
+
+        boss.SetBiome("givre");
+        yield return null;
+
+        Check("boss : demarre en phase I", boss.Phase == 0, $"phase={boss.Phase}");
+
+        // Bascule sous 66 % : la phase doit avancer et la surcharge se déclencher.
+        boss.TakeDamage(400f);
+        yield return null;
+        Check("boss : bascule en phase II sous 66 % de PV", boss.Phase == 1,
+              $"phase={boss.Phase}, ratio={boss.HpRatio:F2}");
+
+        // Irréversibilité : se soigner ne doit PAS faire reculer la phase, sinon un combat long
+        // oscillerait autour du seuil et rejouerait la surcharge en boucle.
+        boss.ApplyScaling(1000f, 5f);   // PV remis au maximum
+        yield return new WaitForSeconds(BossPhases.TransitionSeconds + 0.2f);
+        Check("boss : la progression de phase est irreversible", boss.Phase >= 1,
+              $"phase={boss.Phase} apres retour a PV pleins");
+
+        // Phase III : invocation de renforts.
+        boss.TakeDamage(900f);
+        yield return new WaitForSeconds(BossPhases.TransitionSeconds + 0.3f);
+        Check("boss : atteint la phase III", boss.Phase == 2, $"phase={boss.Phase}");
+
+        yield return new WaitForSeconds(0.5f);
+
+        // On compte les VAGUES et non les ennemis présents : les armes du joueur, encore actives,
+        // tuent les renforts aussi vite qu'ils arrivent, et un solde net serait donc négatif alors
+        // que l'invocation fonctionne parfaitement.
+        Check("boss : invoque des renforts en phase III", boss.AddWaves > 0,
+              $"{boss.AddWaves} vague(s) de {BossPhases.AddsPerWave}");
+
+        Check("boss : tire sa signature", boss.SignatureCount > 0, $"{boss.SignatureCount} tirs");
+
+        if (boss != null) Destroy(boss.gameObject);
+        foreach (var e in EnemyBase.Active.ToArray()) if (e != null) Destroy(e.gameObject);
         yield return null;
     }
 

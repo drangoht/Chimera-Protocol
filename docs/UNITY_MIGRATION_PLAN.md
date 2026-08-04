@@ -479,6 +479,38 @@ Mono conserve un avantage de principe pour la parité (l'export .NET de Godot es
 mais ce n'est plus une contrainte : le choix peut se faire sur d'autres critères (temps de build,
 performances, cap console/mobile).
 
+### 6.5 Lot 4 — bestiaire : logique complète (46/46)
+
+**Bestiaire data-driven conservé** : `EnemyTable` lit `enemies.json` — **31 ennemis pour 9
+comportements**. C'est une propriété délibérée du jeu ; la reproduire par 31 classes aurait multiplié
+par sept la surface de code pour un résultat identique.
+
+⚠ **Piège de données trouvé et verrouillé** : `enemies_biome_expansion.json` ressemble à un fichier
+à charger — **aucun code du jeu ne le lit**. Ses 20 entrées existent déjà dans `enemies.json`, mais
+**sans leur `framesPath`** : le fusionner « pour être complet » aurait rendu 20 ennemis invisibles,
+sans la moindre erreur. Cas général → `docs/PITFALLS_UNITY.md`.
+
+**Affixes d'élite** (5) branchés sur `EliteAffixTable`. Deux détails séparent « l'affixe existe » de
+« l'affixe joue » : le Régénérant ne se soigne qu'après un délai **sans être frappé** (sinon ce n'est
+qu'un sac de PV), et l'explosion passe par `Player.TakeDamage`, donc **respecte les i-frames**.
+La promotion a lieu **après** le scaling, pour porter sur les valeurs de la minute courante.
+
+**Boss** : `RustedCore` — 3 phases × 5 incarnations, adossé à `BossPhases`/`BossIncarnations`.
+Vérifié : incarnation par biome, repli sur la souche pour un biome inconnu, bascule sous 66 %,
+**irréversibilité de la phase** (se soigner ne fait pas reculer — sinon un combat long oscillerait
+autour du seuil et rejouerait la surcharge en boucle), phase III, renforts, signature.
+**Mini-boss** : socle `MiniBoss` + les 3 champions de biome, chacun demandant le réflexe **inverse**
+de l'incarnation finale de son biome.
+
+⚠ **Trois échecs de banc, aucun du code** — tous instructifs : échantillon de variété mesuré sur
+2 ennemis ; explosion absorbée par des i-frames déclenchées par la nuée ; et l'ennemi explosif
+**posé sur le joueur**, qui le frappait au contact avant d'exploser — on mesurait alors l'inverse de
+l'effet visé. Dernier en date : compter les renforts *présents* alors que les armes du joueur les
+tuent à mesure — c'est le nombre de **vagues** qui est le signal.
+
+⚠ **Reste au Lot 4** : les 3 mini-boss globaux (`AetherRevenant`, `MasterSentinel`, `RustStalker`) et
+tous les visuels (sprites, overlays de champion, télégraphes).
+
 ### 6.4 Lot 3 — arsenal : machinerie livrée, comportements en cours
 
 **Le critère de sortie a été traité en premier** — « les fusions héritent bien du niveau, le bug de
