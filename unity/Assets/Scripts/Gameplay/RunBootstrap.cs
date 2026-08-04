@@ -36,7 +36,17 @@ public sealed class RunBootstrap : MonoBehaviour
 
         // Les bonus permanents s'appliquent APRÈS StartRun — qui remet les statistiques à leur état
         // de début de partie et effacerait donc tout ce que le joueur a acheté au Hub.
-        if (Player.Instance != null) MetaProgression.ApplyTo(Player.Instance.Stats);
+        if (Player.Instance != null)
+        {
+            MetaProgression.ApplyTo(Player.Instance.Stats);
+
+            // Le porteur des greffes doit exister avant la première élimination : une jauge peut se
+            // remplir dans les premières secondes.
+            if (Player.Instance.GetComponent<GraftManager>() == null)
+                Player.Instance.gameObject.AddComponent<GraftManager>();
+        }
+
+        Assimilation.ResetForRun();
 
         ApplyCommandLine();
         WireInventory();

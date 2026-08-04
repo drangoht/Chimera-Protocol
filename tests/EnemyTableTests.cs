@@ -90,6 +90,37 @@ public class EnemyTableTests
     }
 
     /// <summary>
+    /// L'aller-retour libellé → comportement → libellé doit être exact : c'est lui qui relie une
+    /// élimination à sa jauge d'Assimilation. Un seul libellé faux rendrait une jauge inatteignable,
+    /// donc une greffe jamais proposée — sans la moindre erreur.
+    /// </summary>
+    [Fact]
+    public void LAllerRetourEntreLibelleEtComportementEstExact()
+    {
+        foreach (EnemyTable.AiType ai in System.Enum.GetValues(typeof(EnemyTable.AiType)))
+            Assert.Equal(ai, EnemyTable.ParseAi(EnemyTable.AiKey(ai)));
+    }
+
+    /// <summary>
+    /// Les archétypes qui alimentent une jauge doivent porter <b>exactement</b> le libellé attendu par
+    /// <c>grafts.json</c> : les deux fichiers de données se rejoignent ici, et nulle part ailleurs.
+    /// </summary>
+    [Fact]
+    public void LesLibellesCorrespondentAuxJaugesDassimilation()
+    {
+        var config = GraftTable.Parse(File.ReadAllText(
+            Path.Combine(TestPaths.RepoRoot, "data", "grafts.json")));
+
+        var known = new HashSet<string>();
+        foreach (EnemyTable.AiType ai in System.Enum.GetValues(typeof(EnemyTable.AiType)))
+            known.Add(EnemyTable.AiKey(ai));
+
+        foreach (string aiType in config.AiTypeToGauge.Keys)
+            Assert.True(known.Contains(aiType),
+                $"grafts.json alimente une jauge depuis '{aiType}', que le bestiaire ne sait pas produire");
+    }
+
+    /// <summary>
     /// Un type d'IA mal saisi doit donner un ennemi <b>jouable</b>, pas faire échouer le chargement
     /// du bestiaire entier.
     /// </summary>

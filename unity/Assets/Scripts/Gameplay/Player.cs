@@ -196,6 +196,11 @@ public sealed class Player : MonoBehaviour
         // Tout coup encaissé suspend la régénération, même entièrement absorbé.
         Stats.RegenSuppressLeft = RegenReserve.SuppressionSeconds;
 
+        // Épines : la greffe rend une fraction du coup à ce qui l'a porté. Calculée sur le montant
+        // ENTRANT et non sur le net — c'est le coup reçu qui est renvoyé, pas ce qu'il en reste après
+        // les protections du porteur.
+        ReflectThorns(amount);
+
         if (net <= 0f) { HealthChanged?.Invoke(Stats.CurrentHp, Stats.MaxHp); return; }
 
         Stats.CurrentHp = Mathf.Max(0f, Stats.CurrentHp - net);
@@ -205,6 +210,33 @@ public sealed class Player : MonoBehaviour
         {
             _dead = true;
             Died?.Invoke();
+        }
+    }
+
+    private GraftManager? _grafts;
+
+    /// <summary>
+    /// Renvoie une part du coup encaissé aux ennemis au contact (greffe « Carapace Greffée »).
+    /// Sans greffe d'épines, ne fait rien et ne coûte rien.
+    /// </summary>
+    private void ReflectThorns(float incoming)
+    {
+        _grafts ??= GetComponent<GraftManager>();
+        if (_grafts == null || !_grafts.HasThorns) return;
+
+        float reflected = _grafts.ThornsDamageFor(incoming);
+        if (reflected <= 0f) return;
+
+        Vector2 me = transform.position;
+        const float reach = 48f;
+
+        // Copie de sécurité : le renvoi peut tuer, donc modifier la liste pendant qu'on la parcourt.
+        foreach (var enemy in EnemyBase.Active.ToArray())
+        {
+            if (enemy == null || enemy.IsDead) continue;
+            if (((Vector2)enemy.transform.position - me).sqrMagnitude > reach * reach) continue;
+
+            enemy.TakeDamage(reflected);
         }
     }
 

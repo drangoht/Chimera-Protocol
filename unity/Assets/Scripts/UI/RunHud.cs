@@ -15,12 +15,22 @@ public sealed class RunHud : MonoBehaviour
     private PauseScreen? _pause;
     private LevelUpScreen? _levelUp;
     private RunEndScreen? _runEnd;
+    private AssimilationScreen? _assimilation;
+
+    /// <summary>
+    /// Une jauge d'Assimilation est pleine : proposer la greffe. L'écran passe par la file de
+    /// modales, donc attend son tour si une montée de niveau est déjà ouverte.
+    /// </summary>
+    private void OnGaugeFilled(string gauge) => _assimilation?.Present(gauge);
 
     private void Start()
     {
         _pause   = gameObject.AddComponent<PauseScreen>();
         _levelUp = gameObject.AddComponent<LevelUpScreen>();
         _runEnd  = gameObject.AddComponent<RunEndScreen>();
+        _assimilation = gameObject.AddComponent<AssimilationScreen>();
+
+        Assimilation.GaugeFilled += OnGaugeFilled;
 
         _pause.QuitRequested += () => SceneRoot.ChangeScene(GameScenes.MainMenu);
         _runEnd.Dismissed    += () => SceneRoot.ChangeScene(GameScenes.MainMenu);
@@ -37,6 +47,7 @@ public sealed class RunHud : MonoBehaviour
     {
         if (GameManager.Instance != null) GameManager.Instance.RunFinished -= OnRunFinished;
         if (XpSystem.Instance != null)    XpSystem.Instance.LevelUp -= OnLevelUp;
+        Assimilation.GaugeFilled -= OnGaugeFilled;
     }
 
     private void Update()

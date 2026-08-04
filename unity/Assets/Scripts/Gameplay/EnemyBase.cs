@@ -332,6 +332,14 @@ public class EnemyBase : MonoBehaviour
         SpawnXpOrb();
         GameManager.Instance?.RegisterKill();
 
+        // Assimilation : chaque élimination alimente la jauge de son archétype. C'est ici, et nulle
+        // part ailleurs, que le bestiaire rencontre les greffes — un champion et un boss versent
+        // dans la jauge des champions, pas dans celle de leur comportement.
+        Assimilation.OnEnemyKilled(
+            EnemyTable.AiKey(Ai), IsElite,
+            isMiniBoss: this is MiniBoss,
+            isBoss: this is RustedCore);
+
         Destroy(gameObject);
     }
 

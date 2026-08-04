@@ -199,6 +199,7 @@ public sealed class RunSmokeTest : MonoBehaviour
         yield return RunProgressionChecks(playerGo);
         yield return RunBossSpawnChecks(gm, spawner);
         yield return RunMetaChecks();
+        yield return RunAssimilationChecks(enemyPrefab);
 
         // ─── Fin de run ───────────────────────────────────────────────────────
         gm.EndRun();
@@ -981,6 +982,102 @@ public sealed class RunSmokeTest : MonoBehaviour
 
         yield return RunLevelSelectChecks();
         yield return RunChallengeChecks();
+    }
+
+    /// <summary>
+    /// Vérifie l'<b>Assimilation</b> : les éliminations remplissent la bonne jauge, la greffe se
+    /// propose au seuil, s'équipe, et son effet <b>agit</b>.
+    ///
+    /// <para>C'est le seul axe qui transforme le personnage en cours de run. Une greffe équipée sans
+    /// effet serait le même défaut muet que les armes invisibles — sauf qu'ici le joueur a payé une
+    /// jauge entière pour l'obtenir.</para>
+    /// </summary>
+    private IEnumerator RunAssimilationChecks(GameObject enemyPrefab)
+    {
+        Assimilation.Reset();
+
+        Check("assimilation : les greffes se chargent", Assimilation.Config.Grafts.Count > 0,
+              $"{Assimilation.Config.Grafts.Count} greffes, {Assimilation.SlotCount} emplacements");
+        if (Assimilation.Config.Grafts.Count == 0) yield break;
+
+        // ─── Routage des éliminations ─────────────────────────────────────────
+        var swarmGraft = Assimilation.Config.GraftForGauge("swarm");
+        Check("assimilation : chaque jauge a sa greffe", swarmGraft != null);
+        if (swarmGraft == null) yield break;
+
+        string filled = "";
+        void OnFilled(string gauge) => filled = gauge;
+        Assimilation.GaugeFilled += OnFilled;
+
+        int threshold = Assimilation.ThresholdOf("swarm");
+        for (int i = 0; i < threshold; i++)
+            Assimilation.OnEnemyKilled("straight_chase", isElite: false, isMiniBoss: false, isBoss: false);
+
+        Check("assimilation : les eliminations remplissent la jauge de leur archetype",
+              filled == "swarm", $"seuil {threshold}, jauge remplie : '{filled}'");
+
+        // Un champion verse dans la jauge des champions, pas dans celle de son comportement.
+        int championBefore = Assimilation.PointsOf(Assimilation.Config.ChampionGaugeKey);
+        Assimilation.OnEnemyKilled("straight_chase", isElite: false, isMiniBoss: true, isBoss: false);
+        Check("assimilation : un champion alimente la jauge des champions",
+              Assimilation.PointsOf(Assimilation.Config.ChampionGaugeKey) > championBefore,
+              $"{championBefore} -> {Assimilation.PointsOf(Assimilation.Config.ChampionGaugeKey)}");
+
+        Assimilation.GaugeFilled -= OnFilled;
+
+        // ─── Refuser coûte ────────────────────────────────────────────────────
+        int before = Assimilation.ThresholdOf("swarm");
+        Assimilation.Decline("swarm");
+        Check("assimilation : refuser releve le seuil de la jauge",
+              Assimilation.ThresholdOf("swarm") > before,
+              $"{before} -> {Assimilation.ThresholdOf("swarm")}");
+
+        // ─── Accepter équipe, et l'effet agit ─────────────────────────────────
+        var player = Player.Instance;
+        if (player == null) yield break;
+
+        var manager = player.GetComponent<GraftManager>() ?? player.gameObject.AddComponent<GraftManager>();
+        yield return null;
+
+        Assimilation.Accept("swarm");
+        Check("assimilation : la greffe est equipee", Assimilation.Has(swarmGraft.Id),
+              $"{Assimilation.Equipped.Count}/{Assimilation.SlotCount} emplacements");
+
+        // La Nuée Symbiotique fait orbiter des alliés qui mordent : une cible collée au joueur doit
+        // perdre des PV sans qu'aucune arme n'intervienne.
+        player.transform.position = Vector3.zero;
+        var dummy = Instantiate(enemyPrefab, new Vector3(46f, 0f), Quaternion.identity);
+        dummy.SetActive(true);
+        var target = dummy.GetComponent<EnemyBase>();
+        target.ApplyScaling(100000f, 0f);
+        target.Speed = 0f;
+
+        float hpBefore = target.CurrentHp;
+        yield return new WaitForSeconds(2.0f);
+
+        Check("assimilation : l'effet de la greffe agit vraiment", target.CurrentHp < hpBefore,
+              $"{hpBefore:F0} -> {target.CurrentHp:F0} PV");
+
+        // ⚠ Inventaire EXHAUSTIF de ce qui n'est pas porté. Ne relever que les greffes rencontrées ne
+        // prouverait rien : on applique donc chaque greffe et chaque fusion, et on relit la liste.
+        // Trois groupes dépendent d'une esquive que le joueur n'a pas encore sous Unity.
+        GraftManager.UnsupportedGroups.Clear();
+        foreach (var g in Assimilation.Config.Grafts)  manager.Apply(g);
+        foreach (var f in Assimilation.Config.Fusions) manager.Apply(f);
+
+        int groups = 0;
+        foreach (var g in Assimilation.Config.Grafts)  groups += g.Effects.Count;
+        foreach (var f in Assimilation.Config.Fusions) groups += f.Effects.Count;
+
+        Check("assimilation : la majorite des effets sont portes",
+              GraftManager.UnsupportedGroups.Count * 2 < groups,
+              GraftManager.UnsupportedGroups.Count == 0
+                  ? $"{groups} effets, aucun inerte"
+                  : $"{groups} effets, inertes : " + string.Join(", ", GraftManager.UnsupportedGroups));
+
+        if (target != null) Destroy(target.gameObject);
+        manager.ClearAll();
+        yield return null;
     }
 
     /// <summary>

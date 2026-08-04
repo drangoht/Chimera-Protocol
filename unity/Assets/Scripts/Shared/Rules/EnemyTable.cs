@@ -124,6 +124,29 @@ public static class EnemyTable
     };
 
     /// <summary>
+    /// Libellé de données d'un comportement — l'inverse exact de <see cref="ParseAi"/>.
+    ///
+    /// <para>Nécessaire au routage des éliminations vers les jauges d'Assimilation, qui indexe les
+    /// archétypes par <b>leur nom dans le JSON</b> (<c>straight_chase</c>…). Sans cet inverse, la
+    /// correspondance se referait à la main quelque part, et un seul libellé mal recopié suffirait à
+    /// rendre une jauge entière inatteignable — sans erreur, la greffe correspondante ne serait
+    /// simplement jamais proposée.</para>
+    /// </summary>
+    public static string AiKey(AiType ai) => ai switch
+    {
+        AiType.StraightChase   => "straight_chase",
+        AiType.ErraticChase    => "erratic_chase",
+        AiType.RangedKiter     => "ranged_kiter",
+        AiType.SlowHunter      => "slow_hunter",
+        AiType.LungingChaser   => "lunging_chaser",
+        AiType.ChargingBruiser => "charging_bruiser",
+        AiType.ConeKiter       => "cone_kiter",
+        AiType.ShieldedChaser  => "shielded_chaser",
+        AiType.BossCore        => "boss_core",
+        _                      => "straight_chase",
+    };
+
+    /// <summary>
     /// Ennemis dont la fenêtre d'apparition est ouverte à un instant donné, avec leur poids.
     /// </summary>
     public static List<(EnemyDef Def, float Weight)> Eligible(
