@@ -30,6 +30,7 @@ public sealed class HUD : MonoBehaviour
     private Text?  _levelLabel;
     private Text?  _timerLabel;
     private Text?  _arsenalLabel;
+    private Text?  _dashLabel;
     private Text?  _bannerLabel;
     private Text?  _bossLabel;
     private Image? _bossFill;
@@ -146,6 +147,28 @@ public sealed class HUD : MonoBehaviour
 
         UpdateBossBar();
         UpdateBanner();
+        UpdateDash();
+    }
+
+    /// <summary>
+    /// Affiche l'esquive <b>et sa touche</b> dès qu'une greffe l'accorde.
+    ///
+    /// <para>⚠ Défaut déjà commis côté Godot : la capacité n'était annoncée nulle part — ni au HUD,
+    /// ni dans la description, ni à l'acquisition — et une run entière a été jouée sans savoir
+    /// qu'une touche existait. Une capacité qui ne s'annonce pas n'existe pas pour le joueur.</para>
+    /// </summary>
+    private void UpdateDash()
+    {
+        if (_dashLabel == null) return;
+
+        var player = Player.Instance;
+        if (player == null || !player.DashEnabled) { _dashLabel.text = ""; return; }
+
+        bool ready = player.DashReadyRatio >= 1f;
+        _dashLabel.text = ready
+            ? $"{InputRemap.DisplayName(GameAction.Dash)} — esquive"
+            : $"{InputRemap.DisplayName(GameAction.Dash)} — esquive  {player.DashReadyRatio * 100f:F0} %";
+        _dashLabel.color = ready ? Cyan : Background;
     }
 
     /// <summary>
@@ -238,6 +261,11 @@ public sealed class HUD : MonoBehaviour
         _arsenalLabel = BuildLabel(canvasGo.transform, "Arsenal", new Vector2(0f, 0f),
                                    new Vector2(24f, 320f), new Vector2(320f, 300f), OffWhite, TextAnchor.LowerLeft);
         _arsenalLabel.fontSize = 16;
+
+        // En bas à droite, hors du chemin du regard : une capacité s'annonce sans occuper le centre.
+        _dashLabel = BuildLabel(canvasGo.transform, "Dash", new Vector2(1f, 0f),
+                                new Vector2(-320f, 60f), new Vector2(300f, 26f), Cyan, TextAnchor.LowerRight);
+        _dashLabel.fontSize = 18;
 
         BuildBossPanel(canvasGo.transform);
 

@@ -1069,11 +1069,38 @@ public sealed class RunSmokeTest : MonoBehaviour
         foreach (var g in Assimilation.Config.Grafts)  groups += g.Effects.Count;
         foreach (var f in Assimilation.Config.Fusions) groups += f.Effects.Count;
 
-        Check("assimilation : la majorite des effets sont portes",
-              GraftManager.UnsupportedGroups.Count * 2 < groups,
+        Check("assimilation : aucun effet de greffe n'est inerte",
+              GraftManager.UnsupportedGroups.Count == 0,
               GraftManager.UnsupportedGroups.Count == 0
-                  ? $"{groups} effets, aucun inerte"
+                  ? $"{groups} effets, tous portes"
                   : $"{groups} effets, inertes : " + string.Join(", ", GraftManager.UnsupportedGroups));
+
+        // ─── L'esquive ────────────────────────────────────────────────────────
+        // Appliquer les greffes ci-dessus a accordé le dash au joueur : il doit être utilisable, et
+        // déplacer réellement le porteur bien au-delà de sa vitesse plafonnée.
+        Check("esquive : accordee par la greffe", player.DashEnabled);
+        Check("esquive : prete des l'acquisition", player.DashReadyRatio >= 1f);
+
+        player.transform.position = Vector3.zero;
+        player.ExternalMoveOverride = Vector2.right;
+        yield return null;
+
+        // Distance qu'une course ordinaire couvrirait dans la MÊME fenêtre : c'est la seule
+        // comparaison qui a un sens, et elle ne dépend pas de la cadence du banc.
+        const float window = 0.25f;
+        float ordinary = Mathf.Min(player.Stats.Speed, StatCaps.MaxSpeed) * window;
+
+        player.TriggerDashForBench();
+        Vector3 from = player.transform.position;
+        yield return new WaitForSeconds(window);
+        float travelled = Vector3.Distance(from, player.transform.position);
+
+        Check("esquive : la ruade depasse largement la course", travelled > ordinary * 1.5f,
+              $"{travelled:F0} px en {window:F2} s, contre {ordinary:F0} px en courant");
+        Check("esquive : la recharge repart apres usage", player.DashReadyRatio < 1f,
+              $"recharge a {player.DashReadyRatio * 100f:F0} %");
+
+        player.ExternalMoveOverride = null;
 
         if (target != null) Destroy(target.gameObject);
         manager.ClearAll();

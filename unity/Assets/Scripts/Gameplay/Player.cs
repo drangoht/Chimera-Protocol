@@ -95,9 +95,21 @@ public sealed class Player : MonoBehaviour
         // libellé affiché au joueur doit venir de la même source (cf. InputRemap).
         Vector2 input = ExternalMoveOverride ?? InputRemap.MoveVector();
 
+        UpdateDashTimers(dt);
+
+        // Déclenchement de l'esquive : ruade brève et invulnérable, disponible seulement si une
+        // greffe l'a accordée.
+        if (_dashEnabled && _dashActiveLeft <= 0f && _dashCooldownLeft <= 0f &&
+            InputRemap.WasPressedThisFrame(GameAction.Dash))
+            StartDash(input);
+
         // La vitesse est plafonnée par StatCaps — la même source que côté Godot.
         float speed = Mathf.Min(Stats.Speed * SpeedMultiplier, StatCaps.MaxSpeed);
         Velocity = input * speed;
+
+        // Pendant la ruade, la vitesse est IMPOSÉE : elle ne passe pas par le plafond, sans quoi une
+        // esquive ne serait qu'un déplacement ordinaire et ne sortirait jamais d'un encerclement.
+        if (_dashActiveLeft > 0f) Velocity = _dashVelocity;
 
         Vector3 next = transform.position + (Vector3)(Velocity * dt);
         next.x = Mathf.Clamp(next.x, -Arena.HalfWidth, Arena.HalfWidth);
@@ -107,10 +119,116 @@ public sealed class Player : MonoBehaviour
         if (Mathf.Abs(input.x) > 0.01f) FacingLeft = input.x < 0f;
         if (Velocity.sqrMagnitude > 1f) AimDirection = Velocity.normalized;
 
+        // La charge blesse pendant toute la ruade — un ennemi une seule fois par charge.
+        if (_dashActiveLeft > 0f && _chargeDamage > 0f) ApplyChargeDamage();
+
         if (_animator != null)
         {
             _animator.FlipX = FacingLeft;
             _animator.Play(Velocity.sqrMagnitude > 1f ? "move" : "idle");
+        }
+    }
+
+    // ─── Esquive (greffe « Servos Erratiques ») ───────────────────────────────
+
+    private bool  _dashEnabled;
+    private float _dashDistance, _dashDuration, _dashCooldown, _dashCooldownFloor, _dashIframes;
+    private bool  _dashFollowsCooldownReduction;
+    private float _dashCooldownLeft, _dashActiveLeft, _dashCooldownDuration = 1f;
+    private Vector2 _dashVelocity;
+
+    private float _chargeDamage, _chargeWidth, _chargeKnockback;
+    private readonly HashSet<EnemyBase> _chargeHit = new();
+
+    /// <summary>L'esquive est-elle accordée par une greffe ? (jauge du HUD)</summary>
+    public bool DashEnabled => _dashEnabled;
+
+    /// <summary>La ruade est-elle en cours ? Le front descendant déclenche la nova de la fusion.</summary>
+    public bool IsDashing => _dashActiveLeft > 0f;
+
+    /// <summary>Recharge dans [0,1] : 0 juste après usage, 1 = prête.</summary>
+    public float DashReadyRatio => _dashCooldownDuration <= 0f
+        ? 1f
+        : Mathf.Clamp01(1f - _dashCooldownLeft / _dashCooldownDuration);
+
+    /// <summary>
+    /// Accorde l'esquive. Les trois derniers paramètres la transforment en <b>charge</b> : un couloir
+    /// de dégâts avec recul.
+    /// </summary>
+    public void EnableDash(float distance, float duration, float cooldown, float cooldownFloor,
+                           float iframes, bool followsCooldownReduction,
+                           float chargeDamage = 0f, float chargeWidth = 0f, float chargeKnockback = 0f)
+    {
+        _dashEnabled = true;
+        _dashDistance = distance;
+        _dashDuration = Mathf.Max(0.01f, duration);
+        _dashCooldown = cooldown;
+        _dashCooldownFloor = cooldownFloor;
+        _dashIframes = iframes;
+        _dashFollowsCooldownReduction = followsCooldownReduction;
+        _dashCooldownLeft = 0f;   // disponible immédiatement
+
+        _chargeDamage = chargeDamage;
+        _chargeWidth = chargeWidth;
+        _chargeKnockback = chargeKnockback;
+    }
+
+    /// <summary>
+    /// Déclenche une ruade sans passer par le clavier — réservé aux bancs, qui n'ont pas d'entrée.
+    /// Sans ce point d'entrée, l'esquive resterait invérifiable autrement qu'en jouant.
+    /// </summary>
+    public void TriggerDashForBench()
+    {
+        if (!_dashEnabled || _dashActiveLeft > 0f || _dashCooldownLeft > 0f) return;
+        StartDash(ExternalMoveOverride ?? AimDirection);
+    }
+
+    private void UpdateDashTimers(float dt)
+    {
+        if (_dashCooldownLeft > 0f) _dashCooldownLeft -= dt;
+        if (_dashActiveLeft   > 0f) _dashActiveLeft   -= dt;
+    }
+
+    private void StartDash(Vector2 moveDirection)
+    {
+        Vector2 dir = moveDirection.sqrMagnitude > 0.01f ? moveDirection.normalized : AimDirection;
+        if (dir.sqrMagnitude < 0.01f) dir = Vector2.down;
+
+        _dashVelocity = dir * (_dashDistance / _dashDuration);
+        _dashActiveLeft = _dashDuration;
+        _chargeHit.Clear();   // un ennemi n'est touché qu'une fois par charge
+
+        // Les i-frames de l'esquive passent par la MÊME fenêtre que celles des dégâts subis : deux
+        // compteurs concurrents laisseraient passer un coup au moment précis où le joueur esquive.
+        _invulnTimer = Mathf.Max(_invulnTimer, _dashIframes);
+
+        float reduced = _dashFollowsCooldownReduction
+            ? _dashCooldown * (1f - Stats.CooldownReduction)
+            : _dashCooldown;
+
+        _dashCooldownLeft = Mathf.Max(_dashCooldownFloor, reduced);
+        _dashCooldownDuration = _dashCooldownLeft;
+
+        WeaponVfx.Ring(transform.position, 26f, new Color(0.6f, 0.9f, 1f), 9f, 0.16f);
+    }
+
+    /// <summary>Couloir de dégâts de la charge : chaque ennemi une seule fois par ruade.</summary>
+    private void ApplyChargeDamage()
+    {
+        Vector2 center = transform.position;
+
+        foreach (var enemy in EnemyBase.Active.ToArray())
+        {
+            if (enemy == null || enemy.IsDead || _chargeHit.Contains(enemy)) continue;
+            if (((Vector2)enemy.transform.position - center).sqrMagnitude > _chargeWidth * _chargeWidth) continue;
+
+            enemy.TakeDamage(_chargeDamage);
+
+            Vector2 push = (Vector2)enemy.transform.position - center;
+            push = push.sqrMagnitude > 0.01f ? push.normalized : _dashVelocity.normalized;
+            enemy.transform.position = (Vector2)enemy.transform.position + push * _chargeKnockback;
+
+            _chargeHit.Add(enemy);
         }
     }
 

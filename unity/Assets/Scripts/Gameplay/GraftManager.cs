@@ -67,10 +67,13 @@ public sealed class GraftManager : MonoBehaviour
                 case "autoTurret":
                 case "turrets":        ApplyTurrets(def, group.Key); break;
 
+                case "dash":           ApplyDash(def, "dash"); break;
+                case "charge":         ApplyDash(def, "charge"); break;
+                case "novaDash":       ApplyDash(def, "novaDash"); ApplyNova(def); break;
+
                 default:
-                    // ⚠ Trois groupes (dash, novaDash, charge) dépendent d'une esquive que le joueur
-                    // ne possède pas encore sous Unity : les porter demanderait d'abord de porter le
-                    // dash lui-même. Ils sont donc INERTES, et le disent.
+                    // Un effet non porté ne doit JAMAIS passer inaperçu : la greffe s'équipe, occupe
+                    // un emplacement, et ne fait rien — indiscernable d'un bug pour le joueur.
                     if (!UnsupportedGroups.Contains(group.Key)) UnsupportedGroups.Add(group.Key);
                     Debug.LogWarning($"[GraftManager] effet non porte : '{group.Key}' " +
                                      $"(greffe {def.Id}) — la greffe est equipee mais SANS cet effet.");
@@ -153,6 +156,78 @@ public sealed class GraftManager : MonoBehaviour
         _turretTimer    = _turretInterval;
     }
 
+    // ─── Esquive, charge et nova ──────────────────────────────────────────────
+
+    /// <summary>
+    /// Accorde l'esquive au porteur. Les trois greffes concernées partagent les mêmes paramètres de
+    /// ruade et ne diffèrent que par ce qu'elles y ajoutent — d'où un seul chemin.
+    /// </summary>
+    private void ApplyDash(GraftTable.GraftDef def, string group)
+    {
+        if (_player == null) return;
+
+        float damageMult = def.Effect(group, "scalesWithDamageMultiplier", 0) != 0
+            ? _player.Stats.DamageMultiplier
+            : 1f;
+
+        _player.EnableDash(
+            distance:  (float)def.Effect(group, "distancePx", 180),
+            duration:  (float)def.Effect(group, "durationSec", 0.18),
+            cooldown:  (float)def.Effect(group, "cooldownSec", 3.5),
+            cooldownFloor: (float)def.Effect(group, "cooldownFloorSec", 1.5),
+            iframes:   (float)def.Effect(group, "iframesSec", 0.25),
+            followsCooldownReduction: def.Effect(group, "affectedByCooldownReduction", 1) != 0,
+            chargeDamage:    (float)def.Effect(group, "impactDamage", 0) * damageMult,
+            chargeWidth:     (float)def.Effect(group, "corridorWidthPx", 0),
+            chargeKnockback: (float)def.Effect(group, "knockbackPx", 0));
+    }
+
+    private void ApplyNova(GraftTable.GraftDef def)
+    {
+        float damageMult = def.Effect("novaDash", "scalesWithDamageMultiplier", 1) != 0
+            ? (_player?.Stats.DamageMultiplier ?? 1f)
+            : 1f;
+
+        _novaRadius    = (float)def.Effect("novaDash", "novaRadiusPx", 175);
+        _novaDamage    = (float)def.Effect("novaDash", "novaDamage", 80) * damageMult;
+        _novaKnockback = (float)def.Effect("novaDash", "novaKnockbackPx", 90);
+        _wasDashing    = _player?.IsDashing ?? false;
+    }
+
+    private float _novaRadius, _novaDamage, _novaKnockback;
+    private bool  _wasDashing;
+
+    /// <summary>
+    /// La nova part à la <b>fin</b> de la ruade — front descendant. La déclencher au départ la ferait
+    /// exploser là d'où le joueur s'enfuit, exactement au mauvais endroit.
+    /// </summary>
+    private void UpdateNova()
+    {
+        if (_novaRadius <= 0f || _player == null) return;
+
+        bool dashing = _player.IsDashing;
+        bool justEnded = _wasDashing && !dashing;
+        _wasDashing = dashing;
+
+        if (!justEnded) return;
+
+        Vector2 center = _player.transform.position;
+        WeaponVfx.Ring(center, _novaRadius, new Color(1f, 0.75f, 0.35f), 13f, 0.32f);
+
+        foreach (var enemy in EnemyBase.Active.ToArray())
+        {
+            if (enemy == null || enemy.IsDead) continue;
+
+            Vector2 offset = (Vector2)enemy.transform.position - center;
+            if (offset.sqrMagnitude > _novaRadius * _novaRadius) continue;
+
+            enemy.TakeDamage(_novaDamage);
+
+            Vector2 push = offset.sqrMagnitude > 0.01f ? offset.normalized : Vector2.right;
+            enemy.transform.position = (Vector2)enemy.transform.position + push * _novaKnockback;
+        }
+    }
+
     // ─── Boucle ───────────────────────────────────────────────────────────────
 
     private void Update()
@@ -161,6 +236,7 @@ public sealed class GraftManager : MonoBehaviour
         UpdateOrbiters(dt);
         UpdateShockwave(dt);
         UpdateTurrets(dt);
+        UpdateNova();
     }
 
     private void UpdateOrbiters(float dt)
