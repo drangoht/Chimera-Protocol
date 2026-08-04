@@ -157,7 +157,7 @@ public sealed class OptionsScreen : MonoBehaviour
         var panelRect = panel.GetComponent<RectTransform>();
         panelRect.anchorMin = panelRect.anchorMax = new Vector2(0.5f, 0.5f);
         panelRect.pivot = new Vector2(0.5f, 0.5f);
-        panelRect.sizeDelta = new Vector2(1000f, 660f);
+        panelRect.sizeDelta = new Vector2(1000f, 880f);
         panelRect.anchoredPosition = Vector2.zero;
 
         var title = UiStyle.Label(panel.transform, Loc.T("OPTIONS_TITLE"), 38,
@@ -173,11 +173,13 @@ public sealed class OptionsScreen : MonoBehaviour
         var columnRect = column.GetComponent<RectTransform>();
         columnRect.anchorMin = Vector2.zero;
         columnRect.anchorMax = Vector2.one;
-        columnRect.offsetMin = new Vector2(40f, 96f);
-        columnRect.offsetMax = new Vector2(-40f, -96f);
+        // Le bas laisse la place au bouton de retour : sans cette marge, la derniere ligne
+        // passe DESSOUS et les deux se chevauchent.
+        columnRect.offsetMin = new Vector2(40f, 100f);
+        columnRect.offsetMax = new Vector2(-40f, -100f);
 
         var layout = column.AddComponent<VerticalLayoutGroup>();
-        layout.spacing = 12f;
+        layout.spacing = 10f;
         layout.childForceExpandHeight = false;
         layout.childControlHeight = true;
         layout.childControlWidth = true;
@@ -243,7 +245,7 @@ public sealed class OptionsScreen : MonoBehaviour
         var button = UiStyle.TextButton(_list, label(), FrameAccent.Cyan);
 
         var element = button.gameObject.AddComponent<LayoutElement>();
-        element.minHeight = 64f;
+        element.minHeight = 62f;
 
         button.onClick.AddListener(action);
         _rows.Add((label, button, button.GetComponentInChildren<Text>()));

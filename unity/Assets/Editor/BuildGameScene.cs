@@ -181,8 +181,12 @@ public static class BuildGameScene
         camGo.transform.position = new Vector3(0f, 0f, -10f);
         camGo.tag = "MainCamera";
 
-        var menuGo = new GameObject("MainMenu",
-            typeof(MainMenuScreen), typeof(SceneDiagnostic), typeof(MusicDirector));
+        var menuGo = new GameObject("MainMenu", typeof(MainMenuScreen), typeof(MusicDirector));
+
+        // ⚠ Les outils vivent sur LEUR PROPRE objet, jamais sur celui du menu : tous deux survivent
+        // au changement de scène (DontDestroyOnLoad), et posés sur le menu ils le feraient survivre
+        // avec eux — le menu resterait alors affiché PAR-DESSUS la partie.
+        var toolsGo = new GameObject("[Outils]", typeof(SceneDiagnostic), typeof(ScreenshotTour));
 
         // Un EventSystem est INDISPENSABLE : sans lui, aucun bouton ne reçoit de clic ni de focus,
         // et le menu paraît simplement inerte — sans la moindre erreur.
@@ -190,7 +194,7 @@ public static class BuildGameScene
             typeof(UnityEngine.EventSystems.EventSystem),
             typeof(UnityEngine.EventSystems.StandaloneInputModule));
 
-        foreach (var go in new[] { camGo, menuGo, eventSystem })
+        foreach (var go in new[] { camGo, menuGo, toolsGo, eventSystem })
             EditorSceneManager.MoveGameObjectToScene(go, scene);
 
         EditorSceneManager.SaveScene(scene, GameScenes.PathOf(GameScenes.MainMenu));
@@ -225,10 +229,11 @@ public static class BuildGameScene
         // ⚠ L'AudioListener n'est PAS un détail de caméra : sans lui, Unity ne restitue AUCUN son —
         // les clips se chargent, les AudioSource jouent, les compteurs montent, et le jeu reste
         // totalement muet. Aucune erreur n'est levée.
-        var camGo = new GameObject("MainCamera", typeof(Camera), typeof(AudioListener));
+        var camGo = new GameObject("MainCamera",
+            typeof(Camera), typeof(AudioListener), typeof(RunCamera));
         var cam = camGo.GetComponent<Camera>();
         cam.orthographic = true;
-        cam.orthographicSize = 540f;
+        cam.orthographicSize = 540f;   // RunCamera l'ajuste à la hauteur d'écran (1 px = 1 unité)
         cam.backgroundColor = new Color(0.102f, 0.102f, 0.180f);
         cam.clearFlags = CameraClearFlags.SolidColor;
         camGo.transform.position = new Vector3(0f, 0f, -10f);
@@ -248,6 +253,10 @@ public static class BuildGameScene
         cannon.Range = 400f;
         cannon.BulletPrefab = bulletPrefab;
 
+        // Le sol et les limites de l'arène : sans eux, la zone de jeu est un vide plat où rien ne
+        // donne l'échelle ni le sens du déplacement.
+        var arenaGo = new GameObject("Arene", typeof(ArenaRenderer));
+
         var spawnerGo = new GameObject("EnemySpawner", typeof(EnemySpawner));
         var spawner = spawnerGo.GetComponent<EnemySpawner>();
         spawner.EnemyPrefab = enemyPrefab;
@@ -262,7 +271,7 @@ public static class BuildGameScene
             typeof(UnityEngine.EventSystems.EventSystem),
             typeof(UnityEngine.EventSystems.StandaloneInputModule));
 
-        foreach (var go in new[] { camGo, systems, playerGo, spawnerGo, bootGo, eventSystem })
+        foreach (var go in new[] { camGo, systems, arenaGo, playerGo, spawnerGo, bootGo, eventSystem })
             EditorSceneManager.MoveGameObjectToScene(go, scene);
 
         EditorSceneManager.SaveScene(scene, GameScenes.PathOf(GameScenes.Game));

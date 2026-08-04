@@ -28,6 +28,9 @@ public static class UiStyle
     /// <summary>Marge intérieure standard d'un panneau.</summary>
     public const float PanelPadding = 24f;
 
+    /// <summary>Marge entre le texte d'un bouton et son liseré.</summary>
+    public const float ButtonTextPadding = 12f;
+
     /// <summary>Sprite blanc partagé — voir <see cref="UiPrimitives.White"/>.</summary>
     public static Sprite WhiteSprite => UiPrimitives.White;
 
@@ -48,21 +51,7 @@ public static class UiStyle
     public static GameObject Panel(Transform parent, string name, FrameAccent accent = FrameAccent.Steel)
     {
         var border = NewUiObject(name, parent);
-        var image = border.AddComponent<Image>();
-
-        var frame = Frame($"ui_frame_popup_{Slug(accent)}", "ui_frame_popup_cyan");
-        if (frame != null)
-        {
-            // 9-slice : les coins gardent leur taille, seuls les bords se répètent. C'est ce qui
-            // permet au même cadre de 48 px d'habiller un panneau de 1280.
-            image.sprite = frame;
-            image.type = Image.Type.Sliced;
-            image.color = ColorOf(accent);
-            return border;
-        }
-
-        // Repli plat — voir la note en tête de classe.
-        image.color = ColorOf(accent);
+        border.AddComponent<Image>().color = ColorOf(accent);
 
         var fill = NewUiObject("Fill", border.transform);
         fill.AddComponent<Image>().color = UiPalette.PanelBg;
@@ -71,71 +60,28 @@ public static class UiStyle
         return border;
     }
 
-    private static readonly System.Collections.Generic.Dictionary<string, Sprite?> _frames = new();
-
-    /// <summary>
-    /// Cadre par nom, avec repli. Chargé depuis <c>Resources/</c> : une texture rangée ailleurs
-    /// n'existe pas à l'exécution — le piège qui avait rendu 40 jeux d'animations introuvables.
-    /// </summary>
-    private static Sprite? Frame(string name, string fallbackName)
-    {
-        if (_frames.TryGetValue(name, out var cached)) return cached;
-
-        var sprite = Resources.Load<Sprite>("UiFrames/" + name)
-                  ?? Resources.Load<Sprite>("UiFrames/" + fallbackName);
-
-        if (sprite == null)
-            Debug.LogWarning($"[UiStyle] cadre '{name}' introuvable — rendu plat.");
-
-        _frames[name] = sprite;
-        return sprite;
-    }
-
-    private static string Slug(FrameAccent accent) => accent switch
-    {
-        FrameAccent.Cyan   => "cyan",
-        FrameAccent.Violet => "violet",
-        FrameAccent.Gold   => "or",
-        FrameAccent.Danger => "danger",
-        _                  => "disabled",
-    };
-
     /// <summary>Bouton stylé, avec ses états de survol et de pression.</summary>
     public static Button TextButton(Transform parent, string label, FrameAccent accent = FrameAccent.Cyan)
     {
-        var go = NewUiObject("Button_" + label, parent);
-        var image = go.AddComponent<Image>();
-
-        var frame = Frame($"ui_frame_button_{Slug(accent)}", "ui_frame_button_cyan");
-        if (frame != null)
-        {
-            image.sprite = frame;
-            image.type = Image.Type.Sliced;
-        }
-        else
-        {
-            image.color = ColorOf(accent);
-
-            var flat = NewUiObject("Fill", go.transform);
-            flat.AddComponent<Image>().color = UiPalette.PanelBg;
-            Stretch(flat, BorderWidth);
-        }
-
+        var go = Panel(parent, "Button_" + label, accent);
         var button = go.AddComponent<Button>();
-        button.targetGraphic = image;
 
-        // Transition par couleur du fond : les cadres restent stables, seul le remplissage réagit —
-        // sans quoi le liseré d'accent « clignoterait » au survol.
+        var fill = go.transform.GetChild(0).GetComponent<Image>();
+        button.targetGraphic = fill;
+
+        // Transition par couleur du FOND, jamais du liseré : c'est le liseré qui porte l'accent, et
+        // le voir clignoter au survol brouille la lecture des couleurs.
         var colors = button.colors;
         colors.normalColor      = Color.white;
-        colors.highlightedColor = new Color(1.35f, 1.35f, 1.35f, 1f);
-        colors.pressedColor     = new Color(0.75f, 0.75f, 0.75f, 1f);
-        colors.disabledColor    = new Color(0.5f, 0.5f, 0.5f, 0.6f);
+        colors.highlightedColor = new Color(1.6f, 1.6f, 1.6f, 1f);
+        colors.pressedColor     = new Color(0.7f, 0.7f, 0.7f, 1f);
+        colors.disabledColor    = new Color(0.55f, 0.55f, 0.55f, 0.7f);
         colors.selectedColor    = colors.highlightedColor;
         button.colors = colors;
 
-        var text = Label(go.transform, label, 22, UiPalette.OffWhite, TextAnchor.MiddleCenter);
-        Stretch(text.gameObject, 0f);
+        // Le texte respire : sans cette marge, un libellé long touche le liseré et paraît coupé.
+        var text = Label(go.transform, label, 20, UiPalette.OffWhite, TextAnchor.MiddleCenter);
+        Stretch(text.gameObject, ButtonTextPadding);
 
         return button;
     }
