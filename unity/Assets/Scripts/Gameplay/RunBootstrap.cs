@@ -47,6 +47,11 @@ public sealed class RunBootstrap : MonoBehaviour
         }
 
         Assimilation.ResetForRun();
+
+        // La musique du biome démarre avec la run : les trois pistes (calme, combat, boss) tournent
+        // ensemble et seuls leurs volumes bougent.
+        MusicDirector.Instance?.PlayBiome(RunConfig.BiomeId);
+
         ApplyCommandLine();
         WireInventory();
 

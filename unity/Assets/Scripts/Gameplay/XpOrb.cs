@@ -95,6 +95,7 @@ public sealed class XpOrb : MonoBehaviour
         if (_collected) return;
         _collected = true;
 
+        AudioSystem.PlaySfx("sfx_xp_collect", pitchVariation: 0.12f);
         XpSystem.Instance?.AddXp(Value);
         Destroy(gameObject);
     }

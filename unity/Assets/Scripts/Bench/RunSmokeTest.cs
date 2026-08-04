@@ -1297,6 +1297,8 @@ public sealed class RunSmokeTest : MonoBehaviour
         Destroy(codexGo);
         yield return null;
 
+        yield return RunAudioChecks();
+
         // ─── Les trois axes agissent-ils vraiment ? ───────────────────────────
         RunConfig.Choose(LevelThreat.Order[0], 0);
         float baseSpawn = RunConfig.SpawnMult;
@@ -1334,6 +1336,66 @@ public sealed class RunSmokeTest : MonoBehaviour
 
         // Remise à l'état de départ : le banc continue derrière.
         RunConfig.Choose(LevelThreat.Order[0], 0);
+        yield return null;
+    }
+
+    /// <summary>
+    /// Vérifie l'audio. <b>Un son manquant ne se voit pas — il ne s'entend pas non plus</b> : c'est
+    /// exactement le mode de défaillance des armes invisibles, appliqué au son. Le seul garde-fou
+    /// possible est de charger chaque identifiant utilisé par le code et chaque piste de biome.
+    /// </summary>
+    private IEnumerator RunAudioChecks()
+    {
+        // Les identifiants réellement appelés par le jeu, un par famille d'événement.
+        string[] used =
+        {
+            "sfx_weapon_impulse_shoot", "sfx_player_hit", "sfx_player_die", "sfx_levelup",
+            "sfx_card_select", "sfx_xp_collect", "sfx_fusion_evolve", "sfx_ui_purchase",
+            "sfx_ui_button", "sfx_enemy_swarm_die", "sfx_enemy_drone_die",
+            "sfx_enemy_sentinel_die", "sfx_enemy_colossus_die",
+        };
+
+        var missing = new List<string>();
+        foreach (string id in used)
+            if (Resources.Load<AudioClip>("Audio/sfx/" + id) == null) missing.Add(id);
+
+        Check("audio : tous les sons appeles par le code existent", missing.Count == 0,
+              missing.Count == 0 ? $"{used.Length} sons" : "manquants : " + string.Join(", ", missing));
+
+        // Chaque biome a ses DEUX versions : sans l'une, le fondu croisé bascule vers le silence.
+        var missingTracks = new List<string>();
+        foreach (string biome in LevelThreat.Order)
+        {
+            if (Resources.Load<AudioClip>($"Audio/music/music_run_{biome}_calm") == null)
+                missingTracks.Add(biome + ":calm");
+            if (Resources.Load<AudioClip>($"Audio/music/music_run_{biome}_combat") == null)
+                missingTracks.Add(biome + ":combat");
+        }
+        if (Resources.Load<AudioClip>("Audio/music/music_run_boss") == null) missingTracks.Add("boss");
+
+        Check("audio : chaque biome a ses deux versions, plus le theme de boss",
+              missingTracks.Count == 0,
+              missingTracks.Count == 0 ? $"{LevelThreat.Order.Length * 2 + 1} pistes"
+                                       : "manquantes : " + string.Join(", ", missingTracks));
+
+        // Un son doit réellement partir : compter les lectures distingue « la banque est là » de
+        // « le système joue ».
+        int before = AudioSystem.PlayedCount;
+        AudioSystem.PlaySfx("sfx_ui_button");
+        Check("audio : un son est effectivement joue", AudioSystem.PlayedCount == before + 1);
+
+        // ─── Musique adaptative ───────────────────────────────────────────────
+        var musicGo = new GameObject("MusicHost");
+        var music = musicGo.AddComponent<MusicDirector>();
+        yield return null;
+
+        music.PlayBiome(LevelThreat.Order[0]);
+        yield return null;
+
+        Check("musique : demarre sur la piste calme", music.CurrentTrack == "calm",
+              $"piste '{music.CurrentTrack}', intensite {music.Intensity:F2}");
+
+        Destroy(musicGo);
         yield return null;
     }
 

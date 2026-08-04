@@ -38,6 +38,7 @@ public class ImpulseCannon : WeaponBase
 
         bullet.Piercing = Piercing;
         bullet.Launch(dir * BulletSpeed, EffectiveDamage, Range);
+        AudioSystem.PlaySfx("sfx_weapon_impulse_shoot");
         return true;
     }
 }

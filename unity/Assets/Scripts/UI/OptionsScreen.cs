@@ -195,6 +195,15 @@ public sealed class OptionsScreen : MonoBehaviour
         AddRow(() => $"{Loc.T("OPTIONS_VSYNC")} : {OnOff(GameSettings.Current.Vsync)}", ToggleVsync);
         AddRow(() => $"{Loc.T("OPTIONS_SHOW_FPS")} : {OnOff(GameSettings.Current.ShowFps)}", ToggleFps);
 
+        // Les volumes ne sont revenus qu'avec l'audio : tant que rien ne jouait, ces trois lignes
+        // auraient été des réglages morts.
+        AddRow(() => $"{Loc.T("OPTIONS_MASTER")} : {Percent(GameSettings.Current.MasterVolume)}",
+               () => CycleVolume(v => GameSettings.Current.MasterVolume = v, GameSettings.Current.MasterVolume));
+        AddRow(() => $"{Loc.T("OPTIONS_MUSIC")} : {Percent(GameSettings.Current.MusicVolume)}",
+               () => CycleVolume(v => GameSettings.Current.MusicVolume = v, GameSettings.Current.MusicVolume));
+        AddRow(() => $"{Loc.T("OPTIONS_SFX")} : {Percent(GameSettings.Current.SfxVolume)}",
+               () => CycleVolume(v => GameSettings.Current.SfxVolume = v, GameSettings.Current.SfxVolume));
+
         _close = UiStyle.TextButton(panel.transform, Loc.T("COMMON_BACK"), FrameAccent.Steel);
         var closeRect = _close.GetComponent<RectTransform>();
         closeRect.anchorMin = closeRect.anchorMax = new Vector2(0.5f, 0f);
@@ -205,6 +214,27 @@ public sealed class OptionsScreen : MonoBehaviour
     }
 
     private static string OnOff(bool value) => value ? Loc.T("COMMON_ON") : Loc.T("COMMON_OFF");
+
+    private static string Percent(float value) => $"{Mathf.RoundToInt(value * 100f)} %";
+
+    /// <summary>
+    /// Fait défiler un volume par paliers de 25 %, jusqu'à zéro puis retour au maximum.
+    ///
+    /// <para>Des paliers plutôt qu'un curseur : un curseur uGUI se règle mal à la manette, et le
+    /// projet n'a pas d'écart audible entre 62 % et 65 %. Le réglage est <b>appliqué immédiatement</b>
+    /// — un volume qui ne changerait qu'à la fermeture de l'écran ne se règle pas à l'oreille.</para>
+    /// </summary>
+    private void CycleVolume(Action<float> setter, float current)
+    {
+        float next = current <= 0.001f ? 1f : Mathf.Max(0f, current - 0.25f);
+
+        setter(next);
+        GameSettings.ApplyVolumes(GameSettings.Current);
+
+        // Un repère sonore à chaque cran : c'est la seule façon d'entendre ce qu'on règle.
+        AudioSystem.PlaySfx("sfx_ui_button", pitchVariation: 0f);
+        Refresh();
+    }
 
     private void AddRow(Func<string> label, UnityEngine.Events.UnityAction action)
     {

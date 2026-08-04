@@ -328,6 +328,7 @@ public class EnemyBase : MonoBehaviour
         _isDead = true;
 
         Died?.Invoke(XpValue);
+        PlayDeathSfx();
         TriggerEliteExplosion();
         SpawnXpOrb();
         GameManager.Instance?.RegisterKill();
@@ -341,6 +342,25 @@ public class EnemyBase : MonoBehaviour
             isBoss: this is RustedCore);
 
         Destroy(gameObject);
+    }
+
+    /// <summary>
+    /// Son de mort, choisi selon l'archétype. Il porte une information de jeu : un colosse qui tombe
+    /// hors du champ ne se voit pas, mais s'entend — et ne sonne pas comme une nuée qui s'effondre.
+    /// </summary>
+    private void PlayDeathSfx()
+    {
+        string sfx = Ai switch
+        {
+            EnemyTable.AiType.RangedKiter     => "sfx_enemy_sentinel_die",
+            EnemyTable.AiType.ConeKiter       => "sfx_enemy_sentinel_die",
+            EnemyTable.AiType.SlowHunter      => "sfx_enemy_colossus_die",
+            EnemyTable.AiType.ChargingBruiser => "sfx_enemy_colossus_die",
+            EnemyTable.AiType.ErraticChase    => "sfx_enemy_drone_die",
+            _                                 => "sfx_enemy_swarm_die",
+        };
+
+        AudioSystem.PlaySfx(sfx);
     }
 
     /// <summary>Prefab d'orbe d'XP, injecté par le spawner à la création.</summary>

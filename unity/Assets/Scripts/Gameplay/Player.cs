@@ -323,10 +323,12 @@ public sealed class Player : MonoBehaviour
 
         Stats.CurrentHp = Mathf.Max(0f, Stats.CurrentHp - net);
         HealthChanged?.Invoke(Stats.CurrentHp, Stats.MaxHp);
+        AudioSystem.PlaySfx("sfx_player_hit");
 
         if (Stats.CurrentHp <= 0f)
         {
             _dead = true;
+            AudioSystem.PlaySfx("sfx_player_die");
             Died?.Invoke();
         }
     }

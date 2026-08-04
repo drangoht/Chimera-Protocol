@@ -181,7 +181,8 @@ public static class BuildGameScene
         camGo.transform.position = new Vector3(0f, 0f, -10f);
         camGo.tag = "MainCamera";
 
-        var menuGo = new GameObject("MainMenu", typeof(MainMenuScreen), typeof(SceneDiagnostic));
+        var menuGo = new GameObject("MainMenu",
+            typeof(MainMenuScreen), typeof(SceneDiagnostic), typeof(MusicDirector));
 
         // Un EventSystem est INDISPENSABLE : sans lui, aucun bouton ne reçoit de clic ni de focus,
         // et le menu paraît simplement inerte — sans la moindre erreur.
@@ -231,7 +232,7 @@ public static class BuildGameScene
 
         var systems = new GameObject("[Systems]",
             typeof(XpSystem), typeof(GameManager), typeof(InventorySystem),
-            typeof(HUD), typeof(RunHud));
+            typeof(HUD), typeof(RunHud), typeof(MusicDirector));
 
         var playerGo = new GameObject("Player",
             typeof(SpriteRenderer), typeof(FrameAnimator), typeof(Player), typeof(ImpulseCannon));

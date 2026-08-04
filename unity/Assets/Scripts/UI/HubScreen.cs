@@ -95,6 +95,8 @@ public sealed class HubScreen : MonoBehaviour
     private void Purchase(MetaUpgradeDefinition def)
     {
         if (!MetaProgression.TryPurchase(def.Id)) return;
+
+        AudioSystem.PlaySfx("sfx_ui_purchase");
         Refresh();
     }
 

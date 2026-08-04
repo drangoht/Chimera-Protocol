@@ -32,6 +32,7 @@ public static class GameSettings
             Loc.Language = _current.Language;
 
             ApplyDisplay(_current);
+            ApplyVolumes(_current);
             return _current;
         }
     }
@@ -53,10 +54,24 @@ public static class GameSettings
         QualitySettings.vSyncCount = settings.Vsync ? 1 : 0;
     }
 
+    /// <summary>
+    /// Pousse les volumes vers l'audio. Comme la langue, ils sont <b>poussés</b> et non tirés : la
+    /// couche Platform ne peut pas dépendre du Gameplay sans créer un cycle entre assemblies.
+    /// </summary>
+    public static void ApplyVolumes(SettingsData settings)
+    {
+        AudioSystem.MasterVolume = settings.MasterVolume;
+        AudioSystem.SfxVolume = settings.SfxVolume;
+
+        if (MusicDirector.Instance != null) MusicDirector.Instance.MusicVolume = settings.MusicVolume;
+    }
+
     /// <summary>Écrit les réglages sur disque.</summary>
     public static void Save()
     {
         if (_current == null) return;
+
+        ApplyVolumes(_current);
         UserData.SaveSettings(_current);
     }
 

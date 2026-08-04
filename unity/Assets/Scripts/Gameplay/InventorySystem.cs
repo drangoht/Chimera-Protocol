@@ -421,6 +421,7 @@ public sealed class InventorySystem : MonoBehaviour
         // place : la carte la plus spectaculaire du jeu faisait perdre une arme.
         InstantiateWeapon(fusionId, inherited, mount);
 
+        AudioSystem.PlaySfx("sfx_fusion_evolve");
         FusionApplied?.Invoke(fusionId, inherited);
         Debug.Log($"[InventorySystem] Fusion forgee : {fusionId} (niveau herite {inherited}).");
         return inherited;

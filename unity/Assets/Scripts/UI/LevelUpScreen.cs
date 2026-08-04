@@ -85,6 +85,7 @@ public sealed class LevelUpScreen : MonoBehaviour
 
     private void Choose(LevelUpCard card)
     {
+        AudioSystem.PlaySfx("sfx_card_select");
         Hide();
         ModalQueue.Close(ModalKind.LevelUp);
         CardChosen?.Invoke(card);

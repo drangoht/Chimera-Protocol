@@ -85,6 +85,7 @@ public sealed class RunHud : MonoBehaviour
             inv.AvailableFusions,
             n => (int)(Gd.Randi() % (uint)Mathf.Max(1, n)));
 
+        AudioSystem.PlaySfx("sfx_levelup");
         _levelUp.Present(cards);
     }
 
