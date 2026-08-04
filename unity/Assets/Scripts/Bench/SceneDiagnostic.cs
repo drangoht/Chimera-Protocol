@@ -85,6 +85,15 @@ public sealed class SceneDiagnostic : MonoBehaviour
         int orbs = FindObjectsByType<XpOrb>(FindObjectsSortMode.None).Length;
         sb.AppendLine($"orbes presents       : {orbs}");
 
+        // ⚠ Sans AudioListener, Unity ne restitue AUCUN son : les clips se chargent, les sources
+        // jouent, les compteurs montent, et le jeu reste muet — sans la moindre erreur. Le relever
+        // ici est le seul moyen de distinguer « pas de son » de « son inaudible ».
+        int listeners = FindObjectsByType<AudioListener>(FindObjectsSortMode.None).Length;
+        sb.AppendLine($"AudioListener        : {(listeners == 1 ? "present" : listeners == 0 ? "ABSENT — LE JEU SERA MUET" : $"{listeners} (un seul attendu)")}");
+        sb.AppendLine($"sources audio        : {FindObjectsByType<AudioSource>(FindObjectsSortMode.None).Length}");
+        sb.AppendLine($"sons joues           : {AudioSystem.PlayedCount}");
+        sb.AppendLine($"musique              : {(MusicDirector.Instance != null ? MusicDirector.Instance.CurrentTrack : "AUCUN MusicDirector")}");
+
         yield return AuditWeapons(sb);
 
         // ─── Progression sur 30 s : c'est la DUREE qui manquait au premier relevé ──

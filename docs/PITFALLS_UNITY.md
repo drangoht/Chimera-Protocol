@@ -125,6 +125,22 @@ l'id au composant et fabrique l'arme sur le porteur — plus rien à tenir synch
 fichier et une classe. **Le banc consomme la même table**, sinon une arme absente du banc est une
 arme dont on ne sait pas si elle tire.
 
+### Sans **`AudioListener`**, tout le système audio tourne et le jeu reste muet
+
+**Signalé en jouant** : « je n'ai rien entendu ». Pourtant les 41 clips étaient importés, les
+`AudioSource` créées, `PlaySfx` appelée à chaque tir et à chaque mort, le compteur de lectures
+montait, et le `MusicDirector` annonçait la bonne piste. **Il manquait l'oreille** : les scènes sont
+générées par code (`new GameObject("MainCamera", typeof(Camera))`) et personne n'avait ajouté
+d'`AudioListener`. Unity ne lève aucune erreur.
+
+**Ce que cela dit du banc** : compter les lectures ne prouve **rien** sur l'audibilité — même famille
+que `Image.Type.Filled` sans sprite, où `fillAmount` se réglait sans effet. Le seul relevé qui vaut
+est *« un `AudioListener` existe-t-il dans la scène ? »*, désormais dans `SceneDiagnostic` avec le
+nombre de sources et la piste courante.
+
+**Parade** : `typeof(AudioListener)` sur la caméra des deux scènes générées, et **un seul** — plusieurs
+listeners produisent un avertissement et un mixage imprévisible.
+
 ### Une arme qui tue **sans laisser de trace** se lit « la carte n'a rien fait »
 
 **Signalé en jouant** : « je ne vois pas les autres armes, ni leurs projectiles ». Le relevé en scène

@@ -33,6 +33,10 @@ public sealed class MainMenuScreen : MonoBehaviour
         // écriture n'a pu créer un fichier vierge et condamner la migration.
         _ = GameSettings.Current;
 
+        // Le menu a sa propre piste : c'est le premier son du jeu, et le laisser muet donne
+        // l'impression que rien n'a démarré.
+        MusicDirector.Instance?.PlaySingle("music_menu");
+
         BuildUi();
 
         // La pause ne survit jamais à un retour au menu : rester à timeScale 0 produirait un menu

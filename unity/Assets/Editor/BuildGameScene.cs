@@ -172,7 +172,7 @@ public static class BuildGameScene
     {
         Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
-        var camGo = new GameObject("MainCamera", typeof(Camera));
+        var camGo = new GameObject("MainCamera", typeof(Camera), typeof(AudioListener));
         var cam = camGo.GetComponent<Camera>();
         cam.orthographic = true;
         cam.orthographicSize = 540f;
@@ -221,7 +221,11 @@ public static class BuildGameScene
 
         // Caméra orthographique en unités = pixels (PPU 1) : une demi-hauteur de 540 donne
         // exactement 1080 pixels de haut, comme la fenêtre de référence du jeu.
-        var camGo = new GameObject("MainCamera", typeof(Camera));
+        //
+        // ⚠ L'AudioListener n'est PAS un détail de caméra : sans lui, Unity ne restitue AUCUN son —
+        // les clips se chargent, les AudioSource jouent, les compteurs montent, et le jeu reste
+        // totalement muet. Aucune erreur n'est levée.
+        var camGo = new GameObject("MainCamera", typeof(Camera), typeof(AudioListener));
         var cam = camGo.GetComponent<Camera>();
         cam.orthographic = true;
         cam.orthographicSize = 540f;
