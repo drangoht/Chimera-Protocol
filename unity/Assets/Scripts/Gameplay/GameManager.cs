@@ -79,7 +79,9 @@ public sealed class GameManager : MonoBehaviour
             using var doc = System.Text.Json.JsonDocument.Parse(json);
             if (doc.RootElement.TryGetProperty("runDurationSeconds", out var v) &&
                 v.TryGetInt32(out int seconds) && seconds > 0)
-                RunDurationSeconds = seconds;
+                // Le cran « Compte à rebours » raccourcit le temps imparti : il attaque le temps de
+                // CONSTRUCTION du build, pas la puissance — le boss arrive face à un arsenal amputé.
+                RunDurationSeconds = RunConfig.RunDurationSeconds(seconds);
         }
         catch (System.Text.Json.JsonException e)
         {

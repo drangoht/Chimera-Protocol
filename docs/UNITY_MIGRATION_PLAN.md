@@ -630,6 +630,27 @@ Vérifié en scène réelle : le joueur démarre à **175 PV** au lieu de 100 (`
 ⚠ Non encore vu en jouant : le **crédit des Échos en fin de run** (le banc le couvre, mais aucune run
 jouée ne s'est terminée depuis).
 
+**Puis le choix du niveau — et les trois axes de difficulté enfin branchés.** `EnemySpawner`
+multipliait tout par `1f` : le palier du biome, le réglage du joueur et le cran de saturation étaient
+trois réglages sans le moindre effet, ce qui rendait toute mesure d'équilibrage vide de sens.
+`RunConfig` rassemble le choix en un point unique, franchi à chaque lancement — sans quoi une run
+hérite en silence du réglage de la précédente, et le jeu se comporte « presque » comme prévu.
+
+- **Écran de sélection** : une carte par biome, verrouillage progressif (`BiomeUnlock`, pur et testé),
+  record, et le **sélecteur de cran sur la carte** — décision de la 1.25.0 : un panneau global aurait
+  laissé régler un niveau hors écran. Un cran verrouillé reste **visible** (invisible se lit
+  inexistant).
+- **Mesuré au banc** : palier 0 → 4 fait passer les PV de ×1,00 à ×1,50 et les Échos de ×1,00 à
+  ×1,45 ; le cran II donne PV ×1,45, dégâts ×1,80, densité ×1,40 ; le cran III ramène le temps
+  imparti de 780 s à **484 s** ; et les champions restent adoucis (×1,28 contre ×1,50 pour la faune)
+  — battre le boss débloque le niveau suivant.
+- **Localisation** : `LocTable` (pure) lit le vrai `ui.csv` — guillemets et virgules internes compris,
+  un `Split(',')` naïf coupant des phrases au milieu. `Loc.T()` rend **la clé** quand elle manque,
+  jamais un blanc. ⚠ Le CSV est **dupliqué** dans `StreamingAssets` comme `data/*.json` : un test
+  interdit désormais aux deux copies de diverger.
+
+**108 vérifications · 556 tests.**
+
 ### 6.5 Lot 4 — bestiaire : logique complète (46/46)
 
 **Bestiaire data-driven conservé** : `EnemyTable` lit `enemies.json` — **31 ennemis pour 9

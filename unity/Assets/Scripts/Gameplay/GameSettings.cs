@@ -26,6 +26,11 @@ public static class GameSettings
 
             UserData.MigrateFromGodotIfNeeded();
             _current = UserData.LoadSettings();
+
+            // La langue est POUSSÉE vers la couche de traduction : celle-ci ne peut pas dépendre du
+            // Gameplay sans créer un cycle entre assemblies.
+            Loc.Language = _current.Language;
+
             return _current;
         }
     }

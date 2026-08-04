@@ -52,8 +52,17 @@ public sealed class EnemySpawner : MonoBehaviour
     [Tooltip("Croissance des dégâts par minute de jeu.")]
     public float DamageScalingPerMinute = 0.06f;
 
-    /// <summary>Multiplicateur de densité (difficulté × palier de menace × cran de saturation).</summary>
-    public float TotalSpawnMult { get; set; } = 1f;
+    private float _spawnMultOverride = -1f;
+
+    /// <summary>
+    /// Multiplicateur de densité (difficulté × palier de menace × cran de saturation). Suit
+    /// <see cref="RunConfig"/>, sauf si un banc impose sa propre valeur.
+    /// </summary>
+    public float TotalSpawnMult
+    {
+        get => _spawnMultOverride >= 0f ? _spawnMultOverride : RunConfig.SpawnMult;
+        set => _spawnMultOverride = value;
+    }
 
     /// <summary>Temps de jeu écoulé, en secondes — pilote toutes les courbes.</summary>
     public float ElapsedSeconds { get; private set; }
@@ -93,7 +102,16 @@ public sealed class EnemySpawner : MonoBehaviour
         if (json == null) return;
 
         _bestiary = EnemyTable.Parse(json);
-        Debug.Log($"[EnemySpawner] {_bestiary.Count} types d'ennemis charges.");
+
+        // Cran « Élite ordinaire » : la fréquence ET le plafond montent. Le plafond est un paramètre
+        // à part entière, pas un simple facteur — au-delà, une nuée d'élites cesse d'être une texture
+        // et fait peser régénération, explosions et sprites agrandis sur 200-300 entités.
+        Biome = RunConfig.BiomeId;
+        EliteFrequencyMult = SaturationTable.EliteFrequencyMult(RunConfig.Saturation);
+        EliteChanceCap = SaturationTable.EliteChanceCap(RunConfig.Saturation);
+
+        Debug.Log($"[EnemySpawner] {_bestiary.Count} types d'ennemis charges — biome {Biome}, " +
+                  $"palier {RunConfig.ThreatTier}, cran {RunConfig.Saturation}.");
     }
 
     private void Update()
@@ -113,8 +131,11 @@ public sealed class EnemySpawner : MonoBehaviour
         bool overtime = gm?.Overtime ?? false;
         float otMin   = overtime ? gm!.OvertimeSeconds / 60f : 0f;
 
+        // ⚠ Le palier du niveau décale le temps de référence du SCALING, jamais celui de la densité :
+        // la densité d'un haut palier vient de son SpawnMult, sinon les premières secondes du dernier
+        // niveau basculeraient d'un coup en milieu de partie.
         float tDensity = minutes + OvertimeEscalation.DensityMinutes(otMin);
-        float tStat    = minutes + OvertimeEscalation.StatMinutes(otMin);
+        float tStat    = minutes + OvertimeEscalation.StatMinutes(otMin) + RunConfig.TimeOffsetMinutes;
 
         // Cadence pilotée par un INTERVALLE décroissant, comme sous Godot — et non par un débit :
         // les deux ne produisent pas la même distribution dans le temps.
@@ -223,9 +244,17 @@ public sealed class EnemySpawner : MonoBehaviour
         }
 
         // Le scaling vient de la logique pure : mêmes chiffres que sous Godot, par construction.
+        //
+        // Les trois axes de difficulté (réglage du joueur × palier du niveau × cran de saturation)
+        // sont rassemblés dans RunConfig. Les champions reçoivent un multiplicateur de PV ADOUCI :
+        // battre le boss débloque le niveau suivant, et l'aligner sur la faune fermerait la
+        // progression aux paliers élevés.
+        bool champion = def != null && def.IsChampion;
+        float hpMult  = champion ? RunConfig.ChampionHpMult : RunConfig.EnemyHpMult;
+
         enemy.ApplyScaling(
-            EnemyScaling.Scaled(enemy.MaxHp,  minutes, hpPerMinute,  1f),
-            EnemyScaling.Scaled(enemy.Damage, minutes, dmgPerMinute, 1f));
+            EnemyScaling.Scaled(enemy.MaxHp,  minutes, hpPerMinute,  hpMult),
+            EnemyScaling.Scaled(enemy.Damage, minutes, dmgPerMinute, RunConfig.EnemyDamageMult));
 
         // Le boss prend l'incarnation de son biome — sprite, teinte et signature d'attaque.
         if (enemy is RustedCore boss)

@@ -88,7 +88,7 @@ public sealed class MainMenuScreen : MonoBehaviour
         play.onClick.AddListener(() =>
         {
             PlayRequested?.Invoke();
-            SceneRoot.ChangeScene(GameScenes.Game);
+            OpenLevelSelect();
         });
         _firstButton = play;
 
@@ -106,6 +106,28 @@ public sealed class MainMenuScreen : MonoBehaviour
     }
 
     private HubScreen? _hub;
+    private LevelSelectScreen? _levelSelect;
+
+    /// <summary>
+    /// Ouvre le choix du niveau. « Jouer » ne lance plus directement : le biome décide du palier de
+    /// menace, de la faune et de l'incarnation du boss — le choisir <b>est</b> une décision de jeu.
+    /// </summary>
+    private void OpenLevelSelect()
+    {
+        if (_levelSelect == null)
+        {
+            _levelSelect = gameObject.AddComponent<LevelSelectScreen>();
+            _levelSelect.Closed += RestoreFocus;
+        }
+
+        _levelSelect.Show();
+    }
+
+    private void RestoreFocus()
+    {
+        if (_firstButton != null && EventSystem.current != null)
+            EventSystem.current.SetSelectedGameObject(_firstButton.gameObject);
+    }
 
     /// <summary>
     /// Ouvre le Hub par-dessus le menu. Il est créé à la première demande : le construire d'emblée
@@ -116,11 +138,7 @@ public sealed class MainMenuScreen : MonoBehaviour
         if (_hub == null)
         {
             _hub = gameObject.AddComponent<HubScreen>();
-            _hub.Closed += () =>
-            {
-                if (_firstButton != null && EventSystem.current != null)
-                    EventSystem.current.SetSelectedGameObject(_firstButton.gameObject);
-            };
+            _hub.Closed += RestoreFocus;
         }
 
         _hub.Show();

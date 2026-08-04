@@ -28,6 +28,10 @@ public sealed class RunBootstrap : MonoBehaviour
         // n'afficheraient rien.
         WeaponVfx.Reset();
 
+        // Le biome décide de la faune, du palier de menace et de l'incarnation du boss. Le poser
+        // avant StartRun évite qu'une run hérite en silence du choix de la précédente.
+        if (GameManager.Instance != null) GameManager.Instance.CurrentBiomeId = RunConfig.BiomeId;
+
         GameManager.Instance?.StartRun();
 
         // Les bonus permanents s'appliquent APRÈS StartRun — qui remet les statistiques à leur état

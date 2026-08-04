@@ -115,7 +115,11 @@ public sealed class RunHud : MonoBehaviour
         bool victory = GameManager.Instance?.BossDefeated ?? false;
         int seconds = Mathf.RoundToInt(runTime);
 
-        _runEnd?.Show(victory, runSeconds: seconds, kills: kills, cores: 0);
+        // Le multiplicateur d'Échos vient de la SOURCE UNIQUE (palier × cran) : l'écran anime les
+        // composantes à partir du même total qu'il crédite. Deux calculs finiraient par diverger, et
+        // la somme animée ne collerait plus au montant reçu.
+        _runEnd?.Show(victory, runSeconds: seconds, kills: kills, cores: 0,
+                      tierMult: RunConfig.EchoMult);
 
         // ⚠ Le montant crédité est celui que l'écran AFFICHE, pas un second calcul : deux formules
         // pour un même total finissent toujours par diverger, et le joueur voit alors une somme qu'il

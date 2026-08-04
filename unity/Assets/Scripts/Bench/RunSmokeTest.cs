@@ -973,6 +973,69 @@ public sealed class RunSmokeTest : MonoBehaviour
 
         Destroy(hubGo);
         yield return null;
+
+        yield return RunLevelSelectChecks();
+    }
+
+    /// <summary>
+    /// Vérifie le <b>choix du niveau</b> et les trois axes de difficulté qu'il commande.
+    ///
+    /// <para>C'est ce qui manquait pour qu'une mesure d'équilibrage veuille dire quelque chose : tant
+    /// que le spawner multipliait tout par 1, le palier du biome, le réglage du joueur et le cran de
+    /// saturation étaient trois réglages sans effet.</para>
+    /// </summary>
+    private IEnumerator RunLevelSelectChecks()
+    {
+        var selectGo = new GameObject("LevelSelectHost");
+        var select = selectGo.AddComponent<LevelSelectScreen>();
+        yield return null;
+
+        Check("niveaux : une carte par biome", select.CardCount == LevelThreat.Order.Length,
+              $"{select.CardCount} cartes pour {LevelThreat.Order.Length} biomes");
+
+        select.Show();
+        Check("niveaux : l'ecran s'ouvre", select.IsVisible);
+        select.Hide();
+        Destroy(selectGo);
+
+        // ─── Les trois axes agissent-ils vraiment ? ───────────────────────────
+        RunConfig.Choose(LevelThreat.Order[0], 0);
+        float baseSpawn = RunConfig.SpawnMult;
+        float baseHp = RunConfig.EnemyHpMult;
+        float baseDamage = RunConfig.EnemyDamageMult;
+        double baseEcho = RunConfig.EchoMult;
+
+        // Palier du niveau : un biome tardif est plus dur, et rapporte davantage.
+        RunConfig.Choose(LevelThreat.Order[^1], 0);
+        Check("difficulte : le palier du biome durcit la run",
+              RunConfig.EnemyHpMult > baseHp && RunConfig.SpawnMult > baseSpawn,
+              $"PV ×{baseHp:F2} -> ×{RunConfig.EnemyHpMult:F2}, densite ×{baseSpawn:F2} -> ×{RunConfig.SpawnMult:F2}");
+        Check("difficulte : un palier eleve rapporte plus d'Echos",
+              RunConfig.EchoMult > baseEcho, $"×{baseEcho:F2} -> ×{RunConfig.EchoMult:F2}");
+
+        // Le champion est adouci : battre le boss débloque le niveau suivant.
+        Check("difficulte : les champions sont adoucis face a la faune",
+              RunConfig.ChampionHpMult < RunConfig.EnemyHpMult,
+              $"champion ×{RunConfig.ChampionHpMult:F2} contre faune ×{RunConfig.EnemyHpMult:F2}");
+
+        // Cran de saturation « Meute » : PV, dégâts et densité montent ensemble.
+        RunConfig.Choose(LevelThreat.Order[0], 2);
+        Check("saturation : le cran II durcit les trois axes",
+              RunConfig.EnemyHpMult > baseHp && RunConfig.EnemyDamageMult > baseDamage &&
+              RunConfig.SpawnMult > baseSpawn,
+              $"PV ×{RunConfig.EnemyHpMult:F2}, degats ×{RunConfig.EnemyDamageMult:F2}, " +
+              $"densite ×{RunConfig.SpawnMult:F2}");
+
+        // Cran III « Compte à rebours » : il attaque le TEMPS, pas la puissance.
+        int standard = RunConfig.RunDurationSeconds(780);
+        RunConfig.Choose(LevelThreat.Order[0], 3);
+        Check("saturation : le cran III raccourcit le temps imparti",
+              RunConfig.RunDurationSeconds(780) < standard,
+              $"{standard} s -> {RunConfig.RunDurationSeconds(780)} s");
+
+        // Remise à l'état de départ : le banc continue derrière.
+        RunConfig.Choose(LevelThreat.Order[0], 0);
+        yield return null;
     }
 
     private void Report()
