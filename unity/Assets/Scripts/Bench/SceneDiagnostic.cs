@@ -80,6 +80,43 @@ public sealed class SceneDiagnostic : MonoBehaviour
         int orbs = FindObjectsByType<XpOrb>(FindObjectsSortMode.None).Length;
         sb.AppendLine($"orbes presents       : {orbs}");
 
+        // ─── Progression sur 30 s : c'est la DUREE qui manquait au premier relevé ──
+        sb.AppendLine();
+        sb.AppendLine("--- progression (t, ennemis, elim., xp, PV, orbes, dist. ennemi le + proche) ---");
+
+        float minContactDist = float.MaxValue;
+        int damageEvents = 0;
+        float lastHp = player != null ? player.Stats.CurrentHp : 0f;
+
+        for (int step = 1; step <= 6; step++)
+        {
+            float until = Time.realtimeSinceStartup + 5f;
+            while (Time.realtimeSinceStartup < until)
+            {
+                if (player != null)
+                {
+                    foreach (var e in EnemyBase.Active)
+                        if (e != null)
+                            minContactDist = Mathf.Min(minContactDist,
+                                Vector2.Distance(e.transform.position, player.transform.position));
+
+                    if (player.Stats.CurrentHp < lastHp) { damageEvents++; lastHp = player.Stats.CurrentHp; }
+                }
+                yield return null;
+            }
+
+            sb.AppendLine($"t={step * 5,2}s  ennemis={EnemyBase.Active.Count,3}  " +
+                          $"elim.={(gm != null ? gm.Kills : 0),3}  " +
+                          $"xp={(xp != null ? xp.CurrentXp : 0),3}/niv {(xp != null ? xp.CurrentLevel : 0)}  " +
+                          $"PV={(player != null ? player.Stats.CurrentHp : 0),6:F1}  " +
+                          $"orbes={FindObjectsByType<XpOrb>(FindObjectsSortMode.None).Length,3}  " +
+                          $"dmin={minContactDist,6:F0}");
+        }
+
+        sb.AppendLine();
+        sb.AppendLine($"coups encaisses      : {damageEvents}");
+        sb.AppendLine($"distance mini vue    : {minContactDist:F1} (rayon de contact = 24)");
+
         Debug.Log(sb.ToString());
         Application.Quit(0);
     }

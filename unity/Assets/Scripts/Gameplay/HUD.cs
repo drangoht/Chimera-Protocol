@@ -119,6 +119,11 @@ public sealed class HUD : MonoBehaviour
 
         var img = fillGo.GetComponent<Image>();
         img.color = fillColor;
+
+        // ⚠ Sans sprite, Unity IGNORE fillAmount sur une Image de type Filled : la barre reste
+        // pleine en permanence, sans erreur. Symptôme trompeur — « les valeurs ne changent pas »
+        // alors que le jeu fonctionne.
+        img.sprite = UiPrimitives.White;
         img.type = Image.Type.Filled;
         img.fillMethod = Image.FillMethod.Horizontal;
         img.fillOrigin = (int)Image.OriginHorizontal.Left;

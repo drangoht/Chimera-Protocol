@@ -25,6 +25,9 @@ public static class UiStyle
     /// <summary>Marge intérieure standard d'un panneau.</summary>
     public const float PanelPadding = 24f;
 
+    /// <summary>Sprite blanc partagé — voir <see cref="UiPrimitives.White"/>.</summary>
+    public static Sprite WhiteSprite => UiPrimitives.White;
+
     /// <summary>Couleur associée à un accent.</summary>
     public static Color ColorOf(FrameAccent accent) => accent switch
     {
