@@ -1,0 +1,20 @@
+{
+    "name": "ChimeraProtocol.UI",
+    "rootNamespace": "",
+    "references": [
+        "ChimeraProtocol.Platform",
+        "ChimeraProtocol.PlatformCore",
+        "ChimeraProtocol.Rules",
+        "ChimeraProtocol.Gameplay",
+        "UnityEngine.UI"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

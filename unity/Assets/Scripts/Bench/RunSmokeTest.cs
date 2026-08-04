@@ -177,6 +177,7 @@ public sealed class RunSmokeTest : MonoBehaviour
         yield return RunAllWeaponsFire(enemyPrefab, bulletPrefab);
         yield return RunEliteChecks(enemyPrefab);
         yield return RunBossChecks(enemyPrefab);
+        yield return RunModalChecks();
         yield return RunFusionChecks(systems);
 
         // ─── Fin de run ───────────────────────────────────────────────────────
@@ -413,6 +414,90 @@ public sealed class RunSmokeTest : MonoBehaviour
 
         if (boss != null) Destroy(boss.gameObject);
         foreach (var e in EnemyBase.Active.ToArray()) if (e != null) Destroy(e.gameObject);
+        yield return null;
+    }
+
+    /// <summary>
+    /// Vérifie la <b>file de modales</b> et l'écran de montée de niveau.
+    ///
+    /// <para>C'est ici que se loge le pire risque de l'interface : une modale qui ne s'ouvre pas, ou
+    /// une pause qui n'est jamais levée, laisse le jeu <b>définitivement figé</b> — sans erreur,
+    /// sans message, et sans que le joueur puisse rien faire.</para>
+    /// </summary>
+    private IEnumerator RunModalChecks()
+    {
+        ModalQueue.Reset();
+        Check("modales : etat initial propre", !ModalQueue.IsOpen && !SceneRoot.Paused);
+
+        // Deux demandes dans la même frame : une seule doit s'ouvrir, l'autre attendre.
+        ModalQueue.Request(ModalKind.Assimilation);
+        ModalQueue.Request(ModalKind.LevelUp);
+
+        // L'ouverture est reportee a la fin de frame, pour que la priorite s'applique aux demandes
+        // de la MEME frame et non a la premiere arrivee.
+        yield return null;
+
+        Check("modales : une seule ouverte a la fois", ModalQueue.PendingCount == 1,
+              $"ouverte={ModalQueue.Current}, en attente={ModalQueue.PendingCount}");
+
+        // La montée de niveau passe devant : elle interrompt la run à un instant précis.
+        Check("modales : la montee de niveau est prioritaire",
+              ModalQueue.Current == ModalKind.LevelUp, ModalQueue.Current?.ToString() ?? "aucune");
+
+        Check("modales : le jeu est en pause", SceneRoot.Paused);
+
+        // Une demande en double ne doit pas empiler deux écrans identiques.
+        int before = ModalQueue.PendingCount;
+        ModalQueue.Request(ModalKind.LevelUp);
+        ModalQueue.Request(ModalKind.Assimilation);
+        Check("modales : pas de doublon en file", ModalQueue.PendingCount == before,
+              $"{ModalQueue.PendingCount} en attente");
+
+        // Fermeture : la suivante prend le relais, la pause est maintenue.
+        ModalQueue.Close(ModalKind.LevelUp);
+        yield return null;
+        Check("modales : la suivante prend le relais",
+              ModalQueue.Current == ModalKind.Assimilation, ModalQueue.Current?.ToString() ?? "aucune");
+        Check("modales : la pause tient entre deux modales", SceneRoot.Paused);
+
+        // Dernière fermeture : la pause DOIT être levée, sinon le jeu reste figé pour toujours.
+        ModalQueue.Close(ModalKind.Assimilation);
+        yield return null;
+        Check("modales : la pause est levee a la fin", !SceneRoot.Paused && !ModalQueue.IsOpen);
+
+        // L'écran lui-même : construction, présentation, choix.
+        var screenGo = new GameObject("LevelUpScreen");
+        var screen = screenGo.AddComponent<LevelUpScreen>();
+        yield return null;
+
+        var cards = LevelUpPool.BuildOverload();
+        LevelUpCard? chosen = null;
+        screen.CardChosen += c => chosen = c;
+
+        screen.Present(cards);
+        yield return null;   // laisse la file s'ouvrir en fin de frame
+        yield return null;
+
+        Check("ecran de niveau : s'affiche a la demande", screen.IsVisible);
+        Check("ecran de niveau : propose les cartes fournies", screen.Cards.Count == cards.Count,
+              $"{screen.Cards.Count} cartes");
+
+        // Un clic simulé sur la première carte.
+        var button = screenGo.GetComponentInChildren<UnityEngine.UI.Button>();
+        Check("ecran de niveau : les cartes sont cliquables", button != null);
+        if (button != null)
+        {
+            button.onClick.Invoke();
+            yield return null;
+
+            Check("ecran de niveau : le choix est remonte", chosen.HasValue,
+                  chosen?.Id ?? "aucun");
+            Check("ecran de niveau : se ferme et leve la pause",
+                  !screen.IsVisible && !SceneRoot.Paused);
+        }
+
+        Destroy(screenGo);
+        ModalQueue.Reset();
         yield return null;
     }
 
