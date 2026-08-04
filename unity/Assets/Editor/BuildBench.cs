@@ -23,6 +23,7 @@ public static class BuildBench
     private const string OutDirSmoke       = "Build/platform-smoke";
     private const string OutDirSmokeIl2cpp = "Build/platform-smoke-il2cpp";
     private const string OutDirRunSmoke    = "Build/run-smoke";
+    private const string OutDirGame        = "Build/game";
 
     [MenuItem("Chimera/Build banc (Mono)")]
     public static void Windows64Mono()
@@ -49,6 +50,42 @@ public static class BuildBench
     [MenuItem("Chimera/Build verification plateforme (IL2CPP)")]
     public static void Windows64PlatformSmokeIl2cpp()
         => Build<PlatformSmokeTest>(ScriptingImplementation.IL2CPP, OutDirSmokeIl2cpp, "PlatformSmoke");
+
+    /// <summary>
+    /// Build du <b>vrai jeu</b> : menu principal + scène de run, telles que déclarées dans
+    /// <see cref="GameScenes.All"/>. C'est ce build qui sera publié — les autres ne servent qu'à
+    /// vérifier.
+    /// </summary>
+    [MenuItem("Chimera/Build du jeu (Mono)")]
+    public static void Windows64Game()
+    {
+        PlayerSettings.SetScriptingBackend(NamedBuildTarget.Standalone, ScriptingImplementation.Mono2x);
+        PlayerSettings.companyName = "drangoht";
+        PlayerSettings.productName = "Chimera Protocol";
+        PlayerSettings.SplashScreen.show = false;
+        PlayerSettings.runInBackground = true;
+
+        string projectRoot = Directory.GetParent(Application.dataPath)!.FullName;
+        string outDir = Path.Combine(projectRoot, OutDirGame);
+        Directory.CreateDirectory(outDir);
+
+        var scenes = new string[GameScenes.All.Length];
+        for (int i = 0; i < scenes.Length; i++) scenes[i] = GameScenes.PathOf(GameScenes.All[i]);
+
+        var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
+        {
+            scenes = scenes,
+            locationPathName = Path.Combine(outDir, "ChimeraProtocol.exe"),
+            target = BuildTarget.StandaloneWindows64,
+            options = BuildOptions.None,
+        });
+
+        var summary = report.summary;
+        Debug.Log($"[BUILD] jeu : resultat={summary.result} duree={summary.totalTime} " +
+                  $"taille={summary.totalSize} scenes={scenes.Length}");
+
+        if (summary.result != BuildResult.Succeeded) EditorApplication.Exit(1);
+    }
 
     /// <summary>Critère de sortie du Lot 2 : le cœur de run, vérifié headless.</summary>
     [MenuItem("Chimera/Build verification coeur de run (Mono)")]

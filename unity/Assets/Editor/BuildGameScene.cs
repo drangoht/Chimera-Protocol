@@ -18,7 +18,6 @@ using UnityEngine.SceneManagement;
 public static class BuildGameScene
 {
     private const string PrefabDir = "Assets/Resources/Prefabs/entities";
-    private const string ScenePath = "Assets/Scenes/Game.unity";
 
     [MenuItem("Chimera/Construire la scene de jeu")]
     public static void Run()
@@ -32,6 +31,8 @@ public static class BuildGameScene
         GameObject orbPrefab    = BuildXpOrbPrefab();
 
         BuildScene(enemyPrefab, bulletPrefab, orbPrefab);
+        BuildMainMenu();
+        RegisterScenes();
 
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
@@ -96,6 +97,50 @@ public static class BuildGameScene
         return prefab;
     }
 
+    /// <summary>Scène du menu principal — point d'entrée du jeu.</summary>
+    private static void BuildMainMenu()
+    {
+        Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+
+        var camGo = new GameObject("MainCamera", typeof(Camera));
+        var cam = camGo.GetComponent<Camera>();
+        cam.orthographic = true;
+        cam.orthographicSize = 540f;
+        cam.backgroundColor = new Color(0.102f, 0.102f, 0.180f);
+        cam.clearFlags = CameraClearFlags.SolidColor;
+        camGo.transform.position = new Vector3(0f, 0f, -10f);
+        camGo.tag = "MainCamera";
+
+        var menuGo = new GameObject("MainMenu", typeof(MainMenuScreen));
+
+        // Un EventSystem est INDISPENSABLE : sans lui, aucun bouton ne reçoit de clic ni de focus,
+        // et le menu paraît simplement inerte — sans la moindre erreur.
+        var eventSystem = new GameObject("EventSystem",
+            typeof(UnityEngine.EventSystems.EventSystem),
+            typeof(UnityEngine.EventSystems.StandaloneInputModule));
+
+        foreach (var go in new[] { camGo, menuGo, eventSystem })
+            EditorSceneManager.MoveGameObjectToScene(go, scene);
+
+        EditorSceneManager.SaveScene(scene, GameScenes.PathOf(GameScenes.MainMenu));
+        Debug.Log("[SCENE] menu principal ecrit : " + GameScenes.PathOf(GameScenes.MainMenu));
+    }
+
+    /// <summary>
+    /// Déclare les scènes dans les réglages de build, dans l'ordre de <see cref="GameScenes.All"/>.
+    /// Une scène absente d'ici ne peut pas être chargée à l'exécution : le symptôme est un écran
+    /// noir sans message.
+    /// </summary>
+    private static void RegisterScenes()
+    {
+        var list = new EditorBuildSettingsScene[GameScenes.All.Length];
+        for (int i = 0; i < GameScenes.All.Length; i++)
+            list[i] = new EditorBuildSettingsScene(GameScenes.PathOf(GameScenes.All[i]), true);
+
+        EditorBuildSettings.scenes = list;
+        Debug.Log($"[SCENE] {list.Length} scenes declarees au build.");
+    }
+
     // ─── Scène ────────────────────────────────────────────────────────────────
 
     private static void BuildScene(GameObject enemyPrefab, GameObject bulletPrefab, GameObject orbPrefab)
@@ -113,7 +158,9 @@ public static class BuildGameScene
         camGo.transform.position = new Vector3(0f, 0f, -10f);
         camGo.tag = "MainCamera";
 
-        var systems = new GameObject("[Systems]", typeof(XpSystem), typeof(GameManager), typeof(HUD));
+        var systems = new GameObject("[Systems]",
+            typeof(XpSystem), typeof(GameManager), typeof(InventorySystem),
+            typeof(HUD), typeof(RunHud));
 
         var playerGo = new GameObject("Player", typeof(SpriteRenderer), typeof(Player), typeof(ImpulseCannon));
         playerGo.GetComponent<SpriteRenderer>().sortingOrder = 15;
@@ -131,10 +178,15 @@ public static class BuildGameScene
 
         var bootGo = new GameObject("RunBootstrap", typeof(RunBootstrap));
 
-        foreach (var go in new[] { camGo, systems, playerGo, spawnerGo, bootGo })
+        // Sans EventSystem, les ecrans modaux ne recoivent ni clic ni focus manette.
+        var eventSystem = new GameObject("EventSystem",
+            typeof(UnityEngine.EventSystems.EventSystem),
+            typeof(UnityEngine.EventSystems.StandaloneInputModule));
+
+        foreach (var go in new[] { camGo, systems, playerGo, spawnerGo, bootGo, eventSystem })
             EditorSceneManager.MoveGameObjectToScene(go, scene);
 
-        EditorSceneManager.SaveScene(scene, ScenePath);
-        Debug.Log("[SCENE] scene ecrite : " + ScenePath);
+        EditorSceneManager.SaveScene(scene, GameScenes.PathOf(GameScenes.Game));
+        Debug.Log("[SCENE] scene de jeu ecrite : " + GameScenes.PathOf(GameScenes.Game));
     }
 }
