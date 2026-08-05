@@ -213,9 +213,16 @@ public static class BuildGameScene
         var camGo = new GameObject("MainCamera", typeof(Camera), typeof(AudioListener));
         var cam = camGo.GetComponent<Camera>();
         cam.orthographic = true;
+        cam.orthographicSize = 360f;   // 720 px de haut, la résolution logique du jeu d'origine
         cam.backgroundColor = new Color(0.06f, 0.06f, 0.11f);
         cam.clearFlags = CameraClearFlags.SolidColor;
         camGo.tag = "MainCamera";
+
+        // ⚠ La caméra RECULE en Z. Laissée à l'origine, elle se retrouve dans le même plan que les
+        // sprites de la cinématique : ceux-ci tombent derrière son plan de coupe et l'écran reste
+        // noir — avec le texte, qui vit dans le canevas, parfaitement visible par-dessus. Le
+        // symptôme se lit alors comme « les sprites ne se chargent pas », alors qu'ils sont là.
+        camGo.transform.position = new Vector3(0f, 0f, -10f);
 
         var introGo = new GameObject("Intro", typeof(IntroScreen), typeof(MusicDirector));
 

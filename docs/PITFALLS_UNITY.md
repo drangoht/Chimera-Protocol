@@ -539,6 +539,37 @@ contact.
 C'est le piège des ramassables « walk-over » déjà connu du projet, sous une forme un peu différente :
 là c'était l'`Area2D` qui exigeait un mouvement physique, ici c'est la mécanique elle-même.
 
+### Un sprite d'interface chargé dans le monde est cent fois trop petit
+
+Le Noyau d'Aether — sujet de **deux plans sur six** de la cinématique — était invisible : on ne voyait
+que ses particules. Même image que l'icône du HUD, mais importée depuis `Resources/Ui/` à **100 px par
+unité** ; posée dans le monde à l'échelle 5,5, l'icône de 32 px mesurait **moins de deux pixels**.
+
+La parade est une copie sous `Resources/Vfx/`, dossier importé à 1 px = 1 unité comme le reste du
+monde. C'est la troisième forme du même piège de PPU, après les bordures 9-slice à ×100 et la tuile
+`Tiled` qui ne se répétait pas : **le PPU d'un sprite dépend de l'endroit où il sera affiché, pas de
+ce qu'il représente**.
+
+### Une caméra 2D laissée à l'origine ne voit rien
+
+Les sprites de la cinématique n'apparaissaient pas. Aucune erreur, et le texte — qui vit dans le
+canevas — s'affichait parfaitement par-dessus : le symptôme se lit donc comme « les sprites ne se
+chargent pas », alors qu'ils étaient là. La caméra était restée en `z = 0`, dans le même plan qu'eux,
+donc derrière son plan de coupe. La scène de jeu la reculait à `-10` ; la scène d'intro, écrite
+séparément, ne le faisait pas.
+
+### Une cinématique doit ignorer les entrées de sa première demi-seconde
+
+L'intro se passait toute seule avant d'avoir affiché une image : l'activation de la fenêtre par le
+système suffit à déclencher `Input.anyKeyDown`. Pour un joueur, c'est une touche restée enfoncée au
+lancement — et il ne comprend pas ce qu'il vient de rater. Une garde de 0,6 s l'évite sans rendre le
+saut moins immédiat.
+
+⚠ Corollaire pour le banc : **ne pas activer la fenêtre** avant de capturer une cinématique, et caler
+les clichés sur le rythme réel des plans plutôt que sur une estimation — un log par plan
+(`[Intro] plan n/6 à t = …`) coûte six lignes et évite de conclure à un défaut de rythme qui n'existe
+pas.
+
 ### Une table parsée n'est pas une table branchée
 
 `GraftTable` lisait les **fusions de greffes** — recette, jauge dédiée, points par archétype — depuis

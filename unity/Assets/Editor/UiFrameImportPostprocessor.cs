@@ -18,6 +18,11 @@ public sealed class UiFrameImportPostprocessor : AssetPostprocessor
     private void OnPreprocessTexture()
     {
         if (assetPath.Contains("/Resources/Environment/")) { ConfigureTile(); return; }
+
+        // Les sprites d'effet vivent dans le MONDE, à 1 px = 1 unité comme tout le reste du jeu —
+        // et non à 100 comme l'interface. Les importer au PPU de l'UI les rendrait cent fois trop
+        // petits dans une scène.
+        if (assetPath.Contains("/Resources/Vfx/")) { ConfigureWorldSprite(); return; }
         if (assetPath.Contains("/Resources/Ui/")) { ConfigureUiSprite(); return; }
         if (!assetPath.Contains("/Resources/UiFrames/")) return;
 
@@ -37,6 +42,28 @@ public sealed class UiFrameImportPostprocessor : AssetPostprocessor
     /// l'arène, ce qui donne un aplat uni — un sol qui ressemble exactement au vide qu'il devait
     /// remplacer, sans la moindre erreur.</para>
     /// </summary>
+    /// <summary>
+    /// Sprite d'effet joué dans le monde — 1 px = 1 unité, filtre point, sans mipmap. Mêmes réglages
+    /// que <c>Art/</c> ; ils vivent sous <c>Resources/</c> parce qu'ils sont chargés par chemin à
+    /// l'exécution.
+    /// </summary>
+    private void ConfigureWorldSprite()
+    {
+        var importer = (TextureImporter)assetImporter;
+        importer.textureType = TextureImporterType.Sprite;
+        importer.spriteImportMode = SpriteImportMode.Single;
+        importer.spritePixelsPerUnit = 1f;
+        importer.filterMode = FilterMode.Point;
+        importer.mipmapEnabled = false;
+        importer.alphaIsTransparency = true;
+
+        var settings = new TextureImporterSettings();
+        importer.ReadTextureSettings(settings);
+        settings.spriteMeshType = SpriteMeshType.FullRect;
+        settings.spriteAlignment = (int)SpriteAlignment.Center;
+        importer.SetTextureSettings(settings);
+    }
+
     private void ConfigureTile()
     {
         var importer = (TextureImporter)assetImporter;
