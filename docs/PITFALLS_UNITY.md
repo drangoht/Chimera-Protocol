@@ -441,6 +441,47 @@ Corollaire trouvé au même endroit : `HUD.Place()` pose un pivot **haut-gauche*
 mêmes ancre et position avec un pivot différent décale l'élément de la **hauteur entière** du bloc —
 soit, ici, hors du champ où on le cherchait.
 
+### Un contrôle doit avoir la **nature** de ce qu'il règle
+
+Symptôme : l'écran d'options « ne ressemble pas au jeu » alors que chaque libellé est juste. Le
+portage y empilait des boutons pleine largeur « Étiquette : valeur », qu'on clique pour faire défiler.
+Trois pertes, toutes invisibles au code :
+
+- un **volume** n'a plus de course : on ne voit pas où l'on se trouve entre 0 et 100 %, seulement le
+  palier courant ;
+- un **état** ne se lit plus par sa forme mais par un mot (« Activé »), donc plus d'un coup d'œil ;
+- rien ne distingue plus **ce qui se règle** de **ce qui s'annonce** : toutes les lignes ont la même
+  silhouette.
+
+Le jeu publié emploie un curseur, un interrupteur et une liste déroulante, avec le **libellé à gauche
+et le contrôle à droite**. Les textures existaient déjà dans `Resources/UiFrames`
+(`ui_slider_grabber`, `ui_toggle_on/off`) — comme les cadres blindés et les icônes avant elles,
+elles étaient importées et inutilisées.
+
+⚠ Deux pièges d'assemblage rencontrés en les posant :
+
+- **La poignée d'un `Slider` ne fixe que sa largeur.** Unity pilote son ancrage horizontal ; lui
+  donner une hauteur en dur l'étire en rectangle. Elle s'ancre en `(0,0)-(0,1)` avec un `sizeDelta`
+  de `(largeur, 0)`, et sa zone se rétrécit d'une demi-poignée à chaque bout, sinon elle déborde de
+  la piste aux extrémités.
+- **Le `graphic` d'un `Toggle` est ce qu'Unity affiche quand la case est cochée.** Le laisser vide
+  donne un interrupteur qui ne bouge jamais — coché ou non, la même image.
+
+### Une `Image` en mode `Tiled` ne se répète pas quand les PPU divergent
+
+La vignette d'un biome (tuile de sol répétée) s'affichait en **aplat uni**. Une `Image` uGUI
+dimensionne sa tuile d'après `referencePixelsPerUnit / spritePixelsPerUnit` : à 100 pour 1 — les
+valeurs du projet —, une tuile de 32 px se dessine sur 3 200 et une seule remplit tout. Même famille
+que les bordures 9-slice à ×100. Ici la parade est de **ne pas répéter** : agrandie au filtre point,
+la tuile montre son motif, ce qui est exactement ce que la vignette doit dire.
+
+### Des textes posés à hauteur fixe doivent réserver leur cas le plus long
+
+Sur la carte d'un biome, quatre lignes sont posées à des ordonnées fixes. La description du Secteur
+Néon et la règle d'un cran passent toutes deux **à la ligne** : serrées, les deux derniers textes se
+chevauchaient. Le défaut n'apparaît que sur un contenu particulier — celui qu'on ne regarde pas en
+premier sur la capture.
+
 ### Un `Register` silencieux prive le HUD de l'arme de départ
 
 `InventorySystem.Register` remplissait la table sans émettre `WeaponChanged`. Or `RunBootstrap`

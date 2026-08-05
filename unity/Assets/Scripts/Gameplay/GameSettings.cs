@@ -52,6 +52,11 @@ public static class GameSettings
             : FullScreenMode.Windowed;
 
         QualitySettings.vSyncCount = settings.Vsync ? 1 : 0;
+
+        // La secousse d'écran se rejoue au démarrage comme le plein écran : sans cela, un joueur qui
+        // l'avait coupée la retrouve active à chaque lancement — la préférence est enregistrée mais
+        // jamais appliquée.
+        ScreenShake.Intensity = settings.ShakeIntensity;
     }
 
     /// <summary>

@@ -200,9 +200,13 @@ public sealed class HubScreen : MonoBehaviour
         scroll.viewport = scrollRect;
         _list = content.transform;
 
+        // Les améliorations D'ABORD, le perk et le titre ensuite — l'ordre du jeu publié. Ce qui
+        // s'achète est la raison d'être de l'écran ; ce qui s'équipe se règle une fois puis ne bouge
+        // plus. Le portage ouvrait sur deux lignes d'équipement, qui repoussaient hors écran ce que
+        // le joueur venait faire.
+        BuildRows();
         BuildPerkRow();
         BuildTitleRow();
-        BuildRows();
 
         // Réinitialisation : elle REMBOURSE les Échos dépensés. C'est ce qui rend un arbre
         // d'améliorations réversible, donc explorable — sans elle, un achat regretté est définitif
@@ -324,7 +328,11 @@ public sealed class HubScreen : MonoBehaviour
 
         foreach (var def in MetaProgression.All)
         {
-            var panel = UiStyle.Panel(_list, "Row_" + def.Id, FrameAccent.Cyan);
+            // ⚠ Cadre de BOUTON et non de panneau. Le cadre de panneau porte un second liseré
+            // intérieur : répété sur quatorze lignes, il donnait un empilement de cadres dans des
+            // cadres où plus rien ne ressortait — alors qu'une ligne d'amélioration doit se lire
+            // comme une ligne, pas comme une fenêtre.
+            var panel = UiStyle.Card(_list, "Row_" + def.Id, FrameAccent.Cyan);
 
             var element = panel.AddComponent<LayoutElement>();
             element.minHeight = 96f;

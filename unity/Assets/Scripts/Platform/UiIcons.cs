@@ -70,6 +70,13 @@ public static class UiIcons
         { "overload_regen",     "ui_icon_noyau"          },
         { "overload_damage",    "ui_icon_thermal_core"   },
 
+        // ─── Récompenses (défis, Hub) ─────────────────────────────────────────
+        { "echo",               "ui_icon_echo"           },
+        { "extra_slot",         "ui_icon_extra_slot"     },
+        { "title",              "ui_icon_title"          },
+        { "hp",                 "ui_icon_hp"             },
+        { "nova",               "ui_icon_nova"           },
+
         // ─── Greffes et fusions de chimère ────────────────────────────────────
         { "aiming_eye",             "aiming_eye_icon"             },
         { "erratic_servos",         "erratic_servos_icon"         },

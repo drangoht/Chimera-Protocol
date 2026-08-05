@@ -34,7 +34,10 @@ public sealed class LevelSelectScreen : MonoBehaviour
     private sealed class Card
     {
         public string BiomeId = "";
-        public Text Info = null!;
+        public Text Title = null!;
+        public Text Effect = null!;
+        public Text Description = null!;
+        public Text Saturation = null!;
         public Button Launch = null!;
         public Button RankDown = null!;
         public Button RankUp = null!;
@@ -94,22 +97,48 @@ public sealed class LevelSelectScreen : MonoBehaviour
             card.RankDown.interactable = unlocked && card.Rank > 0;
             card.RankUp.interactable = unlocked && card.Rank < maxRank;
 
-            card.Info.text = Describe(card, unlocked, maxRank, settings);
+            Describe(card, unlocked, maxRank, settings);
         }
     }
 
-    private static string Describe(Card card, bool unlocked, int maxRank, SettingsData settings)
+    /// <summary>
+    /// Remplit les quatre textes d'une carte : titre, effet du biome, description, règle du cran.
+    ///
+    /// <para>Le portage réunissait tout dans un unique libellé sur le bouton de lancement. Trois
+    /// conséquences : le <b>nom</b> du biome se réduisait à son identifiant en capitales
+    /// (« SANCTUAIRE »), son <b>effet</b> et sa <b>description</b> — la raison même de choisir ce
+    /// niveau plutôt qu'un autre — n'apparaissaient nulle part, et la règle du cran <b>débordait</b>
+    /// hors du cadre.</para>
+    /// </summary>
+    private static void Describe(Card card, bool unlocked, int maxRank, SettingsData settings)
     {
-        string name = card.BiomeId.ToUpperInvariant();
+        string slug = card.BiomeId.ToUpperInvariant();
+        string name = Loc.T($"BIOME_{slug}_NAME");
 
+        // Verrouillé : la carte garde son nom, son effet et sa description — c'est ce qui donne
+        // envie de l'ouvrir. Seul le badge change, et le bouton se grise. Le jeu publié fait de
+        // même : masquer le contenu d'un niveau fermé n'en dirait pas la valeur.
         if (!unlocked)
         {
-            string blocker = BiomeUnlock.BlockedBy(card.BiomeId, settings.Completions) ?? "";
-            return $"{name}   VERROUILLÉ\nTerminer {blocker.ToUpperInvariant()} pour l'ouvrir";
+            card.Title.text = $"{name}   {Loc.T("LEVELSEL_LOCKED")}";
+            card.Effect.text = Loc.T($"BIOME_{slug}_EFFECT");
+            card.Description.text = Loc.T($"BIOME_{slug}_DESC");
+            card.Saturation.text = "";
+            return;
         }
 
         int best = GameSettings.HighScoreFor(card.BiomeId);
-        string record = best > 0 ? $"record {best / 60:00}:{best % 60:00}" : "aucun record";
+        bool beaten = settings.Completions.ContainsKey(card.BiomeId);
+
+        // Le badge VAINCU et le record disent l'histoire du joueur avec ce niveau : c'est ce qui
+        // transforme une liste de cinq entrées en une carte de progression.
+        string record = best > 0 ? $"{best / 60:00}:{best % 60:00}" : "";
+        string badge = beaten ? $"   {Loc.T("LEVELSEL_DEFEATED")}" : "";
+        string time = record.Length > 0 ? $"   ⏱ {record}" : "";
+
+        card.Title.text = $"{name}{badge}{time}   {Loc.T("LEVELSEL_THREAT")} {LevelThreat.TierOf(card.BiomeId)}";
+        card.Effect.text = Loc.T($"BIOME_{slug}_EFFECT");
+        card.Description.text = Loc.T($"BIOME_{slug}_DESC");
 
         // La RÈGLE du cran, pas son numéro : un cran est une règle nommée, lisible avant de lancer,
         // et non un multiplicateur. C'est ce qui permet de savoir ce qu'on accepte de perdre.
@@ -125,14 +154,13 @@ public sealed class LevelSelectScreen : MonoBehaviour
         else
         {
             var rank = SaturationTable.Ranks[Mathf.Min(card.Rank, SaturationTable.Ranks.Count) - 1];
-            rankText = $"Cran {card.Rank} — {Loc.T(rank.NameKey)} : {Loc.T(rank.RuleKey)}";
+            rankText = $"{Loc.T("SAT_SHORT")} {card.Rank} — {Loc.T(rank.NameKey)} : {Loc.T(rank.RuleKey)}";
         }
 
-        string ceiling = card.Rank >= maxRank && maxRank < SaturationTable.MaxRank
-            ? "   (battre ce cran pour ouvrir le suivant)"
-            : "";
+        if (card.Rank >= maxRank && maxRank < SaturationTable.MaxRank)
+            rankText += "   " + Loc.T("SAT_LOCKED_HINT");
 
-        return $"{name}   palier {LevelThreat.TierOf(card.BiomeId)}   {record}\n{rankText}{ceiling}";
+        card.Saturation.text = rankText;
     }
 
     // ─── Construction ─────────────────────────────────────────────────────────
@@ -197,46 +225,75 @@ public sealed class LevelSelectScreen : MonoBehaviour
 
         foreach (string biome in LevelThreat.Order) BuildCard(biome);
 
-        var close = UiStyle.TextButton(panel.transform, "Retour", FrameAccent.Steel);
+        // « Aléatoire » à côté de « Retour », comme le jeu publié : il évite au joueur qui n'a pas
+        // d'avis de relire cinq cartes pour rejouer.
+        var random = UiStyle.TextButton(panel.transform, Loc.T("LEVELSEL_RANDOM"), FrameAccent.Cyan);
+        var randomRect = random.GetComponent<RectTransform>();
+        randomRect.anchorMin = randomRect.anchorMax = new Vector2(0.5f, 0f);
+        randomRect.pivot = new Vector2(1f, 0f);
+        randomRect.sizeDelta = new Vector2(300f, 58f);
+        randomRect.anchoredPosition = new Vector2(-14f, 16f);
+        random.onClick.AddListener(LaunchRandom);
+
+        var close = UiStyle.TextButton(panel.transform, Loc.T("COMMON_BACK"), FrameAccent.Steel);
         var closeRect = close.GetComponent<RectTransform>();
         closeRect.anchorMin = closeRect.anchorMax = new Vector2(0.5f, 0f);
-        closeRect.pivot = new Vector2(0.5f, 0f);
-        closeRect.sizeDelta = new Vector2(320f, 58f);
-        closeRect.anchoredPosition = new Vector2(0f, 16f);
+        closeRect.pivot = new Vector2(0f, 0f);
+        closeRect.sizeDelta = new Vector2(300f, 58f);
+        closeRect.anchoredPosition = new Vector2(14f, 16f);
         close.onClick.AddListener(Close);
     }
 
+    /// <summary>
+    /// Une <b>carte de biome</b> : vignette, nom, effet, description, règle du cran et bouton de
+    /// lancement — la disposition du jeu publié (<c>docs/ui_v1160_levelselect.png</c>).
+    ///
+    /// <para>Le liseré prend la <b>couleur du biome</b>. Ce n'est pas un ornement : c'est la même
+    /// teinte que le sol de l'arène qu'on s'apprête à lancer, et elle fait le lien entre l'écran de
+    /// choix et le lieu choisi.</para>
+    /// </summary>
     private void BuildCard(string biomeId)
     {
         if (_list == null) return;
 
-        var row = UiStyle.NewUiObject("Card_" + biomeId, _list);
-        var element = row.AddComponent<LayoutElement>();
-        element.minHeight = 104f;
-
-        var rowLayout = row.AddComponent<HorizontalLayoutGroup>();
-        rowLayout.spacing = 10f;
-        rowLayout.childForceExpandWidth = false;
-        rowLayout.childControlWidth = true;
-        rowLayout.childControlHeight = true;
-
         var card = new Card { BiomeId = biomeId };
+        var accent = AccentOf(biomeId);
 
-        card.Launch = UiStyle.TextButton(row.transform, biomeId.ToUpperInvariant(), FrameAccent.Cyan);
-        var launchElement = card.Launch.gameObject.AddComponent<LayoutElement>();
-        launchElement.flexibleWidth = 1f;
+        var frame = UiStyle.Card(_list, biomeId, accent);
+        var element = frame.AddComponent<LayoutElement>();
+        element.minHeight = CardHeight;
+        element.preferredHeight = CardHeight;
 
-        // ⚠ Largeur préférée forcée à ZÉRO. Sans elle, la carte réclame la largeur de son texte —
-        // la règle du cran fait deux lignes et plus de 1 500 px — et pousse les deux boutons de
-        // sélection hors du cadre : le joueur ne peut plus changer de cran, donc plus régler la
-        // difficulté du niveau qu'il s'apprête à lancer.
-        launchElement.preferredWidth = 0f;
-        launchElement.minWidth = 320f;
-        card.Info = card.Launch.GetComponentInChildren<Text>();
+        BuildThumbnail(frame.transform, biomeId, accent);
+
+        // Colonne de texte, entre la vignette et la colonne de boutons.
+        var text = UiStyle.NewUiObject("Text", frame.transform).GetComponent<RectTransform>();
+        text.anchorMin = Vector2.zero;
+        text.anchorMax = Vector2.one;
+        text.offsetMin = new Vector2(ThumbnailSize + 40f, 16f);
+        text.offsetMax = new Vector2(-(LaunchWidth + RankWidth + 48f), -16f);
+
+        // ⚠ Les quatre lignes sont posées à des hauteurs FIXES, donc chacune doit avoir la place de
+        // ses deux lignes possibles : la description du Secteur Néon et la règle d'un cran passent
+        // toutes deux à la ligne, et les serrer faisait se chevaucher les deux derniers textes.
+        card.Title = Line(text, 26, UiStyle.ColorOf(accent), 0f, 34f);
+        card.Effect = Line(text, 20, UiPalette.Gold, 36f, 26f);
+        card.Description = Line(text, 19, UiPalette.OffWhite, 64f, 52f);
+        card.Saturation = Line(text, 17, UiPalette.Dim, 118f, 52f);
+
+        // Colonne de droite : lancer en haut, réglage du cran dessous. Les deux appartiennent à la
+        // même décision — où jouer, et à quelle dureté — donc au même endroit de la carte.
+        card.Launch = UiStyle.TextButton(frame.transform, Loc.T("LEVELSEL_PLAY_HERE"), accent);
+        var launchRect = card.Launch.GetComponent<RectTransform>();
+        launchRect.anchorMin = new Vector2(1f, 1f);
+        launchRect.anchorMax = new Vector2(1f, 1f);
+        launchRect.pivot = new Vector2(1f, 1f);
+        launchRect.sizeDelta = new Vector2(LaunchWidth, 56f);
+        launchRect.anchoredPosition = new Vector2(-20f, -18f);
         card.Launch.onClick.AddListener(() => Launch(card));
 
-        card.RankDown = BuildRankButton(row.transform, "◀", card, -1);
-        card.RankUp   = BuildRankButton(row.transform, "▶", card, +1);
+        card.RankDown = BuildRankButton(frame.transform, "◀", card, -1, -(20f + RankWidth + 8f));
+        card.RankUp   = BuildRankButton(frame.transform, "▶", card, +1, -20f);
 
         _cards.Add(card);
         CardCount++;
@@ -244,12 +301,100 @@ public sealed class LevelSelectScreen : MonoBehaviour
         _firstButton ??= card.Launch;
     }
 
-    private Button BuildRankButton(Transform parent, string label, Card card, int delta)
+    /// <summary>Une ligne de texte de la colonne centrale, posée à une hauteur donnée depuis le haut.</summary>
+    private static Text Line(RectTransform parent, int size, Color color, float top, float height)
+    {
+        var text = UiStyle.Label(parent, "", size, color, TextAnchor.UpperLeft);
+
+        var rect = text.GetComponent<RectTransform>();
+        rect.anchorMin = new Vector2(0f, 1f);
+        rect.anchorMax = new Vector2(1f, 1f);
+        rect.pivot = new Vector2(0.5f, 1f);
+        rect.offsetMin = new Vector2(0f, -(top + height));
+        rect.offsetMax = new Vector2(0f, -top);
+
+        return text;
+    }
+
+    /// <summary>
+    /// Vignette du biome : la <b>tuile de sol</b> répétée et teintée, exactement comme l'arène. Elle
+    /// ne décore pas, elle montre le lieu — c'est le seul aperçu que le joueur ait avant de lancer.
+    /// </summary>
+    private static void BuildThumbnail(Transform parent, string biomeId, FrameAccent accent)
+    {
+        var go = UiStyle.NewUiObject("Thumbnail", parent);
+        var image = go.AddComponent<Image>();
+        image.raycastTarget = false;
+
+        var tile = Resources.Load<Sprite>("Environment/tile_floor_stone");
+        if (tile != null)
+        {
+            image.sprite = tile;
+
+            // ⚠ Volontairement AGRANDIE, pas répétée. Le mode `Tiled` d'une Image uGUI dimensionne
+            // sa tuile d'après `referencePixelsPerUnit / spritePixelsPerUnit` : à 100 pour 1 — les
+            // valeurs du projet —, une tuile de 32 px se dessine sur 3 200 et la vignette n'affiche
+            // qu'un aplat uni. Agrandie au filtre point, la même tuile montre son motif, ce qui est
+            // précisément ce que la vignette doit dire.
+            image.type = Image.Type.Simple;
+            image.color = FloorTintOf(biomeId);
+        }
+        else
+        {
+            image.color = UiStyle.ColorOf(accent);
+        }
+
+        var rect = go.GetComponent<RectTransform>();
+        rect.anchorMin = rect.anchorMax = new Vector2(0f, 0.5f);
+        rect.pivot = new Vector2(0f, 0.5f);
+        rect.sizeDelta = new Vector2(ThumbnailSize, ThumbnailSize);
+        rect.anchoredPosition = new Vector2(20f, 0f);
+
+        // Liseré d'accent autour de la vignette, comme le jeu publié : sans lui, la tuile paraît
+        // collée sur la carte plutôt que sertie dedans.
+        var border = UiStyle.NewUiObject("Border", go.transform);
+        var borderImage = border.AddComponent<Image>();
+        borderImage.sprite = UiStyle.ButtonFrame(accent);
+        borderImage.type = Image.Type.Sliced;
+        borderImage.fillCenter = false;
+        borderImage.raycastTarget = false;
+        UiStyle.Stretch(border, -2f);
+    }
+
+    /// <summary>Teinte du sol du biome — la même table que l'arène, pour que l'aperçu ne mente pas.</summary>
+    private static Color FloorTintOf(string biomeId) => biomeId switch
+    {
+        "fournaise" => new Color(1.00f, 0.72f, 0.58f),
+        "givre"     => new Color(0.72f, 0.88f, 1.00f),
+        "neon"      => new Color(0.86f, 0.70f, 1.00f),
+        "aether"    => new Color(0.72f, 1.00f, 0.94f),
+        _           => new Color(0.88f, 0.90f, 1.00f),
+    };
+
+    /// <summary>Accent d'un biome, repris de sa couleur de bordure d'arène.</summary>
+    private static FrameAccent AccentOf(string biomeId) => biomeId switch
+    {
+        "fournaise" => FrameAccent.Danger,
+        "neon"      => FrameAccent.Violet,
+        "aether"    => FrameAccent.Violet,
+        _           => FrameAccent.Cyan,
+    };
+
+    private const float CardHeight = 196f;
+    private const float ThumbnailSize = 136f;
+    private const float LaunchWidth = 220f;
+    private const float RankWidth = 72f;
+
+    private Button BuildRankButton(Transform parent, string label, Card card, int delta, float right)
     {
         var button = UiStyle.TextButton(parent, label, FrameAccent.Gold);
 
-        var element = button.gameObject.AddComponent<LayoutElement>();
-        element.preferredWidth = 88f;
+        var rect = button.GetComponent<RectTransform>();
+        rect.anchorMin = new Vector2(1f, 0f);
+        rect.anchorMax = new Vector2(1f, 0f);
+        rect.pivot = new Vector2(1f, 0f);
+        rect.sizeDelta = new Vector2(RankWidth, 52f);
+        rect.anchoredPosition = new Vector2(right, 18f);
 
         button.onClick.AddListener(() =>
         {
@@ -264,6 +409,22 @@ public sealed class LevelSelectScreen : MonoBehaviour
         });
 
         return button;
+    }
+
+    /// <summary>
+    /// Lance un biome <b>débloqué</b> tiré au sort, avec le cran déjà réglé pour lui. Le tirage passe
+    /// par <see cref="Gd.Randf"/> comme tout l'aléatoire du jeu : une graine fixée doit rejouer la
+    /// même partie, y compris le choix du niveau.
+    /// </summary>
+    private void LaunchRandom()
+    {
+        var open = new List<Card>();
+        foreach (var card in _cards)
+            if (BiomeUnlock.IsUnlocked(card.BiomeId, GameSettings.Current.Completions)) open.Add(card);
+
+        if (open.Count == 0) return;
+
+        Launch(open[Mathf.Min((int)(Gd.Randf() * open.Count), open.Count - 1)]);
     }
 
     private void Launch(Card card)

@@ -5,13 +5,19 @@ using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 /// <summary>
-/// Options (Lot 6).
+/// Options (Lot 6, remis à la parité visuelle le 2026-08-05).
 ///
-/// <para><b>Cet écran ne propose que des réglages qui agissent.</b> Les curseurs de volume et
-/// l'intensité de secousse existent dans la sauvegarde — ils viennent de la version Godot — mais ni
-/// l'audio ni la secousse d'écran ne sont portés : les afficher donnerait des réglages morts, c'est-à-dire
-/// exactement le défaut des armes invisibles, appliqué à l'interface. Ils reviendront avec ce qu'ils
-/// pilotent.</para>
+/// <para><b>Cet écran ne propose que des réglages qui agissent.</b> Un réglage mort est le même
+/// défaut qu'une arme invisible, appliqué à l'interface. C'est à ce titre que les volumes n'étaient
+/// pas affichés avant que l'audio n'existe, et que l'intensité de secousse arrive maintenant —
+/// branchée sur <c>ScreenShake.Intensity</c>, pas seulement écrite dans la sauvegarde.</para>
+///
+/// <para><b>Chaque réglage emploie le contrôle de sa nature</b>, comme le jeu publié
+/// (<c>docs/ui_v1160_options.png</c>) : un <b>curseur</b> pour une valeur continue, un
+/// <b>interrupteur</b> pour un état, un <b>sélecteur</b> pour un choix parmi trois. Le portage
+/// empilait des boutons « Étiquette : valeur » identiques sur toute la largeur — on ne pouvait ni
+/// voir où l'on se trouvait dans une course de volume, ni distinguer d'un coup d'œil ce qui se règle
+/// de ce qui s'annonce.</para>
 /// </summary>
 public sealed class OptionsScreen : MonoBehaviour
 {
@@ -30,8 +36,10 @@ public sealed class OptionsScreen : MonoBehaviour
     private GameObject? _root;
     private Transform? _list;
     private Button? _close;
+    private Button? _first;
 
-    private readonly List<(Func<string> Label, Button Button, Text Text)> _rows = new();
+    /// <summary>Textes à réécrire quand une valeur change (pourcentages, nom de l'option courante).</summary>
+    private readonly List<(Func<string> Text, Text Target)> _dynamic = new();
 
     private void Awake()
     {
@@ -46,8 +54,12 @@ public sealed class OptionsScreen : MonoBehaviour
         _root.SetActive(true);
         Refresh();
 
-        if (_close != null && EventSystem.current != null)
-            EventSystem.current.SetSelectedGameObject(_close.gameObject);
+        // Le focus va sur le PREMIER réglage, pas sur « Retour » : un écran d'options qui s'ouvre
+        // avec la sortie sélectionnée demande un aller-retour avant de pouvoir régler quoi que ce
+        // soit, et la première touche pressée referme l'écran.
+        var target = _first != null ? _first.gameObject : _close?.gameObject;
+        if (target != null && EventSystem.current != null)
+            EventSystem.current.SetSelectedGameObject(target);
     }
 
     public void Hide()
@@ -71,7 +83,7 @@ public sealed class OptionsScreen : MonoBehaviour
 
     private void Refresh()
     {
-        foreach (var (label, _, text) in _rows) text.text = label();
+        foreach (var (source, target) in _dynamic) target.text = source();
     }
 
     // ─── Réglages ─────────────────────────────────────────────────────────────
@@ -100,30 +112,30 @@ public sealed class OptionsScreen : MonoBehaviour
         Refresh();
     }
 
-    private void ToggleFullscreen()
+    private static void SetFullscreen(bool on)
     {
-        var settings = GameSettings.Current;
-        settings.DisplayMode = settings.DisplayMode == 2 ? 0 : 2;
+        GameSettings.Current.DisplayMode = on ? 2 : 0;
 
-        Screen.fullScreenMode = settings.DisplayMode == 2
-            ? FullScreenMode.FullScreenWindow
-            : FullScreenMode.Windowed;
-
-        Refresh();
+        Screen.fullScreenMode = on ? FullScreenMode.FullScreenWindow : FullScreenMode.Windowed;
     }
 
-    private void ToggleVsync()
+    private static void SetVsync(bool on)
     {
-        var settings = GameSettings.Current;
-        settings.Vsync = !settings.Vsync;
-        QualitySettings.vSyncCount = settings.Vsync ? 1 : 0;
-        Refresh();
+        GameSettings.Current.Vsync = on;
+        QualitySettings.vSyncCount = on ? 1 : 0;
     }
 
-    private void ToggleFps()
+    private static void SetFps(bool on) => GameSettings.Current.ShowFps = on;
+
+    /// <summary>
+    /// Secousse d'écran. <b>Elle agit tout de suite</b> : le champ existait dans la sauvegarde depuis
+    /// la reprise des réglages Godot, mais <c>ScreenShake.Intensity</c> n'était affecté par personne —
+    /// le réglage aurait été un interrupteur mort, exactement ce que cet écran s'interdit.
+    /// </summary>
+    private static void SetShake(bool on)
     {
-        GameSettings.Current.ShowFps = !GameSettings.Current.ShowFps;
-        Refresh();
+        GameSettings.Current.ShakeIntensity = on ? 1f : 0f;
+        ScreenShake.Intensity = GameSettings.Current.ShakeIntensity;
     }
 
     private static string DifficultyName(int difficulty) => difficulty switch
@@ -146,11 +158,13 @@ public sealed class OptionsScreen : MonoBehaviour
         _root = canvasGo;
         UiStyle.ScreenBackdrop(canvasGo.transform);
 
-        var panel = UiStyle.NewUiObject("Panel", canvasGo.transform);
+        // Panneau CENTRÉ et borné, non plein écran — comme le jeu publié : une colonne de réglages
+        // étalée sur 1920 px sépare tellement le libellé de son contrôle qu'on ne les relie plus.
+        var panel = UiStyle.Panel(canvasGo.transform, "Panel", FrameAccent.Cyan);
         var panelRect = panel.GetComponent<RectTransform>();
         panelRect.anchorMin = panelRect.anchorMax = new Vector2(0.5f, 0.5f);
         panelRect.pivot = new Vector2(0.5f, 0.5f);
-        panelRect.sizeDelta = new Vector2(1000f, 980f);
+        panelRect.sizeDelta = new Vector2(980f, 860f);
         panelRect.anchoredPosition = Vector2.zero;
 
         float headerBottom = UiStyle.Header(panel.transform, Loc.T("OPTIONS_TITLE"));
@@ -161,36 +175,36 @@ public sealed class OptionsScreen : MonoBehaviour
         columnRect.anchorMax = Vector2.one;
         // Le bas laisse la place au bouton de retour : sans cette marge, la derniere ligne
         // passe DESSOUS et les deux se chevauchent.
-        columnRect.offsetMin = new Vector2(40f, 100f);
-        columnRect.offsetMax = new Vector2(-40f, -headerBottom);
+        columnRect.offsetMin = new Vector2(56f, 100f);
+        columnRect.offsetMax = new Vector2(-56f, -headerBottom);
 
         var layout = column.AddComponent<VerticalLayoutGroup>();
-        layout.spacing = 10f;
+        layout.spacing = 8f;
         layout.childForceExpandHeight = false;
         layout.childControlHeight = true;
         layout.childControlWidth = true;
 
         _list = column.transform;
 
-        AddRow(() => $"{Loc.T("OPTIONS_LANGUAGE")} : {GameSettings.Current.Language.ToUpperInvariant()}",
-               CycleLanguage);
-        AddRow(() => $"{Loc.T("OPTIONS_DIFFICULTY")} : {DifficultyName(GameSettings.Current.Difficulty)}",
-               CycleDifficulty);
-        AddRow(() => $"{Loc.T("OPTIONS_DISPLAY_MODE")} : " +
-                     Loc.T(GameSettings.Current.DisplayMode == 2
-                         ? "OPTIONS_DISPLAY_FULLSCREEN" : "OPTIONS_DISPLAY_WINDOWED"),
-               ToggleFullscreen);
-        AddRow(() => $"{Loc.T("OPTIONS_VSYNC")} : {OnOff(GameSettings.Current.Vsync)}", ToggleVsync);
-        AddRow(() => $"{Loc.T("OPTIONS_SHOW_FPS")} : {OnOff(GameSettings.Current.ShowFps)}", ToggleFps);
+        // Ordre du jeu publié : d'abord ce qui s'entend, puis ce qui se voit, puis ce qui se joue.
+        AddSlider(Loc.T("OPTIONS_MASTER"), () => GameSettings.Current.MasterVolume,
+                  v => GameSettings.Current.MasterVolume = v);
+        AddSlider(Loc.T("OPTIONS_MUSIC"), () => GameSettings.Current.MusicVolume,
+                  v => GameSettings.Current.MusicVolume = v);
+        AddSlider(Loc.T("OPTIONS_SFX"), () => GameSettings.Current.SfxVolume,
+                  v => GameSettings.Current.SfxVolume = v);
 
-        // Les volumes ne sont revenus qu'avec l'audio : tant que rien ne jouait, ces trois lignes
-        // auraient été des réglages morts.
-        AddRow(() => $"{Loc.T("OPTIONS_MASTER")} : {Percent(GameSettings.Current.MasterVolume)}",
-               () => CycleVolume(v => GameSettings.Current.MasterVolume = v, GameSettings.Current.MasterVolume));
-        AddRow(() => $"{Loc.T("OPTIONS_MUSIC")} : {Percent(GameSettings.Current.MusicVolume)}",
-               () => CycleVolume(v => GameSettings.Current.MusicVolume = v, GameSettings.Current.MusicVolume));
-        AddRow(() => $"{Loc.T("OPTIONS_SFX")} : {Percent(GameSettings.Current.SfxVolume)}",
-               () => CycleVolume(v => GameSettings.Current.SfxVolume = v, GameSettings.Current.SfxVolume));
+        // « Plein écran » et non « Mode d'affichage » : le contrôle est devenu un interrupteur, et un
+        // interrupteur doit nommer ce qu'il ACTIVE — « Mode d'affichage : allumé » ne veut rien dire.
+        AddSwitch(Loc.T("OPTIONS_DISPLAY_FULLSCREEN"), GameSettings.Current.DisplayMode == 2, SetFullscreen);
+        AddSwitch(Loc.T("OPTIONS_SHAKE"), GameSettings.Current.ShakeIntensity > 0.01f, SetShake);
+        AddSwitch(Loc.T("OPTIONS_VSYNC"), GameSettings.Current.Vsync, SetVsync);
+        AddSwitch(Loc.T("OPTIONS_SHOW_FPS"), GameSettings.Current.ShowFps, SetFps);
+
+        AddSelector(Loc.T("OPTIONS_DIFFICULTY"),
+                    () => DifficultyName(GameSettings.Current.Difficulty), CycleDifficulty);
+        AddSelector(Loc.T("OPTIONS_LANGUAGE"),
+                    () => GameSettings.Current.Language.ToUpperInvariant(), CycleLanguage);
 
         _close = UiStyle.TextButton(panel.transform, Loc.T("COMMON_BACK"), FrameAccent.Steel);
         var closeRect = _close.GetComponent<RectTransform>();
@@ -201,40 +215,76 @@ public sealed class OptionsScreen : MonoBehaviour
         _close.onClick.AddListener(Close);
     }
 
-    private static string OnOff(bool value) => value ? Loc.T("COMMON_ON") : Loc.T("COMMON_OFF");
-
     private static string Percent(float value) => $"{Mathf.RoundToInt(value * 100f)} %";
 
+    // ─── Lignes ───────────────────────────────────────────────────────────────
+
     /// <summary>
-    /// Fait défiler un volume par paliers de 25 %, jusqu'à zéro puis retour au maximum.
-    ///
-    /// <para>Des paliers plutôt qu'un curseur : un curseur uGUI se règle mal à la manette, et le
-    /// projet n'a pas d'écart audible entre 62 % et 65 %. Le réglage est <b>appliqué immédiatement</b>
-    /// — un volume qui ne changerait qu'à la fermeture de l'écran ne se règle pas à l'oreille.</para>
+    /// Ligne à curseur : libellé, course, et le <b>pourcentage à droite</b>. Le chiffre n'est pas
+    /// redondant avec la course — l'un se compare d'un coup d'œil, l'autre se dit.
     /// </summary>
-    private void CycleVolume(Action<float> setter, float current)
-    {
-        float next = current <= 0.001f ? 1f : Mathf.Max(0f, current - 0.25f);
-
-        setter(next);
-        GameSettings.ApplyVolumes(GameSettings.Current);
-
-        // Un repère sonore à chaque cran : c'est la seule façon d'entendre ce qu'on règle.
-        AudioSystem.PlaySfx("sfx_ui_button", pitchVariation: 0f);
-        Refresh();
-    }
-
-    private void AddRow(Func<string> label, UnityEngine.Events.UnityAction action)
+    private void AddSlider(string label, Func<float> get, Action<float> set)
     {
         if (_list == null) return;
 
-        var button = UiStyle.TextButton(_list, label(), FrameAccent.Cyan);
+        var control = UiStyle.SettingRow(_list, label);
 
-        var element = button.gameObject.AddComponent<LayoutElement>();
-        element.minHeight = 62f;
+        var readout = UiStyle.Label(control, Percent(get()), 22, UiPalette.Cyan, TextAnchor.MiddleRight);
+        var readoutRect = readout.GetComponent<RectTransform>();
+        readoutRect.anchorMin = new Vector2(1f, 0f);
+        readoutRect.anchorMax = new Vector2(1f, 1f);
+        readoutRect.pivot = new Vector2(1f, 0.5f);
+        readoutRect.sizeDelta = new Vector2(120f, 0f);
+        readoutRect.anchoredPosition = Vector2.zero;
 
-        button.onClick.AddListener(action);
-        _rows.Add((label, button, button.GetComponentInChildren<Text>()));
+        var slider = UiStyle.HSlider(control, get(), value =>
+        {
+            set(value);
+
+            // Appliqué IMMÉDIATEMENT : un volume qui ne changerait qu'à la fermeture de l'écran ne
+            // se règle pas à l'oreille.
+            GameSettings.ApplyVolumes(GameSettings.Current);
+            readout.text = Percent(value);
+        });
+
+        // Un repère sonore quand on lâche le curseur — pas à chaque frame de glissement, sinon le
+        // réglage se fait sous une mitraillette de clics.
+        var trigger = slider.gameObject.AddComponent<EventTrigger>();
+        var entry = new EventTrigger.Entry { eventID = EventTriggerType.PointerUp };
+        entry.callback.AddListener(_ => AudioSystem.PlaySfx("sfx_ui_button", pitchVariation: 0f));
+        trigger.triggers.Add(entry);
+
+        _dynamic.Add((() => Percent(get()), readout));
+        _first ??= null;   // un curseur n'est pas un Button : le focus initial reste sur le 1er bouton
+        RowCount++;
+    }
+
+    private void AddSwitch(string label, bool value, Action<bool> set)
+    {
+        if (_list == null) return;
+
+        var control = UiStyle.SettingRow(_list, label);
+        UiStyle.Switch(control, value, on =>
+        {
+            set(on);
+            AudioSystem.PlaySfx("sfx_ui_button", pitchVariation: 0f);
+            Refresh();
+        });
+
+        RowCount++;
+    }
+
+    private void AddSelector(string label, Func<string> value, Action next)
+    {
+        if (_list == null) return;
+
+        var control = UiStyle.SettingRow(_list, label);
+        var button = UiStyle.Selector(control, value(), () => { next(); Refresh(); });
+
+        var text = button.GetComponentInChildren<Text>();
+        if (text != null) _dynamic.Add((value, text));
+
+        _first ??= button;
         RowCount++;
     }
 }

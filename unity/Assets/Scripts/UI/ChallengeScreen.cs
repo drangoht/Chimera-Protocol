@@ -38,7 +38,8 @@ public sealed class ChallengeScreen : MonoBehaviour
 
         _root.SetActive(true);
         if (_header != null)
-            _header.text = $"{ChallengeSystem.UnlockedCount()} / {ChallengeSystem.All.Count} accomplis";
+            _header.text = Loc.T("CHALLENGES_PROGRESS",
+                                 ChallengeSystem.UnlockedCount(), ChallengeSystem.All.Count);
 
         if (_close != null && EventSystem.current != null)
             EventSystem.current.SetSelectedGameObject(_close.gameObject);
@@ -78,15 +79,26 @@ public sealed class ChallengeScreen : MonoBehaviour
         panelRect.offsetMin = new Vector2(60f, 40f);
         panelRect.offsetMax = new Vector2(-60f, -20f);
 
-        UiStyle.Header(panel.transform, Loc.T("CHALLENGES_TITLE"), FrameAccent.Violet);
+        UiStyle.Header(panel.transform, Loc.T("CHALLENGES_TITLE"), FrameAccent.Gold);
 
-        _header = UiStyle.Label(panel.transform, "", 22, UiPalette.Cyan, TextAnchor.UpperCenter);
+        // Ce que sont les défis, dit AVANT la liste : un joueur qui découvre cet écran voit sinon
+        // treize objectifs sans savoir qu'ils se valident en fin de run ni ce qu'ils rapportent.
+        var intro = UiStyle.Label(panel.transform, Loc.T("CHALLENGES_INTRO"), 19,
+                                  UiPalette.Dim, TextAnchor.UpperLeft);
+        var introRect = intro.GetComponent<RectTransform>();
+        introRect.anchorMin = new Vector2(0f, 1f);
+        introRect.anchorMax = new Vector2(1f, 1f);
+        introRect.pivot = new Vector2(0.5f, 1f);
+        introRect.offsetMin = new Vector2(28f, -128f);
+        introRect.offsetMax = new Vector2(-28f, -92f);
+
+        _header = UiStyle.Label(panel.transform, "", 22, UiPalette.Cyan, TextAnchor.UpperLeft);
         var headerRect = _header.GetComponent<RectTransform>();
         headerRect.anchorMin = new Vector2(0f, 1f);
         headerRect.anchorMax = new Vector2(1f, 1f);
         headerRect.pivot = new Vector2(0.5f, 1f);
-        headerRect.offsetMin = new Vector2(24f, -112f);
-        headerRect.offsetMax = new Vector2(-24f, -80f);
+        headerRect.offsetMin = new Vector2(28f, -164f);
+        headerRect.offsetMax = new Vector2(-28f, -132f);
 
         // Treize défis ne tiennent pas dans un panneau : la liste défile, comme au Hub.
         var scrollGo = UiStyle.NewUiObject("Scroll", panel.transform);
@@ -94,7 +106,7 @@ public sealed class ChallengeScreen : MonoBehaviour
         scrollRect.anchorMin = Vector2.zero;
         scrollRect.anchorMax = Vector2.one;
         scrollRect.offsetMin = new Vector2(28f, 86f);
-        scrollRect.offsetMax = new Vector2(-28f, -120f);
+        scrollRect.offsetMax = new Vector2(-28f, -176f);
 
         var scroll = scrollGo.AddComponent<ScrollRect>();
         scroll.horizontal = false;
@@ -136,6 +148,16 @@ public sealed class ChallengeScreen : MonoBehaviour
         _close.onClick.AddListener(Close);
     }
 
+    /// <summary>
+    /// Un défi : <b>une carte</b> portant l'icône de sa récompense, son nom, son état et ce qu'il
+    /// demande.
+    ///
+    /// <para>Le portage empilait treize lignes de texte nu, alignées à gauche, sur un tiers de
+    /// l'écran. La liste se lisait comme un journal de bord : rien ne séparait un défi du suivant,
+    /// et rien ne distinguait « +50 Échos » d'« un titre » — alors que c'est exactement ce que le
+    /// joueur vient chercher ici. La carte, l'icône et le liseré viennent du jeu publié
+    /// (<c>docs/ui_v1160_challenges.png</c>).</para>
+    /// </summary>
     private void BuildRow(Transform parent, ChallengeTable.ChallengeDef def)
     {
         bool done = ChallengeSystem.IsUnlocked(def.Id);
@@ -150,14 +172,72 @@ public sealed class ChallengeScreen : MonoBehaviour
         };
 
         // Un défi accompli reste affiché, coché : masquer les acquis effacerait le sentiment de
-        // progression, qui est tout l'objet de cet écran.
-        var label = UiStyle.Label(parent,
-            $"{(done ? "✔" : "○")}  {Loc.T(def.NameKey)}   —   {reward}\n     {Loc.T(def.DescKey)}",
-            18, done ? UiPalette.Gold : UiPalette.OffWhite, TextAnchor.UpperLeft);
+        // progression, qui est tout l'objet de cet écran. Le liseré ACQUIS est doré, l'autre acier —
+        // la couleur dit l'état avant que le mot ne soit lu.
+        var card = UiStyle.Card(parent, def.Id, done ? FrameAccent.Gold : FrameAccent.Cyan);
 
-        var element = label.gameObject.AddComponent<LayoutElement>();
-        element.minHeight = 56f;
+        var element = card.AddComponent<LayoutElement>();
+        element.minHeight = CardHeight;
+        element.preferredHeight = CardHeight;
+
+        // L'icône dit la NATURE de la récompense : un Noyau pour les Échos, un emplacement pour un
+        // perk, un titre pour un cosmétique. Trois pictogrammes déjà dessinés pour cet usage.
+        var iconSprite = UiIcons.For(RewardIconId(def.RewardType));
+        if (iconSprite != null)
+        {
+            var iconGo = UiStyle.NewUiObject("Icon", card.transform);
+            var image = iconGo.AddComponent<Image>();
+            image.sprite = iconSprite;
+            image.preserveAspect = true;
+            image.raycastTarget = false;
+
+            // Éteinte tant que le défi n'est pas accompli : la récompense se voit, sans se donner.
+            image.color = done ? Color.white : new Color(0.30f, 0.30f, 0.42f, 1f);
+
+            var iconRect = iconGo.GetComponent<RectTransform>();
+            iconRect.anchorMin = iconRect.anchorMax = new Vector2(0f, 0.5f);
+            iconRect.pivot = new Vector2(0f, 0.5f);
+            iconRect.sizeDelta = new Vector2(IconSize, IconSize);
+            iconRect.anchoredPosition = new Vector2(20f, 0f);
+        }
+
+        float textLeft = iconSprite != null ? IconSize + 36f : 24f;
+
+        // Les clés d'état sont celles du jeu — les inventer afficherait leur nom brut à l'écran.
+        var title = UiStyle.Label(card.transform,
+            $"{Loc.T(def.NameKey)}   {Loc.T(done ? "CHAL_STATUS_DONE" : "CHAL_STATUS_TODO")}",
+            24, done ? UiPalette.Gold : UiPalette.OffWhite, TextAnchor.LowerLeft);
+
+        var titleRect = title.GetComponent<RectTransform>();
+        titleRect.anchorMin = new Vector2(0f, 0.5f);
+        titleRect.anchorMax = new Vector2(1f, 1f);
+        titleRect.offsetMin = new Vector2(textLeft, 0f);
+        titleRect.offsetMax = new Vector2(-24f, -14f);
+
+        var body = UiStyle.Label(card.transform,
+            $"{Loc.T(def.DescKey)}   ·   {reward}",
+            19, done ? UiPalette.OffWhite : UiPalette.Dim, TextAnchor.UpperLeft);
+
+        var bodyRect = body.GetComponent<RectTransform>();
+        bodyRect.anchorMin = new Vector2(0f, 0f);
+        bodyRect.anchorMax = new Vector2(1f, 0.5f);
+        bodyRect.offsetMin = new Vector2(textLeft, 14f);
+        bodyRect.offsetMax = new Vector2(-24f, 0f);
 
         RowCount++;
     }
+
+    /// <summary>Icône associée à une nature de récompense.</summary>
+    private static string RewardIconId(ChallengeTable.RewardKind kind) => kind switch
+    {
+        ChallengeTable.RewardKind.Perk     => "extra_slot",
+        ChallengeTable.RewardKind.Cosmetic => "title",
+        _                                  => "echo",
+    };
+
+    /// <summary>Hauteur d'une carte de défi, en pixels de référence.</summary>
+    private const float CardHeight = 96f;
+
+    /// <summary>Côté de l'icône de récompense.</summary>
+    private const float IconSize = 56f;
 }
