@@ -129,8 +129,8 @@ public sealed class HUD : MonoBehaviour
         var inv = InventorySystem.Instance;
         if (inv == null) return;
 
-        foreach (var (id, level) in inv.WeaponLevels) AddArsenalRow(id, $"{Pretty(id)}  {level}");
-        foreach (var (id, level) in inv.PassiveLevels) AddArsenalRow(id, $"· {Pretty(id)}  {level}");
+        foreach (var (id, level) in inv.WeaponLevels) AddArsenalRow(id, $"{UiNames.Of(id)}  {level}");
+        foreach (var (id, level) in inv.PassiveLevels) AddArsenalRow(id, $"· {UiNames.Of(id)}  {level}");
     }
 
     /// <summary>

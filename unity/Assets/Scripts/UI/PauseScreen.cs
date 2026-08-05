@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -46,9 +47,10 @@ public sealed class PauseScreen : MonoBehaviour
     }
 
     /// <summary>Ouvre l'écran et met le jeu en pause.</summary>
+    /// <param name="bodyText">Corps imposé — réservé aux bancs ; sinon l'état réel de la run.</param>
     public void Open(string? bodyText = null)
     {
-        if (_body != null && bodyText != null) _body.text = bodyText;
+        if (_body != null) _body.text = bodyText ?? BuildReport();
 
         SetVisible(true);
         SceneRoot.Paused = true;
@@ -66,6 +68,105 @@ public sealed class PauseScreen : MonoBehaviour
         SceneRoot.Paused = false;
         Resumed?.Invoke();
     }
+
+    /// <summary>
+    /// L'état de la run, en cinq sections — <b>Mission, Joueur, Armes, Passifs, Greffes</b>, comme le
+    /// jeu publié.
+    ///
+    /// <para><b>C'est le seul écran où le joueur peut LIRE sa run.</b> Le HUD dit ce qui change
+    /// (PV, chrono, niveau) ; il ne dit pas ce qu'on a construit — un multiplicateur de dégâts, une
+    /// réduction de recharge, le niveau exact de chaque arme. Le portage n'affichait qu'un texte
+    /// passé par l'appelant, c'est-à-dire <b>rien</b> en jeu : la pause y servait uniquement à
+    /// quitter.</para>
+    /// </summary>
+    private static string BuildReport()
+    {
+        var sb = new System.Text.StringBuilder();
+
+        var gm = GameManager.Instance;
+        var xp = XpSystem.Instance;
+        var stats = Player.Instance?.Stats;
+        var inv = InventorySystem.Instance;
+
+        int elapsed = gm != null ? Mathf.FloorToInt(gm.RunTime) : 0;
+        int left = gm != null ? Mathf.Max(0, gm.RunDurationSeconds - elapsed) : 0;
+
+        sb.AppendLine(Loc.T("PAUSE_MISSION"));
+        Stat(sb, Loc.T("PAUSE_TIME_SURVIVED"), $"{elapsed / 60:00}:{elapsed % 60:00}");
+        Stat(sb, Loc.T("PAUSE_TIME_LEFT"), $"{left / 60:00}:{left % 60:00}");
+        Stat(sb, Loc.T("PAUSE_LEVEL"), $"{xp?.CurrentLevel ?? 1}");
+        Stat(sb, Loc.T("PAUSE_XP"), $"{xp?.CurrentXp ?? 0} / {xp?.XpToNextLevel ?? 0}");
+        Stat(sb, Loc.T("PAUSE_KILLS"), $"{gm?.Kills ?? 0}");
+        Stat(sb, Loc.T("PAUSE_CORES"), $"{gm?.CoresCollected ?? 0}");
+
+        sb.AppendLine();
+        sb.AppendLine(Loc.T("PAUSE_PLAYER"));
+
+        if (stats == null)
+        {
+            Stat(sb, "—", Loc.T("PAUSE_UNAVAILABLE"));
+        }
+        else
+        {
+            Stat(sb, Loc.T("PAUSE_HP"), $"{stats.CurrentHp:F0} / {stats.MaxHp:F0}");
+            Stat(sb, Loc.T("PAUSE_SPEED"), $"{stats.Speed:F0} px/s");
+            Stat(sb, Loc.T("PAUSE_DMG_MULT"), $"×{stats.DamageMultiplier:F2}");
+            Stat(sb, Loc.T("PAUSE_DMG_REDUC"), $"{stats.DamageReduction * 100f:F0} %");
+            Stat(sb, Loc.T("PAUSE_CD_REDUC"), $"{stats.CooldownReduction * 100f:F0} %");
+        }
+
+        sb.AppendLine();
+        sb.AppendLine(Loc.T("PAUSE_WEAPONS"));
+
+        if (inv == null || inv.WeaponLevels.Count == 0)
+        {
+            sb.AppendLine("   " + Loc.T("PAUSE_NONE"));
+        }
+        else
+        {
+            foreach (var (id, level) in inv.WeaponLevels)
+            {
+                // Une FUSION se signale : c'est l'arme la plus forte du jeu, et elle est
+                // indiscernable d'une arme ordinaire dans une liste de noms.
+                // ⚠ `Contains` sur une chaîne résout vers MemoryExtensions et exige un
+                // StringComparison : c'est bien la collection qu'on interroge, pas le texte.
+                string mark = System.Linq.Enumerable.Contains(inv.AppliedFusions, id) ? "✦ " : "  ";
+                Stat(sb, mark + UiNames.Of(id), $"Niv. {level}");
+            }
+        }
+
+        if (inv != null && inv.PassiveLevels.Count > 0)
+        {
+            sb.AppendLine();
+            sb.AppendLine(Loc.T("PAUSE_PASSIVES"));
+
+            foreach (var (id, level) in inv.PassiveLevels)
+                Stat(sb, "  " + UiNames.Of(id), $"Niv. {level}");
+        }
+
+        sb.AppendLine();
+        sb.AppendLine(Loc.T("PAUSE_GRAFTS"));
+
+        if (Assimilation.Equipped.Count == 0)
+        {
+            sb.AppendLine("   " + Loc.T("PAUSE_NONE"));
+        }
+        else
+        {
+            foreach (string id in Assimilation.Equipped)
+            {
+                var def = Assimilation.Config.GraftById(id);
+                sb.AppendLine("   " + (def != null ? def.Name : id));
+            }
+        }
+
+        return sb.ToString();
+    }
+
+    /// <summary>Une ligne « libellé … valeur », en colonnes alignées par une police à chasse fixe.</summary>
+    private static void Stat(System.Text.StringBuilder sb, string label, string value)
+        => sb.AppendLine($"   {label.PadRight(26, '.')} {value}");
+
 
     private void SetVisible(bool visible)
     {
@@ -108,8 +209,7 @@ public sealed class PauseScreen : MonoBehaviour
         scrollRect.offsetMax = new Vector2(-24f, -100f);
 
         var scroll = scrollGo.AddComponent<ScrollRect>();
-        scroll.horizontal = false;
-        scroll.movementType = ScrollRect.MovementType.Clamped;
+        UiStyle.ConfigureScroll(scroll);
         scrollGo.AddComponent<RectMask2D>();
 
         var content = UiStyle.NewUiObject("Content", scrollGo.transform);
@@ -151,11 +251,18 @@ public sealed class PauseScreen : MonoBehaviour
         layout.childControlWidth = true;
         layout.childControlHeight = true;
 
-        var resume = UiStyle.TextButton(buttonRow.transform, "Reprendre", FrameAccent.Cyan);
+        // Les libellés viennent de la table — ils annoncent aussi leur touche (« [Échap] »).
+        var resume = UiStyle.TextButton(buttonRow.transform, Loc.T("PAUSE_RESUME"), FrameAccent.Cyan);
         resume.onClick.AddListener(Resume);
         _firstButton = resume;
 
-        var quit = UiStyle.TextButton(buttonRow.transform, "Quitter la partie", FrameAccent.Danger);
+        // ⚠ Options ACCESSIBLE DEPUIS LA PAUSE. Sans ce bouton, un joueur qui trouve la musique trop
+        // forte ou la secousse gênante doit abandonner sa run pour y toucher — c'est précisément
+        // pendant une partie qu'on s'en aperçoit. Le jeu publié l'a ; le portage l'avait perdu.
+        var options = UiStyle.TextButton(buttonRow.transform, Loc.T("PAUSE_OPTIONS"), FrameAccent.Steel);
+        options.onClick.AddListener(OpenOptions);
+
+        var quit = UiStyle.TextButton(buttonRow.transform, Loc.T("PAUSE_QUIT"), FrameAccent.Danger);
         quit.onClick.AddListener(() =>
         {
             SetVisible(false);
@@ -163,8 +270,40 @@ public sealed class PauseScreen : MonoBehaviour
             QuitRequested?.Invoke();
         });
 
-        Navigation.Mode explicitMode = Navigation.Mode.Explicit;
-        var navA = resume.navigation; navA.mode = explicitMode; navA.selectOnRight = quit; resume.navigation = navA;
-        var navB = quit.navigation;   navB.mode = explicitMode; navB.selectOnLeft = resume; quit.navigation = navB;
+        Chain(resume, options, quit);
+    }
+
+    /// <summary>Chaîne de focus explicite, circulaire, sur une rangée de boutons.</summary>
+    private static void Chain(params Button[] buttons)
+    {
+        for (int i = 0; i < buttons.Length; i++)
+        {
+            var nav = buttons[i].navigation;
+            nav.mode = Navigation.Mode.Explicit;
+            nav.selectOnLeft = buttons[(i - 1 + buttons.Length) % buttons.Length];
+            nav.selectOnRight = buttons[(i + 1) % buttons.Length];
+            buttons[i].navigation = nav;
+        }
+    }
+
+    private OptionsScreen? _options;
+
+    /// <summary>
+    /// Ouvre les options par-dessus la pause. Elles vivent sur le <b>même objet</b>, donc au-dessus
+    /// dans l'empilement des canevas — et le jeu reste figé pendant qu'on règle.
+    /// </summary>
+    private void OpenOptions()
+    {
+        if (_options == null)
+        {
+            _options = gameObject.AddComponent<OptionsScreen>();
+            _options.Closed += () =>
+            {
+                if (_firstButton != null && EventSystem.current != null)
+                    EventSystem.current.SetSelectedGameObject(_firstButton.gameObject);
+            };
+        }
+
+        _options.Show();
     }
 }

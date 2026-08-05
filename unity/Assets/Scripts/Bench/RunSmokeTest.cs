@@ -633,8 +633,10 @@ public sealed class RunSmokeTest : MonoBehaviour
         pause.Open(longBody);
         yield return null;
 
+        // Reprendre · Options · Quitter — les trois du jeu publié. Le compte est vérifié parce que
+        // c'est ce qui a manqué : « Options » avait disparu du portage sans que rien ne le signale.
         var pauseButtons = pauseGo.GetComponentsInChildren<UnityEngine.UI.Button>(true);
-        Check("pause : les boutons survivent a un contenu tres long", pauseButtons.Length == 2,
+        Check("pause : les boutons survivent a un contenu tres long", pauseButtons.Length == 3,
               $"{pauseButtons.Length} boutons");
 
         pause.Resume();

@@ -109,7 +109,7 @@ public sealed class ChallengeScreen : MonoBehaviour
         scrollRect.offsetMax = new Vector2(-28f, -176f);
 
         var scroll = scrollGo.AddComponent<ScrollRect>();
-        scroll.horizontal = false;
+        UiStyle.ConfigureScroll(scroll);
         scrollGo.AddComponent<RectMask2D>();
 
         var content = UiStyle.NewUiObject("Content", scrollGo.transform);

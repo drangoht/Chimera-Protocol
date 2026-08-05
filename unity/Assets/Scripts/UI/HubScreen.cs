@@ -171,7 +171,7 @@ public sealed class HubScreen : MonoBehaviour
         scrollRect.offsetMax = new Vector2(-28f, -headerBottom);
 
         var scroll = scrollGo.AddComponent<ScrollRect>();
-        scroll.horizontal = false;
+        UiStyle.ConfigureScroll(scroll);
         scrollGo.AddComponent<RectMask2D>();
 
         var content = UiStyle.NewUiObject("Content", scrollGo.transform);

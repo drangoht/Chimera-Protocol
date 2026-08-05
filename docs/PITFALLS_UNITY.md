@@ -570,6 +570,45 @@ les clichés sur le rythme réel des plans plutôt que sur une estimation — un
 (`[Intro] plan n/6 à t = …`) coûte six lignes et évite de conclure à un défaut de rythme qui n'existe
 pas.
 
+### `ScrollRect.scrollSensitivity` vaut 1 par défaut — soit un pixel par cran
+
+Sur une liste de trente entrées, il faut alors des dizaines de tours de molette pour descendre, et le
+défilement se lit comme **cassé**, pas comme lent. Une ligne du Codex mesure une cinquantaine de
+pixels de référence : trois lignes par cran (160) est le geste attendu. Les six écrans qui défilent
+recopiaient les mêmes lignes de configuration — et la sensibilité manquait dans les six, ce qui est
+la signature d'un réglage qu'on ne pense pas à écrire parce qu'il ne s'écrit nulle part.
+
+### Une valeur RENVOYÉE et ignorée finit par produire un chevauchement
+
+`UiStyle.Header` renvoie l'ordonnée du bas de son liseré, précisément pour que l'appelant s'y cale.
+Le Codex l'ignorait et posait ses onglets à une ordonnée devinée : le trait passait **derrière** eux,
+à deux pixels près. Le symptôme — « les onglets sont mal calés par rapport à la ligne » — est
+exactement ce qu'on obtient quand deux éléments se positionnent chacun de leur côté au lieu de se
+chaîner.
+
+Depuis, tout ce qui suit l'en-tête part de cette mesure : onglets, bandeau d'introduction, haut de la
+liste.
+
+### Une liste sans séparateur se lit comme un bloc
+
+Trente entrées de deux lignes chacune, empilées sans filet : l'œil ne sait plus où finit une créature
+et où commence la suivante, et les **deux lignes d'une même entrée** paraissent appartenir à deux
+entrées différentes. Le jeu publié règle cela par un cadre autour de chaque carte ; sur une liste de
+trente, un filet d'un pixel coûte moins cher à l'œil qu'un cadre — mais l'absence des deux ne se
+répare pas par de l'espacement.
+
+### Deux écrans qui nomment la même chose doivent lire la même table
+
+Le HUD écrivait `IMPULSE CANNON` — l'identifiant technique rendu lisible — là où l'écran de pause
+disait « Canon à Impulsions ». Deux noms pour la même arme, sur deux écrans que le joueur ouvre à
+quelques secondes d'intervalle. Le repli sur l'identifiant avait été écrit « en attendant la table de
+localisation » ; elle était déjà chargée ailleurs. D'où `UiNames`, dans `Platform` pour que le HUD
+(`Gameplay`) et la pause (`UI`) y accèdent tous deux.
+
+⚠ Piège au passage : `collection.Contains(chaîne)` résout vers `MemoryExtensions.Contains` et exige
+un `StringComparison` — c'est bien la collection qu'on interroge, pas le texte. `Enumerable.Contains`
+lève l'ambiguïté.
+
 ### Une table parsée n'est pas une table branchée
 
 `GraftTable` lisait les **fusions de greffes** — recette, jauge dédiée, points par archétype — depuis

@@ -194,7 +194,7 @@ public sealed class LevelSelectScreen : MonoBehaviour
         scrollRect.offsetMax = new Vector2(-28f, -90f);
 
         var scroll = scrollGo.AddComponent<ScrollRect>();
-        scroll.horizontal = false;
+        UiStyle.ConfigureScroll(scroll);
         scrollGo.AddComponent<RectMask2D>();
 
         var content = UiStyle.NewUiObject("Content", scrollGo.transform);

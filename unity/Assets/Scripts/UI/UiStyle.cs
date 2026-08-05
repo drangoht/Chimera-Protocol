@@ -435,6 +435,28 @@ public static class UiStyle
         return button;
     }
 
+    /// <summary>
+    /// Sensibilité de la molette, en pixels de référence par cran.
+    ///
+    /// <para><b>Le défaut d'uGUI vaut 1</b> — c'est-à-dire <i>un</i> pixel par cran de molette. Sur
+    /// une liste de trente entrées, il faut alors des dizaines de tours pour descendre, et le
+    /// défilement paraît cassé plutôt que lent. Une ligne du Codex mesure une cinquantaine de
+    /// pixels : trois lignes par cran est le geste attendu.</para>
+    /// </summary>
+    public const float ScrollSensitivity = 160f;
+
+    /// <summary>
+    /// Règle une zone de défilement : vertical seul, borné, masqué, et à la <b>bonne</b> sensibilité
+    /// de molette. Source unique — les six écrans qui défilent recopiaient les mêmes lignes, et la
+    /// sensibilité manquait dans les six.
+    /// </summary>
+    public static void ConfigureScroll(ScrollRect scroll)
+    {
+        scroll.horizontal = false;
+        scroll.movementType = ScrollRect.MovementType.Clamped;
+        scroll.scrollSensitivity = ScrollSensitivity;
+    }
+
     /// <summary>Séparateur horizontal teinté.</summary>
     public static GameObject Separator(Transform parent, Color accent, float height = 2f)
     {

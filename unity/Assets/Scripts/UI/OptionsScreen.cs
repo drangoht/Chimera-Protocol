@@ -188,8 +188,7 @@ public sealed class OptionsScreen : MonoBehaviour
         scrollRect.offsetMax = new Vector2(-56f, -headerBottom);
 
         var scroll = scrollGo.AddComponent<ScrollRect>();
-        scroll.horizontal = false;
-        scroll.movementType = ScrollRect.MovementType.Clamped;
+        UiStyle.ConfigureScroll(scroll);
         scrollGo.AddComponent<RectMask2D>();
 
         var column = UiStyle.NewUiObject("Rows", scrollGo.transform);

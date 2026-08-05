@@ -120,7 +120,7 @@ public sealed class CodexScreen : MonoBehaviour
             // La liste recule d'autant : réserver la place en permanence laisserait un trou de
             // 50 px en haut des trois onglets qui n'ont rien à introduire.
             if (_scrollRect != null)
-                _scrollRect.offsetMax = new Vector2(-28f, hasIntro ? -204f : -150f);
+                _scrollRect.offsetMax = new Vector2(-28f, -(hasIntro ? _listTop + IntroHeight : _listTop));
         }
     }
 
@@ -245,6 +245,22 @@ public sealed class CodexScreen : MonoBehaviour
         var element = row.AddComponent<LayoutElement>();
         element.minHeight = IconSize + 8f;
 
+        // ⚠ Un TRAIT sous chaque entrée. Trente lignes de deux textes empilées sans séparation se
+        // lisent comme un bloc continu : l'œil ne sait plus où finit une créature et où commence la
+        // suivante, et les deux lignes d'une même entrée paraissent appartenir à deux entrées
+        // différentes. C'est ce que le jeu publié règle par un cadre autour de chaque carte ; ici,
+        // sur des listes de trente entrées, un filet coûte moins cher à l'œil qu'un cadre.
+        var rule = UiStyle.NewUiObject("Rule", row.transform);
+        rule.AddComponent<Image>().color = UiPalette.WithAlpha(UiPalette.Steel, 0.9f);
+        rule.GetComponent<Image>().raycastTarget = false;
+
+        var ruleRect = rule.GetComponent<RectTransform>();
+        ruleRect.anchorMin = new Vector2(0f, 0f);
+        ruleRect.anchorMax = new Vector2(1f, 0f);
+        ruleRect.pivot = new Vector2(0.5f, 0f);
+        ruleRect.sizeDelta = new Vector2(0f, 1f);
+        ruleRect.anchoredPosition = Vector2.zero;
+
         // L'icône fournie l'emporte : le bestiaire passe le sprite de la créature, que la table
         // d'identifiants ne connaît pas — et n'a pas à connaître.
         icon ??= id != null ? UiIcons.For(id) : null;
@@ -306,27 +322,35 @@ public sealed class CodexScreen : MonoBehaviour
         panelRect.offsetMin = new Vector2(60f, 40f);
         panelRect.offsetMax = new Vector2(-60f, -20f);
 
-        UiStyle.Header(panel.transform, Loc.T("MENU_CODEX"), FrameAccent.Violet);
+        // ⚠ La valeur RENVOYÉE par Header donne le bas du liseré. L'ignorer — ce que faisait le
+        // portage — pose les onglets à une ordonnée devinée : ils chevauchaient le trait, qui
+        // passait derrière eux. Tout ce qui suit se cale désormais sur cette mesure.
+        float headerBottom = UiStyle.Header(panel.transform, Loc.T("MENU_CODEX"), FrameAccent.Violet);
 
-        _header = UiStyle.Label(panel.transform, "", 22, UiPalette.Cyan, TextAnchor.UpperRight);
+        BuildTabs(panel.transform, headerBottom);
+
+        // Le compteur « découverts / total » est aligné sur la rangée d'onglets, à sa droite : les
+        // deux disent l'état de l'onglet courant, ils appartiennent à la même ligne de lecture.
+        _header = UiStyle.Label(panel.transform, "", 22, UiPalette.Cyan, TextAnchor.MiddleRight);
         var headerRect = _header.GetComponent<RectTransform>();
-        headerRect.anchorMin = new Vector2(0f, 1f);
+        headerRect.anchorMin = new Vector2(1f, 1f);
         headerRect.anchorMax = new Vector2(1f, 1f);
-        headerRect.pivot = new Vector2(0.5f, 1f);
-        headerRect.offsetMin = new Vector2(24f, -142f);
-        headerRect.offsetMax = new Vector2(-32f, -108f);
+        headerRect.pivot = new Vector2(1f, 1f);
+        headerRect.sizeDelta = new Vector2(260f, TabHeight);
+        headerRect.anchoredPosition = new Vector2(-28f, -headerBottom);
 
-        BuildTabs(panel.transform);
+        // Sous les onglets, jamais dessus : la liste commence là où la rangée finit.
+        _listTop = headerBottom + TabHeight + 12f;
 
         var scrollGo = UiStyle.NewUiObject("Scroll", panel.transform);
         var scrollRect = scrollGo.GetComponent<RectTransform>();
         scrollRect.anchorMin = Vector2.zero;
         scrollRect.anchorMax = Vector2.one;
         scrollRect.offsetMin = new Vector2(28f, 88f);
-        scrollRect.offsetMax = new Vector2(-28f, -150f);
+        scrollRect.offsetMax = new Vector2(-28f, -_listTop);
 
         var scroll = scrollGo.AddComponent<ScrollRect>();
-        scroll.horizontal = false;
+        UiStyle.ConfigureScroll(scroll);
         scrollGo.AddComponent<RectMask2D>();
 
         var content = UiStyle.NewUiObject("Content", scrollGo.transform);
@@ -377,15 +401,24 @@ public sealed class CodexScreen : MonoBehaviour
         _close.onClick.AddListener(Close);
     }
 
-    private void BuildTabs(Transform parent)
+    /// <summary>Hauteur de la rangée d'onglets, en pixels de référence.</summary>
+    private const float TabHeight = 58f;
+
+    /// <summary>Hauteur réservée au bandeau d'introduction, quand l'onglet en a un.</summary>
+    private const float IntroHeight = 52f;
+
+    /// <summary>Ordonnée du haut de la liste, mesurée depuis le haut du panneau.</summary>
+    private float _listTop = 150f;
+
+    private void BuildTabs(Transform parent, float top)
     {
         var row = UiStyle.NewUiObject("Tabs", parent);
         var rowRect = row.GetComponent<RectTransform>();
         rowRect.anchorMin = new Vector2(0f, 1f);
         rowRect.anchorMax = new Vector2(1f, 1f);
         rowRect.pivot = new Vector2(0.5f, 1f);
-        rowRect.offsetMin = new Vector2(28f, -142f);
-        rowRect.offsetMax = new Vector2(-320f, -80f);
+        rowRect.offsetMin = new Vector2(28f, -(top + TabHeight));
+        rowRect.offsetMax = new Vector2(-300f, -top);
 
         var layout = row.AddComponent<HorizontalLayoutGroup>();
         layout.spacing = 10f;
