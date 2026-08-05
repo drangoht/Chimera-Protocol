@@ -40,6 +40,7 @@ public static class BuildGameScene
         GameObject miniBossPrefab = BuildMiniBossPrefab();
 
         BuildScene(enemyPrefab, bulletPrefab, orbPrefab, corePrefab, champions, miniBossPrefab);
+        BuildIntro();
         BuildMainMenu();
         RegisterScenes();
 
@@ -199,7 +200,38 @@ public static class BuildGameScene
         return prefab;
     }
 
-    /// <summary>Scène du menu principal — point d'entrée du jeu.</summary>
+    /// <summary>
+    /// Scène de la cinématique d'ouverture — <b>première scène du build</b>, donc celle qui se
+    /// charge au lancement.
+    /// </summary>
+    private static void BuildIntro()
+    {
+        Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+
+        // ⚠ L'AudioListener n'est pas un détail de caméra : sans lui, la piste d'intro se charge,
+        // joue, et le jeu s'ouvre en silence — sans la moindre erreur.
+        var camGo = new GameObject("MainCamera", typeof(Camera), typeof(AudioListener));
+        var cam = camGo.GetComponent<Camera>();
+        cam.orthographic = true;
+        cam.backgroundColor = new Color(0.06f, 0.06f, 0.11f);
+        cam.clearFlags = CameraClearFlags.SolidColor;
+        camGo.tag = "MainCamera";
+
+        var introGo = new GameObject("Intro", typeof(IntroScreen), typeof(MusicDirector));
+
+        // Sans EventSystem, un clic ne parvient à personne — et l'intro se passe aussi au clic.
+        var eventSystem = new GameObject("EventSystem",
+            typeof(UnityEngine.EventSystems.EventSystem),
+            typeof(UnityEngine.EventSystems.StandaloneInputModule));
+
+        foreach (var go in new[] { camGo, introGo, eventSystem })
+            EditorSceneManager.MoveGameObjectToScene(go, scene);
+
+        EditorSceneManager.SaveScene(scene, GameScenes.PathOf(GameScenes.Intro));
+        Debug.Log("[SCENE] intro ecrite : " + GameScenes.PathOf(GameScenes.Intro));
+    }
+
+    /// <summary>Scène du menu principal.</summary>
     private static void BuildMainMenu()
     {
         Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);

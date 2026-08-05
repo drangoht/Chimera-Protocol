@@ -140,6 +140,52 @@ public static class Vfx
     }
 
     /// <summary>
+    /// <b>Vortex</b> : cœur sombre, bras spiralés en rotation, anneau d'horizon et poussière aspirée.
+    ///
+    /// <para>Un puits de gravité dessiné en simple anneau ne dit rien de ce qu'il fait : il ressemble
+    /// à une aire de dégâts de plus. Ce sont les <b>bras courbes</b> qui font lire l'aspiration, et
+    /// leur <b>rotation</b> qui la fait lire comme un mouvement — le portage n'avait ni l'une ni
+    /// l'autre. La forme vient du jeu publié (<c>GravityWell</c>) : trois bras, resserrement de
+    /// 3,2 rad sur la course, rotation continue.</para>
+    /// </summary>
+    /// <param name="spin">Phase de rotation, en radians — l'appelant la fait avancer dans le temps.</param>
+    public static void Vortex(Vector2 center, float radius, float innerRadius, float spin,
+                              Color color, float life)
+    {
+        // Anneau d'horizon : la limite d'aspiration doit rester lisible sous les bras.
+        Ring(center, radius, new Color(color.r, color.g, color.b, 0.5f), 2f, life);
+
+        // Cœur : un disque sombre approché par un anneau épais. C'est lui qui donne l'impression
+        // d'un trou plutôt que d'un halo — sans lui, le centre paraît vide.
+        Ring(center, innerRadius * 0.6f, new Color(0.06f, 0.02f, 0.12f, 0.9f),
+             innerRadius * 1.2f, life);
+
+        const int Arms = 3;
+        const int Steps = 14;
+        const float Tightness = 3.2f;   // resserrement de la spirale, en radians
+
+        for (int arm = 0; arm < Arms; arm++)
+        {
+            float baseAngle = spin + arm * 2f * Mathf.PI / Arms;
+
+            for (int i = 0; i < Steps; i++)
+            {
+                float t = i / (float)(Steps - 1);
+                float r = Mathf.Lerp(radius, innerRadius, t);
+                float a = baseAngle + t * Tightness;
+
+                Points[i] = center + new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * r;
+            }
+
+            // L'alpha croît vers le centre : le bras paraît happé, et non peint d'un bout à l'autre.
+            Polyline(Steps, new Color(color.r, color.g, color.b, 0.85f), 2.5f, 6f, life,
+                     VfxPrimitives.OrderGround);
+        }
+
+        Glow(center, color, innerRadius * 2.2f, 0.8f, life, VfxPrimitives.OrderGround);
+    }
+
+    /// <summary>
     /// Onde de choc : anneau qui se dilate depuis un point. Portage de <c>ShockwaveRing</c> — la mort
     /// d'un colosse doit s'annoncer par une expansion, pas par un cercle posé.
     /// </summary>

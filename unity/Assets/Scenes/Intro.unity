@@ -199,7 +199,7 @@ GameObject:
   - component: {fileID: 1004331387}
   - component: {fileID: 1004331386}
   m_Layer: 0
-  m_Name: '[Outils]'
+  m_Name: Intro
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -214,9 +214,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 1004331385}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 91ff08bbf5c4fe04693ce8479ccc99b9, type: 3}
+  m_Script: {fileID: 11500000, guid: c93382b40fe3361469a5af0e60c555d6, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ScreenshotTour
+  m_EditorClassIdentifier: ChimeraProtocol.Gameplay::MusicDirector
 --- !u!114 &1004331387
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -226,9 +226,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 1004331385}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: acde3b0f6c6d9c64e997104df7da3645, type: 3}
+  m_Script: {fileID: 11500000, guid: 5d44ee2f4d3f98145847260538cf1692, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::SceneDiagnostic
+  m_EditorClassIdentifier: ChimeraProtocol.UI::IntroScreen
 --- !u!4 &1004331388
 Transform:
   m_ObjectHideFlags: 0
@@ -244,7 +244,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1107192088
+--- !u!1 &1256900426
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -252,9 +252,9 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 1107192091}
-  - component: {fileID: 1107192090}
-  - component: {fileID: 1107192089}
+  - component: {fileID: 1256900429}
+  - component: {fileID: 1256900428}
+  - component: {fileID: 1256900427}
   m_Layer: 0
   m_Name: MainCamera
   m_TagString: MainCamera
@@ -262,25 +262,25 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!81 &1107192089
+--- !u!81 &1256900427
 AudioListener:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1107192088}
+  m_GameObject: {fileID: 1256900426}
   m_Enabled: 1
---- !u!20 &1107192090
+--- !u!20 &1256900428
 Camera:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1107192088}
+  m_GameObject: {fileID: 1256900426}
   m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 2
-  m_BackGroundColor: {r: 0.102, g: 0.102, b: 0.18, a: 1}
+  m_BackGroundColor: {r: 0.06, g: 0.06, b: 0.11, a: 1}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
   m_FOVAxisMode: 0
@@ -305,7 +305,7 @@ Camera:
   far clip plane: 1000
   field of view: 60
   orthographic: 1
-  orthographic size: 540
+  orthographic size: 5
   m_Depth: 0
   m_CullingMask:
     serializedVersion: 2
@@ -321,63 +321,6 @@ Camera:
   m_OcclusionCulling: 1
   m_StereoConvergence: 10
   m_StereoSeparation: 0.022
---- !u!4 &1107192091
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1107192088}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: -10}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1256900426
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1256900429}
-  - component: {fileID: 1256900428}
-  - component: {fileID: 1256900427}
-  m_Layer: 0
-  m_Name: MainMenu
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1256900427
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1256900426}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c93382b40fe3361469a5af0e60c555d6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: ChimeraProtocol.Gameplay::MusicDirector
---- !u!114 &1256900428
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1256900426}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 53fa5e1509a1b1b4290f951244b9156e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: ChimeraProtocol.UI::MainMenuScreen
 --- !u!4 &1256900429
 Transform:
   m_ObjectHideFlags: 0
@@ -397,7 +340,6 @@ Transform:
 SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
-  - {fileID: 1107192091}
   - {fileID: 1256900429}
   - {fileID: 1004331388}
   - {fileID: 772591361}

@@ -10,14 +10,24 @@
 /// </summary>
 public static class GameScenes
 {
-    /// <summary>Menu principal — point d'entrée du jeu.</summary>
+    /// <summary>
+    /// Cinématique d'ouverture — <b>point d'entrée du jeu</b>, comme sous Godot où
+    /// <c>run/main_scene</c> désigne <c>IntroScreen.tscn</c>. Elle porte le seul récit du jeu et se
+    /// passe d'une touche.
+    /// </summary>
+    public const string Intro = "Intro";
+
+    /// <summary>Menu principal.</summary>
     public const string MainMenu = "MainMenu";
 
     /// <summary>Scène de jeu — une run.</summary>
     public const string Game = "Game";
 
-    /// <summary>Toutes les scènes à embarquer dans le build, dans l'ordre.</summary>
-    public static readonly string[] All = { MainMenu, Game };
+    /// <summary>
+    /// Toutes les scènes à embarquer dans le build, <b>dans l'ordre</b> — la première est celle qui
+    /// se charge au lancement.
+    /// </summary>
+    public static readonly string[] All = { Intro, MainMenu, Game };
 
     /// <summary>Chemin d'asset d'une scène, tel qu'attendu par le pipeline de build.</summary>
     public static string PathOf(string sceneName) => $"Assets/Scenes/{sceneName}.unity";

@@ -23,6 +23,9 @@ public static class LocTable
         /// <summary>Nombre de clés lues.</summary>
         public int Count => _rows.Count;
 
+        /// <summary>Clés lues — permet de vérifier la table entière plutôt qu'une entrée choisie.</summary>
+        public IEnumerable<string> Keys => _rows.Keys;
+
         internal void Add(string key, string[] values) => _rows[key] = values;
 
         /// <summary>
@@ -65,13 +68,25 @@ public static class LocTable
             if (key.Length == 0) continue;
 
             var values = new string[fields.Count - 1];
-            for (int i = 1; i < fields.Count; i++) values[i - 1] = fields[i];
+            for (int i = 1; i < fields.Count; i++) values[i - 1] = Unescape(fields[i]);
 
             doc.Add(key, values);
         }
 
         return doc;
     }
+
+    /// <summary>
+    /// Rend leur sens aux séquences échappées du CSV — aujourd'hui le seul <c>\n</c>.
+    ///
+    /// <para>⚠ L'importeur de traductions de Godot fait cette conversion pour nous ; le portage lit
+    /// le CSV <b>brut</b> et ne la faisait pas. Symptôme : les deux barres apparaissaient
+    /// <b>littéralement</b> au milieu des phrases — « te traque.\nTu lui arracheras » —, sur toutes
+    /// les lignes de la cinématique d'ouverture, c'est-à-dire sur le seul texte narratif du jeu.
+    /// Aucune erreur, aucun test rouge : juste une faute de frappe apparente dans trois langues.</para>
+    /// </summary>
+    public static string Unescape(string value)
+        => value.IndexOf('\\') < 0 ? value : value.Replace("\\n", "\n");
 
     /// <summary>
     /// Découpe une ligne CSV en respectant les guillemets : <c>a,"b,c",d</c> donne trois champs.

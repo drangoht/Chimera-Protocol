@@ -144,8 +144,30 @@ public sealed class CodexScreen : MonoBehaviour
 
             AddEntry(seen, def.Name,
                      $"{def.Role}   {def.MaxHp:F0} PV   {def.DamagePerSecond:F0} dgt/s" +
-                     (def.Biome.Length > 0 ? $"   {def.Biome}" : ""));
+                     (def.Biome.Length > 0 ? $"   {def.Biome}" : ""),
+                     icon: PortraitOf(def));
         }
+    }
+
+    /// <summary>
+    /// Portrait d'un ennemi : la <b>première image de son animation d'attente</b>.
+    ///
+    /// <para>Les ennemis n'ont pas d'icône dessinée — et n'en ont pas besoin : leur sprite EST leur
+    /// portrait, et c'est celui que le joueur a vu à l'écran. Le bestiaire n'en montrait aucun,
+    /// alors que les jeux d'animations étaient déjà chargés pour le jeu : une colonne de trente
+    /// lignes de texte où l'on ne reconnaît rien de ce qu'on a combattu.</para>
+    /// </summary>
+    private static Sprite? PortraitOf(EnemyTable.EnemyDef def)
+    {
+        var frames = SpriteFramesLibrary.ForEnemy(def.Id, def.FramesPath);
+        if (frames == null) return null;
+
+        // « idle » d'abord — un ennemi se reconnaît au repos, pas au milieu d'une attaque. À défaut,
+        // la première animation venue vaut mieux que rien.
+        var animation = frames.Find("idle") ?? frames.Find("move");
+        if (animation == null && frames.Animations.Length > 0) animation = frames.Animations[0];
+
+        return animation != null && animation.Frames.Length > 0 ? animation.Frames[0] : null;
     }
 
     private void BuildArsenal()
@@ -212,7 +234,7 @@ public sealed class CodexScreen : MonoBehaviour
     /// alors lisible, seul le ton s'éteint.
     /// </param>
     private void AddEntry(bool discovered, string name, string detail, string? id = null,
-                          bool hideWhenLocked = true, Color? tint = null)
+                          bool hideWhenLocked = true, Color? tint = null, Sprite? icon = null)
     {
         if (_list == null) return;
 
@@ -223,7 +245,9 @@ public sealed class CodexScreen : MonoBehaviour
         var element = row.AddComponent<LayoutElement>();
         element.minHeight = IconSize + 8f;
 
-        var icon = id != null ? UiIcons.For(id) : null;
+        // L'icône fournie l'emporte : le bestiaire passe le sprite de la créature, que la table
+        // d'identifiants ne connaît pas — et n'a pas à connaître.
+        icon ??= id != null ? UiIcons.For(id) : null;
 
         if (icon != null)
         {

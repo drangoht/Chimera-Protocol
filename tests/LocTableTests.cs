@@ -96,4 +96,31 @@ public class LocTableTests
         Assert.True(File.Exists(copy), "la copie StreamingAssets manque — Unity n'aurait aucune traduction");
         Assert.Equal(File.ReadAllText(source), File.ReadAllText(copy));
     }
+
+    /// <summary>
+    /// ⚠ Les « \n » du CSV doivent devenir de vrais sauts de ligne. L'importeur de traductions de
+    /// Godot le fait ; le portage lit le CSV brut et ne le faisait pas — les deux caractères
+    /// s'affichaient <b>littéralement</b> au milieu des six lignes de la cinématique d'ouverture,
+    /// c'est-à-dire du seul texte narratif du jeu.
+    /// </summary>
+    [Fact]
+    public void LesSautsDeLigneEchappesDeviennentDeVraisSautsDeLigne()
+    {
+        var doc = LocTable.Parse("keys,en,fr,es\nBEAT,\"First line.\\nSecond line.\",fr,es");
+
+        Assert.Equal("First line.\nSecond line.", doc.Get("BEAT", "en"));
+        Assert.DoesNotContain("\\n", doc.Get("BEAT", "en"));
+    }
+
+    /// <summary>Le texte du jeu lui-même : aucune traduction ne garde une séquence échappée.</summary>
+    [Fact]
+    public void AucuneTraductionDuJeuNeGardeUnAntislashN()
+    {
+        var doc = LocTable.Parse(File.ReadAllText(
+            Path.Combine(TestPaths.RepoRoot, "localization", "ui.csv")));
+
+        foreach (string key in doc.Keys)
+            foreach (string language in LocTable.Languages)
+                Assert.DoesNotContain("\\n", doc.Get(key, language));
+    }
 }

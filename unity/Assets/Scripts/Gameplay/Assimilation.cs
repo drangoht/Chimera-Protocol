@@ -104,6 +104,12 @@ public static class Assimilation
             // progresserait jamais en comparaison.
             var def = Config.GraftForGauge(gauge);
             if (def != null && _equipped.Contains(def.Id)) continue;
+
+            // Jauge en pause si sa greffe a été ABSORBÉE par une fusion équipée. Sans cela, le jeu
+            // re-proposerait une greffe que le joueur porte déjà sous forme fusionnée, et il
+            // pourrait la ré-équiper à côté de sa propre fusion — soit l'effet compté deux fois.
+            if (def != null && IsFusionSourceEquipped(def.Id)) continue;
+
             if (_pending.Contains(gauge)) continue;
 
             _points[gauge] = PointsOf(gauge) + contribution.Points;
@@ -114,6 +120,65 @@ public static class Assimilation
                 GaugeFilled?.Invoke(gauge);
             }
         }
+
+        RouteFusionKill(aiType, isElite, isMiniBoss, isBoss);
+    }
+
+    /// <summary>
+    /// Jauges de <b>fusion</b> — le mécanisme qui empêche les greffes de s'empiler sans fin.
+    ///
+    /// <para>Deux greffes portées ensemble finissent par se lier : la fusion prend leur place à
+    /// toutes les deux et <b>libère un emplacement</b> (occupation 2 → 1). C'est la récompense
+    /// structurelle qui rend un couple désirable — sans elle, le joueur accumule des greffes
+    /// côte à côte et leurs effets s'additionnent indéfiniment.</para>
+    ///
+    /// <para>Une jauge de fusion n'accumule qu'à <b>trois</b> conditions, toutes reprises du design
+    /// (§15.1) : les deux prérequis sont équipés <i>à l'instant du kill</i>, la victime est un
+    /// basique ou une élite d'un archétype source, et la fusion n'est ni portée ni déjà proposée.
+    /// Les champions et le boss ne comptent pas — la fusion se mérite sur la nuée des deux
+    /// espèces qu'elle lie.</para>
+    /// </summary>
+    private static void RouteFusionKill(string aiType, bool isElite, bool isMiniBoss, bool isBoss)
+    {
+        if (isMiniBoss || isBoss) return;
+
+        foreach (var fusion in Config.Fusions)
+        {
+            if (_equipped.Contains(fusion.Id)) continue;
+            if (_pending.Contains(fusion.GaugeKey)) continue;
+
+            bool ready = true;
+            foreach (string required in fusion.Requires)
+                if (!_equipped.Contains(required)) { ready = false; break; }
+
+            if (!ready) continue;
+
+            int points = fusion.KillPoints(aiType, isElite);
+            if (points <= 0) continue;
+
+            _points[fusion.GaugeKey] = PointsOf(fusion.GaugeKey) + points;
+
+            if (_points[fusion.GaugeKey] >= ThresholdOf(fusion.GaugeKey))
+            {
+                _pending.Add(fusion.GaugeKey);
+                GaugeFilled?.Invoke(fusion.GaugeKey);
+            }
+        }
+    }
+
+    /// <summary>
+    /// La greffe est-elle <b>absorbée</b> par une fusion portée ? Sa jauge est alors en pause :
+    /// c'est la garde anti double-effet.
+    /// </summary>
+    public static bool IsFusionSourceEquipped(string graftId)
+    {
+        foreach (string id in _equipped)
+        {
+            var fusion = Config.FusionById(id);
+            if (fusion != null && fusion.Requires.Contains(graftId)) return true;
+        }
+
+        return false;
     }
 
     /// <summary>
@@ -122,6 +187,9 @@ public static class Assimilation
     /// </summary>
     public static bool Accept(string gauge, string? replaceId = null)
     {
+        // Une jauge de fusion se résout autrement : elle retire deux greffes pour en poser une.
+        if (AcceptFusion(gauge)) return true;
+
         var def = Config.GraftForGauge(gauge);
         if (def == null) return false;
 
@@ -150,6 +218,42 @@ public static class Assimilation
         _pending.Remove(gauge);
         _points[gauge] = 0;
         _declined[gauge] = (_declined.TryGetValue(gauge, out int d) ? d : 0) + 1;
+    }
+
+    /// <summary>
+    /// Résout une jauge de fusion : les <b>deux</b> greffes sources cèdent leur place à la fusion.
+    ///
+    /// <para>L'occupation passe de 2 à 1, et c'est délibéré : une fusion est ainsi <b>toujours
+    /// acceptable, même emplacements pleins</b> — elle devient la soupape quand on sature, jamais un
+    /// écran de remplacement. Sans cette libération, viser un couple n'aurait aucun intérêt.</para>
+    ///
+    /// <para>Il n'y a <b>pas de défusion</b> : deux Rouilles liées ne se re-séparent pas. Relâcher la
+    /// fusion, plus tard, les relâche toutes les deux d'un coup.</para>
+    /// </summary>
+    /// <returns>Faux si la jauge n'est pas une jauge de fusion — l'appelant traite alors une greffe.</returns>
+    private static bool AcceptFusion(string gauge)
+    {
+        var fusion = Config.FusionForGauge(gauge);
+        if (fusion == null || _equipped.Contains(fusion.Id)) return false;
+
+        // Les prérequis peuvent avoir été remplacés entre le remplissage de la jauge et la réponse
+        // du joueur : la fusion n'est alors plus possible, et la refuser silencieusement vaut mieux
+        // que d'équiper une fusion dont les sources ont disparu.
+        foreach (string required in fusion.Requires)
+            if (!_equipped.Contains(required)) return false;
+
+        _pending.Remove(gauge);
+        _points[gauge] = 0;
+
+        foreach (string required in fusion.Requires) _equipped.Remove(required);
+
+        _equipped.Add(fusion.Id);
+        GameSettings.DiscoverGraft(fusion.Id);
+        GraftEquipped?.Invoke(fusion);
+
+        Debug.Log($"[Assimilation] fusion forgee : {fusion.Id} " +
+                  $"(absorbe {string.Join(" + ", fusion.Requires)}, {_equipped.Count}/{_slotCount}).");
+        return true;
     }
 
     /// <summary>Une greffe est-elle portée ?</summary>

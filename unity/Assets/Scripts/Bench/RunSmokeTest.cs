@@ -1585,6 +1585,27 @@ public sealed class RunSmokeTest : MonoBehaviour
               withoutIcon.Count == 0 ? $"{UiIcons.KnownIds.Count} icones referencees"
                                      : "sans icone : " + string.Join(", ", withoutIcon));
 
+        // ⚠ Chaque ennemi doit avoir SON jeu d'animations. Le repli existe pour qu'un asset manquant
+        // ne rende personne invisible — mais quand quatre ennemis y tombent, ils se ressemblent tous
+        // à l'écran, et rien ne le signale : un sprite EST affiché. C'était le cas de toute la faune
+        // de base, dont l'identifiant ne correspondait pas au nom de son asset.
+        var bestiary = EnemyTable.Parse(DataFiles.Load("enemies.json") ?? "");
+        var fallback = SpriteFramesLibrary.Get(SpriteFramesLibrary.FallbackId);
+        var sharingFallback = new List<string>();
+
+        foreach (var def in bestiary.Values)
+        {
+            if (def.Id == "rust_swarm") continue;   // le repli EST son propre jeu d'animations
+
+            var frames = SpriteFramesLibrary.ForEnemy(def.Id, def.FramesPath);
+            if (frames == fallback) sharingFallback.Add(def.Id);
+        }
+
+        Check("bestiaire : chaque ennemi a son propre jeu d'animations", sharingFallback.Count == 0,
+              sharingFallback.Count == 0
+                  ? $"{bestiary.Count} ennemis, aucun sur le repli"
+                  : "sur le repli : " + string.Join(", ", sharingFallback));
+
         // ─── Musique adaptative ───────────────────────────────────────────────
         var musicGo = new GameObject("MusicHost");
         var music = musicGo.AddComponent<MusicDirector>();

@@ -136,7 +136,8 @@ public class EnemyBase : MonoBehaviour
         if (_slowLeft > 0f)
         {
             _slowLeft -= dt;
-            if (_slowLeft <= 0f) _slowMult = 1f;
+            if (_slowLeft <= 0f) { _slowMult = 1f; ClearFrostTint(); }
+            else ApplyFrostTint();
         }
 
         if (_burnLeft > 0f)
@@ -146,6 +147,46 @@ public class EnemyBase : MonoBehaviour
             if (_burnLeft <= 0f) _burnDps = 0f;
         }
     }
+
+    /// <summary>
+    /// Marque de <b>gel</b> : l'ennemi ralenti vire au bleu glacé.
+    ///
+    /// <para>Un ralentissement de 45 % ne se voit pas. Deux nuées, l'une gelée et l'autre non,
+    /// avancent toutes deux « lentement » à l'œil d'un joueur qui kite — rien ne dit laquelle son
+    /// arme a touchée, ni combien de temps l'effet dure. La teinte le dit, et disparaît avec lui.</para>
+    ///
+    /// <para>La couleur d'origine est mémorisée au premier gel, jamais recalculée : elle peut venir
+    /// d'un affixe d'élite, et la reprendre à <c>Color.white</c> effacerait cette information.</para>
+    /// </summary>
+    private void ApplyFrostTint()
+    {
+        var sr = GetComponentInChildren<SpriteRenderer>();
+        if (sr == null) return;
+
+        if (!_frostTinted)
+        {
+            _baseTint = sr.color;
+            _frostTinted = true;
+        }
+
+        // ⚠ Le clignotement de dégât écrit AUSSI cette couleur. On ne repose donc la teinte de gel
+        // que si la couleur courante n'est pas déjà la nôtre : sans cette garde, un ennemi gelé et
+        // frappé perdrait son flash blanc, seul retour qui dit « le coup a porté ».
+        var frost = new Color(_baseTint.r * 0.55f, _baseTint.g * 0.80f, _baseTint.b * 1.30f, sr.color.a);
+        if (sr.color != Color.white) sr.color = frost;
+    }
+
+    private void ClearFrostTint()
+    {
+        if (!_frostTinted) return;
+        _frostTinted = false;
+
+        var sr = GetComponentInChildren<SpriteRenderer>();
+        if (sr != null) sr.color = _baseTint;
+    }
+
+    private bool _frostTinted;
+    private Color _baseTint = Color.white;
 
     /// <summary>Comportement de déplacement, issu des données (<c>ai.type</c>).</summary>
     public EnemyTable.AiType Ai { get; set; } = EnemyTable.AiType.StraightChase;

@@ -539,6 +539,51 @@ contact.
 C'est le piège des ramassables « walk-over » déjà connu du projet, sous une forme un peu différente :
 là c'était l'`Area2D` qui exigeait un mouvement physique, ici c'est la mécanique elle-même.
 
+### Une table parsée n'est pas une table branchée
+
+`GraftTable` lisait les **fusions de greffes** — recette, jauge dédiée, points par archétype — depuis
+le premier jour du portage. Rien ne les consommait à l'exécution : ni routage de kill, ni proposition,
+ni consommation des deux sources. Résultat en jeu : les greffes s'**empilaient** côte à côte et leurs
+effets s'additionnaient, là où le design en fait fusionner deux en une (**occupation 2 → 1**, un
+emplacement libéré, et la seule raison de viser un couple).
+
+Le symptôme se lit comme un choix d'équilibrage, pas comme un manque : le jeu tourne, les greffes
+marchent, elles sont juste trop nombreuses. Même famille que les icônes présentes mais non reliées,
+et que le `cores: 0` en dur — **du code qui existe et ne sert pas est indiscernable d'un code absent,
+sauf en jouant**.
+
+Deux pièges d'assemblage sont apparus en le branchant :
+
+- `GraftForGauge` renvoie `null` pour une jauge de fusion. L'écran d'assimilation, qui s'en servait
+  seul, se **refermait aussitôt en refusant tout seul** : la fusion, plus long objectif du jeu, était
+  perdue à l'instant où elle s'offrait.
+- Le message « les emplacements sont pleins, la plus ancienne cédera sa place » est **faux** pour une
+  fusion, qui en libère un. L'afficher ferait refuser la meilleure offre du jeu par crainte de perdre
+  autre chose.
+
+### Un repli silencieux qui sert quatre fois n'est plus un repli
+
+`SpriteFramesLibrary.ForEnemy` tombe sur un jeu d'animations de secours quand l'ennemi n'a pas le
+sien — sécurité voulue : un asset manquant ne doit rendre personne invisible. Sauf que la **faune de
+base** (Essaim, Drone, Sentinelle, Colosse Greffé) n'a pas de `framesPath`, et que son identifiant ne
+correspond pas au nom de son asset (`corrupted_drone` contre `drone`). Les quatre y tombaient : trois
+ennemis aux comportements distincts s'affichaient avec le sprite de l'Essaim, dès la première seconde
+de jeu.
+
+Rien ne le signalait — **un sprite était bien affiché**. La parade est une table d'alias, et une
+vérification qui compare l'asset retenu au repli : « 31 ennemis, aucun sur le repli ».
+
+### Les séquences échappées du CSV doivent être converties à la lecture
+
+L'importeur de traductions de Godot transforme `
+` en saut de ligne. Le portage lit le CSV **brut**
+et ne le faisait pas : les deux caractères s'affichaient littéralement au milieu des phrases — sur les
+six lignes de la cinématique d'ouverture, c'est-à-dire sur le **seul texte narratif du jeu**. Aucune
+erreur, aucun test rouge : une faute de frappe apparente, dans trois langues.
+
+Un test balaye désormais la table entière, pas une entrée choisie : c'est la seule façon de couvrir
+les lignes qu'on n'a pas pensé à regarder.
+
 ### Le HUD est un écran comme les autres — il se compare aussi à la référence
 
 Les huit écrans avaient été confrontés à `docs/ui_v1160_*.png` ; le **HUD**, non — parce qu'il n'a

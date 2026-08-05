@@ -53,19 +53,36 @@ public sealed class AssimilationScreen : MonoBehaviour
     {
         if (_root == null) return;
 
-        var def = Assimilation.Config.GraftForGauge(_gauge);
+        // ⚠ Une jauge de FUSION n'a pas de greffe : `GraftForGauge` renvoie null pour elle. Sans ce
+        // second chemin, l'écran se refermait aussitôt en refusant tout seul — la fusion, plus long
+        // objectif du jeu, était perdue à l'instant où elle s'offrait, sans un mot.
+        GraftTable.GraftDef? def = Assimilation.Config.GraftForGauge(_gauge)
+                                ?? Assimilation.Config.FusionForGauge(_gauge);
+
         if (def == null) { Resolve(false); return; }
 
         _root.SetActive(true);
 
-        if (_title != null) _title.text = def.Name;
+        var fusion = def as GraftTable.FusionDef;
+
+        if (_title != null)
+        {
+            _title.text = fusion != null ? $"{Loc.T("ASSIM_FUSION_TAG")} — {def.Name}" : def.Name;
+        }
+
         if (_body != null)
         {
             // L'état des emplacements est dit ICI : accepter avec un arsenal de greffes plein
             // remplace, et le joueur doit le savoir avant de choisir, pas après.
-            string slots = Assimilation.HasFreeSlot
-                ? $"Emplacements {Assimilation.Equipped.Count}/{Assimilation.SlotCount}"
-                : $"Emplacements PLEINS ({Assimilation.SlotCount}) — la plus ancienne cédera sa place";
+            //
+            // ⚠ Une FUSION ne remplace rien : elle absorbe ses deux sources et LIBÈRE un
+            // emplacement. Lui afficher « la plus ancienne cédera sa place » ferait refuser la
+            // meilleure offre du jeu par crainte de perdre autre chose.
+            string slots = fusion != null
+                ? $"{string.Join(" + ", FusionSourceNames(fusion))} → {def.Name}   (un emplacement se libère)"
+                : Assimilation.HasFreeSlot
+                    ? $"Emplacements {Assimilation.Equipped.Count}/{Assimilation.SlotCount}"
+                    : $"Emplacements PLEINS ({Assimilation.SlotCount}) — la plus ancienne cédera sa place";
 
             _body.text = $"{def.Description}\n\n{slots}\n" +
                          "Refuser relève le seuil de cette jauge.";
@@ -163,6 +180,20 @@ public sealed class AssimilationScreen : MonoBehaviour
         declineNav.mode = Navigation.Mode.Explicit;
         declineNav.selectOnLeft = _accept;
         _decline.navigation = declineNav;
+    }
+
+    /// <summary>Noms lisibles des greffes qu'une fusion absorbe.</summary>
+    private static System.Collections.Generic.List<string> FusionSourceNames(GraftTable.FusionDef fusion)
+    {
+        var names = new System.Collections.Generic.List<string>();
+
+        foreach (string id in fusion.Requires)
+        {
+            var source = Assimilation.Config.GraftById(id);
+            names.Add(source != null ? source.Name : id);
+        }
+
+        return names;
     }
 
     private static void Place(Button button, Vector2 anchor)

@@ -20,6 +20,17 @@ public sealed class Singularity : WeaponBase
     public float Duration = 2.2f;
     public float TickInterval = 0.4f;
 
+    /// <summary>
+    /// Rayon du cœur : les ennemis s'y entassent sans le traverser. Repris de <c>GravityWell</c>.
+    /// </summary>
+    public float InnerRadius = 18f;
+
+    /// <summary>Vitesse tangentielle de l'aspiration, en pixels/s — ce qui met les corps en spirale.</summary>
+    public float SwirlStrength = 110f;
+
+    /// <summary>Rotation des bras du vortex, en radians/s — la valeur du jeu publié.</summary>
+    public const float SpinSpeed = 3.2f;
+
     /// <summary>Zones actuellement actives — observable pour les tests et le HUD.</summary>
     public int ActiveWells => _wells.Count;
 
@@ -28,6 +39,7 @@ public sealed class Singularity : WeaponBase
         public Vector2 Center;
         public float TimeLeft;
         public float TickLeft;
+        public float Spin;
     }
 
     private readonly List<Well> _wells = new();
@@ -74,11 +86,8 @@ public sealed class Singularity : WeaponBase
             {
                 w.TickLeft = TickInterval;
 
-                // Le puits est une zone qui PERSISTE : redessiné à chaque battement, il reste visible
-                // toute sa durée sans qu'on ait à gérer un objet d'effet séparé.
-                Vfx.Ring(w.Center, Radius, new Color(0.67f, 0.27f, 1f), 3f, TickInterval);
-                Vfx.Glow(w.Center, new Color(0.85f, 0.6f, 1f), 16f, 0.7f, TickInterval,
-                         VfxPrimitives.OrderGround);
+                // Rien de visuel ici : le vortex se redessine à CHAQUE frame, plus bas. Un visuel
+                // reposé au rythme des dégâts (0,4 s) ne tournerait pas — il sauterait.
             }
 
             var snapshot = EnemyBase.Active.ToArray();
@@ -90,14 +99,35 @@ public sealed class Singularity : WeaponBase
                 if (offset.sqrMagnitude > sqr) continue;
 
                 float dist = offset.magnitude;
-                if (dist > 1f)
+                if (dist > InnerRadius)
                 {
-                    Vector2 dir = offset / dist;
-                    e.transform.position = (Vector2)e.transform.position + dir * PullSpeed * dt;
+                    // ⚠ Aspiration en SPIRALE, et non en ligne droite. Une composante tangentielle
+                    // s'ajoute à la composante radiale, d'autant plus forte qu'on approche du
+                    // centre — c'est elle qui fait qu'un ennemi happé <b>tourne</b> au lieu de
+                    // glisser droit. Sans elle, le puits se lit comme un aimant, pas comme un trou.
+                    Vector2 radial = offset / dist;
+                    var tangent = new Vector2(-radial.y, radial.x);
+
+                    float closeness = 1f - Mathf.Clamp01(dist / Radius);
+                    float swirl = SwirlStrength * (0.35f + closeness);
+
+                    // Le pas radial ne dépasse jamais la distance restante : sinon un ennemi
+                    // traverse le cœur et ressort de l'autre côté à chaque frame — ce qui se voit
+                    // comme un tremblement, pas comme une aspiration.
+                    float step = Mathf.Min(PullSpeed * dt, dist - InnerRadius);
+
+                    e.transform.position = (Vector2)e.transform.position
+                                         + radial * step
+                                         + tangent * swirl * dt;
                 }
 
                 if (tick) e.TakeDamage(damage);
             }
+
+            // Le vortex TOURNE : la phase avance avec le temps, et le visuel est reposé chaque
+            // frame pour la durée d'une frame. C'est ce qui distingue un tourbillon d'un anneau.
+            w.Spin += SpinSpeed * dt;
+            Vfx.Vortex(w.Center, Radius, InnerRadius, w.Spin, new Color(0.72f, 0.42f, 1f), dt * 1.6f);
 
             if (w.TimeLeft <= 0f) _wells.RemoveAt(i);
         }
