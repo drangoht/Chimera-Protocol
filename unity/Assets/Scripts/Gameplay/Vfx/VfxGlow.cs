@@ -1,0 +1,69 @@
+using UnityEngine;
+
+/// <summary>
+/// Lueur additive éphémère — le portage du <c>PointLight2D</c> en mélange additif de Godot.
+///
+/// <para>Godot posait une <i>vraie</i> lumière 2D ; ici c'est un disque à dégradé, additionné à
+/// l'image. Le résultat visuel est le même parce que ces lumières n'éclairaient rien : aucun sprite
+/// du jeu n'était en matériau éclairé, elles ne servaient qu'à <b>ajouter de la clarté</b> au point
+/// d'impact. Reproduire le vrai éclairage (Light2D d'URP) imposerait de rendre tous les sprites du
+/// jeu « éclairés », donc de gérer une lumière globale — beaucoup de risque pour zéro différence
+/// à l'écran.</para>
+/// </summary>
+public sealed class VfxGlow : MonoBehaviour
+{
+    private SpriteRenderer? _renderer;
+    private Color _color;
+    private float _life;
+    private float _left;
+
+    private SpriteRenderer Renderer
+        => _renderer != null ? _renderer : _renderer = GetComponent<SpriteRenderer>();
+
+    /// <summary>Allume la lueur. <paramref name="radiusPx"/> est un rayon, pas un diamètre.</summary>
+    /// <param name="intensity">
+    /// L'« énergie » de Godot. Au-delà de 1 elle ne fait plus monter l'alpha (borné), mais les
+    /// lueurs superposées continuent de s'additionner — c'est ainsi qu'un impact fort blanchit.
+    /// </param>
+    internal void Show(Vector2 position, Color color, float radiusPx, float intensity, float life, int order)
+    {
+        transform.position = position;
+
+        // Le sprite mesure 64 unités (1 px = 1 unité) : l'échelle est donc directement le rapport
+        // du diamètre voulu à cette taille de référence.
+        float scale = radiusPx * 2f / 64f;
+        transform.localScale = new Vector3(scale, scale, 1f);
+
+        _color = new Color(color.r, color.g, color.b, Mathf.Clamp01(color.a * intensity));
+        _life = Mathf.Max(0.01f, life);
+        _left = _life;
+
+        var r = Renderer;
+        r.sprite = VfxPrimitives.Glow;
+        r.sharedMaterial = VfxPrimitives.Additive;
+        r.color = _color;
+        r.sortingOrder = order;
+
+        gameObject.SetActive(true);
+    }
+
+    private void Update()
+    {
+        _left -= Time.deltaTime;
+
+        if (_left <= 0f)
+        {
+            gameObject.SetActive(false);
+            Vfx.Recycle(this);
+            return;
+        }
+
+        // Décroissance douce plutôt que linéaire : sous Godot le fondu des lumières était en
+        // EaseOut, et c'est ce qui fait qu'un flash « claque » puis s'attarde au lieu de s'éteindre
+        // comme un interrupteur.
+        float t = 1f - _left / _life;
+        var c = _color;
+        c.a = _color.a * Mathf.Pow(1f - t, 1.6f);
+        Renderer.color = c;
+    }
+}

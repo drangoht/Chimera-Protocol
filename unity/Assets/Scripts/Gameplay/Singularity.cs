@@ -76,8 +76,9 @@ public sealed class Singularity : WeaponBase
 
                 // Le puits est une zone qui PERSISTE : redessiné à chaque battement, il reste visible
                 // toute sa durée sans qu'on ait à gérer un objet d'effet séparé.
-                WeaponVfx.Ring(w.Center, Radius, new Color(0.67f, 0.27f, 1f), 10f, TickInterval);
-                WeaponVfx.Dot(w.Center, new Color(0.85f, 0.6f, 1f), 16f, TickInterval);
+                Vfx.Ring(w.Center, Radius, new Color(0.67f, 0.27f, 1f), 3f, TickInterval);
+                Vfx.Glow(w.Center, new Color(0.85f, 0.6f, 1f), 16f, 0.7f, TickInterval,
+                         VfxPrimitives.OrderGround);
             }
 
             var snapshot = EnemyBase.Active.ToArray();

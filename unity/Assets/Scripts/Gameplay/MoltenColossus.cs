@@ -19,6 +19,24 @@ public sealed class MoltenColossus : MiniBoss
         ChampionContactRadius = 40f;
     }
 
+    private float _emberTimer;
+
+    protected override void Update()
+    {
+        base.Update();
+        if (IsDead) return;
+
+        // Le sillage de magma était une zone de dégâts INVISIBLE : le joueur perdait des PV en
+        // suivant le colosse sans jamais pouvoir apprendre qu'il fallait se décaler. Les braises
+        // marquent la zone qui brûle, à sa taille réelle.
+        _emberTimer -= Time.deltaTime;
+        if (_emberTimer > 0f) return;
+        _emberTimer = 0.12f;
+
+        Vfx.Burst(transform.position, new Color(1f, 0.75f, 0.3f, 0.9f), new Color(1f, 0.25f, 0.05f, 0f),
+                  6, 10f, 45f, 9f, 0.5f, 0f, 360f, VfxPrimitives.OrderGround);
+    }
+
     protected override void HandleContactDamage(Player player, float dt)
     {
         base.HandleContactDamage(player, dt);

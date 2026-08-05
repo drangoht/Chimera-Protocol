@@ -371,8 +371,8 @@ Chaque lot a un **critère de sortie vérifiable**. Un lot n'est pas « fini » 
 | **0** ✅ | **Socle partagé** — §5, déménagement de `Rules/` (§3.2), `.gdignore` + `Compile Remove` (§3.1), projet Unity qui compile | 3 % | **✅ TERMINÉ le 2026-08-03** — voir §6.1 |
 | **1** ✅ | **Couche Platform** (§4) — `GTween`, `Gd`+PCG32, `GTimer`, `SceneRoot`, `Deferred`, `Spawner`, `FrameAnimator` | 8 % | **✅ TERMINÉ le 2026-08-03** — voir §6.2 |
 | **2** | **Cœur de run** — `GameManager`, `Player`, `EnemyBase`, spawn, XP, un ennemi, une arme | 14 % | Une run se joue : bouger, tuer, ramasser, monter de niveau. **P1 (§4.4) tranché et documenté** |
-| **3** ⬤ | **Arsenal complet** — 12 armes, 9 fusions, projectiles, VFX | 12 % | **Logique ✅** — 21 armes tirent, fusions verrouillées (§6.4). Restent les visuels et sons. |
-| **4** ⬤ | **Bestiaire complet** — 11 ennemis, affixes d'élite, 6 mini-boss, `RustedCore` (3 phases × 5 incarnations) | 14 % | Chaque entité apparaît, agit et meurt correctement ; les 5 incarnations tirent leur signature. **Le boss apparaît en jeu depuis le 2026-08-04** (§6.7) ; restent 3 mini-boss globaux et les visuels |
+| **3** ✅ | **Arsenal complet** — 12 armes, 9 fusions, projectiles, VFX | 12 % | **✅ TERMINÉ le 2026-08-05** — 21 armes tirent (§6.4), sons câblés, et les **vrais VFX** remplacent le placeholder (§6.11) : shader additif, faisceaux, éclairs dentelés, croissant balayé, gerbes, lueur et traînée de projectile. |
+| **4** ⬤ | **Bestiaire complet** — 11 ennemis, affixes d'élite, 6 mini-boss, `RustedCore` (3 phases × 5 incarnations) | 14 % | Chaque entité apparaît, agit et meurt correctement ; les 5 incarnations tirent leur signature. **Le boss apparaît en jeu depuis le 2026-08-04** (§6.7) ; ses 5 signatures et les mécaniques des 3 champions de biome sont **enfin visibles** (§6.11) ; restent 3 mini-boss globaux |
 | **5** ⬤ | **UI & écrans** — 18 écrans, HUD, `UiStyle`/`UiPalette`, navigation clavier/manette, `ModalQueue` | 22 % | **Parité visuelle prouvée par captures avant/après** sur les 18 écrans (§8.3) ; navigation manette complète sans souris. **La boucle de progression est branchée** (§6.7) |
 | **6** ✅ | **Méta & persistance** — Hub, Assimilation, Défis, Codex, `SaveManager`, `GameSettings`, localisation | 13 % | **✅ TERMINÉ le 2026-08-04** (§6.10) — sauvegarde 1.26.0 réelle reprise sans perte (§9.3), boucle Échos → Hub → bonus, choix du niveau et les 3 axes de difficulté, défis, Assimilation, esquive, perks de départ, options, Codex. **140 vérifications · 558 tests** |
 | **7** | **Banc & télémétrie** — flags CLI, `PowerTelemetry`, `BossTelemetry`, `PressureMeter`, `BenchAutoPilot` | 9 % | Une campagne headless tourne et produit un `power_curve.log` exploitable par `tools/power_loop.py` **sans modifier l'outil** |
@@ -567,9 +567,8 @@ ont demandé leur propre appel.
 ne se voit ni par un projectile ni par un drone doit laisser une trace — et *le boss apparaît dans le
 champ de vision*.
 
-⚠ **Ce que cela ne dit toujours pas** : personne n'a encore *joué* une run complète de treize
-minutes. Et les traces sont un **placeholder assumé** : les VFX d'origine (dessin procédural,
-11 shaders, particules) restent à porter.
+⚠ **Ce que cela ne disait pas** : les traces étaient un **placeholder assumé**. Remplacées par les
+vrais effets le 2026-08-05 → §6.11.
 
 ### 6.9 « Le boss n'approche pas », « sa barre ne baisse pas » (2026-08-04)
 
@@ -601,6 +600,46 @@ visible**, affronter le boss et le battre.
 multiplicateurs de difficulté ne sont **pas encore portés** — `EnemySpawner` appelle
 `EnemyScaling.Scaled(..., 1f)`, donc ni `LevelThreat` (palier du biome), ni `DifficultyTuning`, ni
 l'échelle de saturation ne s'appliquent. Aucune mesure d'équilibrage n'a de sens avant.
+
+### 6.11 Les VFX — du placeholder aux vrais effets (2026-08-05)
+
+Le §6.8 avait rendu chaque arme **visible** avec des chapelets de points de sprite, placeholder
+assumé. Il tenait son objectif — plus aucune arme ne tue sans laisser de trace — mais un cône fait de
+60 petits carrés ne se lit pas comme un souffle de flammes, et un anneau de points ne se lit pas
+comme une aura.
+
+**Livré** : un shader **additif** (`Assets/Resources/Shaders/VfxAdditive.shader`) qui restitue ce que
+faisaient les 108 `PointLight2D` de Godot — deux effets qui se croisent **blanchissent** au lieu de
+se masquer, ce qui est toute l'allure du jeu ; les textures radiales générées au démarrage
+(`VfxPrimitives`, portage de `MakeRadialLightTexture`) ; et quatre familles d'effets **recyclées**
+(`VfxGlow`, `VfxTrace`, `VfxRing`, `VfxBurst`, plus `VfxCrescent` pour le seul effet qui s'anime).
+Les cinq VFX de `src/VFX/` sont portés et câblés aux mêmes endroits que sous Godot : impact de
+projectile, flash de bouche, onde de choc, gerbe de mort, croissant de Lame Plasma. `ScreenShake`
+suit, en décalage ajouté **après** la poursuite de caméra.
+
+**Ce que le portage a révélé, et qui n'était pas un travail de finition** :
+
+- Les **cinq signatures du boss** frappaient sans rien afficher — le code le disait lui-même
+  (« la zone visuelle appartenant au lot VFX »). Elles ont chacune la leur, plus un télégraphe de
+  bascule de phase.
+- Le **bouclier orbital du Gardien Néon** était invisible, alors que toute sa mécanique est de
+  frapper là où il ne couvre pas. De même pour le sillage de magma du Colosse et le cône de gel de
+  la Sentinelle. → `ChampionOverlay`, marque permanente sur **son propre objet**.
+- La **Bobine Tesla** ne traçait que son premier éclair : les rebonds dessinaient le segment
+  `from → from`, de longueur nulle. La chaîne — tout l'intérêt de l'arme — ne se voyait pas.
+- La brillance des projectiles **n'a jamais suivi le niveau de l'arme**, y compris sous Godot :
+  `_Ready()` part dès l'`AddChild`, avant l'affectation de `Power`.
+
+**⚠ La leçon du lot** : les valeurs d'effet **ne se transposent pas**. Portées telles quelles, les
+lueurs donnaient d'énormes flaques cyan qui noyaient l'arène — non par erreur de facteur, mais parce
+qu'une arme à tir rapide envoie un *flux* et que dix halos additifs saturent. Recalibré sur capture.
+Détail → `docs/PITFALLS_UNITY.md` §Effets visuels.
+
+**⚠ Ce que cela ne dit pas** : personne n'a joué avec ces effets. Le banc dit qu'ils existent et
+qu'ils se recyclent ; les captures disent qu'ils sont lisibles **en cliché**. Ni l'un ni l'autre ne
+dit ce que donne une nuée de 300 entités en mouvement.
+
+**150 vérifications · 566 tests.**
 
 ### 6.10 Lot 6 — persistance et boucle méta (2026-08-04)
 
@@ -727,8 +766,8 @@ casse silencieusement lors d'un portage.
 ⚠ La brûlure inflige des dégâts **continus** : elle ne doit jamais emprunter le chemin des coups
 discrets ni subir un plancher en pourcentage des PV max.
 
-⚠ **Reste au Lot 3** : les visuels et sons des armes (VFX, sprites de projectiles, mixage) —
-la logique est complète, la présentation appartient aux lots VFX/UI.
+⚠ **Lot 3 clos le 2026-08-05** : les visuels des armes sont portés (§6.11) — faisceaux, arcs,
+anneaux, éclairs, gerbes et lueurs en mélange additif, à la place des points placeholder.
 
 ### 6.3 Lot 2 — cœur de run : tranche verticale livrée
 

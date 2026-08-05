@@ -37,7 +37,13 @@ public class ImpulseCannon : WeaponBase
         if (bullet == null) { Destroy(go); return false; }
 
         bullet.Piercing = Piercing;
+        bullet.Power = Level;
         bullet.Launch(dir * BulletSpeed, EffectiveDamage, Range);
+
+        // Le départ du coup se voit au canon, pas seulement à l'arrivée : sans flash, une arme à
+        // tir rapide semble faire apparaître ses projectiles à côté du joueur.
+        Vfx.Muzzle(transform.position, dir);
+
         AudioSystem.PlaySfx("sfx_weapon_impulse_shoot");
         return true;
     }

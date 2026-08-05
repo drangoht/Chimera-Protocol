@@ -88,6 +88,27 @@ public sealed class ScreenshotTour : MonoBehaviour
         yield return new WaitForSecondsRealtime(6f);
         yield return Shot("run");
 
+        // Puis le COMBAT. Sans cette nuée posée à la main, la tournée photographie une première
+        // minute de run : le joueur y est seul au centre d'une arène vide, et aucune arme de zone,
+        // de mêlée ou de chaîne n'a de cible à portée. Les captures montraient donc « rien ne
+        // s'affiche » d'un arsenal qui s'affichait très bien — l'image ne mentait pas, elle
+        // répondait à une autre question que celle qu'on lui posait.
+        // Trois clichés, chacun juste après avoir posé sa nuée. Un seul ne suffirait pas : les effets
+        // d'arme durent 0,2 s, donc une capture unique tombe presque toujours entre deux tirs — même
+        // piège que le compteur qui monte sans qu'aucun son ne sorte.
+        //
+        // Ils s'enchaînent VITE, et c'est délibéré : les éliminations remplissent les jauges, et la
+        // montée de niveau comme l'Assimilation ouvrent une modale qui recouvre exactement ce qu'on
+        // photographie. Une fenêtre courte reste devant cette progression.
+        SpawnSwarmAroundPlayer(24);
+
+        for (int i = 2; i <= 4; i++)
+        {
+            yield return new WaitForSecondsRealtime(0.35f);
+            yield return Shot($"run-{i}");
+            SpawnSwarmAroundPlayer(10);
+        }
+
         var levelUp = FindFirstObjectByType<LevelUpScreen>();
         if (levelUp != null)
         {
@@ -98,6 +119,31 @@ public sealed class ScreenshotTour : MonoBehaviour
 
         Debug.Log($"[SHOTS] {_index} captures ecrites dans {Path.GetFullPath(_dir)}");
         Application.Quit(0);
+    }
+
+    /// <summary>
+    /// Pose des ennemis en couronne autour du joueur, à portée des armes de mêlée comme des armes de
+    /// zone. Ils sont instanciés depuis le prefab du spawner, donc scalés et armés comme les autres.
+    /// </summary>
+    private void SpawnSwarmAroundPlayer(int count)
+    {
+        var spawner = FindFirstObjectByType<EnemySpawner>();
+        var player = Player.Instance;
+        if (spawner == null || spawner.EnemyPrefab == null || player == null) return;
+
+        for (int i = 0; i < count; i++)
+        {
+            float angle = i / (float)count * Mathf.PI * 2f;
+            float radius = 70f + (i % 4) * 55f;
+            Vector2 at = (Vector2)player.transform.position
+                       + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * radius;
+
+            var go = Instantiate(spawner.EnemyPrefab, at, Quaternion.identity);
+            go.SetActive(true);
+
+            // Pas d'orbe d'XP : 28 morts d'un coup font monter de niveau, et l'écran de montée —
+            // modal et bloquant — recouvrait justement le combat qu'on venait photographier.
+        }
     }
 
     private IEnumerator Shot(string name)

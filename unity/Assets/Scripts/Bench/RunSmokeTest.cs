@@ -247,15 +247,18 @@ public sealed class RunSmokeTest : MonoBehaviour
         // Armes qui se voient par leurs PROJECTILES ou leurs drones : elles n'ont pas à laisser de
         // trace. Toutes les autres frappent à distance sans rien lancer — sans trace, elles tuent
         // sans que rien n'apparaisse à l'écran, et le joueur lit « la carte n'a rien fait ».
+        //
+        // La liste a RÉTRÉCI avec les vrais VFX : les trois armes à tir direct posent désormais un
+        // flash de bouche, donc la vérification les couvre au lieu de les excuser.
         var rendersWithoutTrace = new HashSet<string>
         {
-            "impulse_cannon", "scatter_volley", "vector_lance", "seeker_swarm", "glaive",
-            "rail_overcharged", "hornet_swarm", "drone_swarm", "orbital_swarm",
+            "seeker_swarm", "glaive", "rail_overcharged", "hornet_swarm",
+            "drone_swarm", "orbital_swarm",
         };
 
         foreach (var (name, type) in types)
         {
-            int dotsBefore = WeaponVfx.DotsCreated;
+            int tracesBefore = Vfx.TracesCreated;
             var host = new GameObject("W_" + name);
             host.transform.position = Vector3.zero;
 
@@ -287,7 +290,7 @@ public sealed class RunSmokeTest : MonoBehaviour
             bool ok = weapon is DroneSwarm || weapon.ShotsFired > 0;
             if (!ok) silent.Add(name);
 
-            if (ok && !rendersWithoutTrace.Contains(name) && WeaponVfx.DotsCreated == dotsBefore)
+            if (ok && !rendersWithoutTrace.Contains(name) && Vfx.TracesCreated == tracesBefore)
                 invisible.Add(name);
 
             foreach (var d in dummies) if (d != null) Destroy(d);
@@ -302,8 +305,21 @@ public sealed class RunSmokeTest : MonoBehaviour
         // trace est indiscernable d'une carte sans effet — donc c'est un défaut, pas une finition.
         Check("arsenal : aucune arme n'est invisible", invisible.Count == 0,
               invisible.Count == 0
-                  ? $"{WeaponVfx.DotsCreated} traces dessinees"
+                  ? $"{Vfx.TracesCreated} traces dessinees"
                   : "sans trace : " + string.Join(", ", invisible));
+
+        // Les effets sont RECYCLÉS. Une fuite du vivier a le pire symptôme possible : les effets
+        // disparaissent au bout de quelques minutes de jeu, quand les plafonds sont atteints — donc
+        // jamais pendant un test court, et jamais dans l'éditeur.
+        //
+        // Le critère n'est PAS « zéro actif » : la partie continue de tourner pendant la mesure
+        // (l'arme du joueur tire, les ennemis meurent), donc un compte instantané n'est jamais nul.
+        // Ce qui distingue une fuite, c'est que le compte reste BORNÉ après des centaines
+        // d'émissions ; sans recyclage il serait collé aux plafonds, soit plus de 450.
+        yield return new WaitForSeconds(1f);
+        Check("vfx : les effets retournent au vivier",
+              Vfx.TracesCreated > 200 && Vfx.ActiveEffects < 60,
+              $"{Vfx.ActiveEffects} actifs pour {Vfx.TracesCreated} emis");
 
         Destroy(missilePrefab);
         Destroy(glaivePrefab);

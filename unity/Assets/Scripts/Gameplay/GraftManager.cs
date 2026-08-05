@@ -212,7 +212,9 @@ public sealed class GraftManager : MonoBehaviour
         if (!justEnded) return;
 
         Vector2 center = _player.transform.position;
-        WeaponVfx.Ring(center, _novaRadius, new Color(1f, 0.75f, 0.35f), 13f, 0.32f);
+        Vfx.Shockwave(center, _novaRadius, 0.32f, new Color(1f, 0.75f, 0.35f));
+        Vfx.Glow(center, new Color(1f, 0.8f, 0.4f), _novaRadius * 0.28f, 0.7f, 0.22f);
+        ScreenShake.Shake(5f, 0.2f);
 
         foreach (var enemy in EnemyBase.Active.ToArray())
         {
@@ -282,7 +284,7 @@ public sealed class GraftManager : MonoBehaviour
         _shockwaveTimer = _shockwaveInterval;
 
         Vector2 center = transform.position;
-        WeaponVfx.Ring(center, _shockwaveRadius, new Color(1f, 0.5f, 0.25f), 12f, 0.3f);
+        Vfx.Shockwave(center, _shockwaveRadius, 0.3f, new Color(1f, 0.5f, 0.25f));
 
         foreach (var enemy in EnemyBase.Active.ToArray())
         {

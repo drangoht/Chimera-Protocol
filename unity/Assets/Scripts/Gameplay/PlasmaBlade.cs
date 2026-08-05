@@ -49,8 +49,9 @@ public class PlasmaBlade : WeaponBase
         LastSweepHits = 0;
 
         // L'arc se dessine même s'il ne touche personne : c'est lui qui dit au joueur où frappe son
-        // arme, et une arme de mêlée invisible passe pour une carte sans effet.
-        WeaponVfx.Arc(center, dir, halfArc, ArcRadius, new Color(0.27f, 1f, 0.93f), 11f, 0.14f);
+        // arme, et une arme de mêlée invisible passe pour une carte sans effet. Le croissant balayé
+        // (et non un arc figé) est ce qui le fait lire comme un COUP.
+        Vfx.Crescent(center, dir, halfArc, ArcRadius);
 
         var snapshot = EnemyBase.Active.ToArray();
 

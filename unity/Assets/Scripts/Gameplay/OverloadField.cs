@@ -66,7 +66,12 @@ public class OverloadField : WeaponBase
         // frame une fois la recharge prête, donc dessiner ici sans condition afficherait une aura
         // permanente qui ne dirait plus rien du rythme de l'arme.
         if (LastPulseHits > 0)
-            WeaponVfx.Ring(center, Radius, new Color(0.67f, 0.27f, 1f), 10f, 0.22f);
+        {
+            // Onde qui se DILATE jusqu'à la portée, et non anneau posé : l'arme repousse, et un
+            // cercle immobile ne dit pas dans quel sens.
+            Vfx.Shockwave(center, Radius, 0.22f, new Color(0.67f, 0.27f, 1f));
+            Vfx.Glow(center, new Color(0.67f, 0.27f, 1f), Radius * 0.22f, 0.6f, 0.18f);
+        }
 
         // Une impulsion dans le vide ne doit pas consommer la recharge : sinon l'arme se déclenche
         // sans effet pendant les creux et se retrouve en recharge quand la nuée revient.

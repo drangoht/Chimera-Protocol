@@ -334,6 +334,7 @@ public class EnemyBase : MonoBehaviour
 
         Died?.Invoke(XpValue);
         PlayDeathSfx();
+        SpawnDeathBurst();
         TriggerEliteExplosion();
         SpawnXpOrb();
         GameManager.Instance?.RegisterKill();
@@ -347,6 +348,32 @@ public class EnemyBase : MonoBehaviour
             isBoss: this is RustedCore);
 
         Destroy(gameObject);
+    }
+
+    /// <summary>
+    /// Gerbe de mort — portage d'<c>EnemyDeathBurst</c>. Le <b>calibre</b> suit le rôle de l'ennemi,
+    /// pas ses PV : c'est le seul retour qui distingue « j'ai nettoyé de la piétaille » de « je viens
+    /// d'abattre un champion », dans une mêlée où les sprites sont trop petits pour être suivis.
+    /// </summary>
+    private void SpawnDeathBurst()
+    {
+        int tier = this switch
+        {
+            RustedCore => 3,
+            MiniBoss => 2,
+            _ => IsElite ? 1 : 0,
+        };
+
+        // Teinte reprise du sprite : un ennemi de givre n'explose pas en orange. Le blanc pur d'un
+        // sprite non teinté retomberait sur l'orange chaud d'origine, qui reste le défaut lisible.
+        var sr = GetComponentInChildren<SpriteRenderer>();
+        var tint = sr != null && sr.color != Color.white
+            ? new Color(sr.color.r, sr.color.g, sr.color.b)
+            : new Color(1f, 0.55f, 0.3f);
+
+        Vfx.Death(transform.position, tier, tint);
+
+        if (tier >= 2) ScreenShake.Shake(8f, 0.25f);
     }
 
     /// <summary>

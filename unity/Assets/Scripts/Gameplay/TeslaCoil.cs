@@ -49,24 +49,27 @@ public class TeslaCoil : WeaponBase
         EnemyBase? current = first;
         float damage = EffectiveDamage;
 
+        // Le trait part du PORTEUR, puis d'un maillon à l'autre. L'ancienne version traçait le
+        // segment `from → from` pour tous les rebonds — un trait de longueur nulle, donc invisible :
+        // seul le premier éclair se voyait, et la chaîne, qui est tout l'intérêt de l'arme, ne se
+        // lisait pas.
+        Vector2 from = transform.position;
+
+        ScreenShake.Shake(2f, 0.08f);
+
         for (int i = 0; i <= ChainCount && current != null; i++)
         {
             _alreadyHit.Add(current);
-            Vector2 from = current.transform.position;
+            Vector2 to = current.transform.position;
 
-            // Le rebond est TOUT l'intérêt de cette arme : sans le trait, le joueur ne voit ni où
-            // part la décharge ni jusqu'où elle chaîne.
-            WeaponVfx.Line(i == 0 ? (Vector2)transform.position : from, from,
-                           new Color(0.27f, 1f, 0.93f), 8f, 0.12f);
+            // Dentelé, pas rectiligne : la décharge SAUTE d'une cible à l'autre.
+            Vfx.Bolt(from, to, new Color(0.4f, 0.85f, 1f), 0.16f);
+            from = to;
 
             current.TakeDamage(damage);
             LastChainLength++;
 
-            var next = FindNearestUnhit(from);
-            if (next != null)
-                WeaponVfx.Line(from, next.transform.position, new Color(0.55f, 0.85f, 1f), 7f, 0.12f);
-
-            current = next;
+            current = FindNearestUnhit(to);
         }
 
         return true;

@@ -26,7 +26,8 @@ public sealed class RunBootstrap : MonoBehaviour
         // Le vivier de traces garde des références sur des objets détruits avec la scène précédente :
         // sans cette remise à zéro, les premiers tirs de la run les réutiliseraient — donc
         // n'afficheraient rien.
-        WeaponVfx.Reset();
+        Vfx.Reset();
+        ScreenShake.Reset();
 
         // Le biome décide de la faune, du palier de menace et de l'incarnation du boss. Le poser
         // avant StartRun évite qu'une run hérite en silence du choix de la précédente.

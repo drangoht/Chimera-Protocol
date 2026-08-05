@@ -41,7 +41,13 @@ public sealed class VectorLance : WeaponBase
         var bullet = go.GetComponent<Bullet>();
         if (bullet == null) { Destroy(go); return false; }
 
+        bullet.Power = Level;
         bullet.Launch(dir.normalized * ProjectileSpeed, EffectiveDamage, Range);
+
+        // Arme DIRIGÉE : le flash de bouche est ici le seul retour immédiat sur la direction visée,
+        // le projectile perforant n'ayant pas de cible à atteindre pour la confirmer.
+        Vfx.Muzzle(transform.position, dir.normalized);
+
         LastShots++;
         return true;
     }

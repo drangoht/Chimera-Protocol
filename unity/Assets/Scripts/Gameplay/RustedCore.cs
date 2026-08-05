@@ -115,6 +115,14 @@ public sealed class RustedCore : EnemyBase
         Phase = next;
         _surchargeLeft = SurchargeSeconds;
         PhaseChanged?.Invoke(Phase);
+
+        // La bascule de phase est TÉLÉGRAPHIÉE : une seconde de surcharge pendant laquelle le boss
+        // ne frappe pas. Sans onde ni secousse, cette seconde ne se distingue pas d'un temps mort,
+        // et le joueur n'apprend jamais que le combat vient de changer de régime.
+        var tint = new Color(Incarnation.TintR, Incarnation.TintG, Incarnation.TintB);
+        Vfx.Shockwave(transform.position, 220f, SurchargeSeconds, tint);
+        Vfx.Glow(transform.position, tint, 70f, 0.8f, SurchargeSeconds);
+        ScreenShake.Shake(14f, 0.5f);
     }
 
     private void UpdateSignature(float dt)
@@ -140,6 +148,9 @@ public sealed class RustedCore : EnemyBase
         if (player == null || player.IsDead) return;
 
         float dist = Vector2.Distance(transform.position, player.transform.position);
+        Vector2 self = transform.position;
+        Vector2 toward = ((Vector2)player.transform.position - self).normalized;
+        var tint = new Color(Incarnation.TintR, Incarnation.TintG, Incarnation.TintB);
 
         switch (signature)
         {
@@ -147,23 +158,55 @@ public sealed class RustedCore : EnemyBase
                 // Translocation : réapparaît près du joueur, ce qui interdit le kiting pur.
                 if (dist > 220f)
                 {
-                    Vector2 toward = ((Vector2)player.transform.position - (Vector2)transform.position).normalized;
+                    Vfx.Shockwave(self, 90f, 0.25f, tint);
                     transform.position = (Vector2)player.transform.position - toward * 180f;
+                    Vfx.Shockwave(transform.position, 110f, 0.3f, tint);
+                    Vfx.Glow(transform.position, tint, 40f, 0.8f, 0.3f);
+                    ScreenShake.Shake(5f, 0.2f);
                 }
                 break;
 
             case BossSignature.FrostNova:
+                Vfx.Shockwave(self, 260f, 0.4f, new Color(0.6f, 0.92f, 1f));
+                Vfx.Burst(self, new Color(0.85f, 0.97f, 1f, 0.9f), new Color(0.5f, 0.8f, 1f, 0f),
+                          40, 220f, 520f, 9f, 0.4f);
+                ScreenShake.Shake(7f, 0.25f);
                 if (dist < 260f) { DealDiscreteDamage(player, Damage * 1.2f); player.SpeedMultiplier = 0.7f; }
                 break;
 
             case BossSignature.DirectedFan:
+                Vfx.Cone(self, toward, 40f, 320f, tint, 0.3f, 4f);
+                Vfx.Flame(self, toward, 80f, 200f);
+                ScreenShake.Shake(6f, 0.25f);
+                if (dist < 320f) DealDiscreteDamage(player, Damage);
+                break;
+
             case BossSignature.RotatingBeams:
+                // Quatre faisceaux en croix, décalés d'un tir à l'autre : c'est leur ROTATION qui
+                // fait la signature, et un seul trait vers le joueur ne la montrerait pas.
+                for (int i = 0; i < 4; i++)
+                {
+                    float a = (SignatureCount * 23f + i * 90f) * Mathf.Deg2Rad;
+                    var dir = new Vector2(Mathf.Cos(a), Mathf.Sin(a));
+                    Vfx.Beam(self, self + dir * 320f, tint, 5f, 0.3f);
+                }
+                ScreenShake.Shake(6f, 0.25f);
                 if (dist < 320f) DealDiscreteDamage(player, Damage);
                 break;
 
             case BossSignature.MagmaPools:
                 // Zone au sol : ne touche que de près, mais persiste — reproduit ici par une frappe
-                // de proximité, la zone visuelle appartenant au lot VFX.
+                // de proximité. Les flaques marquent CE QUI BRÛLE ; sans elles, le joueur perd des
+                // PV au corps à corps sans distinguer la flaque du contact du boss.
+                for (int i = 0; i < 3; i++)
+                {
+                    float a = (SignatureCount * 47f + i * 120f) * Mathf.Deg2Rad;
+                    var at = self + new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * 90f;
+                    Vfx.Ring(at, 55f, new Color(1f, 0.45f, 0.15f), 4f, 1.2f);
+                    Vfx.Burst(at, new Color(1f, 0.8f, 0.35f, 0.9f), new Color(1f, 0.25f, 0.05f, 0f),
+                              14, 20f, 90f, 11f, 0.8f, 0f, 360f, VfxPrimitives.OrderGround);
+                }
+                ScreenShake.Shake(4f, 0.2f);
                 if (dist < 160f) DealDiscreteDamage(player, Damage * 0.8f);
                 break;
         }

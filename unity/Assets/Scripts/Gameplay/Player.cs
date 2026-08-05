@@ -213,7 +213,7 @@ public sealed class Player : MonoBehaviour
         _dashCooldownLeft = Mathf.Max(_dashCooldownFloor, reduced);
         _dashCooldownDuration = _dashCooldownLeft;
 
-        WeaponVfx.Ring(transform.position, 26f, new Color(0.6f, 0.9f, 1f), 9f, 0.16f);
+        Vfx.Shockwave(transform.position, 44f, 0.16f, new Color(0.6f, 0.9f, 1f));
     }
 
     /// <summary>Couloir de dégâts de la charge : chaque ennemi une seule fois par ruade.</summary>

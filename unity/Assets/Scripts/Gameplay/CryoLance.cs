@@ -46,8 +46,9 @@ public sealed class CryoLance : WeaponBase
         float damage = EffectiveDamage;
 
         // Le couloir de gel se dessine sur toute sa portée : c'est un tir de zone, pas un projectile,
-        // et rien d'autre n'en signale la largeur ni l'axe.
-        WeaponVfx.Line(origin, origin + dir * Range, new Color(0.55f, 0.9f, 1f), 12f, 0.2f, 16f);
+        // et rien d'autre n'en signale la largeur ni l'axe. Les éclats de givre naissent LE LONG du
+        // faisceau, ce qui distingue un rayon glacé d'un simple trait bleu.
+        Vfx.Frost(origin, dir, Range, Level);
 
         var snapshot = EnemyBase.Active.ToArray();
 

@@ -18,6 +18,8 @@ public sealed class NeonWarden : MiniBoss
     /// <summary>Angle courant du bouclier, en degrés — lu par l'affichage.</summary>
     public float ShieldAngle { get; private set; }
 
+    private ChampionOverlay? _shield;
+
     protected override void Awake()
     {
         base.Awake();
@@ -29,6 +31,13 @@ public sealed class NeonWarden : MiniBoss
     {
         base.Update();
         ShieldAngle = Mathf.Repeat(ShieldAngle + ShieldSpeedDeg * Time.deltaTime, 360f);
+
+        // Le bouclier ne SE VOYAIT PAS. Toute la mécanique du Gardien est de frapper là où il n'est
+        // pas couvert : sans arc affiché, le joueur ne constate qu'un ennemi qui encaisse
+        // irrégulièrement, sans jamais pouvoir en déduire quoi que ce soit.
+        _shield ??= ChampionOverlay.Attach(transform, new Color(0.85f, 0.35f, 1f),
+                                           ChampionContactRadius + 16f, ShieldHalfArc);
+        _shield.AngleDeg = ShieldAngle;
     }
 
     public override void TakeDamage(float amount)

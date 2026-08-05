@@ -344,6 +344,58 @@ ramassables.
 
 ---
 
+## Effets visuels
+
+### Une valeur d'effet **ne se transpose pas** d'un moteur à l'autre — elle se recalibre sur capture
+
+Les lueurs ont été portées avec les nombres de Godot : `PointLight2D` de texture 32 px à
+`TextureScale = 2,2 + niveau × 0,45`, soit 185 px de diamètre à niveau 8. À l'écran, en Unity,
+**d'énormes flaques cyan noyaient l'arène** — le mélange additif de Godot passait par son éclairage
+2D, celui d'Unity est un sprite additionné directement à l'image.
+
+Le vrai piège n'est pas le facteur, c'est **le cumul** : une arme à tir rapide envoie un *flux* de
+projectiles, et dix halos qui se superposent en additif saturent au blanc. **Un effet ne se juge
+jamais sur un exemplaire isolé.** Valeurs retenues, calibrées sur capture : lueur de projectile
+`14 + niveau × 2,5` px de diamètre à alpha `0,12 + niveau × 0,02` ; flash d'impact `8 + niveau × 2,5`
+px de **rayon** (contre 130 en transposition littérale).
+
+### L'aléatoire d'un effet ne doit **jamais** venir de `UnityEngine.Random`
+
+`Random.Range` partage son état avec le jeu. Une campagne de banc lancée sur une graine fixe verrait
+ses tirages de gameplay **se décaler selon le nombre d'éclairs dessinés** — un décor qui change le
+déroulé d'une run. `Vfx` porte donc son propre `System.Random`.
+
+### Sur un paramètre générique, `item == null` ne voit pas le « faux null » d'Unity
+
+Dans `Rent<T>(...) where T : MonoBehaviour`, C# résout `==` en égalité de **référence** : un objet
+détruit avec sa scène passe pour vivant. Il faut convertir explicitement
+(`(UnityEngine.Object)candidate != null`) pour retrouver l'opérateur d'Unity. Symptôme sinon : les
+premiers effets de la run suivante ne s'affichent pas, sans la moindre erreur.
+
+### Un shader atteint seulement par `Shader.Find` peut être **retiré du build**
+
+Le nettoyage de shaders ne garde que ce qui est référencé. Un shader d'effet chargé dynamiquement
+doit vivre dans `Resources/` et se charger par `Resources.Load` — sinon il disparaît **uniquement
+dans le jeu exporté**, jamais dans l'éditeur, donc jamais pendant les tests. Vérification : le
+journal de build doit contenir `Compiling shader "Chimera/VfxAdditive"`.
+
+### Une mécanique invisible n'est pas une mécanique
+
+Le bouclier orbital du Gardien Néon n'absorbe les dégâts que dans le secteur qu'il couvre, et toute
+sa réponse est de tourner autour de lui. Sans arc affiché, le joueur ne constate qu'un ennemi qui
+encaisse irrégulièrement, **sans pouvoir en déduire quoi que ce soit**. Même défaut sur le sillage de
+magma du Colosse (zone de dégâts sans marque au sol) et sur les cinq signatures du boss, qui
+frappaient sans rien afficher. Une marque permanente vit sur **son propre objet**
+(`ChampionOverlay`) : dessinée par le champion, elle serait saturée au blanc par le clignotement de
+dégât, précisément quand le joueur regarde.
+
+### Un anneau se dessine avec `LineRenderer.loop`, jamais avec une polyligne refermée
+
+Une polyligne dont on répète le premier point laisse une **encoche** visible à la fermeture —
+immédiatement lisible sur une aura affichée en permanence.
+
+---
+
 ## Méthode
 
 ### Extraire du moteur, puis confronter — plutôt que lire les sources
@@ -370,3 +422,16 @@ overtime, boss vu, boss vaincu.
 
 ⚠ Corollaire : `--run-duration=<secondes>` existe pour la même raison. Sans elle, **vérifier
 l'arrivée du boss coûte treize minutes de jeu réel** — c'est-à-dire qu'on ne la vérifie jamais.
+
+### Une capture d'écran répond à la question qu'on lui pose, pas à celle qu'on croit
+
+Les premiers clichés de combat montraient « aucune arme de zone ne s'affiche ». C'était exact et sans
+rapport avec les armes : la tournée photographiait la **première minute** d'une run, où le joueur est
+seul au centre d'une arène vide — aucune arme de mêlée, de zone ou de chaîne n'a de cible à portée.
+`ScreenshotTour` pose désormais lui-même une nuée autour du joueur avant les clichés.
+
+Deux conséquences apprises dans la foulée : ces ennemis sont posés **sans orbe d'XP** (28 morts d'un
+coup ouvrent l'écran de montée de niveau, modal, qui recouvre le combat qu'on photographie), et les
+clichés s'enchaînent **vite** (0,35 s) — l'Assimilation se déclenche vers la 35ᵉ élimination et pose
+la même modale. Un effet d'arme dure 0,2 s : **un cliché unique tombe presque toujours entre deux
+tirs**, d'où trois clichés et non un.

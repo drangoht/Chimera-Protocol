@@ -31,7 +31,16 @@ public sealed class CryoSentinel : MiniBoss
         if (_timer > 0f) return;
         _timer = FreezeInterval;
 
-        if (Vector2.Distance(transform.position, player.transform.position) < FreezeRange)
+        Vector2 toPlayer = (Vector2)player.transform.position - (Vector2)transform.position;
+
+        // Le gel se voit MÊME hors de portée : c'est ce qui apprend au joueur que la sentinelle
+        // vient de tirer, et que le ralentissement qu'il subit vient d'elle et non d'un bug.
+        Vfx.Cone(transform.position, toPlayer, 35f, FreezeRange, new Color(0.6f, 0.92f, 1f, 0.7f), 0.35f);
+        Vfx.Burst(transform.position, new Color(0.8f, 0.97f, 1f, 0.9f), new Color(0.6f, 0.85f, 1f, 0f),
+                  18, 60f, 200f, 7f, 0.35f,
+                  Mathf.Atan2(toPlayer.y, toPlayer.x) * Mathf.Rad2Deg, 70f);
+
+        if (toPlayer.magnitude < FreezeRange)
             player.SpeedMultiplier = FreezeSlow;
     }
 }

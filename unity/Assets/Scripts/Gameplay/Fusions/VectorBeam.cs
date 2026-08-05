@@ -41,7 +41,8 @@ public sealed class VectorBeam : WeaponBase
 
         // Le faisceau part de la VISÉE du joueur, pas de la cible la plus proche : sans trait, rien
         // ne dit où il pointe, et l'arme paraît tirer au hasard.
-        WeaponVfx.Line(origin, origin + dir * Range, new Color(1f, 0.85f, 0.35f), 13f, 0.18f, 14f);
+        Vfx.Beam(origin, origin + dir * Range, new Color(1f, 0.85f, 0.35f), 5f, 0.18f);
+        Vfx.Glow(origin, new Color(1f, 0.85f, 0.35f), 16f, 0.8f, 0.12f);
 
         var snapshot = EnemyBase.Active.ToArray();
 

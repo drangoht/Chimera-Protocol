@@ -107,3 +107,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: ChimeraProtocol.Gameplay::Bullet
   HitRadius: 12
   Piercing: 0
+  Power: 1

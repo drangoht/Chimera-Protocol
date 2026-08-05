@@ -25,9 +25,17 @@ public sealed class RunCamera : MonoBehaviour
 
     private Camera? _camera;
     private Vector3 _velocity;
+    private Vector2 _shake;
     private int _lastHeight;
 
-    private void Awake() => _camera = GetComponent<Camera>();
+    private void Awake()
+    {
+        _camera = GetComponent<Camera>();
+        ScreenShake.Reset();   // une secousse ne survit pas à la run qui l'a déclenchée
+    }
+
+    /// <summary>Position suivie, secousse déduite — voir <see cref="Follow"/>.</summary>
+    private Vector3 StripShake(Vector3 position) => position - (Vector3)_shake;
 
     private void LateUpdate()
     {
@@ -65,8 +73,16 @@ public sealed class RunCamera : MonoBehaviour
         target.y = Mathf.Clamp(target.y, -limitY, limitY);
         target.z = transform.position.z;   // la profondeur de la caméra ne change jamais
 
-        transform.position = SmoothTime <= 0f
+        Vector3 followed = SmoothTime <= 0f
             ? target
-            : Vector3.SmoothDamp(transform.position, target, ref _velocity, SmoothTime);
+            : Vector3.SmoothDamp(StripShake(transform.position), target, ref _velocity, SmoothTime);
+
+        // La secousse s'ajoute APRÈS la poursuite et n'est jamais mémorisée dans la position suivie
+        // (d'où StripShake) : sinon l'amortissement la poursuivrait, et la caméra dériverait au lieu
+        // de revenir se centrer.
+        ScreenShake.Advance(Time.deltaTime);
+        _shake = ScreenShake.Offset;
+
+        transform.position = followed + (Vector3)_shake;
     }
 }

@@ -62,7 +62,9 @@ public sealed class ScatterVolley : WeaponBase
             var bullet = go.GetComponent<Bullet>();
             if (bullet == null) { Destroy(go); continue; }
 
+            bullet.Power = Level;
             bullet.Launch(dir * BulletSpeed, EffectiveDamage, Range);
+            Vfx.Muzzle(origin, dir);
             LastVolleySize++;
         }
 
