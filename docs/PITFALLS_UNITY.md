@@ -609,6 +609,54 @@ localisation » ; elle était déjà chargée ailleurs. D'où `UiNames`, dans `P
 un `StringComparison` — c'est bien la collection qu'on interroge, pas le texte. `Enumerable.Contains`
 lève l'ambiguïté.
 
+### L'ordre d'empilement se raisonne par CHEMIN d'ouverture, pas par écran
+
+Les Options portaient l'ordre 96, l'écran de pause 110. Ouvertes depuis le menu principal, elles
+s'affichaient correctement ; ouvertes **depuis la pause** — ce que le jeu publié permet — elles
+apparaissaient *derrière*. Le joueur voyait le voile s'assombrir sans savoir que l'écran demandé
+s'était bien ouvert, dessous.
+
+La règle : un ordre d'empilement se choisit d'après **tous** les écrans depuis lesquels on peut
+ouvrir celui-là, jamais d'après sa place « logique » dans une liste.
+
+### Un panneau dont la hauteur suit le contenu chevauche son propre cadre
+
+Le bloc vital du HUD faisait 152 px pour un contenu qui s'arrêtait à 140 : la dernière rangée — les
+emplacements de greffes — mordait sur le liseré. Un cadre « plaque blindée » porte une bordure
+9-slice de **16 px** : la hauteur utile n'est pas celle du panneau. Elle se calcule
+(`SlotsTop + SlotSize + marge`) plutôt que de s'ajuster à l'œil, sinon toute modification du contenu
+rouvre le défaut.
+
+### Une forme géométrique ne remplace pas un sprite qui existe
+
+Les orbiteurs de la Nuée Symbiotique étaient quatre **carrés blancs teintés**. La greffe promet
+« 4 mini-essaims de rouille vivante » : c'est une créature arrachée à un ennemi, et c'est tout le
+propos de l'Assimilation — le joueur doit reconnaître ce qu'il porte. Le sprite de l'ennemi source
+existait déjà dans le projet.
+
+⚠ Le jeu publié dessine ici des losanges, faute d'y avoir accès autrement ; reproduire la *forme*
+plutôt que l'*intention* aurait raté le sujet. Le repli, lui, reste un losange — un carré tourné d'un
+quart de tour — parce qu'à défaut de sprite, la forme ne doit pas être celle d'un bloc de décor.
+
+### La parallaxe se lit dans l'écart entre les couches, pas dans leur contenu
+
+Le sol glissait d'un bloc sous le joueur, et l'arène paraissait plate. Trois couches aux facteurs du
+jeu publié suffisent à la profondeur : motif très lointain (0,06), poussière lointaine (0,55),
+poussière de premier plan (**1,35**, qui devance la caméra — un facteur supérieur à 1 n'est pas une
+erreur, c'est ce qui place une couche *devant* le plan de jeu).
+
+⚠ Deux points d'implémentation :
+
+- **`LateUpdate`, jamais `Update`** : la caméra suit le joueur dans son propre `LateUpdate`, et lire
+  sa position trop tôt fait *trembler* les couches d'une frame de retard — défaut qui ne se voit
+  qu'en mouvement.
+- **La couche la plus lointaine doit rester discrète** (7 % d'opacité ici). Plus appuyée, ses grandes
+  formes se lisent comme des dalles posées sur le sol : l'œil les prend pour du terrain et cherche à
+  les contourner.
+
+⚠ **Non porté** : la brume animée et les rais de lumière, qui demandent un échantillonnage par
+fragment. La parallaxe est la part qui produit la profondeur.
+
 ### Une table parsée n'est pas une table branchée
 
 `GraftTable` lisait les **fusions de greffes** — recette, jauge dédiée, points par archétype — depuis

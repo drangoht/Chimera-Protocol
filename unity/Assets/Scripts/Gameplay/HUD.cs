@@ -457,7 +457,10 @@ public sealed class HUD : MonoBehaviour
         var rect = panel.GetComponent<RectTransform>();
         rect.anchorMin = rect.anchorMax = new Vector2(0f, 1f);
         rect.pivot = new Vector2(0f, 1f);
-        rect.sizeDelta = new Vector2(VitalsWidth, 152f);
+        // ⚠ Hauteur calculée, pas devinée. Le cadre « plaque blindée » porte une bordure de 16 px
+        // en 9-slice : une hauteur ajustée au contenu fait chevaucher la dernière rangée — ici les
+        // emplacements de greffes — sur le liseré du panneau.
+        rect.sizeDelta = new Vector2(VitalsWidth, SlotsTop + SlotSize + VitalsPadding);
         rect.anchoredPosition = new Vector2(20f, -20f);
 
         _levelLabel = BuildLabel(panel.transform, "Level", new Vector2(0f, 1f),
@@ -482,7 +485,7 @@ public sealed class HUD : MonoBehaviour
 
         var slots = new GameObject("GraftSlots", typeof(RectTransform));
         slots.transform.SetParent(panel.transform, false);
-        Place(slots, new Vector2(0f, 1f), new Vector2(22f, -98f), new Vector2(VitalsWidth - 44f, SlotSize));
+        Place(slots, new Vector2(0f, 1f), new Vector2(22f, -SlotsTop), new Vector2(VitalsWidth - 44f, SlotSize));
 
         var slotsLayout = slots.AddComponent<HorizontalLayoutGroup>();
         slotsLayout.spacing = 8f;
@@ -613,6 +616,12 @@ public sealed class HUD : MonoBehaviour
 
     /// <summary>Côté d'un emplacement de greffe.</summary>
     private const float SlotSize = 42f;
+
+    /// <summary>Ordonnée du haut de la rangée d'emplacements, depuis le haut du panneau.</summary>
+    private const float SlotsTop = 98f;
+
+    /// <summary>Marge sous la dernière rangée — la bordure 9-slice du cadre, plus une respiration.</summary>
+    private const float VitalsPadding = 22f;
 
     private static Image BuildBar(Transform parent, string name, Vector2 anchor,
                                   Vector2 offset, Vector2 size, Color fillColor)

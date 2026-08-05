@@ -120,20 +120,49 @@ public sealed class GraftManager : MonoBehaviour
         _orbitInterval = (float)def.Effect("orbitingAllies", "rehitIntervalSec", 0.45);
         _orbitLifesteal = (float)def.Effect("orbitingAllies", "lifestealFraction", 0.0);
 
+        // ⚠ Le sprite de l'ESSAIM DE ROUILLE, pas un carré blanc teinté.
+        //
+        // La greffe promet « 4 mini-essaims de rouille vivante qui orbitent » : c'est une créature
+        // arrachée à un ennemi, et c'est tout le propos de l'Assimilation — le joueur doit
+        // reconnaître ce qu'il porte. Le portage dessinait quatre carrés, que rien ne relie à la
+        // nuée. (Le jeu publié dessine des losanges ; le sprite dit la même chose en mieux, puisque
+        // l'ennemi source existe ici.)
+        var frames = SpriteFramesLibrary.Get(OrbiterFramesId);
+        var clip = frames?.Find("move") ?? frames?.Find("idle");
+        var sprite = clip != null && clip.Frames.Length > 0 ? clip.Frames[0] : null;
+
         for (int i = 0; i < count; i++)
         {
             var go = new GameObject($"Symbiote{i}", typeof(SpriteRenderer));
 
             var sr = go.GetComponent<SpriteRenderer>();
-            sr.sprite = UiPrimitives.White;
             sr.color = new Color(def.Tint[0], def.Tint[1], def.Tint[2]);
             sr.sortingOrder = 17;
-            go.transform.localScale = new Vector3(11f, 11f, 1f);
+
+            if (sprite != null)
+            {
+                sr.sprite = sprite;
+                go.transform.localScale = Vector3.one * OrbiterScale;
+            }
+            else
+            {
+                // Repli : le losange du jeu publié — un carré tourné d'un quart de tour. Même à
+                // défaut de sprite, la forme ne doit pas être celle d'un bloc de décor.
+                sr.sprite = UiPrimitives.White;
+                go.transform.localScale = new Vector3(11f, 11f, 1f);
+                go.transform.localRotation = Quaternion.Euler(0f, 0f, 45f);
+            }
 
             _orbiters.Add(go.transform);
             _orbiterCooldowns.Add(0f);
         }
     }
+
+    /// <summary>Jeu d'animations dont les orbiteurs empruntent la silhouette.</summary>
+    private const string OrbiterFramesId = "rustswarm";
+
+    /// <summary>Échelle des orbiteurs — plus petits que l'ennemi dont ils viennent : des « mini »-essaims.</summary>
+    private const float OrbiterScale = 0.7f;
 
     private void ApplyThorns(GraftTable.GraftDef def)
         => _thornsFraction += (float)def.Effect("thorns", "reflectFraction",

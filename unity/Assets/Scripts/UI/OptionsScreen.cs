@@ -159,7 +159,11 @@ public sealed class OptionsScreen : MonoBehaviour
             typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
         canvasGo.transform.SetParent(transform, false);
 
-        UiCanvas.Configure(canvasGo, 96);
+        // ⚠ AU-DESSUS de l'écran de pause (110). Les options s'ouvrent depuis deux endroits : le
+        // menu principal, où rien ne les recouvre, et la PAUSE — et là, un ordre inférieur les
+        // faisait apparaître derrière elle. Le joueur voyait le voile s'assombrir sans savoir que
+        // l'écran demandé s'était bien ouvert, dessous.
+        UiCanvas.Configure(canvasGo, 115);
 
         _root = canvasGo;
         UiStyle.ScreenBackdrop(canvasGo.transform);

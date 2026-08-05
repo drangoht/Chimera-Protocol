@@ -36,6 +36,13 @@ public sealed class ArenaRenderer : MonoBehaviour
         BuildBar("BordDroite", new Vector2( w, 0f), new Vector2(BorderThickness, Arena.Height), border);
 
         BuildObstacles(biomeId, border);
+
+        // L'atmosphère vient EN DERNIER : ses couches se placent par rapport à la caméra, pas au
+        // sol, et elle doit exister même si le décor manque.
+        var atmosphere = gameObject.GetComponent<BiomeAtmosphere>()
+                      ?? gameObject.AddComponent<BiomeAtmosphere>();
+
+        atmosphere.Configure(biomeId);
     }
 
     /// <summary>
