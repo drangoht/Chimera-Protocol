@@ -384,6 +384,70 @@ L'illustration de couverture et les drapeaux de langue étaient bien dans le pro
 donc hors de portée d'un `Resources.Load`. Le menu s'affichait sur un aplat uni avec un titre en
 police monospace, et rien dans le code ne signalait l'absence.
 
+**Rejoué à l'identique avec les 43 icônes d'armes** (2026-08-05) : mêmes fichiers présents sous
+`Art/sprites/ui/`, même absence sous `Resources/`, et **aucune table** ne reliait un identifiant à
+son pictogramme. Cartes de montée de niveau, Codex et arsenal du HUD n'affichaient que du texte. La
+parade est désormais vérifiée au banc : *chaque arme et chaque greffe a son icône* (`UiIcons`), et
+elle échoue si l'on ajoute une arme sans son entrée.
+
+### Le focus clavier doit **se voir** — sinon il n'existe pas
+
+Signalement : « on ne peut pas se déplacer dans les menus au clavier ». Le relevé dit l'inverse : la
+sélection passait bien de `Button_Jouer` à `Button_Hub` puis `Button_DÉFIS` à chaque flèche. **C'est
+le signal visuel qui manquait**, et l'effet pour le joueur est rigoureusement le même.
+
+Godot superpose **trois** signaux (`src/UI/UiStyle.cs`, §3.2), et le dit explicitement : « le focus
+ne repose ainsi jamais sur la seule teinte ».
+
+1. **la teinte** — cadre **violet**, *quel que soit l'accent du bouton* ;
+2. **la forme** — le cadre **déborde de 3 px** (`SetExpandMarginAll`) ;
+3. **le mouvement** — l'opacité pulse de 60 % à 100 % sur 0,6 s.
+
+Le portage n'avait qu'une variante `_focus` **de la couleur du bouton**, plus ±18 % de luminosité.
+Aggravé par un menu où chaque entrée portait une couleur différente : « plus lumineux que son
+voisin » ne se compare pas entre deux teintes. Le jeu publié met tout le menu en cyan sauf
+« Quitter » — cette uniformité **est** ce qui rend le focus lisible.
+
+Côté Unity, l'anneau vit sur **son propre objet** enfant : peint sur l'image du bouton, il subirait
+le `SpriteSwap` des états (survol, pressé) et disparaîtrait au moment précis où il sert.
+
+### `StandaloneInputModule` **désélectionne** à chaque clic dans le vide
+
+Un clic qui ne tombe sur aucun élément appelle `SetSelectedGameObject(null)`. Le joueur qui clique
+une fois à côté d'un bouton n'a plus **aucune** sélection : les flèches ne font alors plus rien du
+tout jusqu'à ce qu'il reclique sur un bouton. Godot conserve le focus. D'où `UiFocusGuard`
+(`RuntimeInitializeOnLoadMethod`, un objet persistant) : il rétablit la dernière sélection valide,
+et traite au passage le cas où l'élément sélectionné **disparaît** (écran fermé, liste reconstruite).
+
+### Le texte est flou tant que le canevas n'est pas en `pixelPerfect`
+
+uGUI place ses sommets en coordonnées flottantes. Une colonne centrée, une hauteur de bouton impaire
+ou une marge de mise en page suffisent à poser une ligne de texte sur un **demi-pixel** : la police
+est rééchantillonnée et les glyphes bavent. Aucun réglage de police n'y change rien — c'est le
+canevas qu'il faut corriger (`Canvas.pixelPerfect = true`, cf. `UiCanvas.Configure`, source unique
+des quatre réglages de canevas qui étaient recopiés dans les onze écrans). En complément,
+`fontRenderingMode: HintedSmooth` sur la police.
+
+Le défaut est **invisible au code** et saute aux yeux sur une capture agrandie ×3.
+
+### Deux colonnes parallèles ne s'alignent pas : il faut une ligne par entrée
+
+L'arsenal du HUD posait une colonne d'icônes **à côté** d'un bloc de texte multiligne, en devinant
+l'interligne d'uGUI. Le décalage était invisible sur une arme et valait **deux lignes entières** sur
+dix. Une mise en page ne se devine pas : une ligne = un conteneur portant son icône *et* son
+libellé, empilés par un `VerticalLayoutGroup`.
+
+Corollaire trouvé au même endroit : `HUD.Place()` pose un pivot **haut-gauche**. Réutiliser les
+mêmes ancre et position avec un pivot différent décale l'élément de la **hauteur entière** du bloc —
+soit, ici, hors du champ où on le cherchait.
+
+### Un `Register` silencieux prive le HUD de l'arme de départ
+
+`InventorySystem.Register` remplissait la table sans émettre `WeaponChanged`. Or `RunBootstrap`
+enregistre l'arme de départ **après** que le HUD a lu l'inventaire — vide à cet instant. L'arme avec
+laquelle le joueur commence sa run n'apparaissait donc nulle part de toute la partie, et le HUD ne se
+peuplait qu'à la première carte prise.
+
 ---
 
 ## Effets visuels
@@ -477,3 +541,22 @@ coup ouvrent l'écran de montée de niveau, modal, qui recouvre le combat qu'on 
 clichés s'enchaînent **vite** (0,35 s) — l'Assimilation se déclenche vers la 35ᵉ élimination et pose
 la même modale. Un effet d'arme dure 0,2 s : **un cliché unique tombe presque toujours entre deux
 tirs**, d'où trois clichés et non un.
+
+### Un banc qui simule des touches doit envoyer des **scancodes**, pas des codes virtuels
+
+`pyautogui.press("down")` envoie `VK_DOWN` **sans** `KEYEVENTF_EXTENDEDKEY`. Unity lit les scancodes
+(`m_UsePhysicalKeys: 1`) et y voit alors le **pavé numérique** : `Input.anyKey` est vrai,
+`Input.GetKey(KeyCode.DownArrow)` est faux, et l'axe `Vertical` rend 0. Le banc a ainsi produit un
+verdict net et entièrement faux — « les flèches ne naviguent pas » — sur un jeu où elles naviguaient.
+
+Deux pièges s'y ajoutent, indépendants du scancode :
+
+- **`GetAxisRaw` lit un ÉTAT, pas un événement.** Une pression de quelques millisecondes est vue par
+  `GetButtonDown` (latché sur la frame) mais **pas** par l'axe : `Entrée` semblait marcher et les
+  flèches non. Il faut **maintenir** la touche au moins une frame (≥ 0,2 s en pratique).
+- **La fenêtre doit avoir le focus applicatif** ; un clic simulé peut le lui retirer, et toute la
+  suite du relevé devient muette sans un seul message d'erreur.
+
+Parade : envoyer les touches par `SendInput` avec le scancode et le drapeau *extended* pour les
+flèches, et **journaliser l'état lu côté jeu** (`--input-probe`, `InputProbe`) plutôt que de conclure
+depuis l'extérieur. C'est ce relevé qui a montré que la sélection se déplaçait bel et bien.

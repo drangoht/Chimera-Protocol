@@ -55,20 +55,42 @@ public sealed class ArenaRenderer : MonoBehaviour
 
             var go = new GameObject("Obstacle", typeof(SpriteRenderer));
             go.transform.SetParent(transform, false);
-            go.transform.position = position;
-            go.transform.localScale = new Vector3(2f, 2f, 1f);   // masses lisibles, pas du gravier
+
+            // ⚠ AUCUNE mise à l'échelle. Les sprites du monde sont importés à 1 px = 1 unité : le
+            // pilier fait déjà 32 × 64 px, la taille de sa silhouette d'origine. Le portage lui
+            // appliquait un facteur 2 « pour des masses lisibles », ce qui donnait 64 × 128 px — le
+            // double du joueur, et surtout <b>deux fois et demie</b> la zone qu'il bloque.
+            //
+            // Ancrage à la BASE, comme sous Godot : le point bloquant est au pied de l'obstacle, et
+            // la silhouette monte au-dessus. Centrer le sprite sur ce point le faisait déborder
+            // autant vers le bas que vers le haut, si bien que le joueur — arrêté à 26 px du
+            // centre — se retrouvait recouvert par le décor de tous les côtés. C'est le « le joueur
+            // passe dessous » : le corps était bien bloqué, c'est le dessin qui l'avalait.
+            float half = sprite != null ? sprite.rect.height * 0.5f : 0f;
+            go.transform.position = position + new Vector2(0f, half - FootOffset);
 
             var sr = go.GetComponent<SpriteRenderer>();
             sr.sprite = sprite != null ? sprite : UiPrimitives.White;
             sr.color = sprite != null ? Color.white : accent;
 
+            if (sprite == null) go.transform.localScale = new Vector3(2f * ArenaLayout.BlockRadius,
+                                                                     2f * ArenaLayout.BlockRadius, 1f);
+
             // Au-dessus des entités : un obstacle « infranchissable » doit OCCULTER ce qui passe
-            // derrière, sinon il se lit comme un décor au sol qu'on peut survoler.
+            // derrière, sinon il se lit comme un décor au sol qu'on peut survoler. C'est le
+            // ZIndex 6 de Godot, contre 5 pour le joueur.
             sr.sortingOrder = 20;
         }
 
         ArenaObstacles.Set(centers);
     }
+
+    /// <summary>
+    /// De combien la base du sprite descend sous le point bloquant, en pixels. Reprend le décalage
+    /// du collider de Godot (<c>CollisionShape2D.Position.Y = 14</c>) : le pied de l'obstacle est
+    /// posé un peu plus bas que son centre de blocage, sinon la silhouette paraît flotter.
+    /// </summary>
+    private const float FootOffset = 14f;
 
     /// <summary>Décor d'obstacle propre au biome, avec repli sur le pilier de pierre.</summary>
     private static string DecorFor(string? biomeId) => biomeId switch

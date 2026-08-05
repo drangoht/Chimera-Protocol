@@ -137,9 +137,6 @@ public static class UiStyle
 
         if (ApplyFrame(image, $"ui_frame_button_{Slug(accent)}"))
         {
-            // Le focus change de TEXTURE, pas de teinte : la variante `_focus` allume le liseré.
-            // C'est un signal de forme — celui du jeu publié —, et il reste lisible pour qui
-            // distingue mal les couleurs, là où un simple éclaircissement ne l'est pas.
             button.transition = Selectable.Transition.SpriteSwap;
 
             var state = button.spriteState;
@@ -149,7 +146,12 @@ public static class UiStyle
             state.disabledSprite    = Frame("ui_frame_button_disabled");
             button.spriteState = state;
 
-            AttachFocusPulse(button, image);
+            // ⚠ Le focus s'annonce en VIOLET, quel que soit l'accent du bouton — c'est la règle du
+            // jeu publié (§3.2), et elle n'est pas décorative : dans un menu où chaque entrée porte
+            // déjà sa couleur, « ma variante _focus est plus lumineuse que ma variante normale » ne
+            // se compare pas d'un bouton à l'autre. Le portage avait gardé la couleur du bouton, et
+            // le déplacement du focus en devenait invisible.
+            AttachFocusPulse(button, image, Frame("ui_frame_button_violet_focus"));
         }
         else
         {
@@ -205,7 +207,10 @@ public static class UiStyle
             state.disabledSprite    = Frame("ui_frame_card_disabled");
             button.spriteState = state;
 
-            AttachFocusPulse(button, image);
+            // Une carte garde sa RARETÉ jusque dans son anneau de focus : cette couleur dit la
+            // valeur de la carte, et l'écraser en violet effacerait l'information au moment même où
+            // le joueur arbitre.
+            AttachFocusPulse(button, image, Frame($"ui_frame_card_{slug}_focus"));
         }
         else
         {
@@ -216,12 +221,11 @@ public static class UiStyle
     }
 
     /// <summary>
-    /// Fait <b>pulser</b> le cadre de l'élément qui a le focus. Sans cette animation, la sélection
-    /// clavier/manette se réduit à une nuance de liseré : sur un écran chargé, le joueur perd où il
-    /// se trouve — et le jeu se joue entièrement au clavier ou à la manette.
+    /// Branche le signal de focus — teinte, débordement et pulsation. Voir <see cref="UiFocusPulse"/>
+    /// pour la raison des trois signaux cumulés.
     /// </summary>
-    private static void AttachFocusPulse(Button button, Image image)
-        => button.gameObject.AddComponent<UiFocusPulse>().Bind(button, image);
+    private static void AttachFocusPulse(Button button, Image image, Sprite? focusFrame)
+        => button.gameObject.AddComponent<UiFocusPulse>().Bind(button, image, focusFrame);
 
     /// <summary>Texte courant. Le corps par défaut correspond à celui du jeu publié.</summary>
     public static Text Label(Transform parent, string content, int size = 20,

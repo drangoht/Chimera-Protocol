@@ -99,17 +99,7 @@ public sealed class LevelUpScreen : MonoBehaviour
             typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster), typeof(CanvasGroup));
         canvasGo.transform.SetParent(transform, false);
 
-        var canvas = canvasGo.GetComponent<Canvas>();
-        canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-
-        // Au-dessus du HUD et de tout effet plein écran : une modale assombrie par la vignette
-        // avait déjà été un défaut visible du jeu.
-        canvas.sortingOrder = 100;
-
-        var scaler = canvasGo.GetComponent<CanvasScaler>();
-        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(1920f, 1080f);
-        scaler.matchWidthOrHeight = 0.5f;
+        UiCanvas.Configure(canvasGo, 100);
 
         _root = canvasGo;
 
@@ -120,7 +110,10 @@ public sealed class LevelUpScreen : MonoBehaviour
         panelRect.anchorMin = new Vector2(0.5f, 0.5f);
         panelRect.anchorMax = new Vector2(0.5f, 0.5f);
         panelRect.pivot = new Vector2(0.5f, 0.5f);
-        panelRect.sizeDelta = new Vector2(1100f, 520f);
+        // Proportions du jeu publié (docs/ui_v1160_levelup.png) : les cartes y occupent près de la
+        // moitié de la hauteur. Le portage les tenait dans 520 px, et la description de
+        // l'Auto-réparation — la plus longue du jeu — débordait par le bas une fois l'icône posée.
+        panelRect.sizeDelta = new Vector2(1420f, 680f);
         panelRect.anchoredPosition = Vector2.zero;
 
         var title = UiStyle.Label(panel.transform, "MONTÉE DE NIVEAU", 34, UiPalette.Gold, TextAnchor.UpperCenter);
@@ -164,9 +157,19 @@ public sealed class LevelUpScreen : MonoBehaviour
             var button = UiStyle.CardButton(_cardRow, card.Id, RarityOf(card));
             button.onClick.AddListener(() => Choose(captured));
 
+            // L'icône EN PREMIER, et grande : c'est elle qu'on reconnaît sans lire. Le jeu est en
+            // pause au milieu d'une nuée et le joueur arbitre entre trois cartes en quelques
+            // secondes — trois pavés de texte identiques lui coûtent ce temps-là.
+            float textTop = AddIcon(button.transform, card.Id) ? 150f : 26f;
+
             var text = UiStyle.Label(button.transform, Describe(card), 20,
                                      UiPalette.OffWhite, TextAnchor.UpperCenter);
-            UiStyle.Stretch(text.gameObject, 26f);
+
+            var textRect = text.GetComponent<RectTransform>();
+            textRect.anchorMin = Vector2.zero;
+            textRect.anchorMax = Vector2.one;
+            textRect.offsetMin = new Vector2(26f, 26f);
+            textRect.offsetMax = new Vector2(-26f, -textTop);
 
             _firstButton ??= button;
         }
@@ -182,6 +185,31 @@ public sealed class LevelUpScreen : MonoBehaviour
             nav.selectOnRight = buttons[(i + 1) % buttons.Length];
             buttons[i].navigation = nav;
         }
+    }
+
+    /// <summary>
+    /// Pose l'icône de la carte, en haut. Renvoie <c>false</c> si l'identifiant n'en a pas — le
+    /// texte reprend alors toute la carte plutôt que de laisser un vide qui se lirait comme une
+    /// image cassée.
+    /// </summary>
+    private static bool AddIcon(Transform card, string id)
+    {
+        var sprite = UiIcons.For(id);
+        if (sprite == null) return false;
+
+        var go = UiStyle.NewUiObject("Icon", card);
+        var image = go.AddComponent<Image>();
+        image.sprite = sprite;
+        image.preserveAspect = true;   // les icônes ne sont pas toutes carrées
+        image.raycastTarget = false;   // sinon elle intercepte le clic destiné à la carte
+
+        var rect = go.GetComponent<RectTransform>();
+        rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 1f);
+        rect.pivot = new Vector2(0.5f, 1f);
+        rect.sizeDelta = new Vector2(104f, 104f);
+        rect.anchoredPosition = new Vector2(0f, -26f);
+
+        return true;
     }
 
     /// <summary>

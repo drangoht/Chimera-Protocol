@@ -173,6 +173,12 @@ public sealed class InventorySystem : MonoBehaviour
         _weaponNodes[weaponId] = weapon;
         _weaponLevels[weaponId] = level;
         ApplyWeaponStats(weaponId, level, weapon);
+
+        // ⚠ Notifier, comme le fait la montée de niveau. Ce chemin sert à l'arme de DÉPART, et
+        // <c>RunBootstrap</c> l'enregistre après que le HUD a lu l'inventaire — vide à cet
+        // instant. Sans cet appel, l'arme avec laquelle le joueur commence sa run n'apparaît nulle
+        // part de toute la partie : le HUD ne se rafraîchit qu'à la première carte prise.
+        WeaponChanged?.Invoke(weaponId, level);
     }
 
     /// <summary>

@@ -54,13 +54,7 @@ public sealed class MainMenuScreen : MonoBehaviour
             typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
         canvasGo.transform.SetParent(transform, false);
 
-        var canvas = canvasGo.GetComponent<Canvas>();
-        canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-
-        var scaler = canvasGo.GetComponent<CanvasScaler>();
-        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(1920f, 1080f);
-        scaler.matchWidthOrHeight = 0.5f;
+        UiCanvas.Configure(canvasGo);
 
         var bg = UiStyle.NewUiObject("Background", canvasGo.transform);
         bg.AddComponent<Image>().color = UiPalette.Bg;
@@ -82,6 +76,10 @@ public sealed class MainMenuScreen : MonoBehaviour
         layout.childControlHeight = true;
         layout.childControlWidth = true;
 
+        // ⚠ Toutes les entrées en CYAN, sauf « Quitter » — c'est la disposition du jeu publié
+        // (docs/ui_v1160_menu.png), et elle est ce qui rend le focus lisible : le focus s'annonce en
+        // violet, et une teinte ne ressort que sur un fond uniforme. Le portage donnait une couleur
+        // différente à chaque entrée ; le menu paraissait plus riche et la sélection s'y perdait.
         var play = AddEntry(column.transform, "Jouer", FrameAccent.Cyan, enabled: true);
         play.onClick.AddListener(() =>
         {
@@ -90,19 +88,19 @@ public sealed class MainMenuScreen : MonoBehaviour
         });
         _firstButton = play;
 
-        var hub = AddEntry(column.transform, "Hub", FrameAccent.Gold, enabled: true);
+        var hub = AddEntry(column.transform, "Hub", FrameAccent.Cyan, enabled: true);
         hub.onClick.AddListener(OpenHub);
 
-        var challenges = AddEntry(column.transform, Loc.T("CHALLENGES_TITLE"), FrameAccent.Violet, enabled: true);
+        var challenges = AddEntry(column.transform, Loc.T("CHALLENGES_TITLE"), FrameAccent.Cyan, enabled: true);
         challenges.onClick.AddListener(OpenChallenges);
 
-        var options = AddEntry(column.transform, Loc.T("OPTIONS_TITLE"), FrameAccent.Steel, enabled: true);
+        var options = AddEntry(column.transform, Loc.T("OPTIONS_TITLE"), FrameAccent.Cyan, enabled: true);
         options.onClick.AddListener(OpenOptions);
 
-        var codex = AddEntry(column.transform, Loc.T("MENU_CODEX"), FrameAccent.Violet, enabled: true);
+        var codex = AddEntry(column.transform, Loc.T("MENU_CODEX"), FrameAccent.Cyan, enabled: true);
         codex.onClick.AddListener(OpenCodex);
 
-        var quit = AddEntry(column.transform, "Quitter", FrameAccent.Danger, enabled: true);
+        var quit = AddEntry(column.transform, "Quitter", FrameAccent.Gold, enabled: true);
         quit.onClick.AddListener(SceneRoot.Quit);
 
         BuildFocusChain(column.transform);

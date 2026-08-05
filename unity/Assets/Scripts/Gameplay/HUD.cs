@@ -28,7 +28,7 @@ public sealed class HUD : MonoBehaviour
     private Image? _xpFill;
     private Text?  _levelLabel;
     private Text?  _timerLabel;
-    private Text?  _arsenalLabel;
+    private Transform? _arsenalRows;
     private Text?  _dashLabel;
     private Text?  _fpsLabel;
     private Text?  _bannerLabel;
@@ -97,17 +97,78 @@ public sealed class HUD : MonoBehaviour
     /// </summary>
     private void RefreshArsenal()
     {
-        if (_arsenalLabel == null) return;
+        if (_arsenalRows == null) return;
+
+        for (int i = _arsenalRows.childCount - 1; i >= 0; i--)
+            Destroy(_arsenalRows.GetChild(i).gameObject);
 
         var inv = InventorySystem.Instance;
-        if (inv == null) { _arsenalLabel.text = ""; return; }
+        if (inv == null) return;
 
-        var sb = new System.Text.StringBuilder();
-        foreach (var (id, level) in inv.WeaponLevels) sb.AppendLine($"{Pretty(id)}  {level}");
-        foreach (var (id, level) in inv.PassiveLevels) sb.AppendLine($"· {Pretty(id)}  {level}");
-
-        _arsenalLabel.text = sb.ToString();
+        foreach (var (id, level) in inv.WeaponLevels) AddArsenalRow(id, $"{Pretty(id)}  {level}");
+        foreach (var (id, level) in inv.PassiveLevels) AddArsenalRow(id, $"· {Pretty(id)}  {level}");
     }
+
+    /// <summary>
+    /// Une ligne d'arsenal : l'icône, puis le nom et le niveau.
+    ///
+    /// <para>La liste se reconstruit entièrement plutôt que de se mettre à jour. L'arsenal change au
+    /// plus une fois par montée de niveau, et un cache de lignes devrait suivre les <b>fusions</b>,
+    /// qui retirent deux armes pour en ajouter une.</para>
+    /// </summary>
+    private void AddArsenalRow(string id, string text)
+    {
+        if (_arsenalRows == null) return;
+
+        var row = new GameObject("Row", typeof(RectTransform));
+        row.transform.SetParent(_arsenalRows, false);
+
+        var element = row.AddComponent<LayoutElement>();
+        element.minHeight = ArsenalLineHeight;
+        element.preferredHeight = ArsenalLineHeight;
+
+        var sprite = UiIcons.For(id);
+        if (sprite != null)
+        {
+            var iconGo = new GameObject("Icon", typeof(RectTransform));
+            iconGo.transform.SetParent(row.transform, false);
+
+            var image = iconGo.AddComponent<UnityEngine.UI.Image>();
+            image.sprite = sprite;
+            image.preserveAspect = true;
+            image.raycastTarget = false;
+
+            var iconRect = iconGo.GetComponent<RectTransform>();
+            iconRect.anchorMin = new Vector2(0f, 0f);
+            iconRect.anchorMax = new Vector2(0f, 1f);
+            iconRect.pivot = new Vector2(0f, 0.5f);
+            iconRect.sizeDelta = new Vector2(ArsenalLineHeight, 0f);
+            iconRect.anchoredPosition = Vector2.zero;
+        }
+
+        var labelGo = new GameObject("Label", typeof(Text));
+        labelGo.transform.SetParent(row.transform, false);
+
+        var label = labelGo.GetComponent<Text>();
+        label.font = UiFonts.Main;
+        label.fontSize = ArsenalFontSize;
+        label.color = OffWhite;
+        label.alignment = TextAnchor.MiddleLeft;
+        label.horizontalOverflow = HorizontalWrapMode.Overflow;
+        label.text = text;
+
+        var labelRect = labelGo.GetComponent<RectTransform>();
+        labelRect.anchorMin = Vector2.zero;
+        labelRect.anchorMax = Vector2.one;
+        labelRect.offsetMin = new Vector2(ArsenalLineHeight + 6f, 0f);
+        labelRect.offsetMax = Vector2.zero;
+    }
+
+    /// <summary>Corps du libellé d'arsenal.</summary>
+    private const int ArsenalFontSize = 16;
+
+    /// <summary>Hauteur d'une ligne d'arsenal — elle fixe aussi le côté de l'icône.</summary>
+    private const float ArsenalLineHeight = 22f;
 
     /// <summary>
     /// Rend un identifiant lisible faute de traduction : <c>tesla_coil</c> → <c>TESLA COIL</c>. La
@@ -259,15 +320,7 @@ public sealed class HUD : MonoBehaviour
         var canvasGo = new GameObject("HUDCanvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
         canvasGo.transform.SetParent(transform, false);
 
-        var canvas = canvasGo.GetComponent<Canvas>();
-        canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-
-        // Mise à l'échelle par résolution de référence : sans cela, le HUD garde une taille en
-        // pixels et devient minuscule en 1440p — le pixel art, lui, doit rester net.
-        var scaler = canvasGo.GetComponent<CanvasScaler>();
-        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(1920f, 1080f);
-        scaler.matchWidthOrHeight = 0.5f;
+        UiCanvas.Configure(canvasGo);
 
         _healthFill = BuildBar(canvasGo.transform, "Health", new Vector2(0f, 1f),
                                new Vector2(24f, -24f), new Vector2(420f, 22f), HealthRed);
@@ -281,11 +334,33 @@ public sealed class HUD : MonoBehaviour
         _timerLabel = BuildLabel(canvasGo.transform, "Timer", new Vector2(0.5f, 1f),
                                  new Vector2(-160f, -24f), new Vector2(320f, 26f), OffWhite, TextAnchor.UpperCenter);
 
-        // Arsenal en bas à gauche : la liste grandit vers le haut depuis un pivot bas, sinon elle
-        // sortirait de l'écran dès la sixième arme.
-        _arsenalLabel = BuildLabel(canvasGo.transform, "Arsenal", new Vector2(0f, 0f),
-                                   new Vector2(24f, 320f), new Vector2(320f, 300f), OffWhite, TextAnchor.LowerLeft);
-        _arsenalLabel.fontSize = 16;
+        // Arsenal en bas à gauche : une LIGNE par arme — icône puis libellé —, empilées vers le
+        // haut depuis un pivot bas, sinon la liste sortirait de l'écran dès la sixième arme.
+        //
+        // ⚠ Icône et texte vivent dans la MÊME ligne, et non en deux colonnes parallèles. Une
+        // colonne d'icônes posée à côté d'un bloc de texte oblige à deviner l'interligne exact
+        // d'uGUI : au premier essai le décalage était invisible sur une arme et valait deux lignes
+        // entières sur dix. Une mise en page ne se devine pas, elle se délègue.
+        var list = new GameObject("Arsenal", typeof(RectTransform));
+        list.transform.SetParent(canvasGo.transform, false);
+
+        var listRect = list.GetComponent<RectTransform>();
+        listRect.anchorMin = listRect.anchorMax = new Vector2(0f, 0f);
+        listRect.pivot = new Vector2(0f, 0f);
+        listRect.anchoredPosition = new Vector2(24f, 24f);
+        listRect.sizeDelta = new Vector2(360f, 0f);
+
+        var listLayout = list.AddComponent<VerticalLayoutGroup>();
+        listLayout.spacing = 2f;
+        listLayout.childAlignment = TextAnchor.LowerLeft;
+        listLayout.childForceExpandHeight = false;
+        listLayout.childControlHeight = true;
+        listLayout.childControlWidth = true;
+
+        // La liste prend la hauteur de son contenu, donc grandit vers le haut depuis son pivot bas.
+        list.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+        _arsenalRows = list.transform;
 
         // En bas à droite, hors du chemin du regard : une capacité s'annonce sans occuper le centre.
         _dashLabel = BuildLabel(canvasGo.transform, "Dash", new Vector2(1f, 0f),

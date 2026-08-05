@@ -3,7 +3,8 @@
     "rootNamespace": "",
     "references": [
         "ChimeraProtocol.PlatformCore",
-        "ChimeraProtocol.Rules"
+        "ChimeraProtocol.Rules",
+        "UnityEngine.UI"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

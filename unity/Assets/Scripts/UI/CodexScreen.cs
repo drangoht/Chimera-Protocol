@@ -144,37 +144,70 @@ public sealed class CodexScreen : MonoBehaviour
 
             AddEntry(known, def.Name,
                      $"{def.Rarity}   {stats.Damage:F0} dgt   cadence {stats.Cooldown:F2} s" +
-                     $"   niveau max {def.MaxLevel}");
+                     $"   niveau max {def.MaxLevel}",
+                     def.Id);
         }
     }
 
     private void BuildChimera()
     {
         foreach (var def in Assimilation.Config.Grafts)
-            AddEntry(GameSettings.IsGraftDiscovered(def.Id), def.Name, def.Description);
+            AddEntry(GameSettings.IsGraftDiscovered(def.Id), def.Name, def.Description, def.Id);
 
         foreach (var fusion in Assimilation.Config.Fusions)
-            AddEntry(GameSettings.IsGraftDiscovered(fusion.Id), fusion.Name, fusion.Description);
+            AddEntry(GameSettings.IsGraftDiscovered(fusion.Id), fusion.Name, fusion.Description, fusion.Id);
     }
 
     /// <summary>
     /// Une entrée. Non découverte, elle occupe <b>quand même sa place</b>, anonymisée : le joueur doit
     /// voir qu'il lui reste des choses à trouver, et combien.
     /// </summary>
-    private void AddEntry(bool discovered, string name, string detail)
+    private void AddEntry(bool discovered, string name, string detail, string? id = null)
     {
         if (_list == null) return;
 
         EntryCount++;
         if (discovered) DiscoveredCount++;
 
-        var label = UiStyle.Label(_list,
-            discovered ? $"{name}\n     {detail}" : "? ? ?\n     " + Loc.T("ARSENAL_LOCKED"),
-            18, discovered ? UiPalette.OffWhite : UiPalette.Steel, TextAnchor.UpperLeft);
+        var row = UiStyle.NewUiObject("Entry", _list);
+        var element = row.AddComponent<LayoutElement>();
+        element.minHeight = IconSize + 8f;
 
-        var element = label.gameObject.AddComponent<LayoutElement>();
-        element.minHeight = 52f;
+        var icon = id != null ? UiIcons.For(id) : null;
+
+        if (icon != null)
+        {
+            var go = UiStyle.NewUiObject("Icon", row.transform);
+            var image = go.AddComponent<Image>();
+            image.sprite = icon;
+            image.preserveAspect = true;
+            image.raycastTarget = false;
+
+            // ⚠ Une entrée non découverte garde son icône, mais ÉTEINTE — presque noire, opaque.
+            // La retirer laisserait une colonne en dents de scie où la place des entrées inconnues
+            // ne se lit plus ; l'afficher pleine révélerait ce que le Codex a pour rôle de cacher.
+            image.color = discovered ? Color.white : new Color(0.16f, 0.16f, 0.24f, 1f);
+
+            var rect = go.GetComponent<RectTransform>();
+            rect.anchorMin = rect.anchorMax = new Vector2(0f, 0.5f);
+            rect.pivot = new Vector2(0f, 0.5f);
+            rect.sizeDelta = new Vector2(IconSize, IconSize);
+            rect.anchoredPosition = new Vector2(4f, 0f);
+        }
+
+        var label = UiStyle.Label(row.transform,
+            discovered ? $"{name}\n{detail}" : "? ? ?\n" + Loc.T("ARSENAL_LOCKED"),
+            18, discovered ? UiPalette.OffWhite : UiPalette.Steel, TextAnchor.MiddleLeft);
+
+        var labelRect = label.GetComponent<RectTransform>();
+        labelRect.anchorMin = Vector2.zero;
+        labelRect.anchorMax = Vector2.one;
+        labelRect.offsetMin = new Vector2(icon != null ? IconSize + 16f : 8f, 0f);
+        labelRect.offsetMax = new Vector2(-8f, 0f);
     }
+
+    /// <summary>Côté d'une icône d'entrée, en pixels de référence.</summary>
+    private const float IconSize = 44f;
 
     // ─── Construction ─────────────────────────────────────────────────────────
 
@@ -184,14 +217,7 @@ public sealed class CodexScreen : MonoBehaviour
             typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
         canvasGo.transform.SetParent(transform, false);
 
-        var canvas = canvasGo.GetComponent<Canvas>();
-        canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-        canvas.sortingOrder = 95;
-
-        var scaler = canvasGo.GetComponent<CanvasScaler>();
-        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(1920f, 1080f);
-        scaler.matchWidthOrHeight = 0.5f;
+        UiCanvas.Configure(canvasGo, 95);
 
         _root = canvasGo;
         UiStyle.ScreenBackdrop(canvasGo.transform);

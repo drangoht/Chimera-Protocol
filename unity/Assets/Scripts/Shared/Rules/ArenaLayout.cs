@@ -14,8 +14,19 @@ using System.Collections.Generic;
 /// </summary>
 public static class ArenaLayout
 {
-    /// <summary>Rayon bloquant d'un obstacle, en pixels.</summary>
-    public const float BlockRadius = 26f;
+    /// <summary>
+    /// Rayon bloquant d'un obstacle, en pixels.
+    ///
+    /// <para><b>Il vaut la demi-largeur du décor, jamais plus.</b> Les sprites d'obstacle font 32 px
+    /// de large ; le jeu d'origine bloque avec une capsule de rayon 13 pour une silhouette de la même
+    /// largeur. Le portage était à 26 — soit une zone infranchissable <b>deux fois et demie</b> plus
+    /// large que ce qui se voit à l'écran : le joueur s'arrêtait dans le vide, à côté du pilier.</para>
+    ///
+    /// <para>Un rayon supérieur à la silhouette et un rayon inférieur sont deux défauts distincts et
+    /// tous deux visibles : trop grand, le décor ment par excès (on est arrêté par rien) ; trop
+    /// petit, il ment par défaut (on entre dans la pierre).</para>
+    /// </summary>
+    public const float BlockRadius = 16f;
 
     /// <summary>Marge minimale entre un obstacle et le bord de l'arène.</summary>
     public const float EdgeMargin = 120f;

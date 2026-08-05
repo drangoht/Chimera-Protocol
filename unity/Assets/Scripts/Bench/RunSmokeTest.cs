@@ -1482,7 +1482,51 @@ public sealed class RunSmokeTest : MonoBehaviour
                   ? $"sprite '{probeImage.sprite.name}', mode {probeImage.type}"
                   : "aucun sprite : la fabrique dessine encore un rectangle plat");
 
+        // Le focus doit se VOIR. Ce n'est pas un raffinement : la sélection clavier se déplaçait
+        // correctement d'un bouton à l'autre et rien à l'écran ne le montrait — ce qui se joue et se
+        // signale comme « on ne peut pas naviguer au clavier ». Le signal est celui du jeu publié :
+        // un anneau VIOLET, débordant du bouton, dont l'opacité pulse.
+        var ring = probeButton.transform.Find("FocusRing");
+        var ringImage = ring != null ? ring.GetComponent<UnityEngine.UI.Image>() : null;
+
+        Check("interface : les boutons portent un anneau de focus",
+              ringImage != null && ringImage.sprite != null
+                                && ringImage.sprite.name.Contains("violet"),
+              ringImage != null && ringImage.sprite != null
+                  ? $"sprite '{ringImage.sprite.name}'"
+                  : "aucun anneau : le focus ne se distingue que par une nuance de liseré");
+
+        if (ring != null)
+        {
+            var ringRect = ring.GetComponent<RectTransform>();
+            Check("interface : l'anneau de focus deborde du bouton",
+                  ringRect.offsetMin.x < 0f && ringRect.offsetMax.x > 0f,
+                  $"debordement {-ringRect.offsetMin.x:F0} px");
+        }
+
         Destroy(probe);
+
+        // ⚠ Chaque arme, passif et greffe DOIT avoir une icône chargeable. Les 43 fichiers vivaient
+        // dans le dépôt depuis le début du portage, hors de `Resources/`, et aucune table ne les
+        // reliait à un identifiant : cartes de montée de niveau, Codex et arsenal du HUD
+        // n'affichaient que du texte. Rien ne le signalait — un asset présent n'est pas un asset
+        // affiché, et c'est le troisième défaut de cette famille dans le projet.
+        var withoutIcon = new List<string>();
+
+        string? weaponsJson = DataFiles.Load("weapons.json");
+        if (weaponsJson != null)
+            foreach (string id in WeaponTable.Parse(weaponsJson).Weapons.Keys)
+                if (UiIcons.For(id) == null) withoutIcon.Add(id);
+
+        foreach (var graft in Assimilation.Config.Grafts)
+            if (UiIcons.For(graft.Id) == null) withoutIcon.Add(graft.Id);
+
+        foreach (var fusion in Assimilation.Config.Fusions)
+            if (UiIcons.For(fusion.Id) == null) withoutIcon.Add(fusion.Id);
+
+        Check("interface : chaque arme et chaque greffe a son icone", withoutIcon.Count == 0,
+              withoutIcon.Count == 0 ? $"{UiIcons.KnownIds.Count} icones referencees"
+                                     : "sans icone : " + string.Join(", ", withoutIcon));
 
         // ─── Musique adaptative ───────────────────────────────────────────────
         var musicGo = new GameObject("MusicHost");
