@@ -26,16 +26,38 @@ public sealed class LevelUpScreen : MonoBehaviour
     /// <summary>Émis quand le joueur choisit une carte.</summary>
     public event Action<LevelUpCard>? CardChosen;
 
+    /// <summary>
+    /// Émis quand le joueur renouvelle la main. L'écran ne sait pas tirer des cartes — c'est
+    /// <see cref="RunHud"/> qui possède l'inventaire — il demande donc, et attend un
+    /// <see cref="Replace"/>.
+    /// </summary>
+    public event Action? RerollRequested;
+
+    /// <summary>Émis quand le joueur passe son tour sans rien prendre.</summary>
+    public event Action? Skipped;
+
+    /// <summary>
+    /// Charges de Renouveler / Passer de la run. Posées par <see cref="RunHud"/> au démarrage depuis
+    /// les améliorations du Hub ; sans achat, les deux boutons n'existent pas.
+    /// </summary>
+    public LevelUpCharges Charges { get; set; } = new(0, 0);
+
     /// <summary>Cartes actuellement affichées.</summary>
     public IReadOnlyList<LevelUpCard> Cards => _cards;
 
     /// <summary>L'écran est-il visible ?</summary>
     public bool IsVisible => _root != null && _root.activeSelf;
 
+    /// <summary>Hauteur réservée à la rangée d'actions, en pixels d'interface.</summary>
+    private const float ActionRowHeight = 62f;
+
     private readonly List<LevelUpCard> _cards = new();
     private GameObject? _root;
     private Transform? _cardRow;
     private Button? _firstButton;
+    private Button? _rerollButton;
+    private Button? _skipButton;
+    private GameObject? _actionRow;
 
     private void Awake()
     {
@@ -60,11 +82,24 @@ public sealed class LevelUpScreen : MonoBehaviour
         ModalQueue.Request(ModalKind.LevelUp);
     }
 
+    /// <summary>
+    /// Remplace la main affichée sans refermer l'écran — la réponse attendue à
+    /// <see cref="RerollRequested"/>.
+    /// </summary>
+    public void Replace(IReadOnlyList<LevelUpCard> cards)
+    {
+        _cards.Clear();
+        _cards.AddRange(cards);
+
+        if (IsVisible) BuildCards();
+    }
+
     private void Show()
     {
         if (_root == null) return;
 
         _root.SetActive(true);
+        RefreshActions();
         BuildCards();
 
         // Focus initial : sans lui, l'écran est infranchissable à la manette et bloque la run.
@@ -139,6 +174,96 @@ public sealed class LevelUpScreen : MonoBehaviour
         layout.childControlHeight = true;
 
         _cardRow = row.transform;
+
+        BuildActionRow(panel.transform);
+    }
+
+    /// <summary>
+    /// Rangée « Renouveler / Passer », sous les cartes.
+    ///
+    /// <para><b>Les deux améliorations du Hub qu'elle rend enfin réelles.</b> <c>reroll</c> et
+    /// <c>skip</c> étaient achetables, coûtaient des Échos, et ne faisaient <i>rien</i> — le portage
+    /// n'avait tout simplement pas ces boutons. Une amélioration payée sans effet est indiscernable
+    /// d'un équilibrage raté : le joueur conclut qu'elle est faible, pas qu'elle est absente.</para>
+    ///
+    /// <para>Non acheté = <b>bouton absent</b>, pas grisé. Un bouton grisé qu'on ne peut jamais
+    /// activer se lit comme une fonction cassée ; l'absence se lit comme un déblocage à venir.
+    /// À l'inverse, dépenser sa dernière charge le laisse visible et grisé — le faire disparaître
+    /// donnerait à croire que l'achat a été perdu.</para>
+    /// </summary>
+    private void BuildActionRow(Transform panel)
+    {
+        var row = UiStyle.NewUiObject("ActionRow", panel);
+        var rect = row.GetComponent<RectTransform>();
+        rect.anchorMin = new Vector2(0.5f, 0f);
+        rect.anchorMax = new Vector2(0.5f, 0f);
+        rect.pivot = new Vector2(0.5f, 0f);
+        rect.sizeDelta = new Vector2(560f, ActionRowHeight);
+        rect.anchoredPosition = new Vector2(0f, 18f);
+
+        var layout = row.AddComponent<HorizontalLayoutGroup>();
+        layout.spacing = 20f;
+        layout.childAlignment = TextAnchor.MiddleCenter;
+        layout.childForceExpandWidth = true;
+        layout.childForceExpandHeight = true;
+        layout.childControlWidth = true;
+        layout.childControlHeight = true;
+
+        _rerollButton = UiStyle.TextButton(row.transform, "", FrameAccent.Cyan);
+        _rerollButton.onClick.AddListener(OnRerollPressed);
+
+        _skipButton = UiStyle.TextButton(row.transform, "", FrameAccent.Gold);
+        _skipButton.onClick.AddListener(OnSkipPressed);
+
+        _actionRow = row;
+    }
+
+    private void OnRerollPressed()
+    {
+        if (!Charges.TryReroll()) return;
+
+        AudioSystem.PlaySfx("sfx_ui_button");
+        RefreshActions();
+        RerollRequested?.Invoke();
+    }
+
+    private void OnSkipPressed()
+    {
+        if (!Charges.TrySkip()) return;
+
+        AudioSystem.PlaySfx("sfx_ui_button");
+        Hide();
+        ModalQueue.Close(ModalKind.LevelUp);
+        Skipped?.Invoke();
+    }
+
+    /// <summary>Aligne l'existence, le libellé et l'état des deux boutons sur les charges restantes.</summary>
+    private void RefreshActions()
+    {
+        if (_rerollButton != null)
+        {
+            _rerollButton.gameObject.SetActive(Charges.RerollUnlocked);
+            _rerollButton.interactable = Charges.RerollsLeft > 0;
+            SetLabel(_rerollButton, Loc.T("LEVELUP_REROLL", Charges.RerollsLeft));
+        }
+
+        if (_skipButton != null)
+        {
+            _skipButton.gameObject.SetActive(Charges.SkipUnlocked);
+            _skipButton.interactable = Charges.SkipsLeft > 0;
+            SetLabel(_skipButton, Loc.T("LEVELUP_SKIP", Charges.SkipsLeft));
+        }
+
+        // La rangée entière disparaît quand rien n'est acheté : sans quoi elle réserverait sa
+        // hauteur sous les cartes, et le panneau paraîtrait mal centré sans raison visible.
+        if (_actionRow != null)
+            _actionRow.SetActive(Charges.RerollUnlocked || Charges.SkipUnlocked);
+    }
+
+    private static void SetLabel(Button button, string text)
+    {
+        var label = button.GetComponentInChildren<Text>();
+        if (label != null) label.text = text;
     }
 
     private void BuildCards()
@@ -174,6 +299,12 @@ public sealed class LevelUpScreen : MonoBehaviour
             _firstButton ??= button;
         }
 
+        // La rangée d'actions réserve sa place SOUS les cartes, et seulement si elle existe : sans
+        // ce recalcul, les boutons se superposeraient au bas des cartes les plus longues.
+        bool hasActions = _actionRow != null && _actionRow.activeSelf;
+        var rowRect = _cardRow.GetComponent<RectTransform>();
+        rowRect.offsetMin = new Vector2(32f, hasActions ? ActionRowHeight + 30f : 32f);
+
         // Chaîne de focus explicite : la navigation automatique d'Unity se perd dès qu'un élément
         // est reconstruit à chaque ouverture.
         var buttons = _cardRow.GetComponentsInChildren<Button>();
@@ -183,8 +314,44 @@ public sealed class LevelUpScreen : MonoBehaviour
             nav.mode = Navigation.Mode.Explicit;
             nav.selectOnLeft  = buttons[(i - 1 + buttons.Length) % buttons.Length];
             nav.selectOnRight = buttons[(i + 1) % buttons.Length];
+
+            // Descendre depuis une carte doit atteindre les actions, sinon elles sont inaccessibles
+            // à la manette — et un bouton qu'on ne peut pas atteindre n'existe pas.
+            nav.selectOnDown = FirstUsableAction();
             buttons[i].navigation = nav;
         }
+
+        WireActionNavigation(buttons.Length > 0 ? buttons[0] : null);
+    }
+
+    /// <summary>Premier bouton d'action réellement activable, ou <c>null</c> s'il n'y en a aucun.</summary>
+    private Button? FirstUsableAction()
+    {
+        if (_rerollButton != null && _rerollButton.gameObject.activeSelf && _rerollButton.interactable)
+            return _rerollButton;
+
+        if (_skipButton != null && _skipButton.gameObject.activeSelf && _skipButton.interactable)
+            return _skipButton;
+
+        return null;
+    }
+
+    private void WireActionNavigation(Button? firstCard)
+    {
+        void Wire(Button? button, Button? other)
+        {
+            if (button == null) return;
+
+            var nav = button.navigation;
+            nav.mode = Navigation.Mode.Explicit;
+            nav.selectOnUp = firstCard;
+            nav.selectOnLeft = other;
+            nav.selectOnRight = other;
+            button.navigation = nav;
+        }
+
+        Wire(_rerollButton, _skipButton);
+        Wire(_skipButton, _rerollButton);
     }
 
     /// <summary>

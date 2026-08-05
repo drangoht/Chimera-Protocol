@@ -241,6 +241,8 @@ public sealed class RunSmokeTest : MonoBehaviour
 
         // ─── Arsenal et fusions (critère de sortie du Lot 3) ──────────────────
         yield return RunArchetypeChecks(enemyPrefab, bulletPrefab);
+        yield return RunDirectedWeaponChecks(bulletPrefab);
+        yield return RunStatusFxChecks(enemyPrefab);
         yield return RunAllWeaponsFire(enemyPrefab, bulletPrefab);
         yield return RunEliteChecks(enemyPrefab);
         yield return RunBossChecks(enemyPrefab);
@@ -608,6 +610,91 @@ public sealed class RunSmokeTest : MonoBehaviour
         Destroy(screenGo);
         ModalQueue.Reset();
         yield return null;
+
+        yield return RunLevelUpActionChecks();
+    }
+
+    /// <summary>
+    /// Renouveler / Passer : deux améliorations du Hub qui n'existaient pas dans le portage.
+    ///
+    /// <para>Ce qui se vérifie ici n'est pas qu'elles marchent, mais qu'elles <b>apparaissent au bon
+    /// moment</b> : achetées elles existent, non achetées elles sont absentes — pas grisées. Un
+    /// bouton grisé qu'on ne peut jamais activer se lit comme une fonction cassée.</para>
+    /// </summary>
+    private IEnumerator RunLevelUpActionChecks()
+    {
+        // ─── Rien d'acheté : aucun bouton d'action ────────────────────────────
+        var bareGo = new GameObject("LevelUpSansAchat");
+        var bare = bareGo.AddComponent<LevelUpScreen>();
+        yield return null;
+
+        bare.Charges = new LevelUpCharges(0, 0);
+        bare.Present(LevelUpPool.BuildOverload());
+        yield return null; yield return null;
+
+        Check("niveau : sans achat, aucun bouton Renouveler ni Passer",
+              FindLabelled(bareGo, "Renouveler") == null && FindLabelled(bareGo, "Passer") == null);
+
+        Destroy(bareGo);
+        ModalQueue.Reset();
+        yield return null;
+
+        // ─── Les deux achetés : les deux boutons, avec leur décompte ──────────
+        var go = new GameObject("LevelUpAvecAchats");
+        var screen = go.AddComponent<LevelUpScreen>();
+        yield return null;
+
+        screen.Charges = new LevelUpCharges(rerollLevel: 3, skipLevel: 2);
+
+        bool skipped = false, rerolled = false;
+        screen.Skipped += () => skipped = true;
+        screen.RerollRequested += () => rerolled = true;
+
+        screen.Present(LevelUpPool.BuildOverload());
+        yield return null; yield return null;
+
+        var reroll = FindLabelled(go, "Renouveler");
+        var skip = FindLabelled(go, "Passer");
+
+        Check("niveau : achetes, les deux boutons existent", reroll != null && skip != null,
+              $"renouveler={(reroll != null ? "present" : "ABSENT")}, passer={(skip != null ? "present" : "ABSENT")}");
+
+        if (reroll != null)
+        {
+            reroll.onClick.Invoke();
+            yield return null;
+
+            Check("niveau : renouveler redemande une main sans fermer l'ecran",
+                  rerolled && screen.IsVisible && screen.Charges.RerollsLeft == 2,
+                  $"{screen.Charges.RerollsLeft} renouvellement(s) restant(s)");
+        }
+
+        if (skip != null)
+        {
+            skip.onClick.Invoke();
+            yield return null;
+
+            Check("niveau : passer ferme l'ecran et leve la pause",
+                  skipped && !screen.IsVisible && !SceneRoot.Paused);
+
+            Check("niveau : passer consomme une charge", screen.Charges.SkipsLeft == 1,
+                  $"{screen.Charges.SkipsLeft} passage(s) restant(s)");
+        }
+
+        Destroy(go);
+        ModalQueue.Reset();
+        yield return null;
+    }
+
+    /// <summary>Premier bouton actif dont le libellé commence par <paramref name="prefix"/>.</summary>
+    private static UnityEngine.UI.Button? FindLabelled(GameObject root, string prefix)
+    {
+        foreach (var b in root.GetComponentsInChildren<UnityEngine.UI.Button>(includeInactive: false))
+        {
+            var label = b.GetComponentInChildren<UnityEngine.UI.Text>();
+            if (label != null && label.text.StartsWith(prefix, System.StringComparison.Ordinal)) return b;
+        }
+        return null;
     }
 
     /// <summary>
@@ -672,6 +759,125 @@ public sealed class RunSmokeTest : MonoBehaviour
               $"affiche={end.DisplayedEchoes}, credite={end.EchoesEarned}");
 
         Destroy(endGo);
+        yield return null;
+    }
+
+    /// <summary>
+    /// Arme <b>dirigée</b> : elle doit tirer là où le joueur vise, traverser, et gagner son éventail.
+    ///
+    /// <para>Les trois défauts corrigés étaient invisibles au code et aux relevés : la lance tirait
+    /// bien, à la bonne cadence, avec les bons dégâts. Elle tirait simplement dans la direction de
+    /// <i>déplacement</i>, sans perforer, et sans jamais appliquer les paliers 4-5 de ses données.
+    /// C'est exactement le genre d'écart qu'un compteur de tirs ne peut pas voir.</para>
+    /// </summary>
+    private IEnumerator RunDirectedWeaponChecks(GameObject bulletPrefab)
+    {
+        var host = new GameObject("LanceHost");
+        host.transform.position = Vector3.zero;
+
+        var lance = host.AddComponent<VectorLance>();
+        lance.BulletPrefab = bulletPrefab;
+        yield return null;
+
+        // Palier 5 des données : 3 projectiles, éventail de 20°, perforant.
+        var stats = new WeaponTable.WeaponLevelStats(5, 40f, 0.55f, 3, 620f, true, 20f);
+        lance.ApplyLevelStats(stats);
+
+        Check("lance vectorielle : le palier de niveau est applique",
+              lance.ProjectileCount == 3 && lance.IsPiercing && Mathf.Approximately(lance.SpreadDegrees, 20f),
+              $"{lance.ProjectileCount} projectiles, eventail {lance.SpreadDegrees:F0}, perforant={lance.IsPiercing}");
+
+        // Visée imposée vers le HAUT, sans aucun ennemi : une arme dirigée tire dans le vide.
+        var player = Player.Instance;
+        if (player != null)
+        {
+            player.transform.position = Vector3.zero;
+            player.ForceAim(Vector2.up);
+        }
+
+        int bulletsBefore = FindObjectsByType<Bullet>(FindObjectsSortMode.None).Length;
+        yield return new WaitForSeconds(1.0f);
+
+        var bullets = FindObjectsByType<Bullet>(FindObjectsSortMode.None);
+
+        Check("lance vectorielle : elle tire sans cible", lance.LastShots > 0,
+              $"{lance.LastShots} tir(s), {bullets.Length - bulletsBefore} projectile(s)");
+
+        Check("lance vectorielle : l'eventail part en trois traits", lance.LastVolleySize == 3,
+              $"{lance.LastVolleySize} projectiles au dernier tir");
+
+        // Le cœur du signalement : la direction. Au moins un projectile doit filer vers le haut,
+        // c'est-à-dire là où l'on vise — et non là où l'on court.
+        bool aimed = false, pierces = false;
+        foreach (var b in bullets)
+        {
+            if (b == null) continue;
+            if (b.Piercing) pierces = true;
+            if (b.transform.position.y > 4f) aimed = true;
+        }
+
+        Check("lance vectorielle : elle tire dans la direction VISEE", aimed,
+              aimed ? "projectiles partis vers la visee" : "aucun projectile dans l'axe de visee");
+
+        Check("lance vectorielle : le trait perfore", pierces);
+
+        Destroy(host);
+        foreach (var b in bullets) if (b != null) Destroy(b.gameObject);
+
+        // Les drones ne doivent plus être des carrés blancs de dépannage.
+        Check("essaim de drones : silhouette dediee, pas la primitive blanche",
+              DroneSprite.Get() != UiPrimitives.White && DroneSprite.Get().rect.width >= 8f,
+              $"{DroneSprite.Get().rect.width:F0} px");
+
+        yield return null;
+    }
+
+    /// <summary>
+    /// Gel et brûlure : deux états qui <b>fonctionnaient sans se voir</b>. Le banc ne peut pas juger
+    /// leur lisibilité — seul l'œil le peut — mais il peut vérifier que les signaux existent, ce qui
+    /// est précisément ce qui manquait.
+    /// </summary>
+    private IEnumerator RunStatusFxChecks(GameObject enemyPrefab)
+    {
+        var go = Instantiate(enemyPrefab, new Vector3(200f, 0f, 0f), Quaternion.identity);
+        go.SetActive(true);
+
+        var enemy = go.GetComponent<EnemyBase>();
+        enemy.ApplyScaling(100000f, 0f);   // il doit survivre à sa propre brûlure
+        enemy.Speed = 0f;
+
+        enemy.ApplySlow(0.5f, 4f);
+        enemy.ApplyBurn(5f, 4f);
+        yield return null;
+
+        var fx = go.GetComponent<EnemyStatusFx>();
+
+        Check("etats : le composant d'apparence est pose au premier etat subi", fx != null);
+
+        if (fx != null)
+        {
+            Check("etats : un ennemi gele porte un calque de givre", fx.FrostVisible);
+
+            Check("etats : un ennemi qui brule porte des flammes", fx.FlamesVisible);
+
+            // La traînée ne se sème que si la cible AVANCE — un ennemi immobile ne doit rien laisser.
+            yield return new WaitForSeconds(0.6f);
+            Check("etats : immobile, le gel ne laisse aucune trainee", fx.FrostShardsDropped == 0,
+                  $"{fx.FrostShardsDropped} eclat(s)");
+
+            // En mouvement, il en sème.
+            for (int i = 0; i < 30; i++)
+            {
+                go.transform.position += new Vector3(14f, 0f, 0f);
+                yield return null;
+            }
+
+            yield return new WaitForSeconds(0.5f);
+            Check("etats : en mouvement, le gel laisse une trainee", fx.FrostShardsDropped > 0,
+                  $"{fx.FrostShardsDropped} eclat(s)");
+        }
+
+        if (go != null) Destroy(go);
         yield return null;
     }
 

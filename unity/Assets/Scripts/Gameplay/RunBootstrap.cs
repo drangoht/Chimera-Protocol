@@ -139,6 +139,12 @@ public sealed class RunBootstrap : MonoBehaviour
     ///   <item><c>--saturate-arsenal</c> donne un arsenal de fin de partie. <b>Les deux vont
     ///         ensemble</b> : raccourcir le décompte sans donner le build correspondant fait affronter
     ///         le boss avec les moyens de la première minute.</item>
+    ///   <item><c>--force-weapon=&lt;id&gt;[:&lt;niveau&gt;]</c> donne une arme précise, à un niveau
+    ///         précis. Sans elle, <b>vérifier une arme rare revient à jouer jusqu'à la tirer</b> —
+    ///         c'est-à-dire à ne pas la vérifier. Répétable.</item>
+    ///   <item><c>--force-meta=&lt;id&gt;:&lt;niveau&gt;</c> impose une amélioration du Hub pour la
+    ///         run en cours, <b>sans toucher à la sauvegarde</b>. C'est le seul moyen d'observer
+    ///         Renouveler et Passer sans avoir d'abord dépensé des Échos.</item>
     /// </list>
     /// </summary>
     private void ApplyCommandLine()
@@ -146,6 +152,18 @@ public sealed class RunBootstrap : MonoBehaviour
         foreach (string arg in System.Environment.GetCommandLineArgs())
         {
             if (arg == "--saturate-arsenal") { _saturateArsenal = true; continue; }
+
+            if (arg.StartsWith("--force-weapon=", System.StringComparison.Ordinal))
+            {
+                ForceWeapon(arg.Substring("--force-weapon=".Length));
+                continue;
+            }
+
+            if (arg.StartsWith("--force-meta=", System.StringComparison.Ordinal))
+            {
+                ForceMeta(arg.Substring("--force-meta=".Length));
+                continue;
+            }
 
             if (!arg.StartsWith("--run-duration=", System.StringComparison.Ordinal)) continue;
 
@@ -155,6 +173,32 @@ public sealed class RunBootstrap : MonoBehaviour
                 Debug.Log($"[RunBootstrap] temps imparti force a {seconds}s.");
             }
         }
+    }
+
+    /// <summary>Donne une arme au niveau demandé (« id » ou « id:niveau »).</summary>
+    private static void ForceWeapon(string spec)
+    {
+        var inv = InventorySystem.Instance;
+        if (inv == null) return;
+
+        string[] parts = spec.Split(':');
+        string id = parts[0];
+        int level = parts.Length > 1 && int.TryParse(parts[1], out int n) ? Mathf.Max(1, n) : 1;
+
+        for (int i = 0; i < level; i++) inv.AcquireOrLevelUp(id);
+
+        inv.WeaponLevels.TryGetValue(id, out int applied);
+        Debug.Log($"[RunBootstrap] arme forcee : {id} niveau {applied}.");
+    }
+
+    /// <summary>Impose une amélioration du Hub pour la run — la sauvegarde n'est pas modifiée.</summary>
+    private static void ForceMeta(string spec)
+    {
+        string[] parts = spec.Split(':');
+        if (parts.Length < 2 || !int.TryParse(parts[1], out int level)) return;
+
+        MetaProgression.OverrideUpgradeLevel(parts[0], Mathf.Max(0, level));
+        Debug.Log($"[RunBootstrap] amelioration forcee : {parts[0]} niveau {level}.");
     }
 
     /// <summary>

@@ -34,6 +34,14 @@ public sealed class ScatterVolley : WeaponBase
         base.Awake();
     }
 
+    public override void ApplyLevelStats(WeaponTable.WeaponLevelStats stats)
+    {
+        // ⚠ Sans cette lecture, la salve restait à DEUX projectiles jusqu'au niveau 20 : ses dégâts
+        // montaient, son nombre de traits non — la moitié de sa progression n'existait pas.
+        ProjectileCount = Mathf.Max(1, stats.ProjectileCount);
+        BulletSpeed = stats.ProjectileSpeed;
+    }
+
     protected override bool TryFire()
     {
         if (BulletPrefab == null) return false;

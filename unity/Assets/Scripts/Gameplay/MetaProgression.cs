@@ -59,7 +59,21 @@ public static class MetaProgression
 
     /// <summary>Niveau acheté pour une amélioration (0 si aucune).</summary>
     public static int LevelOf(string upgradeId)
-        => Save.Meta.Upgrades.TryGetValue(upgradeId, out int level) ? level : 0;
+        => _overrides.TryGetValue(upgradeId, out int forced) ? forced
+         : Save.Meta.Upgrades.TryGetValue(upgradeId, out int level) ? level : 0;
+
+    /// <summary>
+    /// Niveaux imposés par la ligne de commande, <b>en mémoire seulement</b>.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Volontairement séparés de la sauvegarde : un drapeau de banc qui écrirait dans
+    /// <c>save.json</c> offrirait des améliorations au joueur — le portage a déjà connu ce piège avec
+    /// <c>--lang</c> sous Godot, où un réglage de test se retrouvait persisté.
+    /// </remarks>
+    private static readonly Dictionary<string, int> _overrides = new();
+
+    /// <summary>Impose un niveau d'amélioration pour la session en cours.</summary>
+    public static void OverrideUpgradeLevel(string upgradeId, int level) => _overrides[upgradeId] = level;
 
     /// <summary>Prix du prochain niveau, ou <c>-1</c> si l'amélioration est au maximum.</summary>
     public static int NextCost(string upgradeId)

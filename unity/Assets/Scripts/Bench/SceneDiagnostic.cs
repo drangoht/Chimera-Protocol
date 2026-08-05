@@ -138,7 +138,11 @@ public sealed class SceneDiagnostic : MonoBehaviour
                 ? $"  BOSS {boss.CurrentHp,7:F0}/{boss.MaxHp,7:F0} ({boss.HpRatio * 100f,5:F1} %)"
                 : "";
 
+            var status = EnemyBase.StatusCounts();
+
             sb.AppendLine($"t={step * 5,2}s  ennemis={EnemyBase.Active.Count,3}  " +
+                          $"geles={status.Slowed,3}/{EnemyBase.SlowsApplied,4}  " +
+                          $"brulent={status.Burning,3}/{EnemyBase.BurnsApplied,4}  " +
                           $"elim.={(gm != null ? gm.Kills : 0),3}  " +
                           $"xp={(xp != null ? xp.CurrentXp : 0),3}/niv {(xp != null ? xp.CurrentLevel : 0)}  " +
                           $"PV={(player != null ? player.Stats.CurrentHp : 0),6:F1}  " +

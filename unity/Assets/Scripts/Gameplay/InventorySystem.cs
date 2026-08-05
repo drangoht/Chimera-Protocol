@@ -216,6 +216,11 @@ public sealed class InventorySystem : MonoBehaviour
         weapon.Configure(level);
         weapon.BaseDamage = stats.Damage * mult;
         weapon.BaseCooldown = stats.Cooldown;
+
+        // Les MÉCANIQUES du palier, et pas seulement ses chiffres : sans cet appel, une arme monte
+        // en dégâts sans jamais gagner ses projectiles supplémentaires — une progression à moitié
+        // appliquée, que rien ne signale.
+        weapon.ApplyLevelStats(stats);
     }
 
     /// <summary>

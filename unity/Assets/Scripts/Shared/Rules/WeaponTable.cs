@@ -22,8 +22,12 @@ public static class WeaponTable
         public readonly float ProjectileSpeed;
         public readonly bool  Piercing;
 
+        /// <summary>Amplitude totale de l'éventail, en degrés. 0 = tir unique droit.</summary>
+        public readonly float SpreadDegrees;
+
         public WeaponLevelStats(int level, float damage, float cooldown,
-                                int projectileCount, float projectileSpeed, bool piercing)
+                                int projectileCount, float projectileSpeed, bool piercing,
+                                float spreadDegrees = 0f)
         {
             Level = level;
             Damage = damage;
@@ -31,6 +35,7 @@ public static class WeaponTable
             ProjectileCount = projectileCount;
             ProjectileSpeed = projectileSpeed;
             Piercing = piercing;
+            SpreadDegrees = spreadDegrees;
         }
     }
 
@@ -92,7 +97,8 @@ public static class WeaponTable
                             Flt(l, "cooldown", 1f),
                             Int(l, "projectileCount", 1),
                             Flt(l, "projectileSpeed", 400f),
-                            Bool(l, "piercing")));
+                            Bool(l, "piercing"),
+                            Flt(l, "spreadDegrees")));
                     }
                 }
 
@@ -147,7 +153,8 @@ public static class WeaponTable
             stats.Cooldown,
             stats.ProjectileCount,
             stats.ProjectileSpeed,
-            stats.Piercing);
+            stats.Piercing,
+            stats.SpreadDegrees);
     }
 
     // ─── Lecture tolérante ────────────────────────────────────────────────────

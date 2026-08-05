@@ -885,6 +885,99 @@ ligne qui repositionnait ensuite le `transform` parent les décalait toutes d'au
 inoffensive parce qu'elle écrivait toujours zéro — le genre de code qui ne casse qu'au premier
 déplacement du parent, des mois plus tard.
 
+### Une arme peut « ne pas fonctionner » sans qu'un seul tir ne manque
+
+La Lance Vectorielle tirait, à la bonne cadence, avec les bons dégâts — et le signalement « elle ne
+fonctionne pas » était **exact**. Trois manques, aucun visible dans son code :
+
+1. **`Player.AimDirection` suivait la direction de DÉPLACEMENT** (`Velocity.normalized`). La seule
+   arme dirigée du jeu tirait donc là où l'on courait : impossible de viser un ennemi sans lui foncer
+   dessus, et rien à l'écran n'annonçait où le trait partirait. Godot lit le **curseur souris**, ou le
+   **stick droit** dès qu'il sort de sa zone morte, avec mémoire du dernier périphérique — sans cette
+   mémoire, une souris immobile ramènerait sans cesse la visée manette vers le curseur. Et il affiche
+   un **réticule**, visible seulement quand une arme dirigée est équipée.
+2. Le trait ne **perforait** pas, alors que ses données le disent perforant à tous les niveaux.
+   `Bullet.Piercing` se pose **avant** `Launch` : le projectile résout sa première collision dès sa
+   mise en mouvement.
+3. Son **éventail** (2 puis 3 projectiles aux niveaux 4-5) n'était jamais appliqué — voir ci-dessous.
+
+⚠ Le stick droit demande deux axes déclarés dans `ProjectSettings/InputManager.asset`
+(`RightStickX` = axe 3, `RightStickY` = axe 4, type joystick). `Input.GetAxisRaw` sur un axe non
+déclaré **lève une exception**, à chaque image.
+
+### `WeaponTable` lisait `projectileCount` — et personne ne le consommait
+
+`ApplyWeaponStats` ne reportait que **les dégâts et la recharge**. Les mécaniques du palier — nombre
+de projectiles, vitesse, perforation, éventail — étaient analysées depuis `weapons.json` puis jetées.
+Conséquence : la Volée Dispersée restait à **2 projectiles au niveau 20**, l'Essaim Traqueur à
+2 missiles, la Lance Vectorielle sans éventail. La moitié de la progression de ces armes n'existait
+pas — et comme leurs **dégâts** montaient bien, ni un relevé ni un test ne pouvaient le voir.
+
+D'où `WeaponBase.ApplyLevelStats(stats)`, appelé par l'inventaire, que chaque famille d'arme
+surcharge pour lire ce qui la concerne. *Une donnée analysée n'est pas une donnée appliquée* — même
+famille que la table de fusions parsée et jamais consommée.
+
+### Une primitive de dépannage finit toujours par arriver à l'écran
+
+`UiPrimitives.White` — un carré — servait de silhouette aux **drones orbitaux**. Rien ne cassait :
+l'essaim tournait, frappait, tuait. Mais cinq carrés blancs en orbite ne se lisent pas comme des
+drones, ils se lisent comme un placeholder oublié. Godot dessine un `Polygon2D` à quatre sommets ;
+le portage a désormais `DroneSprite` (losange à cœur clair). C'est la **deuxième** occurrence après
+les motifs de sol : un repli visuel posé « en attendant » n'est jamais repéré par un test, seulement
+par l'œil.
+
+⚠ Corollaire de taille, déjà rencontré : ces sprites tracés au runtime sont en **PPU 1**, donc
+`localScale` est un **facteur**, pas une taille. `localScale = 12` sur un sprite de 16 px donne
+192 px.
+
+### Un état de combat ne se vérifie pas en regardant l'écran : il se compte
+
+Le gel et la brûlure étaient signalés invisibles. Le premier réflexe — capturer et chercher un ennemi
+bleu — n'a **rien donné en une trentaine de tentatives**, et cela ne prouvait rien : l'échec pouvait
+venir de l'affichage comme de l'effet.
+
+Le relevé a tranché en deux lignes. Sur 30 s et 88 éliminations :
+
+```
+geles=  0/  39   brulent=  0/   9      (instantané / cumulé)
+```
+
+**39 gels appliqués, jamais aucun porté par un ennemi vivant** — dans la première minute, la cible
+meurt du même coup que celui qui la gèle. L'effet marchait, il n'avait simplement aucun porteur.
+Même leçon que la pression ressentie sous Godot : *un événement rare et bref ne se mesure jamais par
+échantillonnage*. D'où `EnemyBase.SlowsApplied` / `BurnsApplied`, cumulés, affichés par `--diagnostic`.
+
+Conséquence pratique : ces états ne sont **observables** que sur une cible qui survit — boss,
+champion, ou faune de fin de run.
+
+### Teinter ne peut qu'assombrir ; superposer en additif délave
+
+Deux approches ont été essayées pour « bleuir » un ennemi gelé, et aucune ne peut marcher sur une
+faune majoritairement **rouge** :
+
+- `SpriteRenderer.color` **multiplie** : un ennemi rouge gelé reste rouge, en plus sombre. Cela se lit
+  « il est dans l'ombre ».
+- un calque **additif** bleu par-dessus ajoute du bleu au rouge et donne du **rose délavé**.
+
+Il faut *remplacer* la couleur en conservant la luminance (qui porte le relief pseudo-3D), donc un
+shader — c'est exactement pourquoi le jeu d'origine en utilise un.
+
+⚠ Le shader avait été écarté par prudence (« il pourrait ne pas rendre sous URP, et son échec
+donnerait un ennemi invisible »). La prudence était mal placée : le projet **charge déjà** un shader
+maison, `VfxAdditive`, dont tous les effets visibles prouvent le rendu. *Une inquiétude sur une
+capacité déjà exercée ailleurs dans le même build se vérifie en trente secondes plutôt que de se
+contourner.* Un `Fallback "Sprites/Default"` couvre le cas restant : l'ennemi reste visible,
+simplement non givré.
+
+### `Start` n'a pas d'ordre garanti entre objets — ne pas y lire ce qu'un autre `Start` écrit
+
+`RunHud.Start` lisait les améliorations du Hub pour construire les charges de Renouveler / Passer ;
+`RunBootstrap.Start` applique les améliorations imposées en ligne de commande. Selon l'ordre — non
+spécifié par Unity — les charges valaient tantôt la sauvegarde, tantôt le drapeau. Le symptôme se lit
+« le drapeau ne marche pas », alors qu'il marche une frame sur deux.
+
+Parade : lire au **premier usage** (ici, au premier passage de niveau), pas au démarrage.
+
 ### Une modale à `timeScale = 0` fige aussi le banc de captures
 
 Un script qui « joue 8 secondes puis capture » produit **deux fois la même image** si une montée de

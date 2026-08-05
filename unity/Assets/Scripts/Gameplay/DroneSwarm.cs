@@ -25,6 +25,9 @@ public class DroneSwarm : WeaponBase
     [Tooltip("Rayon de contact d'un drone.")]
     public float DroneRadius = 20f;
 
+    /// <summary>Côté de la silhouette d'un drone, en pixels — celui du losange de Godot.</summary>
+    private const float DroneSize = 12f;
+
     private readonly List<Transform> _drones = new();
     private readonly List<float> _cooldowns = new();
     private float _orbitAngle;
@@ -102,10 +105,16 @@ public class DroneSwarm : WeaponBase
             // actives du jeu.
             var go = new GameObject($"Drone{i}", typeof(SpriteRenderer));
             var sr = go.GetComponent<SpriteRenderer>();
-            sr.sprite = UiPrimitives.White;
+
+            // ⚠ Un LOSANGE, pas un carré : `UiPrimitives.White` est une primitive de dépannage, et
+            // cinq carrés en orbite se lisent comme un placeholder oublié — pas comme un essaim.
+            sr.sprite = DroneSprite.Get();
             sr.color = new Color(0.27f, 1f, 0.93f);
             sr.sortingOrder = 18;
-            go.transform.localScale = new Vector3(12f, 12f, 1f);
+
+            // Le sprite fait 16 px pour 1 px = 1 unité : l'échelle est un facteur, et 12 px de large
+            // demandent 0,75 — l'écrire « 12 » donnerait un drone de 192 px.
+            go.transform.localScale = Vector3.one * (DroneSize / 16f);
 
             go.transform.SetParent(transform.parent, worldPositionStays: true);
             _drones.Add(go.transform);

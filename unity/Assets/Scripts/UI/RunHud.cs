@@ -36,6 +36,9 @@ public sealed class RunHud : MonoBehaviour
         _runEnd.Dismissed    += () => SceneRoot.ChangeScene(GameScenes.MainMenu);
         _levelUp.CardChosen  += OnCardChosen;
 
+        // Renouveler ne referme pas l'écran : on retire une main et on la remplace sur place.
+        _levelUp.RerollRequested += () => _levelUp.Replace(DrawCards());
+
         if (GameManager.Instance != null)
             GameManager.Instance.RunFinished += OnRunFinished;
 
@@ -62,11 +65,45 @@ public sealed class RunHud : MonoBehaviour
     {
         if (_levelUp == null) return;
 
+        _levelUp.Charges = EnsureCharges();
+
+        AudioSystem.PlaySfx("sfx_levelup");
+        _levelUp.Present(DrawCards());
+    }
+
+    private LevelUpCharges? _charges;
+
+    /// <summary>
+    /// Charges de Renouveler / Passer de la run, lues au <b>premier</b> passage de niveau.
+    /// </summary>
+    /// <remarks>
+    /// <para>Ces deux améliorations du Hub étaient achetables, coûtaient des Échos, et ne faisaient
+    /// <i>rien</i> : le portage n'avait tout simplement pas ces boutons. Une amélioration payée sans
+    /// effet est indiscernable d'un équilibrage raté — le joueur conclut qu'elle est faible, pas
+    /// qu'elle est absente.</para>
+    ///
+    /// <para>⚠ <b>Surtout pas dans <c>Start</c>.</b> L'ordre d'appel des <c>Start</c> entre objets
+    /// n'est pas garanti par Unity, et <c>RunBootstrap</c> — qui applique les améliorations imposées
+    /// en ligne de commande — a le sien. Lues au démarrage, les charges valaient tantôt celles de la
+    /// sauvegarde, tantôt celles du drapeau, <b>selon la frame</b>. Lues au premier passage de
+    /// niveau, tous les <c>Start</c> sont derrière nous.</para>
+    /// </remarks>
+    private LevelUpCharges EnsureCharges()
+        => _charges ??= new LevelUpCharges(MetaProgression.LevelOf("reroll"),
+                                           MetaProgression.LevelOf("skip"));
+
+    /// <summary>
+    /// Tire une main de cartes. <b>Extrait pour être rejouable</b> : le renouvellement doit passer
+    /// exactement par le même chemin que la montée de niveau, sinon les deux mains n'obéiraient pas
+    /// aux mêmes règles d'exclusion (passifs saturés, arsenal plein, fusions disponibles).
+    /// </summary>
+    private static IReadOnlyList<LevelUpCard> DrawCards()
+    {
         var inv = InventorySystem.Instance;
 
         // Sans inventaire, les cartes de surcharge restent le filet : une montée de niveau ne doit
         // JAMAIS proposer un choix vide, sous peine de bloquer la run derrière une modale sans bouton.
-        if (inv == null) { _levelUp.Present(LevelUpPool.BuildOverload()); return; }
+        if (inv == null) return LevelUpPool.BuildOverload();
 
         // Les passifs saturés sont retirés de la liste avant le tirage — proposer une carte qui ne
         // rapporte rien est un choix mort, indiscernable d'un bug par le joueur.
@@ -78,15 +115,12 @@ public sealed class RunHud : MonoBehaviour
         int weaponMax = weaponIds.Count > 0 ? inv.WeaponMaxLevel(weaponIds[0]) : 20;
         int passiveMax = passiveIds.Count > 0 ? inv.PassiveMaxLevel(passiveIds[0]) : 20;
 
-        var cards = LevelUpPool.Build(
+        return LevelUpPool.Build(
             inv.WeaponLevels, weaponIds, weaponMax,
             inv.PassiveLevels, passiveIds, passiveMax,
             InventorySystem.MaxWeapons,
             inv.AvailableFusions,
             n => (int)(Gd.Randi() % (uint)Mathf.Max(1, n)));
-
-        AudioSystem.PlaySfx("sfx_levelup");
-        _levelUp.Present(cards);
     }
 
     /// <summary>

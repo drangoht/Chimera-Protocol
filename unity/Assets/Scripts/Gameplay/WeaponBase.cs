@@ -85,6 +85,22 @@ public abstract class WeaponBase : MonoBehaviour
         Level = Mathf.Max(1, level);
     }
 
+    /// <summary>
+    /// Applique les <b>mécaniques</b> du palier de niveau : nombre de projectiles, vitesse,
+    /// perforation, éventail. Sans effet par défaut — chaque famille d'arme en lit ce qui la
+    /// concerne.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ <b>Ce point d'entrée n'existait pas</b>, et le manque était entièrement silencieux :
+    /// <c>WeaponTable</c> lisait bien <c>projectileCount</c>, <c>projectileSpeed</c> et
+    /// <c>piercing</c> depuis <c>weapons.json</c>, mais seuls les dégâts et la recharge étaient
+    /// reportés sur l'arme. La Salve Éclatée restait donc à deux projectiles au niveau 20, l'Essaim
+    /// Traqueur à deux missiles, et la Lance Vectorielle ne gagnait jamais son éventail — la moitié
+    /// de la progression de ces armes n'existait pas, alors que leurs dégâts montaient bien, ce qui
+    /// rendait le défaut invisible aux relevés comme aux tests.
+    /// </remarks>
+    public virtual void ApplyLevelStats(WeaponTable.WeaponLevelStats stats) { }
+
     protected virtual void Awake() => CaptureSheetDamage();
 
     protected virtual void Update()

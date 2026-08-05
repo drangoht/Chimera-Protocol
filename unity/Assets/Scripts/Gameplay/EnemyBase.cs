@@ -107,6 +107,44 @@ public class EnemyBase : MonoBehaviour
     /// <summary>L'ennemi brûle-t-il ?</summary>
     public bool IsBurning => _burnLeft > 0f;
 
+    /// <summary>L'ennemi est-il ralenti à l'instant ?</summary>
+    public bool IsSlowed => _slowLeft > 0f;
+
+    /// <summary>
+    /// Combien d'ennemis vivants portent chaque état, à l'instant.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Ces deux compteurs existent parce que <b>vérifier un état en regardant l'écran ne marche
+    /// pas</b> : dans la première minute, la faune meurt avant que sa brûlure n'ait le temps de se
+    /// voir, et le couloir de la Lance Cryo est trop étroit pour qu'une capture le surprenne. Sans
+    /// relevé, on ne peut pas distinguer « l'effet ne s'affiche pas » de « l'effet ne se produit
+    /// jamais » — deux causes opposées qui se ressemblent parfaitement.
+    /// </remarks>
+    /// <summary>Ralentissements et brûlures appliqués depuis le début, cumulés.</summary>
+    /// <remarks>
+    /// ⚠ Ce sont ces cumuls qui tranchent, pas les comptes instantanés : dans la première minute
+    /// une cible touchée meurt du même coup, si bien qu'un relevé ponctuel affiche <b>zéro</b> même
+    /// quand l'effet part à chaque tir. La leçon est la même que pour la pression ressentie sous
+    /// Godot — un événement rare et bref ne se mesure jamais par échantillonnage.
+    /// </remarks>
+    public static int SlowsApplied { get; private set; }
+    public static int BurnsApplied { get; private set; }
+
+    /// <summary>Remet les cumuls à zéro — début de run, ou banc.</summary>
+    public static void ResetStatusCounters() { SlowsApplied = 0; BurnsApplied = 0; }
+
+    public static (int Slowed, int Burning) StatusCounts()
+    {
+        int slowed = 0, burning = 0;
+        foreach (var e in Active)
+        {
+            if (e == null || e.IsDead) continue;
+            if (e.IsSlowed) slowed++;
+            if (e.IsBurning) burning++;
+        }
+        return (slowed, burning);
+    }
+
     /// <summary>
     /// Ralentit l'ennemi. Un ralentissement plus fort <b>remplace</b> un plus faible ; à force
     /// égale, seule la durée est prolongée — sinon deux sources de gel empileraient leurs
@@ -118,6 +156,7 @@ public class EnemyBase : MonoBehaviour
 
         if (_slowLeft <= 0f || mult < _slowMult) _slowMult = mult;
         _slowLeft = Mathf.Max(_slowLeft, duration);
+        SlowsApplied++;
     }
 
     /// <summary>
@@ -129,6 +168,7 @@ public class EnemyBase : MonoBehaviour
     {
         _burnDps = Mathf.Max(_burnDps, dps);   // la source la plus forte l'emporte
         _burnLeft = Mathf.Max(_burnLeft, duration);
+        BurnsApplied++;
     }
 
     private void UpdateStatusEffects(float dt)
@@ -136,8 +176,7 @@ public class EnemyBase : MonoBehaviour
         if (_slowLeft > 0f)
         {
             _slowLeft -= dt;
-            if (_slowLeft <= 0f) { _slowMult = 1f; ClearFrostTint(); }
-            else ApplyFrostTint();
+            if (_slowLeft <= 0f) _slowMult = 1f;
         }
 
         if (_burnLeft > 0f)
@@ -146,47 +185,34 @@ public class EnemyBase : MonoBehaviour
             TakeDamage(_burnDps * dt);
             if (_burnLeft <= 0f) _burnDps = 0f;
         }
+
+        RenderStatus(dt);
     }
 
     /// <summary>
-    /// Marque de <b>gel</b> : l'ennemi ralenti vire au bleu glacé.
-    ///
-    /// <para>Un ralentissement de 45 % ne se voit pas. Deux nuées, l'une gelée et l'autre non,
-    /// avancent toutes deux « lentement » à l'œil d'un joueur qui kite — rien ne dit laquelle son
-    /// arme a touchée, ni combien de temps l'effet dure. La teinte le dit, et disparaît avec lui.</para>
-    ///
-    /// <para>La couleur d'origine est mémorisée au premier gel, jamais recalculée : elle peut venir
-    /// d'un affixe d'élite, et la reprendre à <c>Color.white</c> effacerait cette information.</para>
+    /// Confie l'<b>apparence</b> des états à <see cref="EnemyStatusFx"/>, créé au premier état subi.
     /// </summary>
-    private void ApplyFrostTint()
+    /// <remarks>
+    /// ⚠ Rien n'est posé sur un ennemi qui n'a jamais été ni gelé ni brûlé : la faune de base atteint
+    /// 300 entités, et un composant de plus sur chacune se paierait à chaque image pour des états que
+    /// la plupart ne connaîtront jamais.
+    /// </remarks>
+    private void RenderStatus(float dt)
     {
-        var sr = GetComponentInChildren<SpriteRenderer>();
-        if (sr == null) return;
+        bool frozen = _slowLeft > 0f;
+        bool burning = _burnLeft > 0f;
 
-        if (!_frostTinted)
+        if (_statusFx == null)
         {
-            _baseTint = sr.color;
-            _frostTinted = true;
+            if (!frozen && !burning) return;
+            _statusFx = gameObject.AddComponent<EnemyStatusFx>();
         }
 
-        // ⚠ Le clignotement de dégât écrit AUSSI cette couleur. On ne repose donc la teinte de gel
-        // que si la couleur courante n'est pas déjà la nôtre : sans cette garde, un ennemi gelé et
-        // frappé perdrait son flash blanc, seul retour qui dit « le coup a porté ».
-        var frost = new Color(_baseTint.r * 0.55f, _baseTint.g * 0.80f, _baseTint.b * 1.30f, sr.color.a);
-        if (sr.color != Color.white) sr.color = frost;
+        _statusFx.Render(frozen, burning, dt);
     }
 
-    private void ClearFrostTint()
-    {
-        if (!_frostTinted) return;
-        _frostTinted = false;
+    private EnemyStatusFx? _statusFx;
 
-        var sr = GetComponentInChildren<SpriteRenderer>();
-        if (sr != null) sr.color = _baseTint;
-    }
-
-    private bool _frostTinted;
-    private Color _baseTint = Color.white;
 
     /// <summary>Comportement de déplacement, issu des données (<c>ai.type</c>).</summary>
     public EnemyTable.AiType Ai { get; set; } = EnemyTable.AiType.StraightChase;

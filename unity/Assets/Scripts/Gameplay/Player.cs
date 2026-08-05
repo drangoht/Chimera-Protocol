@@ -45,6 +45,16 @@ public sealed class Player : MonoBehaviour
     /// </summary>
     public Vector2? ExternalMoveOverride { get; set; }
 
+    /// <summary>
+    /// Visée imposée de l'extérieur, court-circuitant souris et stick. Même rôle que
+    /// <see cref="ExternalMoveOverride"/> : sans elle, une arme dirigée serait invérifiable au banc,
+    /// qui n'a ni curseur ni manette.
+    /// </summary>
+    public Vector2? ExternalAimOverride { get; set; }
+
+    /// <summary>Impose la visée — raccourci lisible pour les bancs et le pilote automatique.</summary>
+    public void ForceAim(Vector2 direction) => ExternalAimOverride = direction;
+
     /// <summary>Émis à chaque changement de PV : <c>(courant, max)</c>.</summary>
     public event Action<float, float>? HealthChanged;
 
@@ -121,7 +131,8 @@ public sealed class Player : MonoBehaviour
         transform.position = next;
 
         if (Mathf.Abs(input.x) > 0.01f) FacingLeft = input.x < 0f;
-        if (Velocity.sqrMagnitude > 1f) AimDirection = Velocity.normalized;
+
+        UpdateAim();
 
         // La charge blesse pendant toute la ruade — un ennemi une seule fois par charge.
         if (_dashActiveLeft > 0f && _chargeDamage > 0f) ApplyChargeDamage();
@@ -131,6 +142,112 @@ public sealed class Player : MonoBehaviour
             _animator.FlipX = FacingLeft;
             _animator.Play(Velocity.sqrMagnitude > 1f ? "move" : "idle");
         }
+    }
+
+    // ─── Visée dirigée ────────────────────────────────────────────────────────
+
+    /// <summary>Seuil sous lequel le stick droit est considéré au repos.</summary>
+    private const float AimStickDeadzone = 0.25f;
+
+    /// <summary>Distance du réticule au joueur, en pixels.</summary>
+    private const float AimIndicatorRadius = 46f;
+
+    private bool _gamepadAim;
+    private Vector3 _lastMousePosition;
+    private Transform? _aimIndicator;
+
+    /// <summary>
+    /// Met à jour <see cref="AimDirection"/> et le réticule.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ <b>Le portage visait dans la direction de DÉPLACEMENT</b> (<c>Velocity.normalized</c>).
+    /// C'était une arme dirigée sans direction : la Lance Vectorielle tirait là où l'on courait, on
+    /// ne pouvait pas viser un ennemi sans lui foncer dessus, et rien à l'écran n'indiquait où le
+    /// trait partirait. La seule arme d'adresse du jeu devenait ainsi <i>moins</i> maniable qu'un
+    /// canon automatique — ce qui se signale « la Lance Vectorielle ne fonctionne pas », et c'est
+    /// exact du point de vue du joueur, bien qu'aucun tir ne manque.
+    ///
+    /// <para>La règle d'origine : stick droit prioritaire dès qu'il sort de sa zone morte, sinon
+    /// curseur souris ; bouger l'un rebascule sur lui. Sans cette mémoire du dernier périphérique,
+    /// une souris immobile ramènerait sans cesse la visée manette vers le curseur.</para>
+    /// </remarks>
+    private void UpdateAim()
+    {
+        // Visée imposée : le banc n'a ni souris ni manette, et une arme dirigée qu'on ne peut pas
+        // pointer n'est pas vérifiable autrement.
+        if (ExternalAimOverride.HasValue)
+        {
+            var forced = ExternalAimOverride.Value;
+            if (forced.sqrMagnitude > 0.0001f) AimDirection = forced.normalized;
+
+            UpdateAimIndicator();
+            return;
+        }
+
+        Vector2 stick = new(Input.GetAxisRaw("RightStickX"), -Input.GetAxisRaw("RightStickY"));
+        if (stick.magnitude < AimStickDeadzone) stick = Vector2.zero;
+
+        var mouse = Input.mousePosition;
+        if ((mouse - _lastMousePosition).sqrMagnitude > 1f) { _gamepadAim = false; _lastMousePosition = mouse; }
+        if (stick != Vector2.zero) _gamepadAim = true;
+
+        if (_gamepadAim)
+        {
+            if (stick != Vector2.zero) AimDirection = stick.normalized;   // sinon : garde la dernière
+        }
+        else
+        {
+            var camera = Camera.main;
+            if (camera != null)
+            {
+                Vector2 world = camera.ScreenToWorldPoint(mouse);
+                Vector2 toMouse = world - (Vector2)transform.position;
+                if (toMouse.sqrMagnitude > 1f) AimDirection = toMouse.normalized;
+            }
+        }
+
+        UpdateAimIndicator();
+    }
+
+    /// <summary>
+    /// Réticule : un repère posé à distance fixe dans la direction visée, <b>affiché seulement</b>
+    /// quand une arme dirigée est équipée. Le montrer en permanence ajouterait un élément mobile
+    /// dans une nuée pour une information dont 17 armes sur 19 n'ont aucun usage.
+    /// </summary>
+    private void UpdateAimIndicator()
+    {
+        var inv = InventorySystem.Instance;
+        bool directed = inv != null &&
+            (inv.WeaponLevels.ContainsKey("vector_lance") || inv.WeaponLevels.ContainsKey("vector_beam"));
+
+        if (!directed)
+        {
+            if (_aimIndicator != null) _aimIndicator.gameObject.SetActive(false);
+            return;
+        }
+
+        if (_aimIndicator == null) _aimIndicator = BuildAimIndicator();
+
+        _aimIndicator.gameObject.SetActive(true);
+        _aimIndicator.localPosition = AimDirection * AimIndicatorRadius;
+        _aimIndicator.localRotation = Quaternion.Euler(0f, 0f,
+            Mathf.Atan2(AimDirection.y, AimDirection.x) * Mathf.Rad2Deg);
+    }
+
+    private Transform BuildAimIndicator()
+    {
+        var go = new GameObject("Reticule", typeof(SpriteRenderer));
+        go.transform.SetParent(transform, false);
+
+        var sr = go.GetComponent<SpriteRenderer>();
+        sr.sprite = AimReticleSprite.Get();
+        sr.color = new Color(0.27f, 1f, 0.93f, 0.85f);
+
+        // Au-dessus du joueur : sous lui, une nuée serrée le masquerait exactement quand viser
+        // compte le plus.
+        sr.sortingOrder = 30;
+
+        return go.transform;
     }
 
     // ─── Esquive (greffe « Servos Erratiques ») ───────────────────────────────

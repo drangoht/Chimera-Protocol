@@ -26,6 +26,13 @@ public class SeekerSwarm : WeaponBase
         base.Awake();
     }
 
+    public override void ApplyLevelStats(WeaponTable.WeaponLevelStats stats)
+    {
+        // Même omission que pour la Volée Dispersée : l'essaim restait à deux missiles à vie.
+        MissileCount = Mathf.Max(1, stats.ProjectileCount);
+        ProjectileSpeed = stats.ProjectileSpeed;
+    }
+
     protected override bool TryFire()
     {
         if (MissilePrefab == null) return false;
