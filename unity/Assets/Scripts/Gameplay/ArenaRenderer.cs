@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -37,13 +38,138 @@ public sealed class ArenaRenderer : MonoBehaviour
 
         BuildObstacles(biomeId, border);
 
-        // L'atmosphère vient EN DERNIER : ses couches se placent par rapport à la caméra, pas au
+        // Les fenêtres AVANT l'atmosphère : leurs centres décident où poser les motifs profonds.
+        var windows = BuildGlassWindows(floor);
+
+        // L'atmosphère vient en dernier : ses couches se placent par rapport à la caméra, pas au
         // sol, et elle doit exister même si le décor manque.
         var atmosphere = gameObject.GetComponent<BiomeAtmosphere>()
                       ?? gameObject.AddComponent<BiomeAtmosphere>();
 
-        atmosphere.Configure(biomeId);
+        atmosphere.Configure(biomeId, windows);
     }
+
+    /// <summary>
+    /// Ouvre trois à quatre <b>fenêtres vitrées</b> dans le sol, et renvoie leurs centres.
+    ///
+    /// <para><b>C'est par elles que la profondeur se voit.</b> Sous Godot, le sol est une grille de
+    /// tuiles dont quelques amas sont remplacés par une tuile « vitre » ; le fond en parallaxe
+    /// défile derrière, et l'œil ne le lit comme un lointain que parce qu'il l'aperçoit par une
+    /// ouverture. Sans fenêtre, une couche parallaxée posée sur le sol se lit comme du terrain.</para>
+    ///
+    /// <para>Chaque fenêtre est un <c>SpriteMask</c> — qui découpe la couche profonde — surmonté
+    /// d'un reflet de vitre. Le sol lui-même reste une seule surface tuilée : le découper en 2 200
+    /// sprites pour ouvrir douze trous coûterait bien plus que ces quatre masques.</para>
+    /// </summary>
+    private List<Vector2> BuildGlassWindows(Color tint)
+    {
+        var centers = new List<Vector2>();
+
+        var glass = Resources.Load<Sprite>("Environment/tile_floor_glass");
+
+        // ⚠ Le masque est un CARRÉ PLEIN, jamais la tuile « vitre ». Un `SpriteMask` ne retient que
+        // les pixels dont l'alpha dépasse son seuil, et cette tuile est un reflet posé sur du vide :
+        // elle est transparente presque partout. S'en servir comme forme découpait la fenêtre à la
+        // taille du seul trait de reflet — le motif profond ne se voyait donc nulle part, et le
+        // défaut se lisait « il n'y a rien au fond ».
+        var mask = UiPrimitives.White;
+
+        int count = 3 + (int)(Gd.Randf() * 2f);
+
+        for (int i = 0; i < count; i++)
+        {
+            // Loin des bords : une fenêtre collée au mur se découvre en s'y acculant, c'est-à-dire
+            // au pire moment — et la caméra, bornée par l'arène, ne la centre jamais.
+            float x = (Gd.Randf() * 2f - 1f) * (Arena.HalfWidth - WindowMargin);
+            float y = (Gd.Randf() * 2f - 1f) * (Arena.HalfHeight - WindowMargin);
+
+            var center = new Vector2(x, y);
+            centers.Add(center);
+
+            // Un amas de 2 à 3 tuiles de côté, comme sous Godot.
+            float size = WindowSize * (1f + 0.5f * Gd.Randf());
+
+            var maskGo = new GameObject("FenetreMasque", typeof(SpriteMask));
+            maskGo.transform.SetParent(transform, false);
+            maskGo.transform.position = center;
+
+            // ⚠ Le masque se dimensionne, jamais à main levée. Un `localScale = size` posé sur la
+            // tuile « vitre » (64 px, PPU 1) donnait un masque de 6 144 unités — plus large que
+            // l'arène — et les motifs devenaient visibles PARTOUT : le défaut se lisait « le masque
+            // ne marche pas » alors qu'il marchait trop.
+            maskGo.transform.localScale = ScaleToPixels(mask, size);
+
+            var spriteMask = maskGo.GetComponent<SpriteMask>();
+            spriteMask.sprite = mask;
+
+            // ⚠ Sans ces bornes, le masque s'applique à TOUS les ordres de tri — il découperait
+            // aussi le sol, les entités et les effets. Elles le limitent à la couche profonde.
+            spriteMask.isCustomRangeActive = true;
+            spriteMask.frontSortingOrder = -96;
+            spriteMask.backSortingOrder = -99;
+
+            // ⚠ LE FOND DU PUITS, et c'est lui qui fait le trou. Le sol est une surface pleine :
+            // poser les motifs « dessous » les rendrait simplement invisibles. On perce donc en
+            // dessinant PAR-DESSUS le sol un aplat très sombre, aux dimensions de la fenêtre — le
+            // motif s'y détache, et le masque l'empêche de déborder ailleurs.
+            var wellGo = new GameObject("FenetrePuits", typeof(SpriteRenderer));
+            wellGo.transform.SetParent(transform, false);
+            wellGo.transform.position = center;
+            wellGo.transform.localScale = ScaleToPixels(UiPrimitives.White, size);
+
+            var wellRenderer = wellGo.GetComponent<SpriteRenderer>();
+            wellRenderer.sprite = UiPrimitives.White;
+            // Assez sombre pour se lire comme un trou, assez clair pour que le glyphe s'y détache :
+            // un fond quasi noir avalait le motif au lieu de le révéler.
+            wellRenderer.color = new Color(tint.r * 0.10f, tint.g * 0.11f, tint.b * 0.22f, 1f);
+            wellRenderer.sortingOrder = -99;
+
+            if (glass == null) continue;
+
+            // Reflet de la vitre, par-dessus le sol : sans lui, la fenêtre n'a pas de bord et le
+            // motif profond paraît flotter au milieu du terrain.
+            var glassGo = new GameObject("FenetreVitre", typeof(SpriteRenderer));
+            glassGo.transform.SetParent(transform, false);
+            glassGo.transform.position = center;
+            glassGo.transform.localScale = ScaleToPixels(glass, size);
+
+            var renderer = glassGo.GetComponent<SpriteRenderer>();
+            renderer.sprite = glass;
+            renderer.color = new Color(tint.r, tint.g, tint.b, 0.55f);
+            renderer.sortingOrder = -95;
+        }
+
+        return centers;
+    }
+
+    /// <summary>
+    /// Échelle donnant à <paramref name="sprite"/> un côté de <paramref name="pixels"/> px.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ <b>Diviser par <c>rect.width</c> seul est faux</b>, et le faux est silencieux. La taille
+    /// monde d'un sprite vaut <c>rect.width / pixelsPerUnit</c> : sur les tuiles du jeu (PPU 1) les
+    /// deux coïncident, sur <c>UiPrimitives.White</c> (4 px, PPU 4) le rapport est de 4. Un masque
+    /// calculé ainsi mesurait <b>48 px pour 190 demandés</b> et rognait le glyphe qu'il devait
+    /// révéler — on ne voyait plus qu'un fragment de trait, et le défaut se lisait « le motif est mal
+    /// dessiné » alors qu'il était juste découpé trop court.
+    /// </remarks>
+    private static Vector3 ScaleToPixels(Sprite sprite, float pixels)
+    {
+        float unitsX = sprite.rect.width  / sprite.pixelsPerUnit;
+        float unitsY = sprite.rect.height / sprite.pixelsPerUnit;
+
+        return new Vector3(pixels / unitsX, pixels / unitsY, 1f);
+    }
+
+    /// <summary>Côté d'une fenêtre vitrée, en pixels — deux à trois tuiles, comme le jeu publié.</summary>
+    /// ⚠ Un amas de 2 tuiles de 64 px, pas une tuile isolée. À 96 px la fenêtre était PLUS PETITE
+    /// que le glyphe qu'elle est censée révéler (175-250 px) : on n'en apercevait qu'un fragment de
+    /// trait au milieu du vide, ce qui se lit « la fenêtre est vide » et non « il y a une structure
+    /// au fond ». Ce que la fenêtre montre se calibre sur ce qu'il y a derrière.
+    private const float WindowSize = 128f;
+
+    /// <summary>Distance minimale d'une fenêtre au bord de l'arène.</summary>
+    private const float WindowMargin = 260f;
 
     /// <summary>
     /// Obstacles : quelques masses lisibles qui créent des couloirs et des angles morts. Leur

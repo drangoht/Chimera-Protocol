@@ -1474,6 +1474,48 @@ public sealed class RunSmokeTest : MonoBehaviour
 
         ArenaObstacles.Clear();
 
+        // ─── Atmosphère : brume, rais et parallaxe par les fenêtres ───────────
+        // Ces quatre contrôles portent chacun sur une chose qui, absente, ne produit AUCUNE erreur :
+        // un shader manquant donne une arène sans brume, un masque mal dimensionné donne un motif
+        // invisible ou étalé partout. Rien ne casse — le rendu est simplement faux.
+        var atmoGo = new GameObject("BancAtmosphere");
+        var atmo = atmoGo.AddComponent<BiomeAtmosphere>();
+        atmo.Configure("sanctuaire", new[] { new Vector2(0f, 0f), new Vector2(300f, 200f) });
+
+        Check("atmosphere : la brume est chargee", atmo.HasFog,
+              atmo.HasFog ? "shader present" : "shader AtmosphereFog INTROUVABLE");
+
+        Check("atmosphere : les rais de lumiere sont charges", atmo.HasShafts,
+              atmo.HasShafts ? "shader present" : "shader AtmosphereShafts INTROUVABLE");
+
+        // Un motif par fenêtre + le fond dispersé, plus les deux couches de poussière : la seule
+        // vérification qui distingue « la couche existe » de « la couche est vide ».
+        Check("atmosphere : les couches en parallaxe sont peuplees", atmo.MoteCount > 40,
+              $"{atmo.MoteCount} elements pour {atmo.WindowCount} fenetre(s)");
+
+        // Le glyphe profond, dessiné à la main : s'il rendait du vide, les fenêtres n'auraient
+        // rien à montrer et le trou se lirait comme une dalle sombre.
+        var glyph = DeepMotifSprite.Get();
+        Check("atmosphere : le glyphe profond est dessine",
+              glyph != null && glyph.texture != null && glyph.rect.width > 32f,
+              glyph != null ? $"{glyph.rect.width:F0} x {glyph.rect.height:F0} px" : "AUCUN");
+
+        Object.Destroy(atmoGo);
+
+        // La caméra de partie doit cadrer la MÊME hauteur de monde que le jeu d'origine. Un cadrage
+        // à la hauteur d'écran montrait l'arène entière : rien ne défilait, donc aucune parallaxe
+        // n'était perceptible — et c'est invisible pour un test qui ne regarde que des objets.
+        var camGo = new GameObject("BancCameraRun", typeof(Camera));
+        var runCam = camGo.AddComponent<RunCamera>();
+        runCam.SendMessage("LateUpdate", SendMessageOptions.DontRequireReceiver);
+
+        float half = camGo.GetComponent<Camera>().orthographicSize;
+        Check("camera : la hauteur de monde cadree vaut celle de Godot",
+              Mathf.Approximately(half, 360f),
+              $"demi-hauteur {half:F0} (attendu 360, soit 720 unites)");
+
+        Object.Destroy(camGo);
+
         // ─── Police de l'interface ────────────────────────────────────────────
         // Une police absente donnerait une interface SANS TEXTE — ce qui se lit comme un écran
         // cassé, pas comme un asset manquant. Le repli existe pour ça ; ce contrôle vérifie qu'on

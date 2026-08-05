@@ -43,13 +43,37 @@ public sealed class RunCamera : MonoBehaviour
         Follow();
     }
 
-    /// <summary>Une unité du monde = un pixel d'écran, à toute résolution.</summary>
+    /// <summary>
+    /// Hauteur de monde visible, en unités. C'est la hauteur de viewport de Godot
+    /// (<c>window/size/viewport_height</c>), et elle ne dépend <b>pas</b> de la fenêtre : le jeu
+    /// d'origine est en <c>stretch/mode = "canvas_items"</c>, donc il montre toujours 1280 × 720
+    /// unités de monde, quelle que soit la résolution, en étirant le rendu.
+    /// </summary>
+    private const float WorldViewHeight = 720f;
+
+    /// <summary>
+    /// Cadre une hauteur de monde <b>fixe</b>, comme Godot.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Le portage calait la demi-hauteur sur <c>Screen.height / 2</c> pour tenir le « 1 px =
+    /// 1 unité » du reste du projet. En 1920 × 1080 cela montrait <b>1920 unités de large</b> —
+    /// c'est-à-dire l'arène entière (1920 × 1216). Deux conséquences, dont une invisible au test :
+    /// le monde était rendu aux deux tiers de la taille de Godot, et surtout la caméra ne pouvait
+    /// <b>plus se déplacer horizontalement</b> (son cadrage la bornait à zéro). Or une couche de
+    /// parallaxe ne se voit que si la caméra bouge : l'atmosphère était bien construite, elle
+    /// n'avait simplement jamais l'occasion de défiler. « Il manque l'effet parallaxe » se
+    /// diagnostiquait donc dans la <i>caméra</i>, pas dans les couches.
+    ///
+    /// <para>Le « 1 px = 1 unité » reste vrai pour les <b>sprites</b> (un pixel de texture vaut une
+    /// unité de monde) ; ce qui change ici, c'est le facteur d'affichage, exactement comme
+    /// l'étirement de Godot.</para>
+    /// </remarks>
     private void ApplyPixelScale()
     {
         if (_camera == null || Screen.height == _lastHeight) return;
 
         _lastHeight = Screen.height;
-        _camera.orthographicSize = Screen.height / 2f;
+        _camera.orthographicSize = WorldViewHeight / 2f;
     }
 
     /// <summary>

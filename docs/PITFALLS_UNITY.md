@@ -787,6 +787,111 @@ dégât, précisément quand le joueur regarde.
 Une polyligne dont on répète le premier point laisse une **encoche** visible à la fermeture —
 immédiatement lisible sur une aura affichée en permanence.
 
+### La parallaxe est une propriété de la CAMÉRA avant d'être une propriété des couches
+
+`RunCamera` calait `orthographicSize` sur `Screen.height / 2` pour tenir le « 1 px = 1 unité » du
+portage. En 1920 × 1080 cela cadre **1920 unités de large**, soit l'arène entière (1920 × 1216) : le
+cadrage caméra se borne alors à **zéro déplacement horizontal**. Toutes les couches de parallaxe
+étaient construites, peuplées et correctement décalées — elles n'avaient simplement **jamais
+l'occasion de défiler**. Le symptôme (« il manque l'effet parallaxe ») se diagnostiquait dans la
+caméra, pas dans l'atmosphère.
+
+Godot est en `stretch/mode = "canvas_items"` sur un viewport de 1280 × 720 : il montre **toujours
+720 unités de haut**, quelle que soit la résolution, et étire le rendu. La caméra de partie fait
+désormais pareil (`WorldViewHeight = 720`), ce qui rend aussi au monde sa taille apparente d'origine
+— il était rendu aux deux tiers. Le « 1 px = 1 unité » reste vrai pour les **sprites** ; ce qui
+change est le facteur d'affichage. Un contrôle du banc verrouille la demi-hauteur à 360.
+
+### `localScale` n'est pas une taille : diviser par `rect.width` seul est faux, et silencieux
+
+La taille monde d'un sprite vaut `rect.width / pixelsPerUnit`. Sur les tuiles du jeu (PPU 1) les
+deux coïncident, ce qui rend l'erreur invisible — jusqu'au premier sprite fabriqué au runtime.
+`UiPrimitives.White` fait 4 px pour un PPU de 4, soit **1 unité** : un masque dimensionné en divisant
+par `rect.width` mesurait **48 px pour 190 demandés**. Toujours passer par un helper
+(`ArenaRenderer.ScaleToPixels`).
+
+Le même oubli dans l'autre sens donne l'effet inverse : `localScale = size` sur la tuile « vitre »
+(64 px, PPU 1) produit un masque de **6 144 unités**, plus large que l'arène. Les motifs devenaient
+alors visibles **partout**, et le défaut se lisait « le masque ne marche pas » alors qu'il marchait
+trop.
+
+### Un `SpriteMask` ne retient que les pixels OPAQUES de son sprite
+
+Prendre `tile_floor_glass` comme forme de masque paraît naturel — c'est la tuile que la fenêtre
+représente. Mais c'est un **reflet posé sur du vide** : elle est transparente presque partout, donc
+le masque se réduisait au seul trait de reflet. Un masque est une **forme**, pas une illustration :
+carré plein, toujours.
+
+Rappel des deux autres réglages sans lesquels un masque ne fait rien d'utile :
+`renderer.maskInteraction = VisibleInsideMask` sur ce qu'on veut confiner, et surtout
+`isCustomRangeActive` + `front/backSortingOrder` sur le masque — sans bornes il découpe **tous** les
+ordres de tri, y compris les entités.
+
+### Unity ne sait pas percer un sprite : un « trou » se dessine PAR-DESSUS
+
+Sous Godot le sol est une grille de tuiles dont quelques amas sont remplacés par une tuile vitrée ;
+la couche profonde se voit littéralement **au travers**. Le premier portage a traduit ça en plaçant
+les motifs sous le sol dans l'ordre de tri — invisibles, le sol étant une surface pleine (une seule
+sprite `Tiled`, précisément pour ne pas instancier 2 200 tuiles).
+
+Le trou se fabrique donc à l'envers : un aplat sombre redessiné **au-dessus** du sol aux dimensions
+de l'amas (le « fond de puits »), les motifs juste au-dessus, confinés par un masque à cette même
+forme, puis le reflet de vitre. Le résultat se lit comme une ouverture parce que l'œil reconnaît un
+**cadre + un fond plus sombre + une structure dedans**, pas parce que quelque chose a été découpé.
+
+### Une valeur d'effet ne se recopie pas d'un moteur à l'autre — c'est l'EFFET qu'on porte
+
+Le glyphe profond de Godot trace ses hexagones à `alpha 0.6 / 0.3`, sur le fond parallaxé du monde.
+Portés tels quels, ces mêmes traits se lisent **à travers une vitre teintée et sur un puits sombre**,
+qui leur mangent la moitié de leur contraste : la valeur juste ici est `0.9 / 0.55`. Même famille que
+le cumul additif des VFX — deux moteurs qui composent différemment ne rendent pas la même chose de la
+même donnée.
+
+Corollaire de taille : le glyphe mesure ~100 px, donc son `localScale` est un **facteur** (1,0-1,45)
+et non une taille. Écrit comme une taille (`Vector3.one * 46..72`), il donnait fortuitement le bon
+ordre de grandeur sur un sprite de 3 px — et un motif de 7 000 px sur celui-ci.
+
+### Ce qui se voit par une fenêtre se calibre sur ce qu'il y a derrière
+
+Une ouverture de 96 px devant un glyphe de 175-250 px n'en montre qu'un fragment de trait au milieu
+du vide : cela se lit « la fenêtre est vide », jamais « il y a une structure au fond ». Les deux
+dimensions se règlent **ensemble** (ici 128-192 px de fenêtre pour ~100-145 px de glyphe).
+
+Et parce que la couche profonde dérive presque avec la caméra (parallaxe 0,06), un motif posé au
+centre d'une fenêtre en **sort** dès que le joueur traverse l'arène : il faut un fond dispersé
+(22 motifs, comme le jeu publié) sans quoi les fenêtres se vident définitivement au premier
+déplacement.
+
+### Une brume se fait au shader, pas en sprites — et deux couches doivent avoir des vitesses distinctes
+
+Une brume faite de sprites doux se trahit par ses bords : on compte les taches. Le bruit fbm
+procédural n'a pas de bord et s'anime sans qu'aucun objet ne bouge. Les rais de lumière se posent en
+**additif** (`Blend SrcAlpha One`) : en mélange normal, une bande éclaircit le sol vers sa propre
+couleur en aplat, ce qui se lit comme de la peinture et non comme un faisceau.
+
+Ce qui donne l'épaisseur n'est pas leur densité mais l'**écart** entre leurs parallaxes (0,35 pour la
+brume, 0,15 pour les rais, 0,06 pour les motifs) : au même facteur, elles ne feraient qu'un seul
+voile plus dense.
+
+⚠ Ces shaders vivent dans `Resources/Shaders/` et se chargent par `Resources.Load`. Un shader
+seulement atteint par `Shader.Find` peut être **retiré du build** par le nettoyage de shaders :
+l'effet disparaîtrait uniquement dans le jeu exporté, jamais dans l'éditeur — donc jamais pendant les
+tests.
+
+### Ne jamais déplacer le parent après avoir fixé la position MONDE de ses enfants
+
+`BiomeAtmosphere.LateUpdate` fixe `layer.Root.position` (coordonnées monde) pour chaque couche. Une
+ligne qui repositionnait ensuite le `transform` parent les décalait toutes d'autant. Elle était
+inoffensive parce qu'elle écrivait toujours zéro — le genre de code qui ne casse qu'au premier
+déplacement du parent, des mois plus tard.
+
+### Une modale à `timeScale = 0` fige aussi le banc de captures
+
+Un script qui « joue 8 secondes puis capture » produit **deux fois la même image** si une montée de
+niveau s'est ouverte entre-temps : rien n'a bougé. Toute vérification qui repose sur un déplacement
+(parallaxe, suivi de caméra, spawn périodique) doit fermer les modales — et la même cause avait déjà
+fait conclure à tort que les Noyaux d'Aether n'apparaissaient jamais.
+
 ---
 
 ## Méthode
