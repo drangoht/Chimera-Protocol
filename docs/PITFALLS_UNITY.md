@@ -482,6 +482,32 @@ Néon et la règle d'un cran passent toutes deux **à la ligne** : serrées, les
 chevauchaient. Le défaut n'apparaît que sur un contenu particulier — celui qu'on ne regarde pas en
 premier sur la capture.
 
+### Le HUD est un écran comme les autres — il se compare aussi à la référence
+
+Les huit écrans avaient été confrontés à `docs/ui_v1160_*.png` ; le **HUD**, non — parce qu'il n'a
+pas de capture dédiée. Il s'en trouve pourtant une dans `ui_v1160_levelup.png`, et la comparaison a
+montré quatre manques, dont aucun n'est décoratif :
+
+- **pas de panneau** : les barres étaient posées à nu sur le sol de l'arène, illisibles dès qu'une
+  tuile claire passait dessous ;
+- **pas de PV chiffrés** : une barre dit une *proportion*, jamais une *marge* — or « il me reste un
+  coup » ne se lit pas sur une fraction ;
+- **pas d'emplacements de greffes** : la chimère est le troisième axe de progression du jeu et
+  n'apparaissait nulle part pendant la run ;
+- **barre de vie ROUGE** au lieu de verte : une barre pleine y paraît déjà critique, et il ne reste
+  plus de couleur disponible pour dire « je vais mal ».
+
+### Un assemblage ne peut pas remonter vers celui qui le référence
+
+`UI` référence `Gameplay`. Dès que le HUD (dans `Gameplay`) a eu besoin des cadres blindés, l'appel à
+`UiStyle` est devenu impossible — le compilateur ne dit pas « cycle », il dit `The name 'UiStyle'
+does not exist`, ce qui envoie chercher une faute de frappe.
+
+C'est la **deuxième fois** dans la même journée (après `UiCanvas`). La règle qui s'en dégage : ce que
+plusieurs assemblages partagent descend dans `Platform` — d'où `UiFrames` (chargement, cache, pose du
+9-slice) dont `UiStyle` n'est plus qu'une façade. La règle « aucun style ad hoc » y gagne : elle
+tient maintenant aussi pour le HUD, qui aurait sinon chargé ses textures à la main.
+
 ### Un `Register` silencieux prive le HUD de l'arme de départ
 
 `InventorySystem.Register` remplissait la table sans émettre `WeaponChanged`. Or `RunBootstrap`

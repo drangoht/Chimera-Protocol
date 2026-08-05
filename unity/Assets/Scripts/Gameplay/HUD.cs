@@ -22,12 +22,25 @@ public sealed class HUD : MonoBehaviour
     private static readonly Color Violet     = new(0.667f, 0.267f, 1.000f);
     private static readonly Color Gold       = new(1.000f, 0.800f, 0.267f);
     private static readonly Color OffWhite    = new(0.851f, 0.851f, 0.949f);
-    private static readonly Color HealthRed  = new(0.90f, 0.25f, 0.35f);
+
+    /// <summary>
+    /// Vert de la barre de vie — celui du jeu publié. Le portage l'avait mise en <b>rouge</b> : une
+    /// barre pleine y paraît alors déjà critique, et l'information « je vais mal » n'a plus de
+    /// couleur disponible pour se dire.
+    /// </summary>
+    private static readonly Color HealthGreen = new(0.29f, 0.94f, 0.62f);
+
+    /// <summary>Rouge de la barre du boss — la couleur de la MENACE, pas celle du joueur.</summary>
+    private static readonly Color BossRed = new(0.90f, 0.25f, 0.35f);
 
     private Image? _healthFill;
     private Image? _xpFill;
     private Text?  _levelLabel;
+    private Text?  _healthLabel;
     private Text?  _timerLabel;
+    private Text?  _biomeLabel;
+    private Text?  _killsLabel;
+    private Transform? _graftSlots;
     private Transform? _arsenalRows;
     private Text?  _dashLabel;
     private Text?  _fpsLabel;
@@ -59,7 +72,13 @@ public sealed class HUD : MonoBehaviour
         var gm = GameManager.Instance;
         if (gm != null) gm.OvertimeStarted += OnOvertimeStarted;
 
+        // Les emplacements se redessinent à chaque greffe acquise — sans cet abonnement, la rangée
+        // resterait vide toute la run alors que le joueur porte trois greffes.
+        Assimilation.GraftEquipped += OnGraftEquipped;
+
         RefreshArsenal();
+        RefreshGraftSlots();
+        RefreshBiome();
     }
 
     private void OnDestroy()
@@ -76,9 +95,13 @@ public sealed class HUD : MonoBehaviour
 
         var gm = GameManager.Instance;
         if (gm != null) gm.OvertimeStarted -= OnOvertimeStarted;
+
+        Assimilation.GraftEquipped -= OnGraftEquipped;
     }
 
     private void OnArsenalChanged(string id, int level) => RefreshArsenal();
+
+    private void OnGraftEquipped(GraftTable.GraftDef def) => RefreshGraftSlots();
 
     private void OnOvertimeStarted() => Announce("LE NOYAU ROUILLÉ ARRIVE");
 
@@ -196,20 +219,38 @@ public sealed class HUD : MonoBehaviour
             if (gm.Overtime)
             {
                 int ot = Mathf.FloorToInt(gm.OvertimeSeconds);
-                _timerLabel.text = $"SURCHARGE +{ot / 60:00}:{ot % 60:00}   {gm.Kills} elim.";
+                _timerLabel.text = $"+{ot / 60:00}:{ot % 60:00}";
                 _timerLabel.color = Gold;
             }
             else
             {
                 int left = Mathf.Max(0, gm.RunDurationSeconds - Mathf.FloorToInt(gm.RunTime));
-                _timerLabel.text = $"{left / 60:00}:{left % 60:00}   {gm.Kills} elim.";
+                _timerLabel.text = $"{left / 60:00}:{left % 60:00}";
             }
         }
+
+        if (gm != null && _killsLabel != null) _killsLabel.text = $"☠ {gm.Kills}";
 
         UpdateBossBar();
         UpdateBanner();
         UpdateDash();
         UpdateFps();
+    }
+
+    /// <summary>
+    /// Écrit le nom du secteur et son effet. Fait une seule fois : le biome ne change pas en cours
+    /// de run, et le relire à chaque frame ferait une recherche de traduction soixante fois par
+    /// seconde pour un texte immuable.
+    /// </summary>
+    private void RefreshBiome()
+    {
+        if (_biomeLabel == null) return;
+
+        string? id = GameManager.Instance?.CurrentBiomeId ?? RunConfig.BiomeId;
+        if (string.IsNullOrEmpty(id)) { _biomeLabel.text = ""; return; }
+
+        string slug = id!.ToUpperInvariant();
+        _biomeLabel.text = $"{Loc.T($"BIOME_{slug}_NAME")}   ·   {Loc.T($"BIOME_{slug}_EFFECT")}";
     }
 
     private float _fpsAccumulator;
@@ -311,6 +352,10 @@ public sealed class HUD : MonoBehaviour
     private void OnHealthChanged(float current, float max)
     {
         if (_healthFill != null) _healthFill.fillAmount = max > 0f ? Mathf.Clamp01(current / max) : 0f;
+
+        // Le chiffre suit la barre : une barre dit une proportion, le chiffre dit la marge — et
+        // c'est la marge qui décide si l'on peut encore encaisser un coup.
+        if (_healthLabel != null) _healthLabel.text = $"{current:F0} / {max:F0}";
     }
 
     // ─── Construction ─────────────────────────────────────────────────────────
@@ -322,17 +367,8 @@ public sealed class HUD : MonoBehaviour
 
         UiCanvas.Configure(canvasGo);
 
-        _healthFill = BuildBar(canvasGo.transform, "Health", new Vector2(0f, 1f),
-                               new Vector2(24f, -24f), new Vector2(420f, 22f), HealthRed);
-
-        _xpFill = BuildBar(canvasGo.transform, "Xp", new Vector2(0f, 1f),
-                           new Vector2(24f, -54f), new Vector2(420f, 12f), Cyan);
-
-        _levelLabel = BuildLabel(canvasGo.transform, "Level", new Vector2(0f, 1f),
-                                 new Vector2(24f, -76f), new Vector2(220f, 26f), Gold, TextAnchor.UpperLeft);
-
-        _timerLabel = BuildLabel(canvasGo.transform, "Timer", new Vector2(0.5f, 1f),
-                                 new Vector2(-160f, -24f), new Vector2(320f, 26f), OffWhite, TextAnchor.UpperCenter);
+        BuildVitals(canvasGo.transform);
+        BuildTimer(canvasGo.transform);
 
         // Arsenal en bas à gauche : une LIGNE par arme — icône puis libellé —, empilées vers le
         // haut depuis un pivot bas, sinon la liste sortirait de l'écran dès la sixième arme.
@@ -389,13 +425,176 @@ public sealed class HUD : MonoBehaviour
         _bossLabel.fontSize = 18;
 
         _bossFill = BuildBar(panel.transform, "Boss", new Vector2(0f, 1f),
-                             new Vector2(0f, -24f), new Vector2(800f, 18f), HealthRed);
+                             new Vector2(0f, -24f), new Vector2(800f, 18f), BossRed);
 
         _bossPanel = panel;
         panel.SetActive(false);
     }
 
     /// <summary>Barre à deux couches : un fond sombre, un remplissage horizontal par-dessus.</summary>
+    /// <summary>
+    /// Bloc vital, en haut à gauche : <b>un panneau</b> portant le niveau, les points de vie chiffrés,
+    /// la barre de vie, la barre d'XP et les emplacements de greffes.
+    ///
+    /// <para>Le portage posait quatre éléments nus sur le décor. Trois écarts avec le jeu publié
+    /// (<c>docs/ui_v1160_levelup.png</c>), et aucun n'est décoratif :</para>
+    /// <list type="number">
+    ///   <item><b>Le panneau</b> détache le HUD du sol de l'arène. Sans lui, une barre de vie posée
+    ///         sur une tuile claire devient illisible au pire moment.</item>
+    ///   <item><b>Les PV chiffrés</b> (« 129 / 140 ») : une barre dit une proportion, pas une marge.
+    ///         « Il me reste un coup » ne se lit pas sur une fraction.</item>
+    ///   <item><b>Les emplacements de greffes</b> : ils disent combien il en reste à prendre. La
+    ///         chimère est le troisième axe de progression du jeu et n'apparaissait nulle part
+    ///         pendant la run.</item>
+    /// </list>
+    /// </summary>
+    private void BuildVitals(Transform parent)
+    {
+        var panel = BuildFrame(parent, "Vitals", FrameAccent.Violet);
+
+        var rect = panel.GetComponent<RectTransform>();
+        rect.anchorMin = rect.anchorMax = new Vector2(0f, 1f);
+        rect.pivot = new Vector2(0f, 1f);
+        rect.sizeDelta = new Vector2(VitalsWidth, 152f);
+        rect.anchoredPosition = new Vector2(20f, -20f);
+
+        _levelLabel = BuildLabel(panel.transform, "Level", new Vector2(0f, 1f),
+                                 new Vector2(22f, -12f), new Vector2(200f, 34f), OffWhite,
+                                 TextAnchor.UpperLeft);
+        _levelLabel.fontSize = 28;
+
+        // Les PV chiffrés à DROITE, en regard du niveau : les deux nombres que le joueur cherche
+        // sont ainsi aux deux bouts de la même ligne, jamais à se chercher l'un l'autre.
+        _healthLabel = BuildLabel(panel.transform, "Health", new Vector2(1f, 1f),
+                                  new Vector2(-22f, -12f), new Vector2(220f, 34f), HealthGreen,
+                                  TextAnchor.UpperRight);
+        _healthLabel.fontSize = 24;
+        var healthLabelRect = _healthLabel.GetComponent<RectTransform>();
+        healthLabelRect.pivot = new Vector2(1f, 1f);
+
+        _healthFill = BuildBar(panel.transform, "HealthBar", new Vector2(0f, 1f),
+                               new Vector2(22f, -54f), new Vector2(VitalsWidth - 44f, 20f), HealthGreen);
+
+        _xpFill = BuildBar(panel.transform, "XpBar", new Vector2(0f, 1f),
+                           new Vector2(22f, -80f), new Vector2(VitalsWidth - 44f, 10f), Cyan);
+
+        var slots = new GameObject("GraftSlots", typeof(RectTransform));
+        slots.transform.SetParent(panel.transform, false);
+        Place(slots, new Vector2(0f, 1f), new Vector2(22f, -98f), new Vector2(VitalsWidth - 44f, SlotSize));
+
+        var slotsLayout = slots.AddComponent<HorizontalLayoutGroup>();
+        slotsLayout.spacing = 8f;
+        slotsLayout.childForceExpandWidth = false;
+        slotsLayout.childControlWidth = false;
+        slotsLayout.childControlHeight = false;
+
+        _graftSlots = slots.transform;
+    }
+
+    /// <summary>
+    /// Chrono centré, <b>souligné</b>, et sous lui le nom du secteur avec son effet.
+    ///
+    /// <para>Le nom du biome n'est pas un rappel inutile : son effet — « ennemis +18 % rapides »,
+    /// « +20 % d'XP » — change la façon de jouer la run en cours, et le joueur l'a choisi plusieurs
+    /// minutes plus tôt sur un autre écran.</para>
+    /// </summary>
+    private void BuildTimer(Transform parent)
+    {
+        _timerLabel = BuildLabel(parent, "Timer", new Vector2(0.5f, 1f),
+                                 new Vector2(-260f, -18f), new Vector2(520f, 44f), OffWhite,
+                                 TextAnchor.UpperCenter);
+        _timerLabel.fontSize = 34;
+
+        var rule = new GameObject("TimerRule", typeof(Image));
+        rule.transform.SetParent(parent, false);
+        Place(rule, new Vector2(0.5f, 1f), new Vector2(-90f, -60f), new Vector2(180f, 3f));
+        rule.GetComponent<Image>().color = Violet;
+
+        _biomeLabel = BuildLabel(parent, "Biome", new Vector2(0.5f, 1f),
+                                 new Vector2(-460f, -70f), new Vector2(920f, 26f), Violet,
+                                 TextAnchor.UpperCenter);
+        _biomeLabel.fontSize = 19;
+
+        // Éliminations en haut à droite, à la place qu'occupe le compteur de Noyaux du jeu publié :
+        // même rôle — un compteur de progression de la run — et le seul coin encore libre. Elles
+        // étaient collées au chrono, où elles brouillaient la seule information qu'on y cherche.
+        _killsLabel = BuildLabel(parent, "Kills", new Vector2(1f, 1f),
+                                 new Vector2(-200f, -20f), new Vector2(180f, 30f), Gold,
+                                 TextAnchor.UpperRight);
+        _killsLabel.fontSize = 22;
+        _killsLabel.GetComponent<RectTransform>().pivot = new Vector2(1f, 1f);
+    }
+
+    /// <summary>
+    /// Une pastille d'emplacement de greffe : l'icône si elle est portée, un cadre vide sinon.
+    /// <b>Les emplacements libres restent affichés</b> — c'est ce qui dit qu'il reste de la place.
+    /// </summary>
+    private void RefreshGraftSlots()
+    {
+        if (_graftSlots == null) return;
+
+        for (int i = _graftSlots.childCount - 1; i >= 0; i--)
+            Destroy(_graftSlots.GetChild(i).gameObject);
+
+        var equipped = Assimilation.Equipped;
+
+        for (int i = 0; i < Assimilation.SlotCount; i++)
+        {
+            bool filled = i < equipped.Count;
+
+            var slot = BuildFrame(_graftSlots, "Slot" + i, FrameAccent.Violet);
+            var slotRect = slot.GetComponent<RectTransform>();
+            slotRect.sizeDelta = new Vector2(SlotSize, SlotSize);
+
+            if (!filled) continue;
+
+            var sprite = UiIcons.For(equipped[i]);
+            if (sprite == null) continue;
+
+            var iconGo = new GameObject("Icon", typeof(RectTransform));
+            iconGo.transform.SetParent(slot.transform, false);
+
+            var image = iconGo.AddComponent<Image>();
+            image.sprite = sprite;
+            image.preserveAspect = true;
+            image.raycastTarget = false;
+
+            var iconRect = iconGo.GetComponent<RectTransform>();
+            iconRect.anchorMin = Vector2.zero;
+            iconRect.anchorMax = Vector2.one;
+            iconRect.offsetMin = new Vector2(5f, 5f);
+            iconRect.offsetMax = new Vector2(-5f, -5f);
+        }
+    }
+
+    /// <summary>
+    /// Objet d'interface portant un cadre « plaque blindée ».
+    ///
+    /// <para>Le HUD ne peut pas appeler <c>UiStyle</c> : il appartient à <c>Gameplay</c>, que
+    /// l'assemblage <c>UI</c> référence déjà. Il passe donc par <see cref="UiFrames"/>, la partie de
+    /// la fabrique qui vit dans <c>Platform</c> — ce qui garde la règle « aucun style ad hoc »
+    /// intacte : la texture, le découpage et le repli restent décidés à un seul endroit.</para>
+    /// </summary>
+    private static GameObject BuildFrame(Transform parent, string name, FrameAccent accent)
+    {
+        var go = new GameObject(name, typeof(RectTransform));
+        go.transform.SetParent(parent, false);
+
+        var image = go.AddComponent<Image>();
+        image.raycastTarget = false;   // le HUD ne se clique pas : il ne doit rien intercepter
+
+        if (!UiFrames.Apply(image, $"ui_frame_button_{UiFrames.Slug(accent)}"))
+            image.color = Background;
+
+        return go;
+    }
+
+    /// <summary>Largeur du bloc vital, en pixels de référence.</summary>
+    private const float VitalsWidth = 460f;
+
+    /// <summary>Côté d'un emplacement de greffe.</summary>
+    private const float SlotSize = 42f;
+
     private static Image BuildBar(Transform parent, string name, Vector2 anchor,
                                   Vector2 offset, Vector2 size, Color fillColor)
     {

@@ -1,9 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-/// <summary>Accent d'un cadre — détermine sa couleur de liseré.</summary>
-public enum FrameAccent { Cyan, Violet, Gold, Steel, Danger }
-
 /// <summary>
 /// Fabrique unique des éléments d'interface — équivalent d'<c>UiStyle</c> (Lot 5).
 ///
@@ -39,61 +36,21 @@ public static class UiStyle
     /// <summary>Sprite blanc partagé — voir <see cref="UiPrimitives.White"/>.</summary>
     public static Sprite WhiteSprite => UiPrimitives.White;
 
-    private static readonly System.Collections.Generic.Dictionary<string, Sprite?> FrameCache = new();
-
     /// <summary>
-    /// Charge un cadre par son nom de fichier. Le résultat est mis en cache, y compris l'échec :
-    /// un cadre manquant est demandé à chaque bouton de chaque écran, et retenter le chargement
-    /// coûterait un accès disque par bouton.
+    /// Cadre par nom de fichier. Le chargement et son cache vivent dans <see cref="UiFrames"/>
+    /// (assemblage <c>Platform</c>) : le HUD appartient à <c>Gameplay</c> et a besoin des mêmes
+    /// cadres, or <c>UI</c> référence déjà <c>Gameplay</c> — les garder ici obligerait le HUD à
+    /// charger ses textures à la main.
     /// </summary>
-    public static Sprite? Frame(string name)
-    {
-        if (FrameCache.TryGetValue(name, out var cached)) return cached;
-
-        var sprite = Resources.Load<Sprite>("UiFrames/" + name);
-        if (sprite == null)
-            Debug.LogWarning($"[UiStyle] cadre introuvable : UiFrames/{name} — repli en liseré plat.");
-
-        FrameCache[name] = sprite;
-        return sprite;
-    }
+    public static Sprite? Frame(string name) => UiFrames.Get(name);
 
     /// <summary>Cadre de bouton d'un accent — utile pour border un élément qui n'est pas un bouton.</summary>
     public static Sprite? ButtonFrame(FrameAccent accent, bool focus = false)
-        => Frame($"ui_frame_button_{Slug(accent)}{(focus ? "_focus" : "")}");
+        => UiFrames.Button(accent, focus);
 
-    /// <summary>Suffixe de fichier d'un accent. Le doré s'écrit « or », comme sous Godot.</summary>
-    private static string Slug(FrameAccent accent) => accent switch
-    {
-        FrameAccent.Violet => "violet",
-        FrameAccent.Gold   => "or",
-        FrameAccent.Danger => "danger",
-        _                  => "cyan",
-    };
+    private static string Slug(FrameAccent accent) => UiFrames.Slug(accent);
 
-    /// <summary>
-    /// Applique un cadre 9 zones à une image. Renvoie <c>false</c> si la texture manque, à charge
-    /// de l'appelant de dessiner son repli.
-    /// </summary>
-    /// <remarks>
-    /// La teinte reste <b>blanche</b> : ces PNG portent déjà leur couleur d'accent. Les teinter une
-    /// seconde fois donnait des cadres saturés et faux — l'un des deux défauts qui avaient fait
-    /// abandonner les textures au lot 5.
-    /// </remarks>
-    private static bool ApplyFrame(Image image, string frameName)
-    {
-        var sprite = Frame(frameName);
-        if (sprite == null) return false;
-
-        image.sprite = sprite;
-        image.type = Image.Type.Sliced;
-        image.color = Color.white;
-
-        // Sans cela, une Image dont le sprite est plus petit que ses bordures cumulées disparaît
-        // purement et simplement — c'est le cas de tout bouton de moins de 32 px de large.
-        image.fillCenter = true;
-        return true;
-    }
+    private static bool ApplyFrame(Image image, string frameName) => UiFrames.Apply(image, frameName);
 
     /// <summary>Couleur associée à un accent.</summary>
     public static Color ColorOf(FrameAccent accent) => accent switch

@@ -69,7 +69,13 @@ public sealed class OptionsScreen : MonoBehaviour
 
     private void Update()
     {
-        if (IsVisible && Input.GetKeyDown(KeyCode.Escape)) Close();
+        if (!IsVisible) return;
+
+        // La capture d'une touche passe AVANT la fermeture : sinon Échap, qui sert à annuler un
+        // remap en cours, refermerait l'écran d'un coup.
+        if (_awaiting != null) { CaptureBinding(); return; }
+
+        if (Input.GetKeyDown(KeyCode.Escape)) Close();
     }
 
     private void Close()
@@ -169,20 +175,44 @@ public sealed class OptionsScreen : MonoBehaviour
 
         float headerBottom = UiStyle.Header(panel.transform, Loc.T("OPTIONS_TITLE"));
 
-        var column = UiStyle.NewUiObject("Rows", panel.transform);
-        var columnRect = column.GetComponent<RectTransform>();
-        columnRect.anchorMin = Vector2.zero;
-        columnRect.anchorMax = Vector2.one;
+        // ⚠ La liste DOIT défiler depuis que la section Contrôles existe : quinze lignes ne tiennent
+        // pas dans un panneau, et un contenu centré qui déborde sort des DEUX côtés — le défaut déjà
+        // rencontré sur l'écran de pause, où « Quitter la partie » finissait hors cadre.
+        var scrollGo = UiStyle.NewUiObject("Scroll", panel.transform);
+        var scrollRect = scrollGo.GetComponent<RectTransform>();
+        scrollRect.anchorMin = Vector2.zero;
+        scrollRect.anchorMax = Vector2.one;
         // Le bas laisse la place au bouton de retour : sans cette marge, la derniere ligne
         // passe DESSOUS et les deux se chevauchent.
-        columnRect.offsetMin = new Vector2(56f, 100f);
-        columnRect.offsetMax = new Vector2(-56f, -headerBottom);
+        scrollRect.offsetMin = new Vector2(56f, 100f);
+        scrollRect.offsetMax = new Vector2(-56f, -headerBottom);
+
+        var scroll = scrollGo.AddComponent<ScrollRect>();
+        scroll.horizontal = false;
+        scroll.movementType = ScrollRect.MovementType.Clamped;
+        scrollGo.AddComponent<RectMask2D>();
+
+        var column = UiStyle.NewUiObject("Rows", scrollGo.transform);
+        var columnRect = column.GetComponent<RectTransform>();
+        columnRect.anchorMin = new Vector2(0f, 1f);
+        columnRect.anchorMax = new Vector2(1f, 1f);
+        columnRect.pivot = new Vector2(0.5f, 1f);
+
+        // ⚠ Largeur remise à ZÉRO. Un RectTransform naît en 100 × 100 : étiré entre deux ancres
+        // horizontales, il vaudrait « largeur du parent + 100 » et déborderait de 50 px de chaque
+        // côté de sa fenêtre de défilement.
+        columnRect.sizeDelta = Vector2.zero;
 
         var layout = column.AddComponent<VerticalLayoutGroup>();
         layout.spacing = 8f;
         layout.childForceExpandHeight = false;
         layout.childControlHeight = true;
         layout.childControlWidth = true;
+
+        column.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+        scroll.content = columnRect;
+        scroll.viewport = scrollRect;
 
         _list = column.transform;
 
@@ -205,6 +235,14 @@ public sealed class OptionsScreen : MonoBehaviour
                     () => DifficultyName(GameSettings.Current.Difficulty), CycleDifficulty);
         AddSelector(Loc.T("OPTIONS_LANGUAGE"),
                     () => GameSettings.Current.Language.ToUpperInvariant(), CycleLanguage);
+
+        AddSectionTitle(Loc.T("OPTIONS_CONTROLS"));
+
+        AddBinding(Loc.T("OPTIONS_MOVE_UP"),    GameAction.MoveUp);
+        AddBinding(Loc.T("OPTIONS_MOVE_DOWN"),  GameAction.MoveDown);
+        AddBinding(Loc.T("OPTIONS_MOVE_LEFT"),  GameAction.MoveLeft);
+        AddBinding(Loc.T("OPTIONS_MOVE_RIGHT"), GameAction.MoveRight);
+        AddBinding(Loc.T("OPTIONS_DASH"),       GameAction.Dash);
 
         _close = UiStyle.TextButton(panel.transform, Loc.T("COMMON_BACK"), FrameAccent.Steel);
         var closeRect = _close.GetComponent<RectTransform>();
@@ -272,6 +310,102 @@ public sealed class OptionsScreen : MonoBehaviour
         });
 
         RowCount++;
+    }
+
+    /// <summary>
+    /// Titre de section : un séparateur d'accent et un intitulé, comme le jeu publié. Sans lui, les
+    /// cinq lignes de touches se lisent comme cinq réglages de plus.
+    /// </summary>
+    private void AddSectionTitle(string title)
+    {
+        if (_list == null) return;
+
+        var row = UiStyle.NewUiObject("Section_" + title, _list);
+        var element = row.AddComponent<LayoutElement>();
+        element.minHeight = 56f;
+        element.preferredHeight = 56f;
+
+        var label = UiStyle.Label(row.transform, title, 24, UiPalette.Cyan, TextAnchor.LowerCenter);
+        UiStyle.Stretch(label.gameObject, 0f);
+
+        var rule = UiStyle.NewUiObject("Rule", row.transform);
+        rule.AddComponent<Image>().color = UiPalette.WithAlpha(UiPalette.Cyan, 0.5f);
+
+        var ruleRect = rule.GetComponent<RectTransform>();
+        ruleRect.anchorMin = new Vector2(0f, 0f);
+        ruleRect.anchorMax = new Vector2(1f, 0f);
+        ruleRect.pivot = new Vector2(0.5f, 0f);
+        ruleRect.sizeDelta = new Vector2(0f, 2f);
+        ruleRect.anchoredPosition = Vector2.zero;
+    }
+
+    /// <summary>Action dont on attend la nouvelle touche, s'il y en a une.</summary>
+    private GameAction? _awaiting;
+
+    /// <summary>
+    /// Ligne de remappage : le bouton affiche la touche courante et, une fois pressé, <b>attend la
+    /// suivante</b>.
+    ///
+    /// <para>⚠ Le libellé se lit toujours depuis <see cref="InputRemap"/> et n'est jamais écrit en
+    /// dur — c'est la règle qui empêche l'aide de devenir mensongère après un remap. Le projet a
+    /// déjà perdu une session entière sur une capacité dont la touche n'était annoncée nulle
+    /// part.</para>
+    /// </summary>
+    private void AddBinding(string label, GameAction action)
+    {
+        if (_list == null) return;
+
+        var control = UiStyle.SettingRow(_list, label);
+        var button = UiStyle.TextButton(control, InputRemap.DisplayName(action), FrameAccent.Steel);
+
+        var rect = button.GetComponent<RectTransform>();
+        rect.anchorMin = rect.anchorMax = new Vector2(0f, 0.5f);
+        rect.pivot = new Vector2(0f, 0.5f);
+        rect.sizeDelta = new Vector2(300f, 46f);
+        rect.anchoredPosition = Vector2.zero;
+
+        var text = button.GetComponentInChildren<Text>();
+
+        button.onClick.AddListener(() =>
+        {
+            _awaiting = action;
+            if (text != null) text.text = Loc.T("OPTIONS_CONTROLS_PRESS");
+        });
+
+        if (text != null) _dynamic.Add((() => InputRemap.DisplayName(action), text));
+        RowCount++;
+    }
+
+    /// <summary>
+    /// Capture la touche suivante et l'affecte à l'action en attente.
+    ///
+    /// <para><b>Échap annule</b> plutôt que de se lier : une action liée à Échap rendrait le menu
+    /// impossible à fermer, et le joueur n'aurait plus aucun moyen de revenir en arrière.</para>
+    /// </summary>
+    private void CaptureBinding()
+    {
+        if (_awaiting == null || !Input.anyKeyDown) return;
+
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            _awaiting = null;
+            Refresh();
+            return;
+        }
+
+        foreach (KeyCode key in System.Enum.GetValues(typeof(KeyCode)))
+        {
+            // Les boutons de souris partagent l'énumération des touches : les accepter lierait une
+            // action au clic qui vient de valider le bouton lui-même.
+            if (key >= KeyCode.Mouse0 && key <= KeyCode.Mouse6) continue;
+            if (!Input.GetKeyDown(key)) continue;
+
+            InputRemap.Rebind(_awaiting.Value, key);
+            _awaiting = null;
+            AudioSystem.PlaySfx("sfx_ui_button", pitchVariation: 0f);
+            Refresh();
+            return;
+        }
     }
 
     private void AddSelector(string label, Func<string> value, Action next)
