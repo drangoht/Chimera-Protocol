@@ -18,6 +18,7 @@ public sealed class UiFrameImportPostprocessor : AssetPostprocessor
     private void OnPreprocessTexture()
     {
         if (assetPath.Contains("/Resources/Environment/")) { ConfigureTile(); return; }
+        if (assetPath.Contains("/Resources/Ui/")) { ConfigureUiSprite(); return; }
         if (!assetPath.Contains("/Resources/UiFrames/")) return;
 
         var importer = (TextureImporter)assetImporter;
@@ -56,6 +57,32 @@ public sealed class UiFrameImportPostprocessor : AssetPostprocessor
         importer.SetTextureSettings(settings);
     }
 
+    /// <summary>
+    /// Illustrations et icônes d'interface — l'art de couverture, les drapeaux de langue.
+    ///
+    /// <para>Ils vivent sous <c>Resources/</c> et non sous <c>Art/</c> parce que <b>seul
+    /// <c>Resources/</c> est atteignable à l'exécution</b>. C'est la raison — invisible dans le code —
+    /// pour laquelle les écrans du portage n'affichaient aucune illustration : les fichiers étaient
+    /// bien dans le projet, simplement hors de portée d'un <c>Resources.Load</c>.</para>
+    /// </summary>
+    private void ConfigureUiSprite()
+    {
+        var importer = (TextureImporter)assetImporter;
+        importer.textureType = TextureImporterType.Sprite;
+        importer.spriteImportMode = SpriteImportMode.Single;
+        importer.mipmapEnabled = false;
+
+        // 100, comme les cadres : c'est la référence d'une Image uGUI.
+        importer.spritePixelsPerUnit = 100f;
+
+        // L'art de couverture est une PEINTURE, pas du pixel art : filtré au point et réduit à la
+        // taille de l'écran, il crénellerait sur chaque diagonale de la ville et des néons. Les
+        // drapeaux, eux, sont des icônes de 32×20 qui doivent rester nettes.
+        bool painted = assetPath.Contains("splash_art");
+        importer.filterMode = painted ? FilterMode.Bilinear : FilterMode.Point;
+        importer.maxTextureSize = painted ? 2048 : 64;
+    }
+
     private void ConfigureFrame(TextureImporter importer)
     {
 
@@ -69,10 +96,18 @@ public sealed class UiFrameImportPostprocessor : AssetPostprocessor
         bool isPopup  = assetPath.Contains("ui_frame_popup");
         bool isButton = assetPath.Contains("ui_frame_button") || assetPath.Contains("ui_frame_card");
 
-        // (gauche, bas, droite, haut)
+        // (gauche, bas, droite, haut) — l'ordre d'Unity, qui n'est pas celui de Godot
+        // (gauche, haut, droite, bas). Les deux valeurs asymétriques portent le bord « soudé »,
+        // plus épais et plus sombre, qui donne l'épaisseur de la plaque : il est EN BAS dans les
+        // deux familles. Les inverser met l'ombre portée en haut, et la plaque paraît éclairée
+        // par en dessous — défaut discret mais qui se lit sur tout l'écran.
+        //
+        // ⚠ 18 et non 22 pour les boutons : `src/UI/UiStyle.cs` documente l'essai à l'écran —
+        // 16 + 22 = 38 px de marges verticales incompressibles, or les boutons d'achat font 40 px
+        // de haut ; il ne restait que 2 px étirables et la plaque paraissait écrasée.
         importer.spriteBorder = isPopup
-            ? new Vector4(20f, 20f, 20f, 28f)
-            : isButton ? new Vector4(16f, 22f, 16f, 16f)
+            ? new Vector4(20f, 28f, 20f, 20f)
+            : isButton ? new Vector4(16f, 18f, 16f, 16f)
                        : new Vector4(16f, 16f, 16f, 16f);
     }
 }

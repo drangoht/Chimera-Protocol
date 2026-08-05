@@ -13,26 +13,83 @@ public enum FrameAccent { Cyan, Violet, Gold, Steel, Danger }
 ///
 /// <para><b>Les cadres « plaque blindée » sont les textures d'origine</b> — chanfreins, biseau,
 /// rivets — découpées en neuf zones (bordures réglées à l'import, cf.
-/// <c>UiFrameImportPostprocessor</c>). Un rectangle plat approché à la main était le rendu provisoire
-/// du lot 5 ; il donnait une interface juste en couleurs et en ancrages, mais qui ne ressemblait pas
-/// au jeu. Aucun appelant n'a eu à changer.</para>
+/// <c>UiFrameImportPostprocessor</c>). Le rectangle plat n'est plus qu'un <b>repli</b>.</para>
+///
+/// <para>⚠ Ces textures étaient importées, découpées et <b>vérifiées au banc</b> depuis le lot 5 —
+/// mais <b>aucun écran ne les utilisait</b> : la fabrique dessinait un liseré plat. Le banc
+/// contrôlait que les sprites existaient et portaient une bordure, pas qu'ils soient <i>affichés</i>.
+/// C'est exactement le mode de défaillance déjà rencontré avec le compteur de sons qui montait sans
+/// qu'aucun son ne sorte : <b>une vérification qui n'observe pas le résultat final ne prouve
+/// rien</b>.</para>
 ///
 /// <para>⚠ Le repli sur le rendu plat subsiste, et il est <b>volontaire</b> : une texture absente
 /// donnerait sinon des panneaux invisibles — c'est-à-dire des écrans qui paraissent vides.</para>
 /// </summary>
 public static class UiStyle
 {
-    /// <summary>Épaisseur du liseré d'un cadre, en pixels de référence.</summary>
+    /// <summary>Épaisseur du liseré du repli plat, en pixels de référence.</summary>
     public const float BorderWidth = 2f;
 
     /// <summary>Marge intérieure standard d'un panneau.</summary>
     public const float PanelPadding = 24f;
 
     /// <summary>Marge entre le texte d'un bouton et son liseré.</summary>
-    public const float ButtonTextPadding = 12f;
+    public const float ButtonTextPadding = 14f;
 
     /// <summary>Sprite blanc partagé — voir <see cref="UiPrimitives.White"/>.</summary>
     public static Sprite WhiteSprite => UiPrimitives.White;
+
+    private static readonly System.Collections.Generic.Dictionary<string, Sprite?> FrameCache = new();
+
+    /// <summary>
+    /// Charge un cadre par son nom de fichier. Le résultat est mis en cache, y compris l'échec :
+    /// un cadre manquant est demandé à chaque bouton de chaque écran, et retenter le chargement
+    /// coûterait un accès disque par bouton.
+    /// </summary>
+    public static Sprite? Frame(string name)
+    {
+        if (FrameCache.TryGetValue(name, out var cached)) return cached;
+
+        var sprite = Resources.Load<Sprite>("UiFrames/" + name);
+        if (sprite == null)
+            Debug.LogWarning($"[UiStyle] cadre introuvable : UiFrames/{name} — repli en liseré plat.");
+
+        FrameCache[name] = sprite;
+        return sprite;
+    }
+
+    /// <summary>Suffixe de fichier d'un accent. Le doré s'écrit « or », comme sous Godot.</summary>
+    private static string Slug(FrameAccent accent) => accent switch
+    {
+        FrameAccent.Violet => "violet",
+        FrameAccent.Gold   => "or",
+        FrameAccent.Danger => "danger",
+        _                  => "cyan",
+    };
+
+    /// <summary>
+    /// Applique un cadre 9 zones à une image. Renvoie <c>false</c> si la texture manque, à charge
+    /// de l'appelant de dessiner son repli.
+    /// </summary>
+    /// <remarks>
+    /// La teinte reste <b>blanche</b> : ces PNG portent déjà leur couleur d'accent. Les teinter une
+    /// seconde fois donnait des cadres saturés et faux — l'un des deux défauts qui avaient fait
+    /// abandonner les textures au lot 5.
+    /// </remarks>
+    private static bool ApplyFrame(Image image, string frameName)
+    {
+        var sprite = Frame(frameName);
+        if (sprite == null) return false;
+
+        image.sprite = sprite;
+        image.type = Image.Type.Sliced;
+        image.color = Color.white;
+
+        // Sans cela, une Image dont le sprite est plus petit que ses bordures cumulées disparaît
+        // purement et simplement — c'est le cas de tout bouton de moins de 32 px de large.
+        image.fillCenter = true;
+        return true;
+    }
 
     /// <summary>Couleur associée à un accent.</summary>
     public static Color ColorOf(FrameAccent accent) => accent switch
@@ -50,34 +107,67 @@ public static class UiStyle
     /// </summary>
     public static GameObject Panel(Transform parent, string name, FrameAccent accent = FrameAccent.Steel)
     {
-        var border = NewUiObject(name, parent);
-        border.AddComponent<Image>().color = ColorOf(accent);
+        var go = NewUiObject(name, parent);
+        var image = go.AddComponent<Image>();
 
-        var fill = NewUiObject("Fill", border.transform);
+        // Deux cadres de panneau seulement, cyan et violet, comme sous Godot : un panneau annonce
+        // un contexte (jeu / chimère), pas une catégorie d'action. Les accents doré et danger
+        // appartiennent aux boutons.
+        string frame = accent == FrameAccent.Violet ? "ui_frame_popup_violet" : "ui_frame_popup_cyan";
+
+        if (ApplyFrame(image, frame)) return go;
+
+        // Repli plat : liseré d'accent + fond sombre.
+        image.color = ColorOf(accent);
+
+        var fill = NewUiObject("Fill", go.transform);
         fill.AddComponent<Image>().color = UiPalette.PanelBg;
         Stretch(fill, BorderWidth);
 
-        return border;
+        return go;
     }
 
-    /// <summary>Bouton stylé, avec ses états de survol et de pression.</summary>
+    /// <summary>Bouton stylé, avec ses états de survol, de pression et de focus.</summary>
     public static Button TextButton(Transform parent, string label, FrameAccent accent = FrameAccent.Cyan)
     {
-        var go = Panel(parent, "Button_" + label, accent);
+        var go = NewUiObject("Button_" + label, parent);
+        var image = go.AddComponent<Image>();
         var button = go.AddComponent<Button>();
+        button.targetGraphic = image;
 
-        var fill = go.transform.GetChild(0).GetComponent<Image>();
-        button.targetGraphic = fill;
+        if (ApplyFrame(image, $"ui_frame_button_{Slug(accent)}"))
+        {
+            // Le focus change de TEXTURE, pas de teinte : la variante `_focus` allume le liseré.
+            // C'est un signal de forme — celui du jeu publié —, et il reste lisible pour qui
+            // distingue mal les couleurs, là où un simple éclaircissement ne l'est pas.
+            button.transition = Selectable.Transition.SpriteSwap;
 
-        // Transition par couleur du FOND, jamais du liseré : c'est le liseré qui porte l'accent, et
-        // le voir clignoter au survol brouille la lecture des couleurs.
-        var colors = button.colors;
-        colors.normalColor      = Color.white;
-        colors.highlightedColor = new Color(1.6f, 1.6f, 1.6f, 1f);
-        colors.pressedColor     = new Color(0.7f, 0.7f, 0.7f, 1f);
-        colors.disabledColor    = new Color(0.55f, 0.55f, 0.55f, 0.7f);
-        colors.selectedColor    = colors.highlightedColor;
-        button.colors = colors;
+            var state = button.spriteState;
+            state.highlightedSprite = Frame($"ui_frame_button_{Slug(accent)}_focus");
+            state.selectedSprite    = state.highlightedSprite;
+            state.pressedSprite     = state.highlightedSprite;
+            state.disabledSprite    = Frame("ui_frame_button_disabled");
+            button.spriteState = state;
+
+            AttachFocusPulse(button, image);
+        }
+        else
+        {
+            image.color = ColorOf(accent);
+
+            var fill = NewUiObject("Fill", go.transform);
+            fill.AddComponent<Image>().color = UiPalette.PanelBg;
+            Stretch(fill, BorderWidth);
+            button.targetGraphic = fill.GetComponent<Image>();
+
+            var colors = button.colors;
+            colors.normalColor      = Color.white;
+            colors.highlightedColor = new Color(1.6f, 1.6f, 1.6f, 1f);
+            colors.pressedColor     = new Color(0.7f, 0.7f, 0.7f, 1f);
+            colors.disabledColor    = new Color(0.55f, 0.55f, 0.55f, 0.7f);
+            colors.selectedColor    = colors.highlightedColor;
+            button.colors = colors;
+        }
 
         // Le texte respire : sans cette marge, un libellé long touche le liseré et paraît coupé.
         var text = Label(go.transform, label, 20, UiPalette.OffWhite, TextAnchor.MiddleCenter);
@@ -85,6 +175,53 @@ public static class UiStyle
 
         return button;
     }
+
+    /// <summary>
+    /// Carte sélectionnable (montée de niveau, codex) : même anatomie qu'un bouton, liseré à la
+    /// couleur de <b>rareté</b>. C'est ce liseré qui dit la valeur d'une carte avant qu'on l'ait lue.
+    /// </summary>
+    public static Button CardButton(Transform parent, string name, string rarity)
+    {
+        var go = NewUiObject("Card_" + name, parent);
+        var image = go.AddComponent<Image>();
+        var button = go.AddComponent<Button>();
+        button.targetGraphic = image;
+
+        string slug = rarity switch
+        {
+            "epic" or "legendary" => "epic",
+            "rare" or "uncommon"  => "rare",
+            _                     => "common",
+        };
+
+        if (ApplyFrame(image, $"ui_frame_card_{slug}"))
+        {
+            button.transition = Selectable.Transition.SpriteSwap;
+
+            var state = button.spriteState;
+            state.highlightedSprite = Frame($"ui_frame_card_{slug}_focus");
+            state.selectedSprite    = state.highlightedSprite;
+            state.pressedSprite     = state.highlightedSprite;
+            state.disabledSprite    = Frame("ui_frame_card_disabled");
+            button.spriteState = state;
+
+            AttachFocusPulse(button, image);
+        }
+        else
+        {
+            image.color = UiPalette.ForRarity(rarity);
+        }
+
+        return button;
+    }
+
+    /// <summary>
+    /// Fait <b>pulser</b> le cadre de l'élément qui a le focus. Sans cette animation, la sélection
+    /// clavier/manette se réduit à une nuance de liseré : sur un écran chargé, le joueur perd où il
+    /// se trouve — et le jeu se joue entièrement au clavier ou à la manette.
+    /// </summary>
+    private static void AttachFocusPulse(Button button, Image image)
+        => button.gameObject.AddComponent<UiFocusPulse>().Bind(button, image);
 
     /// <summary>Texte courant. Le corps par défaut correspond à celui du jeu publié.</summary>
     public static Text Label(Transform parent, string content, int size = 20,
@@ -119,6 +256,74 @@ public static class UiStyle
 
         return go;
     }
+
+    /// <summary>
+    /// Fond <b>opaque</b> des écrans secondaires — Hub, Options, Codex, Défis, choix du niveau.
+    ///
+    /// <para>Sous Godot ce sont de vraies scènes : elles <b>remplacent</b> le menu. Le portage les
+    /// empile en surcouche translucide, si bien que le logo néon et la Chimère continuaient de
+    /// transparaître derrière un tableau d'améliorations — l'œil ne savait plus quoi lire. Un voile
+    /// ne remplace pas un écran : il annonce « ceci est temporaire, ce qu'il y a derrière compte
+    /// encore », ce qui est faux ici.</para>
+    /// </summary>
+    public static GameObject ScreenBackdrop(Transform parent)
+    {
+        var go = NewUiObject("Backdrop", parent);
+        go.AddComponent<Image>().color = UiPalette.BgDeep;
+        Stretch(go, 0f);
+        return go;
+    }
+
+    /// <summary>
+    /// En-tête d'écran : titre centré et <b>liseré d'accent</b> juste dessous, à crans aux extrémités.
+    ///
+    /// <para>Ce liseré n'est pas un ornement : c'est lui qui sépare l'en-tête du contenu et donne à
+    /// tous les écrans la même charpente. Sans lui, un titre flotte au-dessus d'une liste et l'écran
+    /// paraît inachevé — c'est ce qui distinguait le plus les captures du portage de celles du jeu.</para>
+    /// </summary>
+    /// <returns>L'ordonnée du bas de l'en-tête, à partir du haut du panneau, en pixels de référence.</returns>
+    public static float Header(Transform panel, string title, FrameAccent accent = FrameAccent.Cyan,
+                               int size = 40, float top = 22f)
+    {
+        var color = ColorOf(accent);
+
+        var label = Label(panel, title, size, color, TextAnchor.UpperCenter);
+        var labelRect = label.GetComponent<RectTransform>();
+        labelRect.anchorMin = new Vector2(0f, 1f);
+        labelRect.anchorMax = new Vector2(1f, 1f);
+        labelRect.pivot = new Vector2(0.5f, 1f);
+        labelRect.offsetMin = new Vector2(36f, -(top + size + 12f));
+        labelRect.offsetMax = new Vector2(-36f, -top);
+
+        float lineY = top + size + 20f;
+
+        var line = NewUiObject("HeaderRule", panel);
+        line.AddComponent<Image>().color = WithAlphaSafe(color, 0.85f);
+        var lineRect = line.GetComponent<RectTransform>();
+        lineRect.anchorMin = new Vector2(0f, 1f);
+        lineRect.anchorMax = new Vector2(1f, 1f);
+        lineRect.pivot = new Vector2(0.5f, 1f);
+        lineRect.offsetMin = new Vector2(36f, -(lineY + 2f));
+        lineRect.offsetMax = new Vector2(-36f, -lineY);
+
+        // Crans d'extrémité : le détail qui fait lire une pièce d'interface montée plutôt qu'un
+        // trait tracé. Ils reprennent les embouts du liseré de Godot.
+        foreach (float side in new[] { 0f, 1f })
+        {
+            var cap = NewUiObject("RuleCap", panel);
+            cap.AddComponent<Image>().color = color;
+
+            var capRect = cap.GetComponent<RectTransform>();
+            capRect.anchorMin = capRect.anchorMax = new Vector2(side, 1f);
+            capRect.pivot = new Vector2(side, 1f);
+            capRect.sizeDelta = new Vector2(7f, 7f);
+            capRect.anchoredPosition = new Vector2(side == 0f ? 36f : -36f, -(lineY - 2f));
+        }
+
+        return lineY + 12f;
+    }
+
+    private static Color WithAlphaSafe(Color c, float alpha) => new(c.r, c.g, c.b, alpha);
 
     /// <summary>Voile plein écran qui assombrit le jeu derrière une modale.</summary>
     public static GameObject Scrim(Transform parent, float opacity = 0.72f)

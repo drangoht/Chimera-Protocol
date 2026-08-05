@@ -344,6 +344,48 @@ ramassables.
 
 ---
 
+## Interface
+
+### Un réglage d'import ne s'applique **pas** à un asset déjà importé
+
+Les cadres « plaque blindée » étaient importés à **1 px/unité** comme le reste du projet. Or une
+`Image` uGUI met ses bordures 9 zones à l'échelle `referencePixelsPerUnit / spritePixelsPerUnit`,
+soit **×100** : les coins d'un cadre de 48 px se dessinaient sur 4 800, il ne restait rien à étirer,
+et l'interface était méconnaissable. C'est ce qui avait fait **abandonner** les textures.
+
+Le postprocessor qui corrige ce réglage existait **et n'a jamais rien corrigé** : il ne s'exécute
+qu'à l'import, et les fichiers étaient déjà en place. Réparer demande de toucher le `.meta` —
+l'éditer conserve les GUID, le supprimer les change (`touch` ne suffit pas).
+
+⚠ **Corollaire sur les vérifications.** Le banc contrôlait que les cadres existaient et portaient une
+bordure. Les deux étaient vrais. Il ne contrôlait ni leur **échelle**, ni qu'un bouton les
+**affiche** — donc une fabrique d'interface qui dessinait un rectangle plat passait tous les tests.
+Les trois contrôles vivent maintenant ensemble : présence, échelle (100 px/unité), et sprite
+réellement posé sur un bouton construit.
+
+### `RectTransform` naît en 100 × 100 — et un conteneur de défilement en hérite
+
+Étiré entre deux ancres horizontales sans remise à zéro de `sizeDelta`, un contenu vaut « largeur du
+parent **+ 100** » : il déborde de 50 px de chaque côté de sa fenêtre, et le masque rogne les
+premières lettres de chaque ligne. Le symptôme se lit comme une **faute de texte**, jamais comme un
+défaut de mise en page. Touchait les cinq écrans à liste.
+
+### Une ancre en pourcentage ne se résout pas dans un conteneur dont la largeur est calculée
+
+Positionner des colonnes avec `anchorMax.x = 0.62` à l'intérieur d'un défilement donne un résultat
+faux tant que la largeur du parent n'est pas connue. Les colonnes se placent par **disposition
+explicite** (`HorizontalLayoutGroup` + `LayoutElement`), avec `preferredWidth = 0` et
+`flexibleWidth = 1` sur la colonne extensible — sinon la largeur *préférée* de son texte (une
+description de 1 500 px sur une ligne) pousse tout le reste hors du cadre.
+
+### Seul `Resources/` est atteignable à l'exécution
+
+L'illustration de couverture et les drapeaux de langue étaient bien dans le projet, sous `Art/` —
+donc hors de portée d'un `Resources.Load`. Le menu s'affichait sur un aplat uni avec un titre en
+police monospace, et rien dans le code ne signalait l'absence.
+
+---
+
 ## Effets visuels
 
 ### Une valeur d'effet **ne se transpose pas** d'un moteur à l'autre — elle se recalibre sur capture

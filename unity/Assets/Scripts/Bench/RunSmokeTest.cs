@@ -985,10 +985,12 @@ public sealed class RunSmokeTest : MonoBehaviour
         var hub = hubGo.AddComponent<HubScreen>();
         yield return null;
 
-        // Une ligne par amélioration, plus celle du perk de départ en tête.
-        Check("hub : une ligne par amelioration, plus le perk de depart",
-              hub.RowCount == MetaProgression.All.Count + 1,
-              $"{hub.RowCount} lignes pour {MetaProgression.All.Count} ameliorations + 1 perk");
+        // Une ligne par amélioration, plus les deux sélecteurs de tête : le perk de départ et le
+        // TITRE cosmétique. Sans ce dernier, un titre gagné par un défi ne pouvait pas être porté —
+        // donc ne s'affichait nulle part, et la récompense n'existait que dans la sauvegarde.
+        Check("hub : une ligne par amelioration, plus le perk et le titre",
+              hub.RowCount == MetaProgression.All.Count + 2,
+              $"{hub.RowCount} lignes pour {MetaProgression.All.Count} ameliorations + perk + titre");
 
         hub.Show();
         Check("hub : s'ouvre", hub.IsVisible);
@@ -1438,12 +1440,21 @@ public sealed class RunSmokeTest : MonoBehaviour
 
         var missingFrames = new List<string>();
         var unsliced = new List<string>();
+        var wrongScale = new List<string>();
 
         foreach (string name in frameNames)
         {
             var sprite = Resources.Load<Sprite>("UiFrames/" + name);
             if (sprite == null) { missingFrames.Add(name); continue; }
             if (sprite.border == Vector4.zero) unsliced.Add(name);
+
+            // ⚠ La bordure ne suffit pas à prouver que le cadre est utilisable : une Image uGUI met
+            // ses bordures à l'échelle de referencePixelsPerUnit / spritePixelsPerUnit. À 1 px par
+            // unité — la valeur du RESTE du projet — le facteur vaut 100, les coins d'un cadre de
+            // 48 px se dessinent sur 4 800, et il ne reste rien à étirer au centre. C'est ce défaut
+            // exact qui avait fait abandonner les cadres au lot 5, et il était invisible pour la
+            // vérification précédente.
+            if (!Mathf.Approximately(sprite.pixelsPerUnit, 100f)) wrongScale.Add(name);
         }
 
         Check("interface : les cadres blindes sont presents", missingFrames.Count == 0,
@@ -1453,6 +1464,25 @@ public sealed class RunSmokeTest : MonoBehaviour
         Check("interface : les cadres sont decoupes en neuf zones", unsliced.Count == 0,
               unsliced.Count == 0 ? "bordures reglees"
                                   : "sans bordure : " + string.Join(", ", unsliced));
+
+        Check("interface : les cadres sont a l'echelle de l'UI (100 px/unite)", wrongScale.Count == 0,
+              wrongScale.Count == 0 ? "echelle correcte"
+                                    : "mauvaise echelle : " + string.Join(", ", wrongScale));
+
+        // Le cadre doit être POSÉ sur les boutons, pas seulement importable. La vérification
+        // précédente contrôlait le fichier ; celle-ci contrôle ce que voit le joueur.
+        var probe = new GameObject("FrameProbe", typeof(RectTransform));
+        var probeButton = UiStyle.TextButton(probe.transform, "test");
+        var probeImage = probeButton.GetComponent<UnityEngine.UI.Image>();
+
+        Check("interface : les boutons portent le cadre blinde",
+              probeImage != null && probeImage.sprite != null
+                                 && probeImage.type == UnityEngine.UI.Image.Type.Sliced,
+              probeImage != null && probeImage.sprite != null
+                  ? $"sprite '{probeImage.sprite.name}', mode {probeImage.type}"
+                  : "aucun sprite : la fabrique dessine encore un rectangle plat");
+
+        Destroy(probe);
 
         // ─── Musique adaptative ───────────────────────────────────────────────
         var musicGo = new GameObject("MusicHost");

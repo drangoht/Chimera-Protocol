@@ -151,23 +151,16 @@ public sealed class OptionsScreen : MonoBehaviour
         scaler.matchWidthOrHeight = 0.5f;
 
         _root = canvasGo;
-        UiStyle.Scrim(canvasGo.transform);
+        UiStyle.ScreenBackdrop(canvasGo.transform);
 
-        var panel = UiStyle.Panel(canvasGo.transform, "Panel", FrameAccent.Steel);
+        var panel = UiStyle.NewUiObject("Panel", canvasGo.transform);
         var panelRect = panel.GetComponent<RectTransform>();
         panelRect.anchorMin = panelRect.anchorMax = new Vector2(0.5f, 0.5f);
         panelRect.pivot = new Vector2(0.5f, 0.5f);
-        panelRect.sizeDelta = new Vector2(1000f, 880f);
+        panelRect.sizeDelta = new Vector2(1000f, 980f);
         panelRect.anchoredPosition = Vector2.zero;
 
-        var title = UiStyle.Label(panel.transform, Loc.T("OPTIONS_TITLE"), 38,
-                                  UiPalette.Cyan, TextAnchor.UpperCenter);
-        var titleRect = title.GetComponent<RectTransform>();
-        titleRect.anchorMin = new Vector2(0f, 1f);
-        titleRect.anchorMax = new Vector2(1f, 1f);
-        titleRect.pivot = new Vector2(0.5f, 1f);
-        titleRect.offsetMin = new Vector2(24f, -80f);
-        titleRect.offsetMax = new Vector2(-24f, -24f);
+        float headerBottom = UiStyle.Header(panel.transform, Loc.T("OPTIONS_TITLE"));
 
         var column = UiStyle.NewUiObject("Rows", panel.transform);
         var columnRect = column.GetComponent<RectTransform>();
@@ -176,7 +169,7 @@ public sealed class OptionsScreen : MonoBehaviour
         // Le bas laisse la place au bouton de retour : sans cette marge, la derniere ligne
         // passe DESSOUS et les deux se chevauchent.
         columnRect.offsetMin = new Vector2(40f, 100f);
-        columnRect.offsetMax = new Vector2(-40f, -100f);
+        columnRect.offsetMax = new Vector2(-40f, -headerBottom);
 
         var layout = column.AddComponent<VerticalLayoutGroup>();
         layout.spacing = 10f;

@@ -158,16 +158,15 @@ public sealed class LevelUpScreen : MonoBehaviour
         foreach (var card in _cards)
         {
             var captured = card;
-            var accent = card.Kind switch
-            {
-                LevelUpCardKind.Fusion   => FrameAccent.Gold,
-                LevelUpCardKind.Overload => FrameAccent.Danger,
-                LevelUpCardKind.Passive  => FrameAccent.Violet,
-                _                        => FrameAccent.Cyan,
-            };
 
-            var button = UiStyle.TextButton(_cardRow, Describe(card), accent);
+            // Le cadre porte la RARETÉ, comme sous Godot : c'est ce qui dit la valeur d'une carte
+            // avant même qu'on l'ait lue, dans un écran qui met le jeu en pause au pire moment.
+            var button = UiStyle.CardButton(_cardRow, card.Id, RarityOf(card));
             button.onClick.AddListener(() => Choose(captured));
+
+            var text = UiStyle.Label(button.transform, Describe(card), 20,
+                                     UiPalette.OffWhite, TextAnchor.UpperCenter);
+            UiStyle.Stretch(text.gameObject, 26f);
 
             _firstButton ??= button;
         }
@@ -185,13 +184,61 @@ public sealed class LevelUpScreen : MonoBehaviour
         }
     }
 
-    private static string Describe(LevelUpCard card) => card.Kind switch
+    /// <summary>
+    /// Ce que la carte annonce : sa rareté, son nom et ce qu'elle fait.
+    ///
+    /// <para>Le portage affichait l'<b>identifiant technique</b> (<c>overload_plating</c>) et rien
+    /// d'autre. C'est le pire endroit possible pour ce défaut : le jeu est en pause, le joueur doit
+    /// arbitrer entre trois options, et aucune ne dit ce qu'elle fait. Une carte illisible transforme
+    /// le choix — cœur de la progression — en tirage au hasard.</para>
+    /// </summary>
+    private static string Describe(LevelUpCard card)
     {
-        LevelUpCardKind.NewWeapon     => $"{card.Id}\nNOUVELLE ARME",
-        LevelUpCardKind.WeaponUpgrade => $"{card.Id}\nNIVEAU {card.NextLevel}",
-        LevelUpCardKind.Passive       => $"{card.Id}\nPASSIF {card.NextLevel}",
-        LevelUpCardKind.Fusion        => $"{card.Id}\nFUSION",
-        LevelUpCardKind.Overload      => $"{card.Id}\nSURCHARGE",
-        _                             => card.Id,
+        // L'étiquette porte la RARETÉ, comme le jeu publié — « [Rare] Lance Cryo ». C'est elle qui
+        // hiérarchise trois cartes d'un coup d'œil ; le type de la carte, lui, se déduit du texte.
+        string tag = Loc.T(RarityOf(card) switch
+        {
+            "epic" => "RARITY_EPIC",
+            "rare" => "RARITY_RARE",
+            _      => "RARITY_COMMON",
+        });
+
+        string slug = card.Id.ToUpperInvariant();
+
+        // Trois familles, trois préfixes de clé. La recherche s'arrête à la première qui répond :
+        // une clé absente renvoie son propre nom, ce qui se repère immédiatement à l'écran.
+        string name = FirstTranslated($"WPN_{slug}_NAME", $"PAS_{slug}_NAME", $"CARD_{slug}", card.Id);
+        string desc = FirstTranslated($"WPN_{slug}_DESC", $"PAS_{slug}_DESC", $"CARD_{slug}_DESC", "");
+
+        // Le niveau visé n'est pas un détail : « Lance Cryo » au niveau 1 et au niveau 12 sont deux
+        // décisions très différentes.
+        bool leveled = card.Kind is LevelUpCardKind.WeaponUpgrade or LevelUpCardKind.Passive;
+        if (leveled) name += Loc.T("CARD_LEVEL", card.NextLevel);
+
+        return desc.Length > 0 ? $"[{tag}]\n{name}\n\n{desc}" : $"[{tag}]\n{name}";
+    }
+
+    /// <summary>
+    /// Rareté d'une carte. Une seule source pour le cadre <b>et</b> l'étiquette : les voir diverger
+    /// (cadre épique, texte « Commun ») ne se remarque pas au code et saute aux yeux à l'écran.
+    /// </summary>
+    private static string RarityOf(LevelUpCard card) => card.Kind switch
+    {
+        LevelUpCardKind.Fusion   => "epic",
+        LevelUpCardKind.Overload => "epic",
+        LevelUpCardKind.Passive  => "rare",
+        _                        => "common",
     };
+
+    /// <summary>Première clé qui a une traduction, sinon le repli fourni en dernier argument.</summary>
+    private static string FirstTranslated(params string[] keysThenFallback)
+    {
+        for (int i = 0; i < keysThenFallback.Length - 1; i++)
+        {
+            string translated = Loc.T(keysThenFallback[i]);
+            if (translated != keysThenFallback[i]) return translated;
+        }
+
+        return keysThenFallback[^1];
+    }
 }

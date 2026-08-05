@@ -31,7 +31,24 @@ public sealed class HubScreen : MonoBehaviour
     private Text? _echoLabel;
     private Button? _firstButton;
 
-    private readonly List<(MetaUpgradeDefinition Def, Button Button, Text Label)> _rows = new();
+    /// <summary>
+    /// Une ligne d'amélioration. Elle porte <b>quatre</b> textes distincts et non un seul bloc :
+    /// sous Godot, le nom et la description sont à gauche, le niveau et le coût alignés à droite, et
+    /// l'achat se fait par un bouton propre. Tout empiler dans le libellé d'un grand bouton — ce que
+    /// faisait le portage — supprime l'alignement des colonnes : l'œil ne peut plus comparer deux
+    /// prix ni repérer d'un coup ce qui est au maximum.
+    /// </summary>
+    private sealed class Row
+    {
+        public MetaUpgradeDefinition Def = null!;
+        public Text Name = null!;
+        public Text Description = null!;
+        public Text Level = null!;
+        public Text Cost = null!;
+        public Button Buy = null!;
+    }
+
+    private readonly List<Row> _rows = new();
 
     private void Awake()
     {
@@ -75,20 +92,28 @@ public sealed class HubScreen : MonoBehaviour
     private void Refresh()
     {
         if (_echoLabel != null)
-            _echoLabel.text = $"{MetaProgression.CurrentEchoes} ÉCHOS D'AETHER";
+            _echoLabel.text = Loc.T("HUB_ECHOES", MetaProgression.CurrentEchoes);
 
         RefreshPerkRow();
+        RefreshTitleRow();
 
-        foreach (var (def, button, label) in _rows)
+        foreach (var row in _rows)
         {
-            int level = MetaProgression.LevelOf(def.Id);
-            int cost = MetaProgression.NextCost(def.Id);
+            int level = MetaProgression.LevelOf(row.Def.Id);
+            int cost = MetaProgression.NextCost(row.Def.Id);
+            bool maxed = cost < 0;
 
-            string price = cost < 0 ? "MAX" : $"{cost} É";
-            label.text = $"{def.Name}   {level}/{def.MaxLevel}   {price}\n{def.Description}";
+            row.Name.text = row.Def.Name;
+            row.Description.text = row.Def.Description;
+            row.Level.text = Loc.T("HUB_LEVEL", level, row.Def.MaxLevel);
+            row.Cost.text = maxed ? Loc.T("HUB_MAX") : Loc.T("HUB_COST", cost);
+
+            // Le coût s'éteint quand il n'y a plus rien à payer : un prix affiché sur une ligne au
+            // maximum se lit comme un achat encore possible.
+            row.Cost.color = maxed ? UiPalette.Dim : UiPalette.Gold;
 
             // Grisé quand c'est au maximum ou hors budget : le bouton dit ce qui est possible.
-            button.interactable = MetaProgression.CanPurchase(def.Id);
+            row.Buy.interactable = MetaProgression.CanPurchase(row.Def.Id);
         }
     }
 
@@ -119,30 +144,28 @@ public sealed class HubScreen : MonoBehaviour
 
         _root = canvasGo;
 
-        UiStyle.Scrim(canvasGo.transform);
+        UiStyle.ScreenBackdrop(canvasGo.transform);
 
-        var panel = UiStyle.Panel(canvasGo.transform, "Panel", FrameAccent.Gold);
+        var panel = UiStyle.NewUiObject("Panel", canvasGo.transform);
         var panelRect = panel.GetComponent<RectTransform>();
-        panelRect.anchorMin = panelRect.anchorMax = new Vector2(0.5f, 0.5f);
-        panelRect.pivot = new Vector2(0.5f, 0.5f);
-        panelRect.sizeDelta = new Vector2(1200f, 820f);
-        panelRect.anchoredPosition = Vector2.zero;
+        panelRect.anchorMin = Vector2.zero;
+        panelRect.anchorMax = Vector2.one;
+        panelRect.offsetMin = new Vector2(60f, 40f);
+        panelRect.offsetMax = new Vector2(-60f, -20f);
 
-        var title = UiStyle.Label(panel.transform, "HUB", 40, UiPalette.Gold, TextAnchor.UpperCenter);
-        var titleRect = title.GetComponent<RectTransform>();
-        titleRect.anchorMin = new Vector2(0f, 1f);
-        titleRect.anchorMax = new Vector2(1f, 1f);
-        titleRect.pivot = new Vector2(0.5f, 1f);
-        titleRect.offsetMin = new Vector2(24f, -74f);
-        titleRect.offsetMax = new Vector2(-24f, -20f);
+        float headerBottom = UiStyle.Header(panel.transform, Loc.T("HUB_TITLE"));
 
-        _echoLabel = UiStyle.Label(panel.transform, "", 24, UiPalette.Cyan, TextAnchor.UpperCenter);
+        // Le solde est en OR et juste sous le titre : c'est la seule information de cet écran qui
+        // décide de ce que le joueur peut faire, et il doit la voir avant de lire les lignes.
+        _echoLabel = UiStyle.Label(panel.transform, "", 28, UiPalette.Gold, TextAnchor.UpperCenter);
         var echoRect = _echoLabel.GetComponent<RectTransform>();
         echoRect.anchorMin = new Vector2(0f, 1f);
         echoRect.anchorMax = new Vector2(1f, 1f);
         echoRect.pivot = new Vector2(0.5f, 1f);
-        echoRect.offsetMin = new Vector2(24f, -112f);
-        echoRect.offsetMax = new Vector2(-24f, -78f);
+        echoRect.offsetMin = new Vector2(36f, -(headerBottom + 40f));
+        echoRect.offsetMax = new Vector2(-36f, -headerBottom);
+
+        headerBottom += 52f;
 
         // ⚠ La liste DOIT défiler : quatorze améliorations ne tiennent pas dans un panneau, et un
         // contenu centré qui déborde sort des DEUX côtés — le défaut déjà rencontré sur l'écran de
@@ -151,8 +174,8 @@ public sealed class HubScreen : MonoBehaviour
         var scrollRect = scrollGo.GetComponent<RectTransform>();
         scrollRect.anchorMin = new Vector2(0f, 0f);
         scrollRect.anchorMax = new Vector2(1f, 1f);
-        scrollRect.offsetMin = new Vector2(28f, 88f);
-        scrollRect.offsetMax = new Vector2(-28f, -120f);
+        scrollRect.offsetMin = new Vector2(28f, 96f);
+        scrollRect.offsetMax = new Vector2(-28f, -headerBottom);
 
         var scroll = scrollGo.AddComponent<ScrollRect>();
         scroll.horizontal = false;
@@ -163,6 +186,13 @@ public sealed class HubScreen : MonoBehaviour
         contentRect.anchorMin = new Vector2(0f, 1f);
         contentRect.anchorMax = new Vector2(1f, 1f);
         contentRect.pivot = new Vector2(0.5f, 1f);
+
+        // ⚠ Largeur remise à ZÉRO. Un RectTransform naît en 100 × 100 : étiré entre deux ancres
+        // horizontales, il vaut alors « largeur du parent + 100 » et déborde de 50 px de CHAQUE
+        // côté de sa fenêtre de défilement. Le masque rogne le reste, et ce sont les premières
+        // lettres de chaque ligne qui disparaissent — un défaut qu'on lit comme une faute de texte
+        // et non comme un défaut de mise en page.
+        contentRect.sizeDelta = Vector2.zero;
 
         var layout = content.AddComponent<VerticalLayoutGroup>();
         layout.spacing = 10f;
@@ -178,9 +208,22 @@ public sealed class HubScreen : MonoBehaviour
         _list = content.transform;
 
         BuildPerkRow();
+        BuildTitleRow();
         BuildRows();
 
-        var close = UiStyle.TextButton(panel.transform, "Retour", FrameAccent.Steel);
+        // Réinitialisation : elle REMBOURSE les Échos dépensés. C'est ce qui rend un arbre
+        // d'améliorations réversible, donc explorable — sans elle, un achat regretté est définitif
+        // et le joueur n'ose plus rien acheter.
+        _reset = UiStyle.TextButton(panel.transform, Loc.T("HUB_RESET"), FrameAccent.Danger);
+        var resetRect = _reset.GetComponent<RectTransform>();
+        resetRect.anchorMin = new Vector2(0f, 0f);
+        resetRect.anchorMax = new Vector2(0f, 0f);
+        resetRect.pivot = new Vector2(0f, 0f);
+        resetRect.sizeDelta = new Vector2(460f, 60f);
+        resetRect.anchoredPosition = new Vector2(28f, 16f);
+        _reset.onClick.AddListener(ResetUpgrades);
+
+        var close = UiStyle.TextButton(panel.transform, Loc.T("COMMON_BACK"), FrameAccent.Steel);
         var closeRect = close.GetComponent<RectTransform>();
         closeRect.anchorMin = new Vector2(0.5f, 0f);
         closeRect.anchorMax = new Vector2(0.5f, 0f);
@@ -190,6 +233,33 @@ public sealed class HubScreen : MonoBehaviour
         close.onClick.AddListener(Close);
 
         _firstButton = close;
+    }
+
+    private Button? _reset;
+    private bool _resetArmed;
+
+    /// <summary>
+    /// Réinitialise les améliorations, <b>en deux temps</b>. Une confirmation est indispensable : le
+    /// bouton est à portée de manette sur un écran qu'on parcourt vite, et l'action défait des
+    /// heures de jeu — même remboursée, elle remet le personnage à zéro.
+    /// </summary>
+    private void ResetUpgrades()
+    {
+        var label = _reset?.GetComponentInChildren<Text>();
+
+        if (!_resetArmed)
+        {
+            _resetArmed = true;
+            if (label != null) label.text = Loc.T("HUB_RESET_CONFIRM");
+            return;
+        }
+
+        _resetArmed = false;
+        if (label != null) label.text = Loc.T("HUB_RESET");
+
+        MetaProgression.ResetUpgrades();
+        AudioSystem.PlaySfx("sfx_ui_purchase");
+        Refresh();
     }
 
     /// <summary>
@@ -261,17 +331,140 @@ public sealed class HubScreen : MonoBehaviour
 
         foreach (var def in MetaProgression.All)
         {
-            var button = UiStyle.TextButton(_list, def.Name, FrameAccent.Gold);
+            var panel = UiStyle.Panel(_list, "Row_" + def.Id, FrameAccent.Cyan);
 
-            var element = button.gameObject.AddComponent<LayoutElement>();
-            element.minHeight = 76f;
+            var element = panel.AddComponent<LayoutElement>();
+            element.minHeight = 96f;
 
-            var label = button.GetComponentInChildren<Text>();
+            // Colonnes en DISPOSITION EXPLICITE, et non par ancres proportionnelles. Dans un
+            // conteneur défilant dont la largeur est elle-même calculée, une ancre en pourcentage se
+            // résout contre une largeur qui n'est pas encore connue : le texte débordait des deux
+            // côtés du panneau et se faisait rogner par le masque de défilement — les premières
+            // lettres de chaque amélioration manquaient.
+            var rowLayout = panel.AddComponent<HorizontalLayoutGroup>();
+            rowLayout.padding = new RectOffset(26, 26, 14, 14);
+            rowLayout.spacing = 14f;
+            rowLayout.childForceExpandWidth = false;
+            rowLayout.childControlWidth = true;
+            rowLayout.childControlHeight = true;
+            rowLayout.childAlignment = TextAnchor.MiddleLeft;
+
+            // Colonne de texte : elle prend TOUTE la place restante, d'où `flexibleWidth`. Sa
+            // largeur préférée est mise à zéro, sinon celle du texte — potentiellement une ligne de
+            // 1 500 px — pousserait les colonnes de droite hors du cadre.
+            var textColumn = UiStyle.NewUiObject("Text", panel.transform);
+            var textElement = textColumn.AddComponent<LayoutElement>();
+            textElement.flexibleWidth = 1f;
+            textElement.preferredWidth = 0f;
+            textElement.minWidth = 240f;
+
+            var textLayout = textColumn.AddComponent<VerticalLayoutGroup>();
+            textLayout.spacing = 4f;
+            textLayout.childForceExpandHeight = false;
+            textLayout.childControlHeight = true;
+            textLayout.childControlWidth = true;
+
+            var name = UiStyle.Label(textColumn.transform, def.Name, 24, UiPalette.OffWhite);
+            name.gameObject.AddComponent<LayoutElement>().preferredHeight = 30f;
+
+            var description = UiStyle.Label(textColumn.transform, def.Description, 19, UiPalette.Dim);
+            description.gameObject.AddComponent<LayoutElement>().flexibleHeight = 1f;
+
+            var level = Column(panel.transform, 190f, UiPalette.Cyan);
+            var cost = Column(panel.transform, 230f, UiPalette.Gold);
+
+            var buy = UiStyle.TextButton(panel.transform, Loc.T("HUB_BUY"), FrameAccent.Gold);
+            var buyElement = buy.gameObject.AddComponent<LayoutElement>();
+            buyElement.preferredWidth = 190f;
+            buyElement.preferredHeight = 58f;
+
             var captured = def;
-            button.onClick.AddListener(() => Purchase(captured));
+            buy.onClick.AddListener(() => Purchase(captured));
 
-            _rows.Add((def, button, label));
+            _rows.Add(new Row
+            {
+                Def = def,
+                Name = name,
+                Description = description,
+                Level = level,
+                Cost = cost,
+                Buy = buy,
+            });
+
             RowCount++;
         }
+    }
+
+    /// <summary>
+    /// Colonne de droite à largeur fixe. C'est cette largeur constante d'une ligne à l'autre qui
+    /// rend les niveaux et les prix <b>comparables d'un coup d'œil</b> — sans elle, chaque valeur
+    /// se place où le texte de gauche la laisse, et l'écran redevient une liste de phrases.
+    /// </summary>
+    private static Text Column(Transform parent, float width, Color color)
+    {
+        var label = UiStyle.Label(parent, "", 21, color, TextAnchor.MiddleCenter);
+        var element = label.gameObject.AddComponent<LayoutElement>();
+        element.preferredWidth = width;
+        element.minWidth = width;
+        return label;
+    }
+
+    private Button? _titleButton;
+    private Text? _titleLabel;
+
+    /// <summary>
+    /// Choix du <b>titre</b> cosmétique, dernier maillon de la boucle des défis.
+    ///
+    /// <para>Il manquait entièrement au portage : un titre se débloquait, et rien nulle part ne
+    /// permettait de le porter — donc rien ne le montrait jamais. Un cosmétique qu'on ne peut pas
+    /// équiper n'est pas une récompense, c'est une ligne dans une sauvegarde.</para>
+    /// </summary>
+    private void BuildTitleRow()
+    {
+        if (_list == null) return;
+
+        _titleButton = UiStyle.TextButton(_list, "", FrameAccent.Violet);
+
+        var element = _titleButton.gameObject.AddComponent<LayoutElement>();
+        element.minHeight = 72f;
+
+        _titleLabel = _titleButton.GetComponentInChildren<Text>();
+        _titleButton.onClick.AddListener(CycleTitle);
+        RowCount++;
+    }
+
+    private void CycleTitle()
+    {
+        var available = new List<string> { "" };
+        foreach (var title in Titles.All)
+            if (MetaProgression.HasCosmetic(title.Id)) available.Add(title.Id);
+
+        int index = available.IndexOf(MetaProgression.EquippedCosmetic);
+        MetaProgression.EquipCosmetic(available[(index + 1) % available.Count]);
+
+        Refresh();
+    }
+
+    private void RefreshTitleRow()
+    {
+        if (_titleLabel == null || _titleButton == null) return;
+
+        int unlocked = 0;
+        foreach (var title in Titles.All)
+            if (MetaProgression.HasCosmetic(title.Id)) unlocked++;
+
+        if (unlocked == 0)
+        {
+            _titleLabel.text = $"{Loc.T("HUB_TITLES")} : {Loc.T("HUB_PERK_NONE")}";
+            _titleButton.interactable = false;
+            return;
+        }
+
+        var def = Titles.ById(MetaProgression.EquippedCosmetic);
+        _titleLabel.text = def == null
+            ? $"{Loc.T("HUB_TITLES")} : {Loc.T("HUB_PERK_NONE")}   ({unlocked})"
+            : $"{Loc.T("HUB_TITLES")} : {Loc.T(def.NameKey)}";
+
+        _titleButton.interactable = true;
     }
 }

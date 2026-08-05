@@ -194,23 +194,16 @@ public sealed class CodexScreen : MonoBehaviour
         scaler.matchWidthOrHeight = 0.5f;
 
         _root = canvasGo;
-        UiStyle.Scrim(canvasGo.transform);
+        UiStyle.ScreenBackdrop(canvasGo.transform);
 
-        var panel = UiStyle.Panel(canvasGo.transform, "Panel", FrameAccent.Violet);
+        var panel = UiStyle.NewUiObject("Panel", canvasGo.transform);
         var panelRect = panel.GetComponent<RectTransform>();
-        panelRect.anchorMin = panelRect.anchorMax = new Vector2(0.5f, 0.5f);
-        panelRect.pivot = new Vector2(0.5f, 0.5f);
-        panelRect.sizeDelta = new Vector2(1280f, 860f);
-        panelRect.anchoredPosition = Vector2.zero;
+        panelRect.anchorMin = Vector2.zero;
+        panelRect.anchorMax = Vector2.one;
+        panelRect.offsetMin = new Vector2(60f, 40f);
+        panelRect.offsetMax = new Vector2(-60f, -20f);
 
-        var title = UiStyle.Label(panel.transform, Loc.T("MENU_CODEX"), 38,
-                                  UiPalette.Violet, TextAnchor.UpperCenter);
-        var titleRect = title.GetComponent<RectTransform>();
-        titleRect.anchorMin = new Vector2(0f, 1f);
-        titleRect.anchorMax = new Vector2(1f, 1f);
-        titleRect.pivot = new Vector2(0.5f, 1f);
-        titleRect.offsetMin = new Vector2(24f, -74f);
-        titleRect.offsetMax = new Vector2(-24f, -20f);
+        UiStyle.Header(panel.transform, Loc.T("MENU_CODEX"), FrameAccent.Violet);
 
         _header = UiStyle.Label(panel.transform, "", 22, UiPalette.Cyan, TextAnchor.UpperRight);
         var headerRect = _header.GetComponent<RectTransform>();
@@ -238,6 +231,13 @@ public sealed class CodexScreen : MonoBehaviour
         contentRect.anchorMin = new Vector2(0f, 1f);
         contentRect.anchorMax = new Vector2(1f, 1f);
         contentRect.pivot = new Vector2(0.5f, 1f);
+
+        // ⚠ Largeur remise à ZÉRO. Un RectTransform naît en 100 × 100 : étiré entre deux ancres
+        // horizontales, il vaut alors « largeur du parent + 100 » et déborde de 50 px de CHAQUE
+        // côté de sa fenêtre de défilement. Le masque rogne le reste, et ce sont les premières
+        // lettres de chaque ligne qui disparaissent — un défaut qu'on lit comme une faute de texte
+        // et non comme un défaut de mise en page.
+        contentRect.sizeDelta = Vector2.zero;
 
         var layout = content.AddComponent<VerticalLayoutGroup>();
         layout.spacing = 6f;

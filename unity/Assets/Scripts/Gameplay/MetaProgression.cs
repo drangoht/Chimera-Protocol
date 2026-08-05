@@ -124,6 +124,29 @@ public static class MetaProgression
         return true;
     }
 
+    /// <summary>Titres cosmétiques débloqués par les défis.</summary>
+    public static IReadOnlyList<string> UnlockedCosmetics => Save.Meta.UnlockedCosmetics;
+
+    /// <summary>Ce titre a-t-il été gagné ?</summary>
+    public static bool HasCosmetic(string id) => Save.Meta.UnlockedCosmetics.Contains(id);
+
+    /// <summary>Titre équipé, ou chaîne vide.</summary>
+    public static string EquippedCosmetic => Save.Meta.EquippedCosmetic;
+
+    /// <summary>
+    /// Équipe un titre (ou le retire avec une chaîne vide). Même garde que pour les perks : un titre
+    /// non débloqué est refusé. Il n'a aucun effet de jeu, mais l'afficher sans l'avoir gagné
+    /// viderait la récompense de son sens.
+    /// </summary>
+    public static bool EquipCosmetic(string id)
+    {
+        if (id.Length > 0 && !Save.Meta.UnlockedCosmetics.Contains(id)) return false;
+
+        Save.Meta.EquippedCosmetic = id;
+        Persist();
+        return true;
+    }
+
     /// <summary>Comptabilise une run terminée — base des défis « cumulés ».</summary>
     public static void RegisterRun(int kills)
     {

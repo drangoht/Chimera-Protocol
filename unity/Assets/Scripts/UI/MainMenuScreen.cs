@@ -66,21 +66,15 @@ public sealed class MainMenuScreen : MonoBehaviour
         bg.AddComponent<Image>().color = UiPalette.Bg;
         UiStyle.Stretch(bg, 0f);
 
-        var title = UiStyle.Label(canvasGo.transform, "CHIMERA PROTOCOL", 64,
-                                  UiPalette.Cyan, TextAnchor.MiddleCenter);
-        var titleRect = title.GetComponent<RectTransform>();
-        titleRect.anchorMin = new Vector2(0.5f, 1f);
-        titleRect.anchorMax = new Vector2(0.5f, 1f);
-        titleRect.pivot = new Vector2(0.5f, 1f);
-        titleRect.sizeDelta = new Vector2(900f, 100f);
-        titleRect.anchoredPosition = new Vector2(0f, -110f);
+        BuildSplashArt(canvasGo.transform);
+        BuildTitleFlair(canvasGo.transform);
 
         var column = UiStyle.NewUiObject("Menu", canvasGo.transform);
         var colRect = column.GetComponent<RectTransform>();
         colRect.anchorMin = colRect.anchorMax = new Vector2(0.5f, 0.5f);
         colRect.pivot = new Vector2(0.5f, 0.5f);
-        colRect.sizeDelta = new Vector2(420f, 460f);
-        colRect.anchoredPosition = new Vector2(0f, -40f);
+        colRect.sizeDelta = new Vector2(460f, 460f);
+        colRect.anchoredPosition = new Vector2(0f, -20f);
 
         var layout = column.AddComponent<VerticalLayoutGroup>();
         layout.spacing = 14f;
@@ -112,6 +106,168 @@ public sealed class MainMenuScreen : MonoBehaviour
         quit.onClick.AddListener(SceneRoot.Quit);
 
         BuildFocusChain(column.transform);
+        BuildLanguageRow(canvasGo.transform);
+        BuildVersionStamp(canvasGo.transform);
+    }
+
+    /// <summary>
+    /// L'illustration de couverture, plein écran.
+    ///
+    /// <para><b>Le titre du jeu est peint dedans</b> — il n'y a pas de libellé « CHIMERA PROTOCOL »
+    /// à afficher par-dessus. Le portage en dessinait un en police monospace cyan, ce qui donnait un
+    /// menu correct mais anonyme : le logo néon, la Chimère et la ville sont l'identité du jeu, et
+    /// c'est le premier écran que voit un joueur.</para>
+    ///
+    /// <para>Cadrage en <b>aspect couvert</b> : l'illustration remplit l'écran quitte à déborder,
+    /// jamais déformée. Étirée à un autre format, la silhouette de la Chimère grossit ou s'écrase —
+    /// et c'est immédiatement visible sur un personnage.</para>
+    /// </summary>
+    private static void BuildSplashArt(Transform parent)
+    {
+        var sprite = Resources.Load<Sprite>("Ui/splash_art");
+        if (sprite == null)
+        {
+            Debug.LogWarning("[MainMenu] Ui/splash_art introuvable — fond uni.");
+            return;
+        }
+
+        var go = UiStyle.NewUiObject("SplashArt", parent);
+        var image = go.AddComponent<Image>();
+        image.sprite = sprite;
+        image.preserveAspect = true;
+        image.raycastTarget = false;
+        UiStyle.Stretch(go, 0f);
+
+        // preserveAspect d'uGUI fait TENIR l'image dans le cadre (contain), là où il faut la faire
+        // le RECOUVRIR (cover). D'où le calcul : on agrandit le rectangle du facteur qui manque.
+        var rect = go.GetComponent<RectTransform>();
+        float artRatio = sprite.rect.width / sprite.rect.height;
+        float screenRatio = 1920f / 1080f;
+
+        if (artRatio > screenRatio) rect.offsetMin = rect.offsetMax = Vector2.zero;
+        else
+        {
+            float grow = (screenRatio / artRatio - 1f) * 1080f * 0.5f;
+            rect.offsetMin = new Vector2(0f, -grow);
+            rect.offsetMax = new Vector2(0f, grow);
+        }
+
+        // Vignette : l'illustration est claire en son centre, et les boutons s'y perdaient. Sous
+        // Godot c'est un shader ; ici un simple dégradé radial suffit — il n'y a rien à animer.
+        var vignette = UiStyle.NewUiObject("Vignette", parent);
+        var vig = vignette.AddComponent<Image>();
+        vig.sprite = UiVignette.Sprite;
+        vig.color = new Color(0f, 0f, 0f, 0.72f);
+        vig.raycastTarget = false;
+        UiStyle.Stretch(vignette, 0f);
+    }
+
+    /// <summary>
+    /// Titre cosmétique équipé, sous le logo. Masqué si aucun n'est porté — c'est un flair, pas une
+    /// ligne d'interface : afficher « aucun titre » reviendrait à rappeler au joueur ce qu'il n'a pas.
+    /// </summary>
+    private void BuildTitleFlair(Transform parent)
+    {
+        string id = MetaProgression.EquippedCosmetic;
+        var def = id.Length > 0 ? Titles.ById(id) : null;
+        if (def == null) return;
+
+        var flair = UiStyle.Label(parent, $"— {Loc.T(def.NameKey)} —", 26,
+                                  UiPalette.Gold, TextAnchor.MiddleCenter);
+
+        var rect = flair.GetComponent<RectTransform>();
+        rect.anchorMin = new Vector2(0.5f, 1f);
+        rect.anchorMax = new Vector2(0.5f, 1f);
+        rect.pivot = new Vector2(0.5f, 1f);
+        rect.sizeDelta = new Vector2(800f, 34f);
+        rect.anchoredPosition = new Vector2(0f, -272f);
+    }
+
+    /// <summary>
+    /// Sélecteur de langue en drapeaux, en haut à droite.
+    ///
+    /// <para>Des <b>drapeaux</b> et non des libellés : l'écran est le premier du jeu, et un joueur
+    /// qui ne lit pas la langue affichée doit pouvoir en changer sans la comprendre.</para>
+    /// </summary>
+    private void BuildLanguageRow(Transform parent)
+    {
+        var row = UiStyle.NewUiObject("Languages", parent);
+        var rowRect = row.GetComponent<RectTransform>();
+        rowRect.anchorMin = rowRect.anchorMax = new Vector2(1f, 1f);
+        rowRect.pivot = new Vector2(1f, 1f);
+        rowRect.sizeDelta = new Vector2(240f, 46f);
+        rowRect.anchoredPosition = new Vector2(-28f, -24f);
+
+        var layout = row.AddComponent<HorizontalLayoutGroup>();
+        layout.spacing = 10f;
+        layout.childAlignment = TextAnchor.MiddleRight;
+        layout.childForceExpandWidth = false;
+        layout.childControlWidth = true;
+        layout.childControlHeight = true;
+
+        foreach (string lang in LocTable.Languages)
+        {
+            string code = lang;
+            var button = UiStyle.TextButton(row.transform, "", FrameAccent.Steel);
+
+            var element = button.gameObject.AddComponent<LayoutElement>();
+            element.preferredWidth = 62f;
+            element.preferredHeight = 42f;
+
+            var flag = Resources.Load<Sprite>("Ui/flag_" + code);
+            if (flag != null)
+            {
+                var icon = UiStyle.NewUiObject("Flag", button.transform);
+                var image = icon.AddComponent<Image>();
+                image.sprite = flag;
+                image.raycastTarget = false;
+                UiStyle.Stretch(icon, 12f);
+
+                // Le libellé de repli disparaît : sans cela, le code de langue se superpose au drapeau.
+                var label = button.GetComponentInChildren<Text>();
+                if (label != null) label.text = "";
+            }
+            else
+            {
+                var label = button.GetComponentInChildren<Text>();
+                if (label != null) label.text = code.ToUpperInvariant();
+            }
+
+            button.onClick.AddListener(() => ChooseLanguage(code));
+        }
+    }
+
+    private void ChooseLanguage(string language)
+    {
+        AudioSystem.PlaySfx("sfx_ui_button");
+
+        var settings = GameSettings.Current;
+        if (settings.Language == language) return;
+
+        settings.Language = language;
+        Loc.Language = language;
+        Loc.Reset();       // sans cela la table reste celle de l'ancienne langue
+        GameSettings.Save();
+
+        // Recharger la scène plutôt que ré-appliquer les libellés un par un : chaque écran se
+        // reconstruit avec la nouvelle table, sans qu'aucun n'ait à connaître le mécanisme.
+        SceneRoot.ChangeScene(GameScenes.MainMenu);
+    }
+
+    /// <summary>
+    /// Tampon de version, en bas à droite. Il ne sert pas au joueur mais au <b>rapport de bug</b> :
+    /// sans lui, une capture d'écran ne dit pas quelle version elle montre.
+    /// </summary>
+    private static void BuildVersionStamp(Transform parent)
+    {
+        var stamp = UiStyle.Label(parent, "v" + Application.version, 16,
+                                  UiPalette.WithAlpha(UiPalette.Dim, 0.7f), TextAnchor.LowerRight);
+
+        var rect = stamp.GetComponent<RectTransform>();
+        rect.anchorMin = rect.anchorMax = new Vector2(1f, 0f);
+        rect.pivot = new Vector2(1f, 0f);
+        rect.sizeDelta = new Vector2(320f, 24f);
+        rect.anchoredPosition = new Vector2(-16f, 12f);
     }
 
     private HubScreen? _hub;

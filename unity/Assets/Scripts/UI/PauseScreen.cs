@@ -124,6 +124,13 @@ public sealed class PauseScreen : MonoBehaviour
         contentRect.anchorMin = new Vector2(0f, 1f);
         contentRect.anchorMax = new Vector2(1f, 1f);
         contentRect.pivot = new Vector2(0.5f, 1f);
+
+        // ⚠ Largeur remise à ZÉRO. Un RectTransform naît en 100 × 100 : étiré entre deux ancres
+        // horizontales, il vaut alors « largeur du parent + 100 » et déborde de 50 px de CHAQUE
+        // côté de sa fenêtre de défilement. Le masque rogne le reste, et ce sont les premières
+        // lettres de chaque ligne qui disparaissent — un défaut qu'on lit comme une faute de texte
+        // et non comme un défaut de mise en page.
+        contentRect.sizeDelta = Vector2.zero;
         contentRect.offsetMin = Vector2.zero;
         contentRect.offsetMax = Vector2.zero;
 

@@ -601,6 +601,45 @@ multiplicateurs de difficulté ne sont **pas encore portés** — `EnemySpawner`
 `EnemyScaling.Scaled(..., 1f)`, donc ni `LevelThreat` (palier du biome), ni `DifficultyTuning`, ni
 l'échelle de saturation ne s'appliquent. Aucune mesure d'équilibrage n'a de sens avant.
 
+### 6.12 Les écrans à la parité Godot (2026-08-05)
+
+Comparaison **capture contre capture** avec les références du jeu publié (`docs/ui_v1160_*.png`),
+écran par écran. L'écart était structurel, pas décoratif.
+
+**Ce qui a été livré** : les cadres « plaque blindée » sont enfin **affichés** (voir ci-dessous) avec
+leurs variantes de focus et une pulsation de sélection ; le menu principal retrouve son
+**illustration de couverture** — le titre du jeu y est peint, il n'y avait donc rien à afficher
+par-dessus —, sa vignette, son flair doré, ses drapeaux de langue et son tampon de version ; les
+écrans secondaires deviennent **pleine page** avec un en-tête « titre + liseré à crans » commun,
+au lieu de panneaux flottants sur un menu qui transparaissait ; le Hub retrouve sa mise en page en
+colonnes (nom et description à gauche, niveau et coût alignés à droite, un bouton d'achat par ligne),
+son sélecteur de **titre** et son bouton de réinitialisation ; les cartes de montée de niveau
+affichent enfin leur **rareté, leur nom et leur effet** au lieu d'un identifiant technique.
+
+**⚠ Le défaut central, et sa leçon.** Les cadres 9 zones avaient été jugés inutilisables au lot 5
+(« bordures à ×100 »). En réalité le correctif existait — un postprocessor qui règle l'échelle à
+100 px/unité — et **n'avait jamais rien corrigé** : il ne s'exécute qu'à l'import, or les fichiers
+étaient déjà en place. Pendant ce temps le banc vérifiait que les cadres existaient et portaient une
+bordure : les deux étaient vrais, et pourtant **aucun écran ne les affichait**. C'est le même mode
+de défaillance que le compteur de sons qui montait sans qu'aucun son ne sorte. Les vérifications
+portent désormais sur l'échelle et sur le sprite **réellement posé** sur un bouton construit.
+
+Trois autres défauts de mise en page, tous invisibles au code : un `RectTransform` naît en 100 × 100
+et faisait déborder tous les conteneurs de défilement de 50 px de chaque côté (les premières lettres
+de chaque ligne disparaissaient, ce qui se lit comme une faute de frappe) ; les ancres en pourcentage
+ne se résolvent pas dans un conteneur dont la largeur est elle-même calculée ; et l'illustration de
+couverture, rangée sous `Art/`, était hors de portée d'un `Resources.Load`. Détail →
+`docs/PITFALLS_UNITY.md` §Interface.
+
+**⚠ Ce qui reste en écart, dit franchement** : l'écran d'options utilise des lignes « cliquer pour
+faire défiler la valeur » là où Godot a de vrais **curseurs, interrupteurs et listes déroulantes**
+(leurs textures sont importées, pas encore employées) et n'a pas la section **Contrôles** ; les
+cartes de montée de niveau n'ont pas leur **icône** ; le Codex garde sa disposition du portage ;
+et l'entrée **Défis** est restée au premier niveau du menu alors qu'elle vit sous le Codex depuis
+la 1.15.0.
+
+**152 vérifications · 566 tests.**
+
 ### 6.11 Les VFX — du placeholder aux vrais effets (2026-08-05)
 
 Le §6.8 avait rendu chaque arme **visible** avec des chapelets de points de sprite, placeholder
