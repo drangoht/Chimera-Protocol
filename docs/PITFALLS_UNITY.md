@@ -482,6 +482,19 @@ Néon et la règle d'un cran passent toutes deux **à la ligne** : serrées, les
 chevauchaient. Le défaut n'apparaît que sur un contenu particulier — celui qu'on ne regarde pas en
 premier sur la capture.
 
+### Masquer une entrée non acquise n'a de sens que si la découverte est l'objet de l'écran
+
+Le Codex anonymise ce qu'on n'a pas croisé (« ? ? ? ») : c'est justement ce qu'il apporte. Appliquer
+la même règle aux **perks de départ** aurait été une erreur de portage — un perk verrouillé est un
+**but**, et cacher sa description revient à cacher au joueur ce qu'il gagnerait à aller le chercher.
+Le jeu publié le dit dans son `PerksScreen` : « aucune entrée masquée, la description reste visible
+pour donner un but ». D'où le paramètre `hideWhenLocked` plutôt qu'un quatrième onglet qui recopierait
+la mise en page.
+
+⚠ Piège de données au passage : `StartingPerks` porte des chemins d'icône en **`res://`**, hérités de
+Godot et sans aucun sens ici. C'est la table d'identifiants (`UiIcons`) qui fait foi, et rien ne le
+signalait — la vérification de banc couvre désormais les perks en plus des armes et des greffes.
+
 ### Le HUD est un écran comme les autres — il se compare aussi à la référence
 
 Les huit écrans avaient été confrontés à `docs/ui_v1160_*.png` ; le **HUD**, non — parce qu'il n'a

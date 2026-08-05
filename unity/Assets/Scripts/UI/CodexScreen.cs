@@ -19,7 +19,7 @@ using UnityEngine.UI;
 public sealed class CodexScreen : MonoBehaviour
 {
     /// <summary>Onglets du Codex.</summary>
-    public enum Tab { Bestiary, Arsenal, Chimera }
+    public enum Tab { Bestiary, Arsenal, Chimera, Perks }
 
     /// <summary>Émis à la fermeture.</summary>
     public event Action? Closed;
@@ -39,6 +39,8 @@ public sealed class CodexScreen : MonoBehaviour
     private GameObject? _root;
     private Transform? _list;
     private Text? _header;
+    private Text? _intro;
+    private RectTransform? _scrollRect;
     private Button? _close;
 
     private Dictionary<string, EnemyTable.EnemyDef>? _bestiary;
@@ -99,10 +101,27 @@ public sealed class CodexScreen : MonoBehaviour
             case Tab.Bestiary: BuildBestiary(); break;
             case Tab.Arsenal:  BuildArsenal();  break;
             case Tab.Chimera:  BuildChimera();  break;
+            case Tab.Perks:    BuildPerks();    break;
         }
 
         if (_header != null)
             _header.text = $"{DiscoveredCount} / {EntryCount}";
+
+        // L'intro n'apparaît que là où elle dit quelque chose. Les perks en ont besoin : rien
+        // n'indique autrement qu'ils se débloquent par les Défis et s'équipent au Hub — deux écrans
+        // différents, ni l'un ni l'autre visible d'ici.
+        if (_intro != null)
+        {
+            _intro.text = Current == Tab.Perks ? Loc.T("PERKS_INTRO") : "";
+
+            bool hasIntro = _intro.text.Length > 0;
+            _intro.gameObject.SetActive(hasIntro);
+
+            // La liste recule d'autant : réserver la place en permanence laisserait un trou de
+            // 50 px en haut des trois onglets qui n'ont rien à introduire.
+            if (_scrollRect != null)
+                _scrollRect.offsetMax = new Vector2(-28f, hasIntro ? -204f : -150f);
+        }
     }
 
     /// <summary>
@@ -159,10 +178,41 @@ public sealed class CodexScreen : MonoBehaviour
     }
 
     /// <summary>
+    /// Perks de départ — bonus de début de run, débloqués par les Défis et équipés au Hub.
+    ///
+    /// <para>⚠ <b>Aucune entrée n'est masquée ici</b>, contrairement aux trois autres onglets. Un
+    /// bestiaire cache ce qu'on n'a pas croisé parce que la <i>découverte</i> est son objet ; un perk
+    /// verrouillé, lui, est un <b>but</b> : anonymiser sa description reviendrait à cacher au joueur
+    /// ce qu'il gagnerait à aller chercher. C'est la règle du jeu publié (<c>PerksScreen</c>), et
+    /// c'est pour cela que cet onglet ne se contente pas d'appeler <see cref="AddEntry"/>.</para>
+    /// </summary>
+    private void BuildPerks()
+    {
+        foreach (var perk in StartingPerks.All)
+        {
+            bool unlocked = MetaProgression.HasPerk(perk.Id);
+
+            AddEntry(unlocked,
+                     $"{Loc.T(perk.NameKey)}   {Loc.T(unlocked ? "CHAL_STATUS_DONE" : "PERK_STATUS_LOCKED")}",
+                     Loc.T(perk.DescKey),
+                     perk.Id,
+                     hideWhenLocked: false,
+                     // Doré une fois acquis, comme les défis : le jeu emploie cette couleur pour
+                     // « obtenu » partout, et un perk EST une récompense de défi.
+                     tint: unlocked ? UiPalette.Gold : null);
+        }
+    }
+
+    /// <summary>
     /// Une entrée. Non découverte, elle occupe <b>quand même sa place</b>, anonymisée : le joueur doit
     /// voir qu'il lui reste des choses à trouver, et combien.
     /// </summary>
-    private void AddEntry(bool discovered, string name, string detail, string? id = null)
+    /// <param name="hideWhenLocked">
+    /// Faux pour les entrées qui décrivent un <b>but</b> plutôt qu'une découverte : le texte reste
+    /// alors lisible, seul le ton s'éteint.
+    /// </param>
+    private void AddEntry(bool discovered, string name, string detail, string? id = null,
+                          bool hideWhenLocked = true, Color? tint = null)
     {
         if (_list == null) return;
 
@@ -195,9 +245,12 @@ public sealed class CodexScreen : MonoBehaviour
             rect.anchoredPosition = new Vector2(4f, 0f);
         }
 
-        var label = UiStyle.Label(row.transform,
-            discovered ? $"{name}\n{detail}" : "? ? ?\n" + Loc.T("ARSENAL_LOCKED"),
-            18, discovered ? UiPalette.OffWhite : UiPalette.Steel, TextAnchor.MiddleLeft);
+        string text = discovered || !hideWhenLocked
+            ? $"{name}\n{detail}"
+            : "? ? ?\n" + Loc.T("ARSENAL_LOCKED");
+
+        var label = UiStyle.Label(row.transform, text, 18,
+            tint ?? (discovered ? UiPalette.OffWhite : UiPalette.Dim), TextAnchor.MiddleLeft);
 
         var labelRect = label.GetComponent<RectTransform>();
         labelRect.anchorMin = Vector2.zero;
@@ -277,6 +330,19 @@ public sealed class CodexScreen : MonoBehaviour
         scroll.content = contentRect;
         scroll.viewport = scrollRect;
         _list = content.transform;
+        _scrollRect = scrollRect;
+
+        // Bandeau d'introduction, entre les onglets et la liste. Il n'occupe la place que lorsqu'il
+        // a quelque chose à dire — d'où l'objet désactivé plutôt qu'une chaîne vide, qui laisserait
+        // un trou de 40 px en haut des trois autres onglets.
+        _intro = UiStyle.Label(panel.transform, "", 18, UiPalette.Dim, TextAnchor.UpperLeft);
+        var introRect = _intro.GetComponent<RectTransform>();
+        introRect.anchorMin = new Vector2(0f, 1f);
+        introRect.anchorMax = new Vector2(1f, 1f);
+        introRect.pivot = new Vector2(0.5f, 1f);
+        introRect.offsetMin = new Vector2(28f, -196f);
+        introRect.offsetMax = new Vector2(-28f, -150f);
+        _intro.gameObject.SetActive(false);
 
         _close = UiStyle.TextButton(panel.transform, Loc.T("COMMON_BACK"), FrameAccent.Steel);
         var closeRect = _close.GetComponent<RectTransform>();
@@ -305,6 +371,7 @@ public sealed class CodexScreen : MonoBehaviour
         AddTab(row.transform, Loc.T("MENU_BESTIARY"), Tab.Bestiary);
         AddTab(row.transform, Loc.T("MENU_ARSENAL"),  Tab.Arsenal);
         AddTab(row.transform, Loc.T("MENU_CHIMERA"),  Tab.Chimera);
+        AddTab(row.transform, Loc.T("MENU_PERKS"),    Tab.Perks);
     }
 
     private void AddTab(Transform parent, string label, Tab tab)

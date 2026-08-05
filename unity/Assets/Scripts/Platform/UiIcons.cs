@@ -70,6 +70,13 @@ public static class UiIcons
         { "overload_regen",     "ui_icon_noyau"          },
         { "overload_damage",    "ui_icon_thermal_core"   },
 
+        // ─── Perks de départ ──────────────────────────────────────────────────
+        // Ils réemploient l'icône de ce qu'ils offrent — la greffe, l'arme, l'emplacement — plutôt
+        // que d'avoir un pictogramme propre : c'est ce que le perk DONNE qui le distingue.
+        { "start_graft_swarm",  "swarm_symbiote_icon"    },
+        { "start_weapon_glaive","ui_icon_glaive"         },
+        { "start_extra_slot",   "ui_icon_extra_slot"     },
+
         // ─── Récompenses (défis, Hub) ─────────────────────────────────────────
         { "echo",               "ui_icon_echo"           },
         { "extra_slot",         "ui_icon_extra_slot"     },

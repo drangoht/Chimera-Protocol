@@ -1524,6 +1524,12 @@ public sealed class RunSmokeTest : MonoBehaviour
         foreach (var fusion in Assimilation.Config.Fusions)
             if (UiIcons.For(fusion.Id) == null) withoutIcon.Add(fusion.Id);
 
+        // Les perks de départ aussi : leurs chemins d'icône, dans la table partagée, sont encore
+        // écrits en `res://` — ils viennent de Godot et ne veulent rien dire ici. C'est la table
+        // d'identifiants qui fait foi, et rien ne le signalerait sans cette vérification.
+        foreach (var perk in StartingPerks.All)
+            if (UiIcons.For(perk.Id) == null) withoutIcon.Add(perk.Id);
+
         Check("interface : chaque arme et chaque greffe a son icone", withoutIcon.Count == 0,
               withoutIcon.Count == 0 ? $"{UiIcons.KnownIds.Count} icones referencees"
                                      : "sans icone : " + string.Join(", ", withoutIcon));
