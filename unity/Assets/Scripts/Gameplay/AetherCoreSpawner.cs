@@ -79,6 +79,12 @@ public sealed class AetherCoreSpawner : MonoBehaviour
         var position = new Vector3((float)Gd.RandRange(-halfW, halfW),
                                    (float)Gd.RandRange(-halfH, halfH), 0f);
         SpawnAt(position);
+
+        // Tracé : un Noyau apparaît toutes les 45 s, à une position tirée au sort dans une arène
+        // plus large que l'écran — il peut donc très bien naître hors du champ de la caméra. Sans
+        // cette ligne, « la cadence fonctionne-t-elle ? » ne se vérifie qu'en arpentant l'arène.
+        Debug.Log($"[Noyau] apparu en {position.x:F0}, {position.y:F0} " +
+                  $"(t = {GameManager.Instance?.RunTime ?? 0f:F0} s, total {SpawnedCount})");
     }
 
     /// <summary>

@@ -511,6 +511,23 @@ gris. C'est le même mode de défaillance que l'arme de départ absente du HUD �
 et ne transporte rien. **Quand un port laisse un argument à zéro « en attendant », il faut le noter
 avec ce qui le débloquera** : sans cela, la dette devient invisible le jour même.
 
+### 60 s de jeu ne sont pas 60 s de montre
+
+Vérification du spawn périodique des Noyaux (45 s) : **zéro Noyau après 62 s de jeu réel**. Le
+spawner paraissait cassé. Le chrono à l'écran donnait la réponse — **33 s de temps de jeu** seulement
+s'étaient écoulées : chaque montée de niveau ouvre une modale à `Time.timeScale = 0`, et le bot,
+qui ne validait aucune carte, laissait le jeu figé.
+
+Le compteur n'avance donc que pendant le jeu, et **c'est juste** : un Noyau ne doit pas apparaître
+pendant qu'on choisit une carte. Mais toute vérification chronométrée doit en tenir compte — soit en
+validant les modales, soit en lisant le chrono du jeu plutôt que sa propre montre. Relancé avec
+`Entrée` périodique : **t = 45 s, 90 s, 135 s**, à la seconde.
+
+⚠ Ce que la même session a montré et qui reste ouvert : en **150 s de jeu, aucun Noyau ramassé**. La
+règle est celle de Godot (position aléatoire dans l'arène, aucune aspiration), mais un objet qui
+apparaît à 800 px du joueur toutes les 45 s peut passer une run entière inaperçu. À juger en jouant,
+pas au banc.
+
 ### Un ramassable qui ne s'aspire pas ne se teste pas en attendant
 
 Le Noyau d'Aether se prend **au contact** (20 px, jusqu'à 70 avec `core_magnetism`), là où les orbes
