@@ -495,6 +495,33 @@ la mise en page.
 Godot et sans aucun sens ici. C'est la table d'identifiants (`UiIcons`) qui fait foi, et rien ne le
 signalait — la vérification de banc couvre désormais les perks en plus des armes et des greffes.
 
+### Un zéro en dur est une mécanique morte que rien ne signale
+
+En branchant les Noyaux d'Aether, trois arguments passés à **zéro littéral** sont apparus dans
+`RunHud`, chacun posé faute de source à brancher au moment du portage :
+
+| Argument | Conséquence, entièrement muette |
+|---|---|
+| `cores: 0` (défis) | « Moissonneur de Noyaux » **inaccomplissable** |
+| `cores: 0` (fin de run) | « Noyaux d'Aether : 0 » toujours affiché, **part des Échos perdue** |
+| `graftsEquipped: 0` | « Pleine Chimère » **inaccomplissable** |
+
+Rien ne les distingue d'une valeur juste : le jeu tourne, les écrans s'affichent, les défis restent
+gris. C'est le même mode de défaillance que l'arme de départ absente du HUD — un appel qui *existe*
+et ne transporte rien. **Quand un port laisse un argument à zéro « en attendant », il faut le noter
+avec ce qui le débloquera** : sans cela, la dette devient invisible le jour même.
+
+### Un ramassable qui ne s'aspire pas ne se teste pas en attendant
+
+Le Noyau d'Aether se prend **au contact** (20 px, jusqu'à 70 avec `core_magnetism`), là où les orbes
+d'XP viennent au joueur. Un banc qui pose le Noyau et laisse tourner ne prouverait donc rien — il
+mesurerait l'absence d'aspiration, pas la présence du ramassage. La vérification **fait marcher le
+joueur** vers l'objet, et contrôle les deux faces : le compteur reste à zéro à 200 px, puis monte au
+contact.
+
+C'est le piège des ramassables « walk-over » déjà connu du projet, sous une forme un peu différente :
+là c'était l'`Area2D` qui exigeait un mouvement physique, ici c'est la mécanique elle-même.
+
 ### Le HUD est un écran comme les autres — il se compare aussi à la référence
 
 Les huit écrans avaient été confrontés à `docs/ui_v1160_*.png` ; le **HUD**, non — parce qu'il n'a

@@ -40,6 +40,7 @@ public sealed class HUD : MonoBehaviour
     private Text?  _timerLabel;
     private Text?  _biomeLabel;
     private Text?  _killsLabel;
+    private Text?  _coreLabel;
     private Transform? _graftSlots;
     private Transform? _arsenalRows;
     private Text?  _dashLabel;
@@ -230,6 +231,7 @@ public sealed class HUD : MonoBehaviour
         }
 
         if (gm != null && _killsLabel != null) _killsLabel.text = $"☠ {gm.Kills}";
+        if (gm != null && _coreLabel != null) _coreLabel.text = gm.CoresCollected.ToString();
 
         UpdateBossBar();
         UpdateBanner();
@@ -515,13 +517,30 @@ public sealed class HUD : MonoBehaviour
                                  TextAnchor.UpperCenter);
         _biomeLabel.fontSize = 19;
 
-        // Éliminations en haut à droite, à la place qu'occupe le compteur de Noyaux du jeu publié :
-        // même rôle — un compteur de progression de la run — et le seul coin encore libre. Elles
-        // étaient collées au chrono, où elles brouillaient la seule information qu'on y cherche.
+        // Compteur de Noyaux d'Aether en haut à droite, avec son icône — la place et la forme du jeu
+        // publié. C'est la monnaie de méta-progression : elle se compte pendant la run, pas
+        // seulement à la fin.
+        var coreIcon = new GameObject("CoreIcon", typeof(RectTransform));
+        coreIcon.transform.SetParent(parent, false);
+        Place(coreIcon, new Vector2(1f, 1f), new Vector2(-92f, -18f), new Vector2(30f, 30f));
+
+        var coreImage = coreIcon.AddComponent<Image>();
+        coreImage.sprite = UiIcons.For("xp_bonus");   // le pictogramme de Noyau du jeu
+        coreImage.preserveAspect = true;
+        coreImage.raycastTarget = false;
+        coreImage.color = Violet;
+
+        _coreLabel = BuildLabel(parent, "Cores", new Vector2(1f, 1f),
+                                new Vector2(-56f, -18f), new Vector2(48f, 30f), Violet,
+                                TextAnchor.UpperLeft);
+        _coreLabel.fontSize = 24;
+
+        // Éliminations juste en dessous : elles étaient collées au chrono, où elles brouillaient la
+        // seule information qu'on y cherche.
         _killsLabel = BuildLabel(parent, "Kills", new Vector2(1f, 1f),
-                                 new Vector2(-200f, -20f), new Vector2(180f, 30f), Gold,
+                                 new Vector2(-200f, -52f), new Vector2(180f, 30f), Gold,
                                  TextAnchor.UpperRight);
-        _killsLabel.fontSize = 22;
+        _killsLabel.fontSize = 20;
         _killsLabel.GetComponent<RectTransform>().pivot = new Vector2(1f, 1f);
     }
 

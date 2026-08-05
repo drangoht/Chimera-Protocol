@@ -220,8 +220,26 @@ public sealed class RustedCore : EnemyBase
     {
         if (IsDead) return;
         GameManager.Instance?.RegisterBossDefeated();
+
+        // Trois Noyaux en couronne autour du cadavre, comme sous Godot. En couronne et non empilés :
+        // le joueur les ramasse un par un, ce qui étire la récompense sur quelques secondes au lieu
+        // de la donner d'un pas — et ces secondes-là se passent au milieu de l'arène, sans boss pour
+        // la nettoyer.
+        for (int i = 0; i < BossCoreDrop; i++)
+        {
+            float angle = 2f * Mathf.PI * i / BossCoreDrop;
+            var offset = new Vector3(Mathf.Cos(angle), Mathf.Sin(angle), 0f) * BossCoreSpread;
+            AetherCoreSpawner.SpawnAt(transform.position + offset);
+        }
+
         base.Die();
     }
+
+    /// <summary>Noyaux laissés par le boss.</summary>
+    private const int BossCoreDrop = 3;
+
+    /// <summary>Rayon de la couronne de Noyaux, en pixels.</summary>
+    private const float BossCoreSpread = 48f;
 
     private void UpdateAdds(float dt)
     {

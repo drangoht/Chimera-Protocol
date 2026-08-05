@@ -130,7 +130,11 @@ public sealed class RunHud : MonoBehaviour
         // Le multiplicateur d'Échos vient de la SOURCE UNIQUE (palier × cran) : l'écran anime les
         // composantes à partir du même total qu'il crédite. Deux calculs finiraient par diverger, et
         // la somme animée ne collerait plus au montant reçu.
-        _runEnd?.Show(victory, runSeconds: seconds, kills: kills, cores: 0,
+        // ⚠ `cores` valait ZÉRO en dur : l'écran affichait « Noyaux d'Aether : 0 » quoi qu'il arrive,
+        // et la part des Noyaux dans les Échos gagnés — jusqu'à 22 selon EchoSettings — était
+        // silencieusement perdue.
+        _runEnd?.Show(victory, runSeconds: seconds, kills: kills,
+                      cores: GameManager.Instance?.CoresCollected ?? 0,
                       tierMult: RunConfig.EchoMult);
 
         // ⚠ Le montant crédité est celui que l'écran AFFICHE, pas un second calcul : deux formules
@@ -146,10 +150,15 @@ public sealed class RunHud : MonoBehaviour
         // ⚠ Après RegisterRun et ReportRun : les défis cumulés (« 100 runs », « N biomes terminés »)
         // doivent voir la run qui vient de finir, sinon ils se déclenchent une partie trop tard.
         var inv = InventorySystem.Instance;
+        // ⚠ Ces deux comptes étaient passés à ZÉRO en dur, faute de source à brancher. Conséquence
+        // muette : « Moissonneur de Noyaux » et « Pleine Chimère » ne pouvaient <b>jamais</b>
+        // s'accomplir — deux défis affichés, décrits, et inatteignables.
         var earned = ChallengeSystem.EvaluateRunEnd(
-            runSeconds: seconds, kills: kills, cores: 0, levelCompleted: victory, biomeId: biome,
+            runSeconds: seconds, kills: kills,
+            cores: GameManager.Instance?.CoresCollected ?? 0,
+            levelCompleted: victory, biomeId: biome,
             difficultyRank: RunConfig.Saturation,
-            graftsEquipped: 0,
+            graftsEquipped: Assimilation.Equipped.Count,
             fusionForged: inv != null && inv.AppliedFusions.Count > 0);
 
         foreach (var def in earned)

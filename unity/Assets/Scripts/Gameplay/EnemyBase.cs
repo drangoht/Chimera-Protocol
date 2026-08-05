@@ -337,6 +337,7 @@ public class EnemyBase : MonoBehaviour
         SpawnDeathBurst();
         TriggerEliteExplosion();
         SpawnXpOrb();
+        AetherCoreDrops.OnEnemyDied(DefId, transform.position);
         GameManager.Instance?.RegisterKill();
 
         // Assimilation : chaque élimination alimente la jauge de son archétype. C'est ici, et nulle

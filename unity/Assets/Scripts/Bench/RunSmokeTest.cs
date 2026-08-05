@@ -165,6 +165,57 @@ public sealed class RunSmokeTest : MonoBehaviour
         Check("xp : au moins une montee de niveau", levelUps > 0, $"{levelUps} montees");
         Check("run : des victimes comptabilisees", gm.Kills > 0, $"{gm.Kills} elim.");
 
+        // ─── Noyaux d'Aether ───────────────────────────────────────────────────
+        // ⚠ Ils ne s'aspirent PAS, contrairement aux orbes : le joueur doit entrer dans le rayon.
+        // Un test qui poserait le Noyau et attendrait sans bouger ne prouverait rien — c'est
+        // exactement le piège des ramassables « walk-over » déjà documenté.
+        var corePrefab = Spawner.Load("res://scenes/entities/AetherCore.tscn");
+        Check("noyau : prefab charge depuis Resources", corePrefab != null);
+
+        if (corePrefab != null)
+        {
+            var coreSpawnerGo = new GameObject("AetherCoreSpawner");
+            var coreSpawner = coreSpawnerGo.AddComponent<AetherCoreSpawner>();
+            coreSpawner.CorePrefab = corePrefab;
+
+            int before = gm.CoresCollected;
+            playerGo.transform.position = Vector3.zero;
+
+            // Posé LOIN du joueur, puis le joueur marche dessus : c'est la boucle réelle.
+            AetherCoreSpawner.SpawnAt(new Vector3(200f, 0f, 0f));
+            yield return null;
+
+            int placed = FindObjectsByType<AetherCore>(FindObjectsSortMode.None).Length;
+            Check("noyau : depose dans l'arene", placed > 0, $"{placed} noyau(x) present(s)");
+
+            Check("noyau : ne s'aspire pas comme un orbe",
+                  gm.CoresCollected == before,
+                  $"a 200 px, compteur {gm.CoresCollected} (attendu {before})");
+
+            for (int i = 0; i < 40 && gm.CoresCollected == before; i++)
+            {
+                playerGo.transform.position = Vector3.MoveTowards(
+                    playerGo.transform.position, new Vector3(200f, 0f, 0f), 12f);
+                yield return null;
+            }
+
+            Check("noyau : ramasse au contact et comptabilise", gm.CoresCollected > before,
+                  $"{gm.CoresCollected} noyau(x) ramasse(s)");
+
+            // Le rayon suit la méta-progression, seule chose qu'elle élargit.
+            Check("noyau : le rayon suit core_magnetism",
+                  Mathf.Approximately(AetherCore.RadiusForLevel(0), 20f)
+                  && Mathf.Approximately(AetherCore.RadiusForLevel(3), 70f),
+                  $"niv0={AetherCore.RadiusForLevel(0):F0} px, niv3={AetherCore.RadiusForLevel(3):F0} px");
+
+            // La règle de butin vient des données : une table vide voudrait dire que plus aucun
+            // ennemi n'en laisse tomber, et rien ne le signalerait en jeu avant des minutes.
+            Check("noyau : les regles de butin sont chargees", AetherCoreDrops.RuleCount > 0,
+                  $"{AetherCoreDrops.RuleCount} regle(s)");
+
+            Destroy(coreSpawnerGo);
+        }
+
         // ─── Dégâts de contact et i-frames ─────────────────────────────────────
         // On colle un ennemi au joueur : un seul coup doit passer par fenêtre de 0,45 s.
         playerGo.transform.position = Vector3.zero;

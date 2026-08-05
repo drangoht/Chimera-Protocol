@@ -18,6 +18,12 @@ public sealed class GameManager : MonoBehaviour
     /// <summary>Ennemis tués pendant la run.</summary>
     public int Kills { get; private set; }
 
+    /// <summary>
+    /// Noyaux d'Aether ramassés pendant la run. Ils comptent pour les <b>Échos</b> gagnés et pour le
+    /// défi « Moissonneur de Noyaux » — une valeur laissée à zéro rendrait ce défi inaccomplissable.
+    /// </summary>
+    public int CoresCollected { get; private set; }
+
     /// <summary>La run est-elle terminée (mort du joueur ou limite atteinte) ?</summary>
     public bool RunEnded { get; private set; }
 
@@ -99,6 +105,7 @@ public sealed class GameManager : MonoBehaviour
     {
         RunTime = 0f;
         Kills = 0;
+        CoresCollected = 0;
         RunEnded = false;
         BossDefeated = false;
         _overtimeAnnounced = false;
@@ -111,6 +118,9 @@ public sealed class GameManager : MonoBehaviour
 
     /// <summary>Comptabilise une victime — appelé par les ennemis à leur mort.</summary>
     public void RegisterKill() => Kills++;
+
+    /// <summary>Comptabilise un Noyau d'Aether ramassé.</summary>
+    public void RegisterCoreCollected() => CoresCollected++;
 
     /// <summary>
     /// Raccourcit le temps imparti — réservé aux <b>bancs et au débogage</b> : attendre 13 minutes

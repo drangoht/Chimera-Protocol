@@ -29,6 +29,7 @@ public static class BuildGameScene
         GameObject enemyPrefab  = BuildEnemyPrefab();
         GameObject bulletPrefab = BuildBulletPrefab();
         GameObject orbPrefab    = BuildXpOrbPrefab();
+        GameObject corePrefab   = BuildAetherCorePrefab();
 
         // Projectiles des armes à munition : sans eux, trois familles d'armes épuisent leur recharge
         // et ne tirent rien — silencieusement.
@@ -38,7 +39,7 @@ public static class BuildGameScene
         var champions = BuildChampionPrefabs();
         GameObject miniBossPrefab = BuildMiniBossPrefab();
 
-        BuildScene(enemyPrefab, bulletPrefab, orbPrefab, champions, miniBossPrefab);
+        BuildScene(enemyPrefab, bulletPrefab, orbPrefab, corePrefab, champions, miniBossPrefab);
         BuildMainMenu();
         RegisterScenes();
 
@@ -137,6 +138,23 @@ public static class BuildGameScene
         return go;
     }
 
+    /// <summary>
+    /// Gabarit du Noyau d'Aether. Il porte son PROPRE sprite (<c>pickup_noyau_*</c>) et non le
+    /// premier venu du dossier : un Noyau qui ressemble à une orbe d'XP perd la seule chose qui le
+    /// distingue — il ne s'aspire pas, il faut aller le chercher.
+    /// </summary>
+    private static GameObject BuildAetherCorePrefab()
+    {
+        var go = new GameObject("AetherCore", typeof(SpriteRenderer), typeof(AetherCore));
+
+        var sr = go.GetComponent<SpriteRenderer>();
+        sr.sprite = LoadSpriteNamed("Assets/Art/sprites/pickups", "pickup_noyau_idle_01");
+        sr.color = new Color(0.667f, 0.267f, 1f);   // #AA44FF, la couleur d'Aether
+        sr.sortingOrder = 6;                        // au-dessus des orbes d'XP (5)
+
+        return SaveAsPrefab(go, "AetherCore");
+    }
+
     private static GameObject BuildXpOrbPrefab()
     {
         var go = new GameObject("XpOrb", typeof(SpriteRenderer), typeof(XpOrb));
@@ -150,6 +168,20 @@ public static class BuildGameScene
     /// Premier sprite trouvé sous un dossier — suffisant pour un cœur de run. Le choix précis des
     /// visuels appartient aux lots suivants ; ce qui compte ici est que la chaîne d'assets tienne.
     /// </summary>
+    /// <summary>Sprite d'un nom précis sous un dossier, avec repli sur le premier trouvé.</summary>
+    private static Sprite? LoadSpriteNamed(string folder, string name)
+    {
+        foreach (string guid in AssetDatabase.FindAssets("t:Sprite", new[] { folder }))
+        {
+            string path = AssetDatabase.GUIDToAssetPath(guid);
+            if (Path.GetFileNameWithoutExtension(path) == name)
+                return AssetDatabase.LoadAssetAtPath<Sprite>(path);
+        }
+
+        Debug.LogWarning($"[SCENE] sprite '{name}' introuvable sous {folder} — repli sur le premier.");
+        return LoadSprite(folder);
+    }
+
     private static Sprite? LoadSprite(string folder)
     {
         string[] guids = AssetDatabase.FindAssets("t:Sprite", new[] { folder });
@@ -219,6 +251,7 @@ public static class BuildGameScene
     // ─── Scène ────────────────────────────────────────────────────────────────
 
     private static void BuildScene(GameObject enemyPrefab, GameObject bulletPrefab, GameObject orbPrefab,
+                                   GameObject corePrefab,
                                    EnemySpawner.NamedPrefab[] champions, GameObject miniBossPrefab)
     {
         Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
@@ -264,6 +297,11 @@ public static class BuildGameScene
         spawner.ChampionPrefabs = champions;
         spawner.MiniBossPrefab = miniBossPrefab;
 
+        // Les Noyaux d'Aether ont leur propre cadence — 45 s, indépendante des vagues : c'est une
+        // monnaie de méta-progression, pas une récompense de combat.
+        var coreSpawnerGo = new GameObject("AetherCoreSpawner", typeof(AetherCoreSpawner));
+        coreSpawnerGo.GetComponent<AetherCoreSpawner>().CorePrefab = corePrefab;
+
         var bootGo = new GameObject("RunBootstrap", typeof(RunBootstrap));
 
         // Sans EventSystem, les ecrans modaux ne recoivent ni clic ni focus manette.
@@ -271,7 +309,8 @@ public static class BuildGameScene
             typeof(UnityEngine.EventSystems.EventSystem),
             typeof(UnityEngine.EventSystems.StandaloneInputModule));
 
-        foreach (var go in new[] { camGo, systems, arenaGo, playerGo, spawnerGo, bootGo, eventSystem })
+        foreach (var go in new[] { camGo, systems, arenaGo, playerGo, spawnerGo, coreSpawnerGo,
+                                   bootGo, eventSystem })
             EditorSceneManager.MoveGameObjectToScene(go, scene);
 
         EditorSceneManager.SaveScene(scene, GameScenes.PathOf(GameScenes.Game));
