@@ -17,6 +17,11 @@ public sealed class VfxGlow : MonoBehaviour
     private float _life;
     private float _left;
 
+    private Vector2 _drift;
+    private float _scale;
+    private float _growth = 1f;
+    private bool _animated;
+
     private SpriteRenderer Renderer
         => _renderer != null ? _renderer : _renderer = GetComponent<SpriteRenderer>();
 
@@ -25,7 +30,17 @@ public sealed class VfxGlow : MonoBehaviour
     /// L'« énergie » de Godot. Au-delà de 1 elle ne fait plus monter l'alpha (borné), mais les
     /// lueurs superposées continuent de s'additionner — c'est ainsi qu'un impact fort blanchit.
     /// </param>
-    internal void Show(Vector2 position, Color color, float radiusPx, float intensity, float life, int order)
+    /// <param name="drift">
+    /// Dérive, en pixels par seconde. Une lueur d'impact reste où elle est frappée ; une <b>bouffée
+    /// de fumée</b> doit s'élever et quitter le corps qui l'a produite, sans quoi elle se lit comme
+    /// une tache posée sur l'ennemi.
+    /// </param>
+    /// <param name="growth">
+    /// Facteur d'expansion sur la durée de vie. Ce qui distingue de la fumée d'un simple point qui
+    /// s'éteint, c'est qu'elle <b>s'étale en se diluant</b>.
+    /// </param>
+    internal void Show(Vector2 position, Color color, float radiusPx, float intensity, float life, int order,
+                       Vector2 drift = default, float growth = 1f)
     {
         transform.position = position;
 
@@ -33,6 +48,14 @@ public sealed class VfxGlow : MonoBehaviour
         // du diamètre voulu à cette taille de référence.
         float scale = radiusPx * 2f / 64f;
         transform.localScale = new Vector3(scale, scale, 1f);
+
+        _drift = drift;
+        _scale = scale;
+        _growth = growth;
+
+        // Le cas courant — un flash immobile de taille fixe — ne paie rien : sans ce drapeau, deux
+        // cent vingt lueurs réécriraient position et échelle à chaque image pour ne rien changer.
+        _animated = drift.sqrMagnitude > 0.0001f || !Mathf.Approximately(growth, 1f);
 
         _color = new Color(color.r, color.g, color.b, Mathf.Clamp01(color.a * intensity));
         _life = Mathf.Max(0.01f, life);
@@ -65,5 +88,12 @@ public sealed class VfxGlow : MonoBehaviour
         var c = _color;
         c.a = _color.a * Mathf.Pow(1f - t, 1.6f);
         Renderer.color = c;
+
+        if (!_animated) return;
+
+        transform.position += (Vector3)(_drift * Time.deltaTime);
+
+        float s = _scale * Mathf.Lerp(1f, _growth, t);
+        transform.localScale = new Vector3(s, s, 1f);
     }
 }

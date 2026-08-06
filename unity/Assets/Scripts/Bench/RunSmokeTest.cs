@@ -26,6 +26,40 @@ public sealed class RunSmokeTest : MonoBehaviour
         _results.Add($"{(ok ? "  OK  " : " ECHEC")} {name}{(detail.Length > 0 ? " — " + detail : "")}");
     }
 
+    /// <summary>
+    /// Vérifie qu'une zone de défilement peut <b>recevoir la molette</b>.
+    /// </summary>
+    /// <remarks>
+    /// <para>uGUI ne route un cran de molette que vers ce que le rayon du pointeur touche, et un
+    /// rayon ne touche que des <c>Graphic</c> à <c>raycastTarget</c>. Une fenêtre de défilement sans
+    /// aucun graphique — ce que produit naturellement une interface construite par code — n'en
+    /// reçoit donc que là où le pointeur tombe par hasard sur un libellé. Aux Options, faites
+    /// surtout d'espace libre, cela se lit « la molette ne fonctionne pas ».</para>
+    ///
+    /// <para>C'est le mode de défaillance habituel de ce portage : le réglage visible
+    /// (<c>scrollSensitivity</c>) était juste, la <b>chaîne</b> qui l'amène ne l'était pas. Vérifier
+    /// la sensibilité n'aurait rien montré.</para>
+    /// </remarks>
+    private void CheckScrollWheel(GameObject host, string screen)
+    {
+        var scrolls = host.GetComponentsInChildren<UnityEngine.UI.ScrollRect>(true);
+
+        int deaf = 0;
+        foreach (var scroll in scrolls)
+        {
+            var viewport = scroll.viewport != null
+                ? scroll.viewport
+                : scroll.GetComponent<RectTransform>();
+
+            var graphic = viewport != null ? viewport.GetComponent<UnityEngine.UI.Graphic>() : null;
+            if (graphic == null || !graphic.raycastTarget) deaf++;
+        }
+
+        Check($"{screen} : la molette atteint la zone de defilement",
+              scrolls.Length > 0 && deaf == 0,
+              $"{scrolls.Length} zone(s), {deaf} sourde(s) a la molette");
+    }
+
     private IEnumerator Start()
     {
         Application.targetFrameRate = -1;
@@ -726,6 +760,9 @@ public sealed class RunSmokeTest : MonoBehaviour
         Check("pause : les boutons survivent a un contenu tres long", pauseButtons.Length == 3,
               $"{pauseButtons.Length} boutons");
 
+        // Un contenu trop long pour le cadre ne sert à rien s'il ne peut pas défiler à la molette.
+        CheckScrollWheel(pauseGo, "pause");
+
         pause.Resume();
         yield return null;
         Check("pause : la reprise leve la pause", !pause.IsVisible && !SceneRoot.Paused);
@@ -860,10 +897,33 @@ public sealed class RunSmokeTest : MonoBehaviour
 
             Check("etats : un ennemi qui brule porte des flammes", fx.FlamesVisible);
 
+            // ⚠ La seule chose qu'un banc puisse dire d'un effet, c'est son EMPRISE. « Est-ce
+            // subtil ? » ne se juge qu'à l'œil — mais « les flammes débordent-elles de la
+            // silhouette ? » est un nombre, et c'est justement ce qui avait dérapé : chaque langue
+            // de feu valait 18 fois le sprite de 16 px qui la portait, soit près de 290 px sur un
+            // corps de 32, et le joueur lisait une explosion permanente.
+            // ⚠ En headless, aucune image d'animation n'est posée et le renderer annonce des
+            // dimensions nulles — d'où la même référence de secours que le composant, le rayon de
+            // contact. S'aligner sur `bounds` seul aurait fait échouer la vérification pour une
+            // raison sans rapport avec ce qu'elle mesure.
+            var body = go.GetComponentInChildren<SpriteRenderer>();
+            float bodyWidth = body != null && body.bounds.size.x > 1f
+                ? body.bounds.size.x
+                : enemy.PushRadius * 2f;
+
+            Check("etats : les flammes tiennent dans la silhouette",
+                  bodyWidth > 1f && fx.FlameSpanPx <= bodyWidth * 1.3f,
+                  $"{fx.FlameSpanPx:F0} px de flammes pour un corps de {bodyWidth:F0} px");
+
             // La traînée ne se sème que si la cible AVANCE — un ennemi immobile ne doit rien laisser.
             yield return new WaitForSeconds(0.6f);
             Check("etats : immobile, le gel ne laisse aucune trainee", fx.FrostShardsDropped == 0,
                   $"{fx.FrostShardsDropped} eclat(s)");
+
+            // La fumée, elle, ne demande PAS que la cible bouge : c'est le signal « ça brûle
+            // encore », et les cibles qui portent un état assez longtemps sont les plus lentes.
+            Check("etats : un ennemi qui brule fume, meme immobile", fx.SmokePuffsEmitted > 0,
+                  $"{fx.SmokePuffsEmitted} bouffee(s)");
 
             // En mouvement, il en sème.
             for (int i = 0; i < 30; i++)
@@ -1253,6 +1313,7 @@ public sealed class RunSmokeTest : MonoBehaviour
 
         hub.Show();
         Check("hub : s'ouvre", hub.IsVisible);
+        CheckScrollWheel(hubGo, "hub");
         hub.Hide();
         Check("hub : se ferme", !hub.IsVisible);
 
@@ -1435,6 +1496,7 @@ public sealed class RunSmokeTest : MonoBehaviour
 
         screen.Show();
         Check("defis : l'ecran s'ouvre", screen.IsVisible);
+        CheckScrollWheel(screenGo, "defis");
         screen.Hide();
 
         Destroy(screenGo);
@@ -1497,6 +1559,7 @@ public sealed class RunSmokeTest : MonoBehaviour
 
         select.Show();
         Check("niveaux : l'ecran s'ouvre", select.IsVisible);
+        CheckScrollWheel(selectGo, "niveaux");
         select.Hide();
         Destroy(selectGo);
 
@@ -1510,6 +1573,7 @@ public sealed class RunSmokeTest : MonoBehaviour
 
         options.Show();
         Check("options : l'ecran s'ouvre", options.IsVisible);
+        CheckScrollWheel(optionsGo, "options");
         options.Hide();
         Destroy(optionsGo);
         yield return null;
@@ -1569,6 +1633,8 @@ public sealed class RunSmokeTest : MonoBehaviour
         // La découverte s'enregistre : une greffe assimilée dans cette campagne doit y figurer.
         Check("codex : une greffe assimilee est enregistree",
               GameSettings.IsGraftDiscovered("swarm_symbiote"));
+
+        CheckScrollWheel(codexGo, "codex");
 
         codex.Hide();
         Destroy(codexGo);

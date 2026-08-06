@@ -345,6 +345,29 @@ public static class Vfx
     public static void Dot(Vector2 position, Color color, float size = 10f, float life = DefaultLife)
         => Glow(position, color, size, 1f, life);
 
+    /// <summary>
+    /// <b>Bouffée</b> : une lueur qui <i>dérive et s'étale</i> au lieu de rester posée — la fumée
+    /// d'un ennemi qui brûle, et tout ce qui doit se dissiper plutôt que s'éteindre.
+    /// </summary>
+    /// <remarks>
+    /// <para>⚠ Elle est <b>additive</b> comme tout le reste, donc elle éclaircit là où de la vraie
+    /// fumée assombrirait. C'est le bon choix ici et non un pis-aller : les arènes du jeu sont
+    /// sombres, et une volute sombre y serait purement et simplement invisible. Ce qui la fait lire
+    /// comme de la fumée est sa <b>teinte grise désaturée</b> — une seule des trois composantes du
+    /// feu — sa lenteur et son étalement, pas sa direction de mélange.</para>
+    /// </remarks>
+    /// <param name="riseSpeed">Vitesse d'élévation, en pixels par seconde.</param>
+    /// <param name="drift">Dérive latérale, en pixels par seconde.</param>
+    public static void Puff(Vector2 position, Color color, float radiusPx, float life,
+                            float riseSpeed = 26f, float drift = 0f, float growth = 2.1f,
+                            int order = VfxPrimitives.OrderOver)
+    {
+        var glow = RentGlow();
+        if (glow != null)
+            glow.Show(position, color, radiusPx, 1f, life, order,
+                      new Vector2(drift, riseSpeed), growth);
+    }
+
     // ─── Plomberie ────────────────────────────────────────────────────────────
 
     private static void Polyline(int count, Color color, float coreWidth, float haloWidth,

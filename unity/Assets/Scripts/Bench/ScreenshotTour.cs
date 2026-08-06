@@ -109,6 +109,8 @@ public sealed class ScreenshotTour : MonoBehaviour
             SpawnSwarmAroundPlayer(10);
         }
 
+        yield return ShootStatusEffects();
+
         var levelUp = FindFirstObjectByType<LevelUpScreen>();
         if (levelUp != null)
         {
@@ -119,6 +121,91 @@ public sealed class ScreenshotTour : MonoBehaviour
 
         Debug.Log($"[SHOTS] {_index} captures ecrites dans {Path.GetFullPath(_dir)}");
         Application.Quit(0);
+    }
+
+    /// <summary>
+    /// Photographie le <b>gel</b> et la <b>brûlure</b> — les deux états portés par les ennemis.
+    /// </summary>
+    /// <remarks>
+    /// <para>Ils ne se capturent pas par hasard : il faut l'arme qui les inflige, une cible dans son
+    /// cône <i>et</i> une cible qui y survive, alors qu'un ennemi de base meurt en une seconde. Un
+    /// premier essai a produit exactement ce à quoi il fallait s'attendre — des images de combat où
+    /// aucun ennemi ne brûle. Ici, les états sont posés <b>à la main</b> sur une nuée endurcie : on
+    /// photographie l'apparence, pas la chaîne qui la déclenche (le banc s'en charge).</para>
+    ///
+    /// <para>C'est cette image qui répond à la seule question qui compte pour un effet d'état :
+    /// <b>tient-il dans la silhouette de sa victime</b>, ou la recouvre-t-il ?</para>
+    /// </remarks>
+    private IEnumerator ShootStatusEffects()
+    {
+        SpawnSwarmAroundPlayer(14);
+
+        // ⚠ Réappliqué à CHAQUE image, et pas une fois pour toutes : le spawner continue de peupler
+        // l'arène pendant la pose, et la première version photographiait surtout des arrivants
+        // intacts — quatre ennemis sans la moindre flamme au premier plan, ce qui se lit « l'effet
+        // ne marche pas ».
+        //
+        // Le gel est volontairement ABSENT. Sa traînée sème des éclats de 22 px qui recouvrent
+        // exactement ce qu'on vient regarder ; deux états sur la même image ne se jugent ni l'un ni
+        // l'autre.
+        // ⚠ La coroutine tourne PENDANT les deux clichés, pas seulement avant : le spawner ajoute des
+        // ennemis en permanence, et une application qui s'arrête à la pose laisse au premier plan
+        // des arrivants intacts — ce que la capture précédente montrait, et qui se lit « l'effet ne
+        // marche pas » alors qu'il marche sur les autres.
+        StartCoroutine(KeepBurning(4f));
+        yield return new WaitForSecondsRealtime(1.4f);
+
+        // Le relevé accompagne l'image : une flamme jugée « trop grosse » sur une capture ne dit pas
+        // si c'est le dosage qui est mauvais ou la MESURE du corps qui a échoué et rendu son repli.
+        int total = 0, withFx = 0, flaming = 0;
+        string first = "aucun";
+
+        foreach (var enemy in EnemyBase.Active.ToArray())
+        {
+            if (enemy == null) continue;
+            total++;
+
+            var fx = enemy.GetComponent<EnemyStatusFx>();
+            if (fx == null) continue;
+
+            withFx++;
+            if (fx.FlamesVisible) flaming++;
+
+            if (first == "aucun")
+                first = $"corps {fx.BodyWidthPx:F0} px " +
+                        $"({(fx.BodyMeasured ? "mesure" : "REPLI")}), flammes {fx.FlameSpanPx:F0} px";
+        }
+
+        // ⚠ Compter AVANT de regarder l'image : « les ennemis du fond n'ont pas de flammes » peut
+        // vouloir dire que l'effet est invisible, ou simplement que ces ennemis-là ne brûlent pas.
+        // Sans ce relevé, on doserait un effet qui n'a jamais été appliqué.
+        Debug.Log($"[SHOTS] brulure : {flaming}/{withFx} en flammes sur {total} ennemis — {first}");
+
+        // Deux clichés espacés : les langues de feu montent et les bouffées dérivent, un seul
+        // instantané ne dirait rien de leur course.
+        yield return Shot("etats-brulure");
+
+        yield return new WaitForSecondsRealtime(0.8f);
+        yield return Shot("etats-brulure-2");
+    }
+
+    /// <summary>Maintient tout le monde en flammes — et en vie — pendant la durée d'une pose.</summary>
+    private IEnumerator KeepBurning(float seconds)
+    {
+        for (float t = 0f; t < seconds; t += Time.unscaledDeltaTime)
+        {
+            foreach (var enemy in EnemyBase.Active.ToArray())
+            {
+                if (enemy == null) continue;
+
+                // Beaucoup de PV et un poison très lent : la cible doit encore être là au
+                // déclenchement de l'obturateur, sinon la capture ne montre qu'une arène vide.
+                enemy.ApplyScaling(4000f, 0f);
+                enemy.ApplyBurn(0.5f, 12f);
+            }
+
+            yield return null;
+        }
     }
 
     /// <summary>

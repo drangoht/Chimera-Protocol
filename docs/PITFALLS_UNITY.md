@@ -411,6 +411,33 @@ voisin » ne se compare pas entre deux teintes. Le jeu publié met tout le menu 
 Côté Unity, l'anneau vit sur **son propre objet** enfant : peint sur l'image du bouton, il subirait
 le `SpriteSwap` des états (survol, pressé) et disparaîtrait au moment précis où il sert.
 
+### La molette n'atteint une zone de défilement que par un **`Graphic` raycastable**
+
+Signalement : « la molette ne fonctionne pas dans le menu options ». La sensibilité était pourtant
+juste (`UiStyle.ScrollSensitivity = 160`, réglée précisément parce que le défaut d'uGUI — *un* pixel
+par cran — se lit « cassé »). Ce n'est pas le réglage qui manquait, c'est la **chaîne** qui l'amène.
+
+uGUI ne route un cran de molette que vers ce que le rayon du pointeur **touche**, et un rayon ne
+touche que des `Graphic` dont `raycastTarget` est vrai. Une fenêtre de défilement construite **par
+code** n'a aucun graphique : elle ne porte qu'un `RectMask2D`. Le pointeur tombait donc :
+
+- sur un **libellé** → l'événement remontait la hiérarchie jusqu'au `ScrollRect`, et ça marchait ;
+- sur le **vide** entre deux lignes → il touchait le fond d'écran, qui n'est pas dans la hiérarchie
+  du `ScrollRect` : rien.
+
+Aux Options, faites surtout d'espace libre entre un libellé à gauche et son contrôle à droite, cela
+revenait à « ça ne marche pas ». **Les six écrans à liste étaient touchés** (pause, hub, niveaux,
+options, codex, défis).
+
+Parade : `UiStyle.ConfigureScroll` pose une **`Image` transparente** (alpha 0, `raycastTarget = true`)
+sur la fenêtre — exactement le rôle de l'`Image` du *Viewport* dans la zone de défilement fournie par
+l'éditeur, que le portage avait omise. Une `Image` d'alpha nul reste une cible de rayon tant qu'on ne
+règle pas `alphaHitTestMinimumThreshold`.
+
+⚠ **Ce qu'une vérification doit regarder** : contrôler `scrollSensitivity` n'aurait rien montré. Le
+banc vérifie donc, pour chaque écran, que la **fenêtre** porte un graphique raycastable
+(`CheckScrollWheel`). Même famille que les cadres 9-slice « présents et jamais affichés ».
+
 ### `StandaloneInputModule` **désélectionne** à chaque clic dans le vide
 
 Un clic qui ne tombe sur aucun élément appelle `SetSelectedGameObject(null)`. Le joueur qui clique
@@ -751,6 +778,51 @@ projectiles, et dix halos qui se superposent en additif saturent au blanc. **Un 
 jamais sur un exemplaire isolé.** Valeurs retenues, calibrées sur capture : lueur de projectile
 `14 + niveau × 2,5` px de diamètre à alpha `0,12 + niveau × 0,02` ; flash d'impact `8 + niveau × 2,5`
 px de **rayon** (contre 130 en transposition littérale).
+
+### Sur un sprite en **PPU 1**, `localScale` est un facteur — pas une taille en pixels
+
+Troisième occurrence, et la plus visible : `EnemyStatusFx.FlameSize = 18f` était commenté « côté
+d'une langue de feu, **en pixels** » et servait de multiplicateur à `VfxPrimitives.Spark`, un disque
+de **16 px**. Chaque langue couvrait donc **288 px** — sur un essaim de 16 px, le joueur ne voyait
+plus l'ennemi, seulement « de grosses explosions permanentes ». Les deux précédentes : les drones
+tracés au runtime, et les motifs de sol.
+
+**Un effet porté par une entité se dimensionne en fractions de son corps**, jamais en pixels
+absolus : le même code doit habiller un essaim de 16 px, un champion de 72 et un boss de 154.
+
+- La mesure est `SpriteRenderer.bounds` — en espace monde, elle tient déjà compte de l'échelle et du
+  sprite courant.
+- ⚠ Elle peut être **muette** : tant qu'aucune image d'animation n'est posée, elle rend zéro. Le
+  repli n'est pas une constante devinée mais le **rayon de contact** de l'entité (`PushRadius`), et
+  la mesure est **retentée** tant qu'elle a échoué — la figer au premier appel donnerait la même
+  taille de flammes à tout le bestiaire.
+- ⚠ Un enfant hérite de l'échelle de son porteur : une mesure en pixels du monde doit être divisée
+  par `lossyScale` avant d'être posée en local, sinon un champion à 1,5 porte des flammes 1,5 fois
+  trop grandes — la même confusion, un cran plus loin.
+
+### Un état qui dure a besoin d'un signal qui dure — la fumée, pas le flash
+
+La brûlure ne se lisait que par ses langues de feu, qui se confondent avec les impacts d'armes. Une
+**traînée de fumée** émise pendant tout le poison de chaleur dit ce qu'aucun flash ne dit : *ça brûle
+encore*. À la différence de la traînée de givre, elle **ne demande pas que la cible avance** — les
+seules cibles qui portent un état assez longtemps sont les plus lentes, c'est-à-dire les grosses.
+
+⚠ Elle est **additive** comme tout le reste, donc elle éclaircit là où de la vraie fumée
+assombrirait. C'est le bon choix et non un pis-aller : les arènes sont sombres, une volute sombre y
+serait invisible. Ce qui la fait lire comme de la fumée est sa teinte **grise désaturée**, sa lenteur
+et son étalement (`Vfx.Puff` : dérive + croissance sur la durée de vie).
+
+⚠ **Réglée sur capture, à la baisse.** À 0,3 s d'intervalle et alpha 0,34, une nuée en flammes
+couvrait le sol d'un **voile laiteux continu** : chaque bouffée est discrète, leur cumul ne l'est
+pas. Retenu : 0,45 s, alpha 0,20, rayon 0,18 × la largeur du corps. Et son budget est **plus serré**
+que celui des éclats de givre (90 contre 150) : une bouffée vit trois fois plus longtemps, elle
+mangerait seule le vivier partagé et ferait disparaître les traces d'armes.
+
+⚠ **Photographier un état demande de le maintenir.** Une nuée enflammée « une fois pour toutes »
+donne une capture pleine d'arrivants **intacts** au premier plan — ce qui se lit « l'effet ne marche
+pas ». `ScreenshotTour.KeepBurning` réapplique à chaque image *pendant* la pose, et le relevé
+accompagne l'image (`72/72 en flammes — corps 32 px (mesure), flammes 28 px`) : sans lui, on doserait
+un effet qui n'a jamais été appliqué.
 
 ### L'aléatoire d'un effet ne doit **jamais** venir de `UnityEngine.Random`
 

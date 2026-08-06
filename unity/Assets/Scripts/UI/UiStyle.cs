@@ -450,11 +450,50 @@ public static class UiStyle
     /// de molette. Source unique — les six écrans qui défilent recopiaient les mêmes lignes, et la
     /// sensibilité manquait dans les six.
     /// </summary>
+    /// <remarks>
+    /// <para>⚠ <b>La sensibilité ne suffisait pas : la molette n'atteignait jamais le
+    /// <c>ScrollRect</c>.</b> uGUI ne route un cran de molette que vers ce que le rayon du pointeur
+    /// <i>touche</i>, et un rayon ne touche que des <c>Graphic</c> dont <c>raycastTarget</c> est
+    /// vrai. Or la fenêtre de défilement des six écrans n'a aucun graphique : elle ne porte qu'un
+    /// <c>RectMask2D</c>. Le pointeur tombait donc soit sur un libellé — auquel cas l'événement
+    /// remontait jusqu'ici et le défilement marchait — soit sur le vide entre deux lignes, et de là
+    /// sur le <b>fond d'écran</b>, qui n'est pas dans la hiérarchie du <c>ScrollRect</c> : rien.
+    /// Aux Options, où les lignes sont surtout de l'espace libre, cela se lit « la molette ne
+    /// fonctionne pas » — et c'était pratiquement vrai.</para>
+    ///
+    /// <para>D'où cette <b>vitre transparente</b> posée sur la fenêtre : elle ne se voit pas, ne
+    /// change rien à la mise en page, et donne au rayon la surface continue qui lui manquait. C'est
+    /// le rôle que joue l'<c>Image</c> du <i>Viewport</i> dans la zone de défilement fournie par
+    /// l'éditeur — le portage, qui construit tout par code, l'avait omise.</para>
+    /// </remarks>
     public static void ConfigureScroll(ScrollRect scroll)
     {
         scroll.horizontal = false;
         scroll.movementType = ScrollRect.MovementType.Clamped;
         scroll.scrollSensitivity = ScrollSensitivity;
+
+        // Le viewport est assigné après cet appel dans tous les écrans : on retombe alors sur
+        // l'objet du ScrollRect, qui est justement la fenêtre. Le test couvre les deux ordres.
+        var viewport = scroll.viewport != null ? scroll.viewport.gameObject : scroll.gameObject;
+        EnsureScrollCatcher(viewport);
+    }
+
+    /// <summary>
+    /// Garantit qu'une fenêtre de défilement capte la molette, sans rien afficher.
+    /// </summary>
+    /// <remarks>
+    /// Une <c>Image</c> d'alpha nul reste une cible de rayon — uGUI ne teste l'opacité que si l'on
+    /// règle <c>alphaHitTestMinimumThreshold</c>, ce qu'on ne fait pas. Elle coûte un rectangle
+    /// invisible par écran, et rend le défilement continu sur toute la surface.
+    /// </remarks>
+    public static void EnsureScrollCatcher(GameObject viewport)
+    {
+        var existing = viewport.GetComponent<Graphic>();
+        if (existing != null) { existing.raycastTarget = true; return; }
+
+        var catcher = viewport.AddComponent<Image>();
+        catcher.color = new Color(0f, 0f, 0f, 0f);
+        catcher.raycastTarget = true;
     }
 
     /// <summary>Séparateur horizontal teinté.</summary>
