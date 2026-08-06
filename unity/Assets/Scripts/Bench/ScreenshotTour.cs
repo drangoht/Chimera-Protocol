@@ -145,9 +145,9 @@ public sealed class ScreenshotTour : MonoBehaviour
         // intacts — quatre ennemis sans la moindre flamme au premier plan, ce qui se lit « l'effet
         // ne marche pas ».
         //
-        // Le gel est volontairement ABSENT. Sa traînée sème des éclats de 22 px qui recouvrent
-        // exactement ce qu'on vient regarder ; deux états sur la même image ne se jugent ni l'un ni
-        // l'autre.
+        // Le gel est volontairement ABSENT de cette image. Sa traînée sème des éclats de 22 px qui
+        // recouvrent exactement ce qu'on vient regarder ; deux états sur la même silhouette ne se
+        // jugent ni l'un ni l'autre. Il a sa propre pose, juste après (ShootFrost).
         // ⚠ La coroutine tourne PENDANT les deux clichés, pas seulement avant : le spawner ajoute des
         // ennemis en permanence, et une application qui s'arrête à la pose laisse au premier plan
         // des arrivants intacts — ce que la capture précédente montrait, et qui se lit « l'effet ne
@@ -187,6 +187,94 @@ public sealed class ScreenshotTour : MonoBehaviour
 
         yield return new WaitForSecondsRealtime(0.8f);
         yield return Shot("etats-brulure-2");
+
+        yield return ShootFrost();
+    }
+
+    /// <summary>
+    /// Photographie le <b>gel</b>, séparément de la brûlure.
+    /// </summary>
+    /// <remarks>
+    /// <para>Les deux états ne se jugent pas sur la même image : la traînée de givre sème des éclats
+    /// qui recouvrent exactement les langues de feu qu'on vient regarder. Une capture par état, donc,
+    /// et pour le gel il en faut <b>deux</b> — les cristaux scintillent et la vapeur retombe, un seul
+    /// instantané ne dirait rien de leur vie.</para>
+    ///
+    /// <para>Le ralentissement lui-même, lui, <b>ne se photographie pas</b> : une image ne montre ni
+    /// une vitesse ni une cadence d'animation. Le relevé joint dit ce que le cliché tait.</para>
+    /// </remarks>
+    private IEnumerator ShootFrost()
+    {
+        // ⚠ Purge d'abord : les cibles de la pose précédente brûlent encore (12 s de poison), et
+        // deux états portés par la même silhouette ne se jugent ni l'un ni l'autre. Elles sont
+        // détruites et non tuées — une mort déclencherait gerbes, orbes et compteurs, qui n'ont rien
+        // à faire dans le cliché suivant.
+        foreach (var enemy in EnemyBase.Active.ToArray())
+            if (enemy != null) Destroy(enemy.gameObject);
+
+        yield return null;
+
+        SpawnSwarmAroundPlayer(14);
+
+        // Même précaution que pour la brûlure : réappliqué à CHAQUE image, sans quoi la pose
+        // photographie surtout les arrivants intacts que le spawner ajoute pendant ce temps.
+        StartCoroutine(KeepFrozen(4f));
+        yield return new WaitForSecondsRealtime(1.4f);
+
+        // ⚠ Le relevé compte, il ne cite pas. Une première version décrivait le PREMIER ennemi venu
+        // et annonçait « corps 48 px (REPLI) » — vrai pour lui seul, et impossible à distinguer d'un
+        // échec de mesure généralisé. Ce qu'il faut savoir d'un effet dimensionné sur le corps, c'est
+        // combien de corps ont pu être mesurés, et sur quelle plage de tailles il s'applique.
+        int total = 0, withFx = 0, frozen = 0, measured = 0;
+        float minBody = float.MaxValue, maxBody = 0f, maxSpan = 0f, level = 0f, cadence = 1f;
+
+        foreach (var enemy in EnemyBase.Active.ToArray())
+        {
+            if (enemy == null) continue;
+            total++;
+
+            var fx = enemy.GetComponent<EnemyStatusFx>();
+            if (fx == null) continue;
+
+            withFx++;
+            if (fx.ShardsVisible) frozen++;
+            if (fx.BodyMeasured) measured++;
+
+            minBody = Mathf.Min(minBody, fx.BodyWidthPx);
+            maxBody = Mathf.Max(maxBody, fx.BodyWidthPx);
+            maxSpan = Mathf.Max(maxSpan, fx.ShardSpanPx);
+            level = fx.FrostLevel;
+            cadence = fx.CadenceScale;
+        }
+
+        Debug.Log($"[SHOTS] gel : {frozen}/{withFx} givres sur {total} ennemis, " +
+                  $"{measured}/{withFx} corps mesures ({minBody:F0}-{maxBody:F0} px) — " +
+                  $"givre {maxSpan:F0} px au plus large, intensite {level:F2}, cadence x{cadence:F2}");
+
+        yield return Shot("etats-gel");
+
+        yield return new WaitForSecondsRealtime(0.8f);
+        yield return Shot("etats-gel-2");
+    }
+
+    /// <summary>Maintient tout le monde gelé — et en vie — pendant la durée d'une pose.</summary>
+    private IEnumerator KeepFrozen(float seconds)
+    {
+        for (float t = 0f; t < seconds; t += Time.unscaledDeltaTime)
+        {
+            foreach (var enemy in EnemyBase.Active.ToArray())
+            {
+                if (enemy == null) continue;
+
+                enemy.ApplyScaling(4000f, 0f);
+
+                // La force du Voile de Givre : c'est le gel le plus fort du jeu, donc la borne haute
+                // de l'effet — celle qu'il faut regarder pour juger s'il déborde.
+                enemy.ApplySlow(0.55f, 1.5f);
+            }
+
+            yield return null;
+        }
     }
 
     /// <summary>Maintient tout le monde en flammes — et en vie — pendant la durée d'une pose.</summary>
@@ -228,10 +316,26 @@ public sealed class ScreenshotTour : MonoBehaviour
             var go = Instantiate(spawner.EnemyPrefab, at, Quaternion.identity);
             go.SetActive(true);
 
+            // ⚠ Le gabarit seul ne porte AUCUN sprite : c'est le spawner qui pose le jeu d'animations
+            // depuis la définition, et sa méthode est privée. Sans ce câblage, la nuée posée à la
+            // main se déplace, frappe, meurt — et reste totalement invisible. Le relevé du gel l'a
+            // révélé (4 corps mesurés sur 18) : on photographiait des effets d'état portés par des
+            // ennemis qui n'existaient pas à l'image, et l'on jugeait leur taille là-dessus.
+            var enemy = go.GetComponent<EnemyBase>();
+            var frames = SpriteFramesLibrary.ForEnemy(SwarmSpriteId, "");
+            if (enemy != null && frames != null) enemy.SetSpriteFrames(frames);
+
             // Pas d'orbe d'XP : 28 morts d'un coup font monter de niveau, et l'écran de montée —
             // modal et bloquant — recouvrait justement le combat qu'on venait photographier.
         }
     }
+
+    /// <summary>
+    /// Faune de base employée pour les nuées posées à la main. C'est le plus petit corps du jeu
+    /// (32 px) : la borne la plus sévère pour un effet d'état, qui doit tenir dessus <b>comme</b> sur
+    /// un champion de 72.
+    /// </summary>
+    private const string SwarmSpriteId = "rust_swarm";
 
     private IEnumerator Shot(string name)
     {

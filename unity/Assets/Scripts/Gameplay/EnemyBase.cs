@@ -199,7 +199,11 @@ public class EnemyBase : MonoBehaviour
     /// </remarks>
     private void RenderStatus(float dt)
     {
-        bool frozen = _slowLeft > 0f;
+        // ⚠ La FORCE du ralentissement, pas un booléen : c'est elle qui décide de l'intensité du
+        // givre et de la cadence d'animation de la victime. Réduite à « gelé ou non », la Lance
+        // Cryogénique (−20 %) et le Voile de Givre (−45 %) donnaient la même image.
+        float slow = SlowMultiplier;
+        bool frozen = slow < 1f;
         bool burning = _burnLeft > 0f;
 
         if (_statusFx == null)
@@ -208,7 +212,9 @@ public class EnemyBase : MonoBehaviour
             _statusFx = gameObject.AddComponent<EnemyStatusFx>();
         }
 
-        _statusFx.Render(frozen, burning, dt);
+        // Une fois posé, il continue d'être appelé même sans état : le givre FOND au lieu de
+        // s'éteindre, et la cadence d'animation doit être rendue à sa victime.
+        _statusFx.Render(slow, burning, dt);
     }
 
     private EnemyStatusFx? _statusFx;

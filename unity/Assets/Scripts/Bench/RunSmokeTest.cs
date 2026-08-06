@@ -895,6 +895,15 @@ public sealed class RunSmokeTest : MonoBehaviour
         {
             Check("etats : un ennemi gele porte un calque de givre", fx.FrostVisible);
 
+            Check("etats : un ennemi gele porte des cristaux", fx.ShardsVisible);
+
+            // Le signal qui manquait le plus : un sprite qui s'agite à pleine cadence en avançant au
+            // ralenti se lit « il glisse ». La cadence est aussi la SEULE part du gel qu'un banc
+            // puisse constater — le reste est en pixels.
+            Check("etats : le gel ralentit l'animation de sa victime",
+                  Mathf.Approximately(fx.CadenceScale, 0.5f),
+                  $"cadence x{fx.CadenceScale:F2} pour un ralentissement x0,50");
+
             Check("etats : un ennemi qui brule porte des flammes", fx.FlamesVisible);
 
             // ⚠ La seule chose qu'un banc puisse dire d'un effet, c'est son EMPRISE. « Est-ce
@@ -915,6 +924,12 @@ public sealed class RunSmokeTest : MonoBehaviour
                   bodyWidth > 1f && fx.FlameSpanPx <= bodyWidth * 1.3f,
                   $"{fx.FlameSpanPx:F0} px de flammes pour un corps de {bodyWidth:F0} px");
 
+            // Même mesure pour les cristaux, et pour la même raison : un effet porté qui déborde de
+            // sa victime la remplace au lieu de la qualifier.
+            Check("etats : les cristaux tiennent dans la silhouette",
+                  bodyWidth > 1f && fx.ShardSpanPx <= bodyWidth * 1.3f,
+                  $"{fx.ShardSpanPx:F0} px de givre pour un corps de {bodyWidth:F0} px");
+
             // La traînée ne se sème que si la cible AVANCE — un ennemi immobile ne doit rien laisser.
             yield return new WaitForSeconds(0.6f);
             Check("etats : immobile, le gel ne laisse aucune trainee", fx.FrostShardsDropped == 0,
@@ -924,6 +939,13 @@ public sealed class RunSmokeTest : MonoBehaviour
             // encore », et les cibles qui portent un état assez longtemps sont les plus lentes.
             Check("etats : un ennemi qui brule fume, meme immobile", fx.SmokePuffsEmitted > 0,
                   $"{fx.SmokePuffsEmitted} bouffee(s)");
+
+            // La vapeur froide joue le même rôle pour le gel, et suit donc la même règle.
+            Check("etats : un ennemi gele exhale une vapeur, meme immobile", fx.FrostVaporEmitted > 0,
+                  $"{fx.FrostVaporEmitted} bouffee(s)");
+
+            Check("etats : la prise de gel est signalee une fois, pas a chaque tir",
+                  fx.FreezeSnaps == 1, $"{fx.FreezeSnaps} gerbe(s) pour un seul gel");
 
             // En mouvement, il en sème.
             for (int i = 0; i < 30; i++)
@@ -935,6 +957,63 @@ public sealed class RunSmokeTest : MonoBehaviour
             yield return new WaitForSeconds(0.5f);
             Check("etats : en mouvement, le gel laisse une trainee", fx.FrostShardsDropped > 0,
                   $"{fx.FrostShardsDropped} eclat(s)");
+
+            yield return RunFrostStrengthChecks(enemyPrefab, fx.FrostLevel);
+
+            // Le gel doit RELACHER sa victime : une cadence jamais rendue serait un ralentissement
+            // permanent, c'est-à-dire un bug de gameplay déguisé en effet visuel.
+            //
+            // ⚠ On attend l'ETAT, pas une durée. Une attente fixe est fragile ici : le banc tourne
+            // bien plus vite que le temps réel, et les vérifications précédentes consomment un nombre
+            // d'images qu'on ne connaît pas d'avance — 2,6 s calculées sur un pas de 20 ms tombaient
+            // 0,15 s avant l'expiration, et l'échec se lisait « le gel ne relâche jamais ».
+            for (float t = 0f; t < 6f && enemy.IsSlowed; t += Time.deltaTime) yield return null;
+
+            // Puis le temps de la fonte, qui n'est pas instantanée (c'est le point).
+            yield return new WaitForSeconds(0.5f);
+
+            Check("etats : la cadence est rendue quand le gel expire",
+                  Mathf.Approximately(fx.CadenceScale, 1f), $"cadence x{fx.CadenceScale:F2}");
+
+            Check("etats : le givre fond au lieu de s'eteindre", !fx.FrostVisible && !fx.ShardsVisible,
+                  $"givre {fx.FrostLevel:F2}");
+        }
+
+        if (go != null) Destroy(go);
+        yield return null;
+    }
+
+    /// <summary>
+    /// Le gel doit dire sa <b>force</b>.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ C'est la régression exacte que ce lot corrige : la teinte était binaire, si bien qu'une
+    /// Lance Cryogénique (−20 %) et un Voile de Givre (−45 %) produisaient la même image. Un test qui
+    /// se contenterait de « l'ennemi est bleu » repasserait au vert le jour où l'on y reviendrait.
+    /// </remarks>
+    private IEnumerator RunFrostStrengthChecks(GameObject enemyPrefab, float strongFrost)
+    {
+        var go = Instantiate(enemyPrefab, new Vector3(-200f, 0f, 0f), Quaternion.identity);
+        go.SetActive(true);
+
+        var enemy = go.GetComponent<EnemyBase>();
+        enemy.ApplyScaling(100000f, 0f);
+        enemy.Speed = 0f;
+        enemy.ApplySlow(0.8f, 3f);           // le ralentissement le plus faible du jeu
+        yield return null;
+
+        var fx = go.GetComponent<EnemyStatusFx>();
+
+        if (fx != null)
+        {
+            Check("etats : un gel faible se voit MOINS qu'un gel fort",
+                  fx.FrostLevel < strongFrost - 0.05f,
+                  $"givre {fx.FrostLevel:F2} (x0,80) contre {strongFrost:F2} (x0,50)");
+
+            // …mais il se voit quand même : la Lance touche peu de cibles à la fois, un effet dosé
+            // « à proportion » y serait purement et simplement invisible.
+            Check("etats : un gel faible reste visible", fx.FrostVisible && fx.FrostLevel > 0.4f,
+                  $"givre {fx.FrostLevel:F2}");
         }
 
         if (go != null) Destroy(go);

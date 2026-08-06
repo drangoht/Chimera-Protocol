@@ -824,6 +824,75 @@ pas ». `ScreenshotTour.KeepBurning` réapplique à chaque image *pendant* la po
 accompagne l'image (`72/72 en flammes — corps 32 px (mesure), flammes 28 px`) : sans lui, on doserait
 un effet qui n'a jamais été appliqué.
 
+### Un effet qui dit un ÉTAT doit dire sa FORCE — sinon deux armes se ressemblent
+
+Le gel était binaire : l'ennemi virait au bleu, point. La Lance Cryogénique (−20 %) et le Voile de
+Givre (−45 %) produisaient donc **exactement la même image**, alors que l'écart entre les deux est
+tout ce qui justifie de prendre la seconde. Un état visuel booléen répond à « qui est touché ? » et
+laisse sans réponse « qu'est-ce que ça change ? ».
+
+`EnemyStatusFx.Render` reçoit désormais le **multiplicateur de vitesse**, pas un booléen, et en tire
+l'intensité du givre : `FrostFloor + (1 − FrostFloor) × InverseLerp(1, 0,5, mult)` — ×0,80 → 0,70,
+×0,55 → 0,95.
+
+⚠ **Le plancher n'est pas du confort.** Doser « à proportion » (−20 % → 20 % de teinte) rendrait
+l'effet invisible pour l'arme qui en a le plus besoin : la Lance touche peu de cibles à la fois. Le
+dosage sert à *distinguer* deux forces, pas à en effacer une.
+
+⚠ **Prise sèche, fonte lente.** Le givre monte instantanément (c'est le seul retour qui dise « ce tir
+a porté sur celle-ci ») et redescend en ~0,35 s. Une extinction aussi sèche que la prise ferait
+**clignoter** la nuée entière au rythme des recharges, les deux armes cryo réappliquant leur gel en
+boucle. Même raison pour la gerbe de prise, émise au **front montant** seulement.
+
+⚠ **La cadence, elle, suit le modèle et jamais la fonte** : la décoration peut survivre à l'état, pas
+l'information tactique.
+
+### Un ralentissement se lit d'abord dans la CADENCE, pas dans la couleur
+
+Le signal le plus parlant du gel ne dessine rien : `FrameAnimator.SpeedScale` suit le multiplicateur
+de vitesse de la victime. Sans lui, un sprite qui s'agite à pleine cadence tout en avançant deux fois
+moins vite se lit « **il glisse** » — un défaut d'animation — et non « il est ralenti ». Il coûte une
+affectation, ne prend rien au vivier partagé d'effets, et reste lisible sur un ennemi de 16 px au fond
+d'une nuée, là où quatre pixels de givre ne le sont pas.
+
+C'est aussi la **seule part d'un effet d'état qu'un banc puisse constater** : le reste est en pixels.
+D'où `CadenceScale`, et une vérification que le gel **relâche** sa victime — une cadence jamais rendue
+serait un ralentissement permanent, c'est-à-dire un bug de gameplay déguisé en effet visuel.
+
+⚠ Un plancher est nécessaire (0,35) : `ApplySlow` borne le multiplicateur à 0,05, et recopié tel quel
+il donnerait un sprite **immobile**, que le joueur lit « l'animation est cassée ».
+
+### Le feu court, la glace tient — deux états ne se distinguent que par leur MOUVEMENT
+
+À teinte égale de luminosité, deux nuages de particules se lisent comme le même effet. Ce qui sépare
+la brûlure du gel est leur grammaire : les langues de feu **montent et se renouvellent**, les cristaux
+sont **immobiles et ne font que scintiller** ; la fumée **s'élève et s'étale**, la vapeur froide
+**retombe et se dépose** (`Vfx.Puff` avec une vitesse d'élévation *négative* et une croissance faible).
+Choisir la même dynamique pour les deux reviendrait à ne porter qu'un seul état en deux couleurs.
+
+⚠ **Du givre pousse SUR un corps.** Poser la base du cristal à sa distance d'orbite et le laisser
+croître vers l'extérieur le place entièrement **hors** de la silhouette : la capture montrait des
+planches blanches flottant à côté d'ennemis intacts. Il est centré sur l'orbite, donc à cheval sur le
+bord du corps.
+
+⚠ **Un signal ajouté oblige à rebaisser les anciens.** La traînée d'éclats avait été calibrée quand
+elle était le *seul* signe de mouvement du gel (alpha 0,9, 11 px). Avec les cristaux et la vapeur, une
+nuée gelée devenait un tapis de taches blanches où l'on ne distinguait plus les ennemis → 0,32 et
+7 px. C'est le piège de cumul de la fumée, une couche plus loin : **on ne dose jamais un effet seul,
+on dose la scène**.
+
+### Un relevé qui CITE au lieu de COMPTER cache exactement ce qu'on lui demande
+
+Le relevé joint aux captures d'état décrivait le **premier** ennemi venu : `corps 48 px (REPLI)`.
+Vrai pour lui seul, et impossible à distinguer d'un échec de mesure généralisé. Passé au compte
+(`4/18 corps mesures (32-48 px)`), il a révélé en une ligne que **la nuée posée à la main n'avait
+aucun sprite** : `ScreenshotTour` instanciait le gabarit du spawner sans lui poser son jeu
+d'animations — méthode privée du spawner — si bien qu'on photographiait des effets d'état portés par
+des ennemis **inexistants à l'image**, et qu'on jugeait leur taille là-dessus.
+
+*Quatrième occurrence de « un asset présent n'est pas un asset affiché », et la première où c'est
+l'instrument de jugement lui-même qui était en cause.*
+
 ### L'aléatoire d'un effet ne doit **jamais** venir de `UnityEngine.Random`
 
 `Random.Range` partage son état avec le jeu. Une campagne de banc lancée sur une graine fixe verrait
