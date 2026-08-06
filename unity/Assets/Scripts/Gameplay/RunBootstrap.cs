@@ -45,6 +45,13 @@ public sealed class RunBootstrap : MonoBehaviour
             // remplir dans les premières secondes.
             if (Player.Instance.GetComponent<GraftManager>() == null)
                 Player.Instance.gameObject.AddComponent<GraftManager>();
+
+            // Et le CORPS de la chimère avec lui, pour la même raison — plus une seconde : un perk
+            // de départ équipe une greffe d'office quelques lignes plus bas, et l'événement ne se
+            // rejoue pas. Un composant ajouté après elle laisserait le joueur sans appendices toute
+            // la run, sans que rien ne le signale.
+            if (Player.Instance.GetComponent<ChimeraBody>() == null)
+                Player.Instance.gameObject.AddComponent<ChimeraBody>();
         }
 
         Assimilation.ResetForRun();

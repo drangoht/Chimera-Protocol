@@ -46,11 +46,12 @@ public class PyreStream : WeaponBase
 
         LastConeHits = 0;
 
-        // Un JET de flammes, pas un contour : les particules chaudes (jaune → rouge) sont ce qui
-        // distingue l'arme d'une aura conique. Le contour reste dessiné par-dessus, plus discret,
-        // parce que lui seul dit exactement ce que l'arme couvre.
+        // Un JET de flammes, et RIEN d'autre : les particules chaudes (jaune → rouge) prolongées par
+        // la fumée. Le contour du cône était dessiné par-dessus « parce que lui seul dit exactement
+        // ce que l'arme couvre » — vrai, et c'était le mauvais arbitrage : deux segments droits
+        // partant du joueur donnent au souffle l'allure d'un gabarit de visée. Un feu n'a pas
+        // d'arête ; la couverture se lit à ce qui brûle.
         Vfx.Flame(origin, dir, ConeAngle, Range);
-        Vfx.Cone(origin, dir, half, Range, new Color(1f, 0.55f, 0.2f, 0.5f), 0.16f, 2f);
 
         var snapshot = EnemyBase.Active.ToArray();
 

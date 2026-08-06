@@ -121,6 +121,13 @@ public sealed class Singularity : WeaponBase
                                          + tangent * swirl * dt;
                 }
 
+                // ⚠ La déformation porte sur le SPRITE, pas sur l'entité : elle n'est qu'un rendu, et
+                // un corps déplacé pour de faux serait touché là où il n'est plus. L'intensité suit
+                // la distance — un ennemi happé au bord ondule, un ennemi au bord du cœur est tordu.
+                var warp = e.GetComponent<IrradiationWarp>();
+                if (warp == null) warp = e.gameObject.AddComponent<IrradiationWarp>();
+                warp.Sustain(1f - Mathf.Clamp01(dist / Radius));
+
                 if (tick) e.TakeDamage(damage);
             }
 
@@ -128,6 +135,12 @@ public sealed class Singularity : WeaponBase
             // frame pour la durée d'une frame. C'est ce qui distingue un tourbillon d'un anneau.
             w.Spin += SpinSpeed * dt;
             Vfx.Vortex(w.Center, Radius, InnerRadius, w.Spin, new Color(0.72f, 0.42f, 1f), dt * 1.6f);
+
+            // ⚠ Et surtout : l'ARÈNE se tord. Sans cela, le vortex reste une image posée sur un décor
+            // parfaitement droit — on voit un tourbillon, on ne voit pas l'espace tourbillonner. Le
+            // champ déborde le rayon qui blesse (cf. SpaceDistortion.Field) pour ne pas redessiner en
+            // creux le cercle dont on vient de retirer le contour.
+            SpaceDistortion.Field(w.Center, Radius);
 
             if (w.TimeLeft <= 0f) _wells.RemoveAt(i);
         }

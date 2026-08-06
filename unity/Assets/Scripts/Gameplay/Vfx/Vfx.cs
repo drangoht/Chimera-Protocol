@@ -140,28 +140,46 @@ public static class Vfx
     }
 
     /// <summary>
-    /// <b>Vortex</b> : cœur sombre, bras spiralés en rotation, anneau d'horizon et poussière aspirée.
+    /// <b>Vortex</b> : cœur sombre, bras spiralés en rotation, horizon estompé et matière étirée.
     ///
     /// <para>Un puits de gravité dessiné en simple anneau ne dit rien de ce qu'il fait : il ressemble
     /// à une aire de dégâts de plus. Ce sont les <b>bras courbes</b> qui font lire l'aspiration, et
-    /// leur <b>rotation</b> qui la fait lire comme un mouvement — le portage n'avait ni l'une ni
-    /// l'autre. La forme vient du jeu publié (<c>GravityWell</c>) : trois bras, resserrement de
-    /// 3,2 rad sur la course, rotation continue.</para>
+    /// leur <b>rotation</b> qui la fait lire comme un mouvement. La forme vient du jeu publié
+    /// (<c>GravityWell</c>) : trois bras, resserrement de 3,2 rad sur la course, rotation continue.</para>
+    ///
+    /// <para><b>Les bras ne sont plus des traits.</b> Ils étaient tracés à la polyligne, donc avec le
+    /// cœur presque blanc de <see cref="VfxTrace"/> — trois arcs <i>nets</i>, qui se lisent comme une
+    /// décalcomanie posée sur le sol : quelque chose de <b>dessiné</b> par-dessus l'arène, et non
+    /// l'arène elle-même en train de se tordre. Une singularité n'a aucun contour ; ce qu'elle a, ce
+    /// sont des traînées floues qui s'écrasent en approchant du centre. D'où des chapelets de lueurs
+    /// (même grammaire que <see cref="AuraCloud"/>, qui a réglé le même problème pour les auras) :
+    /// plus larges et plus vives vers l'intérieur, sans jamais un seul bord franc.</para>
+    ///
+    /// <para>La <b>déformation du décor et des corps</b> ne se dessine pas ici : elle est portée par
+    /// <see cref="SpaceDistortion"/>, qui travaille sur les sprites déjà à l'écran. C'est la
+    /// différence entre peindre un tourbillon et en avoir un.</para>
     /// </summary>
     /// <param name="spin">Phase de rotation, en radians — l'appelant la fait avancer dans le temps.</param>
     public static void Vortex(Vector2 center, float radius, float innerRadius, float spin,
                               Color color, float life)
     {
-        // Anneau d'horizon : la limite d'aspiration doit rester lisible sous les bras.
-        Ring(center, radius, new Color(color.r, color.g, color.b, 0.5f), 2f, life);
-
-        // Cœur : un disque sombre approché par un anneau épais. C'est lui qui donne l'impression
-        // d'un trou plutôt que d'un halo — sans lui, le centre paraît vide.
-        Ring(center, innerRadius * 0.6f, new Color(0.06f, 0.02f, 0.12f, 0.9f),
-             innerRadius * 1.2f, life);
+        // ⚠ PAS d'anneau d'horizon, et pas de « cœur sombre » — les deux ont été retirés sur capture.
+        //
+        // L'anneau était posé à alpha 0,16, ce qui semblait raisonnable ; à l'image, c'était le trait
+        // le plus net de toute la scène. La cause est le <b>cumul</b> : le vortex est redessiné à
+        // chaque frame pour la durée d'une frame et demie, si bien que l'anneau se superpose à
+        // lui-même en permanence — une opacité qui se lit comme une contribution unique en produit
+        // deux, additionnées, indéfiniment. Baisser la valeur ne réglait rien : c'est la forme qui
+        // était fausse (un cercle affirme une frontière, une singularité n'en a pas).
+        //
+        // Le « cœur sombre » ne faisait, lui, <b>rien du tout</b> : un anneau presque noir dessiné en
+        // mélange ADDITIF n'ajoute quasiment aucune lumière — il était donc invisible depuis le
+        // premier jour, tout en donnant l'impression que le centre était traité. On ne peut pas
+        // creuser un trou en additif ; le cœur se dit par un halo bref, et le vide par l'absence de
+        // matière autour.
 
         const int Arms = 3;
-        const int Steps = 14;
+        const int Steps = 6;
         const float Tightness = 3.2f;   // resserrement de la spirale, en radians
 
         for (int arm = 0; arm < Arms; arm++)
@@ -174,15 +192,22 @@ public static class Vfx
                 float r = Mathf.Lerp(radius, innerRadius, t);
                 float a = baseAngle + t * Tightness;
 
-                Points[i] = center + new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * r;
-            }
+                var at = center + new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * r;
 
-            // L'alpha croît vers le centre : le bras paraît happé, et non peint d'un bout à l'autre.
-            Polyline(Steps, new Color(color.r, color.g, color.b, 0.85f), 2.5f, 6f, life,
+                // Le grain s'élargit ET s'éclaircit vers le centre : la matière paraît écrasée par
+                // ce qu'elle approche. Constant, il redonnerait un trait — d'épaisseur régulière,
+                // donc d'allure dessinée.
+                float size = Mathf.Lerp(radius * 0.10f, radius * 0.26f, t);
+                float alpha = Mathf.Lerp(0.10f, 0.34f, t);
+
+                Glow(at, new Color(color.r, color.g, color.b, alpha), size, 1f, life,
                      VfxPrimitives.OrderGround);
+            }
         }
 
-        Glow(center, color, innerRadius * 2.2f, 0.8f, life, VfxPrimitives.OrderGround);
+        // Cœur : discret, pour la même raison de cumul que l'anneau. À 0,8 d'intensité il saturait au
+        // blanc pur en une demi-seconde et donnait un projecteur au milieu du puits.
+        Glow(center, color, innerRadius * 1.5f, 0.30f, life, VfxPrimitives.OrderGround);
     }
 
     /// <summary>
@@ -305,8 +330,26 @@ public static class Vfx
                  new Color(0.267f, 1f, 0.933f), radius * 0.22f, 0.6f, 0.18f);
     }
 
-    /// <summary>Souffle de flammes — portage de <c>PyreFlame</c>.</summary>
-    public static void Flame(Vector2 origin, Vector2 direction, float coneAngleDeg, float range)
+    /// <summary>
+    /// Souffle de flammes — portage de <c>PyreFlame</c>, <b>sans aucun contour</b>.
+    ///
+    /// <para>Le jet était doublé du tracé de son cône (<see cref="Cone"/>), au motif que « lui seul dit
+    /// exactement ce que l'arme couvre ». C'était vrai et c'était le mauvais arbitrage : un feu n'a
+    /// pas d'arête, et deux segments droits partant du joueur donnent au souffle l'allure d'un
+    /// gabarit de visée — on lit une <i>portée affichée</i>, pas une flamme. La couverture se lit
+    /// désormais à ce qui brûle, ce qui est aussi la vérité du jeu.</para>
+    ///
+    /// <para>À la place, ce que le trait ne pouvait pas donner : la <b>fumée</b>. Elle prolonge le
+    /// souffle après son extinction, et c'est elle qui fait lire un incendie entretenu plutôt qu'une
+    /// gerbe d'étincelles répétée toutes les demi-secondes.</para>
+    /// </summary>
+    /// <param name="smoke">
+    /// À couper quand plusieurs souffles partent <b>ensemble</b> (la couronne de la Colonne Solaire) :
+    /// six bouffées par tir noient l'arène sous un voile laiteux — le piège de cumul déjà mesuré sur
+    /// la fumée des ennemis en flammes. L'appelant émet alors sa propre dose, une fois.
+    /// </param>
+    public static void Flame(Vector2 origin, Vector2 direction, float coneAngleDeg, float range,
+                             bool smoke = true)
     {
         if (direction.sqrMagnitude < 0.0001f) direction = Vector2.right;
         direction = direction.normalized;
@@ -317,6 +360,78 @@ public static class Vfx
               36, range * 2.4f, range * 3.6f, 18f, 0.28f, dirDeg, coneAngleDeg);
 
         Glow(origin + direction * range * 0.4f, new Color(1f, 0.5f, 0.2f), range * 0.3f, 0.7f, 0.25f);
+
+        if (smoke) Smoke(origin, direction, range);
+    }
+
+    /// <summary>Teinte de la fumée : grise et désaturée — une seule des trois composantes du feu.</summary>
+    private static readonly Color SmokeTint = new(0.60f, 0.56f, 0.54f, 0.13f);
+
+    /// <summary>
+    /// Fumée d'un souffle : deux bouffées lâchées <b>dans</b> le jet, qui s'élèvent, dérivent vers
+    /// l'avant et s'étalent en se diluant.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Additive comme tout le reste : elle éclaircit là où de la vraie fumée assombrirait. Les
+    /// arènes sont sombres, une volute sombre y serait invisible ; ce qui la fait lire comme de la
+    /// fumée est sa teinte grise, sa lenteur et son étalement, pas sa direction de mélange.
+    ///
+    /// <para>⚠ <b>Alpha volontairement bas.</b> L'arme tire jusqu'à sept fois par seconde une fois la
+    /// recharge réduite ; à 0,7 s de vie, une dizaine de bouffées coexistent en permanence devant le
+    /// joueur. C'est leur cumul qui décide, jamais l'exemplaire isolé.</para>
+    /// </remarks>
+    public static void Smoke(Vector2 origin, Vector2 direction, float range)
+    {
+        var rise = new Vector2(direction.x * range * 0.30f, direction.y * range * 0.30f + 22f);
+
+        for (int i = 0; i < 2; i++)
+        {
+            float t = 0.55f + i * 0.32f;
+            var at = origin + direction * (range * t)
+                   + new Vector2((float)(Jitter.NextDouble() * 18.0 - 9.0),
+                                 (float)(Jitter.NextDouble() * 18.0 - 9.0));
+
+            Puff(at, SmokeTint, range * (0.17f + i * 0.05f), 0.70f,
+                 rise.y, rise.x, 2.3f, VfxPrimitives.OrderOver);
+        }
+    }
+
+    /// <summary>
+    /// <b>Éruption solaire</b> : une couronne de langues de feu qui part dans toutes les directions,
+    /// plus le front chaud qui la propulse.
+    ///
+    /// <para>C'est la signature de la Colonne Solaire, et elle doit se distinguer <b>au premier
+    /// coup d'œil</b> du souffle dirigé dont elle est l'évolution : celui-ci part vers une cible,
+    /// celle-là part de partout. Le nombre de bras vient du jeu publié (six).</para>
+    /// </summary>
+    /// <param name="spin">Rotation de la couronne, en radians — décalée à chaque tir, sinon les six
+    /// bras retombent toujours dans les mêmes six directions et l'éruption paraît figée.</param>
+    public static void SolarFlare(Vector2 center, float radius, float coneAngleDeg, float spin)
+    {
+        const int Arms = 6;
+
+        float dirDeg = spin * Mathf.Rad2Deg;
+
+        for (int i = 0; i < Arms; i++)
+        {
+            // ⚠ Une langue de la couronne n'est PAS un appel à <see cref="Flame"/> avec un rayon plus
+            // court. Calibré sur capture : le souffle dirigé est réglé pour une portée de 130 px et
+            // des grains de 18 px, et six exemplaires réduits ne produisaient qu'un petit paquet de
+            // braises collé au joueur — l'éruption la plus rare du jeu se lisait comme un tir raté.
+            // Les langues portent donc jusqu'au rayon qui blesse, avec des grains une fois et demie
+            // plus gros et une vie plus longue.
+            Burst(center, new Color(1f, 0.92f, 0.55f, 0.95f), new Color(1f, 0.32f, 0.08f, 0f),
+                  22, radius * 2.0f, radius * 3.2f, 27f, 0.42f,
+                  dirDeg + i * 360f / Arms, coneAngleDeg);
+        }
+
+        // Le front : une onde chaude qui atteint exactement le rayon qui blesse. Sans elle, six
+        // langues isolées ne disent pas qu'il s'est passé quelque chose *entre* elles.
+        Shockwave(center, radius, 0.38f, new Color(1f, 0.62f, 0.22f));
+        Glow(center, new Color(1f, 0.85f, 0.5f), radius * 0.34f, 0.9f, 0.26f);
+
+        // Une seule bouffée pour toute la couronne — six auraient blanchi l'arène à chaque tir.
+        Puff(center, SmokeTint, radius * 0.30f, 0.85f, 30f, 0f, 2.2f, VfxPrimitives.OrderOver);
     }
 
     /// <summary>Rayon glacé — portage de <c>CryoBeam</c> : faisceau + éclats de givre le long du tir.</summary>

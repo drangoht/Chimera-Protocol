@@ -287,6 +287,7 @@ public sealed class RunSmokeTest : MonoBehaviour
         yield return RunBossSpawnChecks(gm, spawner);
         yield return RunMetaChecks();
         yield return RunAssimilationChecks(enemyPrefab);
+        yield return RunChimeraChecks(enemyPrefab);
         yield return RunHitStopChecks();
 
         // ─── Fin de run ───────────────────────────────────────────────────────
@@ -1597,6 +1598,153 @@ public sealed class RunSmokeTest : MonoBehaviour
 
         if (target != null) Destroy(target.gameObject);
         manager.ClearAll();
+        yield return null;
+    }
+
+    /// <summary>
+    /// Trois signalements de jeu du même lot : ce que le joueur <b>voit</b> de la Colonne Solaire, de
+    /// la Singularité et de ses propres greffes.
+    ///
+    /// <para>Aucun de ces trois défauts n'aurait pu se voir dans un compteur de tirs : la Colonne
+    /// Solaire tirait, la Singularité aspirait, les greffes agissaient. Ils portaient tous les trois
+    /// sur ce qui apparaît à l'écran — d'où des vérifications qui <b>comptent</b> (ennemis touchés
+    /// derrière le porteur, objets de décor pliés, appendices posés) plutôt que de constater qu'un
+    /// effet a été demandé.</para>
+    /// </summary>
+    private IEnumerator RunChimeraChecks(GameObject enemyPrefab)
+    {
+        var player = Player.Instance;
+        if (player == null) yield break;
+
+        player.transform.position = Vector3.zero;
+        player.HealFlat(player.Stats.MaxHp);
+
+        // ─── Colonne Solaire : RADIALE, et non un cône de plus ────────────────
+        // Le portage l'écrivait `: PyreStream` : elle héritait du souffle dirigé et ne frappait que
+        // devant. Trois cibles réparties tout autour tranchent — un cône de 70° n'en toucherait
+        // qu'une, quelle que soit la cible qu'il choisit.
+        var host = new GameObject("ColonneHost");
+        host.transform.position = Vector3.zero;
+
+        var dummies = new List<GameObject>();
+        foreach (var off in new[] { new Vector3(80f, 0f), new Vector3(-80f, 0f), new Vector3(0f, -80f) })
+        {
+            var go = Instantiate(enemyPrefab, off, Quaternion.identity);
+            go.SetActive(true);
+            var e = go.GetComponent<EnemyBase>();
+            e.ApplyScaling(1000000f, 0f);
+            e.Speed = 0f;
+            dummies.Add(go);
+        }
+
+        var solar = host.AddComponent<SolarColumn>();
+        yield return new WaitForSeconds(1.2f);
+
+        Check("colonne solaire : l'eruption frappe TOUT AUTOUR", solar.LastFlareHits >= 3,
+              $"{solar.LastFlareHits}/3 cibles touchees (devant, derriere, dessous)");
+
+        // Elle porte une couronne permanente : entre deux pulsations, rien d'autre ne dit qu'on
+        // porte la fusion plutôt que l'arme dont elle est l'évolution.
+        var corona = host.GetComponentInChildren<AuraCloud>();
+        Check("colonne solaire : une couronne permanente sur le porteur",
+              corona != null && corona.PuffCount > 0,
+              corona != null ? $"{corona.PuffCount} bouffees sur {corona.RadiusPx:F0} px" : "ABSENTE");
+
+        foreach (var d in dummies) if (d != null) Destroy(d);
+        Destroy(host);
+        yield return null;
+
+        // ─── Singularité : l'ARÈNE se tord ────────────────────────────────────
+        // Un vortex dessiné sur un décor parfaitement droit reste une image posée. Le banc n'a pas
+        // d'arène : on vérifie le mécanisme — un objet de décor enregistré, plié par un champ, et
+        // rendu à sa place exacte quand le champ disparaît.
+        var decor = new GameObject("DecorTemoin", typeof(SpriteRenderer));
+        decor.transform.position = new Vector3(60f, 0f, 0f);
+        decor.AddComponent<SpaceDistortion>();
+        yield return null;
+
+        Vector3 rest = decor.transform.position;
+        int registered = SpaceDistortion.Registered;
+
+        // ⚠ Compté en SECONDES et non en images : la déformation s'installe à vitesse fixe
+        // (unités par seconde), et le banc headless tourne à une cadence qui n'a rien de celle du
+        // jeu — un nombre d'images fixe mesurerait la machine, pas l'effet.
+        for (float t = 0f; t < 0.8f; t += Time.deltaTime)
+        {
+            SpaceDistortion.Field(Vector2.zero, 140f);
+            yield return null;
+        }
+
+        float bend = Vector3.Distance(decor.transform.position, rest);
+
+        Check("singularite : le decor est enregistre comme deformable", registered > 0,
+              $"{registered} objet(s), {SpaceDistortion.LastBentCount} plie(s) par le champ");
+
+        Check("singularite : le decor se plie vers le puits", bend > 1f,
+              $"{bend:F1} px de flechissement");
+
+        // Et il revient EXACTEMENT à sa place : une déformation qui laisse une trace déplacerait le
+        // décor d'une singularité à l'autre, jusqu'à ce que les piliers ne soient plus là où ils
+        // bloquent.
+        for (float t = 0f; t < 0.8f; t += Time.deltaTime) yield return null;
+
+        Check("singularite : le decor retrouve sa place exacte",
+              Vector3.Distance(decor.transform.position, rest) < 0.01f,
+              $"{Vector3.Distance(decor.transform.position, rest):F3} px d'ecart");
+
+        Destroy(decor);
+
+        // ─── Le corps de la chimère ───────────────────────────────────────────
+        var body = player.GetComponent<ChimeraBody>() ?? player.gameObject.AddComponent<ChimeraBody>();
+        yield return null;
+
+        // ⚠ Inventaire EXHAUSTIF, comme pour les effets de greffe : ne relever que la greffe
+        // rencontrée ne prouverait rien. Chaque greffe et chaque fusion doit poser des appendices —
+        // une anatomie oubliée journalise, mais seul le compte dit que la table est complète.
+        var invisible = new List<string>();
+        var one = new string[1];
+
+        foreach (var g in Assimilation.Config.Grafts)
+        {
+            one[0] = g.Id;
+            body.Build(one);
+            if (body.PartCount == 0) invisible.Add(g.Id);
+        }
+
+        foreach (var f in Assimilation.Config.Fusions)
+        {
+            one[0] = f.Id;
+            body.Build(one);
+            if (body.PartCount == 0) invisible.Add(f.Id);
+        }
+
+        int total = Assimilation.Config.Grafts.Count + Assimilation.Config.Fusions.Count;
+
+        Check("chimere : chaque greffe se voit sur le porteur", invisible.Count == 0,
+              invisible.Count == 0
+                  ? $"{total} greffes et fusions, toutes incarnees"
+                  : "sans appendice : " + string.Join(", ", invisible));
+
+        // Une fusion porte la SOMME de ses sources, plus ce qu'elle ajoute : c'est ce qui permet de
+        // reconnaître ce qu'on porte sans lire de panneau.
+        var blindee = Assimilation.Config.FusionById("fusion_charge_blindee");
+        if (blindee != null)
+        {
+            one[0] = "grafted_carapace"; body.Build(one); int carapace = body.PartCount;
+            one[0] = "erratic_servos";   body.Build(one); int servos = body.PartCount;
+            one[0] = blindee.Id;         body.Build(one); int fusion = body.PartCount;
+
+            Check("chimere : une fusion cumule ses deux sources et y ajoute la sienne",
+                  fusion > carapace + servos,
+                  $"carapace {carapace} + servos {servos} -> fusion {fusion}");
+        }
+
+        // Les appendices sont dimensionnés en FRACTIONS du corps, jamais en pixels : la mesure doit
+        // avoir abouti, faute de quoi tout le monde porterait la taille de repli.
+        Check("chimere : les appendices se calent sur la taille du corps", body.BodyPx > 8f,
+              $"corps {body.BodyPx:F0} px ({(body.BodyMeasured ? "mesure" : "REPLI")})");
+
+        body.Build(System.Array.Empty<string>());
         yield return null;
     }
 

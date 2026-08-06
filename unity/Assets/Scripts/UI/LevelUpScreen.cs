@@ -227,6 +227,23 @@ public sealed class LevelUpScreen : MonoBehaviour
         RerollRequested?.Invoke();
     }
 
+    /// <summary>
+    /// Referme l'écran <b>sans rien choisir</b> — réservé au banc de captures.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Ce n'est pas une commodité. La montée de niveau est modale et met le jeu à
+    /// <c>timeScale = 0</c> : ouverte pendant une tournée de captures, elle recouvre exactement ce
+    /// qu'on venait photographier <b>et</b> empêche les armes de tirer — les images montrent alors un
+    /// panneau, et le relevé qui les accompagne des compteurs à zéro qu'on lirait « l'effet ne marche
+    /// pas ». Le passage par le bouton « Passer » ne convient pas : il dépend des charges du joueur,
+    /// donc il échoue en silence une fois sur deux.
+    /// </remarks>
+    public void DismissForBench()
+    {
+        Hide();
+        ModalQueue.Close(ModalKind.LevelUp);
+    }
+
     private void OnSkipPressed()
     {
         if (!Charges.TrySkip()) return;

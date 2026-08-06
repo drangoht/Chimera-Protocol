@@ -213,6 +213,14 @@ public sealed class ArenaRenderer : MonoBehaviour
             // derrière, sinon il se lit comme un décor au sol qu'on peut survoler. C'est le
             // ZIndex 6 de Godot, contre 5 pour le joueur.
             sr.sortingOrder = 20;
+
+            // ⚠ EN DERNIER, une fois la position posée : le composant capture sa pose de repos dès
+            // son activation, et l'ajouter plus haut figerait l'origine de la scène comme place
+            // d'origine du pilier — qui y retournerait à la première déformation.
+            //
+            // Le blocage ne passe pas par ce transform (il vit dans ArenaObstacles, plus bas) : un
+            // pilier penché par une singularité bloque donc exactement là où il bloquait.
+            go.AddComponent<SpaceDistortion>();
         }
 
         ArenaObstacles.Set(centers);

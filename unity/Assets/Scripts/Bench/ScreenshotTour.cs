@@ -110,6 +110,7 @@ public sealed class ScreenshotTour : MonoBehaviour
         }
 
         yield return ShootStatusEffects();
+        yield return ShootChimera();
 
         var levelUp = FindFirstObjectByType<LevelUpScreen>();
         if (levelUp != null)
@@ -336,6 +337,152 @@ public sealed class ScreenshotTour : MonoBehaviour
 
     private static string Describe(AuraCloud? cloud)
         => cloud == null ? "ABSENT" : $"{cloud.PuffCount} bouffees sur {cloud.RadiusPx:F0} px";
+
+    /// <summary>
+    /// Photographie les quatre changements signalés en jouant : le souffle du Flux de Braise
+    /// <b>sans son contour</b>, la couronne de la Colonne Solaire, la Singularité qui <b>tord le
+    /// décor</b>, et les greffes portées <b>sur le corps</b> du joueur.
+    /// </summary>
+    /// <remarks>
+    /// <para>⚠ L'arsenal est <b>vidé</b> avant chaque cliché. Les passes précédentes ont accumulé
+    /// trois fusions sur le porteur : photographier une arme au milieu d'elles ne dirait rien de
+    /// cette arme-là — c'est la version « armes » du piège de cumul des effets additifs.</para>
+    ///
+    /// <para>⚠ Chaque cliché est accompagné d'un <b>relevé compté</b>. « Je ne vois pas la fumée » ne
+    /// distingue pas <i>trop pâle</i> de <i>jamais émise</i>, et « le décor ne bouge pas » ne
+    /// distingue pas <i>trop faible</i> de <i>aucun pilier enregistré</i>.</para>
+    /// </remarks>
+    private IEnumerator ShootChimera()
+    {
+        var inv = InventorySystem.Instance;
+        var player = Player.Instance;
+        if (inv == null || player == null) yield break;
+
+        // ─── Le souffle, sans contour ─────────────────────────────────────────
+        inv.ResetForRun();
+        for (int i = 0; i < 5; i++) inv.AcquireOrLevelUp("pyre_stream");
+
+        SpawnSwarmAroundPlayer(14);
+        yield return Play(1.2f);
+
+        var pyre = FindFirstObjectByType<PyreStream>();
+        Debug.Log($"[SHOTS] braise : {(pyre != null ? pyre.LastConeHits : -1)} cible(s) au dernier " +
+                  $"souffle, {Vfx.ActiveEffects} effets a l'image");
+
+        yield return Shot("braise");
+
+        // ─── L'éruption solaire ───────────────────────────────────────────────
+        // ⚠ Elle se FORGE : le passif requis compte autant que le niveau d'arme, et sans lui
+        // `ApplyFusion` refuse en silence — on photographierait le Flux de Braise en croyant tenir
+        // la Colonne Solaire.
+        inv.AddOrUpgradePassive("thermal_core");
+        inv.ApplyFusion("solar_column");
+
+        SpawnSwarmAroundPlayer(14);
+        yield return Play(1.0f);
+
+        var solar = FindFirstObjectByType<SolarColumn>();
+        var corona = solar != null ? solar.GetComponentInChildren<AuraCloud>() : null;
+
+        Debug.Log($"[SHOTS] colonne solaire : {(solar != null ? "equipee" : "ABSENTE")}, " +
+                  $"{(solar != null ? solar.LastFlareHits : -1)} cible(s) touchee(s), " +
+                  $"couronne {Describe(corona)}");
+
+        yield return Shot("colonne-solaire");
+        yield return Play(0.5f);
+        yield return Shot("colonne-solaire-2");
+
+        // ─── La singularité, posée SUR le décor ───────────────────────────────
+        // Sans pilier dans le champ, l'image ne montre que le vortex : c'est précisément la capture
+        // qui ne répond pas à la question posée. Le joueur est donc déplacé contre un obstacle, et
+        // la nuée avec lui — le puits naît sur l'ennemi le plus proche.
+        inv.ResetForRun();
+        for (int i = 0; i < 5; i++) inv.AcquireOrLevelUp("singularity");
+
+        if (ArenaObstacles.Count > 0)
+            player.transform.position = ArenaObstacles.Centers[0] + new Vector2(70f, 0f);
+
+        SpawnSwarmAroundPlayer(12);
+        yield return Play(1.4f);
+
+        Debug.Log($"[SHOTS] singularite : {ArenaObstacles.Count} obstacle(s) dans l'arene, " +
+                  $"{SpaceDistortion.Registered} deformable(s), " +
+                  $"{SpaceDistortion.LastBentCount} plie(s) par le champ");
+
+        yield return Shot("singularite");
+        yield return Play(0.4f);
+        yield return Shot("singularite-2");
+
+        // ─── Le corps de la chimère ───────────────────────────────────────────
+        // Les appendices se posent depuis la liste des greffes portées : on la fournit directement,
+        // les jauges n'ayant rien à voir avec ce qu'on photographie ici.
+        //
+        // ⚠ La scène est VIDÉE d'abord — armes, effets de greffe et faune. Le premier essai a
+        // photographié le porteur au milieu du nuage d'une fusion précédente et sous une montée de
+        // niveau en train de s'ouvrir : on ne voyait ni la carapace ni l'œil. Et vider la faune n'est
+        // pas cosmétique — sans elle, plus d'éliminations, donc plus d'XP, donc plus de modale qui
+        // s'invite entre le dernier écartement et la capture.
+        inv.ResetForRun();
+        player.GetComponent<GraftManager>()?.ClearAll();
+
+        foreach (var enemy in EnemyBase.Active.ToArray())
+            if (enemy != null) Destroy(enemy.gameObject);
+
+        var body = player.GetComponent<ChimeraBody>() ?? player.gameObject.AddComponent<ChimeraBody>();
+        yield return null;
+
+        // ⚠ ZOOM. Le joueur mesure 32 px sur une image de 1280 : à l'échelle du jeu, un appendice de
+        // 12 px occupe une dizaine de pixels à l'écran, et la capture ne peut répondre à aucune des
+        // questions qu'on lui pose (tient-il sur la silhouette ? le reconnaît-on ?). C'est le pendant
+        // du relevé compté : une image doit être cadrée sur ce qu'on lui demande de montrer.
+        var camera = Camera.main;
+        float restSize = camera != null ? camera.orthographicSize : 0f;
+        if (camera != null) camera.orthographicSize = restSize * ChimeraZoom;
+
+        foreach (var (name, grafts) in new[]
+                 {
+                     ("chimere-carapace", new[] { "grafted_carapace", "aiming_eye" }),
+                     ("chimere-rodeur",   new[] { "stalker_wave", "erratic_servos", "swarm_symbiote" }),
+                     ("chimere-fusions",  new[] { "fusion_charge_blindee", "fusion_ruche_tourelles" }),
+                 })
+        {
+            body.Build(grafts);
+            yield return Play(0.7f);
+
+            Debug.Log($"[SHOTS] {name} : {body.PartCount} appendice(s), " +
+                      $"corps {body.BodyPx:F0} px ({(body.BodyMeasured ? "mesure" : "REPLI")}), " +
+                      $"zoom x{1f / ChimeraZoom:F0}");
+
+            yield return Shot(name);
+        }
+
+        if (camera != null) camera.orthographicSize = restSize;
+    }
+
+    /// <summary>Facteur appliqué à la taille de la caméra pour les portraits de chimère.</summary>
+    private const float ChimeraZoom = 0.2f;
+
+    /// <summary>
+    /// Laisse le jeu tourner <paramref name="seconds"/> secondes en <b>écartant la montée de
+    /// niveau</b> à chaque image.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Sans cela, la tournée ne photographie plus rien passé la 12ᵉ minute de run : les
+    /// éliminations font monter le joueur de niveau, la modale s'ouvre, met le jeu à
+    /// <c>timeScale = 0</c> — donc les armes cessent de tirer — et recouvre l'écran. Les images
+    /// montrent alors trois cartes, et le relevé qui les accompagne des compteurs à zéro qu'on
+    /// lirait « l'effet ne marche pas ». C'est arrivé sur cette passe même.
+    /// </remarks>
+    private IEnumerator Play(float seconds)
+    {
+        for (float t = 0f; t < seconds; t += Time.unscaledDeltaTime)
+        {
+            var levelUp = FindFirstObjectByType<LevelUpScreen>();
+            if (levelUp != null && ModalQueue.Current == ModalKind.LevelUp) levelUp.DismissForBench();
+
+            yield return null;
+        }
+    }
 
     /// <summary>Maintient tout le monde gelé — et en vie — pendant la durée d'une pose.</summary>
     private IEnumerator KeepFrozen(float seconds)

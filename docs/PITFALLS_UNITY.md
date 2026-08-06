@@ -1219,6 +1219,97 @@ niveau s'est ouverte entre-temps : rien n'a bougé. Toute vérification qui repo
 (parallaxe, suivi de caméra, spawn périodique) doit fermer les modales — et la même cause avait déjà
 fait conclure à tort que les Noyaux d'Aether n'apparaissaient jamais.
 
+⚠ **Et elle revient toute seule** passé la 12ᵉ minute de run : les éliminations font monter de niveau
+en continu. Fermer une fois ne suffit pas — `ScreenshotTour.Play()` écarte l'écran **à chaque image**
+pendant la pose (`LevelUpScreen.DismissForBench`, et non le bouton « Passer », qui dépend des charges
+du joueur et échoue en silence). Pour un portrait, le plus sûr reste de **vider la faune** : plus
+d'éliminations, plus d'XP, plus de modale.
+
+### Un effet redessiné à chaque image se cumule **avec lui-même**
+
+L'anneau d'horizon de la Singularité était posé à alpha **0,16** — une valeur qu'on lit comme discrète.
+À l'écran, c'était le trait le plus net de toute la scène, un cercle parfait tracé sur l'arène. Le
+vortex est reposé **à chaque frame** pour la durée d'une frame et demie : l'anneau se superpose donc
+en permanence à lui-même, et l'opacité écrite dans le code n'est pas celle qu'on voit.
+
+La leçon du cumul additif était connue pour des effets **émis en flux** (fumée, impacts). Elle vaut
+aussi, et plus fort, pour un effet **persistant redessiné**. Et baisser la valeur n'était pas la
+réponse : un cercle affirme une **frontière**, or une singularité n'en a pas. Les bras spiralés sont
+passés de polylignes (dont le cœur est tiré à 55 % vers le blanc par `VfxTrace`, donc toujours net) à
+des chapelets de lueurs, plus larges et plus vives vers le centre — la même grammaire qu'`AuraCloud`.
+
+### On ne creuse pas un trou en mélange **additif**
+
+Le « cœur sombre » du vortex était un anneau épais de couleur `(0.06, 0.02, 0.12)` censé donner
+l'impression d'un trou. En additif, une couleur presque noire n'ajoute presque rien : **il n'a jamais
+rien dessiné**, depuis le premier jour, tout en donnant à la lecture du code l'impression que le
+centre était traité. Le vide se dit par l'**absence** de matière autour, pas par du noir peint.
+
+### Un contour dit une portée — donc il fait lire un gabarit de visée, pas une arme
+
+Le Flux de Braise doublait son souffle du tracé de son cône, « parce que lui seul dit exactement ce
+que l'arme couvre ». C'était vrai, et c'était le mauvais arbitrage : deux segments droits partant du
+joueur donnent au feu l'allure d'un **indicateur d'interface**. Un feu n'a pas d'arête ; la couverture
+se lit à ce qui brûle, ce qui est aussi la vérité du jeu. Ce que le trait ne pouvait pas donner et qui
+le remplace : la **fumée**, qui prolonge le souffle après son extinction et fait lire un incendie
+entretenu plutôt qu'une gerbe répétée deux fois par seconde.
+
+### `localScale` normalisé par la **largeur** seule — troisième variante, sur une forme non carrée
+
+Les appendices de chimère se dimensionnent en fractions du corps : `Size × corps / sprite`. Le
+diviseur était `rect.width`. L'antenne du Rôdeur est dessinée dans un **6 × 16** : elle sortait donc
+**2,7 fois trop haute** — deux tiges roses de 39 px plantées sur un corps de 32. Aucun test ne pouvait
+le voir (le compte d'appendices était juste, la mesure du corps aussi) ; la capture l'a montré en une
+seconde. Normaliser par `Mathf.Max(width, height)`.
+
+### Une fusion écrite `: SonArmeSource` hérite de son **archétype**
+
+`SolarColumn : PyreStream` ne relevait que quatre champs. La fusion héritait donc du **cône dirigé**,
+alors que `weapons.json` déclare pour elle `"type": "radial_burn"` et `"radius": 155` — deux clés
+qu'aucune ligne ne lisait. Résultat : la carte la plus rare du jeu était le souffle qu'elle remplace,
+un peu plus long. **Cinquième occurrence de « une donnée déclarée n'est pas une donnée consommée »**,
+et la plus muette : l'arme tirait, blessait, brûlait, montait de niveau. Rien n'était en panne —
+c'était simplement une autre arme. L'héritage est légitime quand la fusion *est* la même mécanique en
+plus fort (`IonicStorm`, `FrostVeil`) ; il ne l'est pas quand la fiche annonce un autre archétype.
+
+### Déformer le décor : le rendu se tord, le modèle de collision ne bouge pas
+
+Un vortex dessiné sur une arène parfaitement droite reste une **image posée** : on voit un tourbillon,
+on ne voit pas l'espace tourbillonner. `SpaceDistortion` penche, écrase et fait glisser les sprites
+d'obstacles — mais le blocage vit dans `ArenaObstacles.Centers`, une liste de points que rien n'y
+touche : un pilier penché bloque exactement là où il bloquait. Sans cette séparation, le décor
+mentirait, ce que le projet tient pour pire qu'une absence de décor.
+
+⚠ Le champ **déborde** franchement le rayon qui blesse (×1,6), avec une décroissance quadratique. À
+la limite exacte, la déformation redessinerait en creux le cercle dont on vient de retirer le contour ;
+en décroissance linéaire, elle pencherait tout le décor de l'arène du même petit angle — ce qui se lit
+comme un défaut de rendu global, pas comme une source locale.
+
+⚠ La pose de repos se capture à l'**activation** du composant : l'ajouter avant d'avoir posé la
+position figerait l'origine de la scène comme place d'origine, et l'objet y retournerait à la première
+déformation. Et **pas de `Reset()` global** appelé au démarrage d'une run, contrairement aux viviers
+d'effets : le registre se vide seul (`OnDisable` part avec la scène), et une remise à zéro depuis
+`RunBootstrap.Start` effacerait les piliers si l'arène s'était construite avant lui — l'ordre des
+`Start` n'est pas garanti.
+
+### Une greffe qui ne se voit pas sur le **corps** se lit comme un bonus de Hub
+
+L'Assimilation promet de *devenir une chimère*, et ne se voyait nulle part sur le personnage : la
+carapace ajoutait des épines invisibles, les servos une esquive sans jambes, la ruche des tourelles
+posées *à côté*. Les greffes se lisaient dans un panneau de statistiques, c'est-à-dire au même endroit
+que n'importe quel achat permanent — alors que tout leur propos est d'être d'une autre nature.
+`ChimeraBody` fait pousser des appendices sur la silhouette, un vocabulaire de sept formes partagé par
+les huit greffes.
+
+⚠ **Reconstruit depuis la liste des équipées, jamais accumulé** : une fusion *absorbe* ses deux
+sources et un remplacement en retire une. Ajouter au fil des équipements laisserait à l'écran les
+appendices de greffes que le joueur ne porte plus.
+
+⚠ **Matière ou énergie, jamais entre les deux** — l'œil de visée pivote avec la direction de tir, il
+ne peut donc pas porter d'ombrage cuit (cf. le canon de tourelle). Et il n'est **pas** retourné avec
+le corps : le miroir de l'échelle s'annule dans son angle (`180° − θ`), sans quoi il vise à l'opposé
+une fois sur deux.
+
 ---
 
 ## Méthode

@@ -43,12 +43,6 @@ public static class TurretSprite
     /// <summary>Cœur clair — le même rôle que sur les sprites d'ennemis : il empêche l'aplat.</summary>
     private static readonly Color Core = new(0.85f, 1f, 0.98f);
 
-    /// <summary>
-    /// Contour bleu-nuit du brief (§5), aligné sur le fond d'interface. Sans lui, un objet cyan
-    /// disparaît sur les sols clairs du Sanctuaire.
-    /// </summary>
-    private static readonly Color Outline = new(0.047f, 0.043f, 0.078f, 0.75f);
-
     // ─── Châssis ──────────────────────────────────────────────────────────────
 
     private static Sprite BuildBody()
@@ -88,10 +82,10 @@ public static class TurretSprite
             px[y * Size + x] = dist < 0.34f ? Core : Chassis;
         }
 
-        Shade(px);
-        AddOutline(px);
+        Pseudo3D.Shade(px, Size, Size);
+        Pseudo3D.AddOutline(px, Size, Size);
 
-        return Make(px);
+        return Pseudo3D.Make(px, Size, Size);
     }
 
     // ─── Canon ────────────────────────────────────────────────────────────────
@@ -137,126 +131,8 @@ public static class TurretSprite
         return Sprite.Create(tex, new Rect(0, 0, W, H), new Vector2(0.12f, 0.5f), 1f);
     }
 
-    // ─── Ombrage pseudo-3D (portage de tools/pseudo3d_lib.py) ─────────────────
-
-    /// <summary>
-    /// Classe chaque pixel opaque par sa place dans la silhouette et lui applique la face
-    /// correspondante — portage direct de <c>shade_sprite</c>.
-    /// </summary>
-    /// <remarks>
-    /// ⚠ Les coefficients agissent en <b>TSV</b>, sur la valeur et la saturation, jamais en RVB. La
-    /// contrainte dure du brief est que la <i>teinte</i> ne bouge pas : un assombrissement RVB
-    /// désature vers le gris et fait virer un objet cyan au bleu sale, ce qui se lit « mauvaise
-    /// couleur » et non « dans l'ombre ». Et jamais de noir ni de blanc purs.
-    /// </remarks>
-    private static void Shade(Color[] px)
-    {
-        // Bornes de la silhouette opaque — l'ombre portée est semi-transparente, donc exclue.
-        int minX = Size, minY = Size, maxX = -1, maxY = -1;
-
-        for (int y = 0; y < Size; y++)
-        for (int x = 0; x < Size; x++)
-        {
-            if (px[y * Size + x].a < 0.999f) continue;
-            if (x < minX) minX = x;
-            if (x > maxX) maxX = x;
-            if (y < minY) minY = y;
-            if (y > maxY) maxY = y;
-        }
-
-        if (maxX < 0) return;
-
-        int w = maxX - minX + 1;
-        int h = maxY - minY + 1;
-
-        int contactRows = h <= 10 ? 1 : 2;
-        int highlightRows = Mathf.Max(1, Mathf.RoundToInt(h * 0.30f));
-
-        for (int y = minY; y <= maxY; y++)
-        for (int x = minX; x <= maxX; x++)
-        {
-            var c = px[y * Size + x];
-            if (c.a < 0.999f) continue;
-
-            // ⚠ En espace texture, y croît vers le HAUT : le contact est donc en bas (y - minY) et
-            // la lumière en haut (maxY - y). Inverser les deux donne un objet éclairé par le sol,
-            // défaut discret et immédiatement « faux » à l'œil sans qu'on sache dire pourquoi.
-            int fromBottom = y - minY;
-            int fromTop = maxY - y;
-
-            Face face;
-            if (fromBottom < contactRows)     face = Face.Contact;
-            else if (fromTop < highlightRows) face = Face.Highlight;
-            else face = (x - minX) < w * 0.5f ? Face.BaseLight : Face.Shadow;
-
-            px[y * Size + x] = Apply(c, face);
-        }
-    }
-
-    private enum Face { Highlight, BaseLight, Shadow, Contact }
-
-    private static Color Apply(Color c, Face face)
-    {
-        // (multiplicateur de Valeur, multiplicateur de Saturation) — FACE_COEFFS du brief.
-        // `base_light` est la moyenne explicite de `base` et `highlight` : le flanc gauche d'un
-        // volume est à mi-chemin, la lumière venant aussi de la gauche.
-        (float dv, float ds) = face switch
-        {
-            Face.Highlight => (1.35f, 0.85f),
-            Face.BaseLight => (1.175f, 0.925f),
-            Face.Shadow    => (0.55f, 1.10f),
-            _              => (0.35f, 1.15f),
-        };
-
-        Color.RGBToHSV(c, out float hue, out float sat, out float val);
-
-        val = Mathf.Clamp(val * dv, 0.02f, 0.98f);   // jamais 0 ni 1 purs
-        sat = Mathf.Clamp01(sat * ds);
-
-        var shaded = Color.HSVToRGB(hue, sat, val);
-        return new Color(shaded.r, shaded.g, shaded.b, c.a);
-    }
-
-    /// <summary>Contour d'un pixel autour de la silhouette — le test de lisibilité du §5.</summary>
-    private static void AddOutline(Color[] px)
-    {
-        var outlined = new Color[px.Length];
-        System.Array.Copy(px, outlined, px.Length);
-
-        for (int y = 0; y < Size; y++)
-        for (int x = 0; x < Size; x++)
-        {
-            if (px[y * Size + x].a > 0.5f) continue;
-
-            bool touches = false;
-
-            for (int dy = -1; dy <= 1 && !touches; dy++)
-            for (int dx = -1; dx <= 1; dx++)
-            {
-                int nx = x + dx, ny = y + dy;
-                if (nx < 0 || ny < 0 || nx >= Size || ny >= Size) continue;
-                if (px[ny * Size + nx].a > 0.999f) { touches = true; break; }
-            }
-
-            if (touches) outlined[y * Size + x] = Outline;
-        }
-
-        System.Array.Copy(outlined, px, px.Length);
-    }
-
-    private static Sprite Make(Color[] px)
-    {
-        var tex = new Texture2D(Size, Size, TextureFormat.RGBA32, false)
-        {
-            filterMode = FilterMode.Point,
-            wrapMode = TextureWrapMode.Clamp,
-        };
-
-        tex.SetPixels(px);
-        tex.Apply();
-
-        // PPU 1, comme tous les sprites du monde : le sprite mesure Size unités, et l'échelle est un
-        // RAPPORT — jamais une taille posée telle quelle.
-        return Sprite.Create(tex, new Rect(0, 0, Size, Size), new Vector2(0.5f, 0.5f), 1f);
-    }
+    // ─── Ombrage pseudo-3D ────────────────────────────────────────────────────
+    //
+    // Il vit dans `Pseudo3D` : le même ombrage habille les appendices de chimère, et deux copies
+    // du brief dériveraient l'une de l'autre au premier réglage.
 }
