@@ -7,11 +7,28 @@ using UnityEngine;
 /// <para>Chaque ennemi n'est frappé qu'<b>une fois par phase</b> (aller, puis retour) : sans cet
 /// ensemble, un glaive qui traverse lentement une nuée infligerait ses dégâts à chaque frame de
 /// contact, ce qui en ferait de très loin l'arme la plus forte du jeu.</para>
+///
+/// <para><b>Il TOURNE, et c'est une croix.</b> Le portage lui donnait le sprite d'un tir de sentinelle
+/// ennemie, teinté violet, parfaitement immobile — soit la forme et la couleur d'un projectile
+/// hostile pour l'arme que l'icône, le Codex et l'écran de montée de niveau montrent tous comme une
+/// croix cyan tournoyante. Le tournoiement n'est pas une décoration : c'est ce qui distingue une lame
+/// <i>lancée</i> d'un tir, et il annonce qu'elle va revenir.</para>
 /// </summary>
 public sealed class GlaiveProjectile : MonoBehaviour
 {
     public float Speed = 420f;
     public float HitRadius = 20f;
+
+    /// <summary>Vitesse de rotation, en degrés par seconde.</summary>
+    /// <remarks>
+    /// ⚠ <b>Pas les 16 rad/s du jeu publié</b>, et ce n'est pas une transposition ratée. Godot fait
+    /// tourner un <b>losange</b>, une forme de symétrie d'ordre 2 : son image se répète tous les 180°.
+    /// Une croix est d'ordre 4 — elle se répète tous les <b>90°</b> — donc à vitesse angulaire égale
+    /// elle paraît tourner deux fois plus vite, et à 916 °/s elle frôle le stroboscope (une période
+    /// apparente de six images à 60 IPS). 515 °/s rend la même <i>vitesse perçue</i> : c'est l'effet
+    /// qu'on porte d'un moteur à l'autre, jamais le nombre.
+    /// </remarks>
+    private const float SpinDegPerSec = 515f;
 
     private readonly HashSet<EnemyBase> _hitThisPhase = new();
     private Vector2 _dir = Vector2.right;
@@ -19,6 +36,42 @@ public sealed class GlaiveProjectile : MonoBehaviour
     private float _damage;
     private float _range;
     private bool _returning;
+
+    private void Awake() => Dress();
+
+    /// <summary>
+    /// Pose la silhouette et le halo. Fait <b>par code</b> et non dans le gabarit : le sprite est
+    /// dessiné à l'exécution, donc aucun prefab ne peut le référencer.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Le gabarit garde donc une référence au sprite qu'il servait avant — inerte, mais trompeuse
+    /// à la lecture. Ce qui fait foi est ici.
+    /// </remarks>
+    private void Dress()
+    {
+        var sr = GetComponent<SpriteRenderer>();
+        if (sr == null) return;
+
+        sr.sprite = GlaiveSprite.Get();
+        sr.color = Color.white;   // la teinte vit dans le sprite : un multiplicateur l'assombrirait
+
+        // Halo : le portage du PointLight2D cyan du jeu publié. Sans lui, la lame se perd dans une
+        // nuée dès qu'elle passe devant un ennemi clair — et c'est l'arme dont il faut suivre la
+        // trajectoire, puisqu'elle revient. Un disque radial est invariant par rotation : il peut
+        // rester enfant d'un objet qui tourne.
+        var halo = new GameObject("Halo", typeof(SpriteRenderer));
+        halo.transform.SetParent(transform, false);
+
+        var hr = halo.GetComponent<SpriteRenderer>();
+        hr.sprite = VfxPrimitives.Glow;
+        hr.sharedMaterial = VfxPrimitives.Additive;
+        hr.color = new Color(GlaiveSprite.Blade.r, GlaiveSprite.Blade.g, GlaiveSprite.Blade.b, 0.5f);
+        hr.sortingOrder = sr.sortingOrder - 1;
+
+        // Le sprite de lueur mesure 64 unités : l'échelle est le rapport du diamètre voulu à 64.
+        float diameter = HitRadius * 2.6f;
+        halo.transform.localScale = Vector3.one * (diameter / 64f);
+    }
 
     /// <summary>Arme le glaive. À appeler juste après l'instanciation.</summary>
     public void Launch(Vector2 direction, float damage, float range)
@@ -33,6 +86,8 @@ public sealed class GlaiveProjectile : MonoBehaviour
     {
         float dt = Time.deltaTime;
         Vector2 me = transform.position;
+
+        transform.Rotate(0f, 0f, SpinDegPerSec * dt);
 
         if (!_returning)
         {

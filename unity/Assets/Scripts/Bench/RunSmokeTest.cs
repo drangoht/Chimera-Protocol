@@ -868,6 +868,45 @@ public sealed class RunSmokeTest : MonoBehaviour
               DroneSprite.Get() != UiPrimitives.White && DroneSprite.Get().rect.width >= 8f,
               $"{DroneSprite.Get().rect.width:F0} px");
 
+        // ─── La lame boomerang est une CROIX, et elle tourne ──────────────────
+        // Elle empruntait le sprite d'un tir de sentinelle ENNEMIE, teinté violet et immobile —
+        // la forme et la couleur d'un projectile hostile, pour l'arme que l'icône, le Codex et
+        // l'écran de montée de niveau montrent tous comme une croix cyan tournoyante.
+        // ⚠ Lancé LOIN du joueur et armé avant la première image : sans `Launch`, sa portée vaut
+        // zéro, il se croit déjà en phase de retour dès la première image, se trouve à moins de
+        // 24 px de son point d'arrivée et se détruit. La vérification tomberait alors sur un objet
+        // mort — et se lirait « la lame ne tourne pas ».
+        var blade = new GameObject("GlaiveTemoin", typeof(SpriteRenderer));
+        blade.transform.position = new Vector3(400f, 400f, 0f);
+
+        var projectile = blade.AddComponent<GlaiveProjectile>();
+        projectile.Launch(Vector2.right, 1f, 4000f);
+        yield return null;
+
+        var bladeRenderer = blade.GetComponent<SpriteRenderer>();
+
+        Check("lame boomerang : silhouette dediee en croix",
+              bladeRenderer.sprite == GlaiveSprite.Get()
+              && GlaiveSprite.Get().rect.width >= projectile.HitRadius * 1.8f,
+              $"{GlaiveSprite.Get().rect.width:F0} px pour un rayon de frappe de {projectile.HitRadius:F0}");
+
+        // Le halo est ce qui la rend suivable dans une nuée — or c'est l'arme dont la trajectoire
+        // compte, puisqu'elle revient.
+        Check("lame boomerang : elle porte un halo",
+              blade.GetComponentsInChildren<SpriteRenderer>().Length >= 2);
+
+        // Le tournoiement se COMPTE : il distingue une lame lancée d'un tir, et annonce le retour.
+        // Fenêtre courte à dessein — au-delà d'un demi-tour, `DeltaAngle` se replie et l'écart
+        // mesuré redescendrait.
+        float spinBefore = blade.transform.eulerAngles.z;
+        yield return new WaitForSeconds(0.2f);
+
+        float turned = Mathf.Abs(Mathf.DeltaAngle(spinBefore, blade.transform.eulerAngles.z));
+
+        Check("lame boomerang : elle tournoie", turned > 20f,
+              $"{turned:F0} deg parcourus en 0,2 s");
+
+        Destroy(blade);
         yield return null;
     }
 

@@ -392,6 +392,26 @@ public sealed class ScreenshotTour : MonoBehaviour
         yield return Play(0.5f);
         yield return Shot("colonne-solaire-2");
 
+        // ─── La lame boomerang ────────────────────────────────────────────────
+        // Elle empruntait le sprite d'un tir de sentinelle ennemie : c'est une image, et une seule,
+        // qui dit si elle a désormais la forme de son icône.
+        inv.ResetForRun();
+        for (int i = 0; i < 5; i++) inv.AcquireOrLevelUp("glaive");
+
+        SpawnSwarmAroundPlayer(12);
+        yield return Play(0.9f);
+
+        var lame = FindFirstObjectByType<GlaiveProjectile>();
+        var lameSprite = lame != null ? lame.GetComponent<SpriteRenderer>()?.sprite : null;
+
+        Debug.Log($"[SHOTS] lame boomerang : {(lame != null ? "en vol" : "AUCUNE")}, " +
+                  $"sprite {(lameSprite == GlaiveSprite.Get() ? "croix dediee" : lameSprite?.name ?? "ABSENT")}, " +
+                  $"rotation {(lame != null ? lame.transform.eulerAngles.z : -1f):F0} deg");
+
+        yield return Shot("lame-boomerang");
+        yield return Play(0.35f);
+        yield return Shot("lame-boomerang-2");
+
         // ─── La singularité, posée SUR le décor ───────────────────────────────
         // Sans pilier dans le champ, l'image ne montre que le vortex : c'est précisément la capture
         // qui ne répond pas à la question posée. Le joueur est donc déplacé contre un obstacle, et
