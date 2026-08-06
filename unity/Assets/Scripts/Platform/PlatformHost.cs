@@ -70,6 +70,11 @@ public sealed class PlatformHost : MonoBehaviour
         ScaledTimers.Tick(dt);
         UnscaledTimers.Tick(udt);
 
+        // ⚠ Le ralenti est avancé ICI, et non par la caméra ou par ce qui l'a déclenché : ceux-là
+        // meurent pendant l'effet — le boss est détruit à l'image même où il déclenche le sien —
+        // et le jeu resterait alors ralenti pour de bon.
+        HitStop.Advance(udt);
+
         // On itère sur une copie : une interpolation peut en créer une autre depuis son rappel de
         // fin (enchaînement d'animations), ce qui modifierait la liste en cours de parcours.
         _tweenSwap.Clear();

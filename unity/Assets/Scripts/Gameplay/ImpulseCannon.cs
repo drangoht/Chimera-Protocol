@@ -23,7 +23,13 @@ public class ImpulseCannon : WeaponBase
         base.Awake();   // en dernier : il fige la valeur de fiche
     }
 
-    protected override bool TryFire()
+    protected override bool TryFire() => FireOne();
+
+    /// <summary>
+    /// Envoie <b>un</b> projectile vers l'ennemi le plus proche. Isolé du déclenchement pour qu'une
+    /// arme à rafale puisse en tirer plusieurs sans dupliquer la chaîne « viser → tirer → signaler ».
+    /// </summary>
+    protected bool FireOne()
     {
         var target = FindNearestEnemy();
         if (target == null || BulletPrefab == null) return false;
@@ -38,6 +44,10 @@ public class ImpulseCannon : WeaponBase
 
         bullet.Piercing = Piercing;
         bullet.Power = Level;
+
+        // ⚠ AVANT Launch : c'est lui qui pose halo et traînée, et il lit ce que l'arme a réglé.
+        ConfigureBullet(bullet);
+
         bullet.Launch(dir * BulletSpeed, EffectiveDamage, Range);
 
         // Le départ du coup se voit au canon, pas seulement à l'arrivée : sans flash, une arme à
@@ -47,4 +57,10 @@ public class ImpulseCannon : WeaponBase
         AudioSystem.PlaySfx("sfx_weapon_impulse_shoot");
         return true;
     }
+
+    /// <summary>
+    /// Dernier réglage du projectile avant son départ — allure, pas gameplay. Vide pour le canon de
+    /// base : son projectile est la référence à laquelle les autres se comparent.
+    /// </summary>
+    protected virtual void ConfigureBullet(Bullet bullet) { }
 }

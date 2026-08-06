@@ -24,6 +24,16 @@ public sealed class HUD : MonoBehaviour
     private static readonly Color OffWhite    = new(0.851f, 0.851f, 0.949f);
 
     /// <summary>
+    /// Gris de mise en veille — un élément <b>présent mais indisponible</b>. Il ne doit jamais être
+    /// confondu avec la couleur de fond : un libellé peint au fond disparaît, ce qui se lit
+    /// « l'affichage a un bug », alors qu'un gris se lit « pas maintenant ».
+    /// </summary>
+    private static readonly Color Dim = new(0.45f, 0.45f, 0.55f);
+
+    /// <summary>Cyan éteint — la même information que <see cref="Cyan"/>, mais en attente.</summary>
+    private static readonly Color DimCyan = new(0.16f, 0.42f, 0.40f);
+
+    /// <summary>
     /// Vert de la barre de vie — celui du jeu publié. Le portage l'avait mise en <b>rouge</b> : une
     /// barre pleine y paraît alors déjà critique, et l'information « je vais mal » n'a plus de
     /// couleur disponible pour se dire.
@@ -43,7 +53,12 @@ public sealed class HUD : MonoBehaviour
     private Text?  _coreLabel;
     private Transform? _graftSlots;
     private Transform? _arsenalRows;
+    private Text?  _regenLabel;
+    private Image? _reserveFill;
+    private GameObject? _reserveBar;
     private Text?  _dashLabel;
+    private Image? _dashFill;
+    private GameObject? _dashGauge;
     private Text?  _fpsLabel;
     private Text?  _bannerLabel;
     private Text?  _bossLabel;
@@ -71,7 +86,11 @@ public sealed class HUD : MonoBehaviour
         }
 
         var gm = GameManager.Instance;
-        if (gm != null) gm.OvertimeStarted += OnOvertimeStarted;
+        if (gm != null)
+        {
+            gm.OvertimeStarted += OnOvertimeStarted;
+            gm.BossDown += OnBossDown;
+        }
 
         // Les emplacements se redessinent à chaque greffe acquise — sans cet abonnement, la rangée
         // resterait vide toute la run alors que le joueur porte trois greffes.
@@ -95,7 +114,11 @@ public sealed class HUD : MonoBehaviour
         }
 
         var gm = GameManager.Instance;
-        if (gm != null) gm.OvertimeStarted -= OnOvertimeStarted;
+        if (gm != null)
+        {
+            gm.OvertimeStarted -= OnOvertimeStarted;
+            gm.BossDown -= OnBossDown;
+        }
 
         Assimilation.GraftEquipped -= OnGraftEquipped;
     }
@@ -105,6 +128,22 @@ public sealed class HUD : MonoBehaviour
     private void OnGraftEquipped(GraftTable.GraftDef def) => RefreshGraftSlots();
 
     private void OnOvertimeStarted() => Announce("LE NOYAU ROUILLÉ ARRIVE");
+
+    /// <summary>
+    /// Annonce la <b>complétion du niveau</b> à la chute du boss.
+    /// </summary>
+    /// <remarks>
+    /// <para>⚠ Le portage avait perdu ce bandeau (<c>RunStatsTracker</c> l'affichait sous Godot), et
+    /// son absence est plus lourde qu'une omission décorative : la chute du boss <b>ne termine pas la
+    /// run</b>, qui continue jusqu'à la mort du joueur. Sans annonce, la seule chose qui change à
+    /// l'écran est qu'un ennemi a disparu — et le joueur ne peut pas savoir qu'il vient de débloquer
+    /// le niveau suivant, ni que ce qu'il joue désormais est du rab.</para>
+    ///
+    /// <para>La seconde ligne n'est donc pas du décor : elle répond à la question que la première
+    /// fait immédiatement naître — « et maintenant ? ».</para>
+    /// </remarks>
+    private void OnBossDown()
+        => Announce($"{Loc.T("LEVEL_COMPLETE")}\nLA RUN CONTINUE", 7f);
 
     /// <summary>Affiche un bandeau temporaire au centre de l'écran.</summary>
     public void Announce(string message, float seconds = 4f)
@@ -236,6 +275,7 @@ public sealed class HUD : MonoBehaviour
         UpdateBossBar();
         UpdateBanner();
         UpdateDash();
+        UpdateRegen();
         UpdateFps();
     }
 
@@ -291,13 +331,88 @@ public sealed class HUD : MonoBehaviour
         if (_dashLabel == null) return;
 
         var player = Player.Instance;
-        if (player == null || !player.DashEnabled) { _dashLabel.text = ""; return; }
+        if (player == null || !player.DashEnabled)
+        {
+            _dashLabel.text = "";
+            if (_dashGauge != null) _dashGauge.SetActive(false);
+            return;
+        }
 
-        bool ready = player.DashReadyRatio >= 1f;
-        _dashLabel.text = ready
-            ? $"{InputRemap.DisplayName(GameAction.Dash)} — esquive"
-            : $"{InputRemap.DisplayName(GameAction.Dash)} — esquive  {player.DashReadyRatio * 100f:F0} %";
-        _dashLabel.color = ready ? Cyan : Background;
+        float ratio = player.DashReadyRatio;
+        bool ready = ratio >= 1f;
+
+        // ⚠ Le libellé passait en couleur de FOND pendant la recharge — c'est-à-dire qu'il
+        // DISPARAISSAIT au moment précis où il a quelque chose à dire. Il reste donc toujours
+        // lisible ; c'est la jauge, et non le texte, qui porte l'état.
+        _dashLabel.text = $"{InputRemap.DisplayName(GameAction.Dash)} — esquive";
+        _dashLabel.color = ready ? Cyan : DimCyan;
+
+        if (_dashGauge != null) _dashGauge.SetActive(true);
+
+        if (_dashFill != null)
+        {
+            _dashFill.fillAmount = ratio;
+
+            // Deux couleurs franches plutôt qu'un dégradé : la seule question posée à cette jauge
+            // est binaire — « puis-je esquiver maintenant ? ». Le remplissage répond à la seconde,
+            // « dans combien de temps ».
+            _dashFill.color = ready ? Cyan : DimCyan;
+        }
+    }
+
+    /// <summary>
+    /// Régénération continue et sa <b>réserve</b> — les deux moitiés d'une même règle.
+    /// </summary>
+    /// <remarks>
+    /// <para>Rien n'affichait la régénération : le modèle est pourtant porté en entier (débit,
+    /// réserve anti-pic, suspension de 4 s sous le feu). Sous Godot, le même manque avait produit un
+    /// retour de testeur — l'Auto-réparation était crue <i>active</i> alors qu'elle ne se voyait
+    /// nulle part. Et la suspension aggrave le cas : sans affichage, un joueur touché voit sa
+    /// régénération s'arrêter <b>sans raison visible</b> et lit une carte cassée, pas une règle.</para>
+    ///
+    /// <para>Sous le feu, le débit cède la place au <b>temps restant</b> : l'information actionnable
+    /// est « dans combien de temps », pas « combien ».</para>
+    /// </remarks>
+    private void UpdateRegen()
+    {
+        var player = Player.Instance;
+        if (player == null) return;
+
+        var stats = player.Stats;
+        float perSecond = stats.HpRegenPerSecond;
+        bool suppressed = RegenReserve.IsSuppressed(stats.RegenSuppressLeft);
+
+        if (_regenLabel != null)
+        {
+            if (perSecond <= 0.01f)
+            {
+                _regenLabel.text = "";
+            }
+            else if (suppressed)
+            {
+                // Glyphes limités à ce que porte Share Tech Mono.
+                _regenLabel.text = $"♥ {stats.RegenSuppressLeft:0.0}s";
+                _regenLabel.color = Dim;
+            }
+            else
+            {
+                _regenLabel.text = $"♥ +{perSecond:0.0}/s";
+                _regenLabel.color = HealthGreen;
+            }
+        }
+
+        // La réserve n'existe pas sans source : un liseré vide en permanence ne serait que du bruit.
+        float capacity = RegenReserve.Capacity(perSecond, stats.MaxHp);
+        bool show = capacity > 0.01f;
+
+        if (_reserveBar != null && _reserveBar.activeSelf != show) _reserveBar.SetActive(show);
+        if (!show || _reserveFill == null) return;
+
+        _reserveFill.fillAmount = Mathf.Clamp01(stats.RegenReserveCharge / capacity);
+
+        // Grisé tant que la régénération est coupée : un tampon figé sans explication se lirait
+        // comme un bug.
+        _reserveFill.color = suppressed ? Dim : Cyan;
     }
 
     /// <summary>
@@ -405,6 +520,16 @@ public sealed class HUD : MonoBehaviour
                                 new Vector2(-320f, 60f), new Vector2(300f, 26f), Cyan, TextAnchor.LowerRight);
         _dashLabel.fontSize = 18;
 
+        // La jauge SOUS le libellé, sur la même largeur : une recharge se lit d'un coup d'œil
+        // périphérique, ce qu'un pourcentage écrit ne permet pas — en plein combat, personne ne lit
+        // un nombre à deux chiffres en bas de l'écran.
+        _dashGauge = new GameObject("DashGauge", typeof(RectTransform));
+        _dashGauge.transform.SetParent(canvasGo.transform, false);
+        Place(_dashGauge, new Vector2(1f, 0f), new Vector2(-320f, 36f), new Vector2(300f, 8f));
+
+        _dashFill = BuildBar(_dashGauge.transform, "Dash", new Vector2(0f, 1f),
+                             Vector2.zero, new Vector2(300f, 8f), Cyan);
+
         _fpsLabel = BuildLabel(canvasGo.transform, "Fps", new Vector2(1f, 1f),
                                new Vector2(-140f, -24f), new Vector2(120f, 26f), OffWhite, TextAnchor.UpperRight);
         _fpsLabel.fontSize = 16;
@@ -412,8 +537,14 @@ public sealed class HUD : MonoBehaviour
         BuildBossPanel(canvasGo.transform);
 
         _bannerLabel = BuildLabel(canvasGo.transform, "Banner", new Vector2(0.5f, 0.5f),
-                                  new Vector2(-320f, 160f), new Vector2(640f, 40f), Gold, TextAnchor.MiddleCenter);
+                                  new Vector2(-400f, 170f), new Vector2(800f, 88f), Gold, TextAnchor.MiddleCenter);
         _bannerLabel.fontSize = 30;
+
+        // ⚠ Deux lignes possibles (la complétion du niveau en tient deux) : sans ce débordement
+        // vertical, uGUI TRONQUE la seconde sans le moindre signe — et c'est celle qui dit au joueur
+        // ce qui se passe ensuite.
+        _bannerLabel.verticalOverflow = VerticalWrapMode.Overflow;
+        _bannerLabel.lineSpacing = 1.1f;
     }
 
     private void BuildBossPanel(Transform parent)
@@ -480,8 +611,26 @@ public sealed class HUD : MonoBehaviour
         _healthFill = BuildBar(panel.transform, "HealthBar", new Vector2(0f, 1f),
                                new Vector2(22f, -54f), new Vector2(VitalsWidth - 44f, 20f), HealthGreen);
 
+        // Liseré de réserve COLLÉ sous la barre de vie : la réserve absorbe le prochain coup, elle
+        // appartient donc aux points de vie et non à une ligne d'état séparée.
+        _reserveBar = new GameObject("ReserveBar", typeof(RectTransform));
+        _reserveBar.transform.SetParent(panel.transform, false);
+        Place(_reserveBar, new Vector2(0f, 1f), new Vector2(22f, -75f), new Vector2(VitalsWidth - 44f, 5f));
+
+        _reserveFill = BuildBar(_reserveBar.transform, "Reserve", new Vector2(0f, 1f),
+                                Vector2.zero, new Vector2(VitalsWidth - 44f, 5f), Cyan);
+        _reserveBar.SetActive(false);
+
         _xpFill = BuildBar(panel.transform, "XpBar", new Vector2(0f, 1f),
-                           new Vector2(22f, -80f), new Vector2(VitalsWidth - 44f, 10f), Cyan);
+                           new Vector2(22f, -84f), new Vector2(VitalsWidth - 44f, 10f), Cyan);
+
+        // Le débit de régénération, sur sa propre ligne sous l'XP : c'est une valeur qui ne bouge
+        // qu'à la prise d'une carte, sauf pendant les 4 s de suspension — où elle devient la seule
+        // information utile de tout le bloc.
+        _regenLabel = BuildLabel(panel.transform, "Regen", new Vector2(0f, 1f),
+                                 new Vector2(22f, -96f), new Vector2(200f, 20f), HealthGreen,
+                                 TextAnchor.UpperLeft);
+        _regenLabel.fontSize = 16;
 
         var slots = new GameObject("GraftSlots", typeof(RectTransform));
         slots.transform.SetParent(panel.transform, false);
@@ -618,7 +767,12 @@ public sealed class HUD : MonoBehaviour
     private const float SlotSize = 42f;
 
     /// <summary>Ordonnée du haut de la rangée d'emplacements, depuis le haut du panneau.</summary>
-    private const float SlotsTop = 98f;
+    /// <remarks>
+    /// Relevée de 98 à 120 pour loger la ligne de régénération sous la barre d'XP. La hauteur du
+    /// panneau en dérive (<c>SlotsTop + SlotSize + VitalsPadding</c>) : ajouter une rangée ne se
+    /// paie donc qu'ici, et jamais en retouchant une hauteur devinée.
+    /// </remarks>
+    private const float SlotsTop = 120f;
 
     /// <summary>Marge sous la dernière rangée — la bordure 9-slice du cadre, plus une respiration.</summary>
     private const float VitalsPadding = 22f;

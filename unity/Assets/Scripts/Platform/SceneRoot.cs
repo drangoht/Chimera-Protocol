@@ -31,6 +31,16 @@ public static class SceneRoot
     private static float _resumeScale = 1f;
 
     /// <summary>
+    /// Vitesse <b>nominale</b> du jeu, indépendamment d'une pause ou d'un ralenti en cours.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ C'est elle qu'un effet temporaire doit restaurer, jamais <c>1,0</c> : une campagne de banc
+    /// tourne en temps accéléré (<c>--timescale</c>), et rendre 1,0 annulerait ce réglage
+    /// silencieusement — la mesure continuerait, simplement vingt fois plus lente que prévu.
+    /// </remarks>
+    public static float ResumeScale => _resumeScale;
+
+    /// <summary>
     /// Échelle de temps à restaurer en sortie de pause. Distincte de <see cref="Paused"/> parce que
     /// le banc tourne en temps accéléré (<c>--timescale</c>) : sortir de pause en forçant 1,0
     /// annulerait silencieusement ce réglage au premier menu ouvert.
@@ -76,8 +86,10 @@ public static class SceneRoot
         host.ScaledTimers.Clear();
         host.UnscaledTimers.Clear();
 
-        // La pause ne survit jamais à un changement de scène : rester à timeScale = 0 après un
-        // retour au menu produirait un écran définitivement figé, sans cause visible.
+        // Ni la pause ni un ralenti ne survivent à un changement de scène : rester à timeScale = 0
+        // après un retour au menu produirait un écran définitivement figé, et un ralenti abandonné
+        // en cours donnerait un menu au ralenti — dans les deux cas sans cause visible.
+        HitStop.Reset();
         Paused = false;
 
         SceneManager.LoadScene(sceneName);

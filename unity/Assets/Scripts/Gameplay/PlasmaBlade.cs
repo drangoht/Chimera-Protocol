@@ -49,9 +49,8 @@ public class PlasmaBlade : WeaponBase
         LastSweepHits = 0;
 
         // L'arc se dessine même s'il ne touche personne : c'est lui qui dit au joueur où frappe son
-        // arme, et une arme de mêlée invisible passe pour une carte sans effet. Le croissant balayé
-        // (et non un arc figé) est ce qui le fait lire comme un COUP.
-        Vfx.Crescent(center, dir, halfArc, ArcRadius);
+        // arme, et une arme de mêlée invisible passe pour une carte sans effet.
+        DrawSweep(center, dir, halfArc);
 
         var snapshot = EnemyBase.Active.ToArray();
 
@@ -71,4 +70,16 @@ public class PlasmaBlade : WeaponBase
 
         return LastSweepHits > 0;
     }
+
+    /// <summary>
+    /// Dessine le coup. Le croissant <b>balayé</b> — et non un arc figé — est ce qui le fait lire
+    /// comme un COUP plutôt que comme une portée affichée.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Isolé dans une méthode redéfinissable parce qu'il <b>cesse d'être juste à 360°</b> : un
+    /// croissant de demi-angle 180 est un cercle complet, c'est-à-dire une frontière, et il n'y a
+    /// plus de direction à montrer puisque l'arme frappe partout. Voir <c>FusionBlade</c>.
+    /// </remarks>
+    protected virtual void DrawSweep(Vector2 center, Vector2 direction, float halfArcDeg)
+        => Vfx.Crescent(center, direction, halfArcDeg, ArcRadius);
 }

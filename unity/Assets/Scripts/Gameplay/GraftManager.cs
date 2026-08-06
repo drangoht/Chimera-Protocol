@@ -64,8 +64,12 @@ public sealed class GraftManager : MonoBehaviour
                 case "orbitingAllies": ApplyOrbiters(def); break;
                 case "thorns":         ApplyThorns(def);   break;
                 case "shockwave":      ApplyShockwave(def); break;
-                case "autoTurret":
-                case "turrets":        ApplyTurrets(def, group.Key); break;
+                // ⚠ Les deux groupes ne décrivent PAS la même chose, et les confondre a coûté la
+                // moitié d'une greffe : `autoTurret` est un œil greffé sur le porteur — il tire
+                // depuis lui, et n'a pas de corps ; `turrets` est une ruche de quatre tourelles
+                // ancrées autour de lui, qui ont le leur.
+                case "autoTurret":     ApplyAutoTurret(def); break;
+                case "turrets":        ApplyTurretHive(def); break;
 
                 case "dash":           ApplyDash(def, "dash"); break;
                 case "charge":         ApplyDash(def, "charge"); break;
@@ -176,14 +180,59 @@ public sealed class GraftManager : MonoBehaviour
         _shockwaveTimer    = _shockwaveInterval;
     }
 
-    private void ApplyTurrets(GraftTable.GraftDef def, string group)
+    /// <summary>
+    /// Œil de visée : il tire <b>depuis le porteur</b>, et c'est correct — c'est un œil greffé, pas
+    /// une machine posée à côté.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Les clés lues étaient <c>fireIntervalSec</c> et <c>rangePx</c>, absentes des données : la
+    /// greffe tournait donc sur les valeurs par défaut du code (1,2 s et 420 px au lieu de 1,4 s et
+    /// 420 px déclarés), et le fichier de réglage était ignoré en silence. Rien ne pouvait le
+    /// signaler : des valeurs plausibles sortaient quand même.
+    /// </remarks>
+    private void ApplyAutoTurret(GraftTable.GraftDef def)
     {
-        _turretCount    = Mathf.Max(_turretCount, (int)def.Effect(group, "count", 1));
-        _turretInterval = (float)def.Effect(group, "fireIntervalSec", def.Effect(group, "cooldown", 1.2));
-        _turretDamage   = (float)def.Effect(group, "damage", 12.0);
-        _turretRange    = (float)def.Effect(group, "rangePx", 420.0);
+        _turretCount    = Mathf.Max(_turretCount, 1);
+        _turretInterval = (float)def.Effect("autoTurret", "cooldownSec", 1.4);
+        _turretDamage   = (float)def.Effect("autoTurret", "damage", 18.0);
+        _turretRange    = (float)def.Effect("autoTurret", "targetRangePx", 420.0);
         _turretTimer    = _turretInterval;
+
+        if (_player != null && def.Effect("autoTurret", "scalesWithDamageMultiplier", 1) != 0)
+            _turretDamage *= _player.Stats.DamageMultiplier;
     }
+
+    /// <summary>
+    /// Ruche de Tourelles : quatre <b>corps</b> ancrés autour du porteur.
+    /// </summary>
+    /// <remarks>
+    /// Le portage les avait réduites à « tirer quatre projectiles depuis le joueur ». Rien à l'écran
+    /// ne disait qu'on portait une ruche — voir <see cref="GraftTurret"/>, qui porte le détail de ce
+    /// qui manquait.
+    /// </remarks>
+    private void ApplyTurretHive(GraftTable.GraftDef def)
+    {
+        if (_player == null) return;
+
+        int count = (int)def.Effect("turrets", "count", 4);
+
+        for (int i = 0; i < count; i++)
+        {
+            // ⚠ Hors hiérarchie du joueur, comme les orbiteurs : enfant, la tourelle hériterait de
+            // sa position ET de son échelle, et son ancrage se calculerait deux fois.
+            var go = new GameObject($"Tourelle{i}");
+
+            var turret = go.AddComponent<GraftTurret>();
+            turret.Configure(_player, def, i, count);
+
+            _hive.Add(turret);
+        }
+    }
+
+    /// <summary>Tourelles vivantes — observable pour les vérifications.</summary>
+    public IReadOnlyList<GraftTurret> Hive => _hive;
+
+    private readonly List<GraftTurret> _hive = new();
 
     // ─── Esquive, charge et nova ──────────────────────────────────────────────
 
@@ -384,6 +433,11 @@ public sealed class GraftManager : MonoBehaviour
         foreach (var orbiter in _orbiters) if (orbiter != null) Destroy(orbiter.gameObject);
         _orbiters.Clear();
         _orbiterCooldowns.Clear();
+
+        // Les tourelles vivent HORS de la hiérarchie du joueur : rien ne les détruirait sans cette
+        // ligne, et elles resteraient à tirer dans une arène qui n'existe plus.
+        foreach (var turret in _hive) if (turret != null) Destroy(turret.gameObject);
+        _hive.Clear();
 
         _thornsFraction = 0f;
         _shockwaveInterval = 0f;

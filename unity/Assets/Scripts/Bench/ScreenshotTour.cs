@@ -255,7 +255,87 @@ public sealed class ScreenshotTour : MonoBehaviour
 
         yield return new WaitForSecondsRealtime(0.8f);
         yield return Shot("etats-gel-2");
+
+        yield return ShootFusions();
     }
+
+    /// <summary>
+    /// Photographie les <b>fusions à effet permanent</b> et la Ruche de Tourelles.
+    /// </summary>
+    /// <remarks>
+    /// <para>Aucune ne peut apparaître dans une tournée ordinaire : une fusion se gagne en montant
+    /// deux armes au niveau requis, une greffe demande de remplir une jauge entière. Elles sont donc
+    /// <b>accordées à la main</b> — on photographie une allure, pas la chaîne qui y mène (le banc
+    /// s'en charge).</para>
+    ///
+    /// <para>Ces trois-là ont en commun d'avoir été signalées <b>invisibles ou illisibles</b> en
+    /// jouant : le voile de givre réduit à un cercle, la lame de fusion à un croissant tournoyant,
+    /// les tourelles à rien du tout. C'est exactement ce qu'une image tranche et qu'aucun test ne
+    /// voit.</para>
+    /// </remarks>
+    private IEnumerator ShootFusions()
+    {
+        foreach (var enemy in EnemyBase.Active.ToArray())
+            if (enemy != null) Destroy(enemy.gameObject);
+
+        yield return null;
+
+        var inv = InventorySystem.Instance;
+        var player = Player.Instance;
+        if (inv == null || player == null) yield break;
+
+        // ⚠ Une fusion ne s'ACQUIERT pas : elle se FORGE depuis son arme source montée au niveau
+        // requis. Un premier essai appelait `AcquireOrLevelUp("frost_veil")`, qui ne connaît pas cet
+        // identifiant et ne fait donc rien — le relevé disait « armes impulse_cannon » et la capture
+        // montrait une run ordinaire. Sans le relevé, on aurait jugé des effets jamais équipés.
+        foreach (var (source, passive, fusion) in new[]
+                 {
+                     ("cryo_lance",     "reinforced_plating", "frost_veil"),
+                     ("plasma_blade",   "thermal_core",       "fusion_blade"),
+                     ("impulse_cannon", "capacitor",          "rail_overcharged"),
+                 })
+        {
+            // Le passif requis compte autant que le niveau d'arme : sans lui, `CanFuse` refuse en
+            // silence et rend 0 — la fusion ne se forge pas, et rien ne le dit.
+            for (int i = 0; i < 5; i++) inv.AcquireOrLevelUp(source);
+            inv.AddOrUpgradePassive(passive);
+            inv.ApplyFusion(fusion);
+        }
+
+        // Et la ruche, par la porte de derrière : la greffe de fusion ne s'obtient pas autrement.
+        var manager = player.GetComponent<GraftManager>();
+        var hive = Assimilation.Config.Fusions.Find(f => f.HasEffect("turrets"));
+        if (manager != null && hive != null) manager.Apply(hive);
+
+        // Et l'esquive, sans quoi sa jauge de recharge reste masquée — or c'est précisément elle
+        // qu'on vient photographier. Une capture d'un HUD dont la moitié des lignes ne peut pas
+        // s'afficher ne prouve rien de ces lignes-là.
+        var dashGraft = Assimilation.Config.Grafts.Find(g => g.HasEffect("dash"));
+        if (manager != null && dashGraft != null) manager.Apply(dashGraft);
+
+        SpawnSwarmAroundPlayer(16);
+        yield return new WaitForSecondsRealtime(1.6f);
+
+        // ⚠ Le relevé dit si les AURAS EXISTENT. Sans lui, « je ne vois pas le nuage » ne distingue
+        // pas « il est trop pâle » de « il n'a jamais été créé » — deux causes opposées, et la
+        // première seule se corrige en montant l'opacité.
+        int turrets = manager != null ? manager.Hive.Count : 0;
+        var veil = FindFirstObjectByType<FrostVeil>();
+        var blade = FindFirstObjectByType<FusionBlade>();
+
+        Debug.Log($"[SHOTS] fusions : {turrets} tourelle(s), armes " +
+                  string.Join(", ", inv.WeaponLevels.Keys) +
+                  $" — nuage de givre {Describe(veil != null ? veil.Cloud : null)}" +
+                  $", champ irradiant {Describe(blade != null ? blade.Field : null)}");
+
+        yield return Shot("fusions");
+
+        yield return new WaitForSecondsRealtime(0.9f);
+        yield return Shot("fusions-2");
+    }
+
+    private static string Describe(AuraCloud? cloud)
+        => cloud == null ? "ABSENT" : $"{cloud.PuffCount} bouffees sur {cloud.RadiusPx:F0} px";
 
     /// <summary>Maintient tout le monde gelé — et en vie — pendant la durée d'une pose.</summary>
     private IEnumerator KeepFrozen(float seconds)

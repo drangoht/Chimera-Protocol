@@ -287,6 +287,7 @@ public sealed class RunSmokeTest : MonoBehaviour
         yield return RunBossSpawnChecks(gm, spawner);
         yield return RunMetaChecks();
         yield return RunAssimilationChecks(enemyPrefab);
+        yield return RunHitStopChecks();
 
         // ─── Fin de run ───────────────────────────────────────────────────────
         gm.EndRun();
@@ -984,6 +985,47 @@ public sealed class RunSmokeTest : MonoBehaviour
     }
 
     /// <summary>
+    /// Le ralenti de coup décisif doit se <b>rendre</b>.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ C'est le défaut exact signalé en jouant : « le ralenti reste actif après la mort du boss au
+    /// lieu de revenir à la vitesse normale ». Un effet qui écrit <c>Time.timeScale</c> et ne le
+    /// restaure pas ne casse rien, ne lève rien, et rend le jeu injouable pour le reste de la
+    /// session. Il ne peut être attrapé que par une vérification qui regarde la valeur <i>après</i>.
+    /// </remarks>
+    private IEnumerator RunHitStopChecks()
+    {
+        HitStop.Reset();
+        float nominal = SceneRoot.ResumeScale;
+
+        HitStop.Trigger();
+        yield return null;
+
+        Check("ralenti : il ralentit vraiment le jeu", Time.timeScale < nominal * 0.5f,
+              $"timeScale {Time.timeScale:F2} pour un nominal de {nominal:F2}");
+
+        // On attend en temps RÉEL : attendre en temps de jeu pendant qu'on ralentit le jeu
+        // multiplierait l'attente par l'inverse du ralenti — l'erreur qui rend ce genre d'effet
+        // impossible à borner.
+        yield return new WaitForSecondsRealtime(1.2f);
+
+        Check("ralenti : la vitesse normale est RENDUE", !HitStop.Active
+              && Mathf.Approximately(Time.timeScale, nominal),
+              $"timeScale {Time.timeScale:F2}");
+
+        // Et il se rend aussi quand on l'interrompt — un changement de scène pendant l'effet ne doit
+        // pas laisser un menu au ralenti.
+        HitStop.Trigger();
+        yield return null;
+        HitStop.Reset();
+
+        Check("ralenti : interrompu, il rend la vitesse immediatement",
+              Mathf.Approximately(Time.timeScale, nominal), $"timeScale {Time.timeScale:F2}");
+
+        yield return null;
+    }
+
+    /// <summary>
     /// Le gel doit dire sa <b>force</b>.
     /// </summary>
     /// <remarks>
@@ -1493,6 +1535,38 @@ public sealed class RunSmokeTest : MonoBehaviour
               GraftManager.UnsupportedGroups.Count == 0
                   ? $"{groups} effets, tous portes"
                   : $"{groups} effets, inertes : " + string.Join(", ", GraftManager.UnsupportedGroups));
+
+        // ─── La Ruche de Tourelles a des CORPS ────────────────────────────────
+        // Le portage se contentait de tirer N projectiles depuis le joueur : la greffe fonctionnait
+        // sans que rien à l'écran ne dise qu'on la portait.
+        Check("ruche : les tourelles existent en tant qu'objets", manager.Hive.Count >= 4,
+              $"{manager.Hive.Count} tourelle(s)");
+
+        if (manager.Hive.Count > 0)
+        {
+            var turret = manager.Hive[0];
+            var body = turret != null ? turret.GetComponentInChildren<SpriteRenderer>() : null;
+
+            Check("ruche : une tourelle porte un chassis ombre et un canon",
+                  body != null && body.sprite == TurretSprite.Body
+                  && turret!.GetComponentsInChildren<SpriteRenderer>().Length >= 2);
+
+            // Elles rejoignent leur ancrage à vitesse FINIE : posées sur le joueur au départ, elles
+            // doivent s'en être écartées. Un placement instantané en ferait un élément d'interface.
+            player.transform.position = Vector3.zero;
+            yield return new WaitForSeconds(1.2f);
+
+            float spread = turret != null
+                ? Vector2.Distance(turret.transform.position, player.transform.position)
+                : 0f;
+
+            Check("ruche : les tourelles s'ancrent AUTOUR du porteur", spread > 40f,
+                  $"{spread:F0} px du joueur");
+
+            Check("ruche : une tourelle tire depuis SA position",
+                  turret != null && turret.Shots > 0,
+                  $"{(turret != null ? turret.Shots : 0)} tir(s)");
+        }
 
         // ─── L'esquive ────────────────────────────────────────────────────────
         // Appliquer les greffes ci-dessus a accordé le dash au joueur : il doit être utilisable, et

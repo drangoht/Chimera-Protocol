@@ -893,6 +893,99 @@ des ennemis **inexistants à l'image**, et qu'on jugeait leur taille là-dessus.
 *Quatrième occurrence de « un asset présent n'est pas un asset affiché », et la première où c'est
 l'instrument de jugement lui-même qui était en cause.*
 
+### Un anneau affirme une FRONTIÈRE — une aura n'en a pas
+
+Toutes les auras du jeu étaient rendues par un cercle (`Vfx.Ring`) plus un halo. Le cercle a un
+défaut de fond : il dessine une limite, donc il donne à un Voile de Givre exactement la forme d'un
+Champ de Surcharge, d'une Nova, ou de n'importe quelle portée d'arme. Rien n'y dit le *givre*, dont
+le propre est justement de ne pas avoir de bord.
+
+`AuraCloud` superpose des bouffées (`VfxPrimitives.Glow`, additif, `OrderGround`) sans jamais tracer
+de trait : réparties en spirale (un tirage uniforme fait des trous et des grumeaux), à rayon
+**respirant** (sans quoi elles tournent sur des orbites fixes et le nuage redevient un anneau), et
+d'autant plus pâles qu'elles sont extérieures — ce dégradé remplace le contour.
+
+⚠ **Persistant, jamais repeint à chaque tir.** À 0,35 s de recharge, une aura redessinée à chaque
+coup *clignote* : le joueur lit « ça se déclenche » là où l'effet est permanent. Et elle ne prend
+rien au vivier partagé, qu'une aura continue viderait à elle seule.
+
+⚠ **Une aura de zone n'est pas un croissant.** `FusionBlade` héritait du balayage de la lame avec un
+demi-angle de 180° — soit un cercle complet, quatre fois par seconde, autour d'un champ qui n'a pas
+de bord, et tournant au hasard de la cible la plus proche alors que l'arme frappe partout. Le tracé
+du coup est donc redéfinissable (`PlasmaBlade.DrawSweep`) : ce qui est juste à 80° cesse de l'être à
+360.
+
+### La prudence sur l'opacité peut rendre un effet **invisible**
+
+Les deux nuages ont été calibrés à 0,07-0,085 par bouffée, par report direct de la leçon de la fumée
+(« en additif, c'est le cumul qui décide »). Sur capture : **rien**. La leçon ne s'appliquait pas —
+la fumée se cumule parce qu'elle est **réémise en continu** et finit par couvrir le sol, un nuage à
+effectif **fixe** n'a que ses recouvrements. Retenu : 0,22 (givre) et 0,17 (irradiation).
+
+⚠ Et le relevé doit dire lequel des deux cas on regarde. « Je ne vois pas le nuage » ne distingue pas
+*trop pâle* de *jamais créé* — deux causes opposées dont une seule se corrige en montant l'opacité.
+D'où `AuraCloud.PuffCount`/`RadiusPx` joints à la capture (`nuage de givre 12 bouffees sur 150 px`,
+ou `ABSENT`).
+
+### Un ombrage cuit suppose une lumière FIXE — donc ce qui tourne ne peut pas être ombré
+
+Le brief pseudo-3D pose une lumière venue du haut-gauche, une ombre en bas, un contact assombri au
+sol. Une pièce qui pivote emporte cette lumière avec elle et trahit l'illusion à chaque changement de
+cible.
+
+La parade n'est pas un contournement mais la bonne lecture de l'objet : séparer la **matière** de
+l'**énergie**. Le châssis d'une tourelle ne tourne pas, il est ombré et porte une ombre au sol ; son
+canon pivote librement parce qu'il est lumineux — une émission n'a pas de face éclairée.
+
+⚠ En espace texture, `y` croît vers le **haut** : le contact est en `y - minY` et la lumière en
+`maxY - y`. Inverser les deux donne un objet éclairé par le sol — discret, et immédiatement « faux »
+à l'œil sans qu'on puisse dire pourquoi.
+
+⚠ Les coefficients agissent en **TSV**, sur la valeur et la saturation, jamais en RVB : la contrainte
+dure du brief est que la *teinte* ne bouge pas. Un assombrissement RVB désature vers le gris et fait
+virer un objet cyan au bleu sale, ce qui se lit « mauvaise couleur » et non « dans l'ombre ».
+
+### Un effet qui écrit `Time.timeScale` doit le **rendre**, et depuis un objet qui survit
+
+Signalé en jouant : « le ralenti reste actif après la mort du boss au lieu de revenir à la vitesse
+normale ». Cette famille de bug ne casse rien, ne lève rien, et rend le jeu injouable pour le reste
+de la session.
+
+Quatre règles, toutes nécessaires (`HitStop`) :
+
+1. l'avance est portée par **`PlatformHost`**, qui survit aux changements de scène — pas par la
+   caméra ni par le boss, tous deux détruits *pendant* l'effet qu'ils déclenchent ;
+2. elle se compte en temps **non mis à l'échelle** : compter en temps de jeu pendant qu'on ralentit
+   le jeu allonge l'effet dans les mêmes proportions — à 8 %, il dure douze fois trop longtemps ;
+3. la vitesse rendue est **`SceneRoot.ResumeScale`**, jamais `1,0` : une campagne de banc en temps
+   accéléré retomberait sinon à la vitesse normale, silencieusement ;
+4. rien n'est écrit **pendant une pause** : la pause possède `timeScale`, et en sortir restaure déjà
+   la vitesse nominale.
+
+⚠ Et la valeur d'origine ne se recopie pas : 0,1 s à 5 % (le `HitStop` de Godot) fait **5 ms** de
+temps de jeu — un hoquet, pas un ralenti. Il faut une **tenue** puis une **remontée progressive** ;
+un ralenti sans remontée n'est qu'un blocage.
+
+### Une donnée déclarée et jamais consommée, **troisième et quatrième fois**
+
+Après `projectileCount` et la table de fusions, deux nouvelles :
+
+- **`RailOvercharged`** : `weapons.json` déclare `burstCount: 3`, `burstInterval`,
+  `cooldownBetweenBursts` et `projectileSpeed: 600`. Le portage tirait **un** projectile à 800 px/s.
+  Sa seule différence avec le canon de base était sa cadence — la fusion la plus lisible du jeu
+  ressemblait à une amélioration de statistique. Le symptôme rapporté était « il se voit mal ».
+- **La Ruche de Tourelles** : le portage lisait `fireIntervalSec` et `rangePx`, deux clés qui
+  **n'existent pas** dans `grafts.json`. La greffe tournait donc entièrement sur les valeurs par
+  défaut du code, et tout ce que le fichier déclarait (`cooldownSec`, `targetRangePx`,
+  `anchorRadiusPx`, `followSpeedPx`, `lifestealFraction`, `contactDamage`) était ignoré en silence.
+
+**Rien ne peut le signaler** : des valeurs plausibles sortent quand même. La seule parade est de lire
+la donnée en face du code qui la consomme, clé par clé.
+
+⚠ Et un effet **collapsé** est encore plus discret qu'un effet absent : les quatre tourelles étaient
+réduites à « tirer quatre projectiles depuis le joueur, vers la même cible, à la même image ». La
+greffe *fonctionnait*, elle coûtait une jauge entière, et rien à l'écran ne disait qu'on la portait.
+
 ### L'aléatoire d'un effet ne doit **jamais** venir de `UnityEngine.Random`
 
 `Random.Range` partage son état avec le jeu. Une campagne de banc lancée sur une graine fixe verrait

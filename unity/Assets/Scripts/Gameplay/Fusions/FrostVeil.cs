@@ -72,22 +72,23 @@ public sealed class FrostVeil : WeaponBase
     }
 
     /// <summary>
-    /// Le voile lui-même : un anneau, une brume centrale et des <b>cristaux qui tourbillonnent</b>.
-    ///
-    /// <para>Le portage n'en dessinait qu'un anneau cyan — la même forme que le Champ de Surcharge,
-    /// que la Nova, que la portée d'une zone. Rien n'y disait le <i>givre</i>. Les cristaux tournent
-    /// lentement autour du porteur et scintillent : c'est ce mouvement qui distingue une aura
-    /// glaçante d'un cercle de dégâts.</para>
+    /// Le voile lui-même : un <b>nuage de givre</b> et des cristaux qui tourbillonnent dedans.
     /// </summary>
+    /// <remarks>
+    /// <para>⚠ <b>Aucun contour.</b> Les deux versions précédentes en dessinaient un — le portage un
+    /// anneau cyan nu, puis un anneau plus une brume centrale. Un cercle affirme une <i>limite</i>,
+    /// et donne la même forme que le Champ de Surcharge, que la Nova, que n'importe quelle portée
+    /// d'arme : rien n'y dit le givre. Une brume glacée n'a précisément pas de bord — c'est ce qui
+    /// la distingue d'un disque de dégâts, et ce que <see cref="AuraCloud"/> rend en superposant des
+    /// bouffées sans jamais tracer de trait.</para>
+    ///
+    /// <para>Le nuage est <b>persistant</b> et non redessiné à chaque tir : à 0,35 s de recharge, une
+    /// aura repeinte à chaque coup clignote, et le joueur lit « ça se déclenche » là où l'effet est
+    /// permanent. Seuls les cristaux restent pulsés — eux sont bien un événement.</para>
+    /// </remarks>
     private void DrawVeil(Vector2 center)
     {
-        var ice = new Color(0.6f, 0.92f, 1f);
-
-        Vfx.Ring(center, Radius, ice, 3f, 0.25f);
-
-        // Brume : un halo large et faible, qui donne du volume au voile plutôt qu'un contour nu.
-        Vfx.Glow(center, new Color(0.55f, 0.85f, 1f), Radius * 0.85f, 0.22f, 0.25f,
-                 VfxPrimitives.OrderGround);
+        EnsureCloud();
 
         _veilSpin += SpinSpeed * BaseCooldown;
 
@@ -103,5 +104,25 @@ public sealed class FrostVeil : WeaponBase
             Vfx.Burst(at, new Color(0.9f, 0.98f, 1f, 0.85f), new Color(0.9f, 0.98f, 1f, 0f),
                       2, 6f, 26f, 3.5f, 0.4f);
         }
+    }
+
+    /// <summary>Nuage de givre porté — créé au premier tir, il vit ensuite tout seul.</summary>
+    public AuraCloud? Cloud { get; private set; }
+
+    private void EnsureCloud()
+    {
+        if (Cloud != null) return;
+
+        var go = new GameObject("NuageDeGivre");
+        go.transform.SetParent(transform, false);
+
+        Cloud = go.AddComponent<AuraCloud>();
+
+        // ⚠ L'alpha est celui d'UNE bouffée, pas du nuage : douze disques superposés en additif se
+        // cumulent. Mais 0,085 — première valeur, tirée par prudence de la leçon de la fumée — a
+        // donné un nuage **invisible** sur capture : la fumée se cumule parce qu'elle est réémise
+        // en continu et couvre le sol, un nuage à effectif FIXE n'a que ses recouvrements. La
+        // prudence était mal placée, et c'est la capture qui l'a dit.
+        Cloud.Configure(Radius, new Color(0.55f, 0.85f, 1f), alpha: 0.22f, count: 12, seed: 0x5F0257);
     }
 }

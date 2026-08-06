@@ -221,6 +221,12 @@ public sealed class RustedCore : EnemyBase
         if (IsDead) return;
         GameManager.Instance?.RegisterBossDefeated();
 
+        // Le seul coup du jeu qui conclut un niveau : il s'entend dans le TEMPS. Sans ce ralenti, le
+        // boss disparaît exactement comme un ennemi de base — et la fin du niveau se déduit d'une
+        // absence.
+        HitStop.Trigger();
+        ScreenShake.Shake(9f, 0.5f);
+
         // Trois Noyaux en couronne autour du cadavre, comme sous Godot. En couronne et non empilés :
         // le joueur les ramasse un par un, ce qui étire la récompense sur quelques secondes au lieu
         // de la donner d'un pas — et ces secondes-là se passent au milieu de l'arène, sans boss pour

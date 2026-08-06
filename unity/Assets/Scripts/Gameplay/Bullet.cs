@@ -27,8 +27,27 @@ public sealed class Bullet : MonoBehaviour
     /// </summary>
     public int Power = 1;
 
+    /// <summary>
+    /// Multiplicateur de <b>présence</b> du projectile : diamètre du halo, opacité et longueur de la
+    /// traînée. Vaut 1 pour un tir ordinaire.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Il ne touche à <b>rien</b> du modèle — ni dégâts, ni portée, ni vitesse. Il existe parce
+    /// qu'un projectile très rapide se voit <i>moins</i> qu'un lent à halo égal : il passe en moins
+    /// d'images, et l'œil n'en garde rien. Le Rail Surchargé (800 px/s contre 600) était ainsi
+    /// devenu plus discret que l'arme dont il est l'évolution — une montée en puissance qui se lit
+    /// comme une perte.
+    /// </remarks>
+    public float Presence = 1f;
+
     /// <summary>Teinte du projectile — reprise pour son impact, sinon la gerbe jure avec le tir.</summary>
     private Color _tint = new(0.267f, 1f, 0.933f);
+
+    /// <summary>Teinte imposée par l'arme, si elle en veut une autre que celle du sprite.</summary>
+    private Color? _tintOverride;
+
+    /// <summary>Impose une teinte au projectile — halo, traînée et gerbe d'impact la suivent.</summary>
+    public void SetTint(Color tint) => _tintOverride = tint;
 
     private readonly System.Collections.Generic.HashSet<EnemyBase> _pierced = new();
     private Vector2 _velocity;
@@ -47,6 +66,12 @@ public sealed class Bullet : MonoBehaviour
         var sr = GetComponent<SpriteRenderer>();
         if (sr != null) _tint = sr.color;
 
+        if (_tintOverride.HasValue)
+        {
+            _tint = _tintOverride.Value;
+            if (sr != null) sr.color = _tint;
+        }
+
         AttachGlow();
         AttachTrail();
     }
@@ -63,21 +88,29 @@ public sealed class Bullet : MonoBehaviour
         // noyaient l'arène : une arme à tir rapide envoie un FLUX de projectiles, et en mélange
         // additif leurs halos se cumulent jusqu'à saturer. Ce qui reste lisible seul devient un
         // aplat à dix exemplaires — c'est le cumul qu'il faut regarder, jamais le sprite isolé.
-        float diameter = 14f + p * 2.5f;
+        float diameter = (14f + p * 2.5f) * Presence;
         go.transform.localScale = Vector3.one * (diameter / 64f);
 
         var sr = go.GetComponent<SpriteRenderer>();
         sr.sprite = VfxPrimitives.Glow;
         sr.sharedMaterial = VfxPrimitives.Additive;
-        sr.color = new Color(_tint.r, _tint.g, _tint.b, Mathf.Clamp01(0.12f + p * 0.02f));
+
+        // ⚠ L'opacité ne suit la présence qu'à moitié (racine) : le halo doit gagner en TAILLE bien
+        // plus qu'en intensité, faute de quoi un flux de projectiles renforcés sature l'écran —
+        // c'est le cumul qui décide, jamais l'exemplaire isolé.
+        float alpha = Mathf.Clamp01((0.12f + p * 0.02f) * Mathf.Sqrt(Presence));
+        sr.color = new Color(_tint.r, _tint.g, _tint.b, alpha);
         sr.sortingOrder = 19;   // juste sous le projectile lui-même
     }
 
     private void AttachTrail()
     {
         var trail = gameObject.AddComponent<TrailRenderer>();
-        trail.time = 0.08f;
-        trail.startWidth = 7f;
+
+        // La traînée s'allonge avec la présence : sur un projectile rapide, c'est elle — et non le
+        // halo — qui donne à l'œil de quoi suivre la trajectoire.
+        trail.time = 0.08f * Presence;
+        trail.startWidth = 7f * Presence;
         trail.endWidth = 0f;
         trail.numCapVertices = 2;
         trail.alignment = LineAlignment.View;
