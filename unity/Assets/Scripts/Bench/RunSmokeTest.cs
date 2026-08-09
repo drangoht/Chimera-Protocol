@@ -295,6 +295,7 @@ public sealed class RunSmokeTest : MonoBehaviour
         // conclurait à un filet qui ne se déclenche pas.
         spawner.enabled = false;
         ClearArena();
+        yield return RunPortedRulesChecks(enemyPrefab);
         yield return RunSafetyNetChecks();
         yield return RunPurgeChecks(spawner.MiniBossPrefab);
         spawner.enabled = true;
@@ -995,9 +996,14 @@ public sealed class RunSmokeTest : MonoBehaviour
             // Le signal qui manquait le plus : un sprite qui s'agite à pleine cadence en avançant au
             // ralenti se lit « il glisse ». La cadence est aussi la SEULE part du gel qu'un banc
             // puisse constater — le reste est en pixels.
+            // ⚠ L'attendu passe par CrowdControlCaps, il n'est PAS le 0,5 demandé plus haut : le
+            // ralentissement est plafonné à 0,60, et la cadence suit le ralentissement RÉEL. Ce
+            // contrôle a échoué le jour où le plafond a enfin été branché — il encodait, sans le
+            // dire, l'absence de garde-fou.
+            float expected = CrowdControlCaps.CapSlowMult(0.5f);
             Check("etats : le gel ralentit l'animation de sa victime",
-                  Mathf.Approximately(fx.CadenceScale, 0.5f),
-                  $"cadence x{fx.CadenceScale:F2} pour un ralentissement x0,50");
+                  Mathf.Approximately(fx.CadenceScale, expected),
+                  $"cadence x{fx.CadenceScale:F2} pour un ralentissement plafonne a x{expected:F2}");
 
             Check("etats : un ennemi qui brule porte des flammes", fx.FlamesVisible);
 
@@ -2175,6 +2181,129 @@ public sealed class RunSmokeTest : MonoBehaviour
 
         // Remise à l'état de départ : le banc continue derrière.
         RunConfig.Choose(LevelThreat.Order[0], 0);
+        yield return null;
+    }
+
+    /// <summary>
+    /// Vérifie les règles que l'audit du 2026-08-09 a trouvées <b>portées et jamais appelées</b> :
+    /// courbe de scaling, plafonds de contrôle de foule, et l'existence même des tirs ennemis.
+    /// </summary>
+    /// <remarks>
+    /// <para>Toutes partagent la même signature : le fichier de règle existe, ses tests unitaires
+    /// passent, et le jeu appelle autre chose — ou rien. Un contrôle qui interroge la règle ne voit
+    /// donc rien ; celui-ci part d'une <b>entité réelle</b> et compare à ce que la règle promet.</para>
+    /// </remarks>
+    private IEnumerator RunPortedRulesChecks(GameObject enemyPrefab)
+    {
+        // ── La courbe de scaling, et non la droite historique ─────────────────
+        //
+        // À 30 minutes l'écart vaut ×2,4 ; à 13 minutes seulement ×1,3. C'est pour cela que le
+        // défaut a survécu au portage : il est presque nul là où on regarde d'habitude.
+        const float tLate = 30f, perMinute = 0.10f;
+        float linear = EnemyScaling.Scaled(100f, tLate, perMinute, 1f);
+        float curved = EnemyScaling.ScaledCurved(100f, tLate, perMinute, 1f);
+
+        Check("scaling : la courbe depasse franchement la droite en fin de partie",
+              curved > linear * 2f,
+              $"a {tLate:F0} min : droite {linear:F0}, courbe {curved:F0} (x{curved / linear:F2})");
+
+        // ── Plafonds de contrôle de foule ─────────────────────────────────────
+        //
+        // ⚠ Le joueur est écarté à l'autre bout de l'arène pendant la mesure. Ses armes tirent
+        // toutes seules et portent à ~500 px : un premier essai relevait 86 PV/s pour un plafond de
+        // brûlure à 60, et l'écart n'était pas la brûlure — c'était le canon. Une mesure de DÉBIT
+        // sur une cible que le joueur peut atteindre mesure les deux à la fois.
+        var player0 = Player.Instance;
+        Vector3 playerHome = player0 != null ? player0.transform.position : Vector3.zero;
+        if (player0 != null) player0.transform.position = new Vector3(-900f, -550f);
+
+        var go = Instantiate(enemyPrefab, new Vector3(900f, 550f), Quaternion.identity);
+        go.SetActive(true);
+        var enemy = go.GetComponent<EnemyBase>();
+        enemy.ApplyScaling(100000f, 0f);
+        enemy.Speed = 0f;
+
+        enemy.ApplySlow(0.02f, 5f);   // demande un ralentissement de 98 %
+        Check("controle de foule : le ralentissement est plafonne",
+              Mathf.Approximately(enemy.SlowMultiplier, CrowdControlCaps.MinSlowMult),
+              $"demande x0,02 -> obtenu x{enemy.SlowMultiplier:0.00} " +
+              $"(plancher {CrowdControlCaps.MinSlowMult:0.00})");
+
+        // ⚠ Mesure COMPARATIVE, avec témoin — et non un débit absolu. Trois essais ont relevé 86,
+        // puis 90, puis 92 PV/s pour un plafond de 60 : la brûlure EST bornée (46 PV perdus, pas
+        // 50 000), mais autre chose frappe la cible pendant la pose. Un débit absolu mesure alors la
+        // somme des deux et accuse la règle. Ce que ce contrôle doit dire est plus simple et ne
+        // dépend d'aucune hypothèse sur l'arène : demander 100 000 dps donne exactement le même
+        // résultat que demander le plafond.
+        var control = Instantiate(enemyPrefab, new Vector3(880f, 530f), Quaternion.identity);
+        control.SetActive(true);
+        var witness = control.GetComponent<EnemyBase>();
+        witness.ApplyScaling(100000f, 0f);
+        witness.Speed = 0f;
+
+        float hpBeforeBurn = enemy.CurrentHp;
+        float hpBeforeWitness = witness.CurrentHp;
+
+        enemy.ApplyBurn(100000f, 5f);                          // demande absurde
+        witness.ApplyBurn(CrowdControlCaps.MaxBurnDps, 5f);    // demande déjà au plafond
+
+        yield return new WaitForSeconds(0.5f);
+
+        float lostBurn = hpBeforeBurn - enemy.CurrentHp;
+        float lostWitness = hpBeforeWitness - witness.CurrentHp;
+
+        Check("controle de foule : la brulure est plafonnee",
+              lostWitness > 0f && Mathf.Abs(lostBurn - lostWitness) <= Mathf.Max(3f, lostWitness * 0.20f),
+              $"100000 dps -> -{lostBurn:F0} PV, plafond ({CrowdControlCaps.MaxBurnDps:F0} dps) -> " +
+              $"-{lostWitness:F0} PV");
+
+        Destroy(control);
+        Destroy(go);
+        if (player0 != null) player0.transform.position = playerHome;
+
+        // ── Les ennemis TIRENT ────────────────────────────────────────────────
+        var player = Player.Instance;
+        if (player == null || player.IsDead)
+        {
+            Check("tirs ennemis : joueur vivant disponible", false);
+            yield break;
+        }
+
+        ClearArena();
+        player.HealFlat(player.Stats.MaxHp);
+        yield return null;
+
+        float hpBefore = player.Stats.CurrentHp;
+        Vector2 from = (Vector2)player.transform.position + new Vector2(200f, 0f);
+        EnemyBullet.Fire(from, Vector2.left, EnemyBullet.SentinelSpeed, 25f,
+                         fromChampion: false, Color.red);
+
+        yield return new WaitForSeconds(1.6f);   // 200 px a 180 px/s
+
+        Check("tirs ennemis : un projectile atteint et blesse le joueur",
+              player.Stats.CurrentHp < hpBefore,
+              $"{hpBefore:F0} -> {player.Stats.CurrentHp:F0} PV");
+
+        // Un archétype à distance doit faire feu tout seul : c'est le comportement entier qui
+        // manquait, pas seulement le projectile.
+        var kiter = Instantiate(enemyPrefab, (Vector3)from, Quaternion.identity);
+        kiter.SetActive(true);
+        var ranged = kiter.GetComponent<EnemyBase>();
+        ranged.ApplyScaling(100000f, 10f);
+        ranged.Speed = 0f;
+        ranged.Ai = EnemyTable.AiType.RangedKiter;
+
+        yield return new WaitForSeconds(2.7f);   // une periode de tir complete
+
+        int inFlight = FindObjectsByType<EnemyBullet>(FindObjectsSortMode.None).Length;
+        Check("tirs ennemis : un archetype a distance fait feu de lui-meme",
+              inFlight > 0, $"{inFlight} projectile(s) en vol");
+
+        Destroy(kiter);
+        foreach (var b in FindObjectsByType<EnemyBullet>(FindObjectsSortMode.None))
+            if (b != null) Destroy(b.gameObject);
+
+        player.HealFlat(player.Stats.MaxHp);
         yield return null;
     }
 

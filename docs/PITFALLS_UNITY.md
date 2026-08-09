@@ -289,6 +289,45 @@ charges partent donc en trois frames, sans que le joueur ait encaissé trois cou
 charge est consommée **après** les i-frames : au plus une par fenêtre de 0,45 s, ce que la carte
 promet (« les premiers **coups** reçus »).
 
+### Appeler la **variante de compatibilité** d'une règle est indétectable là où on regarde
+
+`EnemySpawner` appelait `EnemyScaling.Scaled` — la formule **linéaire historique, conservée pour les
+tests de référence** — au lieu de `ScaledCurved`, celle du jeu, dont le fichier dit pourtant en toutes
+lettres « utilisé par EnemySpawner ». Le commentaire juste au-dessus de l'appel affirmait « le scaling
+vient de la logique pure : mêmes chiffres que sous Godot, par construction ».
+
+Ce qui rend l'erreur si durable est la **forme de l'écart** : ×1,00 à la 5ᵉ minute, ×1,07 à la 8ᵉ,
+×1,3 à la 13ᵉ — puis **×2,4 à la 30ᵉ et ×4,6 à la 60ᵉ**. Nul là où on teste, énorme là où le jeu se
+joue. Et la partie quadratique existe précisément parce que le build du joueur croît bien plus vite
+qu'une droite : la retirer, c'est garantir le décrochage qu'elle corrige.
+
+**Règle** : quand une classe pure expose deux formules dont l'une est dite « historique »,
+« compat » ou « de référence », l'appel du jeu se vérifie une fois explicitement. Aucun test ne le
+fera : les deux fonctions sont justes, c'est le **choix** entre elles qui est faux.
+
+### Un garde-fou recopié de travers **annule** ce qu'il protège
+
+`EnemyBase.ApplySlow` bornait à `Mathf.Clamp(mult, 0.05f, 1f)` là où `CrowdControlCaps.CapSlowMult`
+impose **0,60**. Un ralentissement de 95 % au lieu de 40 % ne se lit pas comme un bug : il se lit
+comme « l'arme de givre est très forte ». Idem pour la brûlure, sans plafond du tout face aux 60 dps
+de la table. Ces classes existent *pour que slow et DoT ne trivialisent jamais le jeu* — les remplacer
+par un clamp local supprime exactement la garantie qu'elles portent.
+
+### Un ennemi qui **kite sans tirer** ressemble à un ennemi prudent
+
+Le portage n'avait **aucun projectile ennemi**. Les archétypes `ranged_kiter` et `cone_kiter`
+exécutaient scrupuleusement leur danse — approche, recul, orbite — et ne faisaient jamais feu ; le
+boss avait perdu deux de ses trois cadences (`BossPhases.BurstInterval` et `ShockInterval`, portées et
+appelées nulle part), ne gardant que sa signature. Un boss qui ne tire pas passe pour un boss de
+corps-à-corps, qu'il suffit de contourner.
+
+Deux indices dormaient dans le dépôt sans que rien ne les relie : `sfx_enemy_sentinel_projectile.wav`,
+importé et jamais joué, et `SaturationTable.ChampionDamage` documentant un plancher « posé **au
+tir** » pour un projectile qui n'existait pas.
+
+⚠ Le drapeau `FromChampion` se pose **au tir**, jamais lu à l'impact : le projectile survit à son
+tireur, et un boss mort ne peut plus dire qu'il en était un.
+
 ### L'icône de l'exécutable se pose **au build**, pas dans l'éditeur
 
 Le binaire sortait avec l'icône **d'Unity** : dans la barre des tâches, l'explorateur et le raccourci,

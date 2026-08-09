@@ -152,7 +152,11 @@ public class EnemyBase : MonoBehaviour
     /// </summary>
     public void ApplySlow(float mult, float duration)
     {
-        mult = Mathf.Clamp(mult, 0.05f, 1f);
+        // ⚠ Le plafond vient de CrowdControlCaps, pas d'un clamp local. Le portage bornait à 0,05
+        // — soit un ralentissement de 95 % là où le jeu en autorise 40 — ce qui transforme une arme
+        // de givre en bouton « pause » sur toute la nuée. Ces garde-fous existent précisément pour
+        // que slow et DoT ne trivialisent jamais le jeu ; les recopier de travers les annule.
+        mult = CrowdControlCaps.CapSlowMult(mult);
 
         if (_slowLeft <= 0f || mult < _slowMult) _slowMult = mult;
         _slowLeft = Mathf.Max(_slowLeft, duration);
@@ -166,7 +170,9 @@ public class EnemyBase : MonoBehaviour
     /// </summary>
     public void ApplyBurn(float dps, float duration)
     {
-        _burnDps = Mathf.Max(_burnDps, dps);   // la source la plus forte l'emporte
+        // La source la plus forte l'emporte, mais elle reste bornée : sans ce plafond, empiler des
+        // sources de brûlure remplace le combat par une attente.
+        _burnDps = Mathf.Max(_burnDps, CrowdControlCaps.CapBurnDps(dps));
         _burnLeft = Mathf.Max(_burnLeft, duration);
         BurnsApplied++;
     }
@@ -251,6 +257,56 @@ public class EnemyBase : MonoBehaviour
         }
     }
 
+    /// <summary>Secondes entre deux tirs d'un archétype à distance. Valeur du jeu d'origine.</summary>
+    private const float RangedShootCooldown = 2.5f;
+
+    /// <summary>Portée au-delà de laquelle un tireur ne gaspille pas ses projectiles.</summary>
+    private const float RangedMaxRange = 520f;
+
+    private float _shootTimer = RangedShootCooldown;
+
+    /// <summary>
+    /// Tir des archétypes à distance (<c>ranged_kiter</c>, <c>cone_kiter</c>).
+    /// </summary>
+    /// <remarks>
+    /// <para>⚠ <b>Aucun ennemi ne tirait dans le portage.</b> Ces deux archétypes gardaient
+    /// scrupuleusement leur distance — approche, recul, orbite — et ne faisaient jamais feu. Le
+    /// défaut est parfaitement silencieux : un ennemi qui kite sans tirer ressemble à un ennemi
+    /// prudent, pas à un ennemi cassé, et il rendait surtout la moitié de sa raison d'être au
+    /// kiting du joueur. La Sentinelle Corrompue est <i>censée</i> punir la ligne droite.</para>
+    ///
+    /// <para>Sous Godot, ce comportement vit dans une classe dédiée (<c>CorruptedSentinel</c>) ;
+    /// ici la faune est <b>pilotée par les données</b>, donc il appartient au socle et se déclenche
+    /// sur le type d'IA. Un ennemi de plus dans <c>enemies.json</c> avec <c>ranged_kiter</c> tire
+    /// désormais sans une ligne de code — c'est l'intérêt du portage data-driven, à condition que
+    /// le socle porte le comportement.</para>
+    /// </remarks>
+    private void UpdateRangedFire(Player player, float dt)
+    {
+        // ⚠ `ranged_kiter` SEULEMENT, jamais `cone_kiter`. Le second ne désigne qu'un ennemi dans
+        // tout le bestiaire — la Sentinelle Cryo — et c'est un champion dont la signature est un
+        // CÔNE dirigé, pas un projectile. Sous Godot la distinction passe par la scène : tous les
+        // `ranged_kiter` héritent de CorruptedSentinel et tirent, la Cryo a la sienne.
+        if (Ai != EnemyTable.AiType.RangedKiter) return;
+
+        _shootTimer -= dt;
+        if (_shootTimer > 0f) return;
+
+        Vector2 self = transform.position;
+        Vector2 toPlayer = (Vector2)player.transform.position - self;
+        if (toPlayer.sqrMagnitude > RangedMaxRange * RangedMaxRange) return;
+
+        _shootTimer = RangedShootCooldown;
+
+        // Pas d'animation « attack » ici : le déplacement en repose une à chaque image, si bien
+        // qu'elle serait écrasée avant d'avoir affiché une seule frame. Une pose qui ne se voit
+        // jamais est un appel mort de plus, pas un retour visuel.
+        EnemyBullet.Fire(self, toPlayer.normalized, EnemyBullet.SentinelSpeed, Damage,
+                         fromChampion: IsChampion, new Color(1f, 0.45f, 0.15f));
+
+        AudioSystem.PlaySfx("sfx_enemy_sentinel_projectile");
+    }
+
     /// <summary>
     /// Dégâts de contact, par <b>distance</b> et non par collision. Le joueur porte des i-frames de
     /// 0,45 s, ce qui borne naturellement les dégâts d'une nuée : appeler ceci à chaque frame pour
@@ -258,6 +314,11 @@ public class EnemyBase : MonoBehaviour
     /// </summary>
     protected virtual void HandleContactDamage(Player player, float dt)
     {
+        // Un tireur ne blesse pas AUSSI au contact : sa menace est son projectile, et cumuler les
+        // deux ferait d'un archétype qui garde ses distances le plus dangereux au corps-à-corps.
+        UpdateRangedFire(player, dt);
+        if (Ai == EnemyTable.AiType.RangedKiter) return;
+
         float dist = Vector2.Distance(transform.position, player.transform.position);
         if (dist < ContactRadius) DealDiscreteDamage(player, Damage);
     }

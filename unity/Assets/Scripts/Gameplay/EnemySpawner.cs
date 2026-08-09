@@ -273,8 +273,6 @@ public sealed class EnemySpawner : MonoBehaviour
             if (frames != null) enemy.SetSpriteFrames(frames);
         }
 
-        // Le scaling vient de la logique pure : mêmes chiffres que sous Godot, par construction.
-        //
         // Les trois axes de difficulté (réglage du joueur × palier du niveau × cran de saturation)
         // sont rassemblés dans RunConfig. Les champions reçoivent un multiplicateur de PV ADOUCI :
         // battre le boss débloque le niveau suivant, et l'aligner sur la faune fermerait la
@@ -282,9 +280,20 @@ public sealed class EnemySpawner : MonoBehaviour
         bool champion = def != null && def.IsChampion;
         float hpMult  = champion ? RunConfig.ChampionHpMult : RunConfig.EnemyHpMult;
 
+        // ⚠ `ScaledCurved`, et surtout pas `Scaled`. La seconde est la formule LINÉAIRE
+        // historique, gardée pour les tests de référence ; la première est celle du jeu, et sa
+        // partie quadratique existe pour une raison précise : le build du joueur croît bien plus
+        // vite qu'une droite, si bien qu'une faune linéaire décroche irrémédiablement en fin de
+        // partie.
+        //
+        // Le portage appelait `Scaled` sous un commentaire affirmant « mêmes chiffres que sous
+        // Godot, par construction ». L'écart mesuré : ×1,3 à la 13ᵉ minute, ×2,4 à la 30ᵉ, ×4,6 à
+        // la 60ᵉ — c'est-à-dire nul là où on regarde d'habitude, et énorme là où le jeu se joue
+        // vraiment. Trouvé le 2026-08-09 par `tools/audit_unused_members.py` : `ScaledCurved`
+        // était déclarée, testée, documentée « utilisé par EnemySpawner », et appelée nulle part.
         enemy.ApplyScaling(
-            EnemyScaling.Scaled(enemy.MaxHp,  minutes, hpPerMinute,  hpMult),
-            EnemyScaling.Scaled(enemy.Damage, minutes, dmgPerMinute, RunConfig.EnemyDamageMult));
+            EnemyScaling.ScaledCurved(enemy.MaxHp,  minutes, hpPerMinute,  hpMult),
+            EnemyScaling.ScaledCurved(enemy.Damage, minutes, dmgPerMinute, RunConfig.EnemyDamageMult));
 
         // Le boss prend l'incarnation de son biome — sprite, teinte et signature d'attaque.
         if (enemy is RustedCore boss)

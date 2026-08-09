@@ -62,9 +62,16 @@ public sealed class RustedCore : EnemyBase
     /// <summary>Vagues d'adds invoquées — observable pour les tests.</summary>
     public int AddWaves { get; private set; }
 
+    /// <summary>Projectiles d'une couronne. Seize : la même valeur que sous Godot.</summary>
+    private const int BulletsPerRing = 16;
+
     private float _surchargeLeft;
     private float _signatureTimer;
     private float _addsTimer;
+    // Armés à la cadence de la phase I : sans cela le boss lâcherait une couronne entière à la
+    // frame de son arrivée, avant même d'être à portée de vue.
+    private float _burstTimer = BossPhases.BurstInterval(0);
+    private float _shockTimer = BossPhases.ShockInterval(0);
 
     /// <summary>Vitesse de fiche, avant le facteur de phase. Figée à la première apparition.</summary>
     private float _baseSpeed;
@@ -114,8 +121,59 @@ public sealed class RustedCore : EnemyBase
         if (_surchargeLeft > 0f) { _surchargeLeft -= dt; return; }
 
         UpdatePhase();
+        UpdateBurst(dt);
+        UpdateShock(dt);
         UpdateSignature(dt);
         UpdateAdds(dt);
+    }
+
+    /// <summary>
+    /// <b>Rideau radial</b> : seize projectiles en couronne, à cadence resserrée par la phase.
+    /// </summary>
+    /// <remarks>
+    /// <para>⚠ Cette cadence — comme l'onde de choc ci-dessous — <b>manquait entièrement au
+    /// portage</b> : `BossPhases.BurstInterval` et `ShockInterval` étaient portés, testés, et appelés
+    /// nulle part. Le boss n'avait donc plus qu'un motif d'attaque sur trois, et devenait un
+    /// adversaire de corps-à-corps qu'il suffit de contourner. Rien ne le signalait : un boss qui ne
+    /// tire pas ressemble à un boss conçu ainsi.</para>
+    ///
+    /// <para>C'est la couronne qui donne au combat sa <b>pression de placement</b> : elle ne vise pas,
+    /// elle occupe l'espace, et c'est ce qui interdit de tourner indéfiniment autour du boss.</para>
+    /// </remarks>
+    private void UpdateBurst(float dt)
+    {
+        _burstTimer -= dt;
+        if (_burstTimer > 0f) return;
+
+        _burstTimer = BossPhases.BurstInterval(Phase);
+
+        var tint = new Color(Incarnation.TintR, Incarnation.TintG, Incarnation.TintB);
+        Vector2 self = transform.position;
+
+        for (int i = 0; i < BulletsPerRing; i++)
+        {
+            float a = 2f * Mathf.PI * i / BulletsPerRing;
+            EnemyBullet.Fire(self, new Vector2(Mathf.Cos(a), Mathf.Sin(a)),
+                             EnemyBullet.BossSpeed, Damage, fromChampion: true, tint);
+        }
+
+        AudioSystem.PlaySfx("sfx_enemy_sentinel_projectile");
+        ScreenShake.Shake(2.5f, 0.1f);
+    }
+
+    /// <summary>
+    /// <b>Onde de choc</b> périodique. Purement visuelle, comme sous Godot : elle ne blesse pas, elle
+    /// <i>rythme</i> le combat et rappelle où se trouve le boss quand la nuée le recouvre.
+    /// </summary>
+    private void UpdateShock(float dt)
+    {
+        _shockTimer -= dt;
+        if (_shockTimer > 0f) return;
+
+        _shockTimer = BossPhases.ShockInterval(Phase);
+
+        var tint = new Color(Incarnation.TintR, Incarnation.TintG, Incarnation.TintB);
+        Vfx.Shockwave(transform.position, 150f, 0.35f, tint);
     }
 
     /// <summary>
@@ -152,6 +210,12 @@ public sealed class RustedCore : EnemyBase
         Vfx.Shockwave(transform.position, 220f, SurchargeSeconds, tint);
         Vfx.Glow(transform.position, tint, 70f, 0.8f, SurchargeSeconds);
         ScreenShake.Shake(14f, 0.5f);
+
+        // Cadences de la NOUVELLE phase, appliquées dès la reprise : c'est le resserrement qui fait
+        // qu'une phase se sent, et l'attendre un cycle entier le noierait dans la surcharge.
+        _burstTimer = BossPhases.BurstInterval(Phase);
+        _shockTimer = BossPhases.ShockInterval(Phase);
+        _signatureTimer = BossPhases.SignatureInterval(Phase, Incarnation.BaseIntervalSec);
     }
 
     private void UpdateSignature(float dt)

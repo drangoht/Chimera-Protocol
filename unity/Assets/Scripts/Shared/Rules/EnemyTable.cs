@@ -82,7 +82,14 @@ public static class EnemyTable
                     Role = Str(e, "role"),
                     MaxHp = Flt(e, "maxHp", 20f),
                     Speed = Flt(e, "speed", 120f),
-                    DamagePerSecond = Flt(e, "damagePerSecond", 5f),
+                    // ⚠ DEUX clés pour le même champ, et le bestiaire n'en déclare qu'une par
+                    // ennemi : `damagePerSecond` pour ce qui blesse au contact, `damagePerProjectile`
+                    // pour ce qui tire. Le portage ne lisait que la première, si bien que les HUIT
+                    // ennemis à distance retombaient tous sur la valeur par défaut (5) au lieu de
+                    // leurs 11 à 18 — la même famille de défaut que les clés inexistantes de la
+                    // Ruche de Tourelles, et tout aussi muette : un ennemi qui blesse peu a l'air
+                    // faible, pas cassé.
+                    DamagePerSecond = Flt(e, "damagePerProjectile", Flt(e, "damagePerSecond", 5f)),
                     XpValue = Int(e, "xpValue", 1),
                     ContactRadius = Flt(e, "contactRadius", 24f),
                     DetectionRange = Flt(e, "detectionRange", 9999f),
