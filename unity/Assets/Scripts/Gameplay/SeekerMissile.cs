@@ -30,7 +30,87 @@ public sealed class SeekerMissile : MonoBehaviour
         _damage = damage;
         _target = target;
         _timeLeft = Lifetime;
+
+        Dress();
+        FaceHeading();
     }
+
+    /// <summary>
+    /// Pose la silhouette du missile — celle de sa carte, et non le sprite du gabarit.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Même correctif que pour la Lame Boomerang, et pour la même raison : le gabarit servait une
+    /// primitive d'emprunt (<c>weapon_bullet_rail</c>, une barre droite teintée en or), si bien que
+    /// l'Essaim Traqueur <b>tirait des traits</b> indiscernables du Canon à Impulsions. Le gabarit
+    /// garde donc une référence inerte — ce qui fait foi est ici.
+    /// </remarks>
+    private void Dress()
+    {
+        var sr = GetComponent<SpriteRenderer>();
+        if (sr == null) return;
+
+        sr.sprite = MissileSprite.Get();
+        sr.color = Color.white;   // la teinte vit dans le sprite : un multiplicateur l'assombrirait
+
+        if (_halo != null) return;
+
+        // Halo violet : un missile de 28 px se perd dans une nuée dès qu'il passe devant un ennemi
+        // clair, et c'est le projectile qu'il faut suivre puisqu'il vire. Un disque radial est
+        // invariant par rotation : il peut rester enfant d'un objet qui s'oriente.
+        _halo = new GameObject("Halo", typeof(SpriteRenderer));
+        _halo.transform.SetParent(transform, false);
+
+        var hr = _halo.GetComponent<SpriteRenderer>();
+        hr.sprite = VfxPrimitives.Glow;
+        hr.sharedMaterial = VfxPrimitives.Additive;
+        hr.color = new Color(MissileSprite.Body.r, MissileSprite.Body.g, MissileSprite.Body.b, 0.45f);
+        hr.sortingOrder = sr.sortingOrder - 1;
+
+        // Le sprite de lueur mesure 64 unités : l'échelle est le rapport du diamètre voulu à 64.
+        float diameter = HitRadius * 2.4f;
+        _halo.transform.localScale = Vector3.one * (diameter / 64f);
+
+        AttachTrail();
+    }
+
+    /// <summary>
+    /// Traînée violette derrière le missile — <b>la signature de sa vignette</b>.
+    /// </summary>
+    /// <remarks>
+    /// L'icône de l'arme montre un missile suivi d'un chapelet de points incurvé, et c'est cette
+    /// courbe qui la rend reconnaissable entre toutes. Elle sert aussi le jeu : un projectile qui
+    /// <b>vire</b> se suit à sa trace bien mieux qu'à sa silhouette de 28 px, surtout dans une nuée.
+    /// </remarks>
+    private void AttachTrail()
+    {
+        var trail = gameObject.AddComponent<TrailRenderer>();
+
+        trail.time = 0.18f;              // plus long que celui d'une balle : la trajectoire COURBE
+        trail.startWidth = 5f;
+        trail.endWidth = 0f;
+        trail.numCapVertices = 2;
+        trail.alignment = LineAlignment.View;
+        trail.textureMode = LineTextureMode.Stretch;
+        trail.sharedMaterial = VfxPrimitives.AdditiveBeam;
+        trail.sortingOrder = 18;
+        trail.startColor = new Color(MissileSprite.Body.r, MissileSprite.Body.g, MissileSprite.Body.b, 0.65f);
+        trail.endColor = new Color(MissileSprite.Body.r, MissileSprite.Body.g, MissileSprite.Body.b, 0f);
+        trail.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+    }
+
+    private GameObject? _halo;
+
+    /// <summary>
+    /// Oriente le missile dans le sens de son vol.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Le portage ne tournait <b>jamais</b> le transform : il ne faisait qu'avancer le long de
+    /// <c>_dir</c>. Tant que le projectile était une barre symétrique, cela ne se voyait pas. Avec
+    /// une ogive, un missile qui part vers la gauche volerait <b>à reculons</b> — le genre de défaut
+    /// qu'un sprite corrige et révèle du même geste.
+    /// </remarks>
+    private void FaceHeading()
+        => transform.rotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(_dir.y, _dir.x) * Mathf.Rad2Deg);
 
     private void Update()
     {
@@ -55,6 +135,7 @@ public sealed class SeekerMissile : MonoBehaviour
         }
 
         transform.position += (Vector3)(_dir * Speed * dt);
+        FaceHeading();   // le guidage change le cap : la silhouette doit le suivre
 
         Vector2 me = transform.position;
         float sqr = HitRadius * HitRadius;

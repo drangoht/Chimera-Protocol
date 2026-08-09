@@ -97,30 +97,28 @@ public static class BuildGameScene
     }
 
     /// <summary>
-    /// Missile à tête chercheuse. Godot le dessine en procédural, il n'existe donc pas de sprite
-    /// « fidèle » à reprendre : la forme allongée du rail est celle qui se lit le mieux en vol.
+    /// Missile à tête chercheuse. <b>Aucun sprite ici</b> : il se dessine lui-même.
     /// </summary>
+    /// <remarks>
+    /// <para>⚠ Ces deux projectiles construisent leur silhouette à l'exécution
+    /// (<see cref="MissileSprite"/>, <see cref="GlaiveSprite"/>) parce qu'ils <b>tournent</b> : un
+    /// sprite du dossier porterait un ombrage cuit, dont la lumière tournerait avec l'objet. Leur
+    /// poser un sprite ici ne servirait donc à rien — sinon à laisser une référence <b>inerte et
+    /// trompeuse à la lecture</b>, exactement ce qui a fait attribuer une barre droite au missile et
+    /// une texture de test UV au glaive.</para>
+    /// </remarks>
     private static GameObject BuildMissilePrefab()
     {
         var go = new GameObject("Missile", typeof(SpriteRenderer), typeof(SeekerMissile));
-        var sr = go.GetComponent<SpriteRenderer>();
-        sr.sprite = LoadSpriteNamed(WeaponSprites, "weapon_bullet_rail");
-        sr.color = new Color(1f, 0.8f, 0.27f);
-        sr.sortingOrder = 20;
+        go.GetComponent<SpriteRenderer>().sortingOrder = 20;
         return SaveAsPrefab(go, "Missile");
     }
 
-    /// <summary>
-    /// Glaive lancé. Même remarque que le missile — l'anneau est la seule forme du dossier qui dise
-    /// « lame qui tourne et revient » plutôt que « projectile qui file droit ».
-    /// </summary>
+    /// <summary>Glaive lancé. Aucun sprite ici non plus — voir <see cref="BuildMissilePrefab"/>.</summary>
     private static GameObject BuildGlaivePrefab()
     {
         var go = new GameObject("Glaive", typeof(SpriteRenderer), typeof(GlaiveProjectile));
-        var sr = go.GetComponent<SpriteRenderer>();
-        sr.sprite = LoadSpriteNamed(WeaponSprites, "weapon_fusionblade_ring_texture");
-        sr.color = new Color(0.67f, 0.27f, 1f);
-        sr.sortingOrder = 20;
+        go.GetComponent<SpriteRenderer>().sortingOrder = 20;
         return SaveAsPrefab(go, "Glaive");
     }
 

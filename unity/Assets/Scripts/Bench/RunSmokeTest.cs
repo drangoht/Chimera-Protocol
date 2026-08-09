@@ -215,13 +215,16 @@ public sealed class RunSmokeTest : MonoBehaviour
         // d'XP déguisée en Noyau, et les trois projectiles du joueur portant celui des TIRS ENNEMIS.
         // Deux entités qui se ressemblent produisent un rapport de bug sur une autre mécanique.
         {
+            // ⚠ Missile et Glaive ne figurent PAS ici : ils construisent leur silhouette à
+            // l'exécution parce qu'ils tournent, et leur gabarit n'a volontairement aucun sprite.
+            // Les y inclure ferait porter le contrôle sur une donnée inerte — c'est-à-dire sur
+            // exactement ce qui a laissé une barre droite passer pour un missile. Ils sont vérifiés
+            // plus bas, sur ce qu'ils affichent RÉELLEMENT.
             var named = new (string Name, GameObject? Prefab)[]
             {
                 ("noyau", corePrefab),
                 ("orbe d'XP", orbPrefab),
                 ("tir joueur", Spawner.Load("res://scenes/entities/Bullet.tscn")),
-                ("missile", Spawner.Load("res://scenes/entities/Missile.tscn")),
-                ("glaive", Spawner.Load("res://scenes/entities/Glaive.tscn")),
                 ("tir ennemi", Spawner.Load("res://scenes/entities/EnemyBullet.tscn")),
             };
 
@@ -245,6 +248,40 @@ public sealed class RunSmokeTest : MonoBehaviour
                   clashes.Count > 0 ? "doublons : " + string.Join(", ", clashes)
                   : missing.Count > 0 ? "sans sprite : " + string.Join(", ", missing)
                   : $"{seen.Count} sprites distincts");
+
+            // Les deux projectiles qui s'habillent seuls : on vérifie ce qui est AFFICHÉ, en les
+            // lançant pour de bon. Un gabarit sans sprite et un `Dress()` qui ne s'exécute pas
+            // donnent un projectile invisible — pire qu'une mauvaise forme.
+            var dressed = new List<string>();
+
+            var mgo = Spawner.Load("res://scenes/entities/Missile.tscn");
+            if (mgo != null)
+            {
+                var m = Instantiate(mgo, new Vector3(1200f, 1200f), Quaternion.identity);
+                m.SetActive(true);
+                m.GetComponent<SeekerMissile>()?.Launch(Vector2.right, 1f, null);
+
+                var s = m.GetComponent<SpriteRenderer>()?.sprite;
+                if (s == null) dressed.Add("missile");
+                Destroy(m);
+            }
+
+            var ggo = Spawner.Load("res://scenes/entities/Glaive.tscn");
+            if (ggo != null)
+            {
+                var g = Instantiate(ggo, new Vector3(1200f, 1240f), Quaternion.identity);
+                g.SetActive(true);
+                g.GetComponent<GlaiveProjectile>()?.Launch(Vector2.right, 1f, 100f);
+
+                var s = g.GetComponent<SpriteRenderer>()?.sprite;
+                if (s == null) dressed.Add("glaive");
+                Destroy(g);
+            }
+
+            Check("projectiles tournants : ils posent leur silhouette au lancement",
+                  dressed.Count == 0,
+                  dressed.Count == 0 ? "missile et glaive habilles"
+                                     : "sans sprite a l'ecran : " + string.Join(", ", dressed));
         }
 
         if (corePrefab != null)
