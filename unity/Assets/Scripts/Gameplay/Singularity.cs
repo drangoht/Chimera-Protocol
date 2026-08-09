@@ -53,6 +53,20 @@ public sealed class Singularity : WeaponBase
         base.Awake();
     }
 
+    /// <summary>
+    /// Applique la FORME du palier, et pas seulement ses chiffres.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Sans cette lecture, le puits gardait son attraction et sa cadence du niveau 1 :
+    /// l'arme montait en degats et gardait sa forme de depart. Le portage ne lisait que six
+    /// des seize cles de palier — huit armes etaient concernees.
+    /// </remarks>
+    public override void ApplyLevelStats(WeaponTable.WeaponLevelStats stats)
+    {
+        TickInterval = stats.Shape("tickInterval", TickInterval);
+        PullSpeed    = stats.Shape("pullSpeed", PullSpeed);
+    }
+
     protected override bool TryFire()
     {
         var target = FindNearestEnemy();

@@ -25,9 +25,45 @@ public static class WeaponTable
         /// <summary>Amplitude totale de l'éventail, en degrés. 0 = tir unique droit.</summary>
         public readonly float SpreadDegrees;
 
+        /// <summary>
+        /// Toutes les autres valeurs numériques du palier, telles quelles.
+        /// </summary>
+        /// <remarks>
+        /// <para>⚠ <b>Un sac générique, et non quinze champs de plus.</b> Le portage ne lisait que six
+        /// clés par niveau là où le jeu d'origine en lit seize : <c>chainCount</c> (la Bobine Tesla
+        /// passe de 2 à 7 chaînes), <c>droneCount</c> (2 → 4), <c>glaiveCount</c> (1 → 3),
+        /// <c>missileCount</c> (2 → 5), <c>coneAngle</c>, <c>arcAngleDegrees</c>, <c>range</c>… Huit
+        /// armes ne grandissaient donc <b>que par leurs dégâts</b> : leur forme restait celle du
+        /// niveau 1 jusqu'au niveau 20.</para>
+        ///
+        /// <para>C'est la suite exacte du défaut <c>projectileCount</c> déjà corrigé — la correction
+        /// n'avait couvert qu'une clé sur seize. Un sac ferme la famille entière : une clé ajoutée
+        /// aux données est désormais lisible <b>sans toucher à ce fichier</b>, et l'oubli redevient
+        /// impossible plutôt qu'improbable.</para>
+        /// </remarks>
+        private readonly Dictionary<string, float>? _shape;
+
+        /// <summary>Valeur de forme du palier, ou <paramref name="fallback"/> si le fichier se tait.</summary>
+        public float Shape(string key, float fallback)
+            => _shape != null && _shape.TryGetValue(key, out float v) ? v : fallback;
+
+        /// <summary>Même chose en entier — nombres de chaînes, de drones, de missiles.</summary>
+        public int ShapeInt(string key, int fallback)
+            => _shape != null && _shape.TryGetValue(key, out float v)
+                ? (int)Math.Round(v)
+                : fallback;
+
+        /// <summary>Clés de forme réellement lues pour ce palier — pour les vérifications.</summary>
+        public IReadOnlyCollection<string> ShapeKeys
+            => (IReadOnlyCollection<string>?)_shape?.Keys ?? Array.Empty<string>();
+
+        /// <summary>Le sac lui-même, pour le reporter tel quel lors d'une extrapolation.</summary>
+        internal Dictionary<string, float>? ShapeBag => _shape;
+
         public WeaponLevelStats(int level, float damage, float cooldown,
                                 int projectileCount, float projectileSpeed, bool piercing,
-                                float spreadDegrees = 0f)
+                                float spreadDegrees = 0f,
+                                Dictionary<string, float>? shape = null)
         {
             Level = level;
             Damage = damage;
@@ -36,6 +72,7 @@ public static class WeaponTable
             ProjectileSpeed = projectileSpeed;
             Piercing = piercing;
             SpreadDegrees = spreadDegrees;
+            _shape = shape;
         }
     }
 
@@ -98,7 +135,8 @@ public static class WeaponTable
                             Int(l, "projectileCount", 1),
                             Flt(l, "projectileSpeed", 400f),
                             Bool(l, "piercing"),
-                            Flt(l, "spreadDegrees")));
+                            Flt(l, "spreadDegrees"),
+                            ShapeOf(l)));
                     }
                 }
 
@@ -154,7 +192,35 @@ public static class WeaponTable
             stats.ProjectileCount,
             stats.ProjectileSpeed,
             stats.Piercing,
-            stats.SpreadDegrees);
+            stats.SpreadDegrees,
+            // La forme PLAFONNE au dernier palier décrit, comme le nombre de projectiles : seuls les
+            // dégâts continuent de monter. Extrapoler un nombre de chaînes rendrait la Bobine Tesla
+            // absurde en fin de partie.
+            stats.ShapeBag);
+    }
+
+    /// <summary>
+    /// Toutes les valeurs numériques d'un palier, y compris celles qu'aucun champ nommé ne couvre.
+    /// </summary>
+    /// <remarks>
+    /// On prend <b>tout</b> plutôt qu'une liste blanche : c'est précisément une liste incomplète qui
+    /// a laissé dix clés de forme inertes pendant tout le portage. Les champs déjà nommés y figurent
+    /// aussi — cela ne coûte rien et évite d'avoir à tenir deux listes cohérentes.
+    /// </remarks>
+    private static Dictionary<string, float>? ShapeOf(JsonElement level)
+    {
+        Dictionary<string, float>? shape = null;
+
+        foreach (var prop in level.EnumerateObject())
+        {
+            if (prop.Value.ValueKind != JsonValueKind.Number) continue;
+            if (!prop.Value.TryGetSingle(out float v)) continue;
+
+            shape ??= new Dictionary<string, float>(StringComparer.Ordinal);
+            shape[prop.Name] = v;
+        }
+
+        return shape;
     }
 
     // ─── Lecture tolérante ────────────────────────────────────────────────────

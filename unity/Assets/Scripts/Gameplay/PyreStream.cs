@@ -32,6 +32,21 @@ public class PyreStream : WeaponBase
         base.Awake();
     }
 
+    /// <summary>
+    /// Applique la FORME du palier, et pas seulement ses chiffres.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Sans cette lecture, le cone gardait son ouverture et sa portee du niveau 1, et la brulure sa duree :
+    /// l'arme montait en degats et gardait sa forme de depart. Le portage ne lisait que six
+    /// des seize cles de palier — huit armes etaient concernees.
+    /// </remarks>
+    public override void ApplyLevelStats(WeaponTable.WeaponLevelStats stats)
+    {
+        Range        = stats.Shape("range", Range);
+        ConeAngle    = stats.Shape("coneAngle", ConeAngle);
+        BurnDuration = stats.Shape("burnDuration", BurnDuration);
+    }
+
     protected override bool TryFire()
     {
         var target = FindNearestEnemy();

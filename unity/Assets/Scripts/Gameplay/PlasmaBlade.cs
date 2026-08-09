@@ -34,6 +34,21 @@ public class PlasmaBlade : WeaponBase
         base.Awake();
     }
 
+    /// <summary>
+    /// Applique la FORME du palier, et pas seulement ses chiffres.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Sans cette lecture, l'arc de la lame restait a 180 degres et 80 px de portee jusqu'au niveau 20,
+    /// alors que les donnees le font passer a 320 degres et 120 px :
+    /// l'arme montait en degats et gardait sa forme de depart. Le portage ne lisait que six
+    /// des seize cles de palier — huit armes etaient concernees.
+    /// </remarks>
+    public override void ApplyLevelStats(WeaponTable.WeaponLevelStats stats)
+    {
+        ArcAngleDeg = stats.Shape("arcAngleDegrees", ArcAngleDeg);
+        ArcRadius   = stats.Shape("arcRadius", ArcRadius);
+    }
+
     protected override bool TryFire()
     {
         var target = FindNearestEnemy();

@@ -34,6 +34,20 @@ public sealed class CryoLance : WeaponBase
         base.Awake();   // en dernier : c'est lui qui fige la valeur de fiche
     }
 
+    /// <summary>
+    /// Applique la FORME du palier, et pas seulement ses chiffres.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Sans cette lecture, la lance gardait sa portee et sa duree de gel du niveau 1 :
+    /// l'arme montait en degats et gardait sa forme de depart. Le portage ne lisait que six
+    /// des seize cles de palier — huit armes etaient concernees.
+    /// </remarks>
+    public override void ApplyLevelStats(WeaponTable.WeaponLevelStats stats)
+    {
+        Range        = stats.Shape("range", Range);
+        SlowDuration = stats.Shape("slowDuration", SlowDuration);
+    }
+
     protected override bool TryFire()
     {
         var target = FindNearestEnemy();

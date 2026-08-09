@@ -38,6 +38,21 @@ public class TeslaCoil : WeaponBase
         base.Awake();
     }
 
+    /// <summary>
+    /// Applique la FORME du palier, et pas seulement ses chiffres.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Sans cette lecture, la bobine restait a DEUX chainons au niveau 20 au lieu de sept — c'est toute sa
+    /// raison d'etre qui ne grandissait pas :
+    /// l'arme montait en degats et gardait sa forme de depart. Le portage ne lisait que six
+    /// des seize cles de palier — huit armes etaient concernees.
+    /// </remarks>
+    public override void ApplyLevelStats(WeaponTable.WeaponLevelStats stats)
+    {
+        ChainCount = Mathf.Max(1, stats.ShapeInt("chainCount", ChainCount));
+        ChainRange = stats.Shape("chainRange", ChainRange);
+    }
+
     protected override bool TryFire()
     {
         var first = FindNearestEnemy();

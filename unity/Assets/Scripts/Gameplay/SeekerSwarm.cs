@@ -28,8 +28,11 @@ public class SeekerSwarm : WeaponBase
 
     public override void ApplyLevelStats(WeaponTable.WeaponLevelStats stats)
     {
-        // Même omission que pour la Volée Dispersée : l'essaim restait à deux missiles à vie.
-        MissileCount = Mathf.Max(1, stats.ProjectileCount);
+        // ⚠ La clé est `missileCount`, PAS `projectileCount` — que cette arme ne déclare nulle part.
+        // Lire la seconde renvoyait son défaut (1) : le correctif censé faire grandir l'essaim le
+        // ramenait en réalité à UN missile, sous les deux qu'il avait en dur avant. Une clé absente
+        // ne se plaint pas, elle rend une valeur plausible.
+        MissileCount = Mathf.Max(1, stats.ShapeInt("missileCount", MissileCount));
         ProjectileSpeed = stats.ProjectileSpeed;
     }
 

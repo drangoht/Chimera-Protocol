@@ -44,6 +44,22 @@ public class DroneSwarm : WeaponBase
     }
 
     /// <summary>Cette arme n'attaque jamais « d'un bloc » : chaque drone gère ses propres dégâts.</summary>
+    /// <summary>
+    /// Applique la FORME du palier, et pas seulement ses chiffres.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Sans cette lecture, l'essaim restait a DEUX drones au niveau 20 au lieu de quatre, et leur cadence
+    /// de morsure ne s'accelerait jamais :
+    /// l'arme montait en degats et gardait sa forme de depart. Le portage ne lisait que six
+    /// des seize cles de palier — huit armes etaient concernees.
+    /// </remarks>
+    public override void ApplyLevelStats(WeaponTable.WeaponLevelStats stats)
+    {
+        DroneCount     = Mathf.Max(1, stats.ShapeInt("droneCount", DroneCount));
+        OrbitSpeedDeg  = stats.Shape("orbitSpeedDegPerSec", OrbitSpeedDeg);
+        DamageInterval = stats.Shape("damageInterval", DamageInterval);
+    }
+
     protected override bool TryFire() => false;
 
     protected override void Update()
