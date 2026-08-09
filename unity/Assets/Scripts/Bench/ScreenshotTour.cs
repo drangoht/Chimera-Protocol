@@ -38,7 +38,54 @@ public sealed class ScreenshotTour : MonoBehaviour
         transform.SetParent(null);
         DontDestroyOnLoad(gameObject);
         Directory.CreateDirectory(_dir);
+
+        Showcase();
         StartCoroutine(Run());
+    }
+
+    /// <summary>
+    /// Remplit une progression de <b>vitrine</b>, en mémoire seulement.
+    /// </summary>
+    /// <remarks>
+    /// <para>Sans elle, une tournée lancée sur une installation neuve photographie un jeu <b>vide</b> :
+    /// Codex masqué (il ne dévoile que ce qu'on a croisé), Hub sans Échos, aucune arme découverte,
+    /// aucun défi. Les images seraient exactes et parfaitement inutilisables — elles montreraient
+    /// l'absence de contenu là où la galerie doit en montrer.</para>
+    ///
+    /// <para>⚠ <b>Rien n'est écrit sur disque</b> : on modifie l'état chargé, jamais le fichier. La
+    /// règle est la même que pour les drapeaux de banc — un outil ne laisse pas sa mise en scène dans
+    /// la sauvegarde du joueur.</para>
+    /// </remarks>
+    private static void Showcase()
+    {
+        var settings = GameSettings.Current;
+
+        var inventory = InventorySystem.Instance;
+        if (inventory != null)
+        {
+            foreach (string id in inventory.AllWeaponIds)
+                if (!settings.DiscoveredWeapons.Contains(id)) settings.DiscoveredWeapons.Add(id);
+        }
+
+        foreach (var graft in Assimilation.Config.Grafts)
+            if (!settings.DiscoveredGrafts.Contains(graft.Id)) settings.DiscoveredGrafts.Add(graft.Id);
+
+        // Une complétion par biome : les niveaux s'ouvrent, les badges s'affichent, et l'échelle de
+        // saturation montre un cran gagné plutôt qu'une porte fermée.
+        foreach (string biome in LevelThreat.Order)
+        {
+            settings.Completions[biome] = 1;
+            settings.SaturationBeatenByLevel[biome] = 1;
+            if (settings.HighScores.TryGetValue(biome, out int best) && best > 0) continue;
+            settings.HighScores[biome] = 13 * 60 + 42;
+        }
+
+        // Des Échos en banque : le Hub photographié à zéro montre une boutique où rien n'est
+        // achetable, c'est-à-dire l'inverse de ce qu'il est. La somme reste modeste — assez pour que
+        // les premiers achats s'ouvrent, pas au point de donner l'arbre entier.
+        if (MetaProgression.CurrentEchoes < 4000) MetaProgression.Save.Meta.CurrentEchoes = 4000;
+
+        Debug.Log("[ScreenshotTour] progression de vitrine posee (en memoire, rien n'est ecrit).");
     }
 
     private IEnumerator Run()
@@ -82,6 +129,18 @@ public sealed class ScreenshotTour : MonoBehaviour
         yield return null;
         codex.Show();
         yield return Shot("codex");
+
+        // Les onglets du Codex sont quatre écrans, pas un : l'arsenal et la chimère montrent ce que
+        // le bestiaire ne dit pas, et ce sont eux qui portent la promesse du jeu — les armes qu'on
+        // construit, les greffes qu'on assimile.
+        codex.SelectTab(CodexScreen.Tab.Arsenal);
+        yield return null;
+        yield return Shot("codex-arsenal");
+
+        codex.SelectTab(CodexScreen.Tab.Chimera);
+        yield return null;
+        yield return Shot("codex-chimere");
+
         codex.Hide();
 
         var challenges = host.AddComponent<ChallengeScreen>();
@@ -126,7 +185,7 @@ public sealed class ScreenshotTour : MonoBehaviour
         {
             levelUp.Present(LevelUpPool.BuildOverload());
             yield return new WaitForSecondsRealtime(1f);
-            yield return Shot("montee-de-niveau");
+            yield return Shot("montee-de-niveau", keepModal: true);
         }
 
         Debug.Log($"[SHOTS] {_index} captures ecrites dans {Path.GetFullPath(_dir)}");
@@ -593,9 +652,25 @@ public sealed class ScreenshotTour : MonoBehaviour
     /// </summary>
     private const string SwarmSpriteId = "rust_swarm";
 
-    private IEnumerator Shot(string name)
+    /// <param name="keepModal">
+    /// Vrai pour les rares clichés dont la modale EST le sujet (l'écran de montée de niveau).
+    /// </param>
+    private IEnumerator Shot(string name, bool keepModal = false)
     {
         string path = Path.Combine(_dir, $"{_index:00}-{name}.png");
+
+        // ⚠ La modale est écartée ICI, au point unique par lequel passent toutes les captures.
+        // Elle l'était auparavant pendant les phases de jeu seulement, et les clichés de combat —
+        // pris entre deux attentes courtes — se faisaient recouvrir quand même : la galerie du
+        // Secteur Néon, qui donne +15 % d'XP, ne montrait qu'un écran de choix de cartes.
+        if (!keepModal)
+        {
+            var levelUp = FindFirstObjectByType<LevelUpScreen>();
+            if (levelUp != null && levelUp.IsVisible) levelUp.DismissForBench();
+
+            var assimilation = FindFirstObjectByType<AssimilationScreen>();
+            if (assimilation != null && assimilation.IsVisible) assimilation.AcceptForBench();
+        }
 
         // Une capture n'est écrite qu'à la fin de la frame suivante : attendre explicitement évite
         // de photographier l'écran d'AVANT.

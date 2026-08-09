@@ -4,6 +4,105 @@
 > `release-manager`). Entrées en ordre décroissant (la plus récente en haut). Ton orienté
 > joueur, EN puis FR (audience itch surtout anglophone).
 
+## v2.0.0 — Same game, rebuilt from the ground up (2026-08-09)
+
+**Changed — Chimera Protocol now runs on a different engine**
+- Everything you play is the same: the same weapons, the same fusions, the same grafts, the same
+  five biomes, the same boss, the same saturation ladder. What changed is the machinery underneath —
+  the game was rebuilt on Unity.
+- **Your save carries over.** Echoes, Hub upgrades, records, completions, discovered weapons and
+  grafts, challenges: all of it is read from your existing installation the first time you launch.
+  Nothing to export, nothing to click.
+- Why bother, if nothing visibly changes? Because the parts that *do* change are the ones you feel
+  without being able to name them: sound, effects, readability. Which brings us to the rest of this
+  list — every entry below is something that was broken, or missing, and is now not.
+
+**Fixed — fourteen weapons were firing in complete silence**
+- Reported in play: *"the Tesla Coil makes no sound."* It didn't — and neither did thirteen others.
+  Eleven of the twelve base weapons were mute, which is roughly the entire early game.
+- Nothing could catch it: a silent weapon still damages, still levels up, still draws its effects,
+  and a screenshot has never made a sound. Every weapon now declares its firing sound in one place,
+  or declares that it is deliberately silent (the drone swarm and the frost veil strike continuously —
+  a sound per tick would be a drone, not a weapon).
+
+**Added — the floor tells you where you are**
+- The five arenas were distinguished by the *tint* of the same repeated tile. Now the Furnace has a
+  lava flow crossing it, the Frost a cracked frozen river, the Neon two data conduits that meet at a
+  lit node, the Sanctuary a paved path around a rune-carved square, and the Aether Wastes a river of
+  raw energy. Obstacles and the glass wells that show the parallax now step aside for them.
+
+**Added — a full reset, in the options**
+- There was no way to start over: the save lives in a system folder nobody should be asked to open.
+  Two clicks now wipe everything you earned — Echoes, upgrades, records, discoveries. **Your
+  preferences survive** (language, volumes, keys): starting a fresh game shouldn't mean setting up
+  your screen again. Never offered mid-run, for the obvious reason.
+
+**Changed — rank I of the saturation ladder is now earned**
+- "Nothing beaten" and "rank 0 beaten" used to be the same value, so a brand-new save was offered
+  rank I straight away — the ladder handed you its first rung instead of making you climb it. Beat
+  the Rusted Core once on a biome, and rank I opens there.
+- The rung above what you've proven stays open, always: that's what makes the ladder climbable.
+
+**Fixed — things that were simply missing**
+- **Discord Rich Presence** is back (menu / run, with the biome and rank). The setting for it had
+  survived the rebuild all by itself, switching nothing.
+- The **executable carries the game's icon** instead of the engine's.
+- The **new-version banner** works again for players who downloaded the archive from the web — the
+  ones with no auto-update at all.
+
+---
+
+**Modifié — Chimera Protocol tourne sur un nouveau moteur**
+- Tout ce que vous jouez est identique : mêmes armes, mêmes fusions, mêmes greffes, mêmes cinq
+  biomes, même boss, même échelle de saturation. Ce qui change est la mécanique en dessous — le jeu
+  a été reconstruit sur Unity.
+- **Votre sauvegarde est reprise.** Échos, améliorations du Hub, records, complétions, armes et
+  greffes découvertes, défis : tout est relu depuis votre installation au premier lancement. Rien à
+  exporter, rien à cliquer.
+- Pourquoi le faire si rien ne change à l'écran ? Parce que ce qui change vraiment, ce sont les
+  choses qu'on ressent sans savoir les nommer : le son, les effets, la lisibilité. D'où la suite de
+  cette liste — chaque ligne ci-dessous est quelque chose qui était cassé, ou absent, et qui ne
+  l'est plus.
+
+**Corrigé — quatorze armes tiraient dans le silence complet**
+- Signalé en jouant : *« la bobine Tesla n'émet aucun son »*. C'était vrai — et treize autres non
+  plus. Onze des douze armes de base étaient muettes, c'est-à-dire à peu près tout le début de
+  partie.
+- Rien ne pouvait le voir : une arme muette blesse, monte de niveau, dessine ses effets, et une
+  capture d'écran n'a jamais fait de bruit. Chaque arme déclare désormais son son en un seul
+  endroit, ou déclare qu'elle est muette à dessein (l'essaim de drones et le voile de givre frappent
+  en continu — un son par tick serait un bourdonnement, pas une arme).
+
+**Ajouté — le sol dit enfin où vous jouez**
+- Les cinq arènes ne se distinguaient que par la *teinte* d'une même tuile répétée. La Fournaise a
+  maintenant sa coulée de lave, le Givre sa rivière gelée craquelée, le Néon deux conduits de données
+  qui se croisent sur un nœud allumé, le Sanctuaire son chemin pavé autour d'une place gravée, et la
+  Friche d'Aether sa rivière d'énergie. Les obstacles et les puits vitrés qui montrent la parallaxe
+  s'écartent désormais pour leur laisser la place.
+
+**Ajouté — une réinitialisation complète, dans les options**
+- Il n'y avait aucun moyen de repartir de zéro : la sauvegarde vit dans un dossier système qu'on ne
+  va pas demander à quelqu'un d'ouvrir. Deux clics effacent tout ce qui a été gagné — Échos,
+  améliorations, records, découvertes. **Vos préférences survivent** (langue, volumes, touches) :
+  recommencer une partie ne devrait pas obliger à reconfigurer son écran. Jamais proposée en pleine
+  partie, pour la raison évidente.
+
+**Modifié — le cran I de l'échelle de saturation se mérite**
+- « Rien battu » et « cran 0 battu » étaient la même valeur : une sauvegarde neuve se voyait donc
+  proposer le cran I d'emblée — l'échelle offrait son premier barreau au lieu de le faire gravir.
+  Battez le Noyau Rouillé une fois sur un biome, et le cran I s'y ouvre.
+- Le barreau au-dessus de ce que vous avez prouvé reste toujours ouvert : c'est lui qui rend
+  l'échelle gravissable.
+
+**Corrigé — ce qui manquait, tout simplement**
+- La **présence Discord** est de retour (menus / en run, avec le biome et le cran). Son réglage,
+  lui, avait survécu tout seul à la reconstruction, sans rien commander.
+- L'**exécutable porte l'icône du jeu** au lieu de celle du moteur.
+- Le **bandeau de nouvelle version** fonctionne à nouveau pour les joueurs qui téléchargent
+  l'archive depuis le web — les seuls à n'avoir aucune mise à jour automatique.
+
+---
+
 ## v1.26.0 — The ladder had a top, and you reached it on the easiest biome (2026-08-03)
 
 **Added — VI · Purifier, the new top rank**

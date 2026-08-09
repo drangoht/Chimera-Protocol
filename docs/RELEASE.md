@@ -13,6 +13,10 @@ Un seul push couvre les deux publics :
 > Rappel technique : un `.exe` en cours d'exécution ne peut pas se remplacer lui-même sous Windows.
 > C'est **l'app itch.io** (processus tiers) qui applique la mise à jour — d'où l'intérêt de ce
 > workflow plutôt qu'un updater maison.
+>
+> Les joueurs venus du **web** n'ont aucune mise à jour automatique : pour eux, le menu principal
+> interroge `version.json` sur le dépôt et affiche un bandeau. C'est le seul moyen qu'ils ont
+> d'apprendre qu'un correctif est sorti — et il ne fonctionne que si le manifeste est poussé.
 
 ---
 
@@ -32,26 +36,52 @@ Un seul push couvre les deux publics :
 
 ---
 
-## Publier une nouvelle version
+## Publier une nouvelle version (moteur Unity)
 
-1. **Incrémente la version** dans `project.godot` : `config/version="1.1.0"` (semver).
-   C'est ce numéro qui s'affiche sur itch et sert de référence à l'auto-update.
-2. Lance le script de release :
+Depuis la **2.0.0**, le jeu est construit avec Unity et se publie par `tools/release_unity.ps1`.
+L'ancien `tools/release_itch.ps1` pilotait l'export Godot ; il est conservé comme référence, mais
+le moteur est gelé et il ne doit plus servir.
+
+1. **Essai à blanc** — la chaîne entière sans rien publier :
    ```
-   powershell -File tools/release_itch.ps1
+   powershell -File tools/release_unity.ps1 -Version 2.1.0 -DryRun
    ```
-   Il enchaîne : vérif `.sln` → **export release Godot .NET** → dossier de distribution propre
-   (`build/dist_windows/` = exe + runtime `data_*`, sans les artefacts parasites) → **`butler push`
-   versionné** vers `drangoht/chimera-protocol:windows` → affiche l'état des channels.
+   Un script de release qu'on ne peut essayer qu'en publiant ne se teste jamais qu'en production.
+
+2. **Régénère la galerie** si l'interface a bougé :
+   ```
+   py tools/capture_store.py
+   ```
+   Cinq tournées, une par biome, ~7 min. Les images atterrissent dans `docs/store_screens/` sous les
+   noms attendus par `docs/ITCH_STORE_PAGE.md`, et les manquantes sont **annoncées**.
+
+3. **Publie** :
+   ```
+   powershell -File tools/release_unity.ps1 -Version 2.1.0
+   ```
+   Il enchaîne : numéro de version posé dans le projet → tampon de build (SHA du commit) → build
+   Unity → vérification du binaire → dossier de distribution propre → **`butler push`** versionné →
+   `version.json` régénéré et poussé sur GitHub → état des channels.
 
    Options utiles :
-   - `-Version 1.1.0` force la version (sinon lue depuis `project.godot`).
    - `-Channel windows` (défaut) — un channel par plateforme.
-   - `-Itch user/slug` si ton slug itch diffère du défaut.
-   - `-SkipExport` réutilise le build existant dans `build/` (itère plus vite).
+   - `-Itch user/slug` si le slug diffère du défaut.
+   - `-SkipBuild` réutilise le binaire déjà construit (le script vérifie qu'il porte la bonne version).
 
-3. Vérifie sur la page itch que la nouvelle version est en ligne. Terminé — les joueurs de l'app
-   la reçoivent automatiquement.
+4. **Colle le devlog** sur itch depuis `docs/DEVLOG.md` (entrée la plus récente, EN puis FR).
+   Le script ne pilote pas le navigateur.
+
+### Ce que le script vérifie, et pourquoi
+
+- **Le tampon de build** (`build_stamp.json`, écrit par le build lui-même) porte version et SHA. Les
+  métadonnées Windows d'un exécutable Unity décrivent le **moteur** (« 6000.5.6f1 »), pas le jeu :
+  les interroger ne dit rien. Et l'horodatage ne vaut pas mieux — le build est incrémental, donc un
+  binaire identique n'est pas réécrit.
+- **Le journal de build** doit contenir une réussite explicite. ⚠ Unity lancé par l'opérateur d'appel
+  `&` rend la main **immédiatement sans rien faire** : pas de log, pas de code retour. D'où
+  `Start-Process -Wait`.
+- **`version.json` est poussé sur GitHub** : c'est ce fichier que lit le bandeau « nouvelle version »
+  du menu. Sans ce push, la release existe pour butler et pour personne d'autre.
 
 ---
 

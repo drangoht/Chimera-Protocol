@@ -87,6 +87,38 @@ public static class BuildBench
                   $"taille={summary.totalSize} scenes={scenes.Length}");
 
         if (summary.result != BuildResult.Succeeded) EditorApplication.Exit(1);
+
+        WriteBuildStamp(outDir);
+    }
+
+    /// <summary>
+    /// Écrit, à côté du binaire, la carte d'identité de ce qui vient d'être construit.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>C'est le seul contrôle honnête de fraîcheur.</b> Les métadonnées Windows d'un
+    /// exécutable Unity décrivent le <b>moteur</b> — « 6000.5.6f1 » — et non le jeu : les interroger
+    /// pour savoir quelle version on s'apprête à publier ne dit rien. Et l'horodatage du fichier ne
+    /// vaut pas mieux, le build étant incrémental : un binaire identique n'est pas réécrit.</para>
+    ///
+    /// <para>Ce fichier, lui, est produit <b>par le build</b> : il ne peut pas annoncer une version
+    /// que le build n'a pas posée. Le script de release le lit avant de pousser — c'est le garde-fou
+    /// qui manquait le jour où une release a expédié le binaire de la version précédente.</para>
+    /// </remarks>
+    private static void WriteBuildStamp(string outDir)
+    {
+        var sha = AssetDatabase.LoadAssetAtPath<TextAsset>("Assets/Resources/build_sha.txt");
+        string shaText = sha != null && sha.text.Trim().Length > 0 ? sha.text.Trim() : "dev";
+
+        string json =
+            "{\n" +
+            $"  \"version\": \"{PlayerSettings.bundleVersion}\",\n" +
+            $"  \"sha\": \"{shaText}\",\n" +
+            $"  \"date\": \"{DateTime.UtcNow:yyyy-MM-ddTHH:mm:ssZ}\",\n" +
+            $"  \"engine\": \"{Application.unityVersion}\"\n" +
+            "}\n";
+
+        File.WriteAllText(Path.Combine(outDir, "build_stamp.json"), json);
+        Debug.Log($"[BUILD] tampon : v{PlayerSettings.bundleVersion}-{shaText}");
     }
 
     /// <summary>

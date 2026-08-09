@@ -110,6 +110,10 @@ public sealed class MainMenuScreen : MonoBehaviour
         BuildFocusChain(column.transform);
         BuildLanguageRow(canvasGo.transform);
         BuildVersionStamp(canvasGo.transform);
+
+        // Contrôle de mise à jour : pour les joueurs venus du web, qui n'ont aucune autre façon
+        // d'apprendre qu'un correctif est sorti.
+        gameObject.AddComponent<UpdateBanner>().Check(canvasGo.transform);
     }
 
     /// <summary>
@@ -262,7 +266,9 @@ public sealed class MainMenuScreen : MonoBehaviour
     /// </summary>
     private static void BuildVersionStamp(Transform parent)
     {
-        var stamp = UiStyle.Label(parent, "v" + Application.version, 16,
+        // Le SHA autant que le numéro : deux binaires peuvent porter la même version et ne pas être
+        // le même code — c'est arrivé, et le tampon est ce qui l'aurait montré du premier coup d'œil.
+        var stamp = UiStyle.Label(parent, BuildInfo.Label, 16,
                                   UiPalette.WithAlpha(UiPalette.Dim, 0.7f), TextAnchor.LowerRight);
 
         var rect = stamp.GetComponent<RectTransform>();

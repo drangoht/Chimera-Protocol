@@ -17,8 +17,8 @@
 Variantes d'accroche (au choix selon le slot) :
 - « Un survivor roguelite où tu ne fais pas que monter de niveau : tu deviens la chimère que tu
   combats. »
-- « Bullet-heaven cyberpunk : 5 biomes, 4 Arpenteurs, des greffes de monstres à assimiler, 1 boss à
-  vaincre pour s'extraire. »
+- « Bullet-heaven cyberpunk : 5 biomes, des greffes de monstres à assimiler, 1 boss à vaincre pour
+  s'extraire — puis une échelle de saturation à gravir, cran par cran. »
 
 ---
 
@@ -78,11 +78,11 @@ littéralement.
   un emplacement — **Charge Blindée** (le dash devient une charge qui encaisse et projette) ou
   **Ruche de Tourelles** (tes essaims deviennent 4 tourelles à 360°). Un nouvel écran **Chimère**
   au menu principal explique tout.
-- **4 personnages jouables**, chacun avec ses stats, son aura et son arme de signature :
-  **Chimera** (cyborg équilibré, Canon à Impulsions), **Titan-Gardien** (robot lourd, Essaim de Drones),
-  **Vagabond** (humain mobile, Lame Plasma) et **Vecteur** (cyborg de précision, **Lance Vectorielle** —
-  la seule arme de départ **dirigée** : tu vises toi-même à la souris ou au stick droit, avec un réticule,
-  et le trait transperce tous les ennemis alignés).
+- **Une échelle de saturation en 7 crans**, une fois le boss vaincu : chaque cran ajoute **une règle
+  nommée**, jamais un multiplicateur de plus. *Hémorragie* coupe les soins reçus et le soin de passage
+  de niveau ; *Compte à rebours* avance l'overtime ; *Sans filet* retire vos consommables ;
+  *Purificateur* fait que les coups de champion font au minimum 12 % de votre barre. Le cran se règle
+  **par niveau**, et chacun se gagne en battant le précédent.
 - **5 biomes avec effets de gameplay** (pas juste cosmétiques) :
   - *Sanctuaire Rouillé* — terrain neutre, pour apprendre la boucle.
   - *Friche d'Aether* — **+20 % d'XP**, montée en puissance accélérée.
@@ -179,7 +179,12 @@ Genre principal recommandé : **Action**. Made with : **Godot**.
 
 ### Visuels EXISTANTS à réutiliser (dans `docs/store_screens/`)
 
-Captures à jour (rendu pseudo-3D, anglais sauf mention contraire, 1280×720 sauf cover).
+**Toute la galerie a été régénérée le 2026-08-09** depuis le binaire de la 2.0.0, en 1280×720 et en
+français. Elle se refait d'une commande — `py tools/capture_store.py` — au lieu de dépendre de ce
+dont on se souvient d'avoir capturé : les images précédentes dataient du moteur Godot et montraient
+des écrans qui n'existent plus. **Une galerie qui ne décrit pas le jeu qu'on télécharge est pire
+qu'une galerie absente.**
+
 À placer dans cet ordre de priorité sur la page (les premiers sont les plus « vendeurs ») :
 
 | Ordre | Fichier | Ce qu'il montre | Légende suggérée |
@@ -190,15 +195,17 @@ Captures à jour (rendu pseudo-3D, anglais sauf mention contraire, 1280×720 sau
 | 4 | `docs/store_screens/gameplay_fournaise.png` | **Run en Fournaise** — coulée de lave, sol pseudo-3D, joueur au centre | « Survis aux marées de Rouille sur 5 biomes. » |
 | 5 | `docs/store_screens/bestiary.png` | **Bestiaire** — faune néon (Security Drone, Holographic Glitch, Laser Turret, Synthetic Golem) | « Une faune propre à chaque biome. » |
 | 6 | `docs/store_screens/menu.png` | **Menu principal** stylé (titre néon, Bestiaire/Arsenal/Options) | Image de couverture / vitrine. |
-| 7 | `docs/store_screens/charsel.png` | **Sélection de personnage** — les 4 Arpenteurs en pseudo-3D (Chimera, Titan, Vagabond, Vecteur), EN, à jour 1.10.0 | « 4 Arpenteurs, 4 styles de jeu. » |
+| 7 | `docs/store_screens/levelup.png` | **Montée de niveau** — trois cartes à choisir, régénérée 2026-08-09 | « Trois cartes, un choix, quinze secondes. » |
 | 8 | `docs/store_screens/levelsel.png` | **Sélection de biome** — les 5 arènes et leurs effets | « 5 biomes, 5 règles. Conquiers-les tous. » |
 | 9 | `docs/store_screens/arsenal.png` | **Arsenal** — armes/passifs avec icônes et descriptions | « Un arsenal qui se construit. » |
 | 10 | `docs/store_screens/gameplay_neon.png` | **Run en Secteur Néon** — grille néon, ambiance overclock | « Risque vs récompense : +10 % vitesse, +15 % XP. » |
 
-> Note : `hud_fusion.png`, `chimera_codex.png` et `assimilation_graft.png` sont capturées en
-> **français** (langue de la session de capture) — à régénérer en anglais avant publication si
-> l'on veut une galerie 100 % homogène (le reste des captures est en EN). Fonctionnellement
-> identique, seul le texte change (`localization/ui.csv`).
+> Note : la galerie est **entièrement en français**, langue des tournées de capture. Pour une
+> galerie anglaise, changer la langue dans les options avant de relancer `capture_store.py` — le jeu
+> est traduit en trois langues, seul le texte change.
+>
+> Images produites par la tournée et disponibles en plus de ce tableau : `hub.png`, `options.png`,
+> `challenges.png`, `chimera_body.png`, et une image de jeu par biome (`gameplay_<biome>.png`).
 
 **Cover / bannière** : `docs/store_screens/cover.png` (630×500, key art Fournaise).
 Autres biomes disponibles pour la galerie : `gameplay_sanctuaire.png`, `gameplay_aether.png`,
