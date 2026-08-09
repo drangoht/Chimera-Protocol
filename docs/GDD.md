@@ -2946,7 +2946,16 @@ ce qui rend les records déjà gagnés valides sans migration destructrice ; « 
 d'**assistance**, hors échelle, parce que l'accessibilité n'est pas une saturation négative.
 
 **L'échelle se règle et se débloque par NIVEAU** (2026-07-30). Battre la saturation N sur un biome y
-ouvre le N+1, et seulement là. Le coût est réel — l'échelle se regagne cinq fois — et il est assumé
+ouvre le N+1, et seulement là.
+
+**Et le cran I se mérite** (2026-08-09). Jusque-là « aucune victoire » et « victoire au cran 0 » étaient
+la même valeur, si bien qu'un joueur qui venait de tout réinitialiser se voyait proposer le cran I sans
+avoir jamais terminé un niveau : l'échelle offrait son premier barreau au lieu de le faire gagner. Les
+deux états sont désormais distincts — tant que le Noyau n'est pas tombé une fois sur ce biome, seul le
+cran 0 s'ouvre. Le *+1* reste ce qui rend l'échelle gravissable : sans un cran ouvert au-dessus de ce
+qui est prouvé, on n'en gagnerait jamais un de plus. Conséquence assumée : la porte d'entrée de la
+difficulté se paie d'une première victoire, là où l'ancien « Difficile » était disponible d'emblée.
+L'écran le dit (`SAT_LOCKED_HINT`), faute de quoi une flèche qui refuse de monter se lit « cassée ». Le coût est réel — l'échelle se regagne cinq fois — et il est assumé
 pour deux raisons : un biome tardif, déjà plus dur via `LevelThreat` (§28), ne se retrouve pas ouvert
 au cran 5 parce que le joueur l'a gagné sur le Sanctuaire ; et chaque niveau porte sa propre courbe.
 Conséquence d'interface : **le sélecteur vit sur la carte du biome**, jamais dans un panneau en tête

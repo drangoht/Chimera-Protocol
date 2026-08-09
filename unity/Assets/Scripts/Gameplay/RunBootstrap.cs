@@ -75,6 +75,11 @@ public sealed class RunBootstrap : MonoBehaviour
         // ensemble et seuls leurs volumes bougent.
         MusicDirector.Instance?.PlayBiome(RunConfig.BiomeId);
 
+        // Le statut Discord suit ce que le joueur fait vraiment. Le nom du biome est TRADUIT : c'est
+        // le libellé que voient ses contacts, pas un identifiant interne.
+        DiscordPresence.Instance?.SetInRun(
+            Loc.T($"BIOME_{RunConfig.BiomeId.ToUpperInvariant()}_NAME"), RunConfig.Saturation);
+
         ApplyCommandLine();
         WireInventory();
 

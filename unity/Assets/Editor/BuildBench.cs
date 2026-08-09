@@ -65,6 +65,8 @@ public static class BuildBench
         PlayerSettings.SplashScreen.show = false;
         PlayerSettings.runInBackground = true;
 
+        ApplyGameIcon();
+
         string projectRoot = Directory.GetParent(Application.dataPath)!.FullName;
         string outDir = Path.Combine(projectRoot, OutDirGame);
         Directory.CreateDirectory(outDir);
@@ -85,6 +87,62 @@ public static class BuildBench
                   $"taille={summary.totalSize} scenes={scenes.Length}");
 
         if (summary.result != BuildResult.Succeeded) EditorApplication.Exit(1);
+    }
+
+    /// <summary>
+    /// Pose l'icône du jeu sur l'exécutable et sur la fenêtre.
+    /// </summary>
+    /// <remarks>
+    /// <para>Le portage sortait un binaire à l'icône <b>Unity</b> : dans la barre des tâches, dans
+    /// l'explorateur et sur le raccourci du bureau, le jeu ne portait pas son nom mais celui du
+    /// moteur qui l'a construit. C'est la première image que voit un joueur, avant même le menu.</para>
+    ///
+    /// <para><b>Posée au build et non à la main dans l'éditeur</b> : un réglage d'éditeur ne vaut que
+    /// sur le poste où il a été fait, et se perd au premier clone du dépôt. Ici l'icône est un asset
+    /// versionné, appliqué par le script qui produit le binaire.</para>
+    ///
+    /// <para>⚠ Unity attend un <c>Texture2D</c> lisible : sans <c>isReadable</c>, l'appel est
+    /// silencieusement ignoré et le binaire garde l'icône du moteur — sans erreur ni avertissement.
+    /// D'où le réglage d'import forcé ici même, plutôt qu'un <c>.meta</c> qu'on croirait suffisant.</para>
+    /// </remarks>
+    private static void ApplyGameIcon()
+    {
+        const string path = "Assets/Art/branding/icon.png";
+
+        var importer = AssetImporter.GetAtPath(path) as TextureImporter;
+        if (importer == null)
+        {
+            Debug.LogWarning($"[BUILD] icone introuvable ({path}) — le binaire gardera celle d'Unity.");
+            return;
+        }
+
+        if (!importer.isReadable || importer.textureType != TextureImporterType.GUI)
+        {
+            importer.textureType = TextureImporterType.GUI;
+            importer.isReadable = true;
+            importer.mipmapEnabled = false;
+            importer.SaveAndReimport();
+        }
+
+        var icon = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+        if (icon == null)
+        {
+            Debug.LogWarning($"[BUILD] icone illisible ({path}).");
+            return;
+        }
+
+        // La même image pour toutes les tailles : Unity la redimensionne. Le sprite d'origine fait
+        // 256 px, soit la plus grande taille demandée par Windows — aucun agrandissement, donc aucun
+        // flou sur les grandes icônes.
+        var target = NamedBuildTarget.Standalone;
+        int[] sizes = PlayerSettings.GetIconSizes(target, IconKind.Any);
+
+        var icons = new Texture2D[sizes.Length];
+        for (int i = 0; i < icons.Length; i++) icons[i] = icon;
+
+        PlayerSettings.SetIcons(target, icons, IconKind.Any);
+
+        Debug.Log($"[BUILD] icone posee sur {icons.Length} taille(s).");
     }
 
     /// <summary>Critère de sortie du Lot 2 : le cœur de run, vérifié headless.</summary>

@@ -1945,6 +1945,27 @@ public sealed class RunSmokeTest : MonoBehaviour
         select.Show();
         Check("niveaux : l'ecran s'ouvre", select.IsVisible);
         CheckScrollWheel(selectGo, "niveaux");
+
+        // Le cran I SE MÉRITE (2026-08-09) : sur un biome jamais terminé, l'échelle s'arrête au
+        // cran 0. La règle elle-même est verrouillée par les tests unitaires ; ce qui ne peut se
+        // vérifier que d'ici, c'est que l'écran le DISE — un bouton qui refuse de monter sans un mot
+        // se lit « cassé », et le projet a déjà payé cette leçon avec un sélecteur qui disparaissait
+        // en silence.
+        var virgin = new Dictionary<string, int>();
+        string firstBiome = LevelThreat.Order[0];
+
+        Check("niveaux : le cran I se merite",
+              BiomeUnlock.MaxSelectableRank(firstBiome, virgin) == 0,
+              $"echelle ouverte jusqu'au cran {BiomeUnlock.MaxSelectableRank(firstBiome, virgin)} sans victoire");
+
+        Check("niveaux : une victoire au cran 0 ouvre le I",
+              BiomeUnlock.MaxSelectableRank(firstBiome,
+                  new Dictionary<string, int> { [firstBiome] = 0 }) == 1);
+
+        Check("niveaux : l'ecran explique comment ouvrir le cran suivant",
+              Loc.T("SAT_LOCKED_HINT").Length > 10,
+              Loc.T("SAT_LOCKED_HINT"));
+
         select.Hide();
         Destroy(selectGo);
 
@@ -1991,6 +2012,29 @@ public sealed class RunSmokeTest : MonoBehaviour
                       $"texte {label.preferredWidth:F0} px pour {available:F0} px utiles");
             }
         }
+
+        // ── Présence Discord ──────────────────────────────────────────────────
+        // Le réglage existait dans la sauvegarde depuis la reprise des données Godot, était migré,
+        // écrit, relu… et piloté par personne : un interrupteur mort dans l'écran qui s'en interdit.
+        // On vérifie ici qu'il commande vraiment quelque chose.
+        Check("options : la presence Discord est proposee",
+              FindLabelled(optionsGo, Loc.T("OPTIONS_DISCORD")) != null
+              || options.RowCount >= 16, $"{options.RowCount} reglages");
+
+        bool discordBefore = GameSettings.Current.Discord;
+
+        GameSettings.Current.Discord = false;
+        GameSettings.ApplyPresence(GameSettings.Current);
+        bool offPushed = !DiscordPresence.PreferenceEnabled;
+
+        GameSettings.Current.Discord = true;
+        GameSettings.ApplyPresence(GameSettings.Current);
+        bool onPushed = DiscordPresence.PreferenceEnabled;
+
+        Check("options : l'interrupteur Discord pilote la presence", offPushed && onPushed);
+
+        GameSettings.Current.Discord = discordBefore;
+        GameSettings.ApplyPresence(GameSettings.Current);
 
         options.Hide();
 

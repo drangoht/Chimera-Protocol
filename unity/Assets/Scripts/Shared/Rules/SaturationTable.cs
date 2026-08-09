@@ -371,7 +371,25 @@ public static class SaturationTable
     /// un biome tardif — déjà plus dur via <see cref="LevelThreat"/> — ne se retrouve pas ouvert au
     /// cran 5 parce que le joueur l'a gagné sur le Sanctuaire.</para>
     /// </summary>
-    public static int MaxSelectable(int highestBeaten) => Math.Min(Clamp(highestBeaten) + 1, MaxRank);
+    /// <remarks>
+    /// <para><b>« Rien battu » et « cran 0 battu » sont deux états distincts</b> (2026-08-09). Ils
+    /// valaient tous deux zéro jusque-là, si bien qu'un joueur qui venait de tout réinitialiser se
+    /// voyait proposer le cran I sans avoir jamais terminé un niveau — l'échelle offrait son premier
+    /// barreau au lieu de le faire gagner. <see cref="NoneBeaten"/> les sépare : tant que le Noyau
+    /// n'est pas tombé une fois sur ce biome, seul le cran 0 s'ouvre.</para>
+    ///
+    /// <para>Le <b>+1</b> reste indispensable : c'est lui qui rend l'échelle gravissable. Sans un cran
+    /// ouvert au-dessus de ce qui est prouvé, il n'y aurait jamais de moyen d'en gagner un de plus, et
+    /// la progression se refermerait sur elle-même.</para>
+    /// </remarks>
+    public static int MaxSelectable(int highestBeaten)
+        => highestBeaten < 0 ? 0 : Math.Min(Clamp(highestBeaten) + 1, MaxRank);
+
+    /// <summary>
+    /// Valeur qui signifie « aucune victoire sur ce biome ». Distincte de 0, qui veut dire « le cran 0
+    /// a été battu » — et c'est cette distinction qui fait mériter le cran I.
+    /// </summary>
+    public const int NoneBeaten = -1;
 
     /// <summary>true si le joueur peut lancer une run à ce rang.</summary>
     public static bool CanSelect(int rank, int highestBeaten)
@@ -429,7 +447,9 @@ public static class SaturationTable
     public static (Dictionary<string, int> Choice, Dictionary<string, int> Beaten) DiffuseGlobalRanks(
         IReadOnlyList<string> biomes, int globalChoice, int globalBeaten)
     {
-        int beaten = Clamp(globalBeaten);
+        // « Rien battu » se propage tel quel : une migration ne doit pas transformer une absence de
+        // victoire en victoire au cran 0, ce qui offrirait le cran I par le simple fait de migrer.
+        int beaten = globalBeaten < 0 ? NoneBeaten : Clamp(globalBeaten);
         int choice = Math.Clamp(Clamp(globalChoice), 0, MaxSelectable(beaten));
 
         var choiceMap = new Dictionary<string, int>();

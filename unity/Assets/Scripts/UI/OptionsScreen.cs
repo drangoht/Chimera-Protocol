@@ -156,6 +156,17 @@ public sealed class OptionsScreen : MonoBehaviour
     private static void SetFps(bool on) => GameSettings.Current.ShowFps = on;
 
     /// <summary>
+    /// Présence Discord. <b>Elle s'applique tout de suite</b> : ce réglage était enregistré et migré
+    /// depuis Godot sans que rien ne le lise — un interrupteur mort, dans l'écran qui s'interdit d'en
+    /// avoir. Le système entier manquait derrière lui.
+    /// </summary>
+    private static void SetDiscord(bool on)
+    {
+        GameSettings.Current.Discord = on;
+        GameSettings.ApplyPresence(GameSettings.Current);
+    }
+
+    /// <summary>
     /// Secousse d'écran. <b>Elle agit tout de suite</b> : le champ existait dans la sauvegarde depuis
     /// la reprise des réglages Godot, mais <c>ScreenShake.Intensity</c> n'était affecté par personne —
     /// le réglage aurait été un interrupteur mort, exactement ce que cet écran s'interdit.
@@ -255,6 +266,7 @@ public sealed class OptionsScreen : MonoBehaviour
         AddSwitch(Loc.T("OPTIONS_SHAKE"), GameSettings.Current.ShakeIntensity > 0.01f, SetShake);
         AddSwitch(Loc.T("OPTIONS_VSYNC"), GameSettings.Current.Vsync, SetVsync);
         AddSwitch(Loc.T("OPTIONS_SHOW_FPS"), GameSettings.Current.ShowFps, SetFps);
+        AddSwitch(Loc.T("OPTIONS_DISCORD"), GameSettings.Current.Discord, SetDiscord);
 
         AddSelector(Loc.T("OPTIONS_DIFFICULTY"),
                     () => DifficultyName(GameSettings.Current.Difficulty), CycleDifficulty);

@@ -44,6 +44,10 @@ public sealed class MainMenuScreen : MonoBehaviour
         SceneRoot.Paused = false;
         ModalQueue.Reset();
 
+        // Le statut Discord redevient « dans les menus » : posé seulement à l'entrée en run, il
+        // laisserait les contacts du joueur le croire en partie longtemps après sa mort.
+        DiscordPresence.Instance?.SetInMenus();
+
         if (_firstButton != null && EventSystem.current != null)
             EventSystem.current.SetSelectedGameObject(_firstButton.gameObject);
     }

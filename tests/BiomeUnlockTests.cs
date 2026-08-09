@@ -43,13 +43,31 @@ public class BiomeUnlockTests
         Assert.True(BiomeUnlock.IsUnlocked(LevelThreat.Order[1], completions));
     }
 
+    /// <summary>
+    /// <b>Le cran I se mérite</b> (décision de l'auteur, 2026-08-09).
+    ///
+    /// <para>Tant que le Noyau n'est pas tombé une fois sur ce biome, seul le cran 0 s'ouvre.
+    /// Auparavant « rien battu » et « cran 0 battu » valaient tous deux zéro, si bien qu'une remise à
+    /// zéro complète laissait l'échelle avec un barreau d'avance — le premier cran était offert au
+    /// lieu d'être gagné.</para>
+    /// </summary>
     [Fact]
-    public void OnNeMonteQueDUnCranALaFois()
+    public void LeCranUnNeSOuvreQuApresUneVictoire()
     {
         var beaten = new Dictionary<string, int>();
 
-        // Convention de SaturationTable : 0 = « aucun cran battu ». Un joueur neuf peut donc déjà
-        // choisir le cran I — c'est la porte d'entrée de l'échelle, et elle doit se sentir.
+        Assert.Equal(0, BiomeUnlock.MaxSelectableRank("sanctuaire", beaten));
+        Assert.True(SaturationTable.CanSelect(0, SaturationTable.NoneBeaten));
+        Assert.False(SaturationTable.CanSelect(1, SaturationTable.NoneBeaten));
+    }
+
+    [Fact]
+    public void OnNeMonteQueDUnCranALaFois()
+    {
+        // Une victoire au cran 0 ouvre le I, et rien de plus : c'est le +1 qui rend l'échelle
+        // gravissable — sans un cran ouvert au-dessus de ce qui est prouvé, on n'en gagnerait jamais
+        // un de plus.
+        var beaten = new Dictionary<string, int> { ["sanctuaire"] = 0 };
         Assert.Equal(1, BiomeUnlock.MaxSelectableRank("sanctuaire", beaten));
 
         beaten["sanctuaire"] = 3;
@@ -73,6 +91,9 @@ public class BiomeUnlockTests
         var beaten = new Dictionary<string, int> { ["sanctuaire"] = 5 };
 
         Assert.Equal(6, BiomeUnlock.MaxSelectableRank("sanctuaire", beaten));
-        Assert.Equal(1, BiomeUnlock.MaxSelectableRank("neon", beaten));   // remis à la porte d'entrée
+
+        // Sur un biome jamais terminé, l'échelle repart de zéro — et se regagne à partir de sa
+        // première victoire, exactement comme sur le premier.
+        Assert.Equal(0, BiomeUnlock.MaxSelectableRank("neon", beaten));
     }
 }

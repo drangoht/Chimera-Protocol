@@ -33,6 +33,7 @@ public static class GameSettings
 
             ApplyDisplay(_current);
             ApplyVolumes(_current);
+            ApplyPresence(_current);
             return _current;
         }
     }
@@ -69,6 +70,21 @@ public static class GameSettings
         AudioSystem.SfxVolume = settings.SfxVolume;
 
         if (MusicDirector.Instance != null) MusicDirector.Instance.MusicVolume = settings.MusicVolume;
+    }
+
+    /// <summary>
+    /// Pousse la préférence de présence Discord. Comme la langue et les volumes : <b>poussée</b> et
+    /// non tirée, la couche Platform ne pouvant pas dépendre du jeu sans créer un cycle.
+    /// </summary>
+    /// <remarks>
+    /// Le champ statique est écrit <b>en plus</b> de l'appel sur l'instance : les réglages sont lus
+    /// dès le menu, éventuellement avant que le composant n'existe, et une préférence poussée dans le
+    /// vide laisserait la présence active chez un joueur qui l'a coupée.
+    /// </remarks>
+    public static void ApplyPresence(SettingsData settings)
+    {
+        DiscordPresence.PreferenceEnabled = settings.Discord;
+        DiscordPresence.Instance?.SetEnabled(settings.Discord);
     }
 
     /// <summary>Écrit les réglages sur disque.</summary>

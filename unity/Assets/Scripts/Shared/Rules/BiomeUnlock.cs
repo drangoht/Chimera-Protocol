@@ -44,7 +44,10 @@ public static class BiomeUnlock
     /// </remarks>
     public static int MaxSelectableRank(string biomeId, IReadOnlyDictionary<string, int> beatenByLevel)
     {
-        int beaten = beatenByLevel.TryGetValue(biomeId, out int b) ? b : 0;
+        // ⚠ Le défaut est « rien battu », PAS « cran 0 battu ». Les confondre — ce que faisait ce
+        // code — ouvrait le cran I à un joueur qui n'avait jamais terminé le niveau : après une
+        // remise à zéro, l'échelle repartait avec un barreau d'avance.
+        int beaten = beatenByLevel.TryGetValue(biomeId, out int b) ? b : SaturationTable.NoneBeaten;
         return SaturationTable.MaxSelectable(beaten);
     }
 }

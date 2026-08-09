@@ -215,6 +215,37 @@ progression cassée, et c'est le pire retour possible sur un choix de carte. →
 sprite recyclés : ni shader ni matériau, donc rien qui puisse être supprimé du build) + un critère au
 banc : **toute arme qui ne se voit ni par un projectile ni par un drone doit laisser une trace**.
 
+### Un réglage **sans système derrière** survit à son système
+
+Le champ `Discord` vivait dans la sauvegarde, était migré depuis Godot, écrit et relu — et piloté par
+personne : `DiscordPresence` n'avait jamais été porté, et l'interrupteur ne figurait même pas dans les
+options. Une préférence orpheline ne lève rien et ne se voit pas ; c'est la variante « réglage » des
+données déclarées jamais consommées, et la plus discrète, puisque la sauvegarde donne l'illusion que
+la fonctionnalité existe.
+
+**Deux règles en sont sorties** :
+- une intégration facultative se **trace même quand elle réussit**. Un journal muet ne distingue pas
+  « connectée » de « jamais installée » — et c'est la seconde qui était vraie ;
+- la préférence est **poussée**, jamais tirée : `DiscordPresence` vit dans `Platform`, qui ne peut pas
+  lire les réglages du jeu sans créer un cycle (4ᵉ occurrence). Et il faut un **champ statique** en
+  plus de l'appel sur l'instance, les réglages étant lus dès le menu, parfois avant que le composant
+  n'existe — sinon la préférence est poussée dans le vide.
+
+⚠ `DiscordRPC` (MIT, donc conforme au « aucun plugin payant ») tire **Newtonsoft.Json** : sans le
+paquet `com.unity.nuget.newtonsoft-json`, tout compile et c'est l'**éditeur de liens** qui échoue,
+avec un message parlant d'assemblages du projet et non de la dépendance manquante.
+
+### L'icône de l'exécutable se pose **au build**, pas dans l'éditeur
+
+Le binaire sortait avec l'icône **d'Unity** : dans la barre des tâches, l'explorateur et le raccourci,
+le jeu portait le nom du moteur qui l'a construit — la première image que voit un joueur, avant même
+le menu. Un réglage fait à la main dans l'éditeur ne vaudrait que sur un poste et se perdrait au
+premier clone ; l'icône est donc un asset versionné, appliqué par le script de build.
+
+⚠ Unity exige une texture **lisible** (`isReadable`) : sans cela l'appel est **silencieusement
+ignoré** et le binaire garde l'icône du moteur, sans erreur ni avertissement. Le réglage d'import est
+donc forcé par le script lui-même, un `.meta` qu'on croirait suffisant ne l'étant pas.
+
 ### Un drapeau de banc appliqué **à moitié** ne produit pas du bruit, il produit un résultat flatteur
 
 `--start-at=13` avançait l'horloge de la run mais **pas celle du spawner**. La campagne d'overtime a
