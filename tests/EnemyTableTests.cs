@@ -177,17 +177,40 @@ public class EnemyTableTests
             $"{champions} champions sur {all.Count} entrées");
     }
 
+    /// <summary>
+    /// Un ennemi tagué n'apparaît que dans son biome.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Ce test <b>passait en ne testant rien</b> jusqu'au 2026-08-09. Il cherchait un ennemi dont
+    /// le champ <c>Biome</c> était renseigné, n'en trouvait aucun — la table lisait une clé qui
+    /// n'existe pas — et sortait par son propre garde-fou « rien à vérifier ». Un test qui se
+    /// désactive lui-même est pire qu'un test absent : il compte dans le total et rassure.
+    /// La sortie anticipée est donc devenue une ASSERTION.
+    /// </remarks>
     [Fact]
     public void UnEnnemiDeBiomeNApparaitQueDansLeSien()
     {
         var all = All().Values.ToList();
-        var biomeSpecific = all.FirstOrDefault(d => d.Biome.Length > 0);
-        if (biomeSpecific == null) return;   // rien à vérifier si l'extension n'en définit aucun
+
+        int tagged = all.Count(d => d.Biomes.Length > 0);
+        Assert.True(tagged > 20, $"seulement {tagged} ennemis tagués sur {all.Count} — la clé est-elle lue ?");
+
+        var biomeSpecific = all.First(d => d.Biomes.Length > 0);
 
         var elsewhere = EnemyTable.Eligible(all, 30f, biome: "un_autre_biome");
         Assert.DoesNotContain(elsewhere, p => p.Def.Id == biomeSpecific.Id);
 
-        var athome = EnemyTable.Eligible(all, 30f, biome: biomeSpecific.Biome);
+        var athome = EnemyTable.Eligible(all, 30f, biome: biomeSpecific.Biomes[0]);
         Assert.Contains(athome, p => p.Def.Id == biomeSpecific.Id);
+
+        // Et le cloisonnement se VOIT : deux biomes ne proposent pas la même faune.
+        var sanctuaire = EnemyTable.Eligible(all, 30f, biome: "sanctuaire");
+        var givre = EnemyTable.Eligible(all, 30f, biome: "givre");
+        var sansFiltre = EnemyTable.Eligible(all, 30f, biome: null);
+
+        Assert.True(sanctuaire.Count < sansFiltre.Count,
+            $"sanctuaire {sanctuaire.Count} contre {sansFiltre.Count} sans filtre");
+        Assert.DoesNotContain(sanctuaire, p => p.Def.Id == "cryo_sentinel");
+        Assert.Contains(givre, p => p.Def.Id == "cryo_sentinel");
     }
 }

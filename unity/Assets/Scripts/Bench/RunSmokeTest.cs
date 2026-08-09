@@ -206,6 +206,21 @@ public sealed class RunSmokeTest : MonoBehaviour
         var corePrefab = Spawner.Load("res://scenes/entities/AetherCore.tscn");
         Check("noyau : prefab charge depuis Resources", corePrefab != null);
 
+        // ⚠ Deux ramassables ne partagent JAMAIS un sprite. L'orbe d'XP prenait « le premier sprite
+        // du dossier », qui se trouvait être celui du Noyau : tous les orbes ressemblaient à des
+        // Noyaux, et le joueur a signalé un compteur qui « n'évolue pas » alors qu'il était exact.
+        // Une confusion d'apparence produit un rapport de bug sur une tout autre mécanique.
+        if (corePrefab != null && orbPrefab != null)
+        {
+            var coreSprite = corePrefab.GetComponent<SpriteRenderer>()?.sprite;
+            var orbSprite = orbPrefab.GetComponent<SpriteRenderer>()?.sprite;
+
+            Check("ramassables : le Noyau et l'orbe d'XP ne partagent pas leur sprite",
+                  coreSprite != null && orbSprite != null && coreSprite != orbSprite,
+                  $"noyau '{(coreSprite != null ? coreSprite.name : "NULL")}', " +
+                  $"orbe '{(orbSprite != null ? orbSprite.name : "NULL")}'");
+        }
+
         if (corePrefab != null)
         {
             var coreSpawnerGo = new GameObject("AetherCoreSpawner");
@@ -2321,6 +2336,66 @@ public sealed class RunSmokeTest : MonoBehaviour
 
         foreach (var w in muted) if (w != null) w.enabled = true;
         if (player0 != null) player0.transform.position = playerHome;
+
+        // ── La faune est bien CLOISONNÉE par biome ────────────────────────────
+        //
+        // ⚠ Le portage lisait une clé `biome` au singulier là où enemies.json déclare `biomes` au
+        // pluriel : le filtre était mort, et les cinq champions de biome apparaissaient dans les
+        // cinq biomes. Signalé en jouant — « je vois tous les mid-boss dans le premier biome ».
+        // Un contrôle qui compterait les ennemis éligibles sans comparer DEUX biomes ne l'aurait pas
+        // vu : le pool n'était pas vide, il était trop large.
+        {
+            string? json = DataFiles.Load("enemies.json");
+            var bestiary = json != null ? EnemyTable.Parse(json) : new Dictionary<string, EnemyTable.EnemyDef>();
+
+            int tagged = 0;
+            foreach (var d in bestiary.Values) if (d.Biomes.Length > 0) tagged++;
+
+            Check("bestiaire : les tags de biome sont lus", tagged > 20,
+                  $"{tagged} ennemis sur {bestiary.Count} portent un biome");
+
+            var first = EnemyTable.Eligible(bestiary.Values, 30f, LevelThreat.Order[0]);
+            var last = EnemyTable.Eligible(bestiary.Values, 30f, LevelThreat.Order[^1]);
+            var everywhere = EnemyTable.Eligible(bestiary.Values, 30f, null);
+
+            Check("bestiaire : chaque biome a sa propre faune",
+                  first.Count < everywhere.Count && last.Count < everywhere.Count,
+                  $"{LevelThreat.Order[0]} {first.Count}, {LevelThreat.Order[^1]} {last.Count}, " +
+                  $"sans filtre {everywhere.Count}");
+
+            // Le champion du Givre n'a rien à faire au Sanctuaire — c'est le symptôme exact rapporté.
+            bool cryoHere = first.Exists(p => p.Def.Id == "cryo_sentinel");
+            Check("bestiaire : un champion de biome ne sort pas du sien", !cryoHere,
+                  cryoHere ? "cryo_sentinel eligible au sanctuaire" : "cryo_sentinel absent du sanctuaire");
+        }
+
+        // ── Le gel du joueur EXPIRE ───────────────────────────────────────────
+        //
+        // ⚠ Le portage écrivait le gel dans `SpeedMultiplier`, sans durée : un joueur touché par une
+        // Sentinelle Cryo restait à moitié vitesse pour le RESTE DE LA RUN. Signalé en jouant, jamais
+        // par l'automatisation — un ralentissement permanent ne lève rien, il se vit.
+        var chilled = Player.Instance;
+        if (chilled != null)
+        {
+            chilled.SpeedMultiplier = 1.6f;          // Célérité en cours
+            chilled.ApplyChill(0.45f, 0.4f);
+
+            bool slowedNow = chilled.ChillMultiplier < 1f;
+            bool celerityKept = Mathf.Approximately(chilled.SpeedMultiplier, 1.6f);
+
+            yield return new WaitForSeconds(0.7f);
+
+            Check("gel : il ralentit, puis EXPIRE",
+                  slowedNow && Mathf.Approximately(chilled.ChillMultiplier, 1f),
+                  $"pendant x{0.45f:0.00}, apres x{chilled.ChillMultiplier:0.00}");
+
+            // Deux canaux distincts : un gel ne doit pas manger un power-up, ni l'inverse.
+            Check("gel : il n'ecrase pas la Celerite",
+                  celerityKept && Mathf.Approximately(chilled.SpeedMultiplier, 1.6f),
+                  $"SpeedMultiplier x{chilled.SpeedMultiplier:0.00} (attendu x1,60)");
+
+            chilled.SpeedMultiplier = 1f;
+        }
 
         // ── Les ennemis TIRENT ────────────────────────────────────────────────
         var player = Player.Instance;

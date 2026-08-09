@@ -45,7 +45,34 @@ public static class EnemyTable
         public float  DamageScalingPerMinute = 0.06f;
         public AiType Ai = AiType.StraightChase;
         public string FramesPath = "";
-        public string Biome = "";
+
+        /// <summary>
+        /// Biomes où cet ennemi peut apparaître. <b>Vide = universel.</b>
+        /// </summary>
+        /// <remarks>
+        /// ⚠ Un <b>tableau</b>, nommé <c>biomes</c> — comme dans <c>enemies.json</c>. Le portage
+        /// lisait une chaîne <c>biome</c> au singulier, une clé qui n'existe nulle part : le champ
+        /// restait donc vide pour les <b>26 ennemis sur 31</b> qui portent un tag, et le filtre était
+        /// mort. Les cinq champions de biome apparaissaient dans les cinq biomes, et toute la faune
+        /// spécifique avec eux — signalé en jouant le 2026-08-09, « je vois tous les mid-boss dans le
+        /// premier biome ». Une clé au singulier là où la donnée est au pluriel ne lève rien : le
+        /// lecteur tolérant rend sa valeur par défaut, et un ennemi « universel » est plausible.
+        /// </remarks>
+        public string[] Biomes = System.Array.Empty<string>();
+
+        /// <summary>Cet ennemi peut-il apparaître dans ce biome ? Sans tag, il est partout chez lui.</summary>
+        public bool IsAllowedInBiome(string? biome)
+        {
+            if (Biomes.Length == 0 || biome == null) return true;
+
+            foreach (string b in Biomes)
+                if (b == biome) return true;
+
+            return false;
+        }
+
+        /// <summary>Biome d'appartenance affiché au Codex, ou chaîne vide si l'ennemi est universel.</summary>
+        public string PrimaryBiome => Biomes.Length > 0 ? Biomes[0] : "";
 
         /// <summary>
         /// Nombre maximal d'exemplaires vivants simultanément. <b>0 = faune ordinaire</b> (aucune
@@ -98,7 +125,7 @@ public static class EnemyTable
                     HpScalingPerMinute = Flt(e, "hpScalingPerMinute", 0.12f),
                     DamageScalingPerMinute = Flt(e, "damageScalingPerMinute", 0.06f),
                     FramesPath = Str(e, "framesPath"),
-                    Biome = Str(e, "biome"),
+                    Biomes = StrArray(e, "biomes"),
                     MaxSimultaneous = Int(e, "maxSimultaneous"),
                 };
 
@@ -166,13 +193,27 @@ public static class EnemyTable
             if (minutes < def.SpawnStartMinute) continue;
             if (def.Ai == AiType.BossCore) continue;   // le boss n'apparaît jamais par la vague
 
-            // Un ennemi marqué d'un biome n'apparaît que là ; les autres sont universels.
-            if (biome != null && def.Biome.Length > 0 && def.Biome != biome) continue;
+            // Un ennemi marqué d'un ou plusieurs biomes n'apparaît que là ; les autres sont partout.
+            if (!def.IsAllowedInBiome(biome)) continue;
 
             if (def.SpawnWeight > 0f) pool.Add((def, def.SpawnWeight));
         }
 
         return pool;
+    }
+
+    /// <summary>Tableau de chaînes, ou tableau vide si la clé manque ou n'est pas un tableau.</summary>
+    private static string[] StrArray(JsonElement e, string name)
+    {
+        if (!e.TryGetProperty(name, out var v) || v.ValueKind != JsonValueKind.Array)
+            return System.Array.Empty<string>();
+
+        var list = new List<string>();
+        foreach (var item in v.EnumerateArray())
+            if (item.ValueKind == JsonValueKind.String && item.GetString() is { Length: > 0 } s)
+                list.Add(s);
+
+        return list.ToArray();
     }
 
     private static string Str(JsonElement e, string name, string fallback = "")

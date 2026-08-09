@@ -183,9 +183,53 @@ public sealed class Player : MonoBehaviour
         float dt = Time.deltaTime;
         if (_invulnTimer > 0f) _invulnTimer -= dt;
 
+        UpdateChill(dt);
         UpdateMovement(dt);
         UpdateRegen(dt);
         PushEnemiesAside();
+    }
+
+    // ─── Ralentissement environnemental (gel du Givre) ────────────────────────
+
+    private float _chillMult = 1f;
+    private float _chillTime;
+
+    /// <summary>Ralentissement de gel en cours (1 = aucun) — lu par le déplacement.</summary>
+    public float ChillMultiplier => _chillMult;
+
+    /// <summary>
+    /// Ralentit le joueur pendant <paramref name="duration"/> secondes (nova et cône du Givre).
+    /// </summary>
+    /// <remarks>
+    /// <para>⚠ <b>Canal séparé de <see cref="SpeedMultiplier"/></b>, et ce n'est pas un détail : le
+    /// portage écrivait le gel directement dans le multiplicateur de vitesse, <b>sans durée</b>. Un
+    /// joueur touché par une Sentinelle Cryo restait donc à moitié vitesse <b>jusqu'à la fin de la
+    /// run</b> — signalé en jouant le 2026-08-09, « en tuant un mid-boss le joueur perd beaucoup de
+    /// vitesse et reste à vitesse faible ». Tuer le champion n'y changeait rien : le ralentissement
+    /// ne lui appartenait plus.</para>
+    ///
+    /// <para>Et les deux canaux ne peuvent pas être confondus : le power-up Célérité écrit lui aussi
+    /// <c>SpeedMultiplier</c>, si bien qu'un gel effaçait la Célérité — et qu'une Célérité qui
+    /// s'achève aurait effacé le gel. Deux sources qui s'écrasent au lieu de se multiplier.</para>
+    ///
+    /// <para>Deux gels qui se chevauchent ne s'additionnent pas : on garde le plus <b>fort</b> et on
+    /// rafraîchit la durée. Rester dans une nappe de plaques de givre ne doit pas clouer sur place —
+    /// d'où le plancher à 0,35.</para>
+    /// </remarks>
+    public void ApplyChill(float mult, float duration)
+    {
+        mult = Mathf.Clamp(mult, 0.35f, 1f);
+
+        if (mult < _chillMult || _chillTime <= 0f) _chillMult = mult;
+        _chillTime = Mathf.Max(_chillTime, duration);
+    }
+
+    private void UpdateChill(float dt)
+    {
+        if (_chillTime <= 0f) return;
+
+        _chillTime -= dt;
+        if (_chillTime <= 0f) { _chillTime = 0f; _chillMult = 1f; }
     }
 
     // ─── Déplacement ──────────────────────────────────────────────────────────
@@ -205,7 +249,9 @@ public sealed class Player : MonoBehaviour
             StartDash(input);
 
         // La vitesse est plafonnée par StatCaps — la même source que côté Godot.
-        float speed = Mathf.Min(Stats.Speed * SpeedMultiplier, StatCaps.MaxSpeed);
+        // Les deux sources se MULTIPLIENT : un gel ne doit ni effacer une Célérité, ni être effacé
+        // par elle. Le plafond ne borne que le haut — un ralentissement passe dessous.
+        float speed = Mathf.Min(Stats.Speed * SpeedMultiplier, StatCaps.MaxSpeed) * _chillMult;
         Velocity = input * speed;
 
         // Pendant la ruade, la vitesse est IMPOSÉE : elle ne passe pas par le plafond, sans quoi une

@@ -264,7 +264,9 @@ public sealed class RustedCore : EnemyBase
                 Vfx.Burst(self, new Color(0.85f, 0.97f, 1f, 0.9f), new Color(0.5f, 0.8f, 1f, 0f),
                           40, 220f, 520f, 9f, 0.4f);
                 ScreenShake.Shake(7f, 0.25f);
-                if (dist < 260f) { DealDiscreteDamage(player, Damage * 1.2f); player.SpeedMultiplier = 0.7f; }
+                // Même défaut que la Sentinelle Cryo : le gel s'écrivait dans le multiplicateur de
+                // vitesse, donc sans durée et par-dessus la Célérité. Valeurs du jeu d'origine.
+                if (dist < 260f) { DealDiscreteDamage(player, Damage * 1.2f); player.ApplyChill(0.55f, 2f); }
                 break;
 
             case BossSignature.DirectedFan:

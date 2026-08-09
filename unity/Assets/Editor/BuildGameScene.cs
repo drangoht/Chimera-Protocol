@@ -156,11 +156,26 @@ public static class BuildGameScene
         return SaveAsPrefab(go, "AetherCore");
     }
 
+    /// <summary>
+    /// Gabarit de l'orbe d'XP. Son sprite est <b>nommé</b>, comme celui du Noyau.
+    /// </summary>
+    /// <remarks>
+    /// <para>⚠ Il prenait « le premier sprite trouvé » du dossier — qui se trouve être
+    /// <c>pickup_noyau_idle_01</c>. Tous les orbes d'XP portaient donc l'apparence d'un <b>Noyau
+    /// d'Aether</b>, et les trois <c>pickup_xporb_*</c> ne servaient à personne. Signalé en jouant
+    /// le 2026-08-09 : « je ne vois pas le nombre de noyaux évoluer… ça incrémente de 1 après en
+    /// avoir ramassé un certain nombre ». Le compteur était juste depuis le début — c'est ce que le
+    /// joueur croyait ramasser qui ne l'était pas.</para>
+    ///
+    /// <para>Le Noyau est le <b>seul</b> objet du jeu qui demande de traverser volontairement le
+    /// danger : il ne s'aspire pas, il faut aller le chercher. Le confondre avec l'orbe qui vient
+    /// tout seul supprime cette décision — et fait passer un compteur exact pour un compteur cassé.</para>
+    /// </remarks>
     private static GameObject BuildXpOrbPrefab()
     {
         var go = new GameObject("XpOrb", typeof(SpriteRenderer), typeof(XpOrb));
         var sr = go.GetComponent<SpriteRenderer>();
-        sr.sprite = LoadSprite("Assets/Art/sprites/pickups");
+        sr.sprite = LoadSpriteNamed("Assets/Art/sprites/pickups", "pickup_xporb_idle_01");
         sr.sortingOrder = 5;
         return SaveAsPrefab(go, "XpOrb");
     }

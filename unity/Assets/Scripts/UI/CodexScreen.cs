@@ -138,13 +138,17 @@ public sealed class CodexScreen : MonoBehaviour
 
         foreach (var def in _bestiary.Values)
         {
-            bool seen = def.Biome.Length == 0
+            // Un ennemi peut appartenir à PLUSIEURS biomes : avoir joué l'un d'eux suffit à l'avoir
+            // croisé. Le portage lisait un biome unique — et une clé qui n'existe pas, donc TOUS les
+            // ennemis passaient pour universels et se dévoilaient dès la première run.
+            bool seen = def.Biomes.Length == 0
                 ? scores.Count > 0 || completions.Count > 0   // faune universelle : vue dès la 1re run
-                : scores.ContainsKey(def.Biome) || completions.ContainsKey(def.Biome);
+                : System.Array.Exists(def.Biomes,
+                                      b => scores.ContainsKey(b) || completions.ContainsKey(b));
 
             AddEntry(seen, def.Name,
                      $"{def.Role}   {def.MaxHp:F0} PV   {def.DamagePerSecond:F0} dgt/s" +
-                     (def.Biome.Length > 0 ? $"   {def.Biome}" : ""),
+                     (def.PrimaryBiome.Length > 0 ? $"   {def.PrimaryBiome}" : ""),
                      icon: PortraitOf(def));
         }
     }

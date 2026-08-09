@@ -7,7 +7,13 @@ using UnityEngine;
 public sealed class CryoSentinel : MiniBoss
 {
     public float FreezeRange = 300f;
-    public float FreezeSlow = 0.5f;
+
+    /// <summary>Force du gel — valeurs du jeu d'origine (0,45 pendant 2,2 s).</summary>
+    public float FreezeSlow = 0.45f;
+
+    /// <summary>Secondes de gel infligées. ⚠ Sans durée, le ralentissement ne finit jamais.</summary>
+    public float FreezeDuration = 2.2f;
+
     public float FreezeInterval = 2.5f;
 
     private float _timer;
@@ -40,7 +46,10 @@ public sealed class CryoSentinel : MiniBoss
                   18, 60f, 200f, 7f, 0.35f,
                   Mathf.Atan2(toPlayer.y, toPlayer.x) * Mathf.Rad2Deg, 70f);
 
+        // ⚠ ApplyChill, et surtout pas `SpeedMultiplier = ...` : le second n'a AUCUNE durée. Le
+        // portage clouait ainsi le joueur à moitié vitesse pour le reste de la run, et tuer la
+        // sentinelle n'y changeait rien — le ralentissement ne lui appartenait plus.
         if (toPlayer.magnitude < FreezeRange)
-            player.SpeedMultiplier = FreezeSlow;
+            player.ApplyChill(FreezeSlow, FreezeDuration);
     }
 }
