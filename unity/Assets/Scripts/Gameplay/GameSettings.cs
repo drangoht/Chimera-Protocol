@@ -148,6 +148,23 @@ public static class GameSettings
         Save();
     }
 
+    /// <summary>
+    /// Remise à zéro <b>totale</b> demandée par le joueur : progression de ce fichier
+    /// <i>et</i> méta-progression (Échos, améliorations, défis).
+    ///
+    /// <para>Les deux sauvegardes tombent ensemble, et par ce point unique : les remettre à zéro
+    /// séparément produit des états incohérents qu'aucun écran ne sait afficher — un joueur sans
+    /// aucune victoire assis sur soixante mille Échos, ou un arbre d'améliorations acheté par
+    /// quelqu'un qui n'a jamais découvert une arme.</para>
+    /// </summary>
+    public static void ResetEverything()
+    {
+        MetaProgression.HardReset();
+
+        Current.ResetProgress();
+        Save();
+    }
+
     /// <summary>Oublie l'état chargé — réservé aux bancs, qui rejouent plusieurs sessions d'affilée.</summary>
     public static void Reset() => _current = null;
 }

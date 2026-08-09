@@ -32,6 +32,25 @@ public static class AudioSystem
     /// <summary>Sons joués depuis le démarrage — observable par les bancs.</summary>
     public static int PlayedCount { get; private set; }
 
+    private static readonly Dictionary<string, int> _playedById = new();
+
+    /// <summary>
+    /// Combien de fois un effet précis a été joué. Sert à attribuer un son à sa <b>source</b> : le
+    /// compte global monte aussi quand le joueur encaisse un coup pendant la mesure, et une arme
+    /// muette y passerait pour bruyante.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ <b>Ce compteur ne prouve pas qu'un son est sorti</b> — le projet a déjà cru un jeu sonore
+    /// parce que <see cref="PlayedCount"/> montait, alors qu'aucun <c>AudioListener</c> n'existait.
+    /// Il dit seulement que l'appel a été fait avec un clip chargé ; c'est la moitié de la chaîne, et
+    /// il se lit toujours à côté d'une vérification que le clip existe bien en asset.
+    /// </remarks>
+    public static int PlayedCountOf(string sfxId)
+        => _playedById.TryGetValue(sfxId, out int n) ? n : 0;
+
+    /// <summary>Le clip existe-t-il et se charge-t-il ? La <b>cause</b> d'un son absent, pas son symptôme.</summary>
+    public static bool CanLoad(string sfxId) => Load(sfxId) != null;
+
     /// <summary>
     /// Correction de mixage propre à un effet, en décibels.
     ///
@@ -65,6 +84,7 @@ public static class AudioSystem
         voice.Play();
 
         PlayedCount++;
+        _playedById[sfxId] = PlayedCountOf(sfxId) + 1;
     }
 
     /// <summary>Charge (et met en cache) un effet. Un identifiant inconnu est signalé une seule fois.</summary>

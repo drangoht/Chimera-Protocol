@@ -54,7 +54,9 @@ public class ImpulseCannon : WeaponBase
         // tir rapide semble faire apparaître ses projectiles à côté du joueur.
         Vfx.Muzzle(transform.position, dir);
 
-        AudioSystem.PlaySfx("sfx_weapon_impulse_shoot");
+        // Le son part de WeaponBase, comme pour les vingt autres armes (WeaponSfx) : l'appel qui
+        // vivait ici en faisait la seule arme bruyante du jeu avec la Lance, sans que ce privilège
+        // soit visible de nulle part.
         return true;
     }
 

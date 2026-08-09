@@ -297,6 +297,12 @@ public sealed class PauseScreen : MonoBehaviour
         if (_options == null)
         {
             _options = gameObject.AddComponent<OptionsScreen>();
+
+            // Pas de remise à zéro depuis une partie en cours : la run écrirait son résultat
+            // par-dessus en s'achevant (record, complétion, cran battu), et le joueur verrait
+            // revenir une progression qu'il vient d'effacer.
+            _options.AllowFullReset = false;
+
             _options.Closed += () =>
             {
                 if (_firstButton != null && EventSystem.current != null)

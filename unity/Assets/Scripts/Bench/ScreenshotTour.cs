@@ -67,6 +67,15 @@ public sealed class ScreenshotTour : MonoBehaviour
         yield return null;
         options.Show();
         yield return Shot("options");
+
+        // Second cliché, liste déroulée jusqu'en bas : les contrôles et la remise à zéro vivent
+        // sous la ligne de flottaison, et une capture du haut de l'écran ne dit rien de ce qui s'y
+        // trouve — c'est ainsi qu'une section entière peut manquer sans que personne ne le voie.
+        foreach (var scroll in host.GetComponentsInChildren<UnityEngine.UI.ScrollRect>(true))
+            scroll.verticalNormalizedPosition = 0f;
+
+        yield return null;
+        yield return Shot("options-bas");
         options.Hide();
 
         var codex = host.AddComponent<CodexScreen>();

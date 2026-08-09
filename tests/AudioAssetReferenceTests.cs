@@ -23,8 +23,15 @@ public class AudioAssetReferenceTests
 
         var missing = new List<string>();
 
-        foreach (var file in Directory.EnumerateFiles(Path.Combine(root, "src"), "*.cs",
-                                                      SearchOption.AllDirectories))
+        // Les DEUX moteurs sont balayés. Le port Unity charge ses effets par le même identifiant,
+        // depuis Resources/Audio/sfx : n'inspecter que src/ laissait la moitié du jeu hors du
+        // garde-fou, précisément la moitié la plus récente.
+        var sources = Directory.EnumerateFiles(Path.Combine(root, "src"), "*.cs",
+                                               SearchOption.AllDirectories)
+            .Concat(Directory.EnumerateFiles(Path.Combine(root, "unity", "Assets", "Scripts"), "*.cs",
+                                             SearchOption.AllDirectories));
+
+        foreach (var file in sources)
         {
             var lines = File.ReadAllLines(file);
             for (int i = 0; i < lines.Length; i++)

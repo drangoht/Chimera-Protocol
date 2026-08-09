@@ -95,6 +95,7 @@ public sealed class SceneDiagnostic : MonoBehaviour
         sb.AppendLine($"sons joues           : {AudioSystem.PlayedCount}");
         sb.AppendLine($"musique              : {(MusicDirector.Instance != null ? MusicDirector.Instance.CurrentTrack : "AUCUN MusicDirector")}");
 
+
         yield return AuditWeapons(sb);
 
         // ─── Progression sur 30 s : c'est la DUREE qui manquait au premier relevé ──
@@ -164,8 +165,49 @@ public sealed class SceneDiagnostic : MonoBehaviour
         sb.AppendLine($"boss vu              : {(_bossSeen ? "OUI" : "NON")}");
         sb.AppendLine($"boss vaincu          : {(gm != null && gm.BossDefeated ? "oui" : "non")}");
 
+        AppendFireSounds(sb);
+
         Debug.Log(sb.ToString());
         Application.Quit(0);
+    }
+
+    /// <summary>
+    /// Sons de tir, <b>arme par arme</b> et dans la scène réelle.
+    ///
+    /// <para>Signalé en jouant le 2026-08-09 : « la bobine Tesla n'émet aucun son ». Elle n'était pas
+    /// seule — le portage n'avait repris que deux des seize appels du jeu publié, et quatorze armes
+    /// tiraient en silence depuis le premier jour.</para>
+    ///
+    /// <para><b>Pourquoi le total global ne suffisait pas.</b> La ligne « sons joués » monte avec les
+    /// ramassages d'XP, les coups encaissés et les morts d'ennemis : elle affichait des centaines de
+    /// sons pendant que l'arsenal entier était muet. Un compte <b>par identifiant</b>, mis en face de
+    /// l'arme qui devrait le produire, est le seul relevé qui sépare les deux.</para>
+    ///
+    /// <para>⚠ Relevé <b>en fin</b> de diagnostic, jamais au début : posé après l'inventaire des
+    /// systèmes, il tombait à la troisième seconde de run — aucune arme n'avait encore franchi sa
+    /// recharge, et il annonçait « 0 » pour tout le monde, y compris pour ce qui marchait.</para>
+    /// </summary>
+    private static void AppendFireSounds(StringBuilder sb)
+    {
+        sb.AppendLine("sons de tir          :");
+
+        foreach (var weapon in FindObjectsByType<WeaponBase>(FindObjectsSortMode.None))
+        {
+            string id = weapon.WeaponId.Length > 0 ? weapon.WeaponId : weapon.GetType().Name + " (ID NON RESOLU)";
+            string? sfx = WeaponSfx.For(weapon.WeaponId);
+
+            if (sfx == null)
+            {
+                sb.AppendLine($"  {id,-18} muette a dessein ({weapon.ShotsFired} tirs)");
+                continue;
+            }
+
+            int played = AudioSystem.PlayedCountOf(sfx);
+            string verdict = weapon.ShotsFired > 0 && played == 0 ? "  ⚠ A TIRE SANS BRUIT" : "";
+            if (!AudioSystem.CanLoad(sfx)) verdict = "  ⚠ CLIP INTROUVABLE";
+
+            sb.AppendLine($"  {id,-18} {weapon.ShotsFired,4} tirs → {played,4} × {sfx}{verdict}");
+        }
     }
 
     private int _cardsPicked;

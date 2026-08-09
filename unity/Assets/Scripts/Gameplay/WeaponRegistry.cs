@@ -47,6 +47,7 @@ public static class WeaponRegistry
     };
 
     private static readonly Dictionary<string, Type> _byId = BuildIndex();
+    private static readonly Dictionary<Type, string> _byType = BuildReverseIndex();
 
     private static Dictionary<string, Type> BuildIndex()
     {
@@ -54,6 +55,25 @@ public static class WeaponRegistry
         foreach (var (id, type) in All) map[id] = type;
         return map;
     }
+
+    private static Dictionary<Type, string> BuildReverseIndex()
+    {
+        var map = new Dictionary<Type, string>();
+        foreach (var (id, type) in All) map[type] = id;
+        return map;
+    }
+
+    /// <summary>
+    /// Identifiant d'une arme d'après son type exact.
+    ///
+    /// <para><b>Le type exact, jamais la classe de base.</b> Trois armes en héritent d'une autre
+    /// (<c>OverloadAegis : OverloadField</c>, <c>FusionBlade : PlasmaBlade</c>,
+    /// <c>OrbitalSwarm : DroneSwarm</c>) : remonter la chaîne d'héritage donnerait à l'Égide
+    /// l'identité du Champ de Surcharge, et toute règle indexée par identifiant — le son de tir, par
+    /// exemple — s'appliquerait à la mauvaise arme.</para>
+    /// </summary>
+    public static string? IdOf(Type type)
+        => type != null && _byType.TryGetValue(type, out var id) ? id : null;
 
     /// <summary>Composant correspondant à un id, ou <c>null</c> si l'id n'est pas une arme portée.</summary>
     public static Type? TypeOf(string weaponId)

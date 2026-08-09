@@ -33,10 +33,25 @@ public sealed class OptionsScreen : MonoBehaviour
     /// <summary>Lignes de réglage — observable pour les vérifications.</summary>
     public int RowCount { get; private set; }
 
+    /// <summary>
+    /// La remise à zéro totale est-elle proposée ? <b>Faux en pleine partie</b> : l'action est
+    /// destructrice, et la run en cours réécrirait par-dessus la remise à zéro en s'achevant — le
+    /// joueur verrait sa progression revenir. À poser avant <see cref="Show"/>.
+    /// </summary>
+    public bool AllowFullReset { get; set; } = true;
+
     private GameObject? _root;
     private Transform? _list;
     private Button? _close;
     private Button? _first;
+
+    /// <summary>Bouton de remise à zéro et son bloc (séparateur compris) — masqués en run.</summary>
+    private GameObject? _resetRow;
+    private Button? _resetButton;
+    private Text? _resetLabel;
+
+    /// <summary>La remise à zéro a-t-elle été <b>armée</b> par un premier clic ?</summary>
+    private bool _resetArmed;
 
     /// <summary>Textes à réécrire quand une valeur change (pourcentages, nom de l'option courante).</summary>
     private readonly List<(Func<string> Text, Text Target)> _dynamic = new();
@@ -52,6 +67,13 @@ public sealed class OptionsScreen : MonoBehaviour
         if (_root == null) return;
 
         _root.SetActive(true);
+
+        // Le bloc de remise à zéro apparaît ou disparaît À L'OUVERTURE, et non à la construction :
+        // le même composant sert au menu principal et à la pause, et c'est l'appelant qui sait
+        // laquelle des deux situations on est en train de vivre.
+        if (_resetRow != null) _resetRow.SetActive(AllowFullReset);
+        DisarmReset();
+
         Refresh();
 
         // Le focus va sur le PREMIER réglage, pas sur « Retour » : un écran d'options qui s'ouvre
@@ -247,6 +269,8 @@ public sealed class OptionsScreen : MonoBehaviour
         AddBinding(Loc.T("OPTIONS_MOVE_RIGHT"), GameAction.MoveRight);
         AddBinding(Loc.T("OPTIONS_DASH"),       GameAction.Dash);
 
+        AddResetRow();
+
         _close = UiStyle.TextButton(panel.transform, Loc.T("COMMON_BACK"), FrameAccent.Steel);
         var closeRect = _close.GetComponent<RectTransform>();
         closeRect.anchorMin = closeRect.anchorMax = new Vector2(0.5f, 0f);
@@ -409,6 +433,120 @@ public sealed class OptionsScreen : MonoBehaviour
             Refresh();
             return;
         }
+    }
+
+    // ─── Remise à zéro totale ─────────────────────────────────────────────────
+
+    /// <summary>
+    /// Bouton « Tout réinitialiser », en bas de la liste, sous son propre séparateur.
+    ///
+    /// <para><b>Il manquait entièrement au portage</b> — le jeu publié le propose depuis les options
+    /// (<c>OptionsScreen.AddResetButton</c>), et c'est le seul moyen pour un joueur de repartir d'un
+    /// jeu vierge : la sauvegarde vit dans un dossier système qu'on ne lui demandera pas d'aller
+    /// ouvrir à la main.</para>
+    ///
+    /// <para><b>Deux clics, pas de modale.</b> Le premier arme, le second efface — l'intitulé change
+    /// entre les deux et dit ce qui va disparaître. Une fenêtre de confirmation supplémentaire ne
+    /// protégerait pas mieux (on y clique « oui » aussi vite) et demanderait une chaîne de focus de
+    /// plus dans un écran qui en compte déjà quinze.</para>
+    /// </summary>
+    private void AddResetRow()
+    {
+        if (_list == null) return;
+
+        var row = UiStyle.NewUiObject("ResetRow", _list);
+        var element = row.AddComponent<LayoutElement>();
+        element.minHeight = 108f;
+        element.preferredHeight = 108f;
+
+        var rule = UiStyle.NewUiObject("Rule", row.transform);
+        rule.AddComponent<Image>().color = UiPalette.WithAlpha(UiPalette.Danger, 0.45f);
+
+        var ruleRect = rule.GetComponent<RectTransform>();
+        ruleRect.anchorMin = new Vector2(0f, 1f);
+        ruleRect.anchorMax = new Vector2(1f, 1f);
+        ruleRect.pivot = new Vector2(0.5f, 1f);
+        ruleRect.sizeDelta = new Vector2(0f, 2f);
+        ruleRect.anchoredPosition = Vector2.zero;
+
+        // Accent « danger » : l'action destructrice se distingue par son LISERÉ autant que par la
+        // couleur de son texte — c'est la règle du jeu publié, et elle vaut aussi pour qui ne
+        // distingue pas les couleurs.
+        _resetButton = UiStyle.TextButton(row.transform, Loc.T("OPTIONS_RESET"), FrameAccent.Danger);
+
+        var buttonRect = _resetButton.GetComponent<RectTransform>();
+        buttonRect.anchorMin = buttonRect.anchorMax = new Vector2(0.5f, 0f);
+        buttonRect.pivot = new Vector2(0.5f, 0f);
+        // Largeur dictée par le libellé le PLUS LONG — celui de l'armement, qui porte
+        // l'avertissement — et non par celui du repos : un cadre calé sur « Tout réinitialiser »
+        // coupait « irréversible — efface Échos & progression » (667 px de texte pour 536 utiles,
+        // relevé au banc). Le bouton demanderait alors une confirmation sans dire de quoi.
+        buttonRect.sizeDelta = new Vector2(740f, 56f);
+        buttonRect.anchoredPosition = new Vector2(0f, 10f);
+
+        _resetLabel = _resetButton.GetComponentInChildren<Text>();
+        if (_resetLabel != null)
+        {
+            _resetLabel.color = UiPalette.Danger;
+
+            // Le libellé suit la langue comme les autres, mais il dépend AUSSI de l'état du bouton :
+            // le relire depuis une clé fixe rendrait son armement au premier changement de langue.
+            _dynamic.Add((ResetLabelText, _resetLabel));
+        }
+
+        _resetButton.onClick.AddListener(OnResetPressed);
+
+        _resetRow = row;
+        RowCount++;
+    }
+
+    /// <summary>
+    /// Premier clic : arme. Second : efface les deux sauvegardes.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Le bouton se <b>désactive</b> ensuite au lieu de disparaître, et annonce « ✓ Réinitialisé ».
+    /// Un bouton qui reprend son intitulé de départ après un effacement laisse croire que rien ne
+    /// s'est produit — et invite à recommencer.
+    /// </remarks>
+    private void OnResetPressed()
+    {
+        AudioSystem.PlaySfx("sfx_ui_button", pitchVariation: 0f);
+
+        if (!_resetArmed)
+        {
+            _resetArmed = true;
+            if (_resetLabel != null) _resetLabel.text = Loc.T("OPTIONS_RESET_CONFIRM");
+            return;
+        }
+
+        GameSettings.ResetEverything();
+
+        _resetArmed = false;
+        if (_resetLabel != null) _resetLabel.text = Loc.T("OPTIONS_RESET_DONE");
+        if (_resetButton != null) _resetButton.interactable = false;
+    }
+
+    /// <summary>
+    /// Désarme à chaque ouverture : un bouton laissé armé effacerait tout au premier clic d'une
+    /// visite ultérieure, sans que le joueur ait rien confirmé cette fois-là.
+    /// </summary>
+    private void DisarmReset()
+    {
+        _resetArmed = false;
+
+        if (_resetButton != null) _resetButton.interactable = true;
+        if (_resetLabel != null)
+        {
+            _resetLabel.text = ResetLabelText();
+            _resetLabel.color = UiPalette.Danger;
+        }
+    }
+
+    /// <summary>Intitulé du bouton dans son état courant : au repos, armé, ou déjà exécuté.</summary>
+    private string ResetLabelText()
+    {
+        if (_resetButton != null && !_resetButton.interactable) return Loc.T("OPTIONS_RESET_DONE");
+        return _resetArmed ? Loc.T("OPTIONS_RESET_CONFIRM") : Loc.T("OPTIONS_RESET");
     }
 
     private void AddSelector(string label, Func<string> value, Action next)

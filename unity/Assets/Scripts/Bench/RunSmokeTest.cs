@@ -333,6 +333,13 @@ public sealed class RunSmokeTest : MonoBehaviour
         var silent = new List<string>();
         var invisible = new List<string>();
 
+        // Armes qui tirent SANS BRUIT. Signalé en jouant (« la bobine Tesla n'émet aucun son ») :
+        // le portage n'avait repris que deux des seize appels de son du jeu publié, et les quatorze
+        // autres étaient muettes depuis le premier jour. Rien ne pouvait le montrer — une arme sans
+        // son blesse, monte de niveau et s'affiche normalement, et une capture d'écran est muette.
+        var mute = new List<string>();
+        var unloadable = new List<string>();
+
         // Armes qui se voient par leurs PROJECTILES ou leurs drones : elles n'ont pas à laisser de
         // trace. Toutes les autres frappent à distance sans rien lancer — sans trace, elles tuent
         // sans que rien n'apparaisse à l'écran, et le joueur lit « la carte n'a rien fait ».
@@ -348,6 +355,13 @@ public sealed class RunSmokeTest : MonoBehaviour
         foreach (var (name, type) in types)
         {
             int tracesBefore = Vfx.TracesCreated;
+
+            // Le son est compté PAR IDENTIFIANT, pas globalement : le porteur encaisse des coups
+            // pendant la mesure (les cibles sont à cinquante pixels), et le compte global monterait
+            // donc même pour une arme parfaitement muette.
+            string? expectedSfx = WeaponSfx.For(name);
+            int sfxBefore = expectedSfx != null ? AudioSystem.PlayedCountOf(expectedSfx) : 0;
+
             var host = new GameObject("W_" + name);
             host.transform.position = Vector3.zero;
 
@@ -382,6 +396,16 @@ public sealed class RunSmokeTest : MonoBehaviour
             if (ok && !rendersWithoutTrace.Contains(name) && Vfx.TracesCreated == tracesBefore)
                 invisible.Add(name);
 
+            if (!WeaponSfx.Covers(name)) mute.Add(name + " (absente de WeaponSfx)");
+            else if (expectedSfx != null)
+            {
+                // Deux relevés, parce qu'ils tombent en panne séparément : l'appel peut ne jamais
+                // partir (le défaut d'origine), ou partir sur un identifiant dont le fichier manque
+                // — et dans ce second cas l'arme reste muette pendant que le compteur monte.
+                if (!AudioSystem.CanLoad(expectedSfx)) unloadable.Add($"{name} → {expectedSfx}");
+                if (ok && AudioSystem.PlayedCountOf(expectedSfx) == sfxBefore) mute.Add(name);
+            }
+
             foreach (var d in dummies) if (d != null) Destroy(d);
             Destroy(host);
             yield return null;
@@ -396,6 +420,27 @@ public sealed class RunSmokeTest : MonoBehaviour
               invisible.Count == 0
                   ? $"{Vfx.TracesCreated} traces dessinees"
                   : "sans trace : " + string.Join(", ", invisible));
+
+        // Signalé en jouant, le 2026-08-09. Le pendant sonore exact du critère ci-dessus : une arme
+        // qu'on n'entend pas se lit comme une arme qui ne part pas.
+        Check($"arsenal : les {types.Length - WeaponSfx.Silent.Count} armes a son se font entendre",
+              mute.Count == 0,
+              mute.Count == 0
+                  ? $"{WeaponSfx.Silent.Count} muettes a dessein : {string.Join(", ", WeaponSfx.Silent)}"
+                  : "muettes : " + string.Join(", ", mute));
+
+        Check("arsenal : les sons de tir se chargent", unloadable.Count == 0,
+              unloadable.Count == 0 ? "tous presents" : "introuvables : " + string.Join(", ", unloadable));
+
+        // La CAUSE, relevée à part : tout ce qui est indexé par identifiant d'arme (le son, mais
+        // aussi ce qui viendra après) passe par cette résolution. Trois armes héritent d'une autre,
+        // et une résolution qui remonterait la chaîne d'héritage rendrait l'identité de la base.
+        var unresolved = new List<string>();
+        foreach (var (name, type) in types)
+            if (WeaponRegistry.IdOf(type) != name) unresolved.Add($"{name} → {WeaponRegistry.IdOf(type) ?? "null"}");
+
+        Check("arsenal : chaque classe d'arme resout son identifiant", unresolved.Count == 0,
+              unresolved.Count == 0 ? $"{types.Length} armes" : string.Join(", ", unresolved));
 
         // Les effets sont RECYCLÉS. Une fuite du vivier a le pire symptôme possible : les effets
         // disparaissent au bout de quelques minutes de jeu, quand les plafonds sont atteints — donc
@@ -1914,8 +1959,64 @@ public sealed class RunSmokeTest : MonoBehaviour
         options.Show();
         Check("options : l'ecran s'ouvre", options.IsVisible);
         CheckScrollWheel(optionsGo, "options");
+
+        // ── Remise à zéro totale ──────────────────────────────────────────────
+        // Elle manquait entièrement au portage : sans elle, un joueur n'a AUCUN moyen de repartir
+        // d'un jeu vierge, la sauvegarde vivant dans un dossier système.
+        //
+        // ⚠ Le banc s'arrête au PREMIER clic — celui qui arme. Le second efface pour de bon les
+        // deux sauvegardes, et le banc partage le dossier de données du jeu : le déclencher ici
+        // effacerait la progression de la personne qui lance la vérification.
+        var reset = FindLabelled(optionsGo, Loc.T("OPTIONS_RESET"));
+        Check("options : la remise a zero est proposee", reset != null);
+
+        if (reset != null)
+        {
+            reset.onClick.Invoke();
+            var label = reset.GetComponentInChildren<UnityEngine.UI.Text>();
+
+            Check("options : le premier clic ARME au lieu d'effacer",
+                  label != null && label.text == Loc.T("OPTIONS_RESET_CONFIRM"),
+                  label != null ? $"libelle '{label.text}'" : "aucun libelle");
+
+            // ⚠ Le texte d'armement est TROIS FOIS plus long que celui du repos, et c'est lui qui
+            // porte l'avertissement (« irréversible — efface Échos & progression »). S'il déborde du
+            // cadre ou se coupe, le bouton demande une confirmation sans dire de quoi : le cas où la
+            // largeur compte le plus est justement celui qu'on ne voit pas sur une capture au repos.
+            if (label != null)
+            {
+                float available = reset.GetComponent<RectTransform>().rect.width - 24f;
+                Check("options : l'avertissement tient dans le cadre",
+                      label.preferredWidth <= available,
+                      $"texte {label.preferredWidth:F0} px pour {available:F0} px utiles");
+            }
+        }
+
+        options.Hide();
+
+        // Rouvrir DÉSARME : un bouton laissé armé effacerait tout au premier clic de la visite
+        // suivante, sans confirmation ce jour-là.
+        options.Show();
+        var rearmed = FindLabelled(optionsGo, Loc.T("OPTIONS_RESET"));
+        Check("options : rouvrir desarme la remise a zero", rearmed != null);
+
         options.Hide();
         Destroy(optionsGo);
+        yield return null;
+
+        // En pleine partie, la remise à zéro n'est PAS proposée : la run réécrirait par-dessus en
+        // s'achevant, et la progression effacée reviendrait sous les yeux du joueur.
+        var pausedOptionsGo = new GameObject("OptionsHostInRun");
+        var pausedOptions = pausedOptionsGo.AddComponent<OptionsScreen>();
+        pausedOptions.AllowFullReset = false;
+        yield return null;
+
+        pausedOptions.Show();
+        Check("options en run : pas de remise a zero",
+              FindLabelled(pausedOptionsGo, Loc.T("OPTIONS_RESET")) == null);
+
+        pausedOptions.Hide();
+        Destroy(pausedOptionsGo);
         yield return null;
 
         // La langue doit changer POUR DE BON : la table est relue, donc un même libellé change.

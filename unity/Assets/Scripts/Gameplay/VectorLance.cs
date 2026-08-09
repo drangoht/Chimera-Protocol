@@ -98,9 +98,9 @@ public sealed class VectorLance : WeaponBase
             fired++;
         }
 
+        // Le son part de WeaponBase (WeaponSfx), sur le « vrai » renvoi de tir : une salve qui
+        // n'envoie aucun projectile ne doit pas plus s'entendre qu'elle ne doit consommer sa recharge.
         if (fired == 0) return false;
-
-        AudioSystem.PlaySfx("sfx_weapon_impulse_shoot");
 
         LastVolleySize = fired;
         LastShots++;

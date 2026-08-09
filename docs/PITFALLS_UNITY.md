@@ -162,6 +162,46 @@ nombre de sources et la piste courante.
 **Parade** : `typeof(AudioListener)` sur la caméra des deux scènes générées, et **un seul** — plusieurs
 listeners produisent un avertissement et un mixage imprévisible.
 
+### Un appel de son écrit **arme par arme** ne se porte jamais en entier
+
+**Signalé en jouant (2026-08-09)** : « la Bobine Tesla n'émet aucun son ». Elle n'était pas seule —
+le jeu publié appelle `PlaySfx` depuis **seize** classes d'armes, chacune dans sa propre méthode de
+tir ; le portage en avait repris **deux** (`ImpulseCannon`, `VectorLance`). Quatorze armes tiraient en
+silence **depuis le premier jour du portage**, dont onze des douze de base.
+
+**Pourquoi rien ne l'a vu.** Une arme muette blesse, monte de niveau, s'affiche et laisse ses traces
+visuelles : elle passe tous les critères existants, y compris « les 21 armes tirent ». Une capture
+d'écran est muette par nature. Et le compteur global `PlayedCount` montait *quand même*, alimenté par
+les ramassages d'XP et les coups encaissés — il affichait des centaines de sons pendant que l'arsenal
+entier ne produisait rien. C'est la forme sonore de la règle des **données déclarées non consommées** :
+la moitié d'un système peut manquer sans qu'un seul indicateur ne bouge.
+
+**Parade structurelle** — la même que pour les icônes et les fusions : **une table**, pas des appels
+dispersés.
+- `WeaponSfx` (logique pure, testée) associe un son à chaque identifiant d'arme, ou la déclare
+  **muette à dessein** (`Silent`) — un essaim en orbite et un voile de givre frappent en continu, un
+  son par tick serait un bourdonnement qui masquerait les sons porteurs d'information.
+- `WeaponBase.Update` le joue en **un point unique**, après un tir effectif : une arme qui ne trouve
+  pas de cible renvoie faux, ne consomme pas sa recharge et ne doit pas s'entendre non plus.
+- L'identifiant se résout par le **type exact** (`WeaponRegistry.IdOf`), jamais en remontant
+  l'héritage : trois armes dérivent d'une autre (`OverloadAegis : OverloadField`,
+  `FusionBlade : PlasmaBlade`, `OrbitalSwarm : DroneSwarm`) et hériteraient de son identité.
+
+**Trois relevés, parce qu'ils tombent en panne séparément** : l'arme est-elle **couverte** par la
+table (sinon elle est muette sans que rien ne le dise) · le clip **se charge-t-il** (`CanLoad` — la
+cause) · le son **est-il parti** pour cette arme (`PlayedCountOf`, par identifiant : le total global
+ne permet aucune attribution). Le diagnostic de scène réelle les imprime arme par arme, **en fin** de
+relevé — posé au début, il tombait à la troisième seconde de run et annonçait « 0 » pour tout le monde.
+
+### Un bouton se dimensionne sur son libellé **le plus long**, pas sur celui du repos
+
+Le bouton de remise à zéro change trois fois d'intitulé : « Tout réinitialiser », puis l'avertissement
+d'armement (« ⚠ Confirmer ? (irréversible — efface Échos & progression) »), puis « ✓ Réinitialisé ».
+Calé sur le premier, il coupait le second — **667 px de texte pour 536 utiles**, relevé au banc — et
+demandait donc une confirmation sans dire de quoi. Une capture au repos ne montre pas ce défaut : le
+cas où la largeur compte est justement celui qu'on ne photographie pas. → vérification de banc :
+`label.preferredWidth` contre la largeur du cadre, **dans l'état armé**.
+
 ### Une arme qui tue **sans laisser de trace** se lit « la carte n'a rien fait »
 
 **Signalé en jouant** : « je ne vois pas les autres armes, ni leurs projectiles ». Le relevé en scène

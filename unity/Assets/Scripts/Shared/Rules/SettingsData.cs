@@ -56,4 +56,31 @@ public sealed class SettingsData
     // ─── Interface ────────────────────────────────────────────────────────────
     public bool VersionStamp { get; set; } = true;
     public bool Discord      { get; set; } = true;
+
+    /// <summary>
+    /// Efface toute la <b>progression</b> portée par ce fichier, et rien d'autre.
+    ///
+    /// <para><b>Les préférences survivent</b> — volume, langue, plein écran, touches remappées. Un
+    /// joueur qui demande à repartir de zéro veut retrouver un jeu vierge, pas un jeu qui lui reparle
+    /// dans une langue qu'il ne lit pas et qui lui redemande de régler son écran. La frontière est
+    /// donc « ce qui se gagne » contre « ce qui se règle ».</para>
+    ///
+    /// <para>⚠ Les <b>crans de saturation</b> tombent avec le reste, y compris le cran choisi. Un cran
+    /// se débloque en battant le précédent : le laisser survivre donnerait un cran V ouvert à un
+    /// joueur dont le compteur de victoires vient d'être remis à zéro — l'échelle mentirait sur ce
+    /// qu'il a réellement gravi.</para>
+    ///
+    /// <para>Ne touche pas à <c>save.json</c> (Échos, améliorations, défis) : c'est un autre fichier,
+    /// remis à zéro par <c>MetaProgression.HardReset</c>. Les deux vont ensemble — l'un sans l'autre
+    /// laisse un joueur « neuf » avec 70 000 Échos, ou un arbre acheté sans aucune arme découverte.</para>
+    /// </summary>
+    public void ResetProgress()
+    {
+        Completions.Clear();
+        HighScores.Clear();
+        DiscoveredWeapons.Clear();
+        DiscoveredGrafts.Clear();
+        SaturationByLevel.Clear();
+        SaturationBeatenByLevel.Clear();
+    }
 }

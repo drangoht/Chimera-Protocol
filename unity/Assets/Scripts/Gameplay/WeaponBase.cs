@@ -101,6 +101,27 @@ public abstract class WeaponBase : MonoBehaviour
     /// </remarks>
     public virtual void ApplyLevelStats(WeaponTable.WeaponLevelStats stats) { }
 
+    /// <summary>
+    /// Identifiant de cette arme, déduit de son type. Résolu une seule fois : la table est un
+    /// dictionnaire, mais ce chemin est parcouru à chaque tir de chaque arme équipée.
+    /// </summary>
+    public string WeaponId => _weaponId ??= WeaponRegistry.IdOf(GetType()) ?? "";
+
+    private string? _weaponId;
+
+    /// <summary>
+    /// Son joué à chaque tir réussi, ou <c>null</c> pour les armes muettes à dessein
+    /// (<see cref="WeaponSfx.Silent"/>).
+    ///
+    /// <para><b>Il se joue ici et nulle part ailleurs.</b> Sous Godot, chaque arme appelait
+    /// <c>PlaySfx</c> depuis sa propre méthode de tir ; le portage n'en a repris que deux sur seize,
+    /// et les quatorze autres — dont la Bobine Tesla — sont restées muettes pendant toute la
+    /// migration sans qu'aucun test ni aucune capture ne puisse le voir. Un point unique, alimenté
+    /// par une table exhaustive, rend l'oubli impossible : une arme nouvelle est bruyante ou
+    /// explicitement muette, jamais muette par distraction.</para>
+    /// </summary>
+    protected virtual string? FireSfx => WeaponSfx.For(WeaponId);
+
     protected virtual void Awake() => CaptureSheetDamage();
 
     protected virtual void Update()
@@ -113,6 +134,12 @@ public abstract class WeaponBase : MonoBehaviour
         if (_cooldownLeft > 0f) return;
 
         if (!TryFire()) return;
+
+        // APRÈS le tir, et seulement s'il a eu lieu : une arme qui ne trouve pas de cible renvoie
+        // faux et ne consomme pas sa recharge — lui faire produire un son la ferait « tirer » à vide
+        // à l'oreille, en boucle, tout le temps où l'arène est vide.
+        var sfx = FireSfx;
+        if (sfx != null) AudioSystem.PlaySfx(sfx);
 
         ShotsFired++;
         _cooldownLeft = EffectiveCooldown;
