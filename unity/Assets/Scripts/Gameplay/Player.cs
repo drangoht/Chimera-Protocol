@@ -398,7 +398,9 @@ public sealed class Player : MonoBehaviour
         float missing = Stats.MaxHp - Stats.CurrentHp;
         float applied = Mathf.Min(tick, missing);
 
-        if (applied > 0f) Heal(applied);
+        // Canal RÉGÉNÉRATION, jamais le soin ponctuel : les deux se règlent avec des leviers
+        // différents, et les confondre dans le journal a déjà produit un faux diagnostic.
+        if (applied > 0f) HealInternal(applied, fromRegen: true);
 
         // Le surplus qui serait perdu à PV pleins alimente la réserve anti-pic.
         float surplus = tick - applied;
@@ -418,11 +420,21 @@ public sealed class Player : MonoBehaviour
     {
         if (_dead || _invulnTimer > 0f || amount <= 0f) return;
 
+        // --invuln : observer un combat long jusqu'au bout (les trois phases du boss) sans mourir
+        // avant. Sorti AVANT les i-frames et la télémétrie — sous ce drapeau, la colonne des dégâts
+        // subis doit rester vide plutôt que fausse.
+        if (DebugHooks.Invulnerable) return;
+
         _invulnTimer = InvulnWindow;
 
         // La réduction est bornée par StatCaps : une seule source de vérité avec Godot.
         float dr = Mathf.Min(Stats.DamageReduction, StatCaps.MaxDamageReduction);
         float net = amount * (1f - dr);
+
+        // Journalisé ICI : le coup qui passe réellement, i-frames et égide déjà écartées, mais AVANT
+        // que la réserve n'en absorbe une part. C'est la pression exercée par le contenu, distincte de
+        // ce que la défense du joueur en retient — les deux se lisent en face l'une de l'autre.
+        PowerTelemetry.NotifyDamageTaken(net);
 
         // La réserve de régénération absorbe en premier, après les i-frames.
         if (Stats.RegenReserveCharge > 0f)
@@ -430,6 +442,10 @@ public sealed class Player : MonoBehaviour
             float absorbed = Mathf.Min(Stats.RegenReserveCharge, net);
             Stats.RegenReserveCharge -= absorbed;
             net -= absorbed;
+
+            // Les PV épargnés par la réserve sont de la régénération ENFIN rendue : elle se compte
+            // ici, et non à la mise en réserve. Compter les deux la doublerait dans le journal.
+            PowerTelemetry.NotifyRegen(absorbed);
         }
 
         // Tout coup encaissé suspend la régénération, même entièrement absorbé.
@@ -486,10 +502,36 @@ public sealed class Player : MonoBehaviour
     /// bug majeur parce que des soins écrivaient <c>CurrentHp</c> en direct, échappant ainsi aux
     /// crans de saturation et à l'instrumentation. Rien ne doit contourner cette méthode.
     /// </summary>
-    public void HealFlat(float amount)
+    public void HealFlat(float amount) => HealInternal(amount, fromRegen: false);
+
+    /// <summary>
+    /// Applique un soin et le journalise dans le bon canal.
+    /// </summary>
+    /// <param name="fromRegen">
+    /// Vrai pour la régénération continue, faux pour un soin ponctuel (orbe, vol de vie, carte).
+    /// </param>
+    /// <remarks>
+    /// ⚠ <b>Les deux canaux ne se pilotent pas avec les mêmes leviers et ne doivent jamais être
+    /// confondus dans le journal.</b> Le relevé qui les sépare a montré que le canal dominant était
+    /// le soin ponctuel — <b>×9,5</b> la régénération — donc que régler la régénération ne pouvait
+    /// rien changer, quelle que soit sa valeur.
+    ///
+    /// <para>Et pour le soin ponctuel, deux montants sont journalisés : ce qui est <b>rendu</b> et ce
+    /// qui est <b>offert</b>. À PV pleins un soin vaut zéro ; ne mesurer que le rendu fait passer « le
+    /// joueur reçoit plus de soins » et « le joueur a plus de PV à remplir » pour la même chose.</para>
+    /// </remarks>
+    private void HealInternal(float amount, bool fromRegen)
     {
         if (_dead || amount <= 0f) return;
+
+        float before = Stats.CurrentHp;
         Stats.CurrentHp = Mathf.Min(Stats.MaxHp, Stats.CurrentHp + amount);
+
+        float applied = Stats.CurrentHp - before;
+
+        if (fromRegen) PowerTelemetry.NotifyRegen(applied);
+        else PowerTelemetry.NotifyHealed(applied, amount);
+
         HealthChanged?.Invoke(Stats.CurrentHp, Stats.MaxHp);
     }
 

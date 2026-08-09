@@ -107,12 +107,30 @@ public sealed class RustedCore : EnemyBase
         UpdateAdds(dt);
     }
 
+    /// <summary>
+    /// Encaisse un coup, et alimente le chronométrage du combat.
+    /// </summary>
+    /// <remarks>
+    /// Le chrono ne démarre qu'ici, au <b>premier dégât</b> : le boss arrive à distance, et le temps
+    /// d'approche n'appartient pas au combat. Le ratio de PV est relevé à chaque coup pour qu'une run
+    /// interrompue dise quand même où en était le combat — un boss laissé à 40 % en dit plus long
+    /// qu'une victoire.
+    /// </remarks>
+    public override void TakeDamage(float amount)
+    {
+        base.TakeDamage(amount);
+
+        BossTelemetry.NotifyFirstDamage();
+        BossTelemetry.NotifyHpRatio(HpRatio);
+    }
+
     private void UpdatePhase()
     {
         int next = BossPhases.Advance(Phase, HpRatio);
         if (next == Phase) return;
 
         Phase = next;
+        BossTelemetry.NotifyPhase(Phase, HpRatio);
         _surchargeLeft = SurchargeSeconds;
         PhaseChanged?.Invoke(Phase);
 
@@ -219,6 +237,8 @@ public sealed class RustedCore : EnemyBase
     protected override void Die()
     {
         if (IsDead) return;
+
+        BossTelemetry.NotifyKill();
         GameManager.Instance?.RegisterBossDefeated();
 
         // Le seul coup du jeu qui conclut un niveau : il s'entend dans le TEMPS. Sans ce ralenti, le

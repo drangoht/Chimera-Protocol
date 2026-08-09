@@ -78,6 +78,18 @@ public abstract class WeaponBase : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Dégâts par seconde <b>théoriques</b> de cette arme — sa contribution à l'indice de puissance.
+    /// </summary>
+    /// <remarks>
+    /// <para>Théoriques, et c'est voulu : l'indice mesure le <b>build</b>, pas la réussite au tir.
+    /// Une arme qui ne trouve pas de cible n'en est pas moins puissante, et confondre les deux ferait
+    /// baisser l'indice dans une arène vide — on ne saurait plus si la courbe décrit la progression du
+    /// joueur ou la densité du moment.</para>
+    /// <para>Les dégâts réellement infligés sont mesurés à part, colonne <c>dps</c>.</para>
+    /// </remarks>
+    public float PowerContribution => EffectiveCooldown > 0.001f ? EffectiveDamage / EffectiveCooldown : 0f;
+
     /// <summary>Règle l'arme à un niveau donné.</summary>
     public virtual void Configure(int level)
     {

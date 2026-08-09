@@ -103,7 +103,10 @@ public sealed class GameManager : MonoBehaviour
     /// <summary>Démarre une run : remet à zéro tout ce qui est état de partie.</summary>
     public void StartRun()
     {
-        RunTime = 0f;
+        // ⚠ L'horloge peut démarrer AVANCÉE (--start-at) : la fenêtre à instruire est l'overtime, où
+        // le bot n'arrive pas de lui-même. Tout ce qui dépend du temps — montée en puissance des
+        // ennemis, densité, heure d'entrée en overtime — suit, puisque tout se dérive de RunTime.
+        RunTime = Mathf.Max(0f, DebugHooks.StartAtMinutes) * 60f;
         Kills = 0;
         CoresCollected = 0;
         RunEnded = false;
@@ -114,6 +117,8 @@ public sealed class GameManager : MonoBehaviour
         Player.Instance?.Stats.ResetForRun();
 
         if (Player.Instance != null) Player.Instance.Died += OnPlayerDied;
+
+        PowerTelemetry.Begin();
     }
 
     /// <summary>Comptabilise une victime — appelé par les ennemis à leur mort.</summary>
@@ -149,21 +154,41 @@ public sealed class GameManager : MonoBehaviour
         if (RunEnded) return;
         RunTime += Time.deltaTime;
 
+        // Le delta est celui du jeu : sous --timescale il est déjà dilaté, donc la période
+        // d'échantillonnage reste exprimée en secondes de JEU et une même run est relevée aux mêmes
+        // endroits, accélérée ou non.
+        PowerTelemetry.Tick(Time.deltaTime);
+
         if (!_overtimeAnnounced && Overtime)
         {
             _overtimeAnnounced = true;
             OvertimeStarted?.Invoke();
             Debug.Log("[GameManager] Overtime — le Noyau Rouille arrive.");
         }
+
+        // --run-limit : sans elle, un banc d'overtime ne s'arrête jamais — la survie est sans fin, et
+        // sous --invuln le joueur ne meurt pas. L'issue est nommée pour que l'outil de dépouillement
+        // ÉCARTE ces runs : leur survie n'est pas mesurée, elle est minorée par le chronomètre.
+        if (DebugHooks.RunLimit > 0f && RunTime >= DebugHooks.RunLimit) EndRun("bench_limit");
     }
 
-    private void OnPlayerDied() => EndRun();
+    private void OnPlayerDied() => EndRun("mort");
 
     /// <summary>Clôt la run. Idempotent : une double fin ne doit pas doubler les récompenses.</summary>
-    public void EndRun()
+    public void EndRun() => EndRun("fin");
+
+    /// <summary>Clôt la run en nommant son issue — c'est elle qui décide si le relevé est exploitable.</summary>
+    public void EndRun(string outcome)
     {
         if (RunEnded) return;
         RunEnded = true;
+
+        PowerTelemetry.End(outcome);
+
+        // Un combat de boss en cours est écrit quand même : « mort du joueur à 40 % des PV du boss »
+        // est un résultat, et c'est même celui qui désigne un boss trop long.
+        BossTelemetry.NotifyRunEnd(outcome);
+
         RunFinished?.Invoke(RunTime, Kills);
     }
 }

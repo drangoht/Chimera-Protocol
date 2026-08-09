@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -56,6 +57,17 @@ public sealed class XpOrb : MonoBehaviour
         OrbTier = Mathf.Clamp(tier, 0, TierScales.Length - 1);
         ApplyTierVisuals();
     }
+
+    /// <summary>
+    /// Orbes présents dans l'arène. Tenue comme celle des ennemis, et pour la même raison : le
+    /// pilote de banc les relit périodiquement, et un balayage de la scène entière à chaque
+    /// réévaluation coûterait plus cher que tout le reste du banc réuni.
+    /// </summary>
+    public static readonly List<XpOrb> Active = new();
+
+    private void OnEnable() => Active.Add(this);
+
+    private void OnDisable() => Active.Remove(this);
 
     private void Start() => ApplyTierVisuals();
 

@@ -387,6 +387,11 @@ public class EnemyBase : MonoBehaviour
 
         _timeSinceHit = 0f;   // toute frappe suspend la régénération de l'affixe Régénérant
 
+        // Journalisé APRÈS la réduction de l'affixe : la courbe de puissance doit compter ce qui est
+        // réellement retiré à l'ennemi, pas ce que l'arme a annoncé. Un blindé encaissant 40 % de
+        // moins gonflerait sinon le DPS mesuré sans qu'aucun ennemi ne meure plus vite.
+        PowerTelemetry.NotifyDamageDealt(amount);
+
         _currentHp -= amount;
         if (_currentHp <= 0f) Die();
     }

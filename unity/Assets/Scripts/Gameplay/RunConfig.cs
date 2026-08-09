@@ -42,7 +42,7 @@ public static class RunConfig
     }
 
     /// <summary>Cran de l'échelle de saturation choisi pour cette run.</summary>
-    public static int Saturation { get; private set; }
+    public static int Saturation { get; private set; } = DebugHooks.Saturation ?? 0;
 
     /// <summary>Réglage d'assistance historique : 0 facile, 1 normal, 2 difficile.</summary>
     public static int Difficulty { get; private set; } = 1;
@@ -54,12 +54,21 @@ public static class RunConfig
     public static void Choose(string biomeId, int saturation)
     {
         BiomeId = biomeId;
-        Saturation = Mathf.Clamp(saturation, 0, SaturationTable.MaxRank);
+
+        // ⚠ Le drapeau de banc gagne, et il ignore le déblocage — on doit pouvoir MESURER un cran
+        // avant de l'avoir gagné, sans quoi instruire l'échelle demanderait de la gravir d'abord.
+        // Il n'est en revanche jamais mémorisé : une campagne ne laisse pas le joueur avec un cran
+        // qu'il n'a pas choisi.
+        Saturation = DebugHooks.Saturation
+                  ?? Mathf.Clamp(saturation, 0, SaturationTable.MaxRank);
+
         Difficulty = GameSettings.Current.Difficulty;
+
+        if (DebugHooks.Saturation.HasValue) return;
 
         // Le cran se règle PAR NIVEAU depuis la 1.25.0 : mémoriser le choix ici, c'est le retrouver
         // au prochain passage sur la carte de ce biome — et nulle part ailleurs.
-        GameSettings.Current.SaturationByLevel[biomeId] = Saturation;
+        GameSettings.Current.SaturationByLevel[biomeId] = Mathf.Clamp(saturation, 0, SaturationTable.MaxRank);
         GameSettings.Save();
     }
 

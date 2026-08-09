@@ -110,6 +110,11 @@ public sealed class EnemySpawner : MonoBehaviour
         EliteFrequencyMult = SaturationTable.EliteFrequencyMult(RunConfig.Saturation);
         EliteChanceCap = SaturationTable.EliteChanceCap(RunConfig.Saturation);
 
+        // L'horloge de la faune suit celle de la run, --start-at compris. Posée ici et pas seulement
+        // dans ResetForRun, que rien n'appelle au démarrage : sans cela le drapeau donnait un joueur
+        // de la treizième minute face à la faune de la première.
+        ElapsedSeconds = Mathf.Max(0f, DebugHooks.StartAtMinutes) * 60f;
+
         Debug.Log($"[EnemySpawner] {_bestiary.Count} types d'ennemis charges — biome {Biome}, " +
                   $"palier {RunConfig.ThreatTier}, cran {RunConfig.Saturation}.");
     }
@@ -261,6 +266,11 @@ public sealed class EnemySpawner : MonoBehaviour
         {
             boss.SetBiome(Biome ?? GameManager.Instance?.CurrentBiomeId);
             boss.AddPrefab = EnemyPrefab;
+
+            // ⚠ APRÈS la mise à l'échelle, jamais avant : les PV effectifs viennent d'être posés, et
+            // ouvrir le relevé plus tôt journaliserait les PV de fiche. L'erreur serait muette — le
+            // nombre écrit resterait parfaitement plausible.
+            BossTelemetry.Begin(boss);
         }
 
         // Promotion en élite APRÈS le scaling : les multiplicateurs d'affixe s'appliquent aux
@@ -356,10 +366,22 @@ public sealed class EnemySpawner : MonoBehaviour
     /// <summary>Force la graine du tirage, pour rendre une campagne de banc reproductible.</summary>
     public void SeedSpawns(ulong seed) => _rng.Seed(seed);
 
-    /// <summary>Remet le compteur de temps à zéro pour une nouvelle run.</summary>
+    /// <summary>
+    /// Remet le compteur de temps au début d'une run — ou à la minute imposée par <c>--start-at</c>.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ <b>Cette horloge doit avancer avec celle de la run, et l'oubli est indétectable.</b> Une
+    /// campagne d'overtime a rendu <b>0,0 dégât subi</b> et <b>100 % de temps soutenable</b> sur trois
+    /// minutes de jeu : le personnage était bien à la treizième minute, avec un arsenal saturé, mais
+    /// la faune en face était celle de la <b>première seconde</b> — quelques ennemis de niveau zéro
+    /// balayés par un build de niveau 20. Résultat net, reproductible, et entièrement faux.
+    ///
+    /// <para>C'est la même famille que la constante recopiée dans un outil de banc : un drapeau
+    /// appliqué à moitié ne produit pas du bruit, il produit un résultat <b>flatteur</b>.</para>
+    /// </remarks>
     public void ResetForRun()
     {
-        ElapsedSeconds = 0f;
+        ElapsedSeconds = Mathf.Max(0f, DebugHooks.StartAtMinutes) * 60f;
         TotalSpawned = 0;
         ElitesSpawned = 0;
         _spawnTimer = 0f;

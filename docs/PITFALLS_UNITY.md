@@ -215,6 +215,55 @@ progression cassée, et c'est le pire retour possible sur un choix de carte. →
 sprite recyclés : ni shader ni matériau, donc rien qui puisse être supprimé du build) + un critère au
 banc : **toute arme qui ne se voit ni par un projectile ni par un drone doit laisser une trace**.
 
+### Un drapeau de banc appliqué **à moitié** ne produit pas du bruit, il produit un résultat flatteur
+
+`--start-at=13` avançait l'horloge de la run mais **pas celle du spawner**. La campagne d'overtime a
+donc rendu **0,0 dégât subi** et **100 % de temps soutenable** sur trois minutes de jeu : le
+personnage était bien à la treizième minute, arsenal saturé — et la faune en face était celle de la
+**première seconde**, quelques ennemis de niveau zéro balayés par un build de niveau 20. Résultat
+net, reproductible, cohérent, et entièrement faux.
+
+C'est la variante moteur de la constante recopiée dans un outil de banc. **Toute horloge dérivée doit
+suivre le drapeau**, et le seul contrôle qui l'aurait vu est de comparer deux grandeurs qui devraient
+bouger ensemble : le niveau du joueur *et* la population d'ennemis.
+
+⚠ Corollaire de lecture : `--start-at` mesure une **borne haute**. Le personnage y démarre nu, sans
+les PV ni les cartes qu'un joueur aurait accumulés — sauf qu'en overtime il regagne cent niveaux en
+trois minutes, ce qui le rend rapidement **intouchable**. Un « zéro dégât » sous ce drapeau est un
+fait de gameplay à confirmer sur un biome dur, pas une preuve d'équilibrage.
+
+### La culture d'un processus headless n'est pas celle qu'on croit
+
+Le premier relevé de boss est sorti avec des durées en « 9,8s » et un pourcentage de PV écrit
+**« 66 ٪ »** — le signe pourcent *arabe*. Le format `P0` et l'interpolation `{x:0.0}` empruntent tous
+deux leur séparateur et leurs symboles à la culture courante, laquelle n'a rien à voir avec la langue
+du jeu ni avec celle du poste.
+
+**Tout ce qui s'écrit dans un journal se formate en culture invariante** — pas seulement la ligne CSV.
+Une virgule décimale casse en silence chaque outil qui relit le fichier, et un signe pourcent exotique
+rend le bloc illisible ; dans les deux cas le journal ne se distingue plus d'un journal absent. ⚠ Unity
+fige le langage à C# 9 : `string.Create(CultureInfo.InvariantCulture, $"…")` n'est pas disponible, il
+faut passer par une fonction de formatage.
+
+### Un journal se choisit **par moteur**, et lire le mauvais ne lève rien
+
+Godot écrit sous `%APPDATA%\Godot\app_userdata\`, Unity sous `%USERPROFILE%\AppData\LocalLow\`. Les
+deux fichiers coexistent, portent le même nom et le même format : un outil pointé sur le mauvais ne
+produit pas d'erreur, il produit **les chiffres de l'autre campagne**, tout aussi plausibles. D'où le
+choix explicite (`--engine`) plutôt qu'une détection.
+
+Et les deux moteurs **ne se comparent pas** : leurs générateurs divergent dès le premier tirage, donc
+une même graine n'y donne pas la même run. Une campagne appariée à cheval sur les deux mesurerait
+l'écart entre les moteurs.
+
+### Un banc doit ouvrir lui-même la porte qu'il vient franchir
+
+Le pilote automatique s'installait, annonçait qu'il prenait la main… et le jeu attendait au **menu
+principal** qu'on clique sur « Jouer ». Le journal restait vide, et la seule trace était une ligne de
+log disant que tout allait bien. Un drapeau de banc doit lancer la run, et la **quitter** : une
+campagne enchaîne des dizaines de runs, et tuer un processus au chronomètre est exactement ce qui
+tronque un journal en cours d'écriture.
+
 ### Un décor se pose **dans l'ordre** — la structure d'abord, ce qui l'évite ensuite
 
 Les motifs de sol (`FloorFeatures`) rendent l'ensemble des **cellules qu'ils occupent**, et c'est

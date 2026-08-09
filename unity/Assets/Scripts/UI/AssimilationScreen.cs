@@ -97,6 +97,16 @@ public sealed class AssimilationScreen : MonoBehaviour
         if (_root != null) _root.SetActive(false);
     }
 
+    /// <summary>
+    /// Accepte la greffe à la place du joueur — le pilote automatique (<c>--auto-play</c>).
+    /// </summary>
+    /// <remarks>
+    /// Accepter, et non refuser : une run de banc doit produire le build le plus complet possible,
+    /// puisque c'est lui qu'on mesure. Un bot qui décline toutes les greffes ferait conclure que
+    /// l'Assimilation ne pèse rien — alors qu'elle n'aurait simplement jamais eu lieu.
+    /// </remarks>
+    public void AcceptForBench() => Resolve(accepted: true);
+
     private void Resolve(bool accepted)
     {
         Hide();

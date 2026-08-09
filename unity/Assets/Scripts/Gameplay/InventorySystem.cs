@@ -130,6 +130,25 @@ public sealed class InventorySystem : MonoBehaviour
     /// <summary>Le joueur porte-t-il cette arme ?</summary>
     public bool Has(string weaponId) => _weaponLevels.ContainsKey(weaponId);
 
+    /// <summary>
+    /// Somme des dégâts par seconde théoriques de l'arsenal porté — l'<b>indice de puissance</b>.
+    /// </summary>
+    /// <remarks>
+    /// C'est la grandeur qui a permis de trancher un diagnostic que personne ne savait poser : la
+    /// puissance faisait <b>×6,42 en douze minutes d'overtime</b> alors que toutes les cartes étaient
+    /// déjà au plafond. Sans indice continu, on ne pouvait qu'observer le résultat — un boss qui fond
+    /// — sans jamais dire d'où venait le surplus.
+    /// </remarks>
+    public float PowerIndex()
+    {
+        float total = 0f;
+
+        foreach (var weapon in _weaponNodes.Values)
+            if (weapon != null) total += weapon.PowerContribution;
+
+        return total;
+    }
+
     /// <summary>Déclare un passif acquis — condition de déblocage des fusions.</summary>
     public void AddPassive(string passiveId) => AddOrUpgradePassive(passiveId);
 

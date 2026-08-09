@@ -2187,6 +2187,54 @@ public sealed class RunSmokeTest : MonoBehaviour
 
         ArenaObstacles.Clear();
 
+        // ─── Instrumentation (lot 7) ──────────────────────────────────────────
+        // Ces relevés portent sur la CHAÎNE, pas sur les règles : la politique de pilotage et la
+        // mesure de pression sont déjà couvertes par les tests unitaires. Ce qu'eux ne peuvent pas
+        // voir, c'est qu'un journal reste vide ou qu'un cap calculé n'atteigne jamais le personnage.
+
+        // Rien ne doit écrire sans le drapeau : ce journal n'a aucune valeur pour un joueur, et il
+        // grossit à chaque run.
+        Check("banc : la courbe de puissance reste muette sans son drapeau", !PowerTelemetry.Active);
+
+        // Les notifications doivent être inoffensives hors campagne — elles sont posées sur les
+        // chemins les plus chauds du jeu (chaque coup porté, chaque soin).
+        PowerTelemetry.NotifyDamageDealt(10f);
+        PowerTelemetry.NotifyHealed(5f, 8f);
+        Check("banc : les notifications ne coutent rien hors campagne", PowerTelemetry.SampleCount == 0);
+
+        // L'indice de puissance doit MONTER avec l'arsenal, sinon la colonne qui a servi à démasquer
+        // le ×6,42 en overtime ne mesurerait rien.
+        var powerHost = new GameObject("BancPuissance");
+        var one = (WeaponBase)powerHost.AddComponent<ImpulseCannon>();
+        yield return null;
+
+        float withOne = one.PowerContribution;
+        powerHost.AddComponent<TeslaCoil>();
+        yield return null;
+
+        Check("banc : l'indice de puissance mesure l'arme", withOne > 0f,
+              $"{withOne:F0} DPS theoriques pour le canon seul");
+        Destroy(powerHost);
+
+        // Le pilote : le cap calculé doit ATTEINDRE le personnage. Un bot qui décide bien et ne
+        // bouge pas est le défaut d'origine du banc — il mourait alors en vingt secondes, sans que
+        // rien ne distingue « il ne sait pas fuir » de « son cap n'est branché sur rien ».
+        var pilotHost = new GameObject("BancPilote");
+        var pilot = pilotHost.AddComponent<BenchAutoPilot>();
+
+        if (Player.Instance != null) Player.Instance.transform.position = Vector3.zero;
+        yield return new WaitForSeconds(BenchAutoPilot.RepathInterval * 3f);
+
+        var steer = Player.Instance != null ? Player.Instance.ExternalMoveOverride : null;
+
+        Check("banc : le pilote impose un cap au personnage",
+              pilot.Repaths > 0 && steer.HasValue && steer.Value.sqrMagnitude > 0.01f,
+              $"{pilot.Repaths} reevaluations, cap {(steer.HasValue ? steer.Value.ToString("F2") : "AUCUN")}");
+
+        Destroy(pilotHost);
+        if (Player.Instance != null) Player.Instance.ExternalMoveOverride = null;
+        yield return null;
+
         // ─── Motifs de sol ────────────────────────────────────────────────────
         // Le tracé est vérifié par les tests unitaires ; ce qui ne peut l'être que d'ici, c'est qu'il
         // devienne des OBJETS À L'ÉCRAN. Un motif calculé et jamais instancié laisse exactement la

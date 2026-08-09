@@ -244,6 +244,29 @@ public sealed class LevelUpScreen : MonoBehaviour
         ModalQueue.Close(ModalKind.LevelUp);
     }
 
+    /// <summary>
+    /// Prend une carte à la place du joueur — le pilote automatique (<c>--auto-play</c>).
+    /// </summary>
+    /// <remarks>
+    /// <para>Distinct de <see cref="DismissForBench"/>, qui <b>écarte</b> l'écran sans rien prendre :
+    /// utile pour une capture, ruineux pour une mesure. Un bot qui n'acquiert rien reste au niveau de
+    /// la première minute, et la courbe de puissance — dont l'objet est justement de suivre le build —
+    /// ne mesurerait plus qu'une arme de départ pendant treize minutes.</para>
+    ///
+    /// <para>⚠ Le choix est <b>aléatoire</b>, et c'est la limite structurelle du banc : il mesure ce
+    /// que le jeu fait d'un build quelconque, jamais ce qu'un humain arbitrerait. Les cartes de
+    /// surcharge existent précisément pour produire un arbitrage — le banc ne peut pas le juger.</para>
+    /// </remarks>
+    public bool ChooseForBench(System.Func<float> rand)
+    {
+        if (_cards.Count == 0) return false;
+
+        int index = Mathf.Clamp((int)(rand() * _cards.Count), 0, _cards.Count - 1);
+        Choose(_cards[index]);
+
+        return true;
+    }
+
     private void OnSkipPressed()
     {
         if (!Charges.TrySkip()) return;

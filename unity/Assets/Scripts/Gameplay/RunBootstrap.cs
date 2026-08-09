@@ -20,8 +20,23 @@ public sealed class RunBootstrap : MonoBehaviour
 
     private void Start()
     {
-        if (Seed != 0UL) Gd.Seed(Seed);
-        else             Gd.Randomize();
+        // La graine du banc l'emporte sur celle de l'inspecteur : c'est elle qui rend une campagne
+        // APPARIÉE possible — rejouer les mêmes graines après un changement annule le bruit de tirage
+        // dans la différence, et quelques paires tranchent ce que trente runs libres laissent indécis.
+        ulong seed = DebugHooks.Seed ?? Seed;
+
+        if (seed != 0UL) Gd.Seed(seed);
+        else Gd.Randomize();
+
+        // ⚠ Passe par SceneRoot et non par Time.timeScale : c'est lui qui retient la vitesse NOMINALE,
+        // celle qu'une sortie de pause ou un ralenti doit restaurer. Écrire Time.timeScale en direct
+        // ferait annuler l'accélération au premier menu ouvert — silencieusement, la campagne
+        // continuant simplement trois fois plus lentement que prévu.
+        if (DebugHooks.TimeScale > 0f)
+        {
+            SceneRoot.TimeScale = DebugHooks.TimeScale;
+            Debug.Log($"[RunBootstrap] temps accelere x{DebugHooks.TimeScale:0.##}.");
+        }
 
         // Le vivier de traces garde des références sur des objets détruits avec la scène précédente :
         // sans cette remise à zéro, les premiers tirs de la run les réutiliseraient — donc
@@ -70,10 +85,36 @@ public sealed class RunBootstrap : MonoBehaviour
         ApplyStartingPerk();
 
         // La saturation a besoin du point de montage pour créer les armes.
-        if (_saturateArsenal) SaturateArsenal();
+        if (_saturateArsenal || DebugHooks.SaturateArsenal) SaturateArsenal();
+
+        AttachBenchPilot();
     }
 
     private bool _saturateArsenal;
+
+    /// <summary>
+    /// Installe le pilote automatique sous <c>--auto-play</c> : conduite du personnage et résolution
+    /// des écrans de choix.
+    /// </summary>
+    /// <remarks>
+    /// <para>Seule la <b>conduite</b> est posée ici. La résolution des écrans de choix
+    /// (<c>BenchAutoPlay</c>) s'installe elle-même depuis l'assemblage de banc : elle lit l'interface,
+    /// que le jeu ne peut pas référencer sans créer un cycle. Les deux vont pourtant ensemble — un bot
+    /// qui se déplace mais reste bloqué au premier passage de niveau ne mesure rien, et un bot qui
+    /// prend des cartes sans bouger meurt en vingt secondes.</para>
+    ///
+    /// <para>Sur son <b>propre objet</b>, comme tous les outils de banc : posé sur un écran, son
+    /// maintien entre scènes le ferait survivre par-dessus la partie suivante.</para>
+    /// </remarks>
+    private static void AttachBenchPilot()
+    {
+        if (!DebugHooks.AutoPlay) return;
+
+        var host = new GameObject("[BenchPilot]");
+        host.AddComponent<BenchAutoPilot>();
+
+        Debug.Log("[RunBootstrap] --auto-play : le personnage est pilote.");
+    }
 
     /// <summary>
     /// Applique le perk de départ équipé au Hub. C'est ce qui referme la boucle des défis : sans lui,
