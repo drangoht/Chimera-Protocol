@@ -2162,8 +2162,83 @@ public sealed class RunSmokeTest : MonoBehaviour
               RunConfig.RunDurationSeconds(780) < standard,
               $"{standard} s -> {RunConfig.RunDurationSeconds(780)} s");
 
+        yield return RunHealingChecks();
+
         // Remise à l'état de départ : le banc continue derrière.
         RunConfig.Choose(LevelThreat.Order[0], 0);
+        yield return null;
+    }
+
+    /// <summary>
+    /// Vérifie les <b>deux leviers du cran I</b> sur le joueur vivant : le soin de passage de niveau,
+    /// et la coupe des soins ponctuels (« Hémorragie »).
+    /// </summary>
+    /// <remarks>
+    /// <para>Ces deux règles étaient <b>portées, testées et jamais appelées</b> jusqu'au 2026-08-09 :
+    /// <c>SaturationTable.HealingMult</c> et <c>LevelUpHealsEnabled</c> existaient, leurs tests
+    /// unitaires passaient, et aucune ligne de code de jeu ne les lisait. Un test de logique pure ne
+    /// peut pas attraper cela par construction — d'où ce contrôle, qui part d'un <b>joueur réel</b>
+    /// et d'un <b>vrai passage de niveau</b>, seul niveau où « la règle existe » et « la règle
+    /// s'applique » cessent d'être la même chose.</para>
+    ///
+    /// <para>⚠ Le succès est tracé autant que l'échec (« le niveau soigne au cran 0 ») : c'est la
+    /// parade retenue après les huit défauts précédents du portage. Un contrôle qui ne relève que les
+    /// anomalies ne distingue pas « rien à signaler » de « rien n'a été exécuté ».</para>
+    /// </remarks>
+    private IEnumerator RunHealingChecks()
+    {
+        var player = Player.Instance;
+        var xp = XpSystem.Instance;
+
+        if (player == null || xp == null || player.IsDead)
+        {
+            Check("soins : joueur vivant disponible pour la mesure", false,
+                  player == null ? "pas de joueur" : xp == null ? "pas de XpSystem" : "joueur mort");
+            yield break;
+        }
+
+        // Cran 0 : le passage de niveau rend un quart de la barre.
+        RunConfig.Choose(LevelThreat.Order[0], 0);
+        player.Stats.CurrentHp = player.Stats.MaxHp * 0.20f;
+        float before = player.Stats.CurrentHp;
+
+        int levelBefore = xp.CurrentLevel;
+        xp.AddXp(XpCurve.Threshold(xp.CurrentLevel) * 2);
+        yield return null;
+
+        float gained = player.Stats.CurrentHp - before;
+        float expected = player.Stats.MaxHp * Player.LevelUpHealFraction;
+        Check("cran 0 : le passage de niveau soigne",
+              xp.CurrentLevel > levelBefore && gained > expected * 0.9f,
+              $"niveau {levelBefore} -> {xp.CurrentLevel}, {before:F0} -> {player.Stats.CurrentHp:F0} PV " +
+              $"(+{gained:F0}, attendu +{expected:F0})");
+
+        // Cran I « Hémorragie » : le même passage de niveau ne rend plus rien.
+        RunConfig.Choose(LevelThreat.Order[0], 1);
+        player.Stats.CurrentHp = player.Stats.MaxHp * 0.20f;
+        before = player.Stats.CurrentHp;
+
+        levelBefore = xp.CurrentLevel;
+        xp.AddXp(XpCurve.Threshold(xp.CurrentLevel) * 2);
+        yield return null;
+
+        Check("cran I : le passage de niveau ne soigne plus",
+              xp.CurrentLevel > levelBefore && Mathf.Approximately(player.Stats.CurrentHp, before),
+              $"niveau {levelBefore} -> {xp.CurrentLevel}, {before:F0} -> {player.Stats.CurrentHp:F0} PV");
+
+        // Et le second levier du même cran : les soins PONCTUELS sont coupés (orbes, vol de vie).
+        player.Stats.CurrentHp = player.Stats.MaxHp * 0.20f;
+        before = player.Stats.CurrentHp;
+        player.HealFlat(100f);
+        yield return null;
+
+        float healedAtRank1 = player.Stats.CurrentHp - before;
+        Check("cran I : les soins ponctuels sont ampute par Hemorragie",
+              healedAtRank1 > 0f && healedAtRank1 < 100f,
+              $"100 PV offerts -> {healedAtRank1:F0} rendus (attendu ~{100f * SaturationTable.HealingMult(1):F0})");
+
+        RunConfig.Choose(LevelThreat.Order[0], 0);
+        player.HealFlat(player.Stats.MaxHp);
         yield return null;
     }
 

@@ -235,6 +235,30 @@ la fonctionnalité existe.
 paquet `com.unity.nuget.newtonsoft-json`, tout compile et c'est l'**éditeur de liens** qui échoue,
 avec un message parlant d'assemblages du projet et non de la dépendance manquante.
 
+### Une règle de difficulté portée sans consommateur rend le cran **payant et vide**
+
+`SaturationTable.HealingMult` et `SaturationTable.LevelUpHealsEnabled` étaient portés, documentés,
+couverts par leurs tests unitaires — et **aucune ligne de code de jeu ne les lisait**. Le cran I
+« Hémorragie » s'affichait donc dans le sélecteur, se gagnait au déblocage, coûtait un palier au
+joueur, et ne retirait **rien**. Trouvé en jouant, 2026-08-09 : « il manque la regen de vie lors d'un
+level up ».
+
+Le soin de passage de niveau lui-même n'existait pas non plus : rien, côté Unity, n'écoutait
+`XpSystem.LevelUp` sur le joueur. Or c'est la **plus grosse source de soin du jeu** — indexée sur les
+PV max, donc sans plafond, et déclenchée en rafale en overtime (~18 niveaux/min × 25 % des PV max).
+Le portage tournait avec un joueur amputé de ce filet, sans erreur, sans avertissement, et sans
+qu'aucune lecture du code ne puisse le révéler : le fichier qui gouverne la règle existe bel et bien.
+
+**Ce qui rend cette famille invisible** : un test de logique pure vérifie que la règle *dit* la bonne
+chose, jamais qu'elle est *appelée*. Le seul contrôle qui l'attrape part d'un **joueur réel** et d'un
+**vrai passage de niveau** (`RunSmokeTest.RunHealingChecks`) — c'est-à-dire du seul niveau où « la
+règle existe » et « la règle s'applique » cessent d'être la même phrase.
+
+⚠ **Corollaire de nommage** : sous Godot, `Player.Heal(0.25f)` soigne d'un **quart de la barre** ;
+sous Unity la méthode homonyme prenait un montant **absolu**. Un appel recopié tel quel aurait rendu
+un quart de point de vie — sans erreur, sans avertissement, invisible à la relecture. La méthode
+s'appelle désormais `HealFraction`.
+
 ### L'icône de l'exécutable se pose **au build**, pas dans l'éditeur
 
 Le binaire sortait avec l'icône **d'Unity** : dans la barre des tâches, l'explorateur et le raccourci,

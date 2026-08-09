@@ -80,10 +80,50 @@ public sealed class Player : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Branche le soin de passage de niveau. <b>En <c>Start</c> et non en <c>Awake</c></b> : l'ordre
+    /// entre deux <c>Awake</c> n'est pas garanti par Unity, et <see cref="XpSystem.Instance"/> serait
+    /// tantôt là, tantôt nul — donc le filet fonctionnerait une frame sur deux.
+    /// </summary>
+    private void Start()
+    {
+        if (XpSystem.Instance != null) XpSystem.Instance.LevelUp += OnLevelUp;
+        else Debug.LogError("[Player] pas de XpSystem : le soin de passage de niveau ne se declenchera jamais.");
+    }
+
     private void OnDestroy()
     {
+        if (XpSystem.Instance != null) XpSystem.Instance.LevelUp -= OnLevelUp;
         if (Instance == this) Instance = null;
     }
+
+    /// <summary>
+    /// Passage de niveau : secousse, et surtout le <b>soin</b> qui va avec.
+    /// </summary>
+    /// <remarks>
+    /// <para>Ce soin est le filet <b>universel</b> du jeu — gratuit, automatique, indexé sur les PV
+    /// max (donc sans plafond, les cartes de surcharge faisant monter ces PV sans fin) et déclenché
+    /// en rafale en overtime. C'est la plus grosse source de soin du jeu, très loin devant les orbes
+    /// et le vol de vie.</para>
+    ///
+    /// <para>⚠ <b>Il manquait entièrement au portage jusqu'au 2026-08-09</b> : rien, côté Unity,
+    /// n'écoutait <see cref="XpSystem.LevelUp"/> sur le joueur. Le jeu ne plantait pas et ne signalait
+    /// rien — il était simplement plus dur que le jeu d'origine, d'un facteur que personne ne pouvait
+    /// deviner en lisant le code, puisque la règle qui le gouverne
+    /// (<see cref="SaturationTable.LevelUpHealsEnabled"/>) existait bel et bien.</para>
+    ///
+    /// <para>Le cran I « Hémorragie » le coupe. La secousse, elle, reste à tous les crans : le niveau
+    /// doit continuer de se voir — seul le rattrapage disparaît.</para>
+    /// </remarks>
+    private void OnLevelUp(int newLevel)
+    {
+        ScreenShake.Shake(6f, 0.20f);
+
+        if (RunConfig.LevelUpHealsEnabled) HealFraction(LevelUpHealFraction);
+    }
+
+    /// <summary>Part des PV max rendue à chaque passage de niveau. Constante de gameplay.</summary>
+    public const float LevelUpHealFraction = 0.25f;
 
     private void Update()
     {
@@ -524,6 +564,12 @@ public sealed class Player : MonoBehaviour
     {
         if (_dead || amount <= 0f) return;
 
+        // Cran I « Hémorragie » : les soins PONCTUELS seulement. La régénération continue est un
+        // autre canal, avec ses propres leviers (réserve, suspension sous le feu) — les confondre
+        // ici appliquerait deux fois la même coupe à un joueur qui n'a pris qu'une carte.
+        if (!fromRegen) amount *= RunConfig.HealingMult;
+        if (amount <= 0f) return;
+
         float before = Stats.CurrentHp;
         Stats.CurrentHp = Mathf.Min(Stats.MaxHp, Stats.CurrentHp + amount);
 
@@ -535,8 +581,18 @@ public sealed class Player : MonoBehaviour
         HealthChanged?.Invoke(Stats.CurrentHp, Stats.MaxHp);
     }
 
-    /// <summary>Soigne d'une fraction des PV max.</summary>
-    public void Heal(float amount) => HealFlat(amount);
+    /// <summary>Soigne d'une <b>fraction</b> des PV max (0,25 = un quart de la barre).</summary>
+    /// <remarks>
+    /// ⚠ Le nom est explicite parce que le portage a failli reproduire un piège classique : une
+    /// méthode <c>Heal</c> qui prend un pourcentage sous Godot et un montant absolu ici. Un
+    /// <c>Heal(0,25f)</c> recopié tel quel aurait rendu <b>un quart de point de vie</b> au lieu d'un
+    /// quart de la barre — sans erreur, sans avertissement, et invisible à la lecture.
+    /// </remarks>
+    public void HealFraction(float fraction)
+    {
+        if (fraction <= 0f) return;
+        HealFlat(Stats.MaxHp * fraction);
+    }
 
     /// <summary>Le joueur est-il invulnérable en ce moment ?</summary>
     public bool IsInvulnerable => _invulnTimer > 0f;

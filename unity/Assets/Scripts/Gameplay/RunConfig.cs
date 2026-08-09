@@ -109,6 +109,40 @@ public static class RunConfig
     /// </summary>
     public static float TimeOffsetMinutes => LevelThreat.TimeOffsetMinutes(ThreatTier);
 
+    // ── Défense du joueur : les deux leviers du cran I « Hémorragie » ────────────────────────────
+    //
+    // ⚠ Ces trois membres manquaient au portage jusqu'au 2026-08-09 : SaturationTable.HealingMult et
+    // LevelUpHealsEnabled étaient portés, testés, documentés — et personne ne les appelait. Le cran I
+    // s'affichait donc dans le sélecteur, se payait en déblocage, et ne retirait RIEN. C'est le même
+    // défaut que les 8 déjà relevés (cf. mémoire « déclaré n'est pas consommé ») : une règle pure
+    // bien écrite AGGRAVE le camouflage, puisque le fichier existe et que ses tests passent.
+
+    /// <summary>
+    /// Mode d'assistance (« Facile ») : hors de l'échelle de saturation, jamais une saturation
+    /// négative. Aucun cran ne s'y applique — c'est de l'accessibilité.
+    /// </summary>
+    public static bool IsAssisted => Difficulty == 0;
+
+    /// <summary>
+    /// Multiplicateur des soins <b>reçus</b> — orbes de PV, vol de vie des greffes, carte Blindage.
+    /// Cran I « Hémorragie ». Vise le canal de soin <b>dominant</b> mesuré (86,4 PV/s de soins
+    /// ponctuels contre 8,2 de régénération) ; il ne touche pas la régénération continue, qui a ses
+    /// propres leviers.
+    /// </summary>
+    public static float HealingMult => IsAssisted ? 1f : SaturationTable.HealingMult(Saturation);
+
+    /// <summary>
+    /// Le passage de niveau soigne-t-il encore (25 % des PV max) ? Non <b>dès le cran I</b>.
+    /// </summary>
+    /// <remarks>
+    /// C'est le <b>second levier du même canal</b> qu'<see cref="HealingMult"/>, et de loin le plus
+    /// gros : en overtime les niveaux tombent à ~18 par minute, soit de l'ordre de 158 % des PV max
+    /// rendus chaque minute, gratuitement et sans décision du joueur. Durcir la faune sans couper
+    /// ceci revient à remplir un seau percé (GDD §34.9).
+    /// </remarks>
+    public static bool LevelUpHealsEnabled
+        => IsAssisted || SaturationTable.LevelUpHealsEnabled(Saturation);
+
     /// <summary>Multiplicateur d'Échos — source unique, partagée par la fin de run et son animation.</summary>
     public static double EchoMult
         => LevelThreat.EchoMult(ThreatTier) * SaturationTable.EchoMult(Saturation);
