@@ -9,10 +9,10 @@ using UnityEngine;
 /// défile, et le jeu paraît se dérouler dans le noir. Sans bordure visible, on découvre la limite en
 /// s'y cognant.</para>
 ///
-/// <para>Le rendu reste volontairement sobre : une tuile de sol répétée, teintée par biome, et un
-/// cadre lumineux sur les quatre bords. Les décors, obstacles et reliefs du jeu d'origine
-/// (<c>BiomeObstacles</c>, <c>FloorFeatures</c>) restent à porter — mais un sol uni vaut infiniment
-/// mieux qu'aucun sol.</para>
+/// <para>Le sol se construit en trois couches, et <b>l'ordre compte</b> : la tuile répétée teintée
+/// par biome, puis la structure qui traverse l'arène (<see cref="FloorFeatures"/> — coulée de lave,
+/// rivière gelée, conduits de données), puis seulement ce qui doit s'en écarter, obstacles et
+/// fenêtres vitrées. Une teinte seule ne distingue pas cinq lieux ; une coulée de lave, si.</para>
 /// </summary>
 public sealed class ArenaRenderer : MonoBehaviour
 {
@@ -35,6 +35,12 @@ public sealed class ArenaRenderer : MonoBehaviour
         BuildBar("BordBas",    new Vector2(0f, -h), new Vector2(Arena.Width, BorderThickness), border);
         BuildBar("BordGauche", new Vector2(-w, 0f), new Vector2(BorderThickness, Arena.Height), border);
         BuildBar("BordDroite", new Vector2( w, 0f), new Vector2(BorderThickness, Arena.Height), border);
+
+        // Les motifs de sol EN PREMIER : ce sont eux qui décident où le reste n'a pas le droit
+        // d'aller. Un pilier planté au milieu d'une coulée de lave, ou un puits de parallaxe ouvert
+        // dans une rivière, se lisent l'un comme l'autre comme un défaut d'assemblage — et c'est
+        // l'ordre du jeu publié, où le sol interroge `_featureCells` avant de poser quoi que ce soit.
+        _featureCells = FloorFeatures.Build(transform, biomeId, border, Gd.Randf);
 
         BuildObstacles(biomeId, border);
 
@@ -80,10 +86,28 @@ public sealed class ArenaRenderer : MonoBehaviour
         {
             // Loin des bords : une fenêtre collée au mur se découvre en s'y acculant, c'est-à-dire
             // au pire moment — et la caméra, bornée par l'arène, ne la centre jamais.
-            float x = (Gd.Randf() * 2f - 1f) * (Arena.HalfWidth - WindowMargin);
-            float y = (Gd.Randf() * 2f - 1f) * (Arena.HalfHeight - WindowMargin);
+            //
+            // Et loin des motifs de sol : vingt essais, comme sous Godot. Un puits ouvert au milieu
+            // d'une rivière la percerait, et la structure la plus visible du biome se retrouverait
+            // trouée sans raison lisible.
+            Vector2 center = Vector2.zero;
+            bool placed = false;
 
-            var center = new Vector2(x, y);
+            for (int attempt = 0; attempt < 20 && !placed; attempt++)
+            {
+                center = new Vector2(
+                    (Gd.Randf() * 2f - 1f) * (Arena.HalfWidth - WindowMargin),
+                    (Gd.Randf() * 2f - 1f) * (Arena.HalfHeight - WindowMargin));
+
+                // Et à l'écart des fenêtres déjà posées. Trois puits superposés ne font pas trois
+                // ouvertures : ils font une tache d'hexagones enchevêtrés, où la profondeur qu'ils
+                // servent à montrer devient illisible. Le défaut s'est aggravé en écartant les
+                // fenêtres des motifs — il reste moins de place, donc plus de collisions.
+                placed = !AreaOnFeature(center, WindowSize * 1.5f) && FarFromAll(center, centers);
+            }
+
+            // Après vingt refus, on pose quand même : mieux vaut une fenêtre mal placée que trois
+            // fenêtres au lieu de quatre — c'est par elles que la parallaxe se voit.
             centers.Add(center);
 
             // Un amas de 2 à 3 tuiles de côté, comme sous Godot.
@@ -171,6 +195,17 @@ public sealed class ArenaRenderer : MonoBehaviour
     /// <summary>Distance minimale d'une fenêtre au bord de l'arène.</summary>
     private const float WindowMargin = 260f;
 
+    /// <summary>Écart minimal entre deux fenêtres — deux fois leur côté, pour qu'on les compte.</summary>
+    private const float WindowSpacing = WindowSize * 2f;
+
+    private static bool FarFromAll(Vector2 candidate, List<Vector2> placed)
+    {
+        foreach (var other in placed)
+            if (Vector2.Distance(candidate, other) < WindowSpacing) return false;
+
+        return true;
+    }
+
     /// <summary>
     /// Obstacles : quelques masses lisibles qui créent des couloirs et des angles morts. Leur
     /// disposition vient de <see cref="ArenaLayout"/> (logique pure, testée) et ne dépend que de la
@@ -183,7 +218,7 @@ public sealed class ArenaRenderer : MonoBehaviour
 
         foreach (var spot in ArenaLayout.Positions(Gd.Randf, Arena.HalfWidth, Arena.HalfHeight))
         {
-            var position = new Vector2(spot.X, spot.Y);
+            var position = NudgeOffFeature(new Vector2(spot.X, spot.Y));
             centers.Add(position);
 
             var go = new GameObject("Obstacle", typeof(SpriteRenderer));
@@ -224,6 +259,66 @@ public sealed class ArenaRenderer : MonoBehaviour
         }
 
         ArenaObstacles.Set(centers);
+    }
+
+    /// <summary>Cellules couvertes par les motifs de sol — obstacles et fenêtres s'en écartent.</summary>
+    private HashSet<FloorFeatureLayout.Cell> _featureCells = new();
+
+    /// <summary>Emprise au sol d'un obstacle, en pixels — la largeur de son sprite, pas son rayon.</summary>
+    private const float ObstacleFootprint = 32f;
+
+    /// <summary>Ce point tombe-t-il sur une structure de sol ?</summary>
+    private bool OnFeature(Vector2 position) => _featureCells.Contains(FloorFeatures.CellAt(position));
+
+    /// <summary>
+    /// Un carré de <paramref name="size"/> pixels centré ici touche-t-il une structure de sol ?
+    /// </summary>
+    /// <remarks>
+    /// ⚠ <b>Tester le seul centre ne suffit pas</b>, et la capture l'a montré tout de suite : une
+    /// fenêtre vitrée de 128 px dont le centre tombe à côté d'une rivière la chevauche quand même sur
+    /// la moitié de sa surface. Le point passe le contrôle, la forme non — c'est la même erreur que
+    /// juger une silhouette sur sa position.
+    /// </remarks>
+    private bool AreaOnFeature(Vector2 center, float size)
+    {
+        float h = size * 0.5f;
+
+        for (float dx = -h; dx <= h; dx += FloorFeatureLayout.TileSize)
+        for (float dy = -h; dy <= h; dy += FloorFeatureLayout.TileSize)
+            if (OnFeature(center + new Vector2(dx, dy))) return true;
+
+        return OnFeature(center + new Vector2(h, h)) || OnFeature(center + new Vector2(-h, -h));
+    }
+
+    /// <summary>
+    /// Décale un obstacle verticalement jusqu'à sortir des motifs de sol.
+    /// </summary>
+    /// <remarks>
+    /// <para>Verticalement seulement, et par rangées entières : les gabarits d'obstacles sont
+    /// <b>symétriques</b> (<see cref="ArenaLayout"/>) et un décalage horizontal casserait la
+    /// composition qu'ils dessinent. Rivières et conduits étant essentiellement horizontaux, quelques
+    /// rangées suffisent presque toujours à en sortir.</para>
+    ///
+    /// <para>Si rien ne convient, l'obstacle reste où il était : sa position d'origine a été choisie
+    /// pour ouvrir un couloir, et ce rôle-là prime sur la propreté du décor.</para>
+    /// </remarks>
+    private Vector2 NudgeOffFeature(Vector2 position)
+    {
+        if (!AreaOnFeature(position, ObstacleFootprint)) return position;
+
+        // La liste va plus loin que les ±192 px du jeu publié. Une rivière large de trois tuiles
+        // flanquée d'une poche de glace couvre près de 250 px : sous Godot, un pilier sur trois
+        // restait donc planté dans le courant, et la première capture du portage l'a montré tout de
+        // suite. Deux rangées de plus suffisent à sortir du cas le plus large.
+        foreach (float dy in new[] { 64f, -64f, 128f, -128f, 192f, -192f, 256f, -256f, 320f, -320f })
+        {
+            float y = Mathf.Clamp(position.y + dy, -Arena.HalfHeight + 64f, Arena.HalfHeight - 64f);
+            var moved = new Vector2(position.x, y);
+
+            if (!AreaOnFeature(moved, ObstacleFootprint)) return moved;
+        }
+
+        return position;
     }
 
     /// <summary>

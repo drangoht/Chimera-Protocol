@@ -215,6 +215,39 @@ progression cassée, et c'est le pire retour possible sur un choix de carte. →
 sprite recyclés : ni shader ni matériau, donc rien qui puisse être supprimé du build) + un critère au
 banc : **toute arme qui ne se voit ni par un projectile ni par un drone doit laisser une trace**.
 
+### Un décor se pose **dans l'ordre** — la structure d'abord, ce qui l'évite ensuite
+
+Les motifs de sol (`FloorFeatures`) rendent l'ensemble des **cellules qu'ils occupent**, et c'est
+cette liste qui décide où les obstacles et les fenêtres vitrées n'ont pas le droit d'aller. Les poser
+avant la structure — ou ne pas se servir de sa sortie — donne un pilier planté au milieu d'une coulée
+de lave et un puits de parallaxe ouvert dans une rivière : deux défauts qu'aucun test ne peut voir,
+et qui sautent aux yeux sur la première capture.
+
+**Trois pièges de placement, tous trouvés à l'image et tous de la même famille** — *une forme n'est
+pas un point* :
+- **Tester le seul centre ne suffit pas.** Une fenêtre de 128 px dont le centre tombe à côté d'une
+  rivière la chevauche quand même sur la moitié de sa surface. → contrôle sur l'**emprise**.
+- **Écarter d'une structure large demande plus de marge qu'on ne croit.** Le jeu publié décale un
+  obstacle de ±192 px au plus ; une rivière de trois tuiles flanquée d'une poche en couvre près de
+  250, si bien qu'un pilier sur trois restait dans le courant. Recopier la constante d'origine
+  reconduit son défaut.
+- **Écarter d'une chose rapproche des autres.** En éloignant les fenêtres des motifs, trois d'entre
+  elles se sont retrouvées superposées : elles ne font alors pas trois ouvertures mais une tache
+  d'hexagones enchevêtrés. Une contrainte ajoutée sur un placement aléatoire en demande souvent une
+  seconde.
+
+⚠ **Un anneau à quatre segments est un losange, pas un carré** : ses sommets tombent sur les axes. Le
+contour des nœuds du Néon pivotait donc de 45° par rapport à la boîte sombre qu'il devait border.
+
+⚠ **L'axe Y s'inverse entre les moteurs.** La ligne 0 de la grille est en haut ; reprendre le calcul
+de Godot tel quel retourne toutes les structures — sans que cela se voie, une rivière renversée
+restant une rivière, jusqu'au jour où un tracé asymétrique le trahit.
+
+**Ce que la séparation géométrie / rendu apporte** : sous Godot, tracé et dessin vivaient dans la
+même classe de nœuds, et « la rivière traverse-t-elle vraiment l'arène ? », « reste-t-elle dans la
+bande que la caméra montre ? », « laisse-t-elle la place au reste ? » ne se vérifiaient qu'à l'œil.
+`FloorFeatureLayout` est pur, donc tout cela est devenu des tests — le rendu n'a plus qu'à colorier.
+
 ### Un commentaire affirmatif n'est pas une lecture du code d'origine
 
 Le port avait figé le boss sur place — `case BossCore: return self;` — avec le commentaire « le boss

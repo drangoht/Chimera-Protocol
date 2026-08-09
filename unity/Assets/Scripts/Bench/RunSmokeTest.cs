@@ -2187,6 +2187,43 @@ public sealed class RunSmokeTest : MonoBehaviour
 
         ArenaObstacles.Clear();
 
+        // ─── Motifs de sol ────────────────────────────────────────────────────
+        // Le tracé est vérifié par les tests unitaires ; ce qui ne peut l'être que d'ici, c'est qu'il
+        // devienne des OBJETS À L'ÉCRAN. Un motif calculé et jamais instancié laisse exactement la
+        // même arène nue qu'avant — et ne lève rien.
+        var floorGo = new GameObject("BancMotifsDeSol");
+        var painted = new List<string>();
+
+        foreach (string biome in LevelThreat.Order)
+        {
+            var host = new GameObject("Motifs_" + biome);
+            host.transform.SetParent(floorGo.transform, false);
+
+            var cells = FloorFeatures.Build(host.transform, biome, UiPalette.Cyan, Gd.Randf);
+            int sprites = host.GetComponentsInChildren<SpriteRenderer>(true).Length;
+
+            // Le rapport compte autant que le nombre : moins d'un sprite par cellule signifierait
+            // qu'une partie du tracé n'a pas été peinte.
+            if (cells.Count < 60 || sprites < cells.Count)
+                painted.Add($"{biome} ({cells.Count} cellules → {sprites} sprites)");
+        }
+
+        Check($"sol : les {LevelThreat.Order.Length} biomes ont leur structure", painted.Count == 0,
+              painted.Count == 0 ? "toutes peintes" : "incompletes : " + string.Join(", ", painted));
+
+        // Le repère cellule ↔ monde, dans les deux sens. Il décide où les obstacles et les fenêtres
+        // n'ont PAS le droit d'aller : inversé, il écarterait le décor de zones vides tout en le
+        // plantant dans la structure — sans que rien ne le signale.
+        bool roundTrip = true;
+        foreach (var cell in new[] { new FloorFeatureLayout.Cell(1, 0), new FloorFeatureLayout.Cell(19, 30),
+                                     new FloorFeatureLayout.Cell(36, 59) })
+            if (!FloorFeatures.CellAt(FloorFeatures.Center(cell)).Equals(cell)) roundTrip = false;
+
+        Check("sol : une cellule et sa position se retrouvent l'une l'autre", roundTrip);
+
+        Destroy(floorGo);
+        yield return null;
+
         // ─── Atmosphère : brume, rais et parallaxe par les fenêtres ───────────
         // Ces quatre contrôles portent chacun sur une chose qui, absente, ne produit AUCUNE erreur :
         // un shader manquant donne une arène sans brume, un masque mal dimensionné donne un motif

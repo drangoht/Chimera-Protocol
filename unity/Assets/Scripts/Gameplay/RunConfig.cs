@@ -12,7 +12,34 @@ using UnityEngine;
 public static class RunConfig
 {
     /// <summary>Biome joué. Détermine le palier de menace, la faune et l'incarnation du boss.</summary>
-    public static string BiomeId { get; private set; } = LevelThreat.Order[0];
+    public static string BiomeId { get; private set; } = BiomeFromCommandLine() ?? LevelThreat.Order[0];
+
+    /// <summary>
+    /// Biome imposé par <c>--biome=&lt;id&gt;</c>, s'il y en a un.
+    /// </summary>
+    /// <remarks>
+    /// <para>Lu ici, à l'initialisation du champ, et non dans le <c>Start</c> d'un composant : le
+    /// décor interroge ce biome depuis son propre <c>Start</c>, et l'ordre entre deux <c>Start</c>
+    /// n'est pas garanti. Un drapeau appliqué trop tard donnerait une arène du bon biome une fois
+    /// sur deux — exactement le défaut des charges de niveau lues dans <c>Start</c>.</para>
+    ///
+    /// <para><b>Non persisté</b>, contrairement à <see cref="Choose"/> : un drapeau de banc n'écrit
+    /// jamais dans la sauvegarde du joueur.</para>
+    /// </remarks>
+    private static string? BiomeFromCommandLine()
+    {
+        foreach (string arg in System.Environment.GetCommandLineArgs())
+        {
+            if (!arg.StartsWith("--biome=", System.StringComparison.Ordinal)) continue;
+
+            string id = arg.Substring("--biome=".Length);
+            if (System.Array.IndexOf(LevelThreat.Order, id) >= 0) return id;
+
+            Debug.LogError($"[RunConfig] biome inconnu : '{id}' — ignore.");
+        }
+
+        return null;
+    }
 
     /// <summary>Cran de l'échelle de saturation choisi pour cette run.</summary>
     public static int Saturation { get; private set; }

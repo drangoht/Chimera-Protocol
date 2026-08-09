@@ -152,6 +152,11 @@ public sealed class RunBootstrap : MonoBehaviour
     ///   <item><c>--force-meta=&lt;id&gt;:&lt;niveau&gt;</c> impose une amélioration du Hub pour la
     ///         run en cours, <b>sans toucher à la sauvegarde</b>. C'est le seul moyen d'observer
     ///         Renouveler et Passer sans avoir d'abord dépensé des Échos.</item>
+    ///   <item><c>--biome=&lt;id&gt;</c> joue un biome précis (portage du drapeau Godot du même nom).
+    ///         Le décor, la faune et l'atmosphère en dépendent entièrement : sans elle, juger une
+    ///         arène demande de passer par l'écran de sélection, donc de ne jamais la juger en banc.
+    ///         <b>Non persisté</b> — comme <c>--force-meta</c>, un drapeau de banc n'écrit pas dans
+    ///         la sauvegarde du joueur.</item>
     /// </list>
     /// </summary>
     private void ApplyCommandLine()
@@ -159,6 +164,10 @@ public sealed class RunBootstrap : MonoBehaviour
         foreach (string arg in System.Environment.GetCommandLineArgs())
         {
             if (arg == "--saturate-arsenal") { _saturateArsenal = true; continue; }
+
+            // ⚠ `--biome=` n'est PAS traitée ici : le décor lit le biome depuis son propre `Start`,
+            // et l'ordre entre deux `Start` n'est pas garanti. Elle est lue par `RunConfig` à
+            // l'initialisation de son champ, donc avant que quoi que ce soit ne l'interroge.
 
             if (arg.StartsWith("--force-weapon=", System.StringComparison.Ordinal))
             {
