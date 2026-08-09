@@ -58,7 +58,20 @@ public static class LevelUpPool
     /// <param name="passiveMaxLevel">Niveau maximum d'un passif.</param>
     /// <param name="weaponSlots">Nombre maximal d'armes portées.</param>
     /// <param name="availableFusions">Fusions actuellement déblocables.</param>
-    /// <param name="pick">Tirage sans remise dans une liste (injecté pour rester déterministe).</param>
+    /// <param name="rarityOf">
+    /// Rareté d'une carte (« common », « rare », « epic »), qui décide de son <b>poids de tirage</b>
+    /// via <see cref="RarityWeights"/>.
+    /// </param>
+    /// <param name="pick">
+    /// Tirage sans remise : reçoit les <b>poids</b> des candidats restants et rend l'index choisi.
+    /// Injecté pour rester déterministe.
+    /// </param>
+    /// <remarks>
+    /// ⚠ Le tirage était <b>uniforme</b> jusqu'au 2026-08-09 : la rareté s'affichait sur la carte —
+    /// cadre coloré, étiquette « Épique » — et ne pesait sur rien. `RarityWeights` était portée,
+    /// testée, et lue par personne. Un joueur voyait donc des cartes annoncées rares tomber aussi
+    /// souvent que les autres, ce qui vide l'étiquette de son sens sans jamais ressembler à un bug.
+    /// </remarks>
     public static List<LevelUpCard> Build(
         IReadOnlyDictionary<string, int> ownedWeapons,
         IReadOnlyList<string> allWeaponIds,
@@ -68,7 +81,8 @@ public static class LevelUpPool
         int passiveMaxLevel,
         int weaponSlots,
         IReadOnlyList<string> availableFusions,
-        Func<int, int> pick)
+        Func<LevelUpCard, string> rarityOf,
+        Func<IReadOnlyList<float>, int> pick)
     {
         var candidates = new List<LevelUpCard>();
 
@@ -109,9 +123,15 @@ public static class LevelUpPool
         var remaining = new List<LevelUpCard>(candidates);
 
         int count = Math.Min(CardsPerLevel, remaining.Count);
+        var weights = new List<float>(remaining.Count);
+
         for (int i = 0; i < count; i++)
         {
-            int index = Math.Clamp(pick(remaining.Count), 0, remaining.Count - 1);
+            // Recalculés à chaque tour : le tirage est SANS REMISE, donc les poids restants changent.
+            weights.Clear();
+            foreach (var card in remaining) weights.Add(RarityWeights.Weight(rarityOf(card)));
+
+            int index = Math.Clamp(pick(weights), 0, remaining.Count - 1);
             chosen.Add(remaining[index]);
             remaining.RemoveAt(index);
         }

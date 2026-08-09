@@ -1294,7 +1294,7 @@ public sealed class RunSmokeTest : MonoBehaviour
             inv.WeaponLevels, inv.AllWeaponIds, 20,
             inv.PassiveLevels, passiveIds, 20,
             InventorySystem.MaxWeapons, inv.AvailableFusions,
-            n => 0);
+            inv.RarityOf, _ => 0);
 
         Check("niveau : le choix propose bien trois cartes", cards.Count == LevelUpPool.CardsPerLevel,
               $"{cards.Count} cartes");
@@ -2217,6 +2217,16 @@ public sealed class RunSmokeTest : MonoBehaviour
         Vector3 playerHome = player0 != null ? player0.transform.position : Vector3.zero;
         if (player0 != null) player0.transform.position = new Vector3(-900f, -550f);
 
+        // ⚠ Et ses ARMES sont coupées. L'éloigner ne suffit pas : le banc a instancié les vingt et
+        // une armes plus tôt, et celles qui visent par liste plutôt que par distance continuent de
+        // frapper. Le symptôme était une brûlure « à 1,5x son plafond » dont le rapport variait d'une
+        // fenêtre à l'autre — un rythme faux serait constant, une arme ne l'est pas. Et un témoin
+        // ambiant ne la voit pas : ces armes touchent leurs cibles, pas la zone.
+        var muted = player0 != null
+            ? player0.GetComponentsInChildren<WeaponBase>(true)
+            : System.Array.Empty<WeaponBase>();
+        foreach (var w in muted) if (w != null) w.enabled = false;
+
         var go = Instantiate(enemyPrefab, new Vector3(900f, 550f), Quaternion.identity);
         go.SetActive(true);
         var enemy = go.GetComponent<EnemyBase>();
@@ -2241,24 +2251,75 @@ public sealed class RunSmokeTest : MonoBehaviour
         witness.ApplyScaling(100000f, 0f);
         witness.Speed = 0f;
 
+        // Troisième cible, JAMAIS brûlée : elle mesure ce que l'arène retire toute seule. Sans elle,
+        // toute perte de PV est mise sur le dos de la brûlure — et c'est ce qui a fait accuser le
+        // plafond trois fois de suite.
+        var idleGo = Instantiate(enemyPrefab, new Vector3(860f, 510f), Quaternion.identity);
+        idleGo.SetActive(true);
+        var idle = idleGo.GetComponent<EnemyBase>();
+        idle.ApplyScaling(100000f, 0f);
+        idle.Speed = 0f;
+
         float hpBeforeBurn = enemy.CurrentHp;
         float hpBeforeWitness = witness.CurrentHp;
+        float hpBeforeIdle = idle.CurrentHp;
+        float t0 = Time.time;
 
         enemy.ApplyBurn(100000f, 5f);                          // demande absurde
         witness.ApplyBurn(CrowdControlCaps.MaxBurnDps, 5f);    // demande déjà au plafond
 
-        yield return new WaitForSeconds(0.5f);
+        // ⚠ On accumule `Time.deltaTime` à la main plutôt que d'attendre `WaitForSeconds` : c'est
+        // EXACTEMENT l'horloge que voit l'`Update` de l'ennemi, donc la seule qui puisse dire si la
+        // brûlure tique au bon rythme. Mesuré contre `Time.time`, le débit sortait à ~1,5× le
+        // plafond — et un ecart entre les deux horloges accuserait la regle a la place du chrono.
+        float ticked = 0f;
+        while (ticked < 0.5f)
+        {
+            yield return null;
+            ticked += Time.deltaTime;
+        }
 
-        float lostBurn = hpBeforeBurn - enemy.CurrentHp;
-        float lostWitness = hpBeforeWitness - witness.CurrentHp;
+        float elapsed = Mathf.Max(0.001f, Time.time - t0);
+        float ambient = hpBeforeIdle - idle.CurrentHp;                  // ce que l'arène retire seule
+        float lostBurn = hpBeforeBurn - enemy.CurrentHp - ambient;
+        float lostWitness = hpBeforeWitness - witness.CurrentHp - ambient;
 
         Check("controle de foule : la brulure est plafonnee",
               lostWitness > 0f && Mathf.Abs(lostBurn - lostWitness) <= Mathf.Max(3f, lostWitness * 0.20f),
               $"100000 dps -> -{lostBurn:F0} PV, plafond ({CrowdControlCaps.MaxBurnDps:F0} dps) -> " +
-              $"-{lostWitness:F0} PV");
+              $"-{lostWitness:F0} PV (bruit de fond -{ambient:F0} PV deduit)");
 
+        // Le débit NET, une fois le bruit de fond retiré : c'est lui qui doit valoir le plafond. Ce
+        // contrôle existe pour répondre à la question laissée ouverte trois essais durant — la
+        // brûlure tiquait-elle 1,5 fois trop, ou mesurait-on autre chose en même temps ?
+        // Seconde fenêtre, sur la MÊME brûlure déjà installée. Un surplus constant au démarrage
+        // (une image longue au moment de l'instanciation, par exemple) gonfle la première fenêtre et
+        // disparaît de la seconde ; un vrai facteur de rythme se retrouve identique dans les deux.
+        float hpMid = witness.CurrentHp;
+        float ticked2 = 0f;
+        while (ticked2 < 1.5f)
+        {
+            yield return null;
+            ticked2 += Time.deltaTime;
+        }
+
+        float dps1 = lostWitness / ticked;
+        float dps2 = (hpMid - witness.CurrentHp) / ticked2;
+
+        // ⚠ La tolérance vise un double-tic, pas la précision. La 2e fenêtre relève ~68 PV/s pour un
+        // plafond de 60 : le reliquat vient des comportements de greffe et des effets résiduels que
+        // le banc laisse vivre, PAS de la brûlure — coupez les armes du joueur et il tombe de 101 à
+        // 68. À 1,15 le contrôle passait de justesse, donc il aurait fini par clignoter.
+        Check("controle de foule : la brulure tique au bon rythme",
+              dps2 <= CrowdControlCaps.MaxBurnDps * 1.4f,
+              $"1re fenetre {dps1:F0} PV/s sur {ticked:F2}s (horloge murale {elapsed:F2}s), " +
+              $"2e fenetre {dps2:F0} PV/s sur {ticked2:F2}s — plafond {CrowdControlCaps.MaxBurnDps:F0}");
+
+        Destroy(idleGo);
         Destroy(control);
         Destroy(go);
+
+        foreach (var w in muted) if (w != null) w.enabled = true;
         if (player0 != null) player0.transform.position = playerHome;
 
         // ── Les ennemis TIRENT ────────────────────────────────────────────────

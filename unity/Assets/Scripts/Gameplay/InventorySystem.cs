@@ -54,6 +54,23 @@ public sealed class InventorySystem : MonoBehaviour
     public IReadOnlyDictionary<string, int> OverloadTakes => _overloadTakes;
 
     /// <summary>
+    /// Rareté d'une carte : <b>source unique</b> du poids de tirage et du cadre affiché.
+    /// </summary>
+    /// <remarks>
+    /// <para>Les voir diverger — une carte tirée comme commune et encadrée en épique — ne se
+    /// remarque pas au code et saute aux yeux à l'écran. La rareté des <b>armes</b> vient des
+    /// données (<c>weapons.json</c>) ; les passifs n'en déclarent pas, et fusions et surcharges sont
+    /// des choix d'exception par nature.</para>
+    /// </remarks>
+    public string RarityOf(LevelUpCard card) => card.Kind switch
+    {
+        LevelUpCardKind.Fusion   => "epic",
+        LevelUpCardKind.Overload => "epic",
+        LevelUpCardKind.Passive  => "rare",
+        _ => _weapons.TryGetValue(card.Id, out var def) ? def.Rarity : "common",
+    };
+
+    /// <summary>
     /// Point de montage des armes créées. Le joueur par défaut : une arme doit suivre son porteur.
     /// </summary>
     public Transform? Mount { get; set; }

@@ -115,12 +115,25 @@ public sealed class RunHud : MonoBehaviour
         int weaponMax = weaponIds.Count > 0 ? inv.WeaponMaxLevel(weaponIds[0]) : 20;
         int passiveMax = passiveIds.Count > 0 ? inv.PassiveMaxLevel(passiveIds[0]) : 20;
 
+        // Le tirage est PONDÉRÉ par la rareté : commun 60, rare 30, épique 10. Une carte annoncée
+        // épique qui tomberait aussi souvent qu'une commune vide son étiquette de son sens.
         return LevelUpPool.Build(
             inv.WeaponLevels, weaponIds, weaponMax,
             inv.PassiveLevels, passiveIds, passiveMax,
             InventorySystem.MaxWeapons,
             inv.AvailableFusions,
-            n => (int)(Gd.Randi() % (uint)Mathf.Max(1, n)));
+            inv.RarityOf,
+            WeightedRoll);
+    }
+
+    /// <summary>Tirage pondéré : une valeur uniforme dans [0, somme des poids], puis l'index.</summary>
+    private static int WeightedRoll(IReadOnlyList<float> weights)
+    {
+        float total = 0f;
+        foreach (float w in weights) total += w;
+        if (total <= 0f) return 0;
+
+        return WeightedPicker.PickIndex(weights, Gd.Randf() * total);
     }
 
     /// <summary>

@@ -328,6 +328,35 @@ tir** » pour un projectile qui n'existait pas.
 ⚠ Le drapeau `FromChampion` se pose **au tir**, jamais lu à l'impact : le projectile survit à son
 tireur, et un boss mort ne peut plus dire qu'il en était un.
 
+### Un **débit absolu** ne se mesure pas dans une arène que le banc a déjà peuplée
+
+Vérifier que la brûlure est plafonnée à 60 PV/s a demandé **cinq tours de banc**, et le correctif
+n'était jamais en cause :
+
+1. **86 PV/s** — le canon du joueur tirait sur la cible de mesure. Joueur écarté à l'autre bout.
+2. **90 PV/s** — soupçon d'un `WaitForSeconds(0,5)` qui durerait plus longtemps. Faux : mesuré,
+   `Time.time` disait bien 0,50 s.
+3. **89 PV/s** avec un témoin **jamais brûlé** à `-0 PV` — donc rien ne frappait la *zone*.
+4. **87 puis 101 PV/s** sur deux fenêtres successives : le rapport **variait**. C'est ce fait-là qui
+   tranche — un `deltaTime` mal compté donne toujours le *même* facteur, une arme à cadence propre
+   non.
+5. **68 PV/s** une fois les armes du joueur désactivées. Le banc instancie les vingt et une armes
+   dans un contrôle antérieur, et celles qui visent par **liste de cibles** plutôt que par distance
+   continuent de frapper — ce qu'aucun témoin *ambiant* ne peut voir, puisqu'elles touchent leurs
+   cibles et pas la zone.
+
+**Trois règles en sortent** :
+- une mesure de **débit** exige de neutraliser explicitement les sources actives (`w.enabled = false`
+  sur les armes), pas seulement d'éloigner le joueur ;
+- **deux fenêtres successives** valent mieux qu'une longue : un facteur constant et une pollution à
+  cadence propre ne se distinguent que par la *stabilité* du rapport ;
+- privilégier la mesure **comparative** — deux cibles, l'une au plafond, l'autre bien au-delà —
+  qui prouve la règle sans rien supposer de l'arène. C'est elle qui a été juste du premier coup.
+
+⚠ Et la leçon de méthode : j'ai écrit « c'est un vrai défaut » au tour 3, sur la foi d'un témoin qui
+ne pouvait pas voir la pollution. Un témoin ne vaut que pour la classe de perturbation qu'il est
+capable de capter.
+
 ### L'icône de l'exécutable se pose **au build**, pas dans l'éditeur
 
 Le binaire sortait avec l'icône **d'Unity** : dans la barre des tâches, l'explorateur et le raccourci,

@@ -380,8 +380,14 @@ public sealed class EnemySpawner : MonoBehaviour
     /// </summary>
     private void TryPromoteToElite(EnemyBase enemy, float minutes)
     {
-        float chance = EliteAffixTable.EliteChance(minutes, EliteFrequencyMult, EliteChanceCap);
-        if (_rng.NextFloat() >= chance) return;
+        // ⚠ `--force-elites` était lu par DebugHooks et consommé par personne : le drapeau existait,
+        // se documentait, et ne promouvait jamais rien. Un outil de banc mort ne se signale pas —
+        // on conclut que les affixes sont rares, pas que le drapeau est débranché.
+        if (!DebugHooks.ForceElites)
+        {
+            float chance = EliteAffixTable.EliteChance(minutes, EliteFrequencyMult, EliteChanceCap);
+            if (_rng.NextFloat() >= chance) return;
+        }
 
         var affixes = EliteAffixTable.All;
         var affix = affixes[_rng.RangeInt(0, affixes.Length - 1)];

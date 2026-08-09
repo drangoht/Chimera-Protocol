@@ -457,13 +457,14 @@ public sealed class LevelUpScreen : MonoBehaviour
     /// Rareté d'une carte. Une seule source pour le cadre <b>et</b> l'étiquette : les voir diverger
     /// (cadre épique, texte « Commun ») ne se remarque pas au code et saute aux yeux à l'écran.
     /// </summary>
-    private static string RarityOf(LevelUpCard card) => card.Kind switch
-    {
-        LevelUpCardKind.Fusion   => "epic",
-        LevelUpCardKind.Overload => "epic",
-        LevelUpCardKind.Passive  => "rare",
-        _                        => "common",
-    };
+    /// <remarks>
+    /// ⚠ Déléguée à l'inventaire depuis le 2026-08-09 : c'est LA source, celle qui décide aussi du
+    /// poids de tirage. Cette méthode mappait auparavant la seule <i>nature</i> de la carte, si bien
+    /// que toutes les armes s'affichaient « commune » alors que <c>weapons.json</c> en déclare des
+    /// rares et des épiques — et que rien, de toute façon, ne pondérait le tirage.
+    /// </remarks>
+    private static string RarityOf(LevelUpCard card)
+        => InventorySystem.Instance?.RarityOf(card) ?? "common";
 
     /// <summary>Première clé qui a une traduction, sinon le repli fourni en dernier argument.</summary>
     private static string FirstTranslated(params string[] keysThenFallback)

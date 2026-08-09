@@ -53,8 +53,34 @@ public sealed class GraftManager : MonoBehaviour
     private void OnDestroy() => Assimilation.GraftEquipped -= Apply;
 
     /// <summary>Applique une greffe fraîchement équipée.</summary>
+    /// <summary>
+    /// Affinité de biome de la run (§21) : une greffe assimilée dans la Fournaise brûle, dans le
+    /// Givre elle ralentit, et ses portées/cadences/dégâts suivent le biome.
+    /// </summary>
+    /// <remarks>
+    /// <para>⚠ <b>Parsée depuis <c>grafts.json</c> et consommée par personne</b> jusqu'au
+    /// 2026-08-09 : <c>GraftTable.GetAffinity</c>, <c>HasBurn</c> et <c>HasSlow</c> existaient, la
+    /// table lisait bien les <c>biomeAffinities</c>, et aucune greffe n'en portait la moindre
+    /// trace. Le défaut est muet par nature — une greffe qui ne brûle pas n'a pas l'air cassée,
+    /// elle a l'air d'une greffe qui ne brûle pas.</para>
+    ///
+    /// <para>Lue <b>par run</b> et non par greffe, contrairement à Godot : une run se joue sur un
+    /// seul biome, donc l'affinité capturée à l'assimilation et celle du biome courant sont la même
+    /// valeur. Un dictionnaire par greffe n'ajouterait ici que de l'état à tenir.</para>
+    /// </remarks>
+    private GraftTable.BiomeAffinity _aff = GraftTable.BiomeAffinity.Neutral;
+
+    /// <summary>Effets on-hit de l'affinité : brûlure (Fournaise) ou ralentissement (Givre).</summary>
+    private void ApplyAffinityOnHit(EnemyBase enemy)
+    {
+        if (_aff.HasBurn) enemy.ApplyBurn(_aff.BurnDps, _aff.BurnTime);
+        if (_aff.HasSlow) enemy.ApplySlow(_aff.SlowMult, _aff.SlowTime);
+    }
+
     public void Apply(GraftTable.GraftDef def)
     {
+        _aff = Assimilation.Config.GetAffinity(RunConfig.BiomeId);
+
         ApplyStatMods(def);
 
         foreach (var group in def.Effects)
@@ -251,12 +277,12 @@ public sealed class GraftManager : MonoBehaviour
         _player.EnableDash(
             distance:  (float)def.Effect(group, "distancePx", 180),
             duration:  (float)def.Effect(group, "durationSec", 0.18),
-            cooldown:  (float)def.Effect(group, "cooldownSec", 3.5),
+            cooldown:  (float)def.Effect(group, "cooldownSec", 3.5) * _aff.CooldownMult,
             cooldownFloor: (float)def.Effect(group, "cooldownFloorSec", 1.5),
             iframes:   (float)def.Effect(group, "iframesSec", 0.25),
             followsCooldownReduction: def.Effect(group, "affectedByCooldownReduction", 1) != 0,
-            chargeDamage:    (float)def.Effect(group, "impactDamage", 0) * damageMult,
-            chargeWidth:     (float)def.Effect(group, "corridorWidthPx", 0),
+            chargeDamage:    (float)def.Effect(group, "impactDamage", 0) * damageMult * _aff.DamageMult,
+            chargeWidth:     (float)def.Effect(group, "corridorWidthPx", 0) * _aff.RadiusMult,
             chargeKnockback: (float)def.Effect(group, "knockbackPx", 0));
     }
 
@@ -266,8 +292,8 @@ public sealed class GraftManager : MonoBehaviour
             ? (_player?.Stats.DamageMultiplier ?? 1f)
             : 1f;
 
-        _novaRadius    = (float)def.Effect("novaDash", "novaRadiusPx", 175);
-        _novaDamage    = (float)def.Effect("novaDash", "novaDamage", 80) * damageMult;
+        _novaRadius    = (float)def.Effect("novaDash", "novaRadiusPx", 175) * _aff.RadiusMult;
+        _novaDamage    = (float)def.Effect("novaDash", "novaDamage", 80) * damageMult * _aff.DamageMult;
         _novaKnockback = (float)def.Effect("novaDash", "novaKnockbackPx", 90);
         _wasDashing    = _player?.IsDashing ?? false;
     }
@@ -302,6 +328,7 @@ public sealed class GraftManager : MonoBehaviour
             if (offset.sqrMagnitude > _novaRadius * _novaRadius) continue;
 
             enemy.TakeDamage(_novaDamage);
+            ApplyAffinityOnHit(enemy);
 
             Vector2 push = offset.sqrMagnitude > 0.01f ? offset.normalized : Vector2.right;
             enemy.transform.position = (Vector2)enemy.transform.position + push * _novaKnockback;
@@ -345,6 +372,7 @@ public sealed class GraftManager : MonoBehaviour
                 if (((Vector2)enemy.transform.position - pos).sqrMagnitude > 22f * 22f) continue;
 
                 enemy.TakeDamage(_orbitDamage);
+                ApplyAffinityOnHit(enemy);
                 if (_orbitLifesteal > 0f) _player?.HealFlat(_orbitDamage * _orbitLifesteal);
 
                 _orbiterCooldowns[i] = _orbitInterval;
@@ -370,6 +398,7 @@ public sealed class GraftManager : MonoBehaviour
             if (((Vector2)enemy.transform.position - center).sqrMagnitude > _shockwaveRadius * _shockwaveRadius) continue;
 
             enemy.TakeDamage(_shockwaveDamage);
+            ApplyAffinityOnHit(enemy);
         }
     }
 

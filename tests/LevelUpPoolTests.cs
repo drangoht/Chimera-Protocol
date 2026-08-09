@@ -23,7 +23,10 @@ public class LevelUpPoolTests
     private const int Slots = 6;
 
     /// <summary>Tirage déterministe : toujours le premier candidat, pour des tests reproductibles.</summary>
-    private static int First(int _) => 0;
+    private static int First(IReadOnlyList<float> _) => 0;
+
+    /// <summary>Rareté par défaut : ces tests portent sur la COMPOSITION du pool, pas sur les poids.</summary>
+    private static string Common(LevelUpCard _) => "common";
 
     private static List<LevelUpCard> Build(
         Dictionary<string, int>? weapons = null,
@@ -33,7 +36,7 @@ public class LevelUpPoolTests
         => LevelUpPool.Build(
             weapons ?? new Dictionary<string, int>(), Weapons, WeaponMax,
             passives ?? new Dictionary<string, int>(), Passives, PassiveMax,
-            slots, fusions ?? System.Array.Empty<string>(), First);
+            slots, fusions ?? System.Array.Empty<string>(), Common, First);
 
     // ─── Le verrou ────────────────────────────────────────────────────────────
 
