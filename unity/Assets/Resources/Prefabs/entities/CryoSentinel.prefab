@@ -125,5 +125,6 @@ MonoBehaviour:
   ChampionContactRadius: 36
   HpDropChance: 0.25
   FreezeRange: 300
-  FreezeSlow: 0.5
+  FreezeSlow: 0.45
+  FreezeDuration: 2.2
   FreezeInterval: 2.5

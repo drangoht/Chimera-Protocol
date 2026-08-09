@@ -210,15 +210,41 @@ public sealed class RunSmokeTest : MonoBehaviour
         // du dossier », qui se trouvait être celui du Noyau : tous les orbes ressemblaient à des
         // Noyaux, et le joueur a signalé un compteur qui « n'évolue pas » alors qu'il était exact.
         // Une confusion d'apparence produit un rapport de bug sur une tout autre mécanique.
-        if (corePrefab != null && orbPrefab != null)
+        // Le contrôle porte sur TOUS les gabarits à sprite, et pas seulement sur la paire fautive :
+        // le chargement « premier trouvé » avait donné le même sprite à quatre gabarits — l'orbe
+        // d'XP déguisée en Noyau, et les trois projectiles du joueur portant celui des TIRS ENNEMIS.
+        // Deux entités qui se ressemblent produisent un rapport de bug sur une autre mécanique.
         {
-            var coreSprite = corePrefab.GetComponent<SpriteRenderer>()?.sprite;
-            var orbSprite = orbPrefab.GetComponent<SpriteRenderer>()?.sprite;
+            var named = new (string Name, GameObject? Prefab)[]
+            {
+                ("noyau", corePrefab),
+                ("orbe d'XP", orbPrefab),
+                ("tir joueur", Spawner.Load("res://scenes/entities/Bullet.tscn")),
+                ("missile", Spawner.Load("res://scenes/entities/Missile.tscn")),
+                ("glaive", Spawner.Load("res://scenes/entities/Glaive.tscn")),
+                ("tir ennemi", Spawner.Load("res://scenes/entities/EnemyBullet.tscn")),
+            };
 
-            Check("ramassables : le Noyau et l'orbe d'XP ne partagent pas leur sprite",
-                  coreSprite != null && orbSprite != null && coreSprite != orbSprite,
-                  $"noyau '{(coreSprite != null ? coreSprite.name : "NULL")}', " +
-                  $"orbe '{(orbSprite != null ? orbSprite.name : "NULL")}'");
+            var seen = new Dictionary<string, string>();
+            var clashes = new List<string>();
+            var missing = new List<string>();
+
+            foreach (var (name, prefab) in named)
+            {
+                var sprite = prefab != null ? prefab.GetComponent<SpriteRenderer>()?.sprite : null;
+                if (sprite == null) { missing.Add(name); continue; }
+
+                if (seen.TryGetValue(sprite.name, out string? other))
+                    clashes.Add($"{name} = {other} ({sprite.name})");
+                else
+                    seen[sprite.name] = name;
+            }
+
+            Check("gabarits : chaque entite a son propre sprite",
+                  clashes.Count == 0 && missing.Count == 0,
+                  clashes.Count > 0 ? "doublons : " + string.Join(", ", clashes)
+                  : missing.Count > 0 ? "sans sprite : " + string.Join(", ", missing)
+                  : $"{seen.Count} sprites distincts");
         }
 
         if (corePrefab != null)

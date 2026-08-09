@@ -43,10 +43,44 @@ public sealed class EnemyBullet : MonoBehaviour
     /// Tire un projectile. <paramref name="fromChampion"/> est posé <b>ici</b> et pas lu à l'impact :
     /// le projectile survit à son tireur, et un boss mort ne peut plus dire qu'il en était un.
     /// </summary>
+    private static GameObject? _prefab;
+    private static bool _prefabLoaded;
+
+    /// <summary>
+    /// Gabarit du projectile, porteur de son sprite dédié (<c>enemy_bullet_sentinel_01</c>).
+    /// </summary>
+    /// <remarks>
+    /// Chargé par son chemin Godot, comme tout le reste. Le repli sur une forme construite à la
+    /// volée n'est pas décoratif : sans lui, un gabarit manquant rendrait les tirs ennemis
+    /// <b>invisibles</b> — ils blesseraient sans que rien n'apparaisse, ce qui est le pire des
+    /// modes de défaillance pour une attaque qu'il faut esquiver.
+    /// </remarks>
+    private static GameObject? Prefab
+    {
+        get
+        {
+            if (_prefabLoaded) return _prefab;
+
+            _prefabLoaded = true;
+            _prefab = Spawner.Load("res://scenes/entities/EnemyBullet.tscn");
+
+            if (_prefab == null)
+                Debug.LogWarning("[EnemyBullet] gabarit introuvable — repli sur la forme generee.");
+
+            return _prefab;
+        }
+    }
+
     public static EnemyBullet Fire(Vector2 origin, Vector2 direction, float speed, float damage,
                                    bool fromChampion, Color tint)
     {
-        var go = new GameObject("EnemyBullet", typeof(SpriteRenderer), typeof(EnemyBullet));
+        var prefab = Prefab;
+
+        var go = prefab != null
+            ? Instantiate(prefab)
+            : new GameObject("EnemyBullet", typeof(SpriteRenderer), typeof(EnemyBullet));
+
+        go.SetActive(true);
         go.transform.position = origin;
 
         var bullet = go.GetComponent<EnemyBullet>();
@@ -62,12 +96,18 @@ public sealed class EnemyBullet : MonoBehaviour
     private void Build()
     {
         _sprite = GetComponent<SpriteRenderer>();
-        _sprite.sprite = VfxPrimitives.Glow;
-        _sprite.material = VfxPrimitives.Additive;
+
+        // Le gabarit porte déjà son sprite ; seul le repli doit s'en fabriquer un.
+        if (_sprite.sprite == null)
+        {
+            _sprite.sprite = VfxPrimitives.Glow;
+            _sprite.material = VfxPrimitives.Additive;
+            transform.localScale = Vector3.one * 0.30f;
+        }
+
         _sprite.color = _tint;
         // Au-dessus de la nuée : un projectile masqué par ce qu'il traverse ne s'esquive pas.
         _sprite.sortingOrder = VfxPrimitives.OrderOver;
-        transform.localScale = Vector3.one * 0.30f;
     }
 
     private void Update()

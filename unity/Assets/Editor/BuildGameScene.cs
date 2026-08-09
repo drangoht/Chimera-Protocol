@@ -36,6 +36,9 @@ public static class BuildGameScene
         BuildMissilePrefab();
         BuildGlaivePrefab();
 
+        // Le tir ennemi : le boss et les archétypes à distance le chargent par son chemin Godot.
+        BuildEnemyBulletPrefab();
+
         var champions = BuildChampionPrefabs();
         GameObject miniBossPrefab = BuildMiniBossPrefab();
 
@@ -67,34 +70,76 @@ public static class BuildGameScene
         return SaveAsPrefab(go, "Enemy");
     }
 
+    /// <summary>Dossier des sprites d'armes et de projectiles.</summary>
+    private const string WeaponSprites = "Assets/Art/sprites/weapons";
+
+    /// <summary>
+    /// Projectile du joueur. Son sprite est <c>weapon_bullet_impulse</c> — celui du jeu d'origine.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Les trois gabarits de projectile prenaient « le premier sprite trouvé » du dossier, qui se
+    /// trouve être <c>enemy_bullet_sentinel_01</c> : <b>les tirs du joueur portaient l'apparence des
+    /// tirs ennemis</b>, tous les trois le même sprite, et seule leur teinte les distinguait. Le
+    /// défaut était latent depuis le début du portage et il est devenu grave le jour où les ennemis
+    /// se sont mis à tirer pour de bon — deux camps, un seul projectile à l'écran.
+    ///
+    /// <para>Même famille que l'orbe d'XP déguisée en Noyau d'Aether : un chargement « premier
+    /// trouvé » est juste le jour où on l'écrit et faux au deuxième asset du dossier.</para>
+    /// </remarks>
     private static GameObject BuildBulletPrefab()
     {
         var go = new GameObject("Bullet", typeof(SpriteRenderer), typeof(Bullet));
         var sr = go.GetComponent<SpriteRenderer>();
-        sr.sprite = LoadSprite("Assets/Art/sprites/weapons");
+        sr.sprite = LoadSpriteNamed(WeaponSprites, "weapon_bullet_impulse");
         sr.color = new Color(0.267f, 1f, 0.933f);
         sr.sortingOrder = 20;
         return SaveAsPrefab(go, "Bullet");
     }
 
+    /// <summary>
+    /// Missile à tête chercheuse. Godot le dessine en procédural, il n'existe donc pas de sprite
+    /// « fidèle » à reprendre : la forme allongée du rail est celle qui se lit le mieux en vol.
+    /// </summary>
     private static GameObject BuildMissilePrefab()
     {
         var go = new GameObject("Missile", typeof(SpriteRenderer), typeof(SeekerMissile));
         var sr = go.GetComponent<SpriteRenderer>();
-        sr.sprite = LoadSprite("Assets/Art/sprites/weapons");
+        sr.sprite = LoadSpriteNamed(WeaponSprites, "weapon_bullet_rail");
         sr.color = new Color(1f, 0.8f, 0.27f);
         sr.sortingOrder = 20;
         return SaveAsPrefab(go, "Missile");
     }
 
+    /// <summary>
+    /// Glaive lancé. Même remarque que le missile — l'anneau est la seule forme du dossier qui dise
+    /// « lame qui tourne et revient » plutôt que « projectile qui file droit ».
+    /// </summary>
     private static GameObject BuildGlaivePrefab()
     {
         var go = new GameObject("Glaive", typeof(SpriteRenderer), typeof(GlaiveProjectile));
         var sr = go.GetComponent<SpriteRenderer>();
-        sr.sprite = LoadSprite("Assets/Art/sprites/weapons");
+        sr.sprite = LoadSpriteNamed(WeaponSprites, "weapon_fusionblade_ring_texture");
         sr.color = new Color(0.67f, 0.27f, 1f);
         sr.sortingOrder = 20;
         return SaveAsPrefab(go, "Glaive");
+    }
+
+    /// <summary>
+    /// Projectile <b>ennemi</b>, avec son propre sprite (<c>enemy_bullet_sentinel_01</c>).
+    /// </summary>
+    /// <remarks>
+    /// Il n'existait pas : le portage n'avait aucun tir ennemi, et ce sprite dormait dans le dépôt
+    /// sans que rien ne le charge. Un gabarit plutôt qu'une forme construite à l'exécution, parce
+    /// que seul <c>Resources/</c> est atteignable en jeu — un sprite n'y arrive qu'en étant
+    /// référencé par un prefab qui s'y trouve.
+    /// </remarks>
+    private static GameObject BuildEnemyBulletPrefab()
+    {
+        var go = new GameObject("EnemyBullet", typeof(SpriteRenderer), typeof(EnemyBullet));
+        var sr = go.GetComponent<SpriteRenderer>();
+        sr.sprite = LoadSpriteNamed(WeaponSprites, "enemy_bullet_sentinel_01");
+        sr.sortingOrder = 20;
+        return SaveAsPrefab(go, "EnemyBullet");
     }
 
     /// <summary>
