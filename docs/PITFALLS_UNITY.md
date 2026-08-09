@@ -357,6 +357,52 @@ n'était jamais en cause :
 ne pouvait pas voir la pollution. Un témoin ne vaut que pour la classe de perturbation qu'il est
 capable de capter.
 
+### Un test qui **se désactive lui-même** est pire qu'un test absent
+
+`UnEnnemiDeBiomeNApparaitQueDansLeSien` cherchait un ennemi dont le champ biome était renseigné, n'en
+trouvait aucun — la table lisait `biome` au singulier là où `enemies.json` déclare `biomes` au
+pluriel — et sortait sur `if (biomeSpecific == null) return;   // rien à vérifier`.
+
+Il **passait**, comptait dans les 626, et rassurait. Pendant ce temps le filtre de biome ne
+s'appliquait à personne : **26 ennemis sur 31** portent un tag, les cinq champions apparaissaient dans
+les cinq biomes, et tout le chantier « faune par biome » était inopérant.
+
+**Règle** : une sortie anticipée « rien à vérifier » dans un test est une **assertion déguisée**. Si
+l'absence de données rend le test vide, c'est cette absence qu'il faut affirmer
+(`Assert.True(tagged > 20, …)`). Et un test de filtrage doit **comparer deux cas** : compter les
+éligibles d'un seul biome ne voit rien, puisque le pool n'était pas vide — il était trop large.
+
+### Deux ramassables qui partagent un sprite produisent un rapport de bug sur une **autre** mécanique
+
+Le gabarit de l'orbe d'XP prenait « le premier sprite trouvé » du dossier `pickups` — qui se trouve
+être `pickup_noyau_idle_01`. Tous les orbes portaient donc l'apparence d'un **Noyau d'Aether**, et les
+trois `pickup_xporb_*` ne servaient à personne.
+
+Le symptôme rapporté n'a rien à voir avec les sprites : « *je ne vois pas le nombre de noyaux
+évoluer… ça incrémente de 1 après en avoir ramassé un certain nombre* ». Le compteur était **exact
+depuis le début** ; c'est ce que le joueur croyait ramasser qui ne l'était pas. Le Noyau est le seul
+objet du jeu qui ne s'aspire pas — le confondre avec l'orbe qui vient tout seul supprime la décision
+qu'il porte.
+
+⚠ **Un chargement « premier trouvé » est une bombe à retardement** dès qu'un second asset entre dans
+le dossier. Nommer le sprite (`LoadSpriteNamed`) coûte une ligne ; le banc vérifie désormais que deux
+ramassables n'ont jamais le même.
+
+### Un état qui n'a **pas de durée** appartient à sa victime, pas à sa source
+
+La Sentinelle Cryo posait `player.SpeedMultiplier = 0.5f`. Rien ne le restaurait : le joueur restait à
+moitié vitesse **pour le reste de la run**, et tuer le champion n'y changeait rien — le
+ralentissement ne lui appartenait plus. Rapporté comme « en tuant un mid-boss le joueur perd beaucoup
+de vitesse ».
+
+Le jeu d'origine a un canal dédié, `ApplyChill(mult, durée)`, **volontairement séparé** du
+multiplicateur de vitesse : le power-up Célérité écrit dans ce dernier, donc un gel effaçait la
+Célérité — et une Célérité qui s'achève aurait effacé le gel. **Deux sources qui s'écrasent au lieu de
+se multiplier.** Le plancher (0,35) existe pour qu'une nappe de plaques ne cloue jamais sur place.
+
+**Règle** : tout effet temporaire porte sa durée dans le même appel que sa valeur. Un `= valeur` nu
+sur un multiplicateur partagé est un bug en attente, et il ne se voit qu'en jouant longtemps.
+
 ### L'icône de l'exécutable se pose **au build**, pas dans l'éditeur
 
 Le binaire sortait avec l'icône **d'Unity** : dans la barre des tâches, l'explorateur et le raccourci,
