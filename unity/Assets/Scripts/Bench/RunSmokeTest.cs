@@ -2415,6 +2415,20 @@ public sealed class RunSmokeTest : MonoBehaviour
                   frozen.Count > 0 ? "figees : " + string.Join(", ", frozen)
                                    : $"{growing} cles de forme evolutives lues");
 
+            // La rareté vient de `rarityByCard` (levelup_config.json), un fichier que le portage ne
+            // chargeait pas : tous les passifs étaient aplatis sur « rare » alors que la table en
+            // distingue des communs. Elle décide du poids de tirage ET du cadre affiché.
+            var invRar = InventorySystem.Instance;
+            if (invRar != null)
+            {
+                string thermal = invRar.RarityOf(new LevelUpCard(LevelUpCardKind.Passive, "thermal_core", 1));
+                string capa = invRar.RarityOf(new LevelUpCard(LevelUpCardKind.Passive, "capacitor", 1));
+
+                Check("cartes : la rarete vient des donnees, passifs compris",
+                      invRar.CardRarityCount >= 15 && thermal == "common" && capa == "rare",
+                      $"{invRar.CardRarityCount} raretes — thermal_core '{thermal}', capacitor '{capa}'");
+            }
+
             // Et le cas nommement corrige : l'Essaim Traqueur lisait `projectileCount`, une clé
             // qu'il ne declare PAS — il retombait donc sur 1 missile, sous les 2 codes en dur.
             if (wdefs.TryGetValue("seeker_swarm", out var seeker))

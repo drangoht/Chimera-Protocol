@@ -62,13 +62,27 @@ public sealed class InventorySystem : MonoBehaviour
     /// données (<c>weapons.json</c>) ; les passifs n'en déclarent pas, et fusions et surcharges sont
     /// des choix d'exception par nature.</para>
     /// </remarks>
-    public string RarityOf(LevelUpCard card) => card.Kind switch
+    public string RarityOf(LevelUpCard card)
     {
-        LevelUpCardKind.Fusion   => "epic",
-        LevelUpCardKind.Overload => "epic",
-        LevelUpCardKind.Passive  => "rare",
-        _ => _weapons.TryGetValue(card.Id, out var def) ? def.Rarity : "common",
-    };
+        // ⚠ `rarityByCard` de levelup_config.json D'ABORD : c'est la table du jeu d'origine, et elle
+        // couvre armes ET passifs. Le portage ne chargeait pas ce fichier, si bien que tous les
+        // passifs étaient aplatis sur « rare » alors que la table en distingue des communs.
+        if (_cardRarity.Count > 0 && _cardRarity.TryGetValue(card.Id, out string? known))
+            return known;
+
+        return card.Kind switch
+        {
+            LevelUpCardKind.Fusion   => "epic",
+            LevelUpCardKind.Overload => "epic",
+            LevelUpCardKind.Passive  => "rare",
+            _ => _weapons.TryGetValue(card.Id, out var def) ? def.Rarity : CardRarityTable.Fallback,
+        };
+    }
+
+    private Dictionary<string, string> _cardRarity = new();
+
+    /// <summary>Nombre de raretés chargées depuis les données — observable pour le banc.</summary>
+    public int CardRarityCount => _cardRarity.Count;
 
     /// <summary>
     /// Point de montage des armes créées. Le joueur par défaut : une arme doit suivre son porteur.
@@ -93,8 +107,13 @@ public sealed class InventorySystem : MonoBehaviour
 
         (_weapons, _fusions) = WeaponTable.Parse(json);
         _passiveDefs = PassiveTable.Parse(json);
-        Debug.Log($"[InventorySystem] {_weapons.Count} armes, {_fusions.Count} fusions " +
-                  $"et {_passiveDefs.Count} passifs charges.");
+
+        // La rareté vit dans un AUTRE fichier que les armes — et il n'était pas chargé du tout.
+        string? levelup = DataFiles.Load("levelup_config.json");
+        if (levelup != null) _cardRarity = CardRarityTable.Parse(levelup);
+
+        Debug.Log($"[InventorySystem] {_weapons.Count} armes, {_fusions.Count} fusions, " +
+                  $"{_passiveDefs.Count} passifs et {_cardRarity.Count} raretes chargees.");
     }
 
     /// <summary>Toutes les armes de base connues des données (fusions exclues : elles se forgent).</summary>
