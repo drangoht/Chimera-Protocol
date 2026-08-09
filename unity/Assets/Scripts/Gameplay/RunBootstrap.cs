@@ -81,6 +81,13 @@ public sealed class RunBootstrap : MonoBehaviour
             Loc.T($"BIOME_{RunConfig.BiomeId.ToUpperInvariant()}_NAME"), RunConfig.Saturation);
 
         ApplyCommandLine();
+
+        // ⚠ APRÈS ApplyCommandLine, qui peut imposer un niveau d'amélioration via `--force-meta=` :
+        // lues avant, les charges vaudraient toujours celles de la sauvegarde et le drapeau serait
+        // sans effet — un banc ne pourrait alors pas mesurer le cran IV sans avoir acheté les filets.
+        // Et surtout pas dans un `Start` du joueur : l'ordre entre deux `Start` n'est pas garanti.
+        Player.Instance?.InitSafetyNets();
+
         WireInventory();
 
         // ⚠ APRÈS le câblage de l'inventaire, et pas avant : celui-ci déclare l'arme de départ en

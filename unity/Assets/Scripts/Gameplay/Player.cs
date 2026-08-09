@@ -66,6 +66,23 @@ public sealed class Player : MonoBehaviour
 
     private FrameAnimator? _animator;
 
+    // ─── Filets de survie achetés au Hub (cran IV « Sans filet ») ─────────────
+
+    private int _extraLivesLeft;
+    private int _absorbChargesLeft;
+
+    /// <summary>Noyaux de Secours restants — une charge annule une mort.</summary>
+    public int ExtraLivesLeft => _extraLivesLeft;
+
+    /// <summary>Plaques Adaptatives restantes — une charge annule un coup entier.</summary>
+    public int AbsorbChargesLeft => _absorbChargesLeft;
+
+    /// <summary>Noyaux de Secours au départ de la run. Figé : le HUD dessine aussi les charges dépensées.</summary>
+    public int ExtraLivesMax { get; private set; }
+
+    /// <summary>Plaques Adaptatives au départ de la run. Figé, même raison.</summary>
+    public int AbsorbChargesMax { get; private set; }
+
     private void Awake()
     {
         Instance = this;
@@ -124,6 +141,40 @@ public sealed class Player : MonoBehaviour
 
     /// <summary>Part des PV max rendue à chaque passage de niveau. Constante de gameplay.</summary>
     public const float LevelUpHealFraction = 0.25f;
+
+    /// <summary>Part des PV max rendue par un Noyau de Secours quand il annule une mort.</summary>
+    public const float ExtraLifeHpFraction = 0.30f;
+
+    /// <summary>
+    /// Recharge les deux consommables méta pour la run à venir. <b>Appelé par
+    /// <see cref="RunBootstrap"/></b>, jamais depuis un <c>Start</c>.
+    /// </summary>
+    /// <remarks>
+    /// <para>Même raison que pour les charges de Renouveler / Passer : les niveaux d'amélioration
+    /// peuvent être imposés en ligne de commande par <c>RunBootstrap</c>, et l'ordre entre deux
+    /// <c>Start</c> n'est pas garanti. Lues trop tôt, les charges vaudraient tantôt celles de la
+    /// sauvegarde, tantôt celles du drapeau, <b>selon la frame</b>.</para>
+    ///
+    /// <para>Les maxima sont figés ici pour que le HUD puisse dessiner les charges <b>dépensées</b> en
+    /// plus des restantes : une pastille qui s'éteint se lit, une pastille qui disparaît ne se lit
+    /// pas. C'est le correctif d'un retour joué — « on ne distingue pas quand une vie est utilisée ».</para>
+    /// </remarks>
+    public void InitSafetyNets()
+    {
+        // Cran IV « Sans filet » : ces deux achats profitent à TOUTES les runs suivantes, si bien
+        // qu'une partie ne commence jamais vraiment à zéro. Le cran les met à zéro.
+        bool enabled = RunConfig.SafetyNetsEnabled;
+
+        _extraLivesLeft    = enabled ? MetaProgression.LevelOf("extra_life")    : 0;
+        _absorbChargesLeft = enabled ? MetaProgression.LevelOf("damage_absorb") : 0;
+
+        ExtraLivesMax    = _extraLivesLeft;
+        AbsorbChargesMax = _absorbChargesLeft;
+
+        Debug.Log($"[Player] filets de survie : {_extraLivesLeft} Noyau(x) de Secours, " +
+                  $"{_absorbChargesLeft} Plaque(s) Adaptative(s)" +
+                  (enabled ? "." : " — coupes par le cran IV « Sans filet »."));
+    }
 
     private void Update()
     {
@@ -467,6 +518,25 @@ public sealed class Player : MonoBehaviour
 
         _invulnTimer = InvulnWindow;
 
+        // Plaque Adaptative (achat méta `damage_absorb`) : les premiers coups de la run sont
+        // totalement absorbés. Placée APRÈS les i-frames — donc au plus une charge par fenêtre de
+        // 0,45 s — et non avant comme sous Godot : au contact d'une nuée, TakeDamage est appelé à
+        // chaque frame par chaque ennemi, si bien que trois charges partaient en trois frames sans
+        // que le joueur ait encaissé trois coups. Divergence assumée, elle sert l'intention écrite
+        // sur la carte (« les premiers COUPS reçus »).
+        if (_absorbChargesLeft > 0)
+        {
+            _absorbChargesLeft--;
+
+            // Le retour visuel est allongé à dessein : à 0,1 s il se confondait avec le clignotement
+            // d'i-frames. Pas de bannière ici, contrairement au Noyau de Secours — trois charges par
+            // run, une interruption à chaque fois deviendrait du bruit ; les pastilles du HUD portent
+            // l'information.
+            Vfx.Shockwave(transform.position, 52f, 0.25f, new Color(0.45f, 0.72f, 1f));
+            HealthChanged?.Invoke(Stats.CurrentHp, Stats.MaxHp);
+            return;
+        }
+
         // La réduction est bornée par StatCaps : une seule source de vérité avec Godot.
         float dr = Mathf.Min(Stats.DamageReduction, StatCaps.MaxDamageReduction);
         float net = amount * (1f - dr);
@@ -502,12 +572,43 @@ public sealed class Player : MonoBehaviour
         HealthChanged?.Invoke(Stats.CurrentHp, Stats.MaxHp);
         AudioSystem.PlaySfx("sfx_player_hit");
 
-        if (Stats.CurrentHp <= 0f)
+        if (Stats.CurrentHp <= 0f) HandleDeath();
+    }
+
+    /// <summary>
+    /// Le joueur vient de tomber à zéro. Un <b>Noyau de Secours</b> (achat méta <c>extra_life</c>)
+    /// peut encore annuler cette mort.
+    /// </summary>
+    /// <remarks>
+    /// <para>⚠ Cet événement est <b>le plus lourd de conséquence de toute la run</b>, et il ne se
+    /// signalait sous Godot que par un flash de 0,3 s et le son de ramassage d'un Noyau d'Aether —
+    /// celui qu'on entend des dizaines de fois par partie. Retour joué : « on ne distingue pas très
+    /// bien quand une vie est utilisée ». Il s'annonce donc comme une <i>mort évitée</i> et non comme
+    /// un ramassage : bannière, secousse, et un son qui n'existe nulle part ailleurs en run.</para>
+    /// </remarks>
+    private void HandleDeath()
+    {
+        if (_dead) return;
+
+        if (_extraLivesLeft > 0)
         {
-            _dead = true;
-            AudioSystem.PlaySfx("sfx_player_die");
-            Died?.Invoke();
+            _extraLivesLeft--;
+            Stats.CurrentHp = Stats.MaxHp * ExtraLifeHpFraction;
+            _invulnTimer = InvulnWindow;
+            HealthChanged?.Invoke(Stats.CurrentHp, Stats.MaxHp);
+
+            AudioSystem.PlaySfx("sfx_ui_death");
+            ScreenShake.Shake(16f, 0.45f);
+            Vfx.Shockwave(transform.position, 140f, 0.5f, new Color(0.55f, 1f, 0.65f));
+            HUD.Instance?.Announce(string.Format(Loc.T("BANNER_EXTRA_LIFE"), _extraLivesLeft), 3f);
+
+            Debug.Log($"[Player] Noyau de Secours consomme. Charges restantes : {_extraLivesLeft}.");
+            return;
         }
+
+        _dead = true;
+        AudioSystem.PlaySfx("sfx_player_die");
+        Died?.Invoke();
     }
 
     private GraftManager? _grafts;

@@ -289,6 +289,15 @@ public sealed class RunSmokeTest : MonoBehaviour
         yield return RunAssimilationChecks(enemyPrefab);
         yield return RunChimeraChecks(enemyPrefab);
         yield return RunHitStopChecks();
+        // ⚠ Le spawner est SUSPENDU pendant ces deux mesures. Elles portent sur un coup unique reçu
+        // par le joueur, or ces contrôles durent plusieurs secondes : une nuée qui continue de
+        // repeupler l'arène consommerait les charges de survie en arrière-plan, et la mesure
+        // conclurait à un filet qui ne se déclenche pas.
+        spawner.enabled = false;
+        ClearArena();
+        yield return RunSafetyNetChecks();
+        yield return RunPurgeChecks(spawner.MiniBossPrefab);
+        spawner.enabled = true;
 
         // ─── Fin de run ───────────────────────────────────────────────────────
         gm.EndRun();
@@ -2166,6 +2175,202 @@ public sealed class RunSmokeTest : MonoBehaviour
 
         // Remise à l'état de départ : le banc continue derrière.
         RunConfig.Choose(LevelThreat.Order[0], 0);
+        yield return null;
+    }
+
+    /// <summary>Vide l'arène : une mesure sur le joueur ne doit pas être polluée par la nuée.</summary>
+    private static void ClearArena()
+    {
+        foreach (var e in EnemyBase.Active.ToArray())
+            if (e != null) Destroy(e.gameObject);
+    }
+
+    /// <summary>
+    /// Vérifie les <b>trois filets de survie achetés au Hub</b> et le cran IV « Sans filet » qui les
+    /// coupe : Noyau de Secours, Plaque Adaptative, Stabilisateur de Surcharge.
+    /// </summary>
+    /// <remarks>
+    /// <para>⚠ Ces trois améliorations étaient <b>achetables et sans aucun effet</b> dans le portage
+    /// jusqu'au 2026-08-09 : elles s'affichaient au Hub, coûtaient des Échos, et rien ne les lisait.
+    /// Le cran IV coupait donc un système absent — il fonctionnait parfaitement, sur du vide, et
+    /// aucune session jouée n'aurait pu le révéler autrement qu'en mourant une fois de trop.</para>
+    ///
+    /// <para>Les niveaux sont imposés <b>en mémoire</b> (<c>OverrideUpgradeLevel</c>) : un banc
+    /// n'écrit jamais dans la sauvegarde du joueur.</para>
+    /// </remarks>
+    private IEnumerator RunSafetyNetChecks()
+    {
+        var player = Player.Instance;
+        if (player == null || player.IsDead)
+        {
+            Check("filets : joueur vivant disponible pour la mesure", false,
+                  player == null ? "pas de joueur" : "joueur mort");
+            yield break;
+        }
+
+        MetaProgression.OverrideUpgradeLevel("extra_life", 2);
+        MetaProgression.OverrideUpgradeLevel("damage_absorb", 3);
+        MetaProgression.OverrideUpgradeLevel("overtime_stabilizer", 3);
+
+        // ── Cran 0 : les trois filets sont actifs ─────────────────────────────
+        RunConfig.Choose(LevelThreat.Order[0], 0);
+        player.InitSafetyNets();
+
+        Check("filets : les charges achetees au Hub sont rechargees",
+              player.ExtraLivesMax == 2 && player.AbsorbChargesMax == 3,
+              $"{player.ExtraLivesMax} Noyau(x), {player.AbsorbChargesMax} Plaque(s)");
+
+        // Plaque Adaptative : le coup est totalement absorbé, PV intacts, une charge en moins.
+        ClearArena();
+        player.HealFlat(player.Stats.MaxHp);
+        yield return new WaitForSeconds(Player.InvulnWindow + 0.1f);
+
+        float hpBefore = player.Stats.CurrentHp;
+        int absorbBefore = player.AbsorbChargesLeft;
+        player.TakeDamage(40f);
+        yield return null;
+
+        Check("filets : la Plaque Adaptative annule le coup",
+              Mathf.Approximately(player.Stats.CurrentHp, hpBefore) &&
+              player.AbsorbChargesLeft == absorbBefore - 1,
+              $"{hpBefore:F0} -> {player.Stats.CurrentHp:F0} PV, " +
+              $"{absorbBefore} -> {player.AbsorbChargesLeft} charge(s)");
+
+        // Épuiser les plaques restantes, une par fenêtre d'i-frames.
+        while (player.AbsorbChargesLeft > 0)
+        {
+            yield return new WaitForSeconds(Player.InvulnWindow + 0.1f);
+            player.TakeDamage(10f);
+        }
+
+        // Noyau de Secours : un coup MORTEL ne tue pas, il consomme une charge et rend 30 % des PV.
+        yield return new WaitForSeconds(Player.InvulnWindow + 0.1f);
+        int livesBefore = player.ExtraLivesLeft;
+        player.TakeDamage(player.Stats.MaxHp * 10f);
+        yield return null;
+
+        Check("filets : le Noyau de Secours annule la mort",
+              !player.IsDead && player.ExtraLivesLeft == livesBefore - 1 &&
+              player.Stats.CurrentHp > player.Stats.MaxHp * 0.25f,
+              $"{livesBefore} -> {player.ExtraLivesLeft} Noyau(x), " +
+              $"{player.Stats.CurrentHp:F0}/{player.Stats.MaxHp:F0} PV, mort={player.IsDead}");
+
+        // ── Cran IV « Sans filet » : plus rien de tout cela ───────────────────
+        RunConfig.Choose(LevelThreat.Order[0], 4);
+        player.InitSafetyNets();
+
+        Check("cran IV : aucun filet achete ne survit",
+              player.ExtraLivesMax == 0 && player.AbsorbChargesMax == 0,
+              $"{player.ExtraLivesMax} Noyau(x), {player.AbsorbChargesMax} Plaque(s)");
+
+        // Troisième filet : le Stabilisateur de Surcharge. Il est lu à l'éveil du spawner, donc la
+        // mesure passe par un spawner neuf — créé INACTIF puis activé, pour que son `Awake` tourne
+        // sans qu'aucun `Update` ne puisse lancer une vague dans le dos de la campagne.
+        float damped = ReadStabilizer();
+        RunConfig.Choose(LevelThreat.Order[0], 0);
+        float free = ReadStabilizer();
+
+        Check("filets : le Stabilisateur de Surcharge aplatit la pente d'overtime",
+              free < 0.99f, $"x{free:0.00} au cran 0 (3 niveaux achetes)");
+        Check("cran IV : le Stabilisateur de Surcharge est neutralise",
+              Mathf.Approximately(damped, 1f), $"x{damped:0.00} au cran IV");
+
+        // ⚠ Les niveaux imposés doivent être RENDUS, pas oubliés : `MetaProgression.Reset()` ne vide
+        // pas la table des overrides, et un Noyau de Secours resté actif annulerait la mort du joueur
+        // dans un contrôle ultérieur — qui passerait alors en mesurant autre chose que lui-même.
+        MetaProgression.OverrideUpgradeLevel("extra_life", 0);
+        MetaProgression.OverrideUpgradeLevel("damage_absorb", 0);
+        MetaProgression.OverrideUpgradeLevel("overtime_stabilizer", 0);
+        player.InitSafetyNets();
+
+        player.HealFlat(player.Stats.MaxHp);
+        yield return null;
+    }
+
+    /// <summary>Lit l'amortissement d'overtime tel qu'un spawner neuf le calculerait maintenant.</summary>
+    private static float ReadStabilizer()
+    {
+        var go = new GameObject("[StabilizerProbe]");
+        go.SetActive(false);
+        var probe = go.AddComponent<EnemySpawner>();
+        go.SetActive(true);              // c'est ici que son Awake tourne
+
+        float value = probe.OvertimeStabilizer;
+        Destroy(go);
+        return value;
+    }
+
+    /// <summary>
+    /// Vérifie le cran VI « Purificateur » : un coup de <b>champion</b> inflige au minimum une
+    /// fraction des PV max du joueur.
+    /// </summary>
+    /// <remarks>
+    /// <para>⚠ <c>SaturationTable.ChampionDamage</c> n'était appelé <b>nulle part</b> dans le portage
+    /// jusqu'au 2026-08-09, alors que <c>EnemyBase.DealDiscreteDamage</c> — écrit pour lui —
+    /// existait et documentait la règle dans son propre commentaire. Le cran VI, dernier barreau de
+    /// l'échelle, était donc entièrement inopérant.</para>
+    ///
+    /// <para>La mesure part d'un <b>vrai champion au contact</b>, avec un dégât nominal
+    /// volontairement dérisoire : c'est le seul protocole où un plancher qui ne s'applique pas se
+    /// voit, puisqu'un nominal élevé donnerait le même résultat avec ou sans règle.</para>
+    /// </remarks>
+    private IEnumerator RunPurgeChecks(GameObject? miniBossPrefab)
+    {
+        var player = Player.Instance;
+        if (player == null || player.IsDead || miniBossPrefab == null)
+        {
+            Check("cran VI : champion et joueur disponibles pour la mesure", false,
+                  miniBossPrefab == null ? "pas de prefab de champion" : "pas de joueur vivant");
+            yield break;
+        }
+
+        float maxHp = player.Stats.MaxHp;
+
+        // Cran 0 : le champion ne fait que son dégât nominal, ici dérisoire.
+        RunConfig.Choose(LevelThreat.Order[0], 0);
+        ClearArena();
+        player.HealFlat(maxHp);
+        yield return new WaitForSeconds(Player.InvulnWindow + 0.1f);
+
+        var champ = Instantiate(miniBossPrefab, player.transform.position, Quaternion.identity);
+        champ.SetActive(true);
+        var enemy = champ.GetComponent<EnemyBase>();
+        enemy.ApplyScaling(50000f, 1f);
+        enemy.Speed = 0f;
+
+        Check("cran VI : le mini-boss est bien reconnu comme champion", enemy.IsChampion);
+
+        float before = player.Stats.CurrentHp;
+        yield return new WaitForSeconds(0.2f);
+        float plainLoss = before - player.Stats.CurrentHp;
+
+        Check("cran 0 : un coup de champion coute son degat nominal",
+              plainLoss < maxHp * 0.05f, $"-{plainLoss:F1} PV sur {maxHp:F0}");
+
+        // Cran VI : le même coup coûte au moins la fraction plancher des PV max.
+        RunConfig.Choose(LevelThreat.Order[0], 6);
+        player.HealFlat(maxHp);
+        yield return new WaitForSeconds(Player.InvulnWindow + 0.1f);
+
+        before = player.Stats.CurrentHp;
+        yield return new WaitForSeconds(0.2f);
+        float purgeLoss = before - player.Stats.CurrentHp;
+
+        // ⚠ Le plancher est un dégât BRUT : la réduction de dégâts s'applique après, à dessein — le
+        // cran retire UNE certitude (une barre de vie sans plafond), pas les trois défenses du joueur.
+        // L'attendu doit donc traverser la DR lui aussi, sinon le contrôle échoue en accusant la règle
+        // alors que c'est sa propre arithmétique qui est fausse : premier essai à -22,3 PV pour un
+        // plancher de 31,8, soit exactement ×0,70 — la DR du joueur de banc.
+        float dr = Mathf.Min(player.Stats.DamageReduction, StatCaps.MaxDamageReduction);
+        float floorHp = SaturationTable.PurgeFraction * maxHp * (1f - dr);
+
+        Check("cran VI : un coup de champion coute au moins le plancher des PV max",
+              purgeLoss > floorHp * 0.9f && purgeLoss > plainLoss,
+              $"-{purgeLoss:F1} PV (plancher {floorHp:F1} apres DR {dr:P0}, nominal -{plainLoss:F1})");
+
+        Destroy(champ);
+        RunConfig.Choose(LevelThreat.Order[0], 0);
+        player.HealFlat(maxHp);
         yield return null;
     }
 

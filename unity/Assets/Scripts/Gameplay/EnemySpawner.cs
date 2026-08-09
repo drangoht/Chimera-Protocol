@@ -115,9 +115,32 @@ public sealed class EnemySpawner : MonoBehaviour
         // de la treizième minute face à la faune de la première.
         ElapsedSeconds = Mathf.Max(0f, DebugHooks.StartAtMinutes) * 60f;
 
+        // Stabilisateur de Surcharge (achat méta `overtime_stabilizer`) : −5 % par niveau sur la
+        // pente d'overtime, jusqu'à −15 %. Le cran IV « Sans filet » le neutralise — c'est le
+        // troisième filet qu'il coupe, et le plus fort sur une run longue : les deux autres sauvent
+        // d'une mort, celui-ci EMPÊCHE la mort d'arriver en aplatissant la seule courbe du jeu qui
+        // monte sans fin.
+        //
+        // ⚠ Ni l'amélioration ni le cran n'existaient dans le portage : l'objet s'achetait au Hub et
+        // ne faisait rien, si bien que le cran IV coupait un filet absent. Lu ici et non au calcul —
+        // le cran ne change pas en cours de run, et cela garde une écriture unique du facteur.
+        int stabilizerLevel = RunConfig.MetaOvertimeDampeningEnabled
+            ? MetaProgression.LevelOf("overtime_stabilizer")
+            : 0;
+        _overtimeStabilizer = 1f - 0.05f * stabilizerLevel;
+
         Debug.Log($"[EnemySpawner] {_bestiary.Count} types d'ennemis charges — biome {Biome}, " +
-                  $"palier {RunConfig.ThreatTier}, cran {RunConfig.Saturation}.");
+                  $"palier {RunConfig.ThreatTier}, cran {RunConfig.Saturation}, " +
+                  $"stabilisateur x{_overtimeStabilizer:0.00}.");
     }
+
+    /// <summary>
+    /// Amortissement de la pente d'overtime apporté par le Stabilisateur de Surcharge (1 = aucun).
+    /// </summary>
+    private float _overtimeStabilizer = 1f;
+
+    /// <summary>Amortissement en vigueur — exposé pour le banc.</summary>
+    public float OvertimeStabilizer => _overtimeStabilizer;
 
     private void Update()
     {
@@ -134,7 +157,9 @@ public sealed class EnemySpawner : MonoBehaviour
         // travers un terme quadratique (GDD §31).
         var gm = GameManager.Instance;
         bool overtime = gm?.Overtime ?? false;
-        float otMin   = overtime ? gm!.OvertimeSeconds / 60f : 0f;
+        // Le Stabilisateur de Surcharge amortit UNIQUEMENT la composante d'overtime, jamais le temps
+        // de run lui-même : il aplatit l'escalade, il ne remonte pas le temps.
+        float otMin   = (overtime ? gm!.OvertimeSeconds / 60f : 0f) * _overtimeStabilizer;
 
         // ⚠ Le palier du niveau décale le temps de référence du SCALING, jamais celui de la densité :
         // la densité d'un haut palier vient de son SpawnMult, sinon les premières secondes du dernier

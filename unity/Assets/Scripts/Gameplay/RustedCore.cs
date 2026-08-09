@@ -39,6 +39,17 @@ public sealed class RustedCore : EnemyBase
     /// <summary>Nom affiché, dérivé de l'incarnation.</summary>
     public string DisplayName => Incarnation.NameKey;
 
+    /// <summary>
+    /// Le boss de fin est un champion — et le premier visé par le cran VI.
+    /// </summary>
+    /// <remarks>
+    /// Il est tué <b>13 fois par run</b> (réapparition toutes les ~70 s) et son TTK est
+    /// <b>insensible aux crans</b> : aucun cran ne le touchait, et un de ses coups coûtait ~1,3 % de
+    /// la barre d'un joueur d'overtime. C'est ainsi que la condition de victoire du jeu est devenue
+    /// un distributeur de récompenses.
+    /// </remarks>
+    public override bool IsChampion => true;
+
     /// <summary>Émis à chaque bascule, avec la nouvelle phase.</summary>
     public event Action<int>? PhaseChanged;
 

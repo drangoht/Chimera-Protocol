@@ -52,6 +52,7 @@ public sealed class HUD : MonoBehaviour
     private Text?  _killsLabel;
     private Text?  _coreLabel;
     private Transform? _graftSlots;
+    private Transform? _safetyRow;
     private Transform? _arsenalRows;
     private Text?  _regenLabel;
     private Image? _reserveFill;
@@ -66,6 +67,14 @@ public sealed class HUD : MonoBehaviour
     private GameObject? _bossPanel;
 
     private float _bannerLeft;
+
+    /// <summary>
+    /// HUD de la run en cours. Exposé pour que le gameplay puisse <b>annoncer</b> un événement rare —
+    /// un Noyau de Secours consommé, par exemple — sans qu'une entité tienne une référence d'UI.
+    /// </summary>
+    public static HUD? Instance { get; private set; }
+
+    private void Awake() => Instance = this;
 
     private void Start()
     {
@@ -103,6 +112,8 @@ public sealed class HUD : MonoBehaviour
 
     private void OnDestroy()
     {
+        if (Instance == this) Instance = null;
+
         if (Player.Instance != null) Player.Instance.HealthChanged -= OnHealthChanged;
 
         var inv = InventorySystem.Instance;
@@ -276,7 +287,93 @@ public sealed class HUD : MonoBehaviour
         UpdateBanner();
         UpdateDash();
         UpdateRegen();
+        UpdateSafetyPips();
         UpdateFps();
+    }
+
+    private Image[] _lifePips = System.Array.Empty<Image>();
+    private Image[] _absorbPips = System.Array.Empty<Image>();
+    private bool _safetyPipsBuilt;
+    private int _lastLivesLeft = -1;
+    private int _lastAbsorbLeft = -1;
+
+    /// <summary>
+    /// Dessine les filets de survie achetés au Hub : une pastille par charge, vive tant qu'elle est
+    /// disponible, <b>éteinte</b> une fois dépensée.
+    /// </summary>
+    /// <remarks>
+    /// <para>Une pastille dépensée s'éteint mais ne <b>disparaît pas</b> : sinon « il m'en restait
+    /// une » et « je n'en ai jamais eu » s'affichent exactement pareil. C'est le correctif d'un
+    /// retour joué sous Godot — le joueur ne pouvait pas savoir qu'une vie venait d'être consommée.</para>
+    ///
+    /// <para>Construites une seule fois, au premier passage où le joueur existe : les maxima sont
+    /// figés au démarrage de la run par <see cref="Player.InitSafetyNets"/>. Si le cran IV « Sans
+    /// filet » les met à zéro, la rangée reste simplement invisible — la règle du cran est déjà lue
+    /// avant de lancer, la redire ici serait du bruit.</para>
+    /// </remarks>
+    private void UpdateSafetyPips()
+    {
+        if (_safetyRow == null) return;
+
+        var player = Player.Instance;
+        if (player == null) return;
+
+        if (!_safetyPipsBuilt)
+        {
+            _safetyPipsBuilt = true;
+            _lifePips   = BuildPips(player.ExtraLivesMax,    new Color(0.55f, 1f, 0.65f), 12f);
+            _absorbPips = BuildPips(player.AbsorbChargesMax, new Color(0.45f, 0.72f, 1f), 8f);
+            _safetyRow.gameObject.SetActive(_lifePips.Length > 0 || _absorbPips.Length > 0);
+        }
+
+        if (!_safetyRow.gameObject.activeSelf) return;
+
+        if (player.ExtraLivesLeft != _lastLivesLeft)
+        {
+            _lastLivesLeft = player.ExtraLivesLeft;
+            PaintPips(_lifePips, _lastLivesLeft);
+        }
+
+        if (player.AbsorbChargesLeft != _lastAbsorbLeft)
+        {
+            _lastAbsorbLeft = player.AbsorbChargesLeft;
+            PaintPips(_absorbPips, _lastAbsorbLeft);
+        }
+    }
+
+    /// <summary>
+    /// Crée les pastilles d'un filet. Les Noyaux de Secours sont plus <b>hauts</b> que les Plaques :
+    /// une charge qui sauve d'une mort ne doit pas se lire comme une charge qui absorbe un coup,
+    /// même du coin de l'œil.
+    /// </summary>
+    private Image[] BuildPips(int count, Color tint, float height)
+    {
+        var pips = new Image[Mathf.Max(0, count)];
+
+        for (int i = 0; i < pips.Length; i++)
+        {
+            var go = new GameObject("Pip", typeof(Image));
+            go.transform.SetParent(_safetyRow, false);
+            go.GetComponent<RectTransform>().sizeDelta = new Vector2(6f, height);
+
+            var image = go.GetComponent<Image>();
+            image.color = tint;
+            image.raycastTarget = false;
+            pips[i] = image;
+        }
+
+        return pips;
+    }
+
+    /// <summary>Allume les <paramref name="left"/> premières pastilles, éteint les suivantes.</summary>
+    private static void PaintPips(Image[] pips, int left)
+    {
+        for (int i = 0; i < pips.Length; i++)
+        {
+            var c = pips[i].color;
+            // L'alpha seul : la teinte porte l'identité du filet, l'intensité porte sa disponibilité.
+            pips[i].color = new Color(c.r, c.g, c.b, i < left ? 1f : 0.18f);
+        }
     }
 
     /// <summary>
@@ -632,6 +729,23 @@ public sealed class HUD : MonoBehaviour
                                  TextAnchor.UpperLeft);
         _regenLabel.fontSize = 16;
 
+        // Rangée des filets de survie, entre la régénération et les greffes : une pastille par charge
+        // achetée. Vide (donc invisible) si le joueur n'a rien acheté, ou si le cran IV les coupe.
+        var safety = new GameObject("SafetyNets", typeof(RectTransform));
+        safety.transform.SetParent(panel.transform, false);
+        Place(safety, new Vector2(0f, 1f), new Vector2(22f, -SafetyTop), new Vector2(VitalsWidth - 44f, 14f));
+
+        var safetyLayout = safety.AddComponent<HorizontalLayoutGroup>();
+        safetyLayout.spacing = 4f;
+        safetyLayout.childAlignment = TextAnchor.LowerLeft;
+        safetyLayout.childForceExpandWidth = false;
+        safetyLayout.childForceExpandHeight = false;
+        safetyLayout.childControlWidth = false;
+        safetyLayout.childControlHeight = false;
+
+        _safetyRow = safety.transform;
+        safety.SetActive(false);
+
         var slots = new GameObject("GraftSlots", typeof(RectTransform));
         slots.transform.SetParent(panel.transform, false);
         Place(slots, new Vector2(0f, 1f), new Vector2(22f, -SlotsTop), new Vector2(VitalsWidth - 44f, SlotSize));
@@ -768,11 +882,15 @@ public sealed class HUD : MonoBehaviour
 
     /// <summary>Ordonnée du haut de la rangée d'emplacements, depuis le haut du panneau.</summary>
     /// <remarks>
-    /// Relevée de 98 à 120 pour loger la ligne de régénération sous la barre d'XP. La hauteur du
-    /// panneau en dérive (<c>SlotsTop + SlotSize + VitalsPadding</c>) : ajouter une rangée ne se
-    /// paie donc qu'ici, et jamais en retouchant une hauteur devinée.
+    /// Relevée de 98 à 120 pour loger la ligne de régénération sous la barre d'XP, puis à 142 pour la
+    /// rangée des filets de survie. La hauteur du panneau en dérive
+    /// (<c>SlotsTop + SlotSize + VitalsPadding</c>) : ajouter une rangée ne se paie donc qu'ici, et
+    /// jamais en retouchant une hauteur devinée.
     /// </remarks>
-    private const float SlotsTop = 120f;
+    private const float SlotsTop = 142f;
+
+    /// <summary>Ordonnée du haut de la rangée des filets de survie.</summary>
+    private const float SafetyTop = 118f;
 
     /// <summary>Marge sous la dernière rangée — la bordure 9-slice du cadre, plus une respiration.</summary>
     private const float VitalsPadding = 22f;

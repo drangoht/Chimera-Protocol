@@ -24,6 +24,9 @@ public class MiniBoss : EnemyBase
 
     protected override float ContactRadius => ChampionContactRadius;
 
-    /// <summary>Un champion compte comme tel pour la musique adaptative et le HUD.</summary>
-    public bool IsChampion => true;
+    /// <summary>
+    /// Un champion compte comme tel pour la musique adaptative, le HUD — et pour le <b>plancher de
+    /// dégâts du cran VI</b> (<see cref="EnemyBase.DealDiscreteDamage"/>).
+    /// </summary>
+    public override bool IsChampion => true;
 }

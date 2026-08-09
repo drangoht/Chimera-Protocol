@@ -143,6 +143,38 @@ public static class RunConfig
     public static bool LevelUpHealsEnabled
         => IsAssisted || SaturationTable.LevelUpHealsEnabled(Saturation);
 
+    // ── Cran IV « Sans filet » : les trois achats de survie du Hub ───────────────────────────────
+    //
+    // ⚠ Même défaut que ci-dessus, trouvé par le même audit : ces deux règles n'avaient aucun
+    // consommateur — mais pour une raison pire. Les trois filets qu'elles coupent n'étaient pas
+    // portés du tout : `extra_life`, `damage_absorb` et `overtime_stabilizer` s'achetaient au Hub,
+    // coûtaient des Échos, et ne faisaient RIEN. Un cran qui coupe un système absent ne peut pas se
+    // repérer en jouant : il fonctionne exactement comme prévu, sur du vide.
+
+    /// <summary>
+    /// Les filets de survie de la méta — Noyau de Secours (<c>extra_life</c>) et Plaque Adaptative
+    /// (<c>damage_absorb</c>) — sont-ils actifs ? Faux à partir du cran IV.
+    /// </summary>
+    /// <remarks>
+    /// Ce cran vise le <b>power-creep de la méta-progression</b> : ces filets s'achètent une fois et
+    /// profitent à toutes les runs suivantes, si bien qu'une partie ne commence jamais vraiment à
+    /// zéro. Les retirer ne change aucune statistique — cela rend la première erreur définitive.
+    /// </remarks>
+    public static bool SafetyNetsEnabled
+        => IsAssisted || SaturationTable.SafetyNetsEnabled(Saturation);
+
+    /// <summary>
+    /// Le Stabilisateur de Surcharge (<c>overtime_stabilizer</c>) amortit-il encore la pente
+    /// d'escalade d'overtime ? Faux à partir du cran IV — troisième filet coupé par la même règle.
+    /// </summary>
+    /// <remarks>
+    /// Les deux autres sauvent d'une mort ; celui-ci <b>empêche la mort d'arriver</b>, en aplatissant
+    /// la seule courbe du jeu qui monte sans fin. C'est donc le plus fort des trois sur une run
+    /// longue — exactement le régime où le joueur s'ennuie.
+    /// </remarks>
+    public static bool MetaOvertimeDampeningEnabled
+        => IsAssisted || SaturationTable.MetaOvertimeDampeningEnabled(Saturation);
+
     /// <summary>Multiplicateur d'Échos — source unique, partagée par la fin de run et son animation.</summary>
     public static double EchoMult
         => LevelThreat.EchoMult(ThreatTier) * SaturationTable.EchoMult(Saturation);

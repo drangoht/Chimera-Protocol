@@ -263,15 +263,42 @@ public class EnemyBase : MonoBehaviour
     }
 
     /// <summary>
+    /// Cet ennemi est-il un <b>champion</b> — mini-boss ou boss de fin ? Seuls eux portent le
+    /// plancher de dégâts du cran VI.
+    /// </summary>
+    public virtual bool IsChampion => false;
+
+    /// <summary>
     /// Chemin <b>unique</b> des coups discrets. Le projet a introduit cette centralisation côté
     /// Godot parce que huit appelants recopiaient la réduction de dégâts, et parce qu'un plancher
     /// exprimé en pourcentage des PV max ne doit <b>jamais</b> toucher un dégât continu — appliqué
     /// à chaque tick, il tuerait en quelques frames.
     /// </summary>
+    /// <remarks>
+    /// <para><b>Cran VI « Purificateur »</b> : un coup de champion inflige au minimum une fraction
+    /// des PV max du joueur. C'est le seul levier de l'échelle qui suive la pente de la défense — le
+    /// joueur gagne ~277 PV max par minute d'overtime via la carte Blindage, sans plafond, pendant
+    /// que les dégâts ennemis restent des valeurs absolues issues d'une courbe fixe. Il ne donne
+    /// aucun PV au boss : celui-ci devient plus <i>dangereux</i>, jamais plus <i>long</i>.</para>
+    ///
+    /// <para>⚠ Le plancher s'applique <b>avant</b> la réduction de dégâts — appliquée par
+    /// <see cref="Player.TakeDamage"/> — donc DR, i-frames et réserve de régénération continuent de
+    /// jouer. Un cran retire <b>une</b> certitude, pas trois.</para>
+    ///
+    /// <para>⚠ Ce plancher était <b>porté et jamais appelé</b> jusqu'au 2026-08-09 : cette méthode
+    /// existait, documentait la règle dans son propre commentaire, et ne l'appliquait pas — le cran VI
+    /// était donc totalement inopérant dans le portage. Les chemins <b>continus</b> (traînée de magma
+    /// du Colosse, exprimée en PV/s × delta) n'appellent pas cette méthode, et c'est ce qui rend le
+    /// piège impossible à reproduire par distraction.</para>
+    /// </remarks>
     protected void DealDiscreteDamage(Player player, float amount)
     {
-        player.TakeDamage(amount);
-        OnDealtDamage(amount);
+        float raw = IsChampion
+            ? SaturationTable.ChampionDamage(amount, player.Stats.MaxHp, RunConfig.Saturation)
+            : amount;
+
+        player.TakeDamage(raw);
+        OnDealtDamage(raw);
     }
 
     // ─── Affixes d'élite ──────────────────────────────────────────────────────

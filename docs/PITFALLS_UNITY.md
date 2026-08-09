@@ -259,6 +259,36 @@ sous Unity la méthode homonyme prenait un montant **absolu**. Un appel recopié
 un quart de point de vie — sans erreur, sans avertissement, invisible à la relecture. La méthode
 s'appelle désormais `HealFraction`.
 
+### Un cran qui coupe un système **absent** fonctionne parfaitement, sur du vide
+
+L'audit exhaustif de `SaturationTable` face à ses consommateurs Unity a montré que **3 des 6 crans**
+de l'échelle étaient totalement inopérants. Le I pour la raison ci-dessus ; les deux autres pour une
+raison pire :
+
+- **Cran IV « Sans filet »** coupe trois achats du Hub — `extra_life`, `damage_absorb`,
+  `overtime_stabilizer`. **Aucun des trois n'était porté** : ils s'affichaient au Hub, se payaient en
+  Échos, et ne faisaient rien. `PlayerStats` n'avait pas de charges, `EnemySpawner` n'amortissait pas
+  la pente d'overtime. Le cran fonctionnait donc *exactement comme écrit*, sur un système qui
+  n'existait pas.
+- **Cran VI « Purificateur »** : `SaturationTable.ChampionDamage` n'était appelé nulle part, alors
+  que `EnemyBase.DealDiscreteDamage` — écrit **pour lui**, et le documentant dans son propre
+  commentaire — existait déjà.
+
+**Ce qui rend cette variante indétectable en jouant** : un filet absent ne se manque qu'au moment où
+il aurait dû servir, c'est-à-dire à une mort qu'on attribue à soi-même ; et un plancher de dégâts
+absent se lit « ce cran est mal dosé ». Aucun des deux ne produit d'anomalie.
+
+**La parade est une table, pas une relecture** : pour chaque membre public d'une règle de gameplay
+partagée, un consommateur nommé — et un contrôle de banc qui part d'un objet **réel**
+(`RunSafetyNetChecks`, `RunPurgeChecks`). Un `Grep` sur `SaturationTable\.\w+` dans `Assets/Scripts`
+répond en une seconde à « qui lit quoi », et c'est lui qui a trouvé les trois.
+
+⚠ **Divergence assumée sur la Plaque Adaptative** : sous Godot la charge est consommée **avant** le
+test d'i-frames. Or `TakeDamage` est appelé à chaque frame par chaque ennemi au contact — trois
+charges partent donc en trois frames, sans que le joueur ait encaissé trois coups. Sous Unity la
+charge est consommée **après** les i-frames : au plus une par fenêtre de 0,45 s, ce que la carte
+promet (« les premiers **coups** reçus »).
+
 ### L'icône de l'exécutable se pose **au build**, pas dans l'éditeur
 
 Le binaire sortait avec l'icône **d'Unity** : dans la barre des tâches, l'explorateur et le raccourci,
