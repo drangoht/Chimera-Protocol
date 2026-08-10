@@ -22,7 +22,7 @@ choisies à la main : c'est ce qui garantit qu'un sprite neuf appartient au mêm
 autres. Parti pris → `docs/ART_BRIEF_PSEUDO3D.md`.
 
 Pour l'UI, les cadres « plaque blindée » viennent de `tools/generate_ui_frames.py` et les couleurs
-de `src/UI/UiPalette.cs` (charte). Parti pris → `docs/ART_BRIEF_UI_FRAMES.md`.
+de `unity/Assets/Scripts/UI/UiPalette.cs` (charte). Parti pris → `docs/ART_BRIEF_UI_FRAMES.md`.
 
 ## Contraintes techniques
 
@@ -42,7 +42,7 @@ de `src/UI/UiPalette.cs` (charte). Parti pris → `docs/ART_BRIEF_UI_FRAMES.md`.
   blanc via `Modulate` et emporterait l'effet avec lui → passer par un nœud d'overlay dédié.
 - Les VFX parentés à la **racine** (pour survivre à la mort de leur émetteur) doivent être purgés
   par `SceneCleanup.ClearWorldVfx`, sinon ils fuient d'une run à l'autre.
-- Après ajout d'un asset : `godot --headless --import` (les `.import` doivent être committés).
+- Après ajout d'un asset : laisser Unity l'importer (les `.meta` DOIVENT être committés — ils portent les GUID).
 
 ## Livrer
 

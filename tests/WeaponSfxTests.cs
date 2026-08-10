@@ -19,7 +19,7 @@ public class WeaponSfxTests
     /// <summary>Identifiants de toutes les armes du jeu, lus dans les vraies données.</summary>
     private static string[] AllWeaponIds()
     {
-        var json = File.ReadAllText(Path.Combine(TestPaths.RepoRoot, "data", "weapons.json"));
+        var json = File.ReadAllText(Path.Combine(TestPaths.Data, "weapons.json"));
         var (weapons, fusions) = WeaponTable.Parse(json);
 
         return weapons.Keys.Concat(fusions.Keys).Distinct().ToArray();
@@ -47,33 +47,21 @@ public class WeaponSfxTests
             Assert.Null(WeaponSfx.For(id));
     }
 
-    [Fact]
-    public void EverySoundUsed_HasAWavFile()
-    {
-        var sfxDir = Path.Combine(TestPaths.RepoRoot, "assets", "audio", "sfx");
-
-        var missing = WeaponSfx.AllSfxIds
-            .Distinct()
-            .Where(id => !File.Exists(Path.Combine(sfxDir, id + ".wav")))
-            .ToArray();
-
-        Assert.True(missing.Length == 0,
-            "Sons d'arme sans fichier .wav :\n  " + string.Join("\n  ", missing));
-    }
-
     /// <summary>
-    /// Le son doit être <b>importé côté Unity</b>, et pas seulement présent dans les sources : ces
-    /// deux dossiers sont distincts, et un fichier absent de <c>Resources/</c> se charge en
-    /// <c>null</c> à l'exécution — l'arme redevient muette exactement comme avant le correctif.
+    /// Le fichier doit être <b>là où <c>Resources.Load</c> ira le chercher</b>.
+    ///
+    /// <para>Il y avait ici deux tests : l'un vérifiait la source (<c>assets/audio/sfx/</c>, héritée
+    /// de Godot), l'autre la copie importée sous <c>Resources/</c>. La source a disparu avec le
+    /// moteur, et c'est la bonne moitié qui reste : un son présent dans les sources mais absent de
+    /// <c>Resources/</c> se charge en <c>null</c> à l'exécution — l'arme redevient muette, ce que
+    /// cette suite existe précisément pour empêcher.</para>
     /// </summary>
     [Fact]
     public void EverySoundUsed_IsPresentInUnityResources()
     {
-        var resources = Path.Combine(TestPaths.RepoRoot, "unity", "Assets", "Resources", "Audio", "sfx");
-
         var missing = WeaponSfx.AllSfxIds
             .Distinct()
-            .Where(id => !File.Exists(Path.Combine(resources, id + ".wav")))
+            .Where(id => !File.Exists(Path.Combine(TestPaths.Sfx, id + ".wav")))
             .ToArray();
 
         Assert.True(missing.Length == 0,

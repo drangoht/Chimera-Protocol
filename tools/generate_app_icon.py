@@ -1,4 +1,4 @@
-"""Genere l'icone d'application de Chimera Protocol (executable Windows + editeur Godot).
+"""Genere l'icone d'application de Chimera Protocol (executable Windows).
 
 Motif : tete de chimere fendue en deux au centre d'une plaque blindee chanfreinee.
   - moitie gauche  = machine  (plaque acier, ailette angulaire, visiere CYAN)
@@ -16,13 +16,12 @@ Trois niveaux de detail — un 256 px reduit a 16 px devient une bouillie illisi
     dore (a cette taille le halo mangeait un tiers du visage)
 
 Sorties :
-  icon.ico  (racine) — 16/24/32/48/64/128/256, embarquee dans le .exe par l'export
-                       Godot (export_presets.cfg : application/icon)
-  icon.png  (racine, 256) — project.godot : config/icon (fenetre + gestionnaire de projets)
+  unity/Assets/Art/branding/icon.png (256) — c'est CE fichier que ProjectSettings
+              designe par GUID pour l'icone de l'executable Windows. Unity ne lit pas
+              de .ico : il derive lui-meme les tailles a la construction, et un .ico
+              pose a cote ne serait embarque nulle part.
   --sheet   : planche de controle multi-tailles -> docs/ui_sheet_app_icon.png
-              (verification visuelle ; nom volontairement sous le motif gitignore
-              docs/ui_sheet_*.png — une image posee dans docs/ finit importee et
-              embarquee dans le .pck a l'export)
+              (verification visuelle, gitignoree)
 
 Usage : python tools/generate_app_icon.py [--sheet]
 """
@@ -440,9 +439,13 @@ def write_sheet(images, path):
 
 def main():
     images = variants()
-    write_ico(images, os.path.join(ROOT, "icon.ico"))
-    images[256].save(os.path.join(ROOT, "icon.png"))
-    print("icon.png  (256, config/icon de project.godot)")
+
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    import unity_paths
+    target = unity_paths.ART / "branding" / "icon.png"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    images[256].save(target)
+    print(f"{target.relative_to(unity_paths.REPO_ROOT)}  (256, icone de l'executable)")
     if "--sheet" in sys.argv:
         write_sheet(images, os.path.join(ROOT, "docs", "ui_sheet_app_icon.png"))
 

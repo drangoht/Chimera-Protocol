@@ -12,7 +12,7 @@ public class WeaponTableTests
     {
         // Le fichier de référence reste celui du dépôt Godot : c'est la même source pour les deux
         // moteurs, ce qui garantit qu'ils lisent exactement les mêmes chiffres.
-        string path = Path.Combine(TestPaths.RepoRoot, "data", "weapons.json");
+        string path = Path.Combine(TestPaths.Data, "weapons.json");
         return File.ReadAllText(path);
     }
 

@@ -9,9 +9,13 @@ import wave
 import os
 import struct
 
+import sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import unity_paths
+
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-MUSIC_DIR    = os.path.join(PROJECT_ROOT, "assets", "audio", "music")
-SFX_DIR      = os.path.join(PROJECT_ROOT, "assets", "audio", "sfx")
+MUSIC_DIR    = str(unity_paths.audio_dir("music"))
+SFX_DIR      = str(unity_paths.audio_dir("sfx"))
 
 SAMPLE_RATE = 44100
 CHANNELS    = 1   # mono

@@ -1,14 +1,17 @@
 """Genere 3 petits drapeaux (FR / EN / ES) pour le selecteur de langue du menu.
 
-Sortie : assets/sprites/ui/flag_{fr,en,es}.png (32x20, bordure sombre 1px, texture_filter Nearest).
+Sortie : unity/Assets/Resources/Ui/flag_{fr,en,es}.png (32x20, bordure sombre 1px, texture_filter Nearest).
 Style volontairement plat (petits drapeaux d'UI) avec un lisere sombre pour se marier au theme.
 """
 import os
+import sys
 from PIL import Image, ImageDraw
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import unity_paths
+
 W, H = 32, 20
-OUT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                   "assets", "sprites", "ui")
+OUT = str(unity_paths.sprite_dir("ui"))
 
 BORDER = (10, 10, 18, 255)
 

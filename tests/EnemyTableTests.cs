@@ -10,7 +10,7 @@ using Xunit;
 public class EnemyTableTests
 {
     private static string Read(string name)
-        => File.ReadAllText(Path.Combine(TestPaths.RepoRoot, "data", name));
+        => File.ReadAllText(Path.Combine(TestPaths.Data, name));
 
     /// <summary>
     /// Le bestiaire du jeu, tel que le moteur le charge : <b>uniquement</b> <c>enemies.json</c>.
@@ -109,7 +109,7 @@ public class EnemyTableTests
     public void LesLibellesCorrespondentAuxJaugesDassimilation()
     {
         var config = GraftTable.Parse(File.ReadAllText(
-            Path.Combine(TestPaths.RepoRoot, "data", "grafts.json")));
+            Path.Combine(TestPaths.Data, "grafts.json")));
 
         var known = new HashSet<string>();
         foreach (EnemyTable.AiType ai in System.Enum.GetValues(typeof(EnemyTable.AiType)))

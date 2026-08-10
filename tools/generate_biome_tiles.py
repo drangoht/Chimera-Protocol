@@ -9,7 +9,7 @@ le simple tintage runtime.
   - givre     : Givre Cryogénique (bleu-glace, givre clair)
   - neon      : Secteur Néon (base sombre, grilles néon magenta + cyan)
 
-Sortie : assets/sprites/tileset/biomes/<biome>/floor_01..03.png, wall_01..02.png
+Sortie : unity/Assets/Art/sprites/tileset/biomes/<biome>/floor_01..03.png, wall_01..02.png
 Lancer : python tools/generate_biome_tiles.py
 """
 import os, sys, random
@@ -20,6 +20,7 @@ ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), ".."))
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import pseudo3d_lib as _p3d
+import unity_paths
 
 def canvas():
     return Image.new("RGBA", (S, S), (0, 0, 0, 255))
@@ -46,7 +47,7 @@ PALETTES = {
 
 def gen_biome(name):
     base, mid, dark, acc, accl = PALETTES[name]
-    out = os.path.join(ROOT, "assets", "sprites", "tileset", "biomes", name)
+    out = str(unity_paths.sprite_dir(f"tileset/biomes/{name}"))
     rng = random.Random(hash(name) & 0xffff)
 
     # Accents de biome (energie vivante) jamais concernes par l'ombrage

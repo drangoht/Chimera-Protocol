@@ -2,7 +2,7 @@
 import_ai_music — intègre les musiques générées par IA dans le jeu.
 
 Prend les fichiers déposés dans `music_ai/` (n'importe quel format), les prépare
-et les installe dans `assets/audio/music/` sous le nom attendu par le moteur.
+et les installe dans `unity/Assets/Resources/Audio/music/` sous le nom attendu par le moteur.
 
 Le travail utile, celui qu'aucun générateur IA ne fait :
 
@@ -38,10 +38,11 @@ import numpy as np
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import synth_lib as S  # noqa: E402
+import unity_paths  # noqa: E402
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 INBOX = os.path.join(PROJECT_ROOT, "music_ai")
-MUSIC_DIR = os.path.join(PROJECT_ROOT, "assets", "audio", "music")
+MUSIC_DIR = str(unity_paths.audio_dir("music"))
 PREVIEW_DIR = os.path.join(PROJECT_ROOT, "build", "music_preview")
 
 BIOMES = ["sanctuaire", "aether", "givre", "fournaise", "neon"]
@@ -71,7 +72,7 @@ class Track:
                  lufs: float = MUSIC_LUFS, fixed_length: float | None = None,
                  note: str = ""):
         self.key = key                    # nom du fichier déposé (sans extension)
-        self.target = target              # nom final dans assets/audio/music/
+        self.target = target              # nom final dans unity/Assets/Resources/Audio/music/
         self.loop = loop
         self.lufs = lufs
         self.fixed_length = fixed_length

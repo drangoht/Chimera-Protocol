@@ -23,7 +23,7 @@ import sys
 
 PROJ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RAW = os.path.join(PROJ, "trailer", "raw")
-FONT = "assets/fonts/ShareTechMono.ttf"
+FONT = "unity/Assets/Resources/Fonts/ShareTechMono.ttf"
 
 COLS = 6
 THUMB_W = 320

@@ -9,7 +9,7 @@ public class MetaUpgradeTableTests
 {
     private static MetaUpgradeTable.Document Real()
         => MetaUpgradeTable.Parse(File.ReadAllText(
-            Path.Combine(TestPaths.RepoRoot, "data", "meta_upgrades.json")));
+            Path.Combine(TestPaths.Data, "meta_upgrades.json")));
 
     [Fact]
     public void LesAmeliorationsDuJeuSeChargent()

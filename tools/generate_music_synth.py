@@ -24,9 +24,13 @@ import os
 
 PYTHON = r"C:/Users/drang/AppData/Local/Programs/Python/Python313/python.exe"
 SAMPLE_RATE = 44100
+import sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import unity_paths
+
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-MUSIC_DIR = os.path.join(PROJECT_ROOT, "assets", "audio", "music")
-SFX_DIR   = os.path.join(PROJECT_ROOT, "assets", "audio", "sfx")
+MUSIC_DIR = str(unity_paths.audio_dir("music"))
+SFX_DIR   = str(unity_paths.audio_dir("sfx"))
 
 # ---------------------------------------------------------------------------
 # Utilitaires de bas niveau

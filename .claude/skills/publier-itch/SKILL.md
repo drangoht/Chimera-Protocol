@@ -1,69 +1,60 @@
 ---
 name: publier-itch
-description: Publier une nouvelle version de Chimera Protocol sur itch.io (export Godot .NET → Butler push → mise à jour du manifeste version.json). À invoquer quand l'utilisateur demande de « publier », « release », « pousser sur itch », « sortir une nouvelle version ». Enchaîne le bump de version, les commits et le script tools/release_itch.ps1.
+description: Publier une nouvelle version de Chimera Protocol sur itch.io (build Unity → Butler push → mise à jour du manifeste version.json). À invoquer quand l'utilisateur demande de « publier », « release », « pousser sur itch », « sortir une nouvelle version ». Enchaîne le build, le push et le commit du manifeste via tools/release_unity.ps1.
 ---
 
 # Publier sur itch.io — Chimera Protocol
 
-Distribution : **itch.io + Butler**. Un `butler push` = auto-update pour les joueurs de
-l'app itch (patch différentiel wharf). Les joueurs web (ZIP) voient le bandeau « nouvelle
-version » du menu (cf. skill `carte-projet` §MAJ). Runbook détaillé : `docs/RELEASE.md`.
+Distribution : **itch.io + Butler**. Un `butler push` = auto-update pour les joueurs de l'app itch
+(patch différentiel wharf). Les joueurs web (ZIP) voient le bandeau « nouvelle version » du menu,
+alimenté par `version.json` lu sur `raw.githubusercontent`. Runbook détaillé : `docs/RELEASE.md`.
 
 ## Procédure (dans l'ordre)
 
 ### 1. Choisir le numéro de version
-Sémantique `MAJEUR.MINEUR.CORRECTIF` depuis `config/version` de `project.godot` :
+Sémantique `MAJEUR.MINEUR.CORRECTIF`, lue dans `unity/ProjectSettings/ProjectSettings.asset`
+(`bundleVersion`) — mais **ne pas l'éditer à la main** : le script la pose lui-même.
 - **correctif** (x.y.**Z**) : bugfix, ajustement mineur ;
 - **mineur** (x.**Y**.0) : nouvelle fonctionnalité / contenu (défaut le plus courant ici) ;
 - **majeur** (**X**.0.0) : refonte, rupture.
 
 Si la nature n'est pas évidente, proposer le bump et continuer sans bloquer.
 
-### 2. Bumper `project.godot` (⚠ le script NE le fait PAS)
-Éditer `config/version="X.Y.Z"`. Puis committer + pousser :
-```
-git add project.godot
-git commit -m "chore(release): bump version X.Y.Z (<résumé>)"
-git push
-```
+### 2. Committer le travail à publier
+Le tampon de build (`v<version>-<sha>`) désigne le commit publié : tout ce qui doit être dans la
+release doit être commité **avant** de lancer le script. Un arbre modifié produit un tampon suffixé
+`+`, qui ne correspond à aucun commit — le script le signale, il ne l'empêche pas.
 
-### 3. Lancer le script de release
-Depuis la racine du dépôt, **sans `-ExecutionPolicy Bypass`** (ce flag est refusé par le
-classifier auto — l'ajouter fait échouer l'appel) :
+### 3. Essai à blanc, puis publication
+Depuis la racine, **sans `-ExecutionPolicy Bypass`** (ce flag est refusé par le classifier auto) :
 ```
-& "tools/release_itch.ps1" -Version X.Y.Z
+& "tools/release_unity.ps1" -Version X.Y.Z -DryRun    # va jusqu'au staging, ne publie rien
+& "tools/release_unity.ps1" -Version X.Y.Z
 ```
-Timeout large (l'export release .NET est long — jusqu'à plusieurs minutes).
+Timeout large : le build Unity prend plusieurs minutes.
 
-Le script enchaîne : export `build/ChimeraProtocol.exe` + runtime → staging propre →
-`butler push …:windows --userversion X.Y.Z` → **régénère `version.json` (racine) et le
-commit+push sur `main`** (source du bandeau MAJ, lu sur raw.githubusercontent).
+Le script enchaîne : `bundleVersion` posée → tampon de build → build Unity
+(`BuildBench.Windows64Game`) → vérification que le binaire porte **bien** la version demandée →
+staging propre → `butler push …:windows --userversion X.Y.Z` → `version.json` régénéré, commité et
+poussé sur `main`.
 
-Paramètres utiles : `-SkipExport` (re-push sans réexporter), `-Channel`, `-Itch user/slug`
-(défaut `drangoht/chimera-protocol`).
+Paramètres utiles : `-SkipBuild` (re-push d'un binaire qu'on vient de construire soi-même — le
+script vérifie alors sa version), `-Channel`, `-Itch user/slug` (défaut `drangoht/chimera-protocol`).
 
-### 4. Committer les artefacts générés restants
-Un nouveau script C# génère un `.uid` Godot → le committer s'il apparaît en non-suivi :
-```
-git add -A ; git status --short   # committer les .uid/.import nouveaux
-```
-
-### 5. Vérifier
-- Sortie du script : « Publication OK — version X.Y.Z poussée ». Le tableau `butler status`
-  peut afficher l'ancienne version tant que le build est « processing » — c'est normal.
-- `version.json` sur `main` = X.Y.Z (le CDN `raw.githubusercontent` a ~5 min de cache TTL,
-  donc le `curl` direct peut retarder ; se fier au diff du commit poussé par le script).
+### 4. Vérifier
+- Sortie : « Publication OK — version X.Y.Z poussée ». Le tableau `butler status` peut afficher
+  l'ancienne version tant que le build est « processing » — c'est normal.
+- `version.json` sur `main` = X.Y.Z (le CDN a ~5 min de cache ; se fier au diff du commit poussé).
 
 ## Prérequis / pièges
-- **`ChimeraProtocol.sln` requis à la racine** (sinon l'export .NET crashe au lancement).
-  Recréer : `dotnet new sln --name ChimeraProtocol --format sln && dotnet sln … add ChimeraProtocol.csproj`.
 - **Butler authentifié** : fourni par l'app itch (dossier `broth`, détecté auto). Si
   « not authorized », lancer une fois `"<butler.exe>" login` (chemin affiché par le script).
-- Godot 4.7 .NET laisse souvent `$LASTEXITCODE` vide en fin d'export → le script ne faille
-  que sur un code non-zéro explicite + vérifie l'existence de l'exe/runtime (ne pas « durcir »).
-- ⚠ **Ne jamais tester `$?` après un exe natif en PowerShell 5.1** : `git` écrit sa progression sur
-  stderr même quand tout va bien, ce qui met `$?` à `$false` à code retour 0. Le script annonçait
-  ainsi « git push echoue » à chaque release réussie (corrigé le 2026-08-02). Seul `$LASTEXITCODE`
-  fait foi.
-- **Doc de fin de release** (feedback projet) : MAJ `README.md`/`CLAUDE.md` + page store itch
-  si la version introduit une phase ou un ajout majeur.
+- ⚠ **Une release a déjà expédié le binaire de la version précédente.** D'où la vérification du
+  tampon : le script exige que `build_stamp.json` porte la version demandée. Ne pas la contourner.
+- ⚠ **La date de l'exécutable ne prouve rien sous Unity** : le build est incrémental, un binaire
+  identique n'est pas réécrit. Seule la version embarquée tranche.
+- ⚠ **Ne jamais tester `$?` après un exe natif en PowerShell 5.1** : `git`, Unity et Butler écrivent
+  leur progression sur stderr même quand tout va bien. Seul `$LASTEXITCODE` fait foi.
+- **Doc de fin de release** : MAJ `README.md` / `CLAUDE.md` + page store itch si la version
+  introduit une phase ou un ajout majeur ; devlog à coller sur itch (rédigé, jamais publié par
+  l'agent).

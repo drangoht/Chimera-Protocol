@@ -32,7 +32,7 @@
 >
 > Contrôle qualité : `tools/analyze_music.py` (niveaux, hiérarchie fréquentielle §4.1, écrêtage de
 > la somme des stems §4.4), `tools/preview_adaptive_mix.py <biome>` (démo d'écoute des paliers
-> d'intensité), `tools/check_music_assets.gd` (headless Godot : égalité des durées entre stems).
+> d'intensité), le smoke test de banc `RunSmokeTest` (chargement réel de chaque piste par son chemin `Resources`).
 
 ---
 

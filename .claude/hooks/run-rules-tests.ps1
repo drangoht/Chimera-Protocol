@@ -1,5 +1,5 @@
-# run-rules-tests.ps1 — hook PostToolUse : rejoue les tests unitaires quand la
-# logique pure de src/Core/Rules/ (ou les tests eux-memes) vient d'etre modifiee.
+# run-rules-tests.ps1 — hook PostToolUse : rejoue les tests unitaires quand la logique
+# pure de unity/Assets/Scripts/Shared/ (ou les tests eux-memes) vient d'etre modifiee.
 # Tourne en asynchrone ; sort en code 2 si les tests cassent, ce qui reveille
 # Claude avec le detail de l'echec.
 
@@ -15,7 +15,7 @@ if (-not $path) { $path = $data.tool_response.filePath }
 if ([string]::IsNullOrWhiteSpace($path)) { exit 0 }
 
 $norm = $path -replace '/', '\'
-if ($norm -notmatch '(?i)\\src\\Core\\Rules\\.*\.cs$' -and
+if ($norm -notmatch '(?i)\\unity\\Assets\\Scripts\\Shared\\.*\.cs$' -and
     $norm -notmatch '(?i)\\tests\\.*\.cs$') {
     exit 0
 }

@@ -27,9 +27,10 @@ PROJECT_ROOT = os.path.dirname(SCRIPT_DIR)
 sys.path.insert(0, SCRIPT_DIR)
 
 import generate_arena_obstacles as gao
+import unity_paths
 
-OUT_ENV = os.path.join(PROJECT_ROOT, "assets", "sprites", "environment")
-OUT_VFX = os.path.join(PROJECT_ROOT, "assets", "sprites", "vfx")
+OUT_ENV = str(unity_paths.sprite_dir("environment"))
+OUT_VFX = str(unity_paths.sprite_dir("vfx"))
 
 
 def main():

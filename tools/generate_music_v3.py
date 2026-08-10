@@ -12,7 +12,7 @@ Usage :
   python tools/generate_music_v3.py --only sanctuaire --preview
   python tools/generate_music_v3.py --list
 
-`--preview` écrit dans `build/music_preview/` au lieu de `assets/audio/music/`
+`--preview` écrit dans `build/music_preview/` au lieu de `unity/Assets/Resources/Audio/music/`
 et n'écrase donc rien.
 
 Points de conception :
@@ -40,9 +40,10 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import synth_instruments as I  # noqa: E402
 import synth_lib as S  # noqa: E402
+import unity_paths  # noqa: E402
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-MUSIC_DIR = os.path.join(PROJECT_ROOT, "assets", "audio", "music")
+MUSIC_DIR = str(unity_paths.audio_dir("music"))
 PREVIEW_DIR = os.path.join(PROJECT_ROOT, "build", "music_preview")
 
 # Marge rendue au-delà de la boucle, réinjectée au début par `loopify`.

@@ -1,17 +1,19 @@
 """Genere les icones 32x32 manquantes (style maison) pour les 2 nouvelles armes :
 - tesla_coil  : eclair cyan/blanc
 - aether_nova : detonation violette (anneau + rayons)
-Sortie : assets/sprites/ui/ui_icon_tesla.png et ui_icon_nova.png
+Sortie : unity/Assets/Resources/Ui/ui_icon_tesla.png et ui_icon_nova.png
 """
 import os, sys, math
 from PIL import Image
 
 S = 32
 ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), ".."))
-OUT = os.path.join(ROOT, "assets", "sprites", "ui")
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import pseudo3d_lib as _p3d
+import unity_paths
+
+OUT = str(unity_paths.sprite_dir("ui"))
 
 
 def canvas():

@@ -6,7 +6,7 @@ entre stems (brief §4.1), propreté du bouclage, et absence de saturation quand
 les 4 stems d'un biome sont sommés à pleine intensité (brief §4.4).
 
 Usage :
-  python tools/analyze_music.py                        # assets/audio/music
+  python tools/analyze_music.py                        # unity/Assets/Resources/Audio/music
   python tools/analyze_music.py --dir build/music_preview
   python tools/analyze_music.py --dir build/music_preview --biome sanctuaire
 """
@@ -25,6 +25,7 @@ import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import synth_lib as S  # noqa: E402
+import unity_paths  # noqa: E402
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -98,7 +99,7 @@ def describe(path: str) -> dict:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--dir", default=os.path.join(PROJECT_ROOT, "assets", "audio", "music"))
+    ap.add_argument("--dir", default=str(unity_paths.audio_dir("music")))
     ap.add_argument("--biome", help="vérifie en plus la somme des 4 stems de ce biome")
     args = ap.parse_args()
 

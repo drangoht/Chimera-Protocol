@@ -1,306 +1,180 @@
 ---
 name: carte-projet
-description: Carte/index de Chimera Protocol (Godot 4.7 .NET / C#). À invoquer AVANT toute exploration du code pour localiser systèmes, écrans, armes, ennemis, données de tuning, singletons et outils sans repartir de zéro avec Glob/Grep. Contient aussi les checklists de câblage et les points d'entrée.
+description: Carte/index de Chimera Protocol (Unity 6.5 / C#). À invoquer AVANT toute exploration du code pour localiser systèmes, écrans, armes, ennemis, données de tuning, assets et outils sans repartir de zéro avec Glob/Grep. Contient aussi les checklists de câblage, les flags de banc et les points d'entrée.
 ---
 
 # Carte du projet — Chimera Protocol
 
-Survivor roguelite vue du dessus, Godot 4.7 **.NET** (C# / .NET 8 / GodotSharp).
+Survivor roguelite vue du dessus, **Unity 6.5** (C# / URP 2D). Le moteur Godot, sur lequel le jeu
+a été écrit jusqu'à la 1.26.0, a été **retiré du dépôt le 2026-08-10** : ses documents survivent
+sous `docs/archive-godot/`, son code non.
 
 Cette carte dit **où** se trouve chaque chose. Pour le reste :
-`docs/ARCHITECTURE.md` (**comment** le code est organisé et pourquoi — principe logique-pure/moteur,
-cycle de vie d'une run, contrats, calques d'UI, persistance, dette connue) ·
-`docs/GDD.md` (**pourquoi** le jeu est réglé ainsi) · `docs/PITFALLS.md` (**quels pièges** guettent) ·
+`docs/GDD.md` (**pourquoi** le jeu est réglé ainsi) · `docs/PITFALLS_UNITY.md` (**quels pièges**
+guettent) · `docs/UNITY_MIGRATION_PLAN.md` (**comment** le portage est architecturé) ·
 `CLAUDE.md` (phase courante, conventions).
 
-> **Maintenir cette carte à jour** : dès que tu ajoutes / supprimes / renommes un
-> système, un écran, une arme, un ennemi, un fichier `data/*.json`, un singleton
-> AutoLoad ou un outil `tools/`, mets à jour la section concernée ci-dessous **dans
-> le même commit**. Une carte périmée est pire qu'absente. En cas de doute sur un
-> détail, vérifie le fichier avant de l'affirmer — ne recopie pas aveuglément.
+> **Maintenir cette carte à jour** : dès que tu ajoutes / supprimes / renommes un système, un écran,
+> une arme, un ennemi, un fichier `StreamingAssets/data/*.json` ou un outil `tools/`, mets à jour la
+> section concernée **dans le même commit**. Une carte périmée est pire qu'absente. En cas de doute,
+> vérifie le fichier avant de l'affirmer — ne recopie pas aveuglément.
 
 ## Arborescence
 
 ```
-src/
-  Core/            GameManager.cs, SaveManager.cs
-  Core/Rules/      Logique PURE testable (aucune dépendance Godot) — voir §Rules
-  Systems/         Singletons + systèmes runtime (spawn, audio, biome…) — voir §Systems
-  UI/              Écrans & HUD (Control) — voir §UI
-  Weapons/         Armes, projectiles, fusions — voir §Weapons
-  Entities/        Player, Enemies, Boss, MiniBoss, Environment — voir §Entities
-  VFX/             Effets visuels
-scenes/            .tscn (ui/, entités, armes)
-data/              JSON de tuning (modifiable sans recompiler) — voir §Data
-localization/      ui.csv (source) → ui.{en,fr,es}.translation ; clé via Loc.T("CLÉ")
-assets/            Raw (sprites PNG 32×32, audio OGG/WAV, themes)
-tools/             Générateurs de sprites/audio + captures + release — voir §Outils
-tests/             xUnit — ChimeraProtocol.Tests.csproj (255 tests). `dotnet test tests/...`
-docs/              GDD.md + briefs/plans — voir §Docs
+unity/
+  Assets/
+    Scripts/Shared/Rules/       Logique PURE testable (aucune dépendance moteur) — voir §Rules
+    Scripts/Shared/PlatformCore/ Socle pur : Pcg32, TimerWheel, Easing, TweenTimeline, DeferredQueue
+    Scripts/Platform/           Pont moteur : Spawner, AudioSystem, Loc, UiFrames, UserData… — voir §Platform
+    Scripts/Gameplay/           Entités, armes, spawn, HUD, télémétrie — voir §Gameplay
+    Scripts/UI/                 Écrans (Canvas) — voir §UI
+    Scripts/Bench/              Banc headless : auto-play, smoke tests, tour de captures
+    Editor/                     Scripts d'éditeur : build, SpriteFrames, import des assets
+    Editor/spriteframes/        Manifestes JSON d'animation (écrits par tools/, lus par BuildSpriteFrames)
+    Art/sprites/                Sources importées par GUID (ennemis, joueur, armes, ramassages, décor)
+    Art/branding/               icon.png — icône de l'exécutable (désignée par ProjectSettings)
+    Resources/                  Chargé PAR CHEMIN à l'exécution : Ui, UiFrames, Vfx, Environment,
+                                Audio/{music,sfx}, Fonts, Shaders, SpriteFrames, Prefabs
+    StreamingAssets/data/       JSON de tuning — voir §Data
+    StreamingAssets/localization/ ui.csv (source unique) ; clé via Loc.T("CLÉ")
+  ProjectSettings/              bundleVersion (posée par le script de release), icônes, URP
+tests/                          xUnit — compile Shared/ par chemin (626 tests). `dotnet test tests/…`
+tools/                          Générateurs d'assets, banc, release — voir §Outils
+docs/                           GDD.md + briefs/plans — voir §Docs
+docs/archive-godot/             Documents de l'ère Godot (périmés sur les chemins, valides sur le fond)
 ```
 
-## Singletons AutoLoad (project.godot)
-`GameManager` · `XpSystem` · `InventorySystem` · `LevelUpSystem` · **`AssimilationSystem`** ·
-`SaveManager` · `MetaProgressionSystem` · **`ChallengeSystem`** · `AudioSystem` ·
-**`MusicDirector`** · `ScreenShake` · `GameSettings` ·
-`DiscordPresence` · `VersionStamp` · `FusionFlash` (scène). Accès partout via `NomSystem.Instance`.
+⚠ **`Art/` et `Resources/` ne se valent pas.** `Art/` est consommé par **référence de GUID** (les
+`SpriteFramesAsset` des ennemis et du joueur) ; `Resources/` est chargé **par chemin**
+(`Resources.Load<Sprite>("Ui/…")`) et embarqué **en entier** dans le binaire. Écrire dans le mauvais
+des deux ne lève aucune erreur : le générateur annonce « écrit », le jeu affiche l'ancienne image.
+La table de destination fait autorité : **`tools/unity_paths.py`**.
 
-## §Rules — `src/Core/Rules/` (logique pure, testée)
-XpCurve · **PassiveScaling** (extrapolation des passifs au-delà des 3 niveaux définis : rendements
-décroissants `ExtrapolatedDelta`/`CumulativeBonus`, cf. GDD §30) · EnemyScaling (`Scaled` linéaire + `ScaledCurved`/`CurvedFactor` = courbe non-linéaire :
-early grace + accélération late, cf. difficulté) · SpawnCurve · **OverloadCards** (progression de FIN
-DE PARTIE : les 3 cartes sans plafond proposées quand le pool de level-up est vide — `Plating`
-+45 PV max, `Regen` +0,6 PV/s, `Damage` +5 % ; `ById`/`IsOverload`/`CumulativeBonus` linéaire, JAMAIS
-amorti par PassiveScaling, cf. GDD §33) · **OvertimeEscalation** (escalade
-d'overtime : `DensityMinutes` ×4 / `StatMinutes` ×1,5 — les deux courbes sont DÉCOUPLÉES, cf. GDD
-§31) · WeaponLeveling · StatCaps (plafonds durs : DR 0,40 · vitesse 380 · **réduction de
-recharge 0,75** · cooldown plancher 0,15 s) · WeightedPicker ·
-EchoFormula (+ `ApplyTier` = multiplicateur de palier appliqué composante par composante) ·
-**LevelThreat** (paliers de menace par NIVEAU : `Order` = ordre de déblocage — source de vérité de
-`GameSettings.LevelOrder` — et index = palier ; `EnemyHpMult`/`ChampionHpMult`/`EnemyDamageMult`/
-`SpawnMult`/`TimeOffsetMinutes`/`EchoMult`, cf. GDD §28) ·
-**AutoPilotPolicy** (pilote du banc `--auto-play` : `ChooseDirection`/`ScoreDirection` — échantillonne
-16 caps et retient le meilleur score menaces/orbes/murs/inertie ; déterministe, c'est ce qui rend deux
-campagnes comparables) ·
-RarityWeights · CrowdControlCaps · DifficultyTuning · **VersionCompare**
-(comparaison sémantique pour le bandeau de MAJ) · **EliteAffixTable** (affixes d'élite :
-fréquence + tirage + `EliteModifiers`, cf. GDD §22) · **GraftTable** (Assimilation : parse
-`grafts.json`, routage kill→jauge `RouteKill`, seuils `EffectiveThreshold`/`DeclinedThreshold`,
-`SlotCount`, **`BiomeAffinity`/`GetAffinity`** = affinités de greffe par biome §21 ; cf.
-docs/DESIGN_ASSIMILATION.md §11-21) · **ChallengeTable** (Défis/succès : parse `challenges.json`,
-`ChallengeContext` fin de run, `IsMet`/`NewlyCompleted` ; cf. docs/DESIGN_CHALLENGES.md) ·
-**`MusicIntensity`** (musique adaptative : `Compute` = intensité 0-1 depuis ennemis/temps/PV,
-`Smooth` = lissage asymétrique montée/descente, `GainDb(MusicStem, …)` = niveau de chaque couche ;
-enum `MusicStem` Bed/Pulse/Lead/Boss) ·
-**`BossPhases`** (boss de fin : `PhaseAt`/`Advance` = phase depuis le ratio de PV, progression
-**irréversible** ; `BurstInterval`/`ShockInterval`/`SignatureRate`/`SpeedMult` par phase ;
-`TransitionSeconds`, `AddsPerWave`, `RomanNumeral` ; cf. GDD §29.3) ·
-**`BossIncarnations`** (les 5 incarnations du boss — `For(biomeId)` → `BossIncarnation` {Id, NameKey,
-`BossSignature`, période, teinte, FramesPath} ; repli sur la souche si biome inconnu ; cf. GDD §29.2) ·
-**`SaturationTable`** (échelle de challenge de fin de partie, `MaxRank` = **6** — un cran = UNE règle
-nommée, cumulative : `HealingMult` I · `EnemyHpMult`/`EnemyDamageMult`/`SpawnMult` II · `RunDurationMult`
-III · `SafetyNetsEnabled`/`LevelUpHealsEnabled` IV · `EliteFrequencyMult`/`EliteChanceCap` V ·
-**`ChampionDamage`/`ChampionMinDamageFraction`/`PurgeFraction` VI** ; + `EchoMult`, `ActiveRanks`,
-`MaxSelectable`/`CanSelect` (déblocage PAR NIVEAU), `MigrateDifficulty`. ⚠ le plancher du cran VI ne
-s'applique qu'aux coups **discrets** — cf. `EnemyBase.DealDiscreteDamage` ; cf. GDD §34) ·
-**`RegenReserve`** (le surplus de régénération perdu à PV pleins devient un tampon anti-pic :
-`Capacity`/`Tick`/`Absorb`, plafond = `ReserveSeconds` × débit borné à `MaxFractionOfMaxHp` ;
-cf. GDD §33.6) ·
-**`PressureMeter`** (mesure de la pression **ressentie** — compte des ÉVÉNEMENTS et non des débits :
-`Observe` à la frame, `CloseCalls`/`LowestRatio`/`DangerFraction`, hystérésis `DangerRatio` 0,30 →
-`SafeRatio` 0,55, `ResetWindow` conserve l'hystérésis. C'est le critère qui décide qu'un cran « se
-sent » ; cf. GDD §34.6).
-Les nœuds délèguent ici (SRP).
+## §Rules — `unity/Assets/Scripts/Shared/Rules/` (logique pure, testée)
+`ArenaLayout` · `AutoPilotPolicy` · `BiomeUnlock` · `BossIncarnations` · `BossPhases` ·
+`CardRarityTable` · `ChallengeTable` · `CrowdControlCaps` · `DifficultyTuning` · `EchoFormula` ·
+`EliteAffixTable` · `EnemyScaling` · `EnemyTable` · `FloorFeatureLayout` · `GodotConfig` (migration
+des `settings.cfg` de joueurs venus de la 1.26.0) · `GraftTable` · `LevelThreat` · `LevelUpCharges` ·
+`LevelUpPool` · `LocTable` · `MetaUpgradeTable` · `MusicIntensity` · `OverloadCards` ·
+`OvertimeEscalation` · `PassiveScaling` · `PassiveTable` · `PressureMeter` · `RarityWeights` ·
+`RegenReserve` · `SaturationTable` · `SaveData` / `SaveMigration` / `SettingsData` · `SpawnCurve` ·
+`StartingPerks` · `StatCaps` · `Titles` · `VersionCompare` · `WeaponFusion` · `WeaponLeveling` ·
+`WeaponSfx` · `WeaponTable` · `WeightedPicker` · `XpCurve`
 
-## §Systems — `src/Systems/`
-- Spawn : `EnemySpawner` (+ `EnemySpawnData`), `PowerUpSpawner` (+ `PowerUp`), `MagnetSpawner`, `AetherCoreSpawner`
-- Progression : `XpSystem`, `LevelUpSystem` (+ `LevelUpCardData`), `InventorySystem`, `MetaProgressionSystem` (+ `MetaUpgradeDefinition`)
-- **Défis / succès (rétention)** : `ChallengeSystem` (autoload — charge `challenges.json`, évalue à `RunStatsTracker.EndRun`, octroie Échos/perks/cosmétiques, émet `ChallengeUnlocked` ; mute `MetaProgressionSystem.Meta` + `PersistMeta`, ne charge JAMAIS sa propre SaveData). Data → `challenges.json`. Logique pure → `ChallengeTable`. Persistance → `MetaSaveData` (`UnlockedChallenges`/`UnlockedPerks`/`UnlockedCosmetics`/`EquippedPerk`/`Lifetime*`). Écran → `ChallengesScreen` (§UI). Cf. docs/DESIGN_CHALLENGES.md.
-- **Perks de départ** : `StartingPerks` (registre id/nom/desc/icône — bonus de début de run débloqués via Défis). Choix équipé au Hub (`HubScreen.BuildPerkSelector`, un seul via `MetaSaveData.EquippedPerk`), appliqué au run start par `GameManager.ApplyStartingPerkHook` → `AssimilationSystem.GrantStartingGraft`/`AddBonusSlots` ou arme sup. Ids = récompenses `perk` de `challenges.json`.
-- **Titres cosmétiques** : `Titles` (registre id/nom — flair sans effet, débloqué via Défis). Choisi au Hub (`HubScreen.BuildTitleSelector`, infra chips générique `BuildChipSection`/`MakeChip`/`RefreshChips` partagée avec les perks ; `MetaSaveData.EquippedCosmetic`), affiché sous le logo du MainMenu (`MainMenu.ApplyTitleFlair`, nœud `TitleFlair`). Ids = récompenses `cosmetic` de `challenges.json`.
-- **Assimilation (greffes)** : `AssimilationSystem` (autoload — jauges par archétype, slots équipés, pause/reprise de jauge, émet `GaugeFilled` ; délègue les chiffres à `GraftTable`) ; effets côté Player → `GraftManager` (§Entities) ; écran → `AssimilationScreen` (§UI). Data → `grafts.json`. Meta : `graft_slots`/`graft_metabolism`. Action d'entrée `dash` (InputRemap). Cf. docs/DESIGN_ASSIMILATION.md.
-- Biome/arène : `BiomeAtmosphere`, `BiomeObstacles`, `FloorFeatures`, `GroundRenderer`, `DeepMotifShape`, `VignetteFollow`
-- **Mesure du TTK boss** : `BossTelemetry` (statique, pas d'autoload — chrono à partir du 1er dégât
-  encaissé par le boss, horodate les bascules de phase, écrit un bloc lisible + une ligne `CSV;` dans
-  `user://boss_ttk.log`). Hooks : `RustedCore` (`_Ready` différé / `TakeDamage` / `EnterSurcharge` /
-  `Die`) et `RunStatsTracker.EndRun` (combat interrompu par la mort du joueur). Toujours active, y
-  compris en run normale. Session guidée → `tools/boss_ttk_session.ps1`.
-- **Mesure de la courbe de puissance** : `PowerTelemetry` (statique — échantillon toutes les 15 s de
-  jeu dans `user://power_curve.log`, écrit au fil de l'eau : DPS infligé, dégâts subis, **PV courants,
-  régénération nominale / réellement rendue, soins ponctuels**, population d'ennemis, indice de
-  puissance du loadout `InventorySystem.PowerIndex()`, build complet — 23 colonnes).
-  **Flag `--power-curve` uniquement** (contrairement à `BossTelemetry`, toujours active). Hooks :
-  `EnemyBase.TakeDamage`, `Player.TakeDamage`/`Heal`/`HealFlat`/`UpdateHpRegen`, `RunStatsTracker`
-  (`_Ready`/`_Process`/`EndRun`). Session jouée → `tools/power_curve_session.ps1` ;
-  **campagne de N runs → `tools/power_curve_multi.py`** (le seul outil qui distingue un effet de
-  réglage du bruit inter-run).
-  ⚠ **Deux colonnes se lisent de travers, et les deux ont déjà produit un faux diagnostic** :
-  `soins_ps` compte le soin **retenu** (borné par les PV manquants) — pour « ce réglage soigne-t-il
-  plus ? », lire `soins_bruts_ps` (**offert**) ; et toutes les colonnes de débit sont **moyennées sur
-  15 s**, donc aveugles aux pics — pour « ce réglage se sentira-t-il ? », lire
-  `frolements`/`pv_min_pct`/`part_danger` (**`PressureMeter`**, échantillonnées à la frame).
-  Lecture appariée cran contre cran → **`tools/power_loop.py --paired <A> <B>`** (test des signes).
-- **Pilote du banc automatisé** : `BenchAutoPilot` (pont scène → règle) + **`AutoPilotPolicy`**
-  (§Rules). Actif sous `--auto-play` seulement : le bot kite, ramasse et dashe, donc **meurt pour de
-  vrai** — la survie et les dégâts subis sont mesurables sans `--invuln`.
-- Divers : `AudioSystem`, `GameSettings` (source unique des réglages, persistés dans `user://settings.cfg` : volumes, **mode de fenêtre** `Windowed/Borderless/Fullscreen` + résolution + VSync + limite/compteur d'IPS, difficulté, **intensité des secousses**, **réduction des flashs**, **vibration manette**, langue, **tampon de version**, **Discord on/off**, touches `move_*`/`dash` rebindables ; migration des anciennes clés `display/fullscreen` et `gameplay/shake`), `Loc`, `FusionFlash`, `ScreenShake` (`Enabled` + `Intensity`), `RunStatsTracker`
-- **Musique adaptative** : `MusicDirector` (autoload — alterne `music_run_<biome>_{calm,combat}.ogg` + `music_run_boss.ogg` commun, **une seule audible à la fois**, fondu croisé à puissance constante ; détecte le boss tout seul via `EnemyBase.AssimIsBoss/AssimIsMiniBoss`). Logique pure → `MusicIntensity` (§Rules : `Select` avec hystérésis, `Approach`, `WeightToDb`). Démarré par `RunStatsTracker` (différé d'une frame : `CurrentBiomeId` est posé par `GroundRenderer._Ready`). `AudioSystem.PlayMusic` le coupe — les deux ne coexistent jamais. Direction sonore → `docs/AUDIO_AI_PROMPTS.md` ; pièges → `docs/PITFALLS.md`
-- Input : **`InputRemap`** (statique) — actions `move_up/down/left/right` (défaut ZQSD + flèches + manette), séparées des `ui_*` menu ; le Player lit `Input.GetVector(move_*)`, remap via l'écran Options, persisté dans `GameSettings`. Action **`dash`** (Maj gauche / RB, `EnsureExtraActions()` au boot via GameManager) pour la greffe Servos Erratiques
-- Intégrations : **`DiscordPresence`** (autoload, NuGet `DiscordRichPresence` — statut « joue à Chimera Protocol », clés art `chimera`/`chimera_small`, tolérant à l'absence de Discord ; `SetInMenus`/`SetInRun` appelés par MainMenu/GameManager), **`VersionStamp`** (autoload `src/UI/`, overlay bas-droite : tampon `v<ver>-<sha>` + **compteur d'IPS**, les deux commandés par les Options via `SetStampVisible`/`SetFpsVisible`) ; **`BuildInfo`** (`src/Core/`, `GitSha` auto-généré par `tools/gen_build_info.ps1`, version lue de project.godot)
+## §Platform — `unity/Assets/Scripts/Platform/`
+`Spawner` (charge un prefab par son ancien chemin `res://scenes/…` traduit en `Prefabs/…`) ·
+`AudioSystem` · `MusicDirector` (dans Gameplay) · `Loc` · `UserData` (sauvegardes) ·
+`UiCanvas` / `UiFonts` / `UiFrames` / `UiIcons` / `UiNames` / `UiPrimitives` · `SceneRoot` ·
+`PlatformHost` · `FrameAnimator` · `GTween` · `HitStop` · `InputRemap` · `DebugHooks` ·
+`BuildInfo` (tampon `v<version>-<sha>`) · `DiscordPresence` · `DataFiles` · `Gd` (utilitaires
+transposés) · `SpriteFramesAsset`
 
-## §UI — `src/UI/` (écrans Control)
+## §Gameplay — `unity/Assets/Scripts/Gameplay/`
+- **Joueur** : `Player`, `PlayerStats`, `ChimeraBody`, `RunCamera`, `Assimilation`, `GraftManager`
+- **Ennemis** : `EnemyBase`, `EnemyAi`, `EnemySpawner`, `EnemyBullet`, `EnemyStatusFx`,
+  `MiniBoss`, `RustedCore` (boss de fin), `MoltenColossus` / `CryoSentinel` / `NeonWarden` (mid-boss)
+- **Armes** : `WeaponBase`, `WeaponRegistry`, `ImpulseCannon`, `ScatterVolley`, `TeslaCoil`,
+  `PlasmaBlade`, `CryoLance`, `VectorLance`, `PyreStream`, `Singularity`, `OverloadField`,
+  `SeekerMissile`, `SeekerSwarm`, `DroneSwarm`, `GraftTurret`, `Glaive` · fusions dans
+  `Gameplay/Fusions/` (9)
+- **Run** : `GameManager`, `RunBootstrap`, `RunConfig`, `XpSystem`, `XpOrb`, `InventorySystem`,
+  `MetaProgression`, `ChallengeSystem`, `EchoSettings`, `GameSettings`, `AetherCore*`
+- **Arène** : `ArenaRenderer`, `ArenaObstacles`, `FloorFeatures`, `BiomeAtmosphere`
+- **Mesure** : `PowerTelemetry`, `BossTelemetry`, `BenchAutoPilot`
+- **VFX** : `Gameplay/Vfx/` (14 fichiers : `Vfx`, `VfxPrimitives`, `ChampionOverlay`, `ScreenShake`…)
 
-**Avant de styliser quoi que ce soit** : `UiPalette` (toutes les couleurs — n'écrire aucune teinte
-en dur) et `UiStyle` (fabrique unique des cadres : `ButtonFrame`/`CardFrame`/`PopupFrame` sur
-textures 9-slice de `assets/sprites/ui/frames/`, `ScreenPanel`/`Separator`/`ScreenTitleUnderline`
-en pur code, `AttachFocusPulse` pour la pulsation de focus). Parti pris et specs →
-`docs/ART_BRIEF_UI_FRAMES.md`. Assets régénérables via `tools/generate_ui_frames.py`.
-Les `.tscn` ne portent plus de `StyleBoxFlat` : un `theme_override_styles/*` en scène écrase
-l'override runtime et rendrait le style invisible (`tools/strip_tscn_styleboxes.py` les retire).
-`MainMenu` (+ **bandeau MAJ** → §MAJ ; 5 entrées : Jouer/Hub/**Codex**/Options/Quitter — les écrans info sont sous le sous-menu Codex ; sélecteur de langue = drapeaux `flag_{fr,en,es}.png` en haut à droite ; flair du titre équipé sous le logo via `ApplyTitleFlair`) · `CharacterSelectScreen` · `LevelSelectScreen` ·
-`HubScreen` · `BestiaryScreen` / `ArsenalScreen` / `CodexScreenBase` (+ `Codex`) ·
-**`OptionsScreen`** (5 sections — Audio / Affichage / Jeu / Interface / Contrôles ; UI en code ;
-double usage : écran plein depuis le MainMenu **ou surcouche** modale via `OpenOverlay(context,
-onClosed)` depuis le menu pause — pas de changement de scène, difficulté grisée et réinit totale
-masquée en run) · **`PauseScreen`** (bouton **Options** → surcouche, puis `Rebuild()` au retour) ·
-`LevelUpScreen` · **`AssimilationScreen`** (écran modal des
-greffes, UI construite en code) · **`ChimeraCodexScreen`** (codex explicatif des greffes/fusions —
-sous-classe `CodexScreenBase`, entrées dérivées de `AssimilationSystem.Config` ; accessible depuis le
-bouton « Chimère » du MainMenu ; `CodexScreenBase.IntroText` = paragraphe d'intro optionnel) ·
-**`ChallengesScreen`** (écran Défis/succès — sous-classe `CodexScreenBase`, entrées dérivées de
-`ChallengeSystem.Defs`, statut accompli/à faire encodé dans accent+tag, objectif+récompense composés
-dans la description ; cf. docs/DESIGN_CHALLENGES.md) · **`PerksScreen`** (décrit les perks de départ —
-sous-classe `CodexScreenBase`, entrées de `StartingPerks.All`, statut débloqué/verrouillé) ·
-**`CodexMenuScreen`** (sous-menu regroupant Bestiaire/Arsenal/Chimère/Défis/Perks — désencombre le
-MainMenu ; les écrans codex y reviennent via `CodexScreenBase.BackScenePath`) ·
-**`ModalQueue`** (statique — coordonne LevelUpScreen +
-AssimilationScreen : un SEUL `Paused`, level-up prioritaire ; jamais affichés simultanément) ·
-`RunEndScreen` · `IntroScreen`
-(cinématique) · `HUD` (+ rangée d'emplacements de greffe sous la barre XP) · `BuffBar` · `Banner` · `BiomeCatalog` · `Characters` (registre
-des 4 persos jouables : chimera/impulse_cannon, titan/drone_swarm, vagabond/plasma_blade,
-vecteur/vector_lance ; `CharacterSelectScreen` en fait les cartes).
+## §UI — `unity/Assets/Scripts/UI/`
+`MainMenuScreen` · `IntroScreen` · `LevelSelectScreen` · `HubScreen` ·
+`CodexScreen` · `ChallengeScreen` · `AssimilationScreen` · `LevelUpScreen` · `PauseScreen` ·
+`RunEndScreen` · `OptionsScreen` · `RunHud` (+ `HUD` côté Gameplay) · `UpdateBanner` ·
+`GameScenes` · `ModalQueue` · `UiFocusGuard` / `UiFocusPulse` / `UiVignette` ·
+⚠ **Aucun écran de sélection de personnage n'existe côté Unity** — il n'a pas été porté.
+**`UiPalette`** (couleurs) et **`UiStyle`** (cadres « plaque blindée ») — jamais de couleur en dur.
 
-## §Weapons — `src/Weapons/`
-Base : `WeaponBase` (⚠ `base._Ready()` EN DERNIER). 12 armes actives + 9 fusions.
-`VectorLance` = arme DIRIGÉE (tire vers `Player.AimDirection` = **souris** ou **stick droit**, pas l'ennemi le plus proche ; réticule `Player._aimIndicator`) ;
-sa fusion `VectorBeam` (+ servo_motors) = rayon perforant CONTINU dirigé (`continuous_beam`).
-`FrostVeil` (cryo_lance + reinforced_plating) = aura de givre CONTINUE (dégâts + slow radial).
-Fusions : `FusionBlade`, `RailOvercharged`, `OrbitalSwarm`, `OverloadAegis`,
-`IonicStorm`, `SolarColumn`, `HornetSwarm`. Projectiles : `Bullet`, `GlaiveProjectile`,
-`SeekerMissile`, `DroneEntity`, etc.
-
-## §Entities — `src/Entities/`
-- Player : `Player` (+ `PlayerStats`, + **`GraftManager`** : applique les effets de greffe — stat mods avec retrait exact, mini-essaims orbitants/tourelle/thorns/onde en `_Process`, teinte additive `SelfModulate`, + **props de silhouette** Phase B `BuildPropFor`/`UpdateProps`/`Shade` : carapace/servos/œil/onde/proue de charge/cœur de ruche ancrés au corps, miroir via `Player.FacingLeft` ; le dash vit dans `Player` : `EnableDash`/`DisableDash`, `GraftSpeedMultiplier`, `HealFlat`, `SetGraftTint`, `FacingLeft`, `IsDashing`)
-- Enemies : `EnemyBase` (data-driven, `SetSpriteFrames`, **`ApplyElite`** — affixes d'élite), `EliteAura` (halo VFX), `EnemyBullet`, `CorruptedDrone`, `CorruptedSentinel`, `RustSwarm`, `RustStalker`
-- MiniBoss : `AetherRevenant`, `MasterSentinel`, `RustStalker` + **3 mid-boss de biome** (GDD §32) :
-  **`MoltenColossus`** (Fournaise — charges télégraphiées laissant un sillage de `BossHazard` Magma),
-  **`CryoSentinel`** (Givre — cône de gel dirigé + plaques de givre dans l'axe, kite à 250 px),
-  **`NeonWarden`** (Néon — bouclier orbital qui absorbe 80 % des dégâts venant du secteur couvert,
-  + adds via `EnemySpawner.SummonAdds`). Leurs effets dessinés vivent dans **`ChampionOverlay`**
-  (parenté à la RACINE : `Modulate` du HitFlash saturerait les couleurs, cf. `docs/PITFALLS.md`)
-  · Boss : `GraftedColossus` (48×48, `Die()` custom)
-- **Boss de fin** (`src/Entities/Boss/`) : **`RustedCore`** (condition de victoire des 5 niveaux —
-  3 phases + 1 incarnation par biome ; override `TakeDamage` pour la surcharge de bascule ;
-  `DisplayName`/`HpRatio`/`Phase`/`IsSurcharging` lus par la barre de boss du HUD ; signatures dans
-  `FireSignature`) · **`BossHazard`** (zones au sol persistantes `Magma`/`Frost`, construites en
-  code, détection par distance, `armDelay` de télégraphe). Logique pure → `BossPhases` +
-  `BossIncarnations` (§Rules). Sprites des 5 incarnations → `tools/generate_boss_sprites.py`
-  (`CORE_VARIANTS`). Pièges + checklist « ajouter une incarnation » → `docs/PITFALLS.md`.
-- Environment : `AetherCore`, `AetherGeyser`, `HpOrb`, `XpOrb`, `MagnetPickup`, `PowerUpPickup`
-
-## §Data — `data/*.json` (tuning sans recompiler)
+## §Data — `unity/Assets/StreamingAssets/data/*.json` (tuning sans recompiler)
 `weapons.json` (5 niveaux/arme) · `enemies.json` + `enemies_biome_expansion.json` ·
-`levelup_config.json` (rarityByCard) · `meta_upgrades.json` (hub, 19 items — inclut `graft_slots`/`graft_metabolism`) ·
-**`grafts.json`** (Assimilation : slots/gauges/grafts/fusions/**biomeAffinities** §21, cf. GraftTable) ·
-**`challenges.json`** (Défis/succès : condition + récompense echoes/perk/cosmetic, cf. ChallengeTable) · `texts.json`.
+`levelup_config.json` (rarityByCard) · `meta_upgrades.json` (hub) · **`grafts.json`** (Assimilation :
+slots/gauges/grafts/fusions/biomeAffinities) · **`challenges.json`** (défis : condition + récompense)
+· `texts.json`. Traductions : `StreamingAssets/localization/ui.csv`.
+
+⚠ **Une clé déclarée n'est pas une clé lue.** `tools/audit_json_keys.py` compare les clés du JSON
+aux littéraux du code : il a trouvé 8 armes qui ne grandissaient que par leurs dégâts.
 
 ## §Outils — `tools/`
-- Sprites : `pseudo3d_lib.py` (⚠ toujours dériver ombre/highlight via ce lib), `generate_*` (sprites/icônes/tiles/vfx),
-  **`generate_midboss_sprites.py`** (les 3 mid-boss de biome en 48×48, `--only=<id>`)
-- **Icône de l'app** : `generate_app_icon.py` → `icon.ico` (7 tailles, 3 niveaux de détail) + `icon.png` (256).
-  Motif : tête de chimère fendue machine/organique sur plaque blindée. Câblage `export_presets.cfg`
-  (`application/icon`) + `project.godot` (`config/icon`, `config/windows_native_icon`) → `docs/PITFALLS.md` §Icône.
-  Contrôle visuel : `--sheet` (planche 16→256).
-- **Audio / musique** : `synth_lib.py` (moteur DSP : oscillateurs anti-aliasés, filtres résonants,
-  formants vocaux, reverb à convolution, mixage, export OGG) + `synth_instruments.py` (timbres :
-  nappe CS-80, chœur, basse, arpège, percussions métalliques) + **`generate_music_v3.py`**
-  (partitions des 26 pistes — `--only <id>`, `--preview`, `--list`). **Ces outils produisent la
-  bande-son de SECOURS** (synthétisée, sans contrainte de licence), plus celle jouée en jeu.
-- **Musique en jeu (générée sur Suno)** : **`import_ai_music.py`** — prend les fichiers déposés
-  dans `music_ai/` et les installe dans `assets/audio/music/` (détection du point de boucle par
-  corrélation FFT, fondu de raccord, loudness EBU R128, encodage OGG). `--list`, `--only <id>`,
-  `--keep-preview` (écouter avant d'installer), `--loop-tolerance` (boucles plus longues).
-  Prompts source : `docs/AUDIO_AI_PROMPTS.md`. Contrôle : `check_music_assets.gd` (headless Godot :
-  existence, chargement réel, boucles courtes). Legacy : `generate_music_synth.py`,
-  `preview_adaptive_mix.py` (mix en couches de la BO synthétisée), `integrate_kenney_audio.py` (SFX)
-- Captures : `screenshot_*.py`, `capture_*.py`, `window_capture.py`
-- **Trailer vidéo** : `record_trailer.py` (capture les rushes via le Movie Maker Godot `--write-movie`
-  + pilotage PyAutoGUI ; table de prises `TAKES`) puis `build_trailer.py` (montage : EDL de plans,
-  upscale ×2 nearest en 1440p, cartons de texte, musique `MUSIC_EDL` + `loudnorm`, sortie
-  `trailer/*.mp4`). Entre les deux : `trailer_sheets.py` (planches-contact horodatées, `--range` /
-  `--step` — **obligatoire après chaque recapture**, les timecodes de l'EDL ne survivent pas aux
-  runs randomisées).
-  Flag jeu `--trailer` = `DebugHooks.TrailerMode` (masque VersionStamp + invite d'intro).
-  **Langue du trailer** : `record_trailer.py --lang=en` (texte affiché PAR LE JEU dans les rushes :
-  narration, bannières, cartes de level-up, menus) ET `build_trailer.py --lang=en` (cartons de texte
-  incrustés, dict `TEXTS`) — les deux doivent porter la même langue. Sortie nommée
-  `trailer/ChimeraProtocol_trailer_<LANG>_1440p.mp4`. Description YouTube prête à coller →
-  `docs/YOUTUBE_TRAILER.md`.
-  Pièges → `docs/PITFALLS.md` §Capture vidéo. Sorties ignorées par git (`trailer/`).
-- Tests/équilibrage : **`boss_ttk_session.ps1`** (mesure du TTK boss par un testeur HUMAIN :
-  `-Biome <id>` / `-All` / `-Real` / `-Invuln` / `-ReportOnly` — lance le combat puis affiche le
-  tableau des relevés de `BossTelemetry`), `boss_ttk_test.py` (bot legacy : kite en cercle, ses
-  chiffres ne valent PAS validation d'équilibrage), **`power_curve_session.ps1`** (courbe de
-  puissance d'une run entière : `-Biome <id>` / `-Bench` (banc headless auto-play) / `-Minutes <n>` /
-  `-ReportOnly` — tableau minute par minute puis ratio puissance/population entrée-overtime → fin),
-  **`power_curve_multi.py`** (campagne de N runs : `--runs` / `--biome` / `--minutes` / `--seed-base`
-  / `--saturate` / `--out <json>` / `--compare <json>` / `--report-only` — médiane, p10/p90, bruit
-  relatif et **plus petit écart détectable** ; `--compare` fait la comparaison **appariée par graine**,
-  la seule qui tranche un réglage en quelques runs). `test_balance_v2.py`, `test_ui_keyboard.py`,
-  `smoketest_exe.py`
-- Release : **`release_itch.ps1`** (export → butler push → régénère & push `version.json`) — workflow complet via le skill **`/publier-itch`**
+- **Destinations** : **`unity_paths.py`** (où écrit chaque famille d'assets) et **`spriteframes.py`**
+  (manifestes d'animation). Tout générateur passe par eux.
+- **Sprites** : `pseudo3d_lib.py` (⚠ toujours dériver ombre/highlight via ce lib) ·
+  `generate_sprites.py` / `_v2` · `generate_new_enemies.py` · `generate_boss_sprites.py` ·
+  `generate_midboss_sprites.py` (`--only=<id>`) · `generate_miniboss_sprites.py` ·
+  `generate_character_sprites.py` · `generate_biome_tiles.py` · `generate_arena_obstacles.py` /
+  `_extras` · `generate_glass_floor_tile.py` · `generate_backdrop_tile.py` ·
+  `generate_vfx_sprites_polish.py` · `generate_splash.py`
+- **UI** : `generate_ui_frames.py` + `generate_ui_widgets.py` (cadres, curseurs, interrupteurs →
+  `Resources/UiFrames`) · `generate_weapon_icons.py` · `generate_graft_icons.py` ·
+  `generate_reward_icons.py` · `generate_hud_assets.py` / `retouch_hud_assets.py` /
+  `extract_hud_assets.py` · `gen_lang_flags.py` · `preview_ui_frames.py` · `ui_contact_sheet.py`
+- **Icône de l'app** : `generate_app_icon.py` → `unity/Assets/Art/branding/icon.png` (Unity dérive
+  lui-même les tailles ; pas de `.ico`). Contrôle visuel : `--sheet`.
+- **Audio** : `synth_lib.py` + `synth_instruments.py` + `generate_music_v3.py` produisent la
+  bande-son de **secours** (synthétisée, sans contrainte de licence). La musique **en jeu** vient de
+  Suno : déposer dans `music_ai/` puis **`import_ai_music.py`** (`--only <id>`, `--keep-preview`) →
+  `Resources/Audio/music`. Prompts : `docs/AUDIO_AI_PROMPTS.md`. Contrôle : `analyze_music.py`.
+  SFX Kenney CC0 : `integrate_kenney_audio.py`.
+- **Audits** (nés du portage — « déclaré n'est pas consommé ») : **`audit_json_keys.py`** (clés de
+  données jamais lues, et « fantômes » lus mais absents) · **`audit_unused_members.py`** (membres C#
+  déclarés que rien n'appelle).
+- **Banc** : **`power_curve_multi.py`** (campagne de N runs : `--runs` / `--biome` / `--minutes` /
+  `--seed-base` / `--saturate` / `--overtime` / `--out` / `--compare` / `--report-only`) ·
+  **`power_loop.py`** (boucle de puissance : niveaux/min, pente des PV max, tests de signes).
+- **Captures** : `capture_store.py` (lance le binaire Unity), `window_capture.py`.
+- **Trailer** : `build_trailer.py` (montage) + `trailer_sheets.py` (planches-contact).
+  ⚠ La **capture** des rushes n'existe plus : elle passait par le Movie Maker de Godot.
+- **Release** : **`release_unity.ps1`** — workflow complet via le skill **`/publier-itch`**.
 - Python : `C:\Users\drang\AppData\Local\Programs\Python\Python313\python.exe`
 
 ## §Docs — `docs/`
-`GDD.md` (référence design) · `RELEASE.md` · `EXPANSION_PLAN.md` ·
-**`AUDIO_AI_PROMPTS.md`** (direction sonore EN VIGUEUR : metal industriel, prompt Suno + tonalité/
-BPM de chaque piste) · `ART_BRIEF_AUDIO.md` (bande-son synthétisée de secours : palette
-instrumentale, progressions, architecture en stems, mixage, bouclage) ·
-`LEVEL_PROGRESSION_PLAN.md` · `ART_BRIEF_PSEUDO3D.md` · `STYLE_GUIDE.md` ·
-`NARRATIVE.md` · `TEST_REPORT.md` (bugs game-tester) · pages store itch.
+`GDD.md` (référence design) · `PROJECT_STATE.md` (état) · `PITFALLS_UNITY.md` (pièges) ·
+`UNITY_MIGRATION_PLAN.md` (architecture du portage) · `TEST_REPORT.md` (mesures & bugs) ·
+`DEVLOG.md` · `RELEASE.md` · **`AUDIO_AI_PROMPTS.md`** (direction sonore en vigueur) ·
+`ART_BRIEF_AUDIO.md` / `_PSEUDO3D` / `_UI_FRAMES` · `STYLE_GUIDE.md` · `NARRATIVE.md` /
+`lore-bible.md` · `DESIGN_ASSIMILATION.md` / `DESIGN_CHALLENGES.md` · `ENDGAME_PLAN.md` ·
+pages store itch · `archive-godot/` (ère Godot).
 
 ## §MAJ — Bandeau « nouvelle version » (joueurs web)
-- Manifeste : `version.json` (racine) = `{version, url}`, poussé sur GitHub par `release_itch.ps1`.
-- `MainMenu.StartUpdateCheck()` : `HttpRequest` vers `raw.githubusercontent.com/drangoht/Chimera-Protocol/main/version.json`, compare via `VersionCompare.IsNewer` à `config/version`, affiche un bandeau + bouton `OS.ShellOpen(url)`. Masqué si `ITCHIO_API_KEY` (app itch = auto-update). Clés loc `UPDATE_AVAILABLE`/`UPDATE_DOWNLOAD`.
+- Manifeste : `version.json` (racine) = `{version, url}`, poussé sur GitHub par `release_unity.ps1`.
+- `UpdateBanner` compare `Application.version` au manifeste lu sur `raw.githubusercontent` via
+  `VersionCompare.IsNewer`. Clés loc `UPDATE_AVAILABLE` / `UPDATE_DOWNLOAD`.
 
-## Checklists de câblage (résumé — détail + pièges non-évidents dans `docs/PITFALLS.md`)
-> **Avant de coder** dans un domaine (armes, ennemis, UI, VFX, scènes…), lire `docs/PITFALLS.md`.
-- **Arme** (8 pts) : `weapons.json` · `levelup_config.json` · `InventorySystem` (paths+stats) · `LevelUpSystem.AllWeaponIds` · `Codex` · icône `ui_icon_*.png`+`.import` · clés `WPN_*` EN/FR/ES.
-- **Ennemi basique** (variante d'archétype, PAS de scène) : `enemies.json` (`ai.type` ∈ straight_chase/erratic_chase/ranged_kiter/slow_hunter, `framesPath` optionnel) · `Codex.Enemies` · clés `ENEMY_*` EN/FR/ES · sprite `.tres`/`.png`. Vrai nouveau comportement = scène + sous-classe.
-- **Greffe (Assimilation)** : `grafts.json` (entrée `grafts[]` : gauge 1:1, sourceAiType, rarity, tint, effects/statMods) · effet appliqué dans `GraftManager` (Setup*/Update* + retrait via RebuildBehaviors/ReverseStatMods ; stat sur `PlayerStats` avec delta réversible et hardcaps `StatCaps`) · clés loc `GRAFT_<ID>_NAME/_DESC` EN/FR/ES (fallback FR du json via `TFallback`) · icône `assets/sprites/grafts/<id>_icon.png` (optionnelle, fallback carré teinté). Routage kill→jauge = pur (`GraftTable.RouteKill`, testé). Nouveau comportement moteur (dash-like lisant l'entrée) = côté `Player`, pas GraftManager.
-- **Incarnation de boss de fin** (5 pts) : `BossIncarnations.All` (biome, `NameKey`, `BossSignature`, période de base, teinte, `FramesPath`) · branche dans `RustedCore.FireSignature` · clé `BOSS_<ID>_NAME` EN/FR/ES · palette dans `CORE_VARIANTS` de `tools/generate_boss_sprites.py` puis `--import` Godot · aucun ajout dans `enemies.json` (les 5 partagent la def `rusted_core`). Cf. GDD §29 + `docs/PITFALLS.md`.
-- **Personnage jouable** (5 pts) : `Characters.All` (id, stats, `StartingWeaponId`, `Tint`, `FramesPath`) · sprite dédié via `tools/generate_character_sprites.py <id>` (+ `.tres` + import Godot) · clés `CHAR_<ID>_NAME/TAG/DESC` EN/FR/ES (l'écran lit les clés, pas les champs C#) · `GameSettings.SignatureWeapons` si l'arme de base doit être « découverte » d'office · aucune méca moteur (le pipeline `GameManager`/`InventorySystem` gère toute arme de départ).
+## Checklists de câblage (résumé — détail + pièges dans `docs/PITFALLS_UNITY.md`)
+> **Avant de coder** dans un domaine (armes, ennemis, UI, VFX, assets), lire `docs/PITFALLS_UNITY.md`.
+- **Arme** : `weapons.json` · `levelup_config.json` · `InventorySystem` · `WeaponRegistry` ·
+  `LevelUpPool` (ids) · Codex · **`WeaponSfx`** (une arme absente de cette table est MUETTE) ·
+  icône dans `Resources/Ui` · clés `WPN_*` EN/FR/ES.
+- **Ennemi basique** (variante d'archétype, pas de prefab) : `enemies.json`
+  (`ai.type` ∈ straight_chase / erratic_chase / ranged_kiter / slow_hunter) · Codex ·
+  clés `ENEMY_*` · sprites dans `Art/sprites/enemies/<id>/` + manifeste
+  `Editor/spriteframes/<id>.json` + **reconstruction des SpriteFrames dans l'éditeur**.
+- **Greffe** : `grafts.json` · effet dans `GraftManager` (avec retrait réversible) ·
+  clés `GRAFT_<ID>_NAME/_DESC` · icône `Resources/Ui/<id>_icon.png`.
+- **Incarnation de boss** : `BossIncarnations.All` · branche dans `RustedCore.FireSignature` ·
+  clé `BOSS_<ID>_NAME` · palette dans `tools/generate_boss_sprites.py`.
+- **Cran de saturation** : `SaturationTable` · clés `SAT_<n>_NAME` / `_RULE` · effet réellement
+  branché côté moteur. ⚠ **3 crans sur 6 étaient inopérants** dans le portage : la table existait,
+  rien ne la lisait. Vérifier au banc, pas sur la table.
 
 ## Commandes utiles
-- Build .exe : `"…/Godot_v4.7…mono.exe" --headless --export-release "Windows Desktop" "./build/ChimeraProtocol.exe"` (⚠ `ChimeraProtocol.sln` requis à la racine)
-- Tests : `dotnet test tests/ChimeraProtocol.Tests.csproj`
-- Compil rapide C# : `dotnet build ChimeraProtocol.csproj`
-- Jouer une run COMPLÈTE en banc (build réellement accumulé jusqu'au boss) : `--auto-play` (level-up
-  et assimilation résolus tout seuls) + `--timescale=<x>` (≤ 4, au-delà les projectiles traversent
-  leurs cibles). ⚠ Il faut lancer **la scène de jeu** et passer les flags **après `--`**, sinon le
-  banc reste bloqué sur le menu principal sans rien mesurer :
-  `godot --headless --path <projet> res://scenes/Game.tscn -- --auto-play --invuln --timescale=3 --biome=neon`
-- Forcer un biome (tests/captures) : flag `--biome=<id>`
-- Forcer tous les ennemis basiques en élite (test des affixes) : flag `--force-elites` (`DebugHooks.ForceElites`)
-- Observer les **cartes de surcharge** (fin de partie, GDD §33) : flag **`--saturate-arsenal`**
-  (`DebugHooks.SaturateArsenal`) — draine le pool jusqu'à point fixe via `LevelUpSystem.DebugDrainPool`
-  (armes + passifs + fusions + montée des fusions) puis octroie un niveau. ⚠ Indispensable : le banc
-  n'atteint JAMAIS la saturation seul (bot immobile → niveau ~73 en 17 min contre 124 en session
-  jouée), et une fois saturé il ne ramasse plus d'orbe donc ne monte plus de niveau.
-- Faire apparaître UN champion isolé, avec le scaling de sa propre fenêtre de spawn : flag
-  **`--debug-enemy=<id>`** (`DebugHooks.DebugEnemy`) — généralise `--debug-boss`, qui ne sait spawner
-  que `rusted_core`. Seul, il sert à **observer** (loadout de départ conservé) ; combiné à
-  `--debug-boss`, à **mesurer** un TTK (loadout de test). Captures : `tools/capture_midboss.py`
-- Forcer l'équipement d'une (ou des trois) fusion(s) de greffes sans grinder les jauges : flag `--force-fusion=<id|all>` (`DebugHooks.ForcedFusion`, équipe d'abord les 2 greffes prérequises). 3 fusions : `fusion_charge_blindee`, `fusion_ruche_tourelles`, `fusion_nova_rodeur` (Frappe Nova = dash-blink + nova ; partage `erratic_servos` avec Charge Blindée → exclusives)
-- Mesurer le TTK du boss de fin : `powershell -File tools/boss_ttk_session.ps1 -Biome neon` (combat
-  joué à la main, relevé automatique) puis `-ReportOnly` pour le tableau. Journal :
-  `%APPDATA%\Godot\app_userdata\Chimera Protocol\boss_ttk.log`
-- Mesurer la COURBE DE PUISSANCE d'une run (rapport puissance joueur / menace, overtime compris) :
-  `powershell -File tools/power_curve_session.ps1 -Biome fournaise` (session jouée) ou `-Bench`
-  (banc headless). Flag brut : `--power-curve` (+ `--run-limit=<s>` pour borner une run — la survie
-  est sans fin, un banc ne s'arrête sinon jamais). Journal :
-  `%APPDATA%\Godot\app_userdata\Chimera Protocol\power_curve.log`
-- **Trancher un RÉGLAGE (et non observer une run)** : `py tools/power_curve_multi.py --runs 5
-  --biome fournaise --out avant.json`, modifier la valeur, puis relancer avec `--compare avant.json`.
-  La campagne annonce le **plus petit écart détectable** ; `--compare` apparie run par run via les
-  graines. **Une run isolée — bot ou humaine — ne tranche rien** (variance ×2,4 mesurée).
-  ⚠ **Lire « temps soutenable » et « survie théorique », pas la survie** : le bot tient 2,6× plus
-  longtemps qu'un joueur, et sous `--minutes 25` les runs s'arrêtent sur la limite de temps
-  (`bench_limit`) — la durée y est un plancher, signalé « ≥ ». Compter **~12 min réelles par run**
-  d'overtime (`--timescale` ne rend rien en nuée) ; le journal est cumulatif, donc une campagne peut
-  se lancer par lots de 2 via `--seed-base` puis s'agréger avec `--report-only --runs N`.
-- Rendre une run REPRODUCTIBLE (mêmes vagues, mêmes cartes) : flag **`--seed=<n>`** (`DebugHooks.Seed`
-  → `GD.Seed`, + dérive le RNG de `PowerUpSpawner`). Base de l'appariement du banc multi-run.
-- Rendre le joueur invulnérable pour observer un combat long (phases du boss, VFX) : flag `--invuln` (`DebugHooks.Invulnerable`) — à combiner avec `--debug-boss`, qui trace aussi chaque bascule de phase
-- Forcer la langue de l'UI pour une session sans toucher à `user://settings.cfg` (captures/trailer) : flag `--lang=<en|fr|es>` (`DebugHooks.ForcedLanguage` → `GameSettings.ApplyLanguageOverride`)
-- Forcer l'équipement d'une (ou des 5) greffe(s) de base pour valider les props de silhouette : flag `--force-graft=<id|all>` (`DebugHooks.ForcedGraft`) ; capture par PID via `tools/capture_graft_silhouette.py`
+- **Tests** : `dotnet test tests/ChimeraProtocol.Tests.csproj` (626 tests, aucun moteur requis)
+- **Build du jeu** :
+  `Unity.exe -batchmode -quit -projectPath unity -executeMethod BuildBench.Windows64Game`
+  (autres cibles : `Windows64PlatformSmoke`, `Windows64RunSmoke`, `Windows64Il2cpp`)
+- **Publier** : `tools/release_unity.ps1 -Version X.Y.Z -DryRun` puis sans `-DryRun`
+- **Flags du jeu** (`DebugHooks`) : `--auto-play` · `--power-curve` · `--biome=<id>` ·
+  `--timescale=<x>` (≤ 4) · `--run-limit=<s>` · `--seed=<n>` · `--start-at=<min>` ·
+  `--saturate-arsenal` · `--saturation=<n>` · `--force-elites` · `--invuln` · `--lang=<en|fr|es>`
+  ⚠ **Non portés depuis Godot** : `--debug-boss`, `--debug-enemy`, `--force-graft`,
+  `--force-fusion`, `--trailer`. Les documents d'archive les mentionnent encore.
+- **Trancher un RÉGLAGE** : `py tools/power_curve_multi.py --runs 5 --overtime --out avant.json`,
+  modifier la valeur, relancer avec `--compare avant.json`. **Une run isolée ne tranche rien**
+  (variance ×2,4 mesurée). Lire « temps soutenable » et le **test des signes**, pas la survie du bot.
+- Journal du banc : `%USERPROFILE%\AppData\LocalLow\drangoht\Chimera Protocol\power_curve.log`

@@ -14,6 +14,7 @@ Usage :
 import math
 import struct
 import os
+import sys
 import zlib
 
 # ---------------------------------------------------------------------------
@@ -26,10 +27,10 @@ try:
 except ImportError:
     PILLOW_AVAILABLE = False
 
-OUTPUT_DIR = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-    "assets", "sprites", "vfx"
-)
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import unity_paths
+
+OUTPUT_DIR = str(unity_paths.sprite_dir("vfx"))
 
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 

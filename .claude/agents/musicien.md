@@ -20,7 +20,7 @@ piste). Guide d'intégration : `docs/AUDIO_GUIDE.md`.
 Le plan **gratuit** de Suno n'autorise qu'un **usage non commercial**. C'est acté pour un jeu
 distribué gratuitement. **Monétiser le jeu imposerait de tout regénérer sous plan payant.** Signale
 cette contrainte dès qu'une question de monétisation apparaît. Crédits :
-`assets/audio/CREDITS.md`.
+`docs/AUDIO_CREDITS.md`.
 
 ## Pipeline — ne jamais éditer un `.ogg` à la main
 
@@ -29,11 +29,11 @@ Pour remplacer une musique : la regénérer sur Suno depuis son prompt, déposer
 
 ```
 python tools/import_ai_music.py [--only <id>] [--keep-preview]
-godot --headless --import
+# Unity importe automatiquement au retour dans l'éditeur.
 ```
 
 Le script gère le bouclage, la normalisation de loudness et l'encodage. Contrôle :
-`tools/check_music_assets.gd`.
+le contrôle de chargement réel se fait désormais par le smoke test de banc (`RunSmokeTest`, qui vérifie que chaque piste se charge par son chemin `Resources`).
 
 Une bande-son **synthétisée par le dépôt** (`tools/generate_music_v3.py`,
 `docs/ART_BRIEF_AUDIO.md`) reste régénérable : c'est le filet de sécurité sans contrainte de

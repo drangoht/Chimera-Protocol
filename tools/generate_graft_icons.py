@@ -5,7 +5,7 @@ canvas RGBA 32x32, dessin par primitives (put/disc/ring/line), puis ombrage pseu
 "icone UI" (tools/pseudo3d_lib.py: shade_icon(), lumiere fixe haut-gauche 45 degres,
 2 faces highlight/shadow, amplitude reduite).
 
-Sortie : assets/sprites/grafts/<id>_icon.png (chemin lu par data/grafts.json, champ
+Sortie : unity/Assets/Resources/Ui/<id>_icon.png (chemin lu par data/grafts.json, champ
 "hudIcon", et par src/Core/Rules/GraftTable.cs / src/UI/AssimilationScreen.cs).
 
 Les couleurs sont choisies pour correspondre a la teinte de chaque greffe (brief
@@ -25,10 +25,12 @@ from PIL import Image
 
 S = 32
 ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), ".."))
-OUT = os.path.join(ROOT, "assets", "sprites", "grafts")
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import pseudo3d_lib as _p3d
+import unity_paths
+
+OUT = str(unity_paths.sprite_dir("grafts"))
 
 
 def canvas():

@@ -71,11 +71,12 @@ def main() -> int:
 
     read = literals(SCRIPTS)
 
-    # ⚠ Le discriminant qui donne son sens au rapport : une clé orpheline des DEUX côtés est une
-    # intention de design jamais câblée — une décision qui appartient à l'auteur. Une clé lue par
-    # Godot et pas par Unity est un TROU DE PORTAGE, et rien d'autre.
-    godot = ROOT / "src"
-    godot_read = literals(godot) if godot.is_dir() else set()
+    # ⚠ Ce rapport distinguait autrefois deux causes, en comparant au code Godot resté dans le
+    # dépôt : une clé lue par Godot et pas par Unity était un TROU DE PORTAGE, une clé orpheline
+    # des deux côtés une intention de design jamais câblée. Godot supprimé, ce témoin n'existe
+    # plus — toute clé orpheline est désormais à instruire au cas par cas, et l'outil ne peut plus
+    # dire laquelle des deux causes s'applique.
+    godot_read: set[str] = set()
 
     report: dict[str, dict[str, list[str]]] = {}
 

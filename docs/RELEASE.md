@@ -39,8 +39,9 @@ Un seul push couvre les deux publics :
 ## Publier une nouvelle version (moteur Unity)
 
 Depuis la **2.0.0**, le jeu est construit avec Unity et se publie par `tools/release_unity.ps1`.
-L'ancien `tools/release_itch.ps1` pilotait l'export Godot ; il est conservé comme référence, mais
-le moteur est gelé et il ne doit plus servir.
+L'ancien `release_itch.ps1`, qui pilotait l'export Godot, a été supprimé avec le moteur
+(2026-08-10) — ses garde-fous utiles ont été repris dans le script Unity, les autres ne se
+transposaient pas.
 
 1. **Essai à blanc** — la chaîne entière sans rien publier :
    ```

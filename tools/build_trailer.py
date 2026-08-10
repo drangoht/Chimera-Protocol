@@ -36,7 +36,7 @@ TXT = os.path.join(PROJ, "trailer", "txt")
 LANG = next((a.split("=", 1)[1] for a in sys.argv[1:] if a.startswith("--lang=")), "en")
 OUT = os.path.join(PROJ, "trailer", f"ChimeraProtocol_trailer_{LANG.upper()}_1440p.mp4")
 
-FONT = "assets/fonts/ShareTechMono.ttf"
+FONT = "unity/Assets/Resources/Fonts/ShareTechMono.ttf"
 
 CYAN = "0x44FFEE"
 GOLD = "0xFFCC44"
@@ -157,9 +157,9 @@ TOTAL = sum(e[2] for e in EDL)
 #   fournaise, et l'audio des rushes est justement attenue a CLIP_GAIN.
 # ---------------------------------------------------------------------------
 MUSIC_EDL = [
-    ("assets/audio/music/music_menu.ogg",             0.0),
-    ("assets/audio/music/music_run_neon_combat.ogg",  9.2),
-    ("assets/audio/music/music_run_boss.ogg",        39.8),
+    ("unity/Assets/Resources/Audio/music/music_menu.ogg",             0.0),
+    ("unity/Assets/Resources/Audio/music/music_run_neon_combat.ogg",  9.2),
+    ("unity/Assets/Resources/Audio/music/music_run_boss.ogg",        39.8),
 ]
 
 XFADE = 1.6

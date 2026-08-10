@@ -2,7 +2,8 @@
   "permissions": {
     "deny": [
       "Edit(./build/**)",
-      "Edit(./.godot/**)",
+      "Edit(./unity/Library/**)",
+      "Edit(./unity/Build/**)",
       "Edit(./**/bin/**)",
       "Edit(./**/obj/**)",
       "Read(./*.keystore)",
@@ -11,8 +12,8 @@
     "ask": [
       "PowerShell(butler *)",
       "Bash(butler *)",
-      "PowerShell(*release_itch*)",
-      "Bash(*release_itch*)"
+      "PowerShell(*release_unity*)",
+      "Bash(*release_unity*)"
     ]
   },
   "hooks": {

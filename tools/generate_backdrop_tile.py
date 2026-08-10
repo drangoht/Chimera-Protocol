@@ -4,14 +4,14 @@ Genere une TUILE TRANSPARENTE reutilisable pour le fond parallax "sous l'arene"
 
 Contrairement aux tuiles de sol/mur (opaques, tintees par biome au chargement),
 cette tuile est un simple masque d'alpha (RGB blanc, alpha variable) : le shader
-assets/shaders/backdrop_parallax.gdshader la reechantillonne en boucle (mod UV)
+de parallaxe de fond la reechantillonne en boucle (mod UV)
 et la teinte avec l'accent du biome courant a l'execution -> une seule tuile
 suffit pour tous les biomes.
 
 Motif : grille de circuit distante (lignes fines + points aux intersections),
 concue pour etre parfaitement raccordable (64x64, motif au pas de 16px).
 
-Sortie : assets/sprites/tileset/backdrop_tile.png
+Sortie : unity/Assets/Art/sprites/tileset/backdrop_tile.png
 Lancer : python tools/generate_backdrop_tile.py
 """
 import os
@@ -19,8 +19,12 @@ from PIL import Image
 
 S = 64
 STEP = 16
+import sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import unity_paths
+
 ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), ".."))
-OUT = os.path.join(ROOT, "assets", "sprites", "tileset", "backdrop_tile.png")
+OUT = str(unity_paths.sprite_path("tileset/backdrop_tile.png"))
 
 WHITE_LINE = (255, 255, 255, 20)
 WHITE_DOT  = (255, 255, 255, 55)

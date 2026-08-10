@@ -204,54 +204,57 @@ d'UI ne se coupent plus à l'ouverture d'une popup (level-up, pause, Assimilatio
 
 | Outil | Version |
 |---|---|
-| Moteur | **Godot 4.7 .NET** |
-| Langage | **C# / .NET 8** |
+| Moteur | **Unity 6.5** (`6000.5.6f1`), URP 2D |
+| Langage | **C#** |
 | Cible | **Windows (.exe)** |
-| Style graphique | Pixel art 32×32 px pseudo-3D avec ombres (`texture_filter = Nearest`) |
-| Typographie | **Share Tech Mono** (OFL) — mono techno lisible, Theme global (VT323/Press Start 2P en réserve) |
-| Langues | **Anglais (défaut) · Français · Espagnol** — TranslationServer Godot, choix persisté |
+| Style graphique | Pixel art 32×32 px pseudo-3D avec ombres (import `Point`, `spritePixelsPerUnit = 1`) |
+| Typographie | **Share Tech Mono** (OFL) — mono techno lisible (VT323 en réserve) |
+| Langues | **Anglais (défaut) · Français · Espagnol** — `ui.csv` lu au runtime, choix persisté |
+
+> Le jeu a été écrit sous **Godot 4.7 .NET** jusqu'à la 1.26.0, puis porté sous Unity (2.0.0). Le
+> moteur Godot a été retiré du dépôt le **2026-08-10** ; sa documentation reste consultable sous
+> `docs/archive-godot/`. Les entrées de phase ci-dessus antérieures à la 2.0.0 décrivent donc un
+> code qui n'existe plus tel quel — leur **contenu de jeu**, lui, a été porté.
 
 ### Structure du projet
 
 ```
 chimera-protocol/
-├── src/
-│   ├── Core/          GameManager, Constants, SaveManager + Rules/ (logique pure testable)
-│   ├── Entities/      Player, EnemyBase + 4 ennemis + 3 mini-boss + boss, XpOrb, HpOrb, MagnetPickup, AetherGeyser
-│   ├── Weapons/       12 armes actives (dont Lance Vectorielle dirigée) + 9 fusions (dont Rayon Vecteur, Voile de Givre) + Bullet
-│   ├── Systems/       XpSystem, InventorySystem, LevelUpSystem, EnemySpawner, AetherCoreSpawner, MagnetSpawner, GameSettings, Loc, GroundRenderer
-│   ├── UI/            MainMenu, CharacterSelect, LevelSelect, Hub, LevelUp, RunEnd, Pause, Options, Bestiary, Arsenal, HUD, Codex
-│   ├── VFX/           EnemyDeathBurst, ImpactBurst, FusionFlash, PlasmaArcFlash, MuzzleFlash, ShockwaveRing
-│   └── Systems/       ScreenShake (AutoLoad)
-├── scenes/            Scènes .tscn (entities, weapons, ui, vfx)
-├── assets/
-│   ├── sprites/       PNG pixel art — joueur, ennemis, tiles, VFX, UI
-│   ├── shaders/       4 shaders GLSL (floor_grid, screen_vignette, shockwave_ring, chromatic_aberration)
-│   ├── fonts/         Share Tech Mono (UI/HUD) + VT323 + Press Start 2P (OFL, réserve)
-│   ├── themes/        ui_theme.tres (Theme global Share Tech Mono)
-│   └── audio/         WAV/OGG CC0 (5 musiques Junkala + 24 SFX + 2 stingers Kenney)
-├── data/              enemies.json, weapons.json, levelup_config.json, meta_upgrades.json
-├── localization/      ui.csv (clés EN/FR/ES) → .translation (TranslationServer Godot)
-├── tests/             ChimeraProtocol.Tests.csproj (xUnit, 62 tests sur src/Core/Rules)
-├── tools/             Scripts de génération d'assets (Python 3.13 + Pillow)
-└── docs/              GDD.md, STYLE_GUIDE.md, AUDIO_GUIDE.md, ARENA_DA_BRIEF.md
+├── unity/
+│   ├── Assets/Scripts/
+│   │   ├── Shared/Rules/        Logique PURE testable, sans dépendance moteur (45 classes)
+│   │   ├── Shared/PlatformCore/ Socle déterministe : Pcg32, TimerWheel, Easing, TweenTimeline
+│   │   ├── Platform/            Pont moteur : Spawner, AudioSystem, Loc, UiFrames, UserData…
+│   │   ├── Gameplay/            Joueur, ennemis, armes (+ Fusions/), spawn, VFX, télémétrie
+│   │   ├── UI/                  Écrans (menu, hub, codex, level-up, pause, options…)
+│   │   └── Bench/               Banc headless : auto-play, smoke tests, tour de captures
+│   ├── Assets/Editor/           Build, construction des SpriteFrames, réglages d'import
+│   ├── Assets/Art/              Sprites sources, consommés par GUID (+ branding/icon.png)
+│   ├── Assets/Resources/        Chargé par chemin à l'exécution : Ui, UiFrames, Audio, Vfx, Fonts…
+│   └── Assets/StreamingAssets/  data/*.json (tuning) + localization/ui.csv
+├── tests/                       xUnit — compile Shared/ par chemin (626 tests, aucun moteur requis)
+├── tools/                       Générateurs d'assets, banc de mesure, audits, release (Python/PS)
+└── docs/                        GDD.md, PITFALLS_UNITY.md, TEST_REPORT.md… + archive-godot/
 ```
 
 ---
 
 ## Lancer le projet
 
-1. Installer **Godot 4.7 .NET** (variante `.NET` obligatoire — pas la version standard)
-2. Installer **.NET 8 SDK**
-3. Ouvrir `project.godot` dans Godot
-4. *Project → Tools → C# → Create C# Solution* si la solution n'est pas détectée
-5. `F5` pour lancer
+1. Installer **Unity 6.5** (`6000.5.6f1`) via Unity Hub
+2. Ouvrir le dossier `unity/` comme projet
+3. Ouvrir la scène de jeu et lancer
 
 **Build Windows :**
 ```
-"C:\CODE\JEUX\Godot_v4.7-stable_mono_win64\Godot_v4.7-stable_mono_win64.exe" --headless --export-release "Windows Desktop" "./build/ChimeraProtocol.exe"
+Unity.exe -batchmode -quit -projectPath unity -executeMethod BuildBench.Windows64Game
 ```
-> Export templates requis — télécharger sur godotengine.org/download/archive/ → Godot 4.7 stable → "Export templates (.NET)"
+> Produit `unity/Build/game/ChimeraProtocol.exe` (ignoré par git, régénéré).
+
+**Tests** (aucun moteur nécessaire) :
+```
+dotnet test tests/ChimeraProtocol.Tests.csproj
+```
 
 ---
 

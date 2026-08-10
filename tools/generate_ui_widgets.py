@@ -8,7 +8,7 @@ les tient lui-meme de pseudo3d_lib.shade() — rien n'est redefini ici.
 
 Usage :
     python tools/generate_ui_widgets.py
-Sortie : assets/sprites/ui/frames/ui_slider_*.png, ui_toggle_*.png
+Sortie : unity/Assets/Resources/UiFrames/ui_slider_*.png, ui_toggle_*.png
 """
 import os
 import sys

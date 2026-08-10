@@ -28,7 +28,7 @@ ce que tes textes doivent porter.
 
 ## Où vont tes textes
 
-**Tout texte affiché passe par `localization/ui.csv`** (colonnes EN / FR / ES) et est lu en jeu via
+**Tout texte affiché passe par `unity/Assets/StreamingAssets/localization/ui.csv`** (colonnes EN / FR / ES) et est lu en jeu via
 `Loc.T("CLÉ")`. Livre donc tes textes **prêts à intégrer**, dans les trois langues, avec leur clé :
 
 - descriptions d'armes, passifs, **greffes et fusions** (1-2 phrases) ;
@@ -48,7 +48,7 @@ local** (il lit le fichier chez lui, seule la réponse entre en contexte) :
 
 ```
 mcp__local-llm__local_digest
-  patterns:    ["localization/ui.csv"]
+  patterns:    ["unity/Assets/StreamingAssets/localization/ui.csv"]
   cwd:         C:\CODE\JEUX\chimera-protocol
   instruction: "Repère les entrées dont une des trois colonnes (EN/FR/ES) est vide, identique à la
                 clé, ou nettement plus longue que les autres. Donne la clé et le problème."
@@ -58,7 +58,7 @@ mcp__local-llm__local_digest
 Utile aussi pour vérifier l'unité de **ton** sur un ensemble de descriptions — c'est du texte, donc
 le terrain où ce modèle est bon.
 
-⚠ Après édition du CSV, `godot --headless --import` est nécessaire, sinon la clé s'affiche brute.
+⚠ Le CSV est lu tel quel depuis StreamingAssets : aucune étape d'import.
 
 ## Responsabilités
 

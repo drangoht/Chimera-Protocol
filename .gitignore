@@ -1,46 +1,58 @@
-
-!music_ai/LISEZ-MOI.md
-# Artefacts de tests (dotnet test / CI)
-# Boite d'entree des musiques generees par IA (sources brutes mp3/wav, lourdes et
-# Build
-# C# / .NET
-# Captures de travail pour comparer l'UI avant/apres (regenerables via
-# Captures jetables (frames de debug / variantes one-off)
-# Godot
-# Les perdre casse toutes les références de prefabs et de scènes.
-# Mono / Rider
-# OS
-# Scratch du chantier audio (mesures, logs de vumetre, scripts jetables) et cache Python
-# Test screenshots
-# Trailer video : rushes AVI du Movie Maker Godot (plusieurs Go), plans intermediaires et
-# Unity (migration — docs/UNITY_MIGRATION_PLAN.md)
-# installes par tools/import_ai_music.py dans assets/audio/music/ sont versionnes.
-# mp4 final. Tout est regenerable via tools/record_trailer.py puis tools/build_trailer.py.
-# regenerables depuis les prompts de docs/AUDIO_AI_PROMPTS.md). Seuls les OGG finaux
-# tools/capture_ui_set.py). Seule une planche-contact retenue est commitee, au cas par cas.
+# ─── Unity ──────────────────────────────────────────────────────────────────
 # ⚠ Les fichiers .meta NE SONT PAS ignorés : Unity y stocke les GUID d'assets.
-*.exe
-*.pck
-*.suo
-*.translation
+#    Les perdre casse toutes les références de prefabs et de scènes.
+unity/*.csproj
+unity/*.sln
+unity/[Bb]uild/
+unity/[Bb]uilds/
+unity/[Ll]ibrary/
+unity/[Ll]ogs/
+unity/[Mm]emoryCaptures/
+unity/[Oo]bj/
+unity/[Tt]emp/
+unity/[Uu]serSettings/
+
+# Identité du binaire, posée par BuildBench.StampGitSha à CHAQUE build : c'est un artefact, pas une
+# source. Le versionner produisait un fichier modifié après chaque build — et, avant ce correctif,
+# un tampon qui survivait à sa release et mentait aux builds suivants (docs/PITFALLS_UNITY.md).
+# Absent d'un clone frais, le jeu affiche « dev » : exact, tant qu'aucun build ne l'a nommé.
+unity/Assets/Resources/build_sha.txt
+unity/Assets/Resources/build_sha.txt.meta
+
+# ─── C# / .NET ──────────────────────────────────────────────────────────────
+bin/
+obj/
 *.user
 *.userprefs
-*.zip
-.DS_Store
-.godot/
-.idea/
-.mono/
+*.suo
 .vs/
+.idea/
+
+# Artefacts de tests (dotnet test / CI)
 TestResults/
-Thumbs.db
-bin/
+test-output.txt
+
+# ─── Build & distribution ───────────────────────────────────────────────────
+# Le dossier de staging poussé par tools/release_unity.ps1 y est régénéré à chaque release.
 build/
-data_*/
-docs/*.png.import
+*.exe
+*.zip
+
+# ─── Sources brutes hors dépôt ──────────────────────────────────────────────
+# Boîte d'entrée des musiques générées par IA (mp3/wav bruts, lourds et régénérables depuis les
+# prompts de docs/AUDIO_AI_PROMPTS.md). Seuls les OGG finaux, installés par tools/import_ai_music.py
+# dans unity/Assets/Resources/Audio/music/, sont versionnés.
+music_ai/*
+!music_ai/LISEZ-MOI.md
+tools/kenney_downloads/
+tools/music_downloads/
+
+# ─── Captures de travail ────────────────────────────────────────────────────
+# Comparaisons d'UI avant/après et frames de debug : régénérables, seule une planche-contact
+# retenue est commitée, au cas par cas.
 docs/*_test.png
 docs/_log_*.txt
 docs/_meter_*.csv
-docs/_meter_*.csv.import
 docs/arsenal_review.png
 docs/balance_screenshots/
 docs/balance_v2_screenshots/
@@ -64,28 +76,9 @@ docs/ui_fix_*.png
 docs/ui_sheet_*.png
 docs/ui_step*.png
 docs/verif_*.png
-music_ai/*
-obj/
-test-output.txt
-tests/*.uid
+
+# ─── Divers ─────────────────────────────────────────────────────────────────
 tools/__pycache__/
 tools/_tmp_*.py
-trailer/
-unity/*.csproj
-unity/*.sln
-unity/Build/
-unity/[Bb]uild/
-unity/[Bb]uilds/
-unity/[Ll]ibrary/
-unity/[Ll]ogs/
-unity/[Mm]emoryCaptures/
-unity/[Oo]bj/
-unity/[Tt]emp/
-unity/[Uu]serSettings/
-
-# Identite du binaire, posee par BuildBench.StampGitSha a CHAQUE build : c'est un artefact, pas une
-# source. Le versionner produisait un fichier modifie apres chaque build — et, avant ce correctif,
-# un tampon qui survivait a sa release et mentait aux builds suivants (docs/PITFALLS_UNITY.md).
-# Absent d'un clone frais, le jeu affiche « dev » : exact, tant qu'aucun build ne l'a nomme.
-unity/Assets/Resources/build_sha.txt
-unity/Assets/Resources/build_sha.txt.meta
+.DS_Store
+Thumbs.db

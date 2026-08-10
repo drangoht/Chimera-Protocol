@@ -17,13 +17,14 @@ import sys
 import math
 from PIL import Image, ImageDraw
 
-# Racine du projet (ce script est dans tools/, les assets dans assets/)
+# Racine du projet (ce script est dans tools/, la destination Unity est donnee par unity_paths)
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, SCRIPT_DIR)
 import pseudo3d_lib as _p3d
+import unity_paths
 PROJECT_ROOT = os.path.dirname(SCRIPT_DIR)
-OUT_ENV = os.path.join(PROJECT_ROOT, "assets", "sprites", "environment")
-OUT_VFX = os.path.join(PROJECT_ROOT, "assets", "sprites", "vfx")
+OUT_ENV = str(unity_paths.sprite_dir("environment"))
+OUT_VFX = str(unity_paths.sprite_dir("vfx"))
 
 # ─── Palette (STYLE_GUIDE.md §1) ─────────────────────────────────────────────
 

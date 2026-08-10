@@ -7,7 +7,7 @@ pour toute derivation highlight/shadow/contact/desaturation (meme physique de
 lumiere LIGHT_DIR haut-gauche que les sprites de jeu) — aucune logique de teinte
 HSV n'est reimplementee ici.
 
-Sortie : assets/sprites/ui/frames/ui_frame_<family>_<accent>[_focus].png
+Sortie : unity/Assets/Resources/UiFrames/ui_frame_<family>_<accent>[_focus].png
 
 Anatomie (§3.1), de l'exterieur vers l'interieur, empilee sur une bande de
 `band_px` (16 boutons/cartes, 20 popups) :
@@ -33,9 +33,10 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import pseudo3d_lib as _p3d
+import unity_paths
 
 ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), ".."))
-OUT = os.path.join(ROOT, "assets", "sprites", "ui", "frames")
+OUT = str(unity_paths.sprite_dir("ui/frames"))
 
 # --------------------------------------------------------------------------- #
 # Palette §3.0 — derivee via shade(), jamais de HSV reimplemente ici.

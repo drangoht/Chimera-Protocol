@@ -6,15 +6,19 @@ parallax (BiomeAtmosphere.BuildBackdropVoid) a travers des trous du sol.
 Tuile neutre (grise) : tintee au runtime comme les autres tuiles de sol via
 GroundRenderer (Modulate = biome.FloorTint), donc reutilisable sur tous les biomes.
 
-Sortie : assets/sprites/tileset/tile_floor_glass.png
+Sortie : unity/Assets/Art/sprites/tileset/tile_floor_glass.png
 Lancer : python tools/generate_glass_floor_tile.py
 """
 import os
+import sys
 from PIL import Image, ImageDraw
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import unity_paths
 
 S = 32
 ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), ".."))
-OUT = os.path.join(ROOT, "assets", "sprites", "tileset", "tile_floor_glass.png")
+OUT = str(unity_paths.sprite_path("tileset/tile_floor_glass.png"))
 
 FRAME       = (0x4A, 0x4A, 0x52, 235)
 FRAME_DARK  = (0x26, 0x26, 0x2C, 235)

@@ -9,7 +9,7 @@ style maison cohérent avec generate_sprites.py / generate_boss_sprites.py).
 Memes animations que le joueur d'origine pour que Player.cs marche sans changement :
   idle (4), run_right (6), run_down (6), death (8).
 
-Sortie : assets/sprites/player/titan/  et  .../vagabond/  + leurs SpriteFrames .tres.
+Sortie : unity/Assets/Art/sprites/player/titan/  et  .../vagabond/  + leurs SpriteFrames .tres.
 Lancer : python tools/generate_character_sprites.py
 """
 import os, math, sys
@@ -21,6 +21,8 @@ ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), ".."))
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import pseudo3d_lib as _p3d
+import unity_paths
+import spriteframes
 
 # ---------------------------------------------------------------- primitives
 def canvas():
@@ -222,7 +224,7 @@ def save_faded(img, path, fade_factor):
 
 # ================================================================ frames
 def gen_char(folder, draw, speeds):
-    base = os.path.join(ROOT, "assets", "sprites", "player", folder)
+    base = str(unity_paths.sprite_dir(f"player/{folder}"))
     prefix = folder
     counts = {"idle": 4, "run_right": 6, "run_down": 6, "death": 8}
 
@@ -258,38 +260,16 @@ def gen_char(folder, draw, speeds):
     print(f"{folder}: frames + .tres OK")
 
 def write_tres(folder, prefix, counts, speeds):
-    order = ["idle", "run_right", "run_down", "death"]
-    paths = []
-    for anim in order:
-        for i in range(counts[anim]):
-            paths.append(f"res://assets/sprites/player/{folder}/{prefix}_{anim}_{i+1:02d}.png")
-
-    lines = [f'[gd_resource type="SpriteFrames" load_steps={len(paths)+1} format=3]', ""]
-    for idx, p in enumerate(paths, start=1):
-        lines.append(f'[ext_resource type="Texture2D" path="{p}" id="{idx}"]')
-    lines.append("")
-    lines.append("[resource]")
-    lines.append("animations = [")
-    idx = 1
-    blocks = []
-    for anim in order:
-        frames = []
-        for _ in range(counts[anim]):
-            frames.append(f'{{"duration": 1.0, "texture": ExtResource("{idx}")}}')
-            idx += 1
-        loop = "false" if anim == "death" else "true"
-        blocks.append('{\n'
-                       f'"frames": [{", ".join(frames)}],\n'
-                       f'"loop": {loop},\n'
-                       f'"name": &"{anim}",\n'
-                       f'"speed": {speeds[anim]:.1f}\n'
-                       '}')
-    lines.append(", ".join(blocks))
-    lines.append("]")
-    path = os.path.join(ROOT, "assets", "sprites", "player", folder, f"{folder}_frames.tres")
-    with open(path, "w", encoding="utf-8") as f:
-        f.write("\n".join(lines) + "\n")
-    print("  .tres ecrit :", path)
+    """Manifeste d'animation lu par BuildSpriteFrames (cote editeur Unity)."""
+    path = spriteframes.write_numbered(
+        entity_id=folder,
+        art_subdir=f"player/{folder}",
+        prefix=prefix,
+        counts=counts,
+        speeds=speeds,
+        order=["idle", "run_right", "run_down", "death"],
+    )
+    print("  manifeste ecrit :", path)
 
 def main():
     speeds = {"idle": 6.0, "run_right": 12.0, "run_down": 12.0, "death": 10.0}

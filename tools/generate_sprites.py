@@ -8,7 +8,7 @@ Resolution : 32x32 px par frame (sauf Colosse : 48x48).
 Format : PNG RGBA transparent.
 
 Usage :
-  python tools/generate_sprites.py [--out assets/sprites]
+  python tools/generate_sprites.py [--out unity/Assets/Art/sprites]
 """
 
 import os
@@ -111,6 +111,7 @@ def save(img, path):
 # Le noyau energetique / accents ne sont jamais assombris par l'ombrage (§5/§6).
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import pseudo3d_lib as _p3d
+import unity_paths
 
 _CORE_COLORS = [
     C_AETHER_PRI[:3], C_AETHER_SEC[:3], C_AETHER_DARK[:3], C_AETHER_HOT[:3],
@@ -1143,8 +1144,7 @@ def generate_pickups(out_dir):
 # ─── MAIN ─────────────────────────────────────────────────────────────────────
 
 def main():
-    base = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                        "assets", "sprites")
+    base = str(unity_paths.ART / "sprites")
 
     if len(sys.argv) > 1 and sys.argv[1].startswith("--out"):
         if "=" in sys.argv[1]:

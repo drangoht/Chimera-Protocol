@@ -69,13 +69,10 @@ import time
 from dataclasses import dataclass, field, asdict
 from pathlib import Path
 
-GODOT = Path(os.environ.get(
-    "GODOT_MONO",
-    r"C:\CODE\JEUX\Godot_v4.7-stable_mono_win64\Godot_v4.7-stable_mono_win64.exe"))
-
-# Binaire Unity — le moteur par défaut depuis le portage. Godot reste atteignable par
-# `--engine godot`, mais il est GELÉ : les deux ne se comparent pas (générateurs différents dès le
-# premier tirage), et une campagne mêlant les deux ne mesurerait que l'écart entre les moteurs.
+# Binaire du jeu. Il n'y en a plus qu'un : le moteur Godot et son banc ont été retirés du dépôt.
+# Les campagnes Godot d'avant le portage restent lisibles dans docs/TEST_REPORT.md, mais elles ne se
+# comparent pas aux campagnes Unity — les générateurs divergent dès le premier tirage, donc une même
+# graine n'y donne pas la même run.
 UNITY = PROJECT_ROOT = Path(__file__).resolve().parent.parent
 UNITY = PROJECT_ROOT / "unity" / "Build" / "game" / "ChimeraProtocol.exe"
 
@@ -90,26 +87,13 @@ if hasattr(sys.stderr, "reconfigure"):
 
 PROJECT = Path(__file__).resolve().parent.parent
 
-# Emplacement du journal, PAR MOTEUR. Godot écrit sous %APPDATA%, Unity sous %USERPROFILE%\AppData\
-# LocalLow — les deux fichiers coexistent donc, et lire le mauvais donnerait une campagne muette (ou,
-# pire, l'ancienne campagne de l'autre moteur, avec des chiffres parfaitement plausibles).
-LOG_GODOT = Path(os.environ["APPDATA"]) / "Godot" / "app_userdata" / "Chimera Protocol" / "power_curve.log"
-LOG_UNITY = (Path(os.environ["USERPROFILE"]) / "AppData" / "LocalLow"
-             / "drangoht" / "Chimera Protocol" / "power_curve.log")
-
-# Moteur courant, fixé par `--engine` avant toute lecture (défaut : unity).
-ENGINE = "unity"
-LOG = LOG_UNITY
-
-
-def use_engine(name: str) -> None:
-    """Sélectionne le moteur et le journal qui va avec."""
-    global ENGINE, LOG
-    ENGINE = name
-    LOG = LOG_UNITY if name == "unity" else LOG_GODOT
+# Journal écrit par le jeu, sous %USERPROFILE%\AppData\LocalLow (emplacement Unity).
+LOG = (Path(os.environ["USERPROFILE"]) / "AppData" / "LocalLow"
+       / "drangoht" / "Chimera Protocol" / "power_curve.log")
 
 HEADER = "=== Courbe de puissance"
-# Indices des colonnes du CSV écrit par PowerTelemetry (cf. src/Systems/PowerTelemetry.cs).
+# Indices des colonnes du CSV écrit par PowerTelemetry
+# (unity/Assets/Scripts/Gameplay/PowerTelemetry.cs).
 C_T, C_PHASE, C_LEVEL, C_POWER, C_DPS, C_TAKEN = 0, 1, 2, 3, 4, 5
 C_KILLS, C_ENEMIES = 6, 7
 C_HP, C_HPMAX, C_REGEN, C_REGEN_EFF, C_HEAL = 11, 12, 13, 14, 15
@@ -131,12 +115,7 @@ def read_run_duration_mult() -> float:
     il ment silencieusement au premier réglage — et un banc qui ment coûte plus cher que pas de banc,
     parce qu'on lui fait confiance.
     """
-    # La table vit désormais sous unity/ : c'est le MÊME fichier pour les deux moteurs (Godot le
-    # compile par chemin). Un exemplaire par moteur rouvrirait exactement la porte que cette
-    # fonction referme.
     src = PROJECT / "unity" / "Assets" / "Scripts" / "Shared" / "Rules" / "SaturationTable.cs"
-    if not src.exists():
-        src = PROJECT / "src" / "Core" / "Rules" / "SaturationTable.cs"
 
     import re
     m = re.search(r"RunDurationMult\(int rank\)\s*=>.*?\?\s*([0-9.]+)f", src.read_text(encoding="utf-8"))
@@ -491,13 +470,7 @@ def compare(before_path: Path, after: list[Run], label: str) -> None:
 # ---------------------------------------------------------------------------
 
 def engine_command(args, seed: int) -> list[str]:
-    """
-    Ligne de commande d'une run, pour le moteur courant.
-
-    Les DRAPEAUX sont identiques des deux côtés — c'est ce qui permet de relire une campagne Godot
-    avec ce même outil. Seul diffère ce qui les précède : Godot est un moteur générique qu'il faut
-    pointer vers un projet et une scène, Unity est un exécutable qui est déjà le jeu.
-    """
+    """Ligne de commande d'une run."""
     flags = [
         "--auto-play", "--power-curve",
         f"--biome={args.biome}",
@@ -506,17 +479,14 @@ def engine_command(args, seed: int) -> list[str]:
         f"--seed={seed}",
     ]
 
-    if ENGINE == "unity":
-        # `-batchmode -nographics` : aucune fenêtre, aucun rendu. Le jeu quitte de lui-même à la fin
-        # de la run (cf. BenchAutoPlay), donc aucune campagne n'a besoin de tuer un processus — et
-        # tuer un processus au milieu d'une écriture est précisément ce qui tronque un journal.
-        return [str(UNITY), "-batchmode", "-nographics"] + flags
-
-    return [str(GODOT), "--headless", "--path", str(PROJECT), "res://scenes/Game.tscn", "--"] + flags
+    # `-batchmode -nographics` : aucune fenêtre, aucun rendu. Le jeu quitte de lui-même à la fin
+    # de la run (cf. BenchAutoPlay), donc aucune campagne n'a besoin de tuer un processus — et
+    # tuer un processus au milieu d'une écriture est précisément ce qui tronque un journal.
+    return [str(UNITY), "-batchmode", "-nographics"] + flags
 
 
 def run_campaign(args) -> list[Run]:
-    binary = UNITY if ENGINE == "unity" else GODOT
+    binary = UNITY
     if not binary.exists():
         sys.exit(f"Binaire introuvable : {binary}\n"
                  "Construire d'abord : Unity.exe -batchmode -quit -projectPath unity "
@@ -586,21 +556,7 @@ def main() -> None:
                    help="compare la campagne à un résumé JSON antérieur, par graine")
     p.add_argument("--report-only", action="store_true",
                    help="ne lance rien : ré-analyse le journal existant")
-    p.add_argument("--engine", choices=("unity", "godot"), default="unity",
-                   help="moteur à lancer, et journal à relire (défaut : unity)")
     args = p.parse_args()
-
-    # ⚠ AVANT toute lecture : c'est ce choix qui décide du fichier lu. Les deux moteurs écrivent dans
-    # des dossiers différents, et relire le mauvais journal ne produit pas une erreur — il produit les
-    # chiffres de l'AUTRE campagne, parfaitement plausibles.
-    use_engine(args.engine)
-
-    # Les deux moteurs ne se comparent pas : leurs générateurs divergent dès le premier tirage, donc
-    # une même graine n'y donne pas la même run. Une campagne appariée à cheval sur les deux mesurerait
-    # l'écart entre les moteurs, pas l'effet du réglage.
-    if args.engine == "godot":
-        print("[moteur godot] ⚠ GELÉ depuis le portage, et non comparable aux campagnes Unity "
-              "(générateurs différents dès le premier tirage).")
 
     if args.overtime:
         args.start_at = args.start_at or 13.0

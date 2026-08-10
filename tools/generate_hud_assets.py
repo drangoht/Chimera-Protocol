@@ -1,18 +1,21 @@
 """
 generate_hud_assets.py
 Chimera Protocol — generateur d'assets HUD procéduraux (Pillow)
-Produit : assets/sprites/ui/ui_lv_hex.png
-          assets/sprites/ui/ui_panel_frame_nobg.png  (cadre tech from scratch)
+Produit : unity/Assets/Resources/Ui/ui_lv_hex.png
+          unity/Assets/Resources/Ui/ui_panel_frame_nobg.png  (cadre tech from scratch)
 """
 
 import math
 import os
+import sys
 from PIL import Image, ImageDraw
 
 # Chemins absolus depuis la racine du projet
 SCRIPT_DIR  = os.path.dirname(os.path.abspath(__file__))
 PROJECT_DIR = os.path.dirname(SCRIPT_DIR)
-OUT_DIR     = os.path.join(PROJECT_DIR, "assets", "sprites", "ui")
+sys.path.insert(0, SCRIPT_DIR)
+import unity_paths
+OUT_DIR     = str(unity_paths.sprite_dir("ui"))
 
 os.makedirs(OUT_DIR, exist_ok=True)
 

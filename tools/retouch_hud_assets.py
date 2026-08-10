@@ -14,8 +14,11 @@ from PIL import Image
 
 SCRIPT_DIR  = os.path.dirname(os.path.abspath(__file__))
 PROJECT_DIR = os.path.dirname(SCRIPT_DIR)
+sys.path.insert(0, SCRIPT_DIR)
+import unity_paths
+
 SRC_IMG     = os.path.join(PROJECT_DIR, "idea", "idee_hud_chimera_core.png")
-OUT_DIR     = os.path.join(PROJECT_DIR, "assets", "sprites", "ui")
+OUT_DIR     = str(unity_paths.sprite_dir("ui"))
 
 os.makedirs(OUT_DIR, exist_ok=True)
 

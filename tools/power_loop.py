@@ -47,13 +47,10 @@ import sys
 from pathlib import Path
 from statistics import median
 
-# Journal Unity par défaut ; celui de Godot reste lisible en le passant à `--log`. Les deux
-# coexistent sur disque, et pointer le mauvais ne lève rien — il rend les chiffres de l'autre
-# campagne, tout aussi plausibles.
-LOG_UNITY = Path.home() / "AppData/LocalLow/drangoht/Chimera Protocol/power_curve.log"
-LOG_GODOT = Path.home() / "AppData/Roaming/Godot/app_userdata/Chimera Protocol/power_curve.log"
-
-DEFAULT_LOG = LOG_UNITY if LOG_UNITY.exists() else LOG_GODOT
+# Journal écrit par le jeu. ⚠ Un journal d'avant le portage traîne peut-être encore sous
+# %APPDATA%\Godot\app_userdata — le passer à `--log` ne lève rien et rend les chiffres d'une
+# campagne d'un autre moteur, tout aussi plausibles.
+DEFAULT_LOG = Path.home() / "AppData/LocalLow/drangoht/Chimera Protocol/power_curve.log"
 
 # Noms de colonnes utilisés, tels qu'écrits par PowerTelemetry.ComposeHeader.
 # ⚠ Indexer par NOM et non par position : le CSV a gagné des colonnes au fil des versions

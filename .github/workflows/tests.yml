@@ -1,8 +1,8 @@
 name: Tests unitaires
 
-# Les tests couvrent src/Core/Rules/ — de la logique pure sans dependance Godot,
+# Les tests couvrent unity/Assets/Scripts/Shared/ — de la logique pure sans dependance moteur,
 # compilee directement dans l'assembly de test (voir tests/ChimeraProtocol.Tests.csproj).
-# Aucun moteur ni export n'est necessaire : un runner Linux suffit.
+# Aucun moteur ni build n'est necessaire : un runner Linux suffit.
 
 on:
   push:

@@ -3,12 +3,12 @@ generate_splash.py -- Generateur Phase 3 : splash screen + sprites decor arene.
 Projet : Chimera Protocol
 
 Livrables :
-  - assets/sprites/ui/splash_art.png          (1280x720)
-  - assets/sprites/environment/tile_floor_stone.png   (32x32)
-  - assets/sprites/environment/tile_wall_stone.png    (32x32)
-  - assets/sprites/environment/decor_column.png       (32x80)
-  - assets/sprites/environment/decor_aether_geyser.png (32x48)
-  - assets/sprites/environment/decor_debris.png       (32x32)
+  - unity/Assets/Resources/Ui/splash_art.png          (1280x720)
+  - unity/Assets/Resources/Environment/tile_floor_stone.png   (32x32)
+  - unity/Assets/Art/sprites/environment/tile_wall_stone.png    (32x32)
+  - unity/Assets/Resources/Environment/decor_column.png       (32x80)
+  - unity/Assets/Art/sprites/environment/decor_aether_geyser.png (32x48)
+  - unity/Assets/Art/sprites/environment/decor_debris.png       (32x32)
   + un fichier .import Godot pour chaque PNG.
 
 Palette conforme a docs/STYLE_GUIDE.md -- principe "Matiere morte / Energie vivante".
@@ -32,8 +32,11 @@ from PIL import Image, ImageDraw, ImageFilter
 # ---------------------------------------------------------------------------
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-OUT_UI  = os.path.join(REPO_ROOT, "assets", "sprites", "ui")
-OUT_ENV = os.path.join(REPO_ROOT, "assets", "sprites", "environment")
+sys.path.insert(0, os.path.join(REPO_ROOT, "tools"))
+import unity_paths
+
+OUT_UI  = str(unity_paths.sprite_dir("ui"))
+OUT_ENV = str(unity_paths.sprite_dir("environment"))
 
 # ---------------------------------------------------------------------------
 # Palette (STYLE_GUIDE.md §1)
@@ -634,8 +637,8 @@ def generate_splash():
 
     # Sauvegarde
     # Note : le STYLE_GUIDE §8.5 place le splash a assets/ (racine du repo, pas dans sprites/).
-    # La mission demande assets/sprites/ui/splash_art.png.
-    # On honore la demande mission (assets/sprites/ui/) et on fait une note ci-dessous.
+    # La mission demande unity/Assets/Resources/Ui/splash_art.png.
+    # On honore la demande mission (unity/Assets/Resources/Ui/) et on fait une note ci-dessous.
     out_path = os.path.join(OUT_UI, "splash_art.png")
     save(img, out_path)
     generate_import(out_path)
@@ -1027,8 +1030,8 @@ def main():
     generate_decor_debris()
 
     print("\n[OK] Tous les fichiers ont ete generes.")
-    print(f"     Splash  : assets/sprites/ui/splash_art.png")
-    print(f"     Decor   : assets/sprites/environment/ (5 fichiers PNG + 5 .import)")
+    print(f"     Splash  : unity/Assets/Resources/Ui/splash_art.png")
+    print(f"     Decor   : unity/Assets/Art/sprites/environment/ (5 fichiers PNG + 5 .import)")
     print()
     print("NOTES pour le developpeur :")
     print("  - splash_art.png : 1280x720, point d'ancrage (0,0) coin haut gauche.")

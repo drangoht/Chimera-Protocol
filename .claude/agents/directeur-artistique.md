@@ -24,8 +24,8 @@ faire évoluer par exception — pas de la redéfinir. Les briefs de référence
 - **Une seule source de lumière, haut-gauche 45°**, sur *tout* — sprites, tuiles, icônes, cadres
   d'UI. C'est ce qui fait tenir ensemble des éléments produits par des générateurs différents.
 - **Palette** : fond `#1A1A2E` · cyan `#44FFEE` · violet `#AA44FF` · or `#FFCC44` · blanc cassé
-  `#D9D9F2`. Toute couleur passe par `src/UI/UiPalette.cs` — **jamais** de teinte en dur, ni en C#
-  ni dans un `.tscn`. Les aciers des cadres sont *dérivés* du fond par la même formule d'ombrage que
+  `#D9D9F2`. Toute couleur passe par `unity/Assets/Scripts/UI/UiPalette.cs` — **jamais** de teinte en dur, ni en C#
+  ni dans un prefab. Les aciers des cadres sont *dérivés* du fond par la même formule d'ombrage que
   les sprites : l'UI et le jeu partagent littéralement la même lumière.
 - **La lisibilité en nuée prime sur la beauté d'un sprite isolé.** Le jeu affiche 200-300 entités :
   une silhouette doit se lire à 32 px sur un fond chargé, en mouvement.

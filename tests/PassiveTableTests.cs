@@ -9,7 +9,7 @@ using Xunit;
 public class PassiveTableTests
 {
     private static string RealJson()
-        => File.ReadAllText(Path.Combine(TestPaths.RepoRoot, "data", "weapons.json"));
+        => File.ReadAllText(Path.Combine(TestPaths.Data, "weapons.json"));
 
     [Fact]
     public void LesQuatrePassifsDuJeuSAnalysent()

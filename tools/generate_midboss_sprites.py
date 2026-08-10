@@ -41,6 +41,8 @@ ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), ".."))
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import pseudo3d_lib as _p3d
+import unity_paths
+import spriteframes
 
 # ---------------------------------------------------------------- primitives
 def canvas():
@@ -429,39 +431,17 @@ def gen_neon_warden(out, prefix="neon_warden"):
 
 # ================================================================ .tres
 def write_tres(folder, prefix, counts, speeds):
-    """SpriteFrames referencant toutes les frames (meme format que generate_boss_sprites.py)."""
-    order = ["idle", "move", "attack", "death"]
-    paths = []
-    for anim in order:
-        for i in range(counts[anim]):
-            paths.append(f"res://assets/sprites/enemies/{folder}/{prefix}_{anim}_{i+1:02d}.png")
-
-    lines = [f'[gd_resource type="SpriteFrames" load_steps={len(paths)+1} format=3]', ""]
-    for idx, p in enumerate(paths, start=1):
-        lines.append(f'[ext_resource type="Texture2D" path="{p}" id="{idx}"]')
-    lines.append("")
-    lines.append("[resource]")
-    lines.append("animations = [")
-    idx = 1
-    anim_blocks = []
-    for anim in order:
-        frames = []
-        for _ in range(counts[anim]):
-            frames.append(f'{{"duration": 1.0, "texture": ExtResource("{idx}")}}')
-            idx += 1
-        loop = "true" if anim in ("idle", "move") else "false"
-        anim_blocks.append('{\n'
-                           f'"frames": [{", ".join(frames)}],\n'
-                           f'"loop": {loop},\n'
-                           f'"name": &"{anim}",\n'
-                           f'"speed": {speeds[anim]:.1f}\n'
-                           '}')
-    lines.append(", ".join(anim_blocks))
-    lines.append("]")
-    path = os.path.join(ROOT, "assets", "sprites", "enemies", folder, f"{prefix}_frames.tres")
-    with open(path, "w", encoding="utf-8") as f:
-        f.write("\n".join(lines) + "\n")
-    print("  .tres ecrit :", path)
+    """Manifeste d'animation lu par BuildSpriteFrames (meme format que generate_boss_sprites.py)."""
+    path = spriteframes.write_numbered(
+        entity_id=folder,
+        art_subdir=f"enemies/{folder}",
+        prefix=prefix,
+        counts=counts,
+        speeds=speeds,
+        order=["idle", "move", "attack", "death"],
+        loop_false=("attack", "death"),
+    )
+    print("  manifeste ecrit :", path)
 
 # ================================================================ main
 MIDBOSSES = {
@@ -479,12 +459,12 @@ def main():
     for mid_id, (gen, speeds) in MIDBOSSES.items():
         if only not in (None, mid_id):
             continue
-        out = os.path.join(ROOT, "assets", "sprites", "enemies", mid_id)
+        out = str(unity_paths.sprite_dir(f"enemies/{mid_id}"))
         print(f"{mid_id}...")
         counts = gen(out)
         write_tres(mid_id, mid_id, counts, speeds)
 
-    print("Termine. Penser a : godot --headless --import")
+    print("Termine. Dans Unity : Chimera > Rebuild SpriteFrames (sinon les anciennes animations restent).")
 
 if __name__ == "__main__":
     main()

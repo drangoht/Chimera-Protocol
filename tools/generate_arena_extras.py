@@ -3,6 +3,7 @@ from PIL import Image, ImageDraw
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import pseudo3d_lib as _p3d
+import unity_paths
 
 def aether_bright(alpha): return (0x00, 0xE5, 0xFF, alpha)
 def aether_abys(alpha): return (0x00, 0xA0, 0xBB, alpha)
@@ -160,7 +161,7 @@ def generate_tech_pillar(od):
 
 def main():
     sd = os.path.dirname(os.path.abspath(__file__))
-    od = os.path.join(os.path.dirname(sd), "assets", "sprites", "tileset")
+    od = str(unity_paths.sprite_dir("tileset"))
     print("=== generate_arena_extras.py ===")
     print("Destination: " + od)
     print()

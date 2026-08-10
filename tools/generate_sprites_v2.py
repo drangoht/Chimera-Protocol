@@ -1,8 +1,8 @@
 """
 generate_sprites_v2.py — Revamp sprites + orbes XP + mini-boss pour Chimera Protocol.
 Produit :
-  1. Orbes XP 4 variantes (assets/sprites/vfx/)
-  2. Mini-boss RustStalker 64x64 + MasterSentinel 64x64 + fichiers .tres
+  1. Orbes XP 4 variantes (Assets/Art/sprites/vfx/)
+  2. Mini-boss RustStalker 64x64 + MasterSentinel 64x64 + manifestes d'animation
   3. Revamp 4 ennemis existants (memes noms de fichiers, meme frame count)
 
 Resolution :
@@ -120,6 +120,8 @@ def save(img, path):
 # jamais assombris par l'ombrage (§5/§6) — exclus de shade_sprite() ci-dessous.
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import pseudo3d_lib as _p3d
+import unity_paths
+import spriteframes
 
 _CORE_COLORS = [
     AETHER[:3], AETHER_DARK[:3], IMPLANT_VIO[:3], IMPLANT_GLOW[:3],
@@ -1062,73 +1064,35 @@ def generate_master_sentinel(out_dir):
 
 # ─── 8. FICHIERS .tres SpriteFrames ──────────────────────────────────────────
 
-def write_spriteframes_tres(path, sprite_prefix, res_path_prefix, animations):
+def write_spriteframes_manifest(entity_id, art_subdir, sprite_prefix, animations):
     """
-    Genere un fichier .tres SpriteFrames Godot 4.
-    animations = liste de dict :
-      { "name": str, "frames": int, "speed": float, "loop": bool }
+    Ecrit le manifeste d'animation lu par l'editeur Unity (BuildSpriteFrames).
+
+    animations = liste de dict : { "name": str, "frames": int, "speed": float, "loop": bool }
     sprite_prefix : prefixe du nom de fichier (ex: "rust_stalker")
-    res_path_prefix : chemin res:// vers le dossier (ex: "res://assets/sprites/enemies/rust_stalker")
+    art_subdir    : dossier sous Assets/Art/sprites/ (ex: "enemies/rust_stalker")
     """
-    # Compter les ext_resource
-    total_textures = sum(a["frames"] for a in animations)
-    load_steps = 1 + total_textures
-
-    lines = []
-    lines.append(f'[gd_resource type="SpriteFrames" load_steps={load_steps} format=3]')
-    lines.append('')
-
-    # Toutes les ext_resource
-    res_id = 1
-    for anim in animations:
-        anim_name = anim["name"]
-        for f in range(1, anim["frames"] + 1):
-            fname = f"{sprite_prefix}_{anim_name}_{f:02d}.png"
-            fpath = f"{res_path_prefix}/{fname}"
-            lines.append(f'[ext_resource type="Texture2D" path="{fpath}" id="{res_id}"]')
-            res_id += 1
-
-    lines.append('')
-    lines.append('[resource]')
-    lines.append('animations = [{')
-
-    res_id = 1
-    for anim_idx, anim in enumerate(animations):
-        anim_name = anim["name"]
-        speed = anim["speed"]
-        loop = "true" if anim["loop"] else "false"
-        frames_count = anim["frames"]
-
-        # frames array
-        frame_entries = []
-        for f in range(frames_count):
-            frame_entries.append(f'{{"duration": 1.0, "texture": ExtResource("{res_id}")}}')
-            res_id += 1
-
-        frames_str = ", ".join(frame_entries)
-
-        lines.append(f'"frames": [{frames_str}],')
-        lines.append(f'"loop": {loop},')
-        lines.append(f'"name": &"{anim_name}",')
-        lines.append(f'"speed": {float(speed)}')
-
-        if anim_idx < len(animations) - 1:
-            lines.append('}, {')
-        else:
-            lines.append('}]')
-
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    with open(path, 'w', encoding='utf-8') as f:
-        f.write('\n'.join(lines) + '\n')
-
-    print(f"  .tres genere : {path}")
+    path = spriteframes.write_manifest(
+        entity_id,
+        art_subdir,
+        [
+            {
+                "name": a["name"],
+                "speed": a["speed"],
+                "loop": a["loop"],
+                "frames": [f'{sprite_prefix}_{a["name"]}_{i + 1:02d}.png' for i in range(a["frames"])],
+            }
+            for a in animations
+        ],
+    )
+    print(f"  manifeste genere : {path}")
 
 
 # ─── MAIN ─────────────────────────────────────────────────────────────────────
 
 def main():
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    sprites_root = os.path.join(root, "assets", "sprites")
+    sprites_root = str(unity_paths.ART / "sprites")
 
     print("\nGenerateur sprites v2 — Chimera Protocol")
     print(f"Racine projet : {root}\n")
@@ -1141,10 +1105,10 @@ def main():
     print("\n=== 2. Mini-boss ===")
     stalker_dir = os.path.join(sprites_root, "enemies", "rust_stalker")
     generate_rust_stalker(stalker_dir)
-    write_spriteframes_tres(
-        path=os.path.join(stalker_dir, "rust_stalker_frames.tres"),
+    write_spriteframes_manifest(
+        entity_id="rust_stalker",
+        art_subdir="enemies/rust_stalker",
         sprite_prefix="rust_stalker",
-        res_path_prefix="res://assets/sprites/enemies/rust_stalker",
         animations=[
             {"name": "idle",   "frames": 4,  "speed": 5.0,  "loop": True},
             {"name": "move",   "frames": 6,  "speed": 8.0,  "loop": True},
@@ -1155,10 +1119,10 @@ def main():
 
     msent_dir = os.path.join(sprites_root, "enemies", "master_sentinel")
     generate_master_sentinel(msent_dir)
-    write_spriteframes_tres(
-        path=os.path.join(msent_dir, "master_sentinel_frames.tres"),
+    write_spriteframes_manifest(
+        entity_id="master_sentinel",
+        art_subdir="enemies/master_sentinel",
         sprite_prefix="master_sentinel",
-        res_path_prefix="res://assets/sprites/enemies/master_sentinel",
         animations=[
             {"name": "idle",   "frames": 4,  "speed": 5.0,  "loop": True},
             {"name": "move",   "frames": 6,  "speed": 8.0,  "loop": True},

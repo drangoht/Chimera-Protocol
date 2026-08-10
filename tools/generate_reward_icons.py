@@ -2,7 +2,7 @@
 - ui_icon_extra_slot : perk "+1 slot d'arme/greffe" (accent cyan)
 - ui_icon_echo       : monnaie "Echo", recompense de 7 defis (accent violet)
 - ui_icon_title      : recompense cosmetique "titre", 3 defis (accent or)
-Sortie : assets/sprites/ui/
+Sortie : unity/Assets/Resources/Ui/
 
 Calque sur tools/generate_weapon_icons.py (memes helpers canvas/put/disc/ring/line,
 canvas 32x32, ombrage final via pseudo3d_lib.shade_icon avant sauvegarde).
@@ -12,10 +12,12 @@ from PIL import Image
 
 S = 32
 ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), ".."))
-OUT = os.path.join(ROOT, "assets", "sprites", "ui")
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import pseudo3d_lib as _p3d
+import unity_paths
+
+OUT = str(unity_paths.sprite_dir("ui"))
 
 
 def canvas():

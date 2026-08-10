@@ -8,8 +8,11 @@ import sys
 
 from PIL import Image, ImageDraw
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import unity_paths
+
 PROJ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-FRAMES = os.path.join(PROJ, "assets", "sprites", "ui", "frames")
+FRAMES = str(unity_paths.sprite_dir("ui/frames"))
 ZOOM = int(sys.argv[1]) if len(sys.argv) > 1 else 8
 
 SHOW = [

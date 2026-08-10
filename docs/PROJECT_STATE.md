@@ -4,7 +4,15 @@
 > implémenté — la mettre à jour à chaque ajout/refonte majeur. Le résumé de phase reste dans
 > `CLAUDE.md` ; le design complet dans `docs/GDD.md` ; la carte du code dans `/carte-projet`.
 
-- Pile technique : **Godot 4.7 .NET (C# / .NET 8 / GodotSharp)**
+- Pile technique : **Unity 6.5 (C#, URP 2D)** depuis la 2.0.0.
+- **Dépôt devenu mono-moteur le 2026-08-10.** `src/`, `scenes/`, `project.godot`, `assets/`, `data/`
+  et `localization/` racine ont été supprimés : les données et les assets n'existent plus qu'en un
+  exemplaire, sous `unity/Assets/`. Les générateurs Python écrivent désormais **là où le jeu lit**
+  (`tools/unity_paths.py`, `tools/spriteframes.py`) ; les scripts qui pilotaient l'éditeur Godot
+  (captures, bancs, `release_itch.ps1`) ont été retirés. Doc de l'ère Godot →
+  `docs/archive-godot/` (dont l'historique complet des chantiers 1.20 → 1.26).
+  ⚠ **Les entrées ci-dessous antérieures à la 2.0.0 citent des chemins qui n'existent plus.** Leur
+  contenu de jeu, lui, a été porté.
 - **Saturation de Rouille — lot 1, l'échelle de challenge de fin de partie (2026-07-31, PUBLIÉ en
   1.25.0).** Plan : `docs/ENDGAME_PLAN.md` ; design : `docs/GDD.md` §34 ; logique pure :
   `SaturationTable`. **Cinq crans nommés et cumulatifs** — I Hémorragie (soins reçus −65 % **et le

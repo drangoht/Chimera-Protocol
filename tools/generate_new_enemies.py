@@ -12,9 +12,10 @@ Chaque ennemi reutilise la silhouette de son archetype d'IA (identique a un des
 Ombrage pseudo-3D via tools/pseudo3d_lib.py (docs/ART_BRIEF_PSEUDO3D.md) : le
 noyau energetique ("core"/"eye" de chaque palette) n'est jamais assombri.
 
-Sortie : assets/sprites/enemies/<id>/<id>_idle_01.png (+ move/death/attack)
-       + assets/sprites/enemies/<id>/<id>_frames.tres (animations idle/move/death,
-         + attack pour les 5 variantes ranged_kiter)
+Sortie : unity/Assets/Art/sprites/enemies/<id>/<id>_idle_01.png (+ move/death/attack)
+       + unity/Assets/Editor/spriteframes/<id>.json (animations idle/move/death,
+         + attack pour les 5 variantes ranged_kiter). Reconstruire ensuite les
+         SpriteFrames depuis l'editeur Unity, sinon le jeu garde les anciennes.
 
 Lancer : python tools/generate_new_enemies.py
 """
@@ -29,7 +30,8 @@ ROOT = os.path.dirname(SCRIPT_DIR)
 sys.path.insert(0, SCRIPT_DIR)
 
 import pseudo3d_lib as p3d
-from generate_sprites_v2 import write_spriteframes_tres
+import unity_paths
+from generate_sprites_v2 import write_spriteframes_manifest
 
 S = 32
 
@@ -280,7 +282,7 @@ DRAW_FN = {
 def gen_enemy(eid, archetype, color_key):
     pal = PALETTES[color_key]
     core_colors = [pal["core"], pal["eye"]]
-    out_dir = os.path.join(ROOT, "assets", "sprites", "enemies", eid)
+    out_dir = str(unity_paths.sprite_dir(f"enemies/{eid}"))
 
     animations = []
 
@@ -356,10 +358,10 @@ def gen_enemy(eid, archetype, color_key):
             {"name": "death", "frames": 5, "speed": 7.0, "loop": False},
         ]
 
-    write_spriteframes_tres(
-        path=os.path.join(out_dir, f"{eid}_frames.tres"),
+    write_spriteframes_manifest(
+        entity_id=eid,
+        art_subdir=f"enemies/{eid}",
         sprite_prefix=eid,
-        res_path_prefix=f"res://assets/sprites/enemies/{eid}",
         animations=animations,
     )
     print(f"  {eid} ({archetype}, {color_key}) : {sum(a['frames'] for a in animations)} frames")

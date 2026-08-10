@@ -9,7 +9,7 @@ public class LocTableTests
 {
     private static LocTable.Document Real()
         => LocTable.Parse(File.ReadAllText(
-            Path.Combine(TestPaths.RepoRoot, "localization", "ui.csv")));
+            Path.Combine(TestPaths.Localization, "ui.csv")));
 
     [Fact]
     public void LaTableDuJeuSeCharge()
@@ -82,19 +82,21 @@ public class LocTableTests
     }
 
     /// <summary>
-    /// Le CSV est <b>dupliqué</b> dans <c>StreamingAssets</c> (comme <c>data/*.json</c>) : Unity ne
-    /// lit pas la racine du dépôt. Deux copies qui divergent produiraient un jeu traduit
-    /// différemment de ce que dit la source — ce test l'interdit.
+    /// Le CSV que lit le jeu est celui de <c>StreamingAssets</c>, et il n'y en a plus qu'un.
+    ///
+    /// <para>Ce test vérifiait auparavant que la copie Unity n'avait pas divergé de la source
+    /// racine, héritée de Godot. Cette source a été supprimée avec le moteur : il ne reste qu'un
+    /// exemplaire, donc plus de dérive possible. Ce qui reste à vérifier, c'est qu'il est bien
+    /// <b>là où le binaire ira le chercher</b> — un CSV rangé ailleurs se charge en table vide et
+    /// l'interface entière s'affiche en clés brutes.</para>
     /// </summary>
     [Fact]
-    public void LaCopieLueParUnityEstIdentiqueALaSource()
+    public void LeCsvEstLaOuUnityLeCherche()
     {
-        string source = Path.Combine(TestPaths.RepoRoot, "localization", "ui.csv");
-        string copy = Path.Combine(TestPaths.RepoRoot, "unity", "Assets", "StreamingAssets",
-                                   "localization", "ui.csv");
+        string csv = Path.Combine(TestPaths.Localization, "ui.csv");
 
-        Assert.True(File.Exists(copy), "la copie StreamingAssets manque — Unity n'aurait aucune traduction");
-        Assert.Equal(File.ReadAllText(source), File.ReadAllText(copy));
+        Assert.True(File.Exists(csv),
+            $"ui.csv absent de StreamingAssets ({csv}) — le jeu n'aurait aucune traduction");
     }
 
     /// <summary>
@@ -117,7 +119,7 @@ public class LocTableTests
     public void AucuneTraductionDuJeuNeGardeUnAntislashN()
     {
         var doc = LocTable.Parse(File.ReadAllText(
-            Path.Combine(TestPaths.RepoRoot, "localization", "ui.csv")));
+            Path.Combine(TestPaths.Localization, "ui.csv")));
 
         foreach (string key in doc.Keys)
             foreach (string language in LocTable.Languages)
