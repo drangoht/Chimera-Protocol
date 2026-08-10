@@ -148,7 +148,13 @@ public static class BuildBench
 
         string full = Path.Combine(Directory.GetParent(Application.dataPath)!.FullName, "Assets/Resources/build_sha.txt");
         Directory.CreateDirectory(Path.GetDirectoryName(full)!);
+
+        bool isNew = !File.Exists(full);
         File.WriteAllText(full, sha);
+
+        // Le fichier est ignoré par git : sur un clone frais, il n'existe pas encore et la base
+        // d'assets ne le connaît donc pas — un ImportAsset seul ne suffirait pas à l'y faire entrer.
+        if (isNew) AssetDatabase.Refresh();
 
         // Sans réimport, le build embarquerait la version que la base d'assets a en mémoire.
         AssetDatabase.ImportAsset(assetPath, ImportAssetOptions.ForceUpdate);
@@ -157,6 +163,12 @@ public static class BuildBench
     }
 
     /// <summary>Le dépôt porte-t-il des modifications autres que celles que la release pose elle-même ?</summary>
+    /// <remarks>
+    /// <c>build_sha.txt</c> est de surcroît ignoré par git — il n'apparaîtra donc pas dans le
+    /// <c>status</c> — mais il reste listé ici : l'exclusion doit rester vraie si quelqu'un décide un
+    /// jour de le reversionner, et une liste qui décrit une intention vaut mieux qu'une liste qui
+    /// s'appuie sur un effet de bord du <c>.gitignore</c>.
+    /// </remarks>
     private static bool HasLocalChanges()
     {
         string[] posedByRelease =

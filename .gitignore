@@ -82,3 +82,10 @@ unity/[Mm]emoryCaptures/
 unity/[Oo]bj/
 unity/[Tt]emp/
 unity/[Uu]serSettings/
+
+# Identite du binaire, posee par BuildBench.StampGitSha a CHAQUE build : c'est un artefact, pas une
+# source. Le versionner produisait un fichier modifie apres chaque build — et, avant ce correctif,
+# un tampon qui survivait a sa release et mentait aux builds suivants (docs/PITFALLS_UNITY.md).
+# Absent d'un clone frais, le jeu affiche « dev » : exact, tant qu'aucun build ne l'a nomme.
+unity/Assets/Resources/build_sha.txt
+unity/Assets/Resources/build_sha.txt.meta

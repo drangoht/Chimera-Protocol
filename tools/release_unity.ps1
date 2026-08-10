@@ -219,7 +219,9 @@ $manifest = [ordered]@{ version = $Version; url = $itchUrl }
 ($manifest | ConvertTo-Json) | Out-File -FilePath (Join-Path $ProjectRoot "version.json") -Encoding utf8
 
 Push-Location $ProjectRoot
-git add version.json "unity/ProjectSettings/ProjectSettings.asset" "unity/Assets/Resources/build_sha.txt"
+# build_sha.txt n'est PLUS commite : depuis qu'il est repose a chaque build, c'est un artefact et non
+# une source — le versionner rendait le depot modifie apres chaque compilation. Il est ignore.
+git add version.json "unity/ProjectSettings/ProjectSettings.asset"
 git diff --cached --quiet
 if ($LASTEXITCODE -ne 0) {
     git commit -m "chore(release): $Version (manifeste, version du projet, tampon de build)"
