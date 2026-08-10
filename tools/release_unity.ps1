@@ -83,15 +83,22 @@ Write-Host "bundleVersion pose a $Version." -ForegroundColor DarkGray
 # Ecrit en RESSOURCE et non compile en dur : il doit designer le commit qu'on publie, connu au
 # dernier moment. Sans lui, deux binaires portant la meme version sont indiscernables — et c'est
 # exactement ce qui a permis d'expedier le mauvais.
+#
+# NOTE : depuis le 2026-08-10, `BuildBench.StampGitSha` REPOSE cette identite juste avant de
+# construire, et c'est desormais elle qui fait foi. L'ecriture ci-dessous ne sert plus qu'au cas
+# -SkipBuild (aucun build ne passera derriere) et a l'affichage. Le tampon n'appartenait pas ici :
+# ecrit seulement a la publication, le fichier RESTAIT ensuite, et tout build local ulterieur
+# affichait le SHA de la derniere release — un garde-fou de fraicheur qui se trompe est pire que pas
+# de garde-fou, puisqu'on lui fait confiance.
 Push-Location $ProjectRoot
 $sha = (git rev-parse --short HEAD)
-$dirty = (git status --porcelain)
 Pop-Location
 
-if ($dirty) {
-    Write-Host "AVERTISSEMENT : depot modifie — le tampon $sha ne decrira pas exactement le binaire." -ForegroundColor Yellow
-}
-
+# Pas d'avertissement « depot modifie » ici : a cet instant l'etape 1 vient elle-meme de modifier
+# ProjectSettings.asset, et build_sha.txt suit ligne suivante — l'alerte se declenchait donc a CHAQUE
+# release, y compris parfaitement propre, et on ne la lisait plus. Le constat honnete est fait par
+# BuildBench, qui exclut ces deux fichiers, et se lit a l'etape 4 sur le tampon du binaire reellement
+# produit.
 $resDir = Join-Path $UnityProject "Assets\Resources"
 New-Item -ItemType Directory -Force -Path $resDir | Out-Null
 Set-Content -Path (Join-Path $resDir "build_sha.txt") -Value $sha -Encoding utf8 -NoNewline
@@ -162,6 +169,16 @@ if ($stamp.version -ne $Version) {
     Fail "Le binaire porte la version '$($stamp.version)' alors qu'on publie '$Version' - build perime."
 }
 Write-Host "Binaire verifie : v$($stamp.version)-$($stamp.sha) (construit le $($stamp.date))." -ForegroundColor DarkGray
+
+# Le suffixe « + » est pose par BuildBench quand l'arbre de travail portait des modifications autres
+# que celles que cette release ecrit elle-meme : le binaire ne correspond alors A AUCUN COMMIT, et le
+# tampon affiche en jeu ne permettra pas de rejouer un rapport de bug. Averti ici et pas plus tot,
+# parce que c'est le seul endroit ou le constat porte sur le binaire REELLEMENT produit.
+if ($stamp.sha -like "*+") {
+    Write-Host "AVERTISSEMENT : binaire construit depuis un arbre modifie ($($stamp.sha)) — il ne correspond a aucun commit." -ForegroundColor Yellow
+} elseif ($stamp.sha -eq "dev") {
+    Write-Host "AVERTISSEMENT : le build n'a pas pu lire git — le tampon dira 'dev' aux joueurs." -ForegroundColor Yellow
+}
 
 # --- 5. Dossier de distribution propre ---------------------------------------------
 # Butler diffe fichier par fichier : on pousse un DOSSIER, sans les artefacts parasites du dossier

@@ -493,6 +493,39 @@ se multiplier.** Le plancher (0,35) existe pour qu'une nappe de plaques ne cloue
 **Règle** : tout effet temporaire porte sa durée dans le même appel que sa valeur. Un `= valeur` nu
 sur un multiplicateur partagé est un bug en attente, et il ne se voit qu'en jouant longtemps.
 
+### Un tampon de fraîcheur écrit par la **release** ment à tous les builds suivants
+
+`build_sha.txt` — la ressource dont le jeu tire son tampon `v2.0.0-<sha>`, et que le script de
+release relit avant de pousser — n'était écrite **que** par `release_unity.ps1`. Elle **restait là**
+ensuite. Tout build local ultérieur affichait donc le SHA de la **dernière release** : pas « dev »,
+pas un avertissement, le numéro d'un commit qui n'était pas celui du binaire.
+
+Constaté le **2026-08-10** : un binaire reconstruit à l'instant annonçait un commit de la veille,
+précisément pendant qu'on cherchait à savoir si le build testé contenait un correctif audio — la
+question exacte que ce tampon existe pour trancher. **Un garde-fou de fraîcheur qui se trompe est
+pire que pas de garde-fou : on lui fait confiance.** Même famille que « la stabilité d'un artefact ne
+prouve pas sa fraîcheur » (`docs/PITFALLS.md` §Export .NET), à un cran de plus : ici l'artefact
+*affirmait* une identité.
+
+**Parade** : `BuildBench.StampGitSha` pose l'identité **avant chaque build**, donc l'acte qui produit
+le binaire est le seul à pouvoir le nommer. Trois valeurs, trois sens distincts :
+
+| Tampon | Signification |
+|---|---|
+| `4b1c37c` | commit exact, binaire reproductible |
+| `4b1c37c+` | arbre de travail modifié — **ne correspond à aucun commit** |
+| `dev` | git indisponible : une ignorance avouée, pas un SHA périmé |
+
+⚠ **Le suffixe doit exclure ce que la release pose elle-même.** Au moment où `release_unity.ps1`
+construit, il vient d'écrire `ProjectSettings.asset` (numéro de version) et `build_sha.txt`, et les
+commitera juste après : ces deux-là sont en avance sur le commit courant **par construction**. Sans
+l'exclusion, toute release — même parfaitement propre — s'auto-déclarerait sale. C'est ce qui était
+arrivé à l'avertissement `$dirty` de l'étape 2, déclenché à chaque fois et donc jamais lu ; il a été
+supprimé au profit d'un contrôle à l'étape 4, sur le tampon du binaire **réellement produit**.
+
+⚠ Et le nouveau signal doit être **consommé** : un `+` fait désormais avertir le script de release.
+Poser une information que rien ne lit est le défaut le plus fréquent de ce portage.
+
 ### L'icône de l'exécutable se pose **au build**, pas dans l'éditeur
 
 Le binaire sortait avec l'icône **d'Unity** : dans la barre des tâches, l'explorateur et le raccourci,

@@ -66,6 +66,7 @@ public static class BuildBench
         PlayerSettings.runInBackground = true;
 
         ApplyGameIcon();
+        StampGitSha();
 
         string projectRoot = Directory.GetParent(Application.dataPath)!.FullName;
         string outDir = Path.Combine(projectRoot, OutDirGame);
@@ -104,6 +105,116 @@ public static class BuildBench
     /// que le build n'a pas posée. Le script de release le lit avant de pousser — c'est le garde-fou
     /// qui manquait le jour où une release a expédié le binaire de la version précédente.</para>
     /// </remarks>
+    /// <summary>
+    /// Pose l'identité git du code qu'on s'apprête à construire, dans la ressource que le jeu lit
+    /// pour afficher son tampon. Appelé <b>avant</b> le build, sans quoi le binaire embarquerait la
+    /// valeur précédente.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Pourquoi ceci n'appartient pas au script de release.</b> C'était le cas, et le
+    /// fichier ne bougeait donc qu'au moment d'une publication — mais il <b>restait là ensuite</b>.
+    /// Tout build local ultérieur affichait le SHA de la <i>dernière release</i> : pas « dev », pas
+    /// un avertissement, le numéro d'un commit qui n'est pas celui du binaire. Constaté le
+    /// 2026-08-10, un build fraîchement construit annonçant un commit vieux d'un jour, précisément
+    /// pendant qu'on cherchait à savoir si le binaire testé contenait un correctif. Un garde-fou de
+    /// fraîcheur qui se trompe est pire que pas de garde-fou : on lui fait confiance.</para>
+    ///
+    /// <para>Écrire l'identité <b>ici</b> la lie à l'acte qui produit le binaire — elle ne peut plus
+    /// décrire autre chose que ce qui vient d'être construit.</para>
+    ///
+    /// <para>Le suffixe <c>+</c> signale un <b>arbre de travail modifié</b> : le binaire ne
+    /// correspond alors à aucun commit, et c'est le cas le plus courant pendant une session de mise
+    /// au point. Deux fichiers sont exclus de ce constat — <c>build_sha.txt</c> et
+    /// <c>ProjectSettings.asset</c> — parce que la release les pose juste avant de construire et les
+    /// commite juste après : ils sont en avance sur le commit courant par construction, pas par
+    /// négligence, et sans cette exclusion toute release s'auto-déclarerait sale.</para>
+    /// </remarks>
+    private static void StampGitSha()
+    {
+        const string assetPath = "Assets/Resources/build_sha.txt";
+
+        string sha = Git("rev-parse --short HEAD");
+
+        if (sha.Length == 0)
+        {
+            // Pas de dépôt, ou pas de git dans le PATH : « dev » dit franchement qu'on ne sait pas,
+            // là où un SHA périmé prétendrait savoir.
+            sha = "dev";
+        }
+        else if (HasLocalChanges())
+        {
+            sha += "+";
+        }
+
+        string full = Path.Combine(Directory.GetParent(Application.dataPath)!.FullName, "Assets/Resources/build_sha.txt");
+        Directory.CreateDirectory(Path.GetDirectoryName(full)!);
+        File.WriteAllText(full, sha);
+
+        // Sans réimport, le build embarquerait la version que la base d'assets a en mémoire.
+        AssetDatabase.ImportAsset(assetPath, ImportAssetOptions.ForceUpdate);
+
+        Debug.Log($"[BUILD] identite git : {sha}");
+    }
+
+    /// <summary>Le dépôt porte-t-il des modifications autres que celles que la release pose elle-même ?</summary>
+    private static bool HasLocalChanges()
+    {
+        string[] posedByRelease =
+        {
+            "unity/Assets/Resources/build_sha.txt",
+            "unity/ProjectSettings/ProjectSettings.asset",
+        };
+
+        foreach (string line in Git("status --porcelain").Split('\n'))
+        {
+            string entry = line.Trim();
+            if (entry.Length == 0) continue;
+
+            // « XY chemin » — le statut tient sur les deux premières colonnes.
+            string path = entry.Length > 2 ? entry.Substring(2).Trim().Replace('\\', '/') : "";
+
+            bool ignored = false;
+            foreach (string posed in posedByRelease)
+                if (path.EndsWith(posed, StringComparison.Ordinal)) { ignored = true; break; }
+
+            if (!ignored) return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>Exécute une commande git à la racine du dépôt. Chaîne vide si git est indisponible.</summary>
+    private static string Git(string args)
+    {
+        try
+        {
+            string unityDir = Directory.GetParent(Application.dataPath)!.FullName;
+            string repoRoot = Directory.GetParent(unityDir)!.FullName;
+
+            var psi = new System.Diagnostics.ProcessStartInfo("git", args)
+            {
+                WorkingDirectory = repoRoot,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true,
+            };
+
+            using var proc = System.Diagnostics.Process.Start(psi);
+            if (proc == null) return "";
+
+            string output = proc.StandardOutput.ReadToEnd();
+            proc.WaitForExit(10000);
+
+            return proc.ExitCode == 0 ? output.Trim() : "";
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning($"[BUILD] git indisponible ({e.Message}) — le tampon dira « dev ».");
+            return "";
+        }
+    }
+
     private static void WriteBuildStamp(string outDir)
     {
         var sha = AssetDatabase.LoadAssetAtPath<TextAsset>("Assets/Resources/build_sha.txt");
