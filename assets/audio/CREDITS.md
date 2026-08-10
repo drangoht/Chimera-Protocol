@@ -43,6 +43,13 @@ Canon a Impulsions, avec lequel elle tire souvent en meme temps ; signale en jou
 limite sature »). Derive de `laserSmall_003.ogg` par passe-bas et raccourcissement (recette dans
 `tools/integrate_kenney_audio.py`), puis attenue de **-11 dB** dans `AudioSystem.MixGainDb` — le
 niveau se regle la, jamais dans le fichier (Unity renormalise les clips a l'import).
+Meme jour, meme retour de jeu : `sfx_enemy_drone_die` attenue de **-9 dB** dans les deux moteurs. Il
+dure **1,36 s pour -12,0 dB RMS** — le plus long et le 2e plus fort de la banque — et c'est le son de
+mort de tout l'archetype `erratic_chase`, soit six especes de faune qui arrivent d'un bloc a la 3e
+minute avec 11 a 17 PV (mortes au premier coup). L'autre son de mort de fourrage
+(`sfx_enemy_swarm_die`) fait 0,16 s a -21,0 dB : les deux racontent la meme chose, ils sont
+desormais au meme niveau. Cote Unity s'y ajoute un plafond de **3 voix par son** (voir
+`docs/PITFALLS_UNITY.md`) — le pool de Godot, limite a 8 canaux, bornait deja l'empilement.
 
 **MIXAGE : trois bus audio** (`default_bus_layout.tres`) — `Master`, `SFX`, `Music`. Le bus
 `Music` porte un compresseur en **sidechain sur `SFX`** (seuil -16 dB, ratio 4, release 200 ms) :

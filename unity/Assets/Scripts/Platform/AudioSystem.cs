@@ -19,8 +19,32 @@ public static class AudioSystem
     /// <summary>Sources simultanées. Au-delà, le son suivant est ignoré plutôt que de voler un canal.</summary>
     private const int MaxVoices = 24;
 
+    /// <summary>
+    /// Copies simultanées d'un <b>même</b> effet. Au-delà, la plus ancienne est réutilisée : le son
+    /// reste présent — la mort la plus récente s'entend toujours — il cesse seulement de s'empiler.
+    ///
+    /// <para><b>Pourquoi cette borne existe.</b> Signalé en jouant (2026-08-10) : le son sature « dès
+    /// que les ennemis qui arrivent vers 2 min 30 sont touchés ». Ce sont les ennemis erratiques
+    /// (11-17 PV, ils meurent d'un coup, six espèces de faune arrivent d'un bloc à la 3ᵉ minute) et
+    /// ils jouent tous <c>sfx_enemy_drone_die</c> — <b>1,36 s et −12,0 dB RMS</b>, le plus long et le
+    /// deuxième plus fort de toute la banque. Vingt morts par seconde × 1,36 s de queue, et les
+    /// vingt-quatre voix portent la même explosion : ce n'est plus un son, c'est sa somme.</para>
+    ///
+    /// <para>C'est aussi une <b>divergence du portage</b> : le pool de Godot n'a que <b>huit</b>
+    /// canaux et vole le plus ancien quand il déborde, ce qui bornait l'empilement sans que personne
+    /// ait eu à y penser. Passer à vingt-quatre voix « pour ne perdre aucun son » a triplé
+    /// l'amplitude atteignable — un plafond global généreux ne remplace pas un plafond
+    /// <b>par son</b> : c'est la répétition du même clip qui s'additionne, pas la variété.</para>
+    /// </summary>
+    private const int MaxVoicesPerSfx = 3;
+
     private static readonly Dictionary<string, AudioClip?> _clips = new();
     private static readonly List<AudioSource> _voices = new();
+
+    /// <summary>Effet porté par chaque voix, et instant de son déclenchement — index parallèles à <see cref="_voices"/>.</summary>
+    private static readonly List<string> _voiceSfx = new();
+    private static readonly List<float> _voiceStart = new();
+
     private static Transform? _root;
 
     /// <summary>Volume des effets, 0 à 1 — suit les réglages du joueur.</summary>
@@ -52,6 +76,25 @@ public static class AudioSystem
     public static bool CanLoad(string sfxId) => Load(sfxId) != null;
 
     /// <summary>
+    /// Copies de <paramref name="sfxId"/> réellement en vol à cet instant — ce que
+    /// <see cref="PlayedCountOf"/> ne dit pas : lui compte des déclenchements, celui-ci mesure
+    /// l'<b>empilement</b>, c'est-à-dire ce qui s'additionne à l'oreille et finit par saturer.
+    /// </summary>
+    /// <remarks>
+    /// Sans sortie audio (banc <c>-nographics</c>, absence d'<c>AudioListener</c>), aucune voix ne
+    /// joue jamais et ce relevé renvoie zéro. Zéro ne vaut donc pas « rien ne s'empile » mais
+    /// « rien n'a été mesuré » — un banc doit distinguer les deux au lieu de conclure au vert.
+    /// </remarks>
+    public static int VoicesPlaying(string sfxId)
+    {
+        int n = 0;
+        for (int i = 0; i < _voices.Count; i++)
+            if (_voices[i] != null && _voices[i].isPlaying && _voiceSfx[i] == sfxId) n++;
+
+        return n;
+    }
+
+    /// <summary>
     /// Correction de mixage propre à un effet, en décibels.
     ///
     /// <para>Objectif : ne pas enterrer les tirs ennemis — ils restent le signal d'un danger qui
@@ -77,6 +120,13 @@ public static class AudioSystem
         // tir de sentinelle. Résultat : ~7 dB sous l'impulsion à l'oreille.
         "sfx_weapon_scatter_shoot"      => -11f,
 
+        // Mort des ennemis erratiques — le son le plus fort de la banque après le tir de sentinelle,
+        // et joué par la faune la plus nombreuse et la plus fragile du jeu. Aligné sur l'AUTRE son de
+        // mort de fourrage (sfx_enemy_swarm_die, −21,0 dB RMS) dont il ne devrait pas se distinguer
+        // par le volume : ces deux-là racontent la même chose, un ennemi jetable qui tombe. Le
+        // plafond par son borne l'empilement ; ce gain corrige le niveau du fichier lui-même.
+        "sfx_enemy_drone_die"           => -9f,
+
         _                               => 0f,
     };
 
@@ -86,7 +136,7 @@ public static class AudioSystem
         var clip = Load(sfxId);
         if (clip == null) return;
 
-        var voice = RentVoice();
+        var voice = RentVoice(sfxId);
         if (voice == null) return;   // toutes les voix occupées : mieux vaut un son perdu qu'un canal volé
 
         voice.clip = clip;
@@ -114,13 +164,41 @@ public static class AudioSystem
         return clip;
     }
 
-    private static AudioSource? RentVoice()
+    /// <summary>
+    /// Réserve une voix pour <paramref name="sfxId"/>, en bornant le nombre de copies simultanées de
+    /// ce <b>même</b> effet (<see cref="MaxVoicesPerSfx"/>).
+    /// </summary>
+    /// <remarks>
+    /// L'ordre des trois cas n'est pas indifférent : le plafond par son passe <b>avant</b> la
+    /// recherche d'une voix libre. L'inverse — chercher une voix libre d'abord — laisserait vingt
+    /// morts simultanées prendre vingt voix, puisqu'il en reste toujours de libres au moment où on
+    /// regarde ; le plafond ne mordrait qu'une fois la réserve entière consommée, c'est-à-dire trop
+    /// tard.
+    /// </remarks>
+    private static AudioSource? RentVoice(string sfxId)
     {
         EnsureRoot();
 
-        foreach (var voice in _voices)
-            if (voice != null && !voice.isPlaying) return voice;
+        // 1. Trop de copies de CE son déjà en vol → réutiliser la plus ancienne d'entre elles. Le son
+        //    reste audible (l'événement le plus récent l'emporte), il cesse simplement de s'additionner.
+        int same = 0, oldest = -1;
+        float oldestStart = float.MaxValue;
 
+        for (int i = 0; i < _voices.Count; i++)
+        {
+            if (_voices[i] == null || !_voices[i].isPlaying || _voiceSfx[i] != sfxId) continue;
+
+            same++;
+            if (_voiceStart[i] < oldestStart) { oldestStart = _voiceStart[i]; oldest = i; }
+        }
+
+        if (same >= MaxVoicesPerSfx && oldest >= 0) return Claim(oldest);
+
+        // 2. Une voix libre.
+        for (int i = 0; i < _voices.Count; i++)
+            if (_voices[i] != null && !_voices[i].isPlaying) return Claim(i);
+
+        // 3. En créer une, tant que la réserve n'est pas pleine.
         if (_voices.Count >= MaxVoices) return null;
 
         var go = new GameObject($"Voice{_voices.Count}", typeof(AudioSource));
@@ -131,8 +209,24 @@ public static class AudioSystem
         source.spatialBlend = 0f;   // 2D : aucune atténuation par la distance
 
         _voices.Add(source);
+        _voiceSfx.Add(sfxId);
+        _voiceStart.Add(Now);
         return source;
+
+        AudioSource Claim(int i)
+        {
+            _voiceSfx[i] = sfxId;
+            _voiceStart[i] = Now;
+            return _voices[i]!;
+        }
     }
+
+    /// <summary>
+    /// Horloge des voix. <b>Non affectée par l'échelle de temps</b> : le jeu met <c>timeScale</c> à
+    /// zéro pendant un passage de niveau, et une horloge gelée figerait l'âge de toutes les voix —
+    /// « la plus ancienne » deviendrait alors indécidable au moment précis où la nuée reprend.
+    /// </summary>
+    private static float Now => Time.unscaledTime;
 
     private static void EnsureRoot()
     {
@@ -149,6 +243,8 @@ public static class AudioSystem
     public static void Reset()
     {
         _voices.Clear();
+        _voiceSfx.Clear();
+        _voiceStart.Clear();
         _root = null;
     }
 }

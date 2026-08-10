@@ -266,6 +266,14 @@ public partial class AudioSystem : Node
         // c'est cette polyphonie — pas le niveau du fichier — qui la rendait « limite saturée ».
         "sfx_weapon_scatter_shoot"      => -11.0f,
 
+        // Mort des ennemis erratiques (−12,0 dB) → ~−21 dB, aligné sur l'AUTRE son de mort de
+        // fourrage (`sfx_enemy_swarm_die`, −21,0). Il est joué par toute la faune erratique — six
+        // espèces qui arrivent d'un bloc à la 3ᵉ minute avec 11 à 17 PV, donc mortes au premier coup
+        // — et il dure 1,36 s là où celui de la nuée en dure 0,16 : le plus long ET le plus fort de
+        // la banque servait le plus grand nombre. Ici le pool de 8 canaux borne l'empilement en
+        // volant le plus ancien ; le portage Unity, qui en a 24, a dû ajouter un plafond PAR SON.
+        "sfx_enemy_drone_die"           => -9.0f,
+
         _                               => 0f,
     };
 

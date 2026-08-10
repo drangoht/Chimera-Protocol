@@ -216,6 +216,48 @@ Ce n'est alors plus deux tirs qui s'entendent, mais une saturation. Corrigé par
 Troisième cas après le tir de sentinelle et son projectile : **quand un son gêne, compter combien de
 fois il part par seconde avant de regarder son niveau**.
 
+### Une réserve de voix **plus généreuse** que celle d'origine sature là où l'original tenait
+
+**Signalé en jouant (2026-08-10)**, dans la foulée du son de la salve : « ça sature aussi avec les
+ennemis qui arrivent vers 2 min 30 - 3 min, dès qu'ils sont touchés ». Ce ne sont pas *des* ennemis
+mais **une cohorte** : à 2:00 le drone corrompu, puis à **3:00 six espèces de faune d'un coup**
+(éclaireur, spectre, étincelle, éclat de glace, glitch), toutes en `erratic_chase`, toutes entre
+**11 et 17 PV** — donc mortes au premier coup. Et l'archétype `erratic_chase` joue
+`sfx_enemy_drone_die` : **1,36 s et −12,0 dB RMS**, le son le **plus long** et le **deuxième plus
+fort** de toute la banque, quand l'autre son de mort de fourrage (`sfx_enemy_swarm_die`) fait 0,16 s
+à −21,0 dB. Le plus encombrant sert le plus grand nombre.
+
+**Ce n'est pas une infidélité au portage** — le spawner de Godot résout lui aussi `erratic_chase` vers
+`CorruptedDrone.tscn`, donc vers ce son. **La divergence est ailleurs, dans la réserve de voix :**
+
+| | Godot publié | Portage Unity (avant) |
+|---|---|---|
+| Canaux | **8** | **24** |
+| Réserve pleine | vole le plus ancien | ignore le son |
+
+Vingt-quatre voix « pour ne perdre aucun son » ont **triplé l'amplitude atteignable** (+9,5 dB de
+somme cohérente), et le vol du plus ancien — que Godot fait par nécessité — coupait au passage les
+queues de 1,36 s avant qu'elles ne s'accumulent. Le portage a donc supprimé un garde-fou **que
+personne n'avait écrit comme tel** : il était un effet de bord de l'avarice du pool d'origine.
+
+**Parade** : un plafond **par son** (`MaxVoicesPerSfx = 3`) et non un plafond global. C'est la
+répétition du *même* clip qui s'additionne — vingt sons différents ne saturent pas, trois copies du
+même y suffisent. Au-delà du plafond, la voix la plus ancienne portant ce son est **réutilisée** et
+non ignorée : la mort la plus récente s'entend toujours, le son cesse seulement de s'empiler.
+⚠ **L'ordre des cas compte** : le plafond doit passer **avant** la recherche d'une voix libre. Vingt
+morts simultanées trouvent toujours une voix libre au moment où on regarde, et un plafond consulté en
+dernier ne mordrait qu'une fois les vingt-quatre voix prises — trop tard.
+
+⚠ **Un relevé de son ne conclut pas s'il n'y a pas de son.** Sans sortie audio, aucune voix ne
+« joue », le comptage rend zéro et un plafond jamais éprouvé passerait pour respecté. Le banc
+distingue donc « 3 voix pour 12 déclenchements » de **« NON CONCLUANT »**, au lieu d'afficher vert
+dans les deux cas. Vérifié sur `bench.exe` (build réel, audio actif) : **3 voix pour 12
+déclenchements**.
+
+**Et la mesure sépare deux choses** : `PlayedCountOf` compte des *déclenchements* — il ne bouge pas
+d'un pouce quand le son sature —, `VoicesPlaying` mesure l'*empilement*, c'est-à-dire ce qui
+s'additionne réellement à l'oreille. Le premier ne pouvait pas voir ce défaut.
+
 ### Un bouton se dimensionne sur son libellé **le plus long**, pas sur celui du repos
 
 Le bouton de remise à zéro change trois fois d'intitulé : « Tout réinitialiser », puis l'avertissement

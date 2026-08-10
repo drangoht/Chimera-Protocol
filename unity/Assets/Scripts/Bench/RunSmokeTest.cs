@@ -2898,6 +2898,19 @@ public sealed class RunSmokeTest : MonoBehaviour
         AudioSystem.PlaySfx("sfx_ui_button");
         Check("audio : un son est effectivement joue", AudioSystem.PlayedCount == before + 1);
 
+        // Un MÊME son ne doit pas s'empiler sans fin. Signalé en jouant : la faune erratique arrive
+        // d'un bloc vers la 3ᵉ minute avec 11-17 PV, meurt au premier coup, et son râle dure 1,36 s —
+        // vingt morts par seconde saturaient les vingt-quatre voix de la même explosion.
+        // ⚠ Ce relevé ne conclut que si l'audio tourne vraiment : sans sortie sonore aucune voix ne
+        // « joue », et un plafond non testé passerait pour respecté.
+        const string stacked = "sfx_enemy_drone_die";
+        for (int i = 0; i < 12; i++) AudioSystem.PlaySfx(stacked);
+
+        int voices = AudioSystem.VoicesPlaying(stacked);
+        Check("audio : un meme son ne s empile pas sans fin", voices > 0 && voices <= 3,
+              voices == 0 ? "NON CONCLUANT — aucune voix ne joue (pas de sortie audio sur ce banc)"
+                          : $"{voices} voix pour 12 declenchements");
+
         // ─── Obstacles de l'arène ─────────────────────────────────────────────
         // Un obstacle qui ne bloque pas est PIRE qu'aucun obstacle : le joueur le voit, le contourne,
         // et découvre en le traversant que le décor mentait.
