@@ -38,6 +38,18 @@ def conv_sfx(src, dst_name):
     run_ffmpeg(["-i", src, "-ar", "44100", "-ac", "1", "-sample_fmt", "s16", dst, "-loglevel", "error"], dst_name)
 
 
+def conv_sfx_filtered(src, dst_name, afilter):
+    """Comme conv_sfx, mais en appliquant une chaine de filtres ffmpeg.
+
+    Sert aux sons qu'on veut deriver d'un asset Kenney sans le remplacer : le meme laser peut
+    servir de tir sec a une arme et de salve sourde a une autre. Le traitement vit ICI et non
+    dans un editeur audio, sinon l'asset n'est plus regenerable et la recette se perd.
+    """
+    dst = os.path.join(DST_SFX, dst_name)
+    run_ffmpeg(["-i", src, "-af", afilter, "-ar", "44100", "-ac", "1",
+                "-sample_fmt", "s16", dst, "-loglevel", "error"], dst_name)
+
+
 def conv_music(src, dst_name):
     """Convertit OGG -> WAV stereo 44100 Hz 16-bit."""
     dst = os.path.join(DST_MUS, dst_name)
@@ -87,6 +99,15 @@ conv_sfx(os.path.join(SCIFI, "engineCircular_000.ogg"), "sfx_weapon_drone_loop.w
 conv_sfx(os.path.join(SCIFI, "forceField_004.ogg"), "sfx_weapon_fusion_activate.wav")
 conv_sfx(os.path.join(SCIFI, "engineCircular_002.ogg"), "sfx_weapon_fusion_loop.wav")
 conv_sfx(os.path.join(SCIFI, "laserRetro_000.ogg"), "sfx_weapon_sentinel_shoot.wav")
+
+# Volee Multiple — salve volontairement DISCRETE (retour de jeu : « trop present, limite sature »).
+# Elle partageait le claquement du Canon a Impulsions et tire souvent en meme temps que lui.
+# Recette : passe-bas 1800 Hz (ote le mordant), coupe a 0,18 s avec fondu (une salve enchainee
+# plusieurs fois par seconde ne doit pas trainer), puis crete ramenee a -1 dBFS comme le reste de
+# la banque. Le NIVEAU final ne se regle pas ici mais dans AudioSystem.MixGainDb (-11 dB) : Unity
+# renormalise les clips a l'import, une attenuation gravee dans le WAV y serait effacee.
+conv_sfx_filtered(os.path.join(SCIFI, "laserSmall_003.ogg"), "sfx_weapon_scatter_shoot.wav",
+                  "lowpass=f=1800:poles=2,atrim=0:0.18,afade=t=out:st=0.12:d=0.06,volume=9.6dB")
 
 # ================================================================
 # SFX JOUEUR & ENNEMIS

@@ -30,7 +30,11 @@ public partial class ScatterVolley : WeaponBase
         var targets = FindNearestEnemies(ProjectileCount);
         if (targets.Count == 0) return;
 
-        AudioSystem.Instance?.PlaySfx("sfx_weapon_impulse_shoot");
+        // Son propre à la salve — plus sourd et plus court que l'impulsion, et atténué au mixage.
+        // Elle partageait le claquement du Canon à Impulsions, avec lequel elle tire souvent en même
+        // temps : deux armes sur le même transitoire s'entendent comme une saturation, pas comme deux
+        // tirs.
+        AudioSystem.Instance?.PlaySfx("sfx_weapon_scatter_shoot");
         int power = InventorySystem.Instance?.GetWeaponLevel("scatter_volley") ?? 1;
 
         var baseDir = (targets[0].GlobalPosition - GlobalPosition).Normalized();

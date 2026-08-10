@@ -32,12 +32,17 @@ bande-son reste **regenerable a l'identique** par `python tools/generate_music_v
 filet de securite sans contrainte de licence. Elle-meme avait remplace des placeholders chiptune
 CC0 (Juhani Junkala) et une intro CC0 (SRG774).
 
-**SFX (24 fichiers) : ASSETS KENNEY CC0 — integres le 2026-06-22**
+**SFX (25 fichiers) : ASSETS KENNEY CC0 — integres le 2026-06-22**
 Convertis depuis les packs Kenney.nl (OGG -> WAV 44100 Hz 16-bit mono via ffmpeg 8.1.1).
 Licence : CC0 / Domaine public — utilisation commerciale libre, aucune attribution obligatoire.
 Retouche du 2026-07-27 : trois SFX dont la crete etait en retrait ont ete remontes a -1 dBFS
 (`sfx_weapon_impulse_shoot` +4.7 dB, `sfx_xp_collect` +2.0, `sfx_ui_button` +1.9) — simple gain,
 aucune compression. Regenerables via `tools/integrate_kenney_audio.py`.
+Ajout du 2026-08-10 : `sfx_weapon_scatter_shoot` — la Volee Multiple partageait le claquement du
+Canon a Impulsions, avec lequel elle tire souvent en meme temps ; signale en jouant (« trop present,
+limite sature »). Derive de `laserSmall_003.ogg` par passe-bas et raccourcissement (recette dans
+`tools/integrate_kenney_audio.py`), puis attenue de **-11 dB** dans `AudioSystem.MixGainDb` — le
+niveau se regle la, jamais dans le fichier (Unity renormalise les clips a l'import).
 
 **MIXAGE : trois bus audio** (`default_bus_layout.tres`) — `Master`, `SFX`, `Music`. Le bus
 `Music` porte un compresseur en **sidechain sur `SFX`** (seuil -16 dB, ratio 4, release 200 ms) :
@@ -71,6 +76,7 @@ via les URLs ci-dessus).
 | Fichier WAV | Source originale (OGG) | Pack | Description |
 |---|---|---|---|
 | `sfx_weapon_impulse_shoot.wav` | `laserSmall_000.ogg` | Sci-Fi Sounds | Tir laser compact |
+| `sfx_weapon_scatter_shoot.wav` | `laserSmall_003.ogg` | Sci-Fi Sounds | Salve sourde (passe-bas 1800 Hz, coupee a 0,18 s) |
 | `sfx_weapon_plasma_swing.wav` | `laserLarge_000.ogg` | Sci-Fi Sounds | Energie lame large |
 | `sfx_weapon_rail_shoot.wav` | `laserLarge_002.ogg` | Sci-Fi Sounds | Tir puissant variante |
 | `sfx_weapon_overload_pulse.wav` | `forceField_000.ogg` | Sci-Fi Sounds | Pulse EMP / champ de force |

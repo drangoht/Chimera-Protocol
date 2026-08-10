@@ -36,9 +36,9 @@ public static class WeaponSfx
     /// <summary>
     /// Son joué à chaque tir, par identifiant d'arme. Valeurs reprises une à une du jeu publié.
     ///
-    /// <para>Quatre effets seulement pour dix-huit armes, et c'est voulu : ils disent la
-    /// <b>famille</b> du tir (impulsion, lame, décharge, rail), pas l'arme. Une banque d'un son par
-    /// arme se transformerait en bouillie dès trois armes équipées.</para>
+    /// <para>Cinq effets seulement pour dix-huit armes, et c'est voulu : ils disent la
+    /// <b>famille</b> du tir (impulsion, salve, lame, décharge, rail), pas l'arme. Une banque d'un son
+    /// par arme se transformerait en bouillie dès trois armes équipées.</para>
     /// </summary>
     private static readonly Dictionary<string, string> _byWeapon = new(StringComparer.Ordinal)
     {
@@ -47,7 +47,14 @@ public static class WeaponSfx
         ["plasma_blade"]   = "sfx_weapon_plasma_swing",
         ["overload_field"] = "sfx_weapon_overload_pulse",
         ["tesla_coil"]     = "sfx_weapon_overload_pulse",
-        ["scatter_volley"] = "sfx_weapon_impulse_shoot",
+        // La salve a son propre son, plus sourd et plus court que l'impulsion, et atténué au mixage
+        // (voir la table de mixage d'AudioSystem). Ce n'est pas une exception à la règle des familles
+        // ci-dessus mais son application : la Volée Multiple tire en salve, et à recharge réduite elle
+        // enchaîne plusieurs salves par seconde EN MÊME TEMPS que le Canon à Impulsions, avec lequel
+        // elle partageait exactement le même claquement — deux armes sur le même transitoire, ça ne
+        // s'entend plus comme deux tirs mais comme une saturation. Signalé en jouant : « trop présent,
+        // limite saturé ».
+        ["scatter_volley"] = "sfx_weapon_scatter_shoot",
         ["glaive"]         = "sfx_weapon_plasma_swing",
         ["seeker_swarm"]   = "sfx_weapon_impulse_shoot",
         ["cryo_lance"]     = "sfx_weapon_rail_shoot",

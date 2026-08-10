@@ -95,4 +95,20 @@ public class WeaponSfxTests
     [InlineData("rail_overcharged", "sfx_weapon_rail_shoot")]
     public void KnownWeapons_KeepTheirPublishedSound(string weaponId, string expected)
         => Assert.Equal(expected, WeaponSfx.For(weaponId));
+
+    /// <summary>
+    /// La Volée Multiple ne partage <b>pas</b> le son du Canon à Impulsions.
+    ///
+    /// <para>Verrou de décision, pris en jouant : « le son de la volée multiple est trop présent,
+    /// limite saturé ». Les deux armes tirent souvent en même temps, et à recharge réduite la salve
+    /// enchaîne plusieurs tirs par seconde — sur le <b>même</b> transitoire, cela ne s'entend plus
+    /// comme deux armes mais comme une saturation. Un futur regroupement « par famille » remettrait
+    /// naturellement les deux sur l'impulsion : ce test dit pourquoi il ne faut pas.</para>
+    /// </summary>
+    [Fact]
+    public void ScatterVolley_HasItsOwnQuieterSound()
+    {
+        Assert.Equal("sfx_weapon_scatter_shoot", WeaponSfx.For("scatter_volley"));
+        Assert.NotEqual(WeaponSfx.For("impulse_cannon"), WeaponSfx.For("scatter_volley"));
+    }
 }

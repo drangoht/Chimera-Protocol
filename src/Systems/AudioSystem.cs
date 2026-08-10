@@ -259,6 +259,13 @@ public partial class AudioSystem : Node
     {
         "sfx_weapon_sentinel_shoot"     => -12.0f,  // −7,5 → ~−19,5 dB, sous les tirs du joueur (−16,9)
         "sfx_enemy_sentinel_projectile" => -6.0f,   // −13,6 → ~−19,6 dB, même cible
+
+        // Salve de la Volée Multiple (−13,2 dB dans le fichier) → ~−24,2 dB, soit ~7 dB sous
+        // l'impulsion. Même raisonnement que ci-dessus, appliqué à une arme du joueur : à recharge
+        // réduite, elle enchaîne plusieurs salves par seconde par-dessus les autres armes équipées, et
+        // c'est cette polyphonie — pas le niveau du fichier — qui la rendait « limite saturée ».
+        "sfx_weapon_scatter_shoot"      => -11.0f,
+
         _                               => 0f,
     };
 

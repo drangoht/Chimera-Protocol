@@ -193,6 +193,29 @@ cause) · le son **est-il parti** pour cette arme (`PlayedCountOf`, par identifi
 ne permet aucune attribution). Le diagnostic de scène réelle les imprime arme par arme, **en fin** de
 relevé — posé au début, il tombait à la troisième seconde de run et annonçait « 0 » pour tout le monde.
 
+### Le niveau d'un son **ne se règle pas dans le fichier** — Unity renormalise à l'import
+
+**Signalé en jouant (2026-08-10)** : « le son de la volée multiple est trop présent, limite saturé ».
+Le réflexe — réencoder le WAV plus bas — **n'aurait rien changé** : tous les clips de la banque sont
+importés avec `forceToMono: 1` **et `normalize: 1`** (voir n'importe quel `.wav.meta` de
+`Resources/audio/sfx/`), donc Unity ramène leur crête à pleine échelle et efface toute atténuation
+gravée dans l'asset. Seuls survivent le **caractère** du son (spectre, enveloppe, durée) et son
+rapport RMS/crête.
+
+**Conséquence pratique** : un fichier se conçoit pour ce qu'il *dit* (sourd ou claquant, court ou
+traînant) et se **cale à −1 dBFS comme le reste de la banque** ; le **niveau** se règle exclusivement
+dans `AudioSystem.MixGainDb`. Le réglage y est de surcroît lisible et comparable, là où il serait
+invisible dans un binaire. C'est la même conclusion que côté Godot (où la raison est autre :
+conserver l'asset CC0 intact).
+
+**Et le gain se choisit sur la polyphonie réelle, pas sur le niveau du fichier.** La Volée Multiple
+partageait exactement le claquement du Canon à Impulsions — deux armes souvent équipées ensemble,
+tirant sur le *même* transitoire, la salve enchaînant plusieurs tirs par seconde à recharge réduite.
+Ce n'est alors plus deux tirs qui s'entendent, mais une saturation. Corrigé par un son propre
+(`sfx_weapon_scatter_shoot`, dérivé Kenney passé au passe-bas et raccourci) **et** −11 dB de mixage.
+Troisième cas après le tir de sentinelle et son projectile : **quand un son gêne, compter combien de
+fois il part par seconde avant de regarder son niveau**.
+
 ### Un bouton se dimensionne sur son libellé **le plus long**, pas sur celui du repos
 
 Le bouton de remise à zéro change trois fois d'intitulé : « Tout réinitialiser », puis l'avertissement

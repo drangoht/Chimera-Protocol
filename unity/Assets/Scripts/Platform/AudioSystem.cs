@@ -59,10 +59,24 @@ public static class AudioSystem
     /// exactement (premier essai à −9 dB) ne suffisait pas : il faut mixer selon la
     /// <b>polyphonie réelle</b> (N sentinelles contre une arme), pas selon le niveau du fichier.</para>
     /// </summary>
+    /// <remarks>
+    /// ⚠ <b>Le niveau du fichier ne suffit pas à régler un son ici</b> : les clips sont importés avec
+    /// <c>forceToMono</c> et <c>normalize</c>, donc Unity ramène leur crête à pleine échelle et efface
+    /// toute atténuation gravée dans le WAV. Un son trop présent se corrige donc <b>dans cette
+    /// table</b>, jamais en réencodant l'asset plus bas — c'est la même conclusion que côté Godot,
+    /// pour une raison différente.
+    /// </remarks>
     private static float MixGainDb(string sfxId) => sfxId switch
     {
         "sfx_weapon_sentinel_shoot"     => -12f,
         "sfx_enemy_sentinel_projectile" => -6f,
+
+        // Salve de la Volée Multiple : le fichier est déjà plus doux que l'impulsion, mais l'arme
+        // tire plusieurs fois par seconde en fin de run, par-dessus les autres armes équipées. C'est
+        // la polyphonie qui décide du gain, pas le niveau du fichier — même raisonnement que pour le
+        // tir de sentinelle. Résultat : ~7 dB sous l'impulsion à l'oreille.
+        "sfx_weapon_scatter_shoot"      => -11f,
+
         _                               => 0f,
     };
 
