@@ -1,8 +1,13 @@
 # Chimera Protocol — itch.io store page (English)
 
 > Ready-to-paste English copy. Strictly factual — everything listed exists in the build.
-> **Up to date for 1.17.1** (2026-07-28). Keep in sync with the FR version (`ITCH_STORE_PAGE.md`)
-> and with the HTML block in its section 3b.
+> **Up to date for 2.0.0** (2026-08-10). Keep in sync with the FR version (`ITCH_STORE_PAGE.md`).
+>
+> ⚠ The 2.0.0 pass corrected copy that had been **wrong for several releases**: the engine (Godot →
+> Unity, and the download's folder name with it), "Easy / Normal / Hard" (replaced by the saturation
+> ladder back in 1.25.0), "3 mini-bosses" (there are six since 1.23.0) and "28 base enemies" (there
+> are 24 — the count had been read off a design file that the game does not load). A store page is
+> a promise; each of those was a small lie told to every visitor.
 
 ## Title
 Chimera Protocol
@@ -27,7 +32,9 @@ In a world where magic and machine merged into a corruption called the **Living 
 - **Fusions that transform the weapon** — max out a weapon while owning its required passive to unlock its evolved form. The Plasma Blade becomes a continuous fusion ring; the Impulse Cannon becomes a piercing rail; and more.
 - **Assimilation: become the chimera** — every kill fills its archetype's gauge; a full gauge offers a **graft** (limited, replaceable slots). Two compatible grafts can **fuse** into a stronger form that frees up a slot — your own body is a third build axis, alongside levels and meta-upgrades.
 - **Challenges that pay out** — 13 objectives evaluated at the end of every run, rewarding Echoes, **starting perks** or **titles**. A fourth progression axis on top of weapons, the Hub and Assimilation.
-- **Endless-survival end-game** — the timer counts down to the **end-of-level boss**. When it hits zero, the difficulty escalates **hard**: massive waves, mini-bosses and **bosses on a loop**. Beating the boss **completes the level** (unlocking the next) but the run keeps going — you survive as long as you can. Your **survival time is the level's high score** (with the difficulty it was set on).
+- **A boss that fights in three phases** — the Rusted Core changes pattern at 66% and 33% health, telegraphing each switch with a second of overload, and it wears **a different incarnation on every biome**: a directed fan, a translocation, a frost nova, magma pools, rotating beams. Same boss, five fights.
+- **Endless-survival end-game** — the timer counts down to the **end-of-level boss**. When it hits zero, the difficulty escalates **hard**: massive waves, mini-bosses and **bosses on a loop**. Beating the boss **completes the level** (unlocking the next) but the run keeps going — you survive as long as you can. Your **survival time is the level's high score** (with the saturation rank it was set on).
+- **Overload cards when the arsenal is full** — reach the point where every weapon is maxed and every passive taken, and the level-up screen stops handing you nothing: three uncapped cards appear (Plating, Self-repair, Surge). The choice between raw survivability and raw damage is what decides how long the endless part lasts.
 
 ### Highlights
 - **A third progression axis: Assimilation.** *"Don't kill the monsters. Become them."* Every enemy archetype (Swarm, Drone, Sentinel, Colossus) has its own gauge, filled by your kills; a full gauge offers a graft from a pool of **5** (Symbiotic Swarm, Erratic Servos, Aiming Eye, Grafted Carapace, Stalker's Wave). **3 slots** by default, up to **5** through the Hub. Grafts visibly reshape your body — attached plating, thrusters, a floating eye — and the right pair **fuses** into an epic form that frees a slot: **Armored Charge** (your dash becomes an impact charge), **Turret Hive** (your swarms become 4 auto-turrets covering 360°) or **Nova Strike** (your dash becomes an offensive blink that detonates on arrival). Armored Charge and Nova Strike share a component, so they're mutually exclusive — pick your build.
@@ -41,19 +48,21 @@ In a world where magic and machine merged into a corruption called the **Living 
   - *Cryogenic Frost* — **enemies −18% speed**, room to kite and aim.
   - *Neon Sector* — an overclocked data sector: **enemies +10% faster but +15% XP** (risk vs reward).
 - **A build-craft arsenal — 12 weapons, 4 passives and 9 fusions** to combine. Including a boomerang blade, homing missiles, a slowing cryo beam, a burning flame cone, an aimed vector lance, and an epic gravity-well singularity.
-- **A dedicated fauna per biome** — each of the 5 biomes has its own creatures: rusted crawlers in the Sanctuary, spectral wraiths in the Aether Wastes, molten colossi in the Furnace, crystalline titans in the Frost, holographic glitches in the Neon Sector. **28 base enemies** in total, each with its own sprite.
+- **A dedicated fauna per biome** — each of the 5 biomes has its own creatures: rusted crawlers in the Sanctuary, spectral wraiths in the Aether Wastes, molten colossi in the Furnace, crystalline titans in the Frost, holographic glitches in the Neon Sector. **24 base enemies** in total, each with its own sprite.
+- **Floors that tell you where you are** — not a tinted tile repeated five times: the Furnace has a lava flow crossing it, the Frost a cracked frozen river, the Neon two data conduits meeting at a lit node, the Sanctuary a paved path around a rune-carved square, the Aether Wastes a river of raw energy. Obstacles and the glass wells that show the parallax step aside for them.
 - **An adaptive industrial-metal soundtrack** — down-tuned guitars and live drums up front, synths and wordless choirs serving the riff. Every biome has two versions of the same track: a restrained *calm* verse and a wide-open *combat* chorus, cross-faded in real time as the screen fills with monsters, plus a shared boss theme that cuts in on its first beat.
 - **Temporary power-ups** — pick up timed buffs mid-run: Overclock (fire rate), Berserk (damage), Aegis (invulnerability), Celerity (speed). No permanent power-creep.
 - **Level progression** — 5 levels unlock one after another (beat a level to open the next). Each tracks its **best survival time + difficulty**. A **DEFEATED** badge marks cleared levels.
 - **Weapon discovery** — undiscovered weapons appear as **???** in the Arsenal until you find and equip them in a run (your character's signature weapon is always known).
 - **Reset everything** — a one-click option to wipe all progress (Echoes, unlocks, records, discoveries) back to a fresh start.
-- **Adjustable difficulty** — Easy / Normal / Hard (damage, HP and spawn multipliers).
-- **An escalating bestiary** — 28 base enemies spread across the biomes, with **elites** carrying dangerous affixes (Armored, Regenerating, Explosive, Frenzied, Vampiric), 3 mini-bosses (Aether Revenant, Rust Stalker, Master Sentinel) and 1 final boss (the Rusted Core).
+- **The Rust Saturation ladder — difficulty as rules, not as multipliers.** Six ranks, and **each one is a named rule you read before you launch**, not a slider: **I Haemorrhage** (healing cut by 65%, levelling up no longer heals), **II Pack** (+45% enemy health, +80% damage, denser waves), **III Countdown** (overtime starts on minute 8 instead of 13 — it attacks your build time), **IV No Safety Net** (every bought safety net is inactive), **V Elites Everywhere** (elites four times more common — most of the swarm carries an affix), **VI Purifier** (champion blows hit for at least 12% of your max health, so stacking health stops protecting you from them). Ranks stack, and each pays **+20% Echoes**.
+- **The ladder is set per biome, and its first rung is earned.** Beat the Rusted Core once somewhere, and rank I opens *there*; the rung above what you've proven stays open, always. An **Assist mode** sits outside the ladder for anyone who wants the loop without the climb.
+- **An escalating bestiary** — 24 base enemies spread across the biomes, with **elites** carrying dangerous affixes (Armored, Regenerating, Explosive, Frenzied, Vampiric), **6 mini-bosses** (Aether Revenant, Rust Stalker, Master Sentinel, plus a champion per biome: Molten Colossus, Cryo Sentinel, Neon Warden) and 1 final boss (the Rusted Core). Each biome champion demands the **opposite** reflex to that biome's boss incarnation.
 - **Meta-progression** — Aether Echoes earned in runs buy permanent upgrades at the Hub, including extra graft slots and a faster assimilation metabolism.
 - **Skippable narrative intro** — the lore told in 6 beats on launch, skippable with any key/click/button.
 - **Keyboard or gamepad** — arrow keys, WASD/ZQSD or your own layout: **movement keys are fully rebindable** in the Options, plus keyboard + gamepad navigation on every menu.
 - **Cyberpunk / CRT aesthetic** — pseudo-3D shaded pixel art (fixed directional light + drop shadows for depth), neon, scanlines, per-biome atmosphere (drifting fog, light shafts, parallax dust), a minimal Cyberpunk-2077-style HUD tinted per biome, screen shake, bloom and chromatic aberration on fusions. The whole interface is built from chamfered "armored plate" frames with beveled edges and corner rivets — no rounded corners to clash with the pixel art.
-- **Built-in Codex** — five screens browsable from the main menu: a Bestiary (28 enemies with animated sprite, role and description), an Arsenal (12 weapons + 4 passives), a Chimera screen (grafts and fusions, effect and requirements), a Challenges screen (progress X/N) and a Perks screen.
+- **Built-in Codex** — five screens browsable from the main menu: a Bestiary (all 31 creatures with animated sprite, role and description), an Arsenal (12 weapons + 4 passives), a Chimera screen (grafts and fusions, effect and requirements), a Challenges screen (progress X/N) and a Perks screen.
 - **Discord Rich Presence** — your friends see what you're playing.
 - **Localized in English, French and Spanish.**
 
@@ -63,14 +72,15 @@ In a world where magic and machine merged into a corruption called the **Living 
 ## System requirements
 - OS: Windows 10 / 11 (64-bit)
 - Architecture: x86_64
-- Runtime: none to install — .NET 8 is embedded in the build
-- Engine: Godot 4.7 .NET (bundled in the .exe)
+- Runtime: none to install
+- Engine: Unity 6.5
 - Controls: keyboard or gamepad
 
-The download contains `ChimeraProtocol.exe` AND the `data_ChimeraProtocol_windows_x86_64/` runtime folder — both are required. They are bundled together in the provided ZIP.
+The download contains `ChimeraProtocol.exe` AND the `ChimeraProtocol_Data/` folder next to it — both are required, and they ship together.
 
 ## Metadata
 - Kind of project: Downloadable
+- **Made with: Unity** (was Godot until 2.0.0 — the itch field needs changing too)
 - Genre: Action (sub: Shooter / Survivor / Roguelite)
 - Tags: survivor, roguelite, bullet-heaven, top-down, pixel-art, cyberpunk, action, singleplayer, controller, twin-stick (choose up to 10)
 - Platform: Windows
@@ -99,7 +109,9 @@ The download contains `ChimeraProtocol.exe` AND the `data_ChimeraProtocol_window
 <li><strong>Fusions that transform the weapon</strong> &mdash; max out a weapon while owning its required passive to unlock its evolved form. The Plasma Blade becomes a continuous fusion ring; the Impulse Cannon becomes a piercing rail; and more.</li>
 <li><strong>Assimilation: become the chimera</strong> &mdash; every kill fills its archetype's gauge; a full gauge offers a <strong>graft</strong> (limited, replaceable slots). Two compatible grafts can <strong>fuse</strong> into a stronger form that frees up a slot &mdash; your own body is a third build axis, alongside levels and meta-upgrades.</li>
 <li><strong>Challenges that pay out</strong> &mdash; 13 objectives evaluated at the end of every run, rewarding Echoes, <strong>starting perks</strong> or <strong>titles</strong>. A fourth progression axis on top of weapons, the Hub and Assimilation.</li>
-<li><strong>Endless-survival end-game</strong> &mdash; the timer counts down to the <strong>end-of-level boss</strong>. When it hits zero, the difficulty escalates <strong>hard</strong>: massive waves, mini-bosses and <strong>bosses on a loop</strong>. Beating the boss <strong>completes the level</strong> (unlocking the next) but the run keeps going &mdash; you survive as long as you can. Your <strong>survival time is the level's high score</strong> (with the difficulty it was set on).</li>
+<li><strong>A boss that fights in three phases</strong> &mdash; the Rusted Core changes pattern at 66% and 33% health, telegraphing each switch with a second of overload, and it wears <strong>a different incarnation on every biome</strong>: a directed fan, a translocation, a frost nova, magma pools, rotating beams. Same boss, five fights.</li>
+<li><strong>Endless-survival end-game</strong> &mdash; the timer counts down to the <strong>end-of-level boss</strong>. When it hits zero, the difficulty escalates <strong>hard</strong>: massive waves, mini-bosses and <strong>bosses on a loop</strong>. Beating the boss <strong>completes the level</strong> (unlocking the next) but the run keeps going &mdash; you survive as long as you can. Your <strong>survival time is the level's high score</strong> (with the saturation rank it was set on).</li>
+<li><strong>Overload cards when the arsenal is full</strong> &mdash; reach the point where every weapon is maxed and every passive taken, and the level-up screen stops handing you nothing: three uncapped cards appear (Plating, Self-repair, Surge). The choice between raw survivability and raw damage is what decides how long the endless part lasts.</li>
 </ul>
 
 <h3>Highlights</h3>
@@ -118,19 +130,21 @@ The download contains `ChimeraProtocol.exe` AND the `data_ChimeraProtocol_window
   </ul>
 </li>
 <li><strong>A build-craft arsenal &mdash; 12 weapons, 4 passives and 9 fusions</strong> to combine. Including a boomerang blade, homing missiles, a slowing cryo beam, a burning flame cone, an aimed vector lance, and an epic gravity-well singularity.</li>
-<li><strong>A dedicated fauna per biome</strong> &mdash; each of the 5 biomes has its own creatures: rusted crawlers in the Sanctuary, spectral wraiths in the Aether Wastes, molten colossi in the Furnace, crystalline titans in the Frost, holographic glitches in the Neon Sector. <strong>28 base enemies, each with its own sprite.</strong></li>
+<li><strong>A dedicated fauna per biome</strong> &mdash; each of the 5 biomes has its own creatures: rusted crawlers in the Sanctuary, spectral wraiths in the Aether Wastes, molten colossi in the Furnace, crystalline titans in the Frost, holographic glitches in the Neon Sector. <strong>24 base enemies, each with its own sprite.</strong></li>
+<li><strong>Floors that tell you where you are</strong> &mdash; not a tinted tile repeated five times: the Furnace has a lava flow crossing it, the Frost a cracked frozen river, the Neon two data conduits meeting at a lit node, the Sanctuary a paved path around a rune-carved square, the Aether Wastes a river of raw energy. Obstacles and the glass wells that show the parallax step aside for them.</li>
 <li><strong>An adaptive industrial-metal soundtrack</strong> &mdash; down-tuned guitars and live drums up front, synths and wordless choirs serving the riff. Every biome has two versions of the same track: a restrained <em>calm</em> verse and a wide-open <em>combat</em> chorus, cross-faded in real time as the screen fills with monsters, plus a shared boss theme that cuts in on its first beat.</li>
 <li><strong>Temporary power-ups</strong> &mdash; pick up timed buffs mid-run: Overclock (fire rate), Berserk (damage), Aegis (invulnerability), Celerity (speed). No permanent power-creep.</li>
 <li><strong>Level progression</strong> &mdash; 5 levels unlock one after another (beat a level to unlock the next); each level tracks its <strong>best survival time + difficulty</strong>. A <strong>DEFEATED</strong> badge marks cleared levels.</li>
 <li><strong>Weapon discovery</strong> &mdash; undiscovered weapons appear as <strong>???</strong> until you find them in a run.</li>
 <li><strong>Reset everything</strong> &mdash; a one-click option to wipe all progress (Echoes, unlocks, records, discoveries) back to a fresh start.</li>
-<li><strong>Adjustable difficulty</strong> &mdash; Easy / Normal / Hard (damage, HP and spawn rate scale accordingly).</li>
-<li><strong>An escalating bestiary</strong> &mdash; 28 base enemies spread across the biomes, with <strong>elites</strong> carrying dangerous affixes (Armored, Regenerating, Explosive, Frenzied, Vampiric), 3 mini-bosses (Aether Revenant, Rust Stalker, Master Sentinel) and 1 final boss (the <strong>Rusted Core</strong>).</li>
+<li><strong>The Rust Saturation ladder &mdash; difficulty as rules, not as multipliers.</strong> Six ranks, and <strong>each one is a named rule you read before you launch</strong>, not a slider: <strong>I Haemorrhage</strong> (healing cut by 65%, levelling up no longer heals), <strong>II Pack</strong> (+45% enemy health, +80% damage, denser waves), <strong>III Countdown</strong> (overtime starts on minute 8 instead of 13 &mdash; it attacks your build time), <strong>IV No Safety Net</strong> (every bought safety net is inactive), <strong>V Elites Everywhere</strong> (elites four times more common &mdash; most of the swarm carries an affix), <strong>VI Purifier</strong> (champion blows hit for at least 12% of your max health, so stacking health stops protecting you from them). Ranks stack, and each pays <strong>+20% Echoes</strong>.</li>
+<li><strong>The ladder is set per biome, and its first rung is earned.</strong> Beat the Rusted Core once somewhere, and rank I opens <em>there</em>; the rung above what you've proven stays open, always. An <strong>Assist mode</strong> sits outside the ladder for anyone who wants the loop without the climb.</li>
+<li><strong>An escalating bestiary</strong> &mdash; 24 base enemies spread across the biomes, with <strong>elites</strong> carrying dangerous affixes (Armored, Regenerating, Explosive, Frenzied, Vampiric), <strong>6 mini-bosses</strong> (Aether Revenant, Rust Stalker, Master Sentinel, plus a champion per biome: Molten Colossus, Cryo Sentinel, Neon Warden) and 1 final boss (the <strong>Rusted Core</strong>). Each biome champion demands the <strong>opposite</strong> reflex to that biome's boss incarnation.</li>
 <li><strong>Meta-progression</strong> &mdash; Aether Echoes earned in runs buy permanent upgrades at the Hub, including extra graft slots and a faster assimilation metabolism.</li>
 <li><strong>Skippable narrative intro</strong> &mdash; the lore told in 6 beats on launch, skippable at any time.</li>
 <li><strong>Keyboard or gamepad</strong> &mdash; arrow keys, WASD/ZQSD or your own layout: <strong>movement keys are fully rebindable</strong> in the Options, plus keyboard + gamepad navigation on every menu.</li>
 <li><strong>Cyberpunk / CRT aesthetic</strong> &mdash; pseudo-3D shaded pixel art (fixed directional light + drop shadows for depth), neon, scanlines, per-biome atmosphere (drifting fog, light shafts, parallax dust), a minimal Cyberpunk-2077-style HUD tinted per biome, screen shake, bloom and chromatic aberration on fusions. The whole interface is built from chamfered "armored plate" frames with beveled edges and corner rivets &mdash; no rounded corners to clash with the pixel art.</li>
-<li><strong>Built-in Codex</strong> &mdash; five screens browsable from the main menu: a Bestiary (each enemy's sprite, role and description), an Arsenal (12 weapons + 4 passives), a Chimera screen (grafts and fusions, effect and requirements), a Challenges screen (progress X/N) and a Perks screen.</li>
+<li><strong>Built-in Codex</strong> &mdash; five screens browsable from the main menu: a Bestiary (all 31 creatures, with sprite, role and description), an Arsenal (12 weapons + 4 passives), a Chimera screen (grafts and fusions, effect and requirements), a Challenges screen (progress X/N) and a Perks screen.</li>
 <li><strong>Discord Rich Presence</strong> &mdash; your friends see what you're playing.</li>
 <li><strong>Localized in English, French and Spanish.</strong></li>
 </ul>
@@ -143,9 +157,9 @@ The download contains `ChimeraProtocol.exe` AND the `data_ChimeraProtocol_window
 <ul>
 <li>OS: Windows 10 / 11 (64-bit)</li>
 <li>Architecture: x86_64</li>
-<li>Runtime: none to install &mdash; .NET 8 is embedded in the build</li>
-<li>Engine: Godot 4.7 .NET (bundled in the .exe)</li>
+<li>Runtime: none to install</li>
+<li>Engine: Unity 6.5</li>
 <li>Controls: keyboard or gamepad</li>
 </ul>
-<p>The download contains <code>ChimeraProtocol.exe</code> AND the <code>data_ChimeraProtocol_windows_x86_64/</code> runtime folder &mdash; both are required. They are bundled together in the provided ZIP.</p>
+<p>The download contains <code>ChimeraProtocol.exe</code> AND the <code>ChimeraProtocol_Data/</code> folder next to it &mdash; both are required, and they ship together.</p>
 ```

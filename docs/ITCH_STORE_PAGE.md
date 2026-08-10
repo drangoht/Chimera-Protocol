@@ -155,14 +155,13 @@ est une étape de plus dans la chimère que tu deviens.
 |---|---|
 | **OS** | Windows 10 / 11 (64 bits) |
 | **Architecture** | x86_64 |
-| **Runtime** | Aucune installation requise — **.NET 8 embarqué** dans le build |
-| **Moteur** | Godot 4.7 .NET (intégré au .exe) |
-| **Disque** | Quelques centaines de Mo (build + runtime .NET) |
+| **Runtime** | Aucune installation requise |
+| **Moteur** | **Unity 6.5** (depuis la 2.0.0 — Godot 4.7 .NET auparavant) |
+| **Disque** | Quelques centaines de Mo |
 | **Contrôles** | Clavier ou manette |
 
-> Le téléchargement contient `ChimeraProtocol.exe` **et** le dossier runtime
-> `data_ChimeraProtocol_windows_x86_64/`. **Les deux sont nécessaires** : lancer le `.exe` seul
-> sans son dossier `data_*` plante au démarrage. Zipper l'ensemble.
+> Le téléchargement contient `ChimeraProtocol.exe` **et** le dossier `ChimeraProtocol_Data/` posé à
+> côté. **Les deux sont nécessaires** : lancer le `.exe` seul plante au démarrage.
 
 ---
 
@@ -171,7 +170,8 @@ est une étape de plus dans la chimère que tu deviens.
 `roguelite` · `survivor` · `bullet-heaven` · `pixel-art` · `sci-fi` · `cyberpunk` · `action`
 · `top-down` · `roguelike` · `singleplayer` · `arcade` · `2D` · `fantasy` · `controller`
 
-Genre principal recommandé : **Action**. Made with : **Godot**.
+Genre principal recommandé : **Action**. Made with : **Unity** (⚠ à changer sur la page — le champ
+disait « Godot » jusqu'à la 2.0.0).
 
 ---
 
@@ -250,8 +250,9 @@ Ces moments forts ne sont pas encore dans `docs/` et feraient la différence —
 - [ ] **Renseigner le prix** : gratuit, « payez ce que vous voulez », ou prix fixe (à décider).
 - [ ] **Remplir la page** : titre, tagline, descriptions courte + longue (sections 1–4 ci-dessus).
 - [ ] **Uploader les visuels** (cover + galerie, section 7) ; ajouter le GIF/trailer dès qu'il existe.
-- [ ] **Régler les métadonnées itch** : plateforme **Windows**, genre **Action**, « Made with Godot »,
-      tags (section 6), classification du contenu.
+- [ ] **Régler les métadonnées itch** : plateforme **Windows**, genre **Action**, « Made with
+      **Unity** » (le champ disait Godot jusqu'à la 2.0.0), tags (section 6), classification du
+      contenu.
 - [ ] **Mentionner les crédits** : audio CC0 (Juhani Junkala — musiques ; Kenney.nl — SFX), polices
       OFL (Share Tech Mono / VT323 / Press Start 2P). Référencer `assets/audio/CREDITS.md` et
       `assets/fonts/CREDITS.md`.

@@ -4,7 +4,7 @@
 > `release-manager`). Entrées en ordre décroissant (la plus récente en haut). Ton orienté
 > joueur, EN puis FR (audience itch surtout anglophone).
 
-## v2.0.0 — Same game, rebuilt from the ground up (2026-08-09)
+## v2.0.0 — Same game, rebuilt from the ground up (2026-08-10)
 
 **Changed — Chimera Protocol now runs on a different engine**
 - Everything you play is the same: the same weapons, the same fusions, the same grafts, the same
@@ -42,6 +42,20 @@
   rank I straight away — the ladder handed you its first rung instead of making you climb it. Beat
   the Rusted Core once on a biome, and rank I opens there.
 - The rung above what you've proven stays open, always: that's what makes the ladder climbable.
+
+**Fixed — the third minute stopped being a wall of noise**
+- Reported in play: *"it saturates as soon as the enemies that show up around 2:30 get hit."* They
+  weren't getting hit — they were dying. Six species of erratic fauna arrive together on the third
+  minute with 11 to 17 health, so they die to a single shot, and they all shared one death sound.
+- That sound held **full level for 1.1 seconds without decaying**, then cut off. Not an explosion
+  with a tail: a continuous rumble, and a few of those overlapping is a wash of noise, not a death. It is now
+  a percussion — 0.3 s with a real decay — and dozens of deaths per second read as dozens of deaths.
+- Deaths also play at a wider pitch spread now. When the same sample repeats twenty times a second,
+  it's the *sameness* as much as the volume that turns into mush.
+- Same family of fix: the **Scatter Volley** was firing the Impulse Cannon's exact sound. Two weapons
+  you often carry together, hammering the same transient — it stopped reading as two weapons and
+  started reading as clipping. It has its own, quieter shot now.
+- And no single sound can pile up indefinitely any more, whatever it is.
 
 **Fixed — things that were simply missing**
 - **Discord Rich Presence** is back (menu / run, with the biome and rank). The setting for it had
@@ -93,6 +107,22 @@
   Battez le Noyau Rouillé une fois sur un biome, et le cran I s'y ouvre.
 - Le barreau au-dessus de ce que vous avez prouvé reste toujours ouvert : c'est lui qui rend
   l'échelle gravissable.
+
+**Corrigé — la troisième minute n'est plus un mur de bruit**
+- Signalé en jouant : *« ça sature dès que les ennemis qui arrivent vers 2 min 30 sont touchés »*.
+  Ils n'étaient pas touchés, ils mouraient : six espèces de faune erratique débarquent ensemble à la
+  troisième minute avec 11 à 17 points de vie — mortes au premier tir — et partageaient toutes le
+  même son de mort.
+- Ce son tenait **son niveau plein pendant 1,1 seconde sans décroître**, puis coupait net. Pas une
+  explosion avec une queue : un grondement continu, et quelques-uns qui se recouvrent font une nappe,
+  pas des morts. C'est devenu une percussion — 0,3 s avec une vraie décroissance — et des dizaines
+  de morts par seconde s'entendent enfin comme des dizaines de morts.
+- Les morts partent aussi sur une plage de hauteurs plus large. Quand le même échantillon se répète
+  vingt fois par seconde, c'est son *identité* autant que son volume qui tourne à la bouillie.
+- Même famille : la **Volée Multiple** tirait le son exact du Canon à Impulsions. Deux armes qu'on
+  porte souvent ensemble, martelant le même transitoire — on n'entendait plus deux armes mais de la
+  saturation. Elle a son propre tir, plus discret.
+- Et plus aucun son, quel qu'il soit, ne peut désormais s'empiler sans fin.
 
 **Corrigé — ce qui manquait, tout simplement**
 - La **présence Discord** est de retour (menus / en run, avec le biome et le cran). Son réglage,
