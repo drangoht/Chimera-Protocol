@@ -559,7 +559,12 @@ public class EnemyBase : MonoBehaviour
             _                                 => "sfx_enemy_swarm_die",
         };
 
-        AudioSystem.PlaySfx(sfx);
+        // Variation de hauteur large, et non les 6 % par défaut : une mort n'arrive jamais seule. À la
+        // 3ᵉ minute, une nuée en produit des dizaines par seconde, et c'est la répétition à
+        // l'identique du même échantillon — plus encore que son volume — qui s'entend comme une
+        // bouillie plutôt que comme des morts distinctes. Les orbes d'XP, autre événement de masse,
+        // font le même choix.
+        AudioSystem.PlaySfx(sfx, pitchVariation: 0.18f);
     }
 
     /// <summary>Prefab d'orbe d'XP, injecté par le spawner à la création.</summary>

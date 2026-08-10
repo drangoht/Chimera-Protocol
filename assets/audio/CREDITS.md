@@ -43,13 +43,16 @@ Canon a Impulsions, avec lequel elle tire souvent en meme temps ; signale en jou
 limite sature »). Derive de `laserSmall_003.ogg` par passe-bas et raccourcissement (recette dans
 `tools/integrate_kenney_audio.py`), puis attenue de **-11 dB** dans `AudioSystem.MixGainDb` — le
 niveau se regle la, jamais dans le fichier (Unity renormalise les clips a l'import).
-Meme jour, meme retour de jeu : `sfx_enemy_drone_die` attenue de **-9 dB** dans les deux moteurs. Il
-dure **1,36 s pour -12,0 dB RMS** — le plus long et le 2e plus fort de la banque — et c'est le son de
-mort de tout l'archetype `erratic_chase`, soit six especes de faune qui arrivent d'un bloc a la 3e
-minute avec 11 a 17 PV (mortes au premier coup). L'autre son de mort de fourrage
-(`sfx_enemy_swarm_die`) fait 0,16 s a -21,0 dB : les deux racontent la meme chose, ils sont
-desormais au meme niveau. Cote Unity s'y ajoute un plafond de **3 voix par son** (voir
-`docs/PITFALLS_UNITY.md`) — le pool de Godot, limite a 8 canaux, bornait deja l'empilement.
+Meme jour, meme retour de jeu : `sfx_enemy_drone_die` **RACCOURCI et reencode**. C'est le son de mort
+de tout l'archetype `erratic_chase`, soit six especes de faune qui arrivent d'un bloc a la 3e minute
+avec 11 a 17 PV (mortes au premier coup), et le fichier d'origine tenait **-11 dB RMS pendant 1,1 s
+sans decroitre** avant de couper net : pas une explosion mais un grondement continu, entendu comme
+« du reverb ». Coupe a **0,30 s avec decroissance exponentielle** (recette dans
+`tools/integrate_kenney_audio.py`), il redevient une percussion. L'enveloppe seule a rendu 5 dB de
+RMS (-12,0 -> -17,1), d'ou un gain de mixage a **-6 dB** et non -9 : les deux corrections visent la
+meme grandeur et ne s'additionnent pas. Cote Unity s'y ajoutent un plafond de **3 voix par son** et
+une variation de hauteur de +/-18 % sur les morts (voir `docs/PITFALLS_UNITY.md`) — le pool de Godot,
+limite a 8 canaux, bornait deja l'empilement.
 
 **MIXAGE : trois bus audio** (`default_bus_layout.tres`) — `Master`, `SFX`, `Music`. Le bus
 `Music` porte un compresseur en **sidechain sur `SFX`** (seuil -16 dB, ratio 4, release 200 ms) :

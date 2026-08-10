@@ -120,12 +120,13 @@ public static class AudioSystem
         // tir de sentinelle. Résultat : ~7 dB sous l'impulsion à l'oreille.
         "sfx_weapon_scatter_shoot"      => -11f,
 
-        // Mort des ennemis erratiques — le son le plus fort de la banque après le tir de sentinelle,
-        // et joué par la faune la plus nombreuse et la plus fragile du jeu. Aligné sur l'AUTRE son de
-        // mort de fourrage (sfx_enemy_swarm_die, −21,0 dB RMS) dont il ne devrait pas se distinguer
-        // par le volume : ces deux-là racontent la même chose, un ennemi jetable qui tombe. Le
-        // plafond par son borne l'empilement ; ce gain corrige le niveau du fichier lui-même.
-        "sfx_enemy_drone_die"           => -9f,
+        // Mort des ennemis erratiques, la faune la plus nombreuse et la plus fragile du jeu. Le gain
+        // est passé de −9 à −6 dB quand le FICHIER a été raccourci (1,36 s de niveau constant →
+        // 0,30 s décroissants) : l'enveloppe a rendu 5 dB de RMS à elle seule, et cumuler les deux
+        // corrections aurait enterré le son. Cible : le niveau de l'autre son de mort de fourrage
+        // (sfx_enemy_swarm_die, −21,0 dB RMS), avec une marge — ces deux-là racontent la même chose,
+        // un ennemi jetable qui tombe, et ce sont les deux plus polyphoniques du jeu.
+        "sfx_enemy_drone_die"           => -6f,
 
         _                               => 0f,
     };

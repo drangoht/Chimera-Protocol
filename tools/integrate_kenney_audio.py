@@ -118,7 +118,15 @@ conv_sfx(os.path.join(SCIFI, "lowFrequency_explosion_000.ogg"), "sfx_player_die.
 
 print("\n--- SFX Ennemis ---")
 conv_sfx(os.path.join(IMPACT, "impactGeneric_light_000.ogg"), "sfx_enemy_swarm_die.wav")
-conv_sfx(os.path.join(SCIFI, "explosionCrunch_001.ogg"), "sfx_enemy_drone_die.wav")
+# Mort des ennemis erratiques — RACCOURCIE. Le fichier brut ne decroit pas : il tient ~-11 dB RMS
+# pendant 1,1 s puis coupe net, ce qui n'est pas une explosion mais un grondement continu. Joue par
+# six especes de faune qui arrivent d'un bloc a la 3e minute avec 11-17 PV (mortes au premier coup),
+# il produisait un mur de bruit permanent — signale deux fois en jouant, la seconde fois comme « du
+# reverb ». C'est bien cela : une trainee dense qui se recouvre. Coupe a 0,30 s avec decroissance
+# exponentielle, il redevient une percussion (-10 -21 -40 -60 dB par tranches de 50 ms) tout en
+# restant distinct du « clic » de la nuee (0,16 s).
+conv_sfx_filtered(os.path.join(SCIFI, "explosionCrunch_001.ogg"), "sfx_enemy_drone_die.wav",
+                  "atrim=0:0.30,afade=t=out:st=0.04:d=0.26:curve=exp")
 conv_sfx(os.path.join(IMPACT, "impactMetal_heavy_002.ogg"), "sfx_enemy_sentinel_die.wav")
 conv_sfx(os.path.join(SCIFI, "laserRetro_002.ogg"), "sfx_enemy_sentinel_projectile.wav")
 conv_sfx(os.path.join(SCIFI, "lowFrequency_explosion_001.ogg"), "sfx_enemy_colossus_die.wav")

@@ -258,6 +258,31 @@ déclenchements**.
 d'un pouce quand le son sature —, `VoicesPlaying` mesure l'*empilement*, c'est-à-dire ce qui
 s'additionne réellement à l'oreille. Le premier ne pouvait pas voir ce défaut.
 
+**⚠ Le plafond n'a pas suffi, et la suite dit pourquoi.** Retour suivant, même run : « le son
+continue à être empilé au même moment, il faut le modifier — peut-être enlever le reverb aussi ».
+L'enveloppe du fichier, tracée par tranches de 50 ms, donne la réponse : `sfx_enemy_drone_die` tient
+**−9 à −13 dB pendant 1,1 s puis coupe net**. Il ne décroît pas. Ce n'est pas une explosion avec une
+queue de réverbération, c'est un **grondement à niveau constant**, et trois copies d'un grondement
+d'une seconde suffisent à faire un mur — le plafond bornait l'empilement à trois, mais trois de
+*ça* est encore une nappe continue. À comparer avec `sfx_enemy_colossus_die`, qui chute de −8 à −25
+dB en 300 ms : lui est une vraie percussion, et il ne pose aucun problème malgré sa seconde de durée.
+
+**Trois leçons de méthode, et la troisième est la plus chère :**
+1. **Un plafond de voix ne rattrape pas une enveloppe plate.** Borner la répétition suppose que
+   chaque copie *finit* ; un son qui ne décroît pas ne finit qu'à sa dernière frame.
+2. **Ce qu'un joueur appelle « du reverb » est une mesure à faire, pas une métaphore** — ici la
+   traînée était réelle et lisible dans l'enveloppe, là où RMS et crête (les deux chiffres regardés
+   au premier tour) la manquaient complètement. **Tracer l'enveloppe avant de toucher au gain.**
+3. **Corriger l'enveloppe change le niveau** : couper à 0,30 s avec décroissance exponentielle a
+   rendu **5 dB de RMS** à lui seul (−12,0 → −17,1). Le gain de mixage a donc dû *remonter*
+   (−9 → −6 dB), sans quoi les deux corrections se seraient cumulées et auraient enterré le son.
+   Deux réglages qui visent la même grandeur ne s'additionnent pas, ils se recalculent.
+
+**Dernier levier, sur la répétition elle-même** : les morts partent avec ±18 % de variation de
+hauteur (`PlaySfx(sfx, pitchVariation: 0.18f)`) et non les 6 % par défaut. À des dizaines de morts
+par seconde, c'est l'identité stricte de l'échantillon — autant que son volume — qui s'entend comme
+une bouillie au lieu d'événements distincts.
+
 ### Un bouton se dimensionne sur son libellé **le plus long**, pas sur celui du repos
 
 Le bouton de remise à zéro change trois fois d'intitulé : « Tout réinitialiser », puis l'avertissement
