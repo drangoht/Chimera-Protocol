@@ -4,6 +4,63 @@
 > `release-manager`). Entrées en ordre décroissant (la plus récente en haut). Ton orienté
 > joueur, EN puis FR (audience itch surtout anglophone).
 
+## v2.0.2 — The main menu, and the boss announcing its own translation key (2026-08-11)
+
+**Fixed — the main menu was still in French**
+- Reported straight after the last update: *"Play and Quit aren't translated."* They weren't —
+  those two entries, and Hub, were written directly into the code. Their translations had been
+  sitting in the table the whole time.
+- The previous pass missed them because it looked for the shared button factory, and these three go
+  through a local one. A sweep that looks for known shapes only ever finds known shapes. The check
+  now looks for *strings that read like human language* instead, and refuses them unless they're
+  explicitly cleared.
+
+**Fixed — the Rusted Core announced itself as `BOSS_CORE_MOLTEN_NAME`**
+- Above its own health bar, in the last fight of a run, in every language. The five incarnations
+  have had proper names since they were added; the code handed the screen the lookup key instead of
+  the name behind it. It now reads *The Molten Core*.
+- Found the same way: the fight's own banner was in the trailer footage.
+
+**Fixed — the smaller ones, same family**
+- `PHASE` written in place instead of the translated one, the frame counter's unit, the weapon level
+  in the pause screen, and two lines of the Hub's starting-perk row.
+
+**Changed — buttons no longer shout at random**
+- The menu read *Play · Hub · CHALLENGES · OPTIONS · Codex · Quit*: two of six entries were
+  borrowing the **screen title** key instead of the menu one. Same words, different voice.
+- One rule now, everywhere: capitals announce a screen, sentence case asks for an action. The pause
+  and Assimilation screens followed suit — *Resume*, *Assimilate*, *Keep* rather than shouting.
+
+---
+
+**Corrigé — le menu principal était toujours en français**
+- Signalé juste après la mise à jour précédente : *« Jouer et Quitter ne sont pas traduits »*.
+  C'était vrai — ces deux entrées, et Hub, étaient écrites en dur dans le code. Leurs traductions
+  attendaient dans la table depuis toujours.
+- La passe précédente les a manquées parce qu'elle cherchait la fabrique de boutons commune, et que
+  ces trois-là passent par une fabrique locale. Un relevé qui cherche des formes connues ne trouve
+  jamais que des formes connues. Le contrôle cherche désormais **les chaînes qui ressemblent à du
+  langage humain**, et les refuse tant qu'elles ne sont pas explicitement acquittées.
+
+**Corrigé — le Noyau Rouillé s'annonçait sous le nom de `BOSS_CORE_MOLTEN_NAME`**
+- Au-dessus de sa propre barre de vie, dans le dernier combat d'une partie, dans toutes les langues.
+  Les cinq incarnations ont un nom propre depuis leur création ; le code passait à l'écran la clé de
+  recherche au lieu du nom qu'elle désigne. Il affiche maintenant *Le Noyau en Fusion*.
+- Trouvé de la même façon : le bandeau du combat était dans les rushes du trailer.
+
+**Corrigé — les plus petits, même famille**
+- « PHASE » écrit sur place au lieu de sa version traduite, l'unité du compteur d'images, le niveau
+  d'arme dans l'écran de pause, et deux lignes de la rangée des perks de départ du Hub.
+
+**Modifié — les boutons ne crient plus au hasard**
+- Le menu affichait *Jouer · Hub · DÉFIS · OPTIONS · Codex · Quitter* : deux entrées sur six
+  empruntaient la clé du **titre d'écran** au lieu de celle du menu. Mêmes mots, autre voix.
+- Une seule règle désormais, partout : les capitales annoncent un écran, la casse de phrase demande
+  une action. Les écrans de pause et d'Assimilation ont suivi — *Reprendre*, *Assimiler*,
+  *Conserver* plutôt que des cris.
+
+---
+
 ## v2.0.1 — The English and Spanish versions were half French (2026-08-11)
 
 **Fixed — every name in the game was showing in French, whatever language you picked**
