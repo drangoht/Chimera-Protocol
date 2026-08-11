@@ -1821,6 +1821,31 @@ Les tests unitaires couvrent la logique pure — **10 % du code**. Ils n'auraien
 pièges de scène ci-dessus. D'où les vérifications qui tournent en **build headless**
 (`PlatformSmokeTest`, `RunSmokeTest`) : c'est là que les erreurs de portage se voient.
 
+### Une capture lancée juste après un build filme l'ANCIEN binaire
+
+Unity affiche « Exiting batchmode successfully » et rend la main **avant** d'avoir fini d'écrire ses
+assemblies dans `Build/`. Une capture démarrée dans la foulée charge donc le code précédent — et
+montre un défaut déjà corrigé, sans rien signaler.
+
+Coût réel : dix minutes de diagnostic sur un correctif qui était bon depuis le début. Le rush
+montrait « Jouer » alors que le code disait `Loc.T("MENU_PLAY")`, ce qui a fait suspecter
+successivement le build, l'assembly, puis la table de traduction. Une seconde capture, deux minutes
+plus tard, rendait le bon résultat.
+
+⚠ **La date d'un fichier de build ne prouve rien** — piège déjà connu pour l'exécutable, vrai aussi
+pour les DLL : `ChimeraProtocol.UI.dll` portait un horodatage vieux de dix minutes tout en contenant
+le code neuf. **Seul le contenu tranche**, et il se lit sans outil :
+
+```powershell
+$u = [System.Text.Encoding]::Unicode.GetString(
+        [System.IO.File]::ReadAllBytes('unity\Build\game\ChimeraProtocol_Data\Managed\ChimeraProtocol.UI.dll'))
+$u.Contains('MENU_PLAY')   # la chaîne attendue est-elle dans le binaire ?
+```
+
+⚠ Viser la **bonne assembly** : le projet en a cinq (`asmdef`). Chercher une clé du HUD dans
+`ChimeraProtocol.Gameplay.dll` a rendu « absente » pour six témoins d'affilée — dont un antérieur à
+la modification, ce qui est le signe que c'est la méthode qui est fausse, pas le code.
+
 ### Un diagnostic qui s'arrête à la première modale ne diagnostique que le début
 
 `SceneDiagnostic` plafonnait à ~5 s : la première montée de niveau ouvre une modale qui met le jeu en
