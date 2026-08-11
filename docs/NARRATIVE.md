@@ -257,10 +257,84 @@ Surcharge exploite délibérément ce principe.
 
 ---
 
+## 4 bis. Descriptions narratives du contenu — matière d'écriture
+
+⚠ **Ces textes ne sont pas affichés par le jeu**, et ne l'ont jamais été. Ils viennent de
+`data/texts.json`, un condensé destiné à l'affichage in-game rédigé à l'ère Godot, branché sur
+rien et supprimé le **2026-08-11** — il était resté à 6 armes, 4 ennemis et 5 améliorations sur un
+jeu qui en compte 21, 51 et 19, et sa section `ui` doublonnait `ui.csv` en périmé (accents retirés
+pour une police pixel art qui n'a jamais été retenue).
+
+Ce que le jeu affiche vit dans **`unity/Assets/StreamingAssets/localization/ui.csv`**, en trois
+langues, et se rédige *court et fonctionnel* : le Codex donne le comportement et les chiffres, pas
+l'univers. Les textes ci-dessous sont donc de la **matière** — le registre à tenir si l'on décide un
+jour d'ajouter une ligne de lore sous la description fonctionnelle du Codex. Les reprendre
+demanderait de les écrire pour tout le contenu, dans les trois langues.
+
+**Armes**
+
+- **Canon à Impulsions** — Une relique de l'avant-Convergence, reconditionnée avec des circuits
+  Aether soudés à l'arraché. Chaque impulsion porte encore la mémoire de ce qu'elle a autrefois
+  protégé.
+- **Lame Plasma** — Une lame de chaleur pure, condensée par une bobine greffée à même l'avant-bras
+  de l'Arpenteur. Elle tranche dans la chair rouillée et dans le métal corrompu avec la même
+  indifférence.
+- **Essaim de Drones** — Des fragments d'automates récupérés sur les cadavres du Sanctuaire,
+  reprogrammés pour tournoyer en orbite autour de l'Arpenteur. Leur loyauté durera jusqu'à la
+  prochaine rupture de signal.
+- **Champ de Surcharge** — Un condensateur Aether logé dans le sternum cyborg libère une onde de
+  choc concentrique. L'onde repousse, brûle et désorganise — mais chaque décharge coûte un fragment
+  d'intégrité cellulaire.
+- **Lame à Fusion** — Quand la chaleur plasma rencontre un Noyau Thermique saturé, la distinction
+  entre l'arme et le bras disparaît. L'anneau continu qui en résulte n'est plus tout à fait une
+  arme : c'est une frontière entre l'Arpenteur et le monde.
+- **Rail Surchargé** — Le Canon à Impulsions, recâblé par un Capaciteur en surrégime, cesse de tirer
+  des projectiles isolés pour cracher des rafales de lumière comprimée. La perforation est infinie —
+  la Rouille Vivante, elle, ne l'est pas.
+
+**Passifs**
+
+- **Noyau Thermique** — Une cellule énergétique greffée dans la cavité thoracique, qui canalise la
+  chaleur résiduelle de chaque attaque pour amplifier la suivante. Prérequis à la Lame à Fusion.
+- **Plaque Renforcée** — Des segments de blindage récupérés sur une Sentinelle détruite, rivetés sur
+  les points vitaux de l'Arpenteur. La douleur est absente. La résistance, elle, est réelle.
+- **Servo-Moteurs** — Des actionneurs hydrauliques récupérés dans les profondeurs du Sanctuaire,
+  implantés dans les membres inférieurs. L'Arpenteur court plus vite qu'un humain. Il n'est plus
+  tout à fait humain.
+- **Capaciteur** — Un accumulateur d'énergie Aether miniaturisé, interfacé au système de tir. Il
+  réduit le temps de recharge en stockant le surplus d'énergie entre chaque décharge. Prérequis au
+  Rail Surchargé.
+
+**Améliorations permanentes du Hub** — elles disent ce que la méta-progression *coûte*, là où le
+Codex ne dit que ce qu'elle rapporte.
+
+- **Corps Renforcé** — Les Échos d'Aether financent une série de greffes structurelles entre les
+  runs. Chaque couche de tissu synthétique ajoutée éloigne un peu plus l'Arpenteur de ce qu'il était.
+- **Calibration Offensive** — Une recalibration des circuits de ciblage et des émetteurs d'énergie,
+  réalisée dans le calme relatif de l'enclave. Les ennemis tombent plus vite. Le Sanctuaire résiste
+  quand même.
+- **Servos Améliorés** — Des composants de remplacement de meilleure facture pour les servo-moteurs
+  implantés. La différence est subtile jusqu'au moment où elle ne l'est plus — et où l'Arpenteur
+  survit grâce à elle.
+- **Synchronisation Aether** — Un algorithme de résonance entre le flux Aether interne et les
+  systèmes d'armes, affiné run après run. Moins d'attente entre les décharges. Plus de temps pour
+  survivre.
+- **Blindage Composite** — Des plaques supplémentaires, des polymères de récupération, des écrans
+  énergétiques de fortune. Chaque amélioration achetée avec les Échos gagnés sur les morts
+  précédentes.
+
+**Textes d'écran** — la seule idée que `ui.csv` n'a pas reprise : les deux **sous-titres** de fin de
+run, qui commentent la mort et la victoire au lieu de les constater.
+
+- Mort — *« L'Aether absorbe ta mémoire. Elle servira à la prochaine mission. »*
+- Victoire — *« Le Sanctuaire se referme derrière toi. Pour combien de temps encore ? »*
+
+---
+
 ## 5. Taglines — variantes
 
 Les trois variantes suivantes ont été développées pour refléter le ton du jeu. La tagline
-retenue (numéro 2) est intégrée dans `data/texts.json`.
+retenue (numéro 2) est la ligne `INTRO_TAGLINE` de `ui.csv`.
 
 **Variante 1 — axe transformation :**
 "Chaque greffe te rapproche de la victoire — ou de ce que tu combats."
@@ -282,15 +356,20 @@ le splash screen ou comme texte d'ambiance.*
 
 ## Notes d'usage pour l'équipe
 
-- Tous les textes de `data/texts.json` sont en français. Les accents sont intentionnellement
-  absents dans certains champs UI (`hub_intro`, `hud_echoes_run_label`) pour compatibilité avec
-  des polices pixel art qui ne couvrent pas l'ASCII étendu — à revoir avec `directeur-artistique`
-  lors du choix de la police finale.
+- ⚠ **Le jeu n'affiche aucun texte de ce document.** Tout ce qu'il montre vit dans
+  `unity/Assets/StreamingAssets/localization/ui.csv`, en **trois langues** (EN/FR/ES) — nom et
+  description de chaque arme, greffe, amélioration et ennemi comprises. Ce document est la
+  **source d'univers** ; `ui.csv` est ce qui sort à l'écran. Écrire ici ne met rien dans le jeu.
+- Ajouter du contenu implique donc **deux gestes** : la matière narrative ici, et les clés
+  correspondantes dans `ui.csv` (`WPN_<ID>_NAME/_DESC`, `GRAFT_…`, `META_…`, `ENEMY_…_NAME/_TAG/_DESC`).
+  `python tools/audit_loc_keys.py` vérifie qu'aucune ne manque — sans quoi le jeu affiche
+  silencieusement le texte **français** de la donnée dans les trois langues. C'est arrivé, et il a
+  fallu regarder les rushes du trailer pour s'en apercevoir.
 - Le ton doit rester constant : sérieux, mélancolique, mais jamais nihiliste. Les Arpenteurs
   ont de la détermination. L'univers est abimé, pas sans espoir.
 - Pour toute nouvelle fusion proposée par `game-designer`, fournir un paragraphe de justification
-  narrative dans ce document (section "Fusions — justification narrative") avant integration dans
-  `data/texts.json`.
-- Les biographies d'ennemis dans `data/texts.json` (champ `lore`) sont conçues pour un affichage
-  in-game compact (2-3 phrases). Les biographies complètes de ce document sont la source — les
-  versions JSON en sont des condensés.
+  narrative dans ce document (section "Fusions — justification narrative") avant d'en rédiger les
+  clés de traduction.
+- Les biographies d'ennemis de la §3 sont **complètes** : les descriptions du Codex (`ENEMY_…_DESC`
+  dans `ui.csv`) en sont des condensés fonctionnels de deux ou trois phrases, qui disent le
+  comportement et la tactique plutôt que l'univers.

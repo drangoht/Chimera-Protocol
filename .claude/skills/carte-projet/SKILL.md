@@ -96,10 +96,17 @@ transposés) · `SpriteFramesAsset`
 `weapons.json` (5 niveaux/arme) · `enemies.json` + `enemies_biome_expansion.json` ·
 `levelup_config.json` (rarityByCard) · `meta_upgrades.json` (hub) · **`grafts.json`** (Assimilation :
 slots/gauges/grafts/fusions/biomeAffinities) · **`challenges.json`** (défis : condition + récompense)
-· `texts.json`. Traductions : `StreamingAssets/localization/ui.csv`.
+Ces fichiers portent les **chiffres et les identifiants**. Le **texte affiché** vit ailleurs :
+`StreamingAssets/localization/ui.csv` (EN/FR/ES), résolu par `Platform/ContentText.cs` qui déduit la
+clé de l'identifiant (`tesla_coil` → `WPN_TESLA_COIL_NAME`). Le champ `name` d'un JSON n'est qu'un
+**repli**, en français. (`texts.json` a été supprimé le 2026-08-11 : troisième source de texte,
+branchée sur rien.)
 
 ⚠ **Une clé déclarée n'est pas une clé lue.** `tools/audit_json_keys.py` compare les clés du JSON
 aux littéraux du code : il a trouvé 8 armes qui ne grandissaient que par leurs dégâts.
+⚠ **Un texte affiché n'est pas un texte traduit.** `tools/audit_loc_keys.py` : tout le contenu nommé
+sortait **en français dans les trois langues**, le repli étant silencieux. Il contrôle les deux sens
+— clé absente et clé orpheline.
 
 ## §Outils — `tools/`
 - **Destinations** : **`unity_paths.py`** (où écrit chaque famille d'assets) et **`spriteframes.py`**

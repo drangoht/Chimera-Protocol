@@ -932,7 +932,11 @@ Objectif : quelque chose de jouable au clavier sans art ni audio.
 - [x] Décision : Colosse Greffé en 48×48 px (unique exception à la grille 32×32, justifiée lisibilité)
 
 *Narratif (`story-teller`) :*
-- [x] `data/texts.json` — noms/descriptions de toutes les armes, passifs, ennemis, upgrades meta, textes UI
+- [x] ~~`data/texts.json`~~ — noms/descriptions d'armes, passifs, ennemis, upgrades meta, textes UI.
+      **Supprimé le 2026-08-11** : jamais branché sur le moteur, resté à 6 armes / 4 ennemis / 5
+      améliorations, et sa section `ui` doublonnait `ui.csv` en périmé. Le texte affiché vit dans
+      `StreamingAssets/localization/ui.csv` (3 langues) ; la matière narrative a été versée dans
+      `docs/NARRATIVE.md` §4 bis.
 - [x] `docs/NARRATIVE.md` — bible narrative condensée, backstory Arpenteur, glossaire 15 termes
 - [x] Tagline retenue : *"Survive. Évolue. Ne reviens jamais le même."*
 
