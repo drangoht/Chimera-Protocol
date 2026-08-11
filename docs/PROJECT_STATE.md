@@ -4,7 +4,27 @@
 > implémenté — la mettre à jour à chaque ajout/refonte majeur. Le résumé de phase reste dans
 > `CLAUDE.md` ; le design complet dans `docs/GDD.md` ; la carte du code dans `/carte-projet`.
 
-- Pile technique : **Unity 6.5 (C#, URP 2D)** depuis la 2.0.0.
+- Pile technique : **Unity 6.5 (C#, URP 2D)** depuis la 2.0.0. **Version en ligne : 2.0.1**
+  (2026-08-11).
+- **Localisation réparée — 2.0.1 (2026-08-11).** Tout le contenu nommé (12 armes, 9 fusions,
+  8 greffes, 19 améliorations du Hub, 51 ennemis) s'affichait **en français dans les trois langues** :
+  les écrans lisaient le champ `name` des JSON de `StreamingAssets/data`, écrits en français, pendant
+  que `ui.csv` portait **109 clés traduites que rien ne lisait** (16 `GRAFT_`, 93 `ENEMY_`) et que
+  `LEVELUP_TITLE`, `RUNEND_VICTORY`, `HUD_DASH_HINT`… dormaient à côté de leur équivalent **codé en
+  dur en français**. Résolution centralisée dans **`Platform/ContentText.cs`** (clé déduite de
+  l'identifiant, repli sur le JSON) ; contrôle permanent par **`tools/audit_loc_keys.py`**, qui
+  vérifie **les deux sens** — clé absente *et* clé orpheline (ce second contrôle a immédiatement
+  attrapé un préfixe `WEAPON_` créé en doublon de `WPN_`, déjà lu par les cartes de montée de niveau).
+  `data/texts.json`, **troisième** source de texte branchée sur rien, supprimé ; sa matière narrative
+  est dans `docs/NARRATIVE.md` §4 bis. ⚠ Trouvé **en regardant les rushes du trailer**, pas par un
+  test — une mauvaise langue ne plante pas et paraît normale à qui l'a écrite.
+- **Pipeline du trailer porté sous Unity (2026-08-11).** La capture vit dans le jeu
+  (`Bench/TrailerRecorder.cs` + `tools/record_trailer.py`, 11 prises) : Unity n'a pas d'équivalent au
+  Movie Maker de Godot dans un build. Chaque plan est **mis en scène**, donc les timecodes de
+  `tools/build_trailer.py` survivent à une recapture — là où les runs aléatoires de Godot
+  invalidaient tout le montage à chaque tournée. ⚠ Les rushes sont **muets** (l'horloge de capture
+  et le mix audio ne cohabitent pas) : toute la bande-son du montage vient de `MUSIC_EDL`.
+  `trailer/` est ignoré par git (~350 Mo, régénérable).
 - **Dépôt devenu mono-moteur le 2026-08-10.** `src/`, `scenes/`, `project.godot`, `assets/`, `data/`
   et `localization/` racine ont été supprimés : les données et les assets n'existent plus qu'en un
   exemplaire, sous `unity/Assets/`. Les générateurs Python écrivent désormais **là où le jeu lit**

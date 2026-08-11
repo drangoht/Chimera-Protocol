@@ -22,9 +22,17 @@ URP 2D). Le dépôt ne contient plus qu'un moteur : Godot a été retiré le **2
 
 ## Phase actuelle
 
-**Migration Unity terminée, 2.0.0 prête à publier.** Le jeu est jouable de bout en bout, avec son,
-validé en jouant. **626 tests.** ▶ L'auteur veut **jouer avant de publier** — ne pas lancer
-`tools/release_unity.ps1` sans `-DryRun` sans son accord explicite.
+**Migration Unity terminée. 2.0.0 publiée le 2026-08-10, 2.0.1 le 2026-08-11.** Le jeu est jouable
+de bout en bout, avec son, validé en jouant. **626 tests.** ▶ Toujours essayer
+`tools/release_unity.ps1 -DryRun` avant de publier pour de bon.
+
+**2.0.1 — la leçon du portage a frappé une dixième fois, sur le TEXTE.** Tout le contenu nommé
+(armes, greffes, améliorations du Hub, ennemis) sortait **en français dans les trois langues** :
+il venait des JSON, et `ui.csv` portait **109 clés traduites que rien ne lisait**. Corrigé par
+`Platform/ContentText.cs` + `tools/audit_loc_keys.py`. Trouvé **en regardant les rushes du
+trailer** — le pipeline vidéo a été reporté sous Unity dans la foulée (`Bench/TrailerRecorder.cs`,
+`tools/record_trailer.py`, chaque plan mis en scène, timecodes stables d'une recapture à l'autre).
+▶ **Reste à faire côté utilisateur : coller le devlog 2.0.1 sur itch** (`docs/DEVLOG.md`, EN puis FR).
 
 **Le dépôt est mono-moteur depuis le 2026-08-10.** Ce qui a changé :
 - `src/`, `scenes/`, `project.godot`, le `.csproj`/`.sln` Godot, `assets/`, `data/` et
