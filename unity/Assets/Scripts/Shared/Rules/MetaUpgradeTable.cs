@@ -41,6 +41,28 @@ public static class MetaUpgradeTable
         public double OvertimeDampening = 0.15;
         public int OvertimeBonusCap = 100;
 
+        /// <summary>
+        /// Frontière standard/overtime, en secondes : au-delà, le temps ne rapporte plus qu'à
+        /// <see cref="OvertimeDampening"/>, et la somme de ce bonus est plafonnée.
+        /// </summary>
+        /// <remarks>
+        /// ⚠ <b>Ce champ manquait, et son absence désarmait la moitié de la formule.</b> L'appel
+        /// passait <c>runSeconds</c> à la place : <c>min(t, capTimeSecs)</c> valait donc toujours
+        /// <c>t</c> et <c>max(0, t − capTimeSecs)</c> toujours zéro — le temps n'était <b>jamais
+        /// plafonné</b> et le bonus de surcharge <b>toujours nul</b>. Une run d'une heure rapportait
+        /// 180 Échos de temps au lieu de 39 + un bonus borné à 100, c'est-à-dire exactement le
+        /// farm sans plafond que <c>meta_upgrades.json</c> décrit avoir supprimé. Les tests de
+        /// <see cref="EchoFormula"/> passaient bien 780 : la règle était juste, l'appel non.
+        /// Corrigé le 2026-08-11.
+        ///
+        /// <para>La valeur par défaut suit <c>runDurationSeconds</c>, et le fichier de données
+        /// impose leur égalité. Elle est <b>surchargeable à l'appel</b> parce que la frontière
+        /// réelle dépend du cran de saturation joué : « Compte à rebours » ramène l'overtime à la
+        /// 8ᵉ minute, et compter au tarif plein un temps que le jeu traite déjà comme de l'overtime
+        /// reviendrait à payer deux fois la même minute.</para>
+        /// </remarks>
+        public int CapTimeSecs = 780;
+
         /// <summary>Réglages du jeu publié, quand aucun document n'a été chargé.</summary>
         public static readonly EchoParams Default = new();
 
@@ -48,27 +70,25 @@ public static class MetaUpgradeTable
         /// Total gagné. <b>Point d'entrée unique</b> : tout affichage part de cette valeur et se
         /// contente de la parcourir.
         /// </summary>
-        public int Total(int runSeconds, int kills, int cores, double tierMult = 1.0)
-            => Detailed(runSeconds, kills, cores, tierMult).Total;
+        public int Total(int runSeconds, int kills, int cores, double tierMult = 1.0,
+                         int? capTimeSecs = null)
+            => Detailed(runSeconds, kills, cores, tierMult, capTimeSecs).Total;
 
         /// <summary>Même calcul, en exposant à part le bonus d'overtime pour l'affichage détaillé.</summary>
-        /// <remarks>
-        /// ⚠ <b>Le plafond de temps passé à la formule est <c>runSeconds</c> lui-même</b>, jamais les
-        /// 780 s de <c>capTimeSecs</c> (champ que ni ce porteur ni son défunt jumeau ne déclarent).
-        /// <c>min(t, capTimeSecs)</c> vaut donc toujours <c>t</c> et <c>max(0, t − capTimeSecs)</c>
-        /// toujours zéro : le temps n'est <b>pas plafonné</b> et le bonus de surcharge est
-        /// <b>toujours nul</b>, alors que <c>meta_upgrades.json</c> calibre l'inverse (211 Échos pour
-        /// une run complète, 311 pour une run extrême — plafond explicite contre le farm). Les tests
-        /// de <see cref="EchoFormula"/>, eux, passent bien 780 : la règle est juste, c'est l'appel qui
-        /// ne l'est pas. Corriger déplace l'économie du jeu — décision d'équilibrage, pas de refacto :
-        /// c'est pourquoi ce comportement est reconduit tel quel ici.
-        /// </remarks>
+        /// <param name="capTimeSecs">
+        /// Frontière standard/overtime de <b>cette</b> run, quand elle diffère de la valeur des
+        /// données (cran de saturation « Compte à rebours »). <c>null</c> = celle des données.
+        /// </param>
         public (int Total, int OvertimeBonus) Detailed(int runSeconds, int kills, int cores,
-                                                       double tierMult = 1.0)
-            => EchoFormula.CalculateDetailed(runSeconds, kills, cores,
-                                             TimeDiv, KillDiv, CoreMult, BaseBonus,
-                                             runSeconds, CapKills, CapCores,
-                                             OvertimeDampening, OvertimeBonusCap, tierMult);
+                                                       double tierMult = 1.0, int? capTimeSecs = null)
+        {
+            int cap = capTimeSecs is > 0 ? capTimeSecs.Value : CapTimeSecs;
+
+            return EchoFormula.CalculateDetailed(runSeconds, kills, cores,
+                                                 TimeDiv, KillDiv, CoreMult, BaseBonus,
+                                                 cap, CapKills, CapCores,
+                                                 OvertimeDampening, OvertimeBonusCap, tierMult);
+        }
     }
 
     /// <summary>Contenu complet du fichier de méta-progression.</summary>
@@ -97,6 +117,11 @@ public static class MetaUpgradeTable
         if (root.TryGetProperty("runDurationSeconds", out var rd) && rd.TryGetInt32(out int seconds) && seconds > 0)
             doc.RunDurationSeconds = seconds;
 
+        // La frontière standard/overtime par défaut est celle de la run : le fichier de données
+        // impose l'égalité des deux champs, autant la tenir ici plutôt que d'espérer qu'on la
+        // recopie sans se tromper.
+        doc.Echoes.CapTimeSecs = doc.RunDurationSeconds;
+
         if (root.TryGetProperty("echoesFormula", out var f))
         {
             var e = doc.Echoes;
@@ -106,6 +131,7 @@ public static class MetaUpgradeTable
             e.BaseBonus = Int(f, "baseBonus", e.BaseBonus);
             e.CapKills  = Int(f, "capKills",  e.CapKills);
             e.CapCores  = Int(f, "capCores",  e.CapCores);
+            e.CapTimeSecs = Int(f, "capTimeSecs", e.CapTimeSecs);
             e.OvertimeBonusCap = Int(f, "overtimeBonusCap", e.OvertimeBonusCap);
 
             if (f.TryGetProperty("overtimeDampening", out var od) && od.TryGetDouble(out double d))

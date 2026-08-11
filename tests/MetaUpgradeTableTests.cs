@@ -105,4 +105,75 @@ public class MetaUpgradeTableTests
         Assert.Empty(MetaUpgradeTable.Parse(null).Upgrades);
         Assert.Equal(780, MetaUpgradeTable.Parse("{}").RunDurationSeconds);
     }
+
+    // ─── Formule d'Échos : la calibration du fichier fait foi ────────────────────────────────────
+    //
+    // ⚠ Ces sept scénarios sont ceux que `meta_upgrades.json` inscrit lui-même sous `_calibration`,
+    // avec les montants attendus. Ils sont ici parce que le code les a démentis pendant tout le
+    // portage : l'appel passait `runSeconds` comme plafond de temps, donc le temps n'était jamais
+    // plafonné et le Bonus de Surcharge jamais versé. Les trois runs d'overtime rapportaient
+    // 237 / 357 / 452 au lieu de 224 / 288 / 311 — soit, sur la plus longue, **+45 %** et surtout un
+    // gain non borné : exactement le farm que ce plafond existe pour fermer.
+    //
+    // Les tests d'`EchoFormula`, eux, passaient déjà 780 et étaient verts. **Une règle testée ne dit
+    // rien de la façon dont on l'appelle** : c'est ce qui manquait, et c'est ce que ceci verrouille.
+
+    [Theory]
+    [InlineData(30, 0, 0, 11)]           // mort précoce
+    [InlineData(180, 120, 4, 51)]        // run standard courte
+    [InlineData(300, 250, 8, 90)]        // run standard
+    [InlineData(780, 520, 22, 211)]      // boss vaincu, pile aux plafonds, sans overtime
+    [InlineData(1080, 920, 29, 224)]     // overtime modeste : +5 min après le boss
+    [InlineData(2400, 3000, 60, 288)]    // overtime excellente : 40 min
+    [InlineData(3600, 8000, 100, 311)]   // overtime extrême : 60 min, plafond atteint
+    public void LesEchosSuiventLaCalibrationDuFichier(int seconds, int kills, int cores, int attendu)
+        => Assert.Equal(attendu, Real().Echoes.Total(seconds, kills, cores));
+
+    [Fact]
+    public void LeBonusDeSurchargeEstBorne()
+    {
+        var echoes = Real().Echoes;
+
+        // Une heure de survie et une journée entière rapportent le même bonus : il est plafonné.
+        var (_, uneHeure) = echoes.Detailed(3600, 8000, 100);
+        var (_, uneJournee) = echoes.Detailed(86400, 200000, 5000);
+
+        Assert.Equal(echoes.OvertimeBonusCap, uneHeure);
+        Assert.Equal(echoes.OvertimeBonusCap, uneJournee);
+    }
+
+    [Fact]
+    public void UneRunSansOvertimeNeGagneAucunBonus()
+    {
+        var (total, bonus) = Real().Echoes.Detailed(780, 520, 22);
+
+        Assert.Equal(0, bonus);
+        Assert.Equal(211, total);
+    }
+
+    [Fact]
+    public void LeCranCompteARebroursAvanceLaFrontiereDeSurcharge()
+    {
+        // « Compte à rebours » ramène le temps imparti de 780 s à 484 s. Une run de 780 s est alors
+        // en overtime depuis presque 5 minutes : ce temps-là doit être AMORTI, pas payé plein tarif.
+        var echoes = Real().Echoes;
+
+        var (plein, sansBonus) = echoes.Detailed(780, 520, 22);
+        var (raccourci, avecBonus) = echoes.Detailed(780, 520, 22, 1.0, capTimeSecs: 484);
+
+        Assert.Equal(0, sansBonus);
+        Assert.True(avecBonus > 0, "la frontière avancée doit produire du temps de surcharge");
+        Assert.True(raccourci < plein,
+            $"un temps amorti ne peut pas rapporter plus que le même temps plein ({raccourci} ≥ {plein})");
+    }
+
+    [Fact]
+    public void LaFrontiereParDefautSuitLaDureeDeRunDuFichier()
+    {
+        var doc = Real();
+
+        // Les deux champs disent la même chose, et le fichier impose leur égalité. Les laisser
+        // diverger déplacerait l'entrée en surcharge du calcul sans la déplacer dans le jeu.
+        Assert.Equal(doc.RunDurationSeconds, doc.Echoes.CapTimeSecs);
+    }
 }

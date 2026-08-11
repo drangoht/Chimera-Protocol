@@ -361,6 +361,21 @@ Paramètres `data/meta_upgrades.json` → `echoesFormula` : `timeDiv=20`, `killD
 `baseBonus=10` (inchangés depuis la v1), plus 5 nouveaux : `capTimeSecs=780`, `capKills=520`,
 `capCores=22`, `overtimeDampening=0.15`, `overtimeBonusCap=100`.
 
+> ⚠ **Ce que le portage Unity en faisait, jusqu'au 2026-08-11.** L'appel passait le temps survécu
+> lui-même comme `capTimeSecs`. `min(t, capTimeSecs)` valait donc toujours `t` et
+> `max(0, t − capTimeSecs)` toujours zéro : **le temps n'était jamais plafonné et le Bonus de
+> Surcharge jamais versé** — la ligne de l'écran de fin (§9.4) ne s'affichait donc jamais, et sa clé
+> de traduction dormait dans `ui.csv` dans les trois langues. Le tableau de calibration ci-dessous
+> était faux en jeu à partir de la première ligne d'overtime : 237 / 357 / **452** au lieu de
+> 224 / 288 / **311**, c'est-à-dire un gain **non borné** — exactement ce que ce §9.2 avait été
+> réécrit pour fermer. Les tests de `EchoFormula` passaient bien 780 et étaient verts : **une règle
+> testée ne dit rien de la façon dont on l'appelle.** Les sept scénarios du tableau sont désormais
+> des tests (`MetaUpgradeTableTests`), joués sur le vrai fichier de données.
+>
+> `capTimeSecs` suit par ailleurs la frontière **effective** de la run : le cran de saturation
+> « Compte à rebours » (§34) la ramène à 484 s, et ce temps-là doit être amorti comme de l'overtime,
+> puisque le jeu le traite déjà comme tel.
+
 **Calibration :**
 
 | Scénario | Temps | Kills | Noyaux | Échos standard | Bonus surcharge | **Total** |

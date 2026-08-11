@@ -19,10 +19,28 @@
   `UiStyle.ScreenCanvas` + `UiStyle.VerticalList` (≈40 lignes recopiées dans 5 écrans),
   `EnemyBase.Nearest` (4 copies mot pour mot), `EchoSettings` (jumeau de
   `MetaUpgradeTable.EchoParams`, supprimé). **626 tests verts, build Unity sans erreur.** Deux
-  défauts trouvés au passage sont documentés mais **non corrigés**, car ce sont des décisions de
-  design : le **plafond de temps de la formule d'Échos** (`capTimeSecs` reçoit `runSeconds`, donc le
-  bonus d'overtime est toujours nul et le temps jamais plafonné) et les **31 descriptions d'ennemis**
-  traduites en trois langues que le bestiaire n'affiche pas.
+  défauts trouvés au passage ont été corrigés dans la foulée, sur décision de l'auteur (voir
+  l'entrée suivante).
+- **Trois défauts d'usage corrigés (2026-08-11, non publiés).** Ils venaient tous de la passe
+  ci-dessus, et aucun n'était une refacto — chacun déplace quelque chose dans le jeu :
+  1. **Le Bonus de Surcharge n'existait pas.** L'appel de la formule d'Échos passait le temps
+     survécu comme `capTimeSecs` : le temps n'était **jamais plafonné** et le bonus **toujours nul**.
+     Une run d'une heure rapportait **452 Échos au lieu de 311**, sans borne — le farm que le
+     GDD §9.2 avait été réécrit pour fermer. Les runs standard, elles, ne bougent pas d'un Écho. Les
+     **sept scénarios de calibration du fichier de données sont devenus des tests**, et la ligne
+     « Bonus de Surcharge » de l'écran de fin s'affiche enfin (sa clé attendait dans `ui.csv`, dans
+     les trois langues). `capTimeSecs` suit la frontière **effective** : le cran « Compte à rebours »
+     la ramène à 484 s.
+  2. **31 descriptions d'ennemis** écrites et traduites, jamais montrées : le bestiaire les affiche,
+     en troisième ligne sourde sous la fiche technique. La ligne du Codex s'ajuste désormais à son
+     contenu au lieu d'une hauteur fixe — **vérifié sur capture**, pas sur le code.
+  3. **Le tirage de spawn suit enfin la graine de la run.** `RunBootstrap` amorce `EnemySpawner` avec
+     une valeur dérivée de `Gd` ; le flux reste **séparé** (le fondre dans le flux global ferait
+     dépendre le spawn du décor, et **cassait 9 vérifications sur 255**). Relevé sur la trace du
+     jeu : `--seed=1` rend deux fois la même graine de spawn, `--seed=2` une autre, et trois runs
+     sans graine en donnent trois différentes.
+
+  **637 tests** (+11), build Unity sans erreur, `RunSmokeTest` **265 OK / 0 échec**.
 - **Localisation réparée — 2.0.1 (2026-08-11).** Tout le contenu nommé (12 armes, 9 fusions,
   8 greffes, 19 améliorations du Hub, 51 ennemis) s'affichait **en français dans les trois langues** :
   les écrans lisaient le champ `name` des JSON de `StreamingAssets/data`, écrits en français, pendant

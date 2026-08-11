@@ -84,19 +84,22 @@ public sealed class EnemySpawner : MonoBehaviour
     private Dictionary<string, EnemyTable.EnemyDef> _bestiary = new();
 
     /// <summary>
-    /// Tirage du spawn — <b>générateur privé, amorcé à zéro, et que personne ne réamorce</b>.
+    /// Tirage du spawn : quelle créature sort, et si elle est promue élite.
     /// </summary>
     /// <remarks>
-    /// ⚠ <b>Défaut connu, laissé en l'état sciemment (2026-08-11).</b> <see cref="SeedSpawns"/> n'a
-    /// aucun appelant : ni <c>--seed</c> ni <c>Gd.Randomize()</c> n'atteignent ce flux. Conséquences —
-    /// la faune et les élites sortent dans le <b>même ordre à chaque partie</b>, et deux campagnes de
-    /// banc « à graines différentes » comparent deux fois la <b>même</b> séquence de spawn.
+    /// <b>Flux séparé de celui du reste du jeu, et amorcé par <see cref="SeedSpawns"/></b> — que
+    /// <c>RunBootstrap</c> appelle au démarrage de chaque run avec une graine dérivée de
+    /// <see cref="Gd"/>. Il faut les deux : le générateur naît sur zéro, et jusqu'au 2026-08-11
+    /// personne ne le réamorçait. La faune et les élites sortaient donc dans le <b>même ordre à
+    /// chaque partie</b> — un roguelite dont la vague de la troisième minute est toujours la même —
+    /// et deux campagnes de banc « à graines différentes » comparaient deux fois la même séquence.
+    /// Un aléa privé n'est jamais neutre : soit quelqu'un l'amorce, soit il n'existe pas.
     ///
-    /// <para>Le corriger <b>n'est pas une refacto</b> : le brancher sur le flux de la run change la
-    /// séquence, et <c>RunSmokeTest</c> est calibré sur celle-ci — mesuré, 9 vérifications sur 255
-    /// tombent, à commencer par la survie du personnage. C'est donc un arbitrage de gameplay (plus de
-    /// variété d'une run à l'autre) doublé d'un recalibrage du banc, à mener pour lui-même. Détail :
-    /// <c>docs/PITFALLS_UNITY.md</c> §« Un générateur d'aléa privé amorcé à zéro ».</para>
+    /// <para>⚠ <b>Le flux reste séparé, et c'est voulu.</b> Le fondre dans celui de <c>Gd</c> ferait
+    /// dépendre le spawn de tout ce qui tire par ailleurs (décor, effets) : ajouter un éclat de
+    /// lumière changerait la vague suivante. Séparé, il ne dépend que de sa graine — et le banc, qui
+    /// monte sa scène sans <c>RunBootstrap</c>, garde la séquence de la graine zéro sur laquelle ses
+    /// vérifications sont calibrées.</para>
     /// </remarks>
     private readonly Pcg32 _rng = new(0UL);
 
@@ -420,8 +423,8 @@ public sealed class EnemySpawner : MonoBehaviour
     public float EliteChanceCap = EliteAffixTable.MaxChance;
 
     /// <summary>
-    /// Force la graine du tirage, pour rendre une campagne de banc reproductible.
-    /// <b>Aucun appelant</b> — voir la remarque de <see cref="_rng"/>, qui explique pourquoi.
+    /// Amorce le tirage. Appelée par <c>RunBootstrap</c> au démarrage d'une run ; un banc peut
+    /// l'appeler lui-même pour rejouer une séquence de spawn précise.
     /// </summary>
     public void SeedSpawns(ulong seed) => _rng.Seed(seed);
 

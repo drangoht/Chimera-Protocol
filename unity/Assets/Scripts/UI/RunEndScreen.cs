@@ -53,13 +53,19 @@ public sealed class RunEndScreen : MonoBehaviour
     /// <c>echoesFormula</c> de <c>meta_upgrades.json</c>. L'écran s'appuyait auparavant sur un jeu de
     /// valeurs codées côté moteur : identiques à celles du fichier, donc invisibles, mais retoucher
     /// le fichier n'aurait rien changé au montant crédité.
+    ///
+    /// <para>La <b>frontière standard/overtime</b> vient du <see cref="GameManager"/>, qui est le seul
+    /// à connaître celle de la run jouée : le cran « Compte à rebours » la ramène de 780 s à 484 s, et
+    /// c'est à partir de là que le temps doit être amorti.</para>
     /// </remarks>
     public void Show(bool victory, int runSeconds, int kills, int cores, double tierMult = 1.0,
                      MetaUpgradeTable.EchoParams? settings = null)
     {
         // Source UNIQUE du total : l'animation ci-dessous ne fera que le parcourir.
-        EchoesEarned = (settings ?? MetaProgression.Catalog.Echoes)
-            .Total(runSeconds, kills, cores, tierMult);
+        var (total, overtimeBonus) = (settings ?? MetaProgression.Catalog.Echoes)
+            .Detailed(runSeconds, kills, cores, tierMult, GameManager.Instance?.RunDurationSeconds);
+
+        EchoesEarned = total;
         DisplayedEchoes = 0;
 
         if (_title != null)
@@ -69,9 +75,20 @@ public sealed class RunEndScreen : MonoBehaviour
         }
 
         if (_stats != null)
+        {
+            // Le Bonus de Surcharge n'apparaît que s'il a été gagné : une ligne « + 0 » sur une run
+            // qui n'a pas atteint l'overtime annoncerait une récompense manquée, alors qu'il n'y
+            // avait rien à manquer. ⚠ Sa clé de traduction attendait dans `ui.csv`, dans les trois
+            // langues, sans un seul appelant — le bonus était nul par construction, donc invisible,
+            // donc jamais réclamé.
+            string bonus = overtimeBonus > 0
+                ? $"\n{Loc.T("RUNEND_OVERTIME_BONUS")} : +{overtimeBonus}"
+                : "";
+
             _stats.text = $"{Loc.T("RUNEND_TIME")} : {runSeconds / 60:00}:{runSeconds % 60:00}\n" +
                           $"{Loc.T("RUNEND_KILLS")} : {kills}\n" +
-                          $"{Loc.T("RUNEND_CORES")} : {cores}";
+                          $"{Loc.T("RUNEND_CORES")} : {cores}{bonus}";
+        }
 
         if (_root != null) _root.SetActive(true);
 

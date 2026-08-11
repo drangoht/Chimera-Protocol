@@ -28,6 +28,8 @@ public sealed class RunBootstrap : MonoBehaviour
         if (seed != 0UL) Gd.Seed(seed);
         else Gd.Randomize();
 
+        SeedTheSpawner();
+
         // ⚠ Passe par SceneRoot et non par Time.timeScale : c'est lui qui retient la vitesse NOMINALE,
         // celle qu'une sortie de pause ou un ralenti doit restaurer. Écrire Time.timeScale en direct
         // ferait annuler l'accélération au premier menu ouvert — silencieusement, la campagne
@@ -105,6 +107,40 @@ public sealed class RunBootstrap : MonoBehaviour
         if (_saturateArsenal || DebugHooks.SaturateArsenal) SaturateArsenal();
 
         AttachBenchPilot();
+    }
+
+    /// <summary>
+    /// Donne au tirage de spawn la graine de <b>cette</b> run — dérivée du flux global, donc
+    /// reproductible sous <c>--seed</c> et différente à chaque partie sans lui.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ <b>Sans cet appel, le spawn ne suit rien.</b> <see cref="EnemySpawner"/> tient son propre
+    /// générateur, amorcé à zéro : jusqu'au 2026-08-11 personne ne le réamorçait, si bien que la
+    /// faune et les élites sortaient dans le <b>même ordre à chaque partie</b> — un roguelite dont
+    /// la vague de la troisième minute est toujours la même — et que deux campagnes de banc « à
+    /// graines différentes » comparaient deux fois la même séquence.
+    ///
+    /// <para><b>Pourquoi ici et pas dans le spawner lui-même</b> : c'est le démarrage de la run qui
+    /// connaît la graine, et lui seul. Le banc, qui monte sa scène sans ce composant, garde donc la
+    /// séquence de la graine zéro sur laquelle ses 265 vérifications sont calibrées — et peut en
+    /// choisir une autre en appelant <see cref="EnemySpawner.SeedSpawns"/>, ce à quoi cette méthode
+    /// sert. Un banc qui suivrait l'aléa du jeu ne mesurerait plus rien de comparable.</para>
+    /// </remarks>
+    private static void SeedTheSpawner()
+    {
+        var spawner = FindFirstObjectByType<EnemySpawner>();
+        if (spawner == null) return;
+
+        // Dérivée, jamais recopiée : deux flux amorcés avec la MÊME graine avancent en parallèle et
+        // rendent les mêmes valeurs aux mêmes moments — une corrélation invisible et indésirable.
+        ulong spawnSeed = (ulong)Gd.RandRange(1, int.MaxValue);
+        spawner.SeedSpawns(spawnSeed);
+
+        // ⚠ La trace n'est pas décorative. C'est le SEUL contrôle praticable de ce câblage : mesurer
+        // la variété du spawn en run réelle ne tranche pas — le pas de temps variable produit à lui
+        // seul des écarts du même ordre, et deux runs de graines différentes divergent de toute
+        // façon. La ligne, elle, dit exactement ce qui a été posé.
+        Debug.Log($"[RunBootstrap] spawn amorce sur {spawnSeed}.");
     }
 
     private bool _saturateArsenal;

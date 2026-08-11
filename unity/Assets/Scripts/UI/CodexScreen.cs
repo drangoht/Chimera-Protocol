@@ -150,12 +150,20 @@ public sealed class CodexScreen : MonoBehaviour
             // spawn et au routage des jauges. Le bestiaire affiche la version écrite pour le joueur,
             // qui vit dans `ui.csv` sous le suffixe TAG — la donnée reste anglaise et technique, le
             // texte affiché est traduit.
+            // ⚠ La DESCRIPTION vient de `ui.csv` (`ENEMY_<ID>_DESC`) et n'a longtemps été affichée
+            // nulle part : trente et une notices écrites et traduites en trois langues, contrôlées
+            // par `tools/audit_loc_keys.py`, que le joueur n'a jamais lues. Le bestiaire disait ce
+            // qu'une créature VAUT (PV, DPS) sans jamais dire ce qu'elle EST.
+            //
+            // Le repli est la chaîne vide et non le texte de la donnée : `enemies.json` ne porte pas
+            // de description, et rendre la clé brute écrirait « ENEMY_X_DESC » à l'écran.
             AddEntry(seen, ContentText.EnemyName(def.Id, def.Name),
                      $"{ContentText.EnemyTag(def.Id, def.Role)}   " +
                      $"{def.MaxHp:F0} {Loc.T("UNIT_HP")}   " +
                      $"{def.DamagePerSecond:F0} {Loc.T("UNIT_DPS")}" +
                      (def.PrimaryBiome.Length > 0 ? "   " + BiomeName(def.PrimaryBiome) : ""),
-                     icon: PortraitOf(def));
+                     icon: PortraitOf(def),
+                     description: ContentText.EnemyDesc(def.Id, ""));
         }
     }
 
@@ -271,17 +279,41 @@ public sealed class CodexScreen : MonoBehaviour
     /// Faux pour les entrées qui décrivent un <b>but</b> plutôt qu'une découverte : le texte reste
     /// alors lisible, seul le ton s'éteint.
     /// </param>
+    /// <param name="description">
+    /// Troisième ligne, en retrait de ton : ce que la créature <b>est</b>, quand les données en
+    /// disent quelque chose. Une entrée non découverte ne la montre jamais — ce serait révéler ce
+    /// qu'elle cache. Sa hauteur n'est pas devinée : la ligne s'ajuste à son texte (voir plus bas).
+    /// </param>
     private void AddEntry(bool discovered, string name, string detail, string? id = null,
-                          bool hideWhenLocked = true, Color? tint = null, Sprite? icon = null)
+                          bool hideWhenLocked = true, Color? tint = null, Sprite? icon = null,
+                          string? description = null)
     {
         if (_list == null) return;
 
         EntryCount++;
         if (discovered) DiscoveredCount++;
 
+        bool showsDescription = discovered && !string.IsNullOrWhiteSpace(description);
+
         var row = UiStyle.NewUiObject("Entry", _list);
         var element = row.AddComponent<LayoutElement>();
         element.minHeight = IconSize + 8f;
+
+        // ⚠ Une entrée à trois lignes ne tient pas dans une hauteur fixe, et un texte qui déborde ne
+        // se voit pas au code : il se fait rogner par le masque de défilement. La ligne se mesure
+        // donc sur son contenu — colonne verticale + ajusteur — plutôt que sur une constante. Le
+        // retrait à gauche laisse la place à l'icône, qui reste posée en absolu.
+        if (showsDescription)
+        {
+            var column = row.AddComponent<VerticalLayoutGroup>();
+            column.padding = new RectOffset(icon != null ? (int)IconSize + 16 : 8, 8, 6, 8);
+            column.spacing = 2f;
+            column.childControlWidth = true;
+            column.childControlHeight = true;
+            column.childForceExpandHeight = false;
+
+            row.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+        }
 
         // ⚠ Un TRAIT sous chaque entrée. Trente lignes de deux textes empilées sans séparation se
         // lisent comme un bloc continu : l'œil ne sait plus où finit une créature et où commence la
@@ -291,6 +323,11 @@ public sealed class CodexScreen : MonoBehaviour
         var rule = UiStyle.NewUiObject("Rule", row.transform);
         rule.AddComponent<Image>().color = UiPalette.WithAlpha(UiPalette.Steel, 0.9f);
         rule.GetComponent<Image>().raycastTarget = false;
+
+        // Le filet et l'icône sont posés en ancres, pas empilés : quand la ligne devient une colonne
+        // gérée par un layout, il faut le lui dire explicitement — sinon ils prennent leur tour dans
+        // la pile et poussent le texte vers le bas.
+        if (showsDescription) rule.AddComponent<LayoutElement>().ignoreLayout = true;
 
         var ruleRect = rule.GetComponent<RectTransform>();
         ruleRect.anchorMin = new Vector2(0f, 0f);
@@ -316,11 +353,16 @@ public sealed class CodexScreen : MonoBehaviour
             // ne se lit plus ; l'afficher pleine révélerait ce que le Codex a pour rôle de cacher.
             image.color = discovered ? Color.white : new Color(0.16f, 0.16f, 0.24f, 1f);
 
+            if (showsDescription) go.AddComponent<LayoutElement>().ignoreLayout = true;
+
             var rect = go.GetComponent<RectTransform>();
-            rect.anchorMin = rect.anchorMax = new Vector2(0f, 0.5f);
-            rect.pivot = new Vector2(0f, 0.5f);
+            // Une entrée haute garde son icône EN HAUT, alignée sur le nom : centrée, elle flotterait
+            // au milieu d'un paragraphe et ne désignerait plus la ligne qu'elle illustre.
+            float anchorY = showsDescription ? 1f : 0.5f;
+            rect.anchorMin = rect.anchorMax = new Vector2(0f, anchorY);
+            rect.pivot = new Vector2(0f, anchorY);
             rect.sizeDelta = new Vector2(IconSize, IconSize);
-            rect.anchoredPosition = new Vector2(4f, 0f);
+            rect.anchoredPosition = new Vector2(4f, showsDescription ? -6f : 0f);
         }
 
         string text = discovered || !hideWhenLocked
@@ -328,13 +370,22 @@ public sealed class CodexScreen : MonoBehaviour
             : "? ? ?\n" + Loc.T("ARSENAL_LOCKED");
 
         var label = UiStyle.Label(row.transform, text, 18,
-            tint ?? (discovered ? UiPalette.OffWhite : UiPalette.Dim), TextAnchor.MiddleLeft);
+            tint ?? (discovered ? UiPalette.OffWhite : UiPalette.Dim),
+            showsDescription ? TextAnchor.UpperLeft : TextAnchor.MiddleLeft);
 
-        var labelRect = label.GetComponent<RectTransform>();
-        labelRect.anchorMin = Vector2.zero;
-        labelRect.anchorMax = Vector2.one;
-        labelRect.offsetMin = new Vector2(icon != null ? IconSize + 16f : 8f, 0f);
-        labelRect.offsetMax = new Vector2(-8f, 0f);
+        if (!showsDescription)
+        {
+            var labelRect = label.GetComponent<RectTransform>();
+            labelRect.anchorMin = Vector2.zero;
+            labelRect.anchorMax = Vector2.one;
+            labelRect.offsetMin = new Vector2(icon != null ? IconSize + 16f : 8f, 0f);
+            labelRect.offsetMax = new Vector2(-8f, 0f);
+            return;
+        }
+
+        // Le texte d'ambiance est plus petit et plus sourd que la fiche technique : il se lit après
+        // elle, jamais à sa place. Sans cette hiérarchie, trois lignes de même poids donnent un pavé.
+        UiStyle.Label(label.transform.parent, description!, 16, UiPalette.Dim, TextAnchor.UpperLeft);
     }
 
     /// <summary>Côté d'une icône d'entrée, en pixels de référence.</summary>

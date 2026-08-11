@@ -1819,15 +1819,22 @@ n'appelait**. Conséquences, dans cet ordre de gravité :
    de spawn. Un tirage figé ne produit pas de bruit : il produit des résultats *stables*, donc
    crédibles, et il resserre artificiellement l'écart entre deux réglages comparés.
 
-Un aléa privé n'est jamais neutre : soit il est amorcé par la graine de la run, soit il n'existe pas.
+Un aléa privé n'est jamais neutre : soit quelqu'un l'amorce, soit il n'existe pas.
 
-⚠ **Et le corriger n'est pas une refacto — c'est un chantier à part.** Brancher ce tirage sur `Gd`
-(le flux de la run, ce que la documentation de `Gd` prescrit déjà mot pour mot) a été essayé le
-2026-08-11 : **9 vérifications sur 255 tombent dans `RunSmokeTest`**, à commencer par la survie du
-personnage — le banc est calibré sur la séquence de la graine zéro, et tout ce qui suit une mort
-prématurée casse en cascade. Le défaut est donc **documenté dans `EnemySpawner` et laissé en place** :
-le lever demande de trancher un arbitrage de gameplay (plus de variété d'une run à l'autre) **et** de
-recalibrer le banc, dans le même mouvement.
+**Corrigé le 2026-08-11 — et la façon de le corriger est le vrai enseignement.** Le premier essai
+fondait ce tirage dans le flux global `Gd` : **9 vérifications sur 255 tombaient dans `RunSmokeTest`**,
+à commencer par la survie du personnage, tout ce qui suit une mort prématurée cassant en cascade.
+Deux raisons de ne pas faire ainsi :
+
+- **Un banc ne doit pas suivre l'aléa du jeu**, sinon il ne mesure plus rien de comparable ;
+- **un flux partagé rend le spawn dépendant de tout ce qui tire par ailleurs** — ajouter un éclat de
+  lumière au décor changerait la vague suivante.
+
+La forme retenue garde donc le flux **séparé**, et c'est `RunBootstrap` — le seul à connaître la
+graine de la run — qui appelle `SeedSpawns` avec une valeur **dérivée** de `Gd` (jamais recopiée :
+deux flux amorcés identiquement avancent en parallèle). Le banc, qui monte sa scène sans
+`RunBootstrap`, conserve la séquence de la graine zéro sur laquelle il est calibré : **265 OK / 0
+échec**, inchangé.
 
 **La leçon de méthode compte autant que le défaut** : un changement d'aléa se mesure toujours contre
 une référence rejouée. Sans le run de référence (0 échec sur 265), les 9 échecs se lisaient comme des
