@@ -37,7 +37,14 @@ public sealed class RustedCore : EnemyBase
     public bool IsSurcharging => _surchargeLeft > 0f;
 
     /// <summary>Nom affiché, dérivé de l'incarnation.</summary>
-    public string DisplayName => Incarnation.NameKey;
+    /// <remarks>
+    /// ⚠ Il rendait la <b>clé de traduction elle-même</b> : le bandeau du boss annonçait
+    /// « BOSS_CORE_MOLTEN_NAME » en toutes lettres, au-dessus de sa barre de vie, sur le moment le
+    /// plus important d'une run — et dans les trois langues, puisqu'aucune n'était consultée. Le nom
+    /// des cinq incarnations était traduit depuis toujours. La propriété s'appelle
+    /// <c>DisplayName</c> : ce qu'elle rend doit être affichable, pas une clé.
+    /// </remarks>
+    public string DisplayName => Loc.T(Incarnation.NameKey);
 
     /// <summary>
     /// Le boss de fin est un champion — et le premier visé par le cran VI.

@@ -84,7 +84,12 @@ public sealed class MainMenuScreen : MonoBehaviour
         // (docs/ui_v1160_menu.png), et elle est ce qui rend le focus lisible : le focus s'annonce en
         // violet, et une teinte ne ressort que sur un fond uniforme. Le portage donnait une couleur
         // différente à chaque entrée ; le menu paraissait plus riche et la sélection s'y perdait.
-        var play = AddEntry(column.transform, "Jouer", FrameAccent.Cyan, enabled: true);
+        // ⚠ Ces libellés passent par une fabrique LOCALE (`AddEntry`), pas par `UiStyle.TextButton` :
+        // c'est ce qui les a fait échapper à la relecture des textes en dur, alors que `MENU_PLAY`,
+        // `MENU_HUB` et `MENU_QUIT` existaient et étaient traduits. Trois entrées du premier écran du
+        // jeu, en français pour tout le monde. Chercher des APPELS ne suffit pas — d'où
+        // `tools/audit_hardcoded_text.py`, qui cherche des CHAÎNES.
+        var play = AddEntry(column.transform, Loc.T("MENU_PLAY"), FrameAccent.Cyan, enabled: true);
         play.onClick.AddListener(() =>
         {
             PlayRequested?.Invoke();
@@ -92,19 +97,24 @@ public sealed class MainMenuScreen : MonoBehaviour
         });
         _firstButton = play;
 
-        var hub = AddEntry(column.transform, "Hub", FrameAccent.Cyan, enabled: true);
+        var hub = AddEntry(column.transform, Loc.T("MENU_HUB"), FrameAccent.Cyan, enabled: true);
         hub.onClick.AddListener(OpenHub);
 
-        var challenges = AddEntry(column.transform, Loc.T("CHALLENGES_TITLE"), FrameAccent.Cyan, enabled: true);
+        // ⚠ `MENU_CHALLENGES` et non `CHALLENGES_TITLE` : les deux existent et disent la même chose,
+        // mais pas sur le même ton. Un TITRE D'ÉCRAN est en capitales — il annonce où l'on vient
+        // d'arriver ; une ENTRÉE DE MENU ne crie pas, elle s'aligne sur ses voisines. Réutiliser la
+        // clé du titre donnait un menu où deux entrées sur six hurlaient : « Play · Hub · CHALLENGES
+        // · OPTIONS · Codex · Quit ». Les clés de menu existaient, traduites, depuis le début.
+        var challenges = AddEntry(column.transform, Loc.T("MENU_CHALLENGES"), FrameAccent.Cyan, enabled: true);
         challenges.onClick.AddListener(OpenChallenges);
 
-        var options = AddEntry(column.transform, Loc.T("OPTIONS_TITLE"), FrameAccent.Cyan, enabled: true);
+        var options = AddEntry(column.transform, Loc.T("MENU_OPTIONS"), FrameAccent.Cyan, enabled: true);
         options.onClick.AddListener(OpenOptions);
 
         var codex = AddEntry(column.transform, Loc.T("MENU_CODEX"), FrameAccent.Cyan, enabled: true);
         codex.onClick.AddListener(OpenCodex);
 
-        var quit = AddEntry(column.transform, "Quitter", FrameAccent.Gold, enabled: true);
+        var quit = AddEntry(column.transform, Loc.T("MENU_QUIT"), FrameAccent.Gold, enabled: true);
         quit.onClick.AddListener(SceneRoot.Quit);
 
         BuildFocusChain(column.transform);

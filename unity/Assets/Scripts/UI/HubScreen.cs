@@ -309,14 +309,14 @@ public sealed class HubScreen : MonoBehaviour
         if (unlocked == 0)
         {
             _perkLabel.text = $"{Loc.T("HUB_PERKS")} : {Loc.T("HUB_PERK_NONE")}\n" +
-                              "Accomplir des défis pour en débloquer";
+                              Loc.T("HUB_PERK_HOWTO");
             _perkButton.interactable = false;
             return;
         }
 
         var def = StartingPerks.ById(MetaProgression.EquippedPerk);
         _perkLabel.text = def == null
-            ? $"{Loc.T("HUB_PERKS")} : {Loc.T("HUB_PERK_NONE")}   ({unlocked} disponible(s))"
+            ? $"{Loc.T("HUB_PERKS")} : {Loc.T("HUB_PERK_NONE")}   {Loc.T("HUB_PERK_AVAILABLE", unlocked)}"
             : $"{Loc.T("HUB_PERKS")} : {Loc.T(def.NameKey)}\n{Loc.T(def.DescKey)}";
 
         _perkButton.interactable = true;

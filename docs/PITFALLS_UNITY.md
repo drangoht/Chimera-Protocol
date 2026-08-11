@@ -1624,6 +1624,27 @@ existaient déjà sous **`WPN_`**, lues par les cartes de montée de niveau. Deu
 douze armes, et rien pour s'en plaindre. L'audit contrôle depuis les deux sens : toute clé qui porte
 un préfixe de la convention sans correspondre à un contenu est signalée **orpheline**.
 
+### La casse d'un libellé dit sa FONCTION — capitales pour un titre, casse de phrase pour une action
+
+Le menu principal affichait « Play · Hub · **CHALLENGES** · **OPTIONS** · Codex · Quit » : deux
+entrées sur six hurlaient. La cause n'est pas une faute de frappe mais une **clé empruntée** —
+`CHALLENGES_TITLE` et `OPTIONS_TITLE` sont des titres d'écran, et ils étaient réutilisés comme
+libellés de bouton. `MENU_CHALLENGES` et `MENU_OPTIONS` existaient, traduits, depuis le début.
+
+La règle, appliquée partout depuis le 2026-08-11 :
+
+- **CAPITALES** = un **titre d'écran**. Il annonce où l'on vient d'arriver : `HUB`, `CHALLENGES`,
+  `OPTIONS`, `ASSIMILATION`, `PAUSE`, `KILLED IN ACTION`.
+- **Casse de phrase** = une **action**. Un bouton ne crie pas : `Play`, `Buy`, `Resume`,
+  `Assimilate`, `Back to menu`. (L'écran de pause et celui d'Assimilation criaient toutes leurs
+  actions ; ils ont été alignés.)
+- Les **badges d'état** restent en capitales (`MAX`, `NEW RECORD!`) : ce ne sont ni des titres ni
+  des actions, mais des marqueurs, et c'est leur voisinage avec un chiffre qui les rend lisibles.
+
+⚠ Conséquence pratique : **ne jamais réutiliser une clé `*_TITLE` comme libellé de bouton.** Les
+deux textes disent la même chose, et c'est précisément ce qui rend l'emprunt tentant — la casse,
+elle, dit deux choses différentes.
+
 ### Une primitive de dépannage finit toujours par arriver à l'écran
 
 `UiPrimitives.White` — un carré — servait de silhouette aux **drones orbitaux**. Rien ne cassait :

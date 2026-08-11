@@ -412,7 +412,7 @@ public sealed class HUD : MonoBehaviour
 
         if (_fpsAccumulator < 0.5f) return;
 
-        _fpsLabel.text = $"{_fpsFrames / _fpsAccumulator:F0} IPS";
+        _fpsLabel.text = Loc.T("HUD_FPS", (_fpsFrames / _fpsAccumulator).ToString("F0"));
         _fpsAccumulator = 0f;
         _fpsFrames = 0;
     }
@@ -542,7 +542,8 @@ public sealed class HUD : MonoBehaviour
 
             // Le pourcentage est affiché en toutes lettres : contre un boss à 5 000 PV, une barre qui
             // descend de 0,2 % par seconde se lit « elle ne bouge pas ». Le chiffre, lui, bouge.
-            _bossLabel.text = $"{boss.DisplayName}   PHASE {BossPhases.RomanNumeral(boss.Phase)}   " +
+            _bossLabel.text = $"{boss.DisplayName}   " +
+                              $"{Loc.T("BOSS_PHASE", BossPhases.RomanNumeral(boss.Phase))}   " +
                               $"{boss.HpRatio * 100f:F1} %{bearing}";
         }
     }

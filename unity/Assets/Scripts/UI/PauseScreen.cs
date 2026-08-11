@@ -131,7 +131,7 @@ public sealed class PauseScreen : MonoBehaviour
                 // ⚠ `Contains` sur une chaîne résout vers MemoryExtensions et exige un
                 // StringComparison : c'est bien la collection qu'on interroge, pas le texte.
                 string mark = System.Linq.Enumerable.Contains(inv.AppliedFusions, id) ? "✦ " : "  ";
-                Stat(sb, mark + UiNames.Of(id), $"Niv. {level}");
+                Stat(sb, mark + UiNames.Of(id), Loc.T("PAUSE_LEVEL_SHORT", level));
             }
         }
 
@@ -141,7 +141,7 @@ public sealed class PauseScreen : MonoBehaviour
             sb.AppendLine(Loc.T("PAUSE_PASSIVES"));
 
             foreach (var (id, level) in inv.PassiveLevels)
-                Stat(sb, "  " + UiNames.Of(id), $"Niv. {level}");
+                Stat(sb, "  " + UiNames.Of(id), Loc.T("PAUSE_LEVEL_SHORT", level));
         }
 
         sb.AppendLine();
