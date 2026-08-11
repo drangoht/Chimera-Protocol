@@ -132,28 +132,15 @@ public sealed class HubScreen : MonoBehaviour
 
     private void BuildUi()
     {
-        var canvasGo = new GameObject("HubCanvas",
-            typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
-        canvasGo.transform.SetParent(transform, false);
+        var screen = UiStyle.ScreenCanvas(transform, "HubCanvas", sortingOrder: 90);
+        _root = screen.Root;
+        var panel = screen.Panel;
 
-        UiCanvas.Configure(canvasGo, 90);
-
-        _root = canvasGo;
-
-        UiStyle.ScreenBackdrop(canvasGo.transform);
-
-        var panel = UiStyle.NewUiObject("Panel", canvasGo.transform);
-        var panelRect = panel.GetComponent<RectTransform>();
-        panelRect.anchorMin = Vector2.zero;
-        panelRect.anchorMax = Vector2.one;
-        panelRect.offsetMin = new Vector2(60f, 40f);
-        panelRect.offsetMax = new Vector2(-60f, -20f);
-
-        float headerBottom = UiStyle.Header(panel.transform, Loc.T("HUB_TITLE"));
+        float headerBottom = UiStyle.Header(panel, Loc.T("HUB_TITLE"));
 
         // Le solde est en OR et juste sous le titre : c'est la seule information de cet écran qui
         // décide de ce que le joueur peut faire, et il doit la voir avant de lire les lignes.
-        _echoLabel = UiStyle.Label(panel.transform, "", 28, UiPalette.Gold, TextAnchor.UpperCenter);
+        _echoLabel = UiStyle.Label(panel, "", 28, UiPalette.Gold, TextAnchor.UpperCenter);
         var echoRect = _echoLabel.GetComponent<RectTransform>();
         echoRect.anchorMin = new Vector2(0f, 1f);
         echoRect.anchorMax = new Vector2(1f, 1f);
@@ -166,42 +153,11 @@ public sealed class HubScreen : MonoBehaviour
         // ⚠ La liste DOIT défiler : quatorze améliorations ne tiennent pas dans un panneau, et un
         // contenu centré qui déborde sort des DEUX côtés — le défaut déjà rencontré sur l'écran de
         // pause, où « Quitter la partie » finissait hors cadre.
-        var scrollGo = UiStyle.NewUiObject("Scroll", panel.transform);
-        var scrollRect = scrollGo.GetComponent<RectTransform>();
-        scrollRect.anchorMin = new Vector2(0f, 0f);
-        scrollRect.anchorMax = new Vector2(1f, 1f);
-        scrollRect.offsetMin = new Vector2(28f, 96f);
-        scrollRect.offsetMax = new Vector2(-28f, -headerBottom);
-
-        var scroll = scrollGo.AddComponent<ScrollRect>();
-        UiStyle.ConfigureScroll(scroll);
-        scrollGo.AddComponent<RectMask2D>();
-
-        var content = UiStyle.NewUiObject("Content", scrollGo.transform);
-        var contentRect = content.GetComponent<RectTransform>();
-        contentRect.anchorMin = new Vector2(0f, 1f);
-        contentRect.anchorMax = new Vector2(1f, 1f);
-        contentRect.pivot = new Vector2(0.5f, 1f);
-
-        // ⚠ Largeur remise à ZÉRO. Un RectTransform naît en 100 × 100 : étiré entre deux ancres
-        // horizontales, il vaut alors « largeur du parent + 100 » et déborde de 50 px de CHAQUE
-        // côté de sa fenêtre de défilement. Le masque rogne le reste, et ce sont les premières
-        // lettres de chaque ligne qui disparaissent — un défaut qu'on lit comme une faute de texte
-        // et non comme un défaut de mise en page.
-        contentRect.sizeDelta = Vector2.zero;
-
-        var layout = content.AddComponent<VerticalLayoutGroup>();
-        layout.spacing = 10f;
-        layout.childForceExpandHeight = false;
-        layout.childControlHeight = true;
-        layout.childControlWidth = true;
-
-        var fitter = content.AddComponent<ContentSizeFitter>();
-        fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-
-        scroll.content = contentRect;
-        scroll.viewport = scrollRect;
-        _list = content.transform;
+        var list = UiStyle.VerticalList(panel,
+                                        offsetMin: new Vector2(28f, 96f),
+                                        offsetMax: new Vector2(-28f, -headerBottom),
+                                        spacing: 10f);
+        _list = list.Content;
 
         // Les améliorations D'ABORD, le perk et le titre ensuite — l'ordre du jeu publié. Ce qui
         // s'achète est la raison d'être de l'écran ; ce qui s'équipe se règle une fois puis ne bouge
@@ -214,7 +170,7 @@ public sealed class HubScreen : MonoBehaviour
         // Réinitialisation : elle REMBOURSE les Échos dépensés. C'est ce qui rend un arbre
         // d'améliorations réversible, donc explorable — sans elle, un achat regretté est définitif
         // et le joueur n'ose plus rien acheter.
-        _reset = UiStyle.TextButton(panel.transform, Loc.T("HUB_RESET"), FrameAccent.Danger);
+        _reset = UiStyle.TextButton(panel, Loc.T("HUB_RESET"), FrameAccent.Danger);
         var resetRect = _reset.GetComponent<RectTransform>();
         resetRect.anchorMin = new Vector2(0f, 0f);
         resetRect.anchorMax = new Vector2(0f, 0f);
@@ -223,7 +179,7 @@ public sealed class HubScreen : MonoBehaviour
         resetRect.anchoredPosition = new Vector2(28f, 16f);
         _reset.onClick.AddListener(ResetUpgrades);
 
-        var close = UiStyle.TextButton(panel.transform, Loc.T("COMMON_BACK"), FrameAccent.Steel);
+        var close = UiStyle.TextButton(panel, Loc.T("COMMON_BACK"), FrameAccent.Steel);
         var closeRect = close.GetComponent<RectTransform>();
         closeRect.anchorMin = new Vector2(0.5f, 0f);
         closeRect.anchorMax = new Vector2(0.5f, 0f);

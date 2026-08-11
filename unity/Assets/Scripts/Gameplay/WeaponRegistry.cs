@@ -79,9 +79,6 @@ public static class WeaponRegistry
     public static Type? TypeOf(string weaponId)
         => _byId.TryGetValue(weaponId, out var type) ? type : null;
 
-    /// <summary>Cet id désigne-t-il une arme connue du moteur ?</summary>
-    public static bool Knows(string weaponId) => _byId.ContainsKey(weaponId);
-
     /// <summary>
     /// Crée l'arme sous <paramref name="mount"/> (le joueur) et lui injecte ses prefabs de projectile.
     /// Renvoie <c>null</c> si l'id est inconnu — et le <b>journalise</b> : une arme silencieusement
@@ -137,10 +134,4 @@ public static class ProjectilePrefabs
     public static GameObject? Bullet  => _bullet  ??= Spawner.Load("res://scenes/entities/Bullet.tscn");
     public static GameObject? Missile => _missile ??= Spawner.Load("res://scenes/entities/Missile.tscn");
     public static GameObject? Glaive  => _glaive  ??= Spawner.Load("res://scenes/entities/Glaive.tscn");
-
-    /// <summary>Injecte des prefabs fabriqués à la volée — réservé aux bancs.</summary>
-    public static void Override(GameObject? bullet, GameObject? missile, GameObject? glaive)
-    {
-        _bullet = bullet; _missile = missile; _glaive = glaive;
-    }
 }

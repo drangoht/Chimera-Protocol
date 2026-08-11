@@ -81,7 +81,4 @@ public static class SpriteFramesLibrary
 
     /// <summary>Jeu d'animations utilisé quand aucun autre ne convient.</summary>
     public const string FallbackId = "rustswarm";
-
-    /// <summary>Vide le cache — utile après une régénération des assets.</summary>
-    public static void ClearCache() => _cache.Clear();
 }

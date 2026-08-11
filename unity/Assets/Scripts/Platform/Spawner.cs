@@ -96,10 +96,4 @@ public static class Spawner
         }
         return component;
     }
-
-    /// <summary>
-    /// Vide le cache de prefabs — à appeler sur un changement de scène si les prefabs proviennent
-    /// de bundles rechargés. Sans effet sur les instances déjà créées.
-    /// </summary>
-    public static void ClearCache() => _cache.Clear();
 }

@@ -167,67 +167,24 @@ public sealed class LevelSelectScreen : MonoBehaviour
 
     private void BuildUi()
     {
-        var canvasGo = new GameObject("LevelSelectCanvas",
-            typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
-        canvasGo.transform.SetParent(transform, false);
+        var screen = UiStyle.ScreenCanvas(transform, "LevelSelectCanvas", sortingOrder: 92);
+        _root = screen.Root;
+        var panel = screen.Panel;
 
-        UiCanvas.Configure(canvasGo, 92);
-
-        _root = canvasGo;
-        UiStyle.ScreenBackdrop(canvasGo.transform);
-
-        var panel = UiStyle.NewUiObject("Panel", canvasGo.transform);
-        var panelRect = panel.GetComponent<RectTransform>();
-        panelRect.anchorMin = Vector2.zero;
-        panelRect.anchorMax = Vector2.one;
-        panelRect.offsetMin = new Vector2(60f, 40f);
-        panelRect.offsetMax = new Vector2(-60f, -20f);
-
-        UiStyle.Header(panel.transform, Loc.T("LEVELSEL_TITLE"), FrameAccent.Cyan);
+        UiStyle.Header(panel, Loc.T("LEVELSEL_TITLE"), FrameAccent.Cyan);
 
         // Cinq biomes ne tiennent pas sans défilement dès que les cartes portent leur sélecteur.
-        var scrollGo = UiStyle.NewUiObject("Scroll", panel.transform);
-        var scrollRect = scrollGo.GetComponent<RectTransform>();
-        scrollRect.anchorMin = Vector2.zero;
-        scrollRect.anchorMax = Vector2.one;
-        scrollRect.offsetMin = new Vector2(28f, 88f);
-        scrollRect.offsetMax = new Vector2(-28f, -90f);
-
-        var scroll = scrollGo.AddComponent<ScrollRect>();
-        UiStyle.ConfigureScroll(scroll);
-        scrollGo.AddComponent<RectMask2D>();
-
-        var content = UiStyle.NewUiObject("Content", scrollGo.transform);
-        var contentRect = content.GetComponent<RectTransform>();
-        contentRect.anchorMin = new Vector2(0f, 1f);
-        contentRect.anchorMax = new Vector2(1f, 1f);
-        contentRect.pivot = new Vector2(0.5f, 1f);
-
-        // ⚠ Largeur remise à ZÉRO. Un RectTransform naît en 100 × 100 : étiré entre deux ancres
-        // horizontales, il vaut alors « largeur du parent + 100 » et déborde de 50 px de CHAQUE
-        // côté de sa fenêtre de défilement. Le masque rogne le reste, et ce sont les premières
-        // lettres de chaque ligne qui disparaissent — un défaut qu'on lit comme une faute de texte
-        // et non comme un défaut de mise en page.
-        contentRect.sizeDelta = Vector2.zero;
-
-        var layout = content.AddComponent<VerticalLayoutGroup>();
-        layout.spacing = 12f;
-        layout.childForceExpandHeight = false;
-        layout.childControlHeight = true;
-        layout.childControlWidth = true;
-
-        var fitter = content.AddComponent<ContentSizeFitter>();
-        fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-
-        scroll.content = contentRect;
-        scroll.viewport = scrollRect;
-        _list = content.transform;
+        var list = UiStyle.VerticalList(panel,
+                                        offsetMin: new Vector2(28f, 88f),
+                                        offsetMax: new Vector2(-28f, -90f),
+                                        spacing: 12f);
+        _list = list.Content;
 
         foreach (string biome in LevelThreat.Order) BuildCard(biome);
 
         // « Aléatoire » à côté de « Retour », comme le jeu publié : il évite au joueur qui n'a pas
         // d'avis de relire cinq cartes pour rejouer.
-        var random = UiStyle.TextButton(panel.transform, Loc.T("LEVELSEL_RANDOM"), FrameAccent.Cyan);
+        var random = UiStyle.TextButton(panel, Loc.T("LEVELSEL_RANDOM"), FrameAccent.Cyan);
         var randomRect = random.GetComponent<RectTransform>();
         randomRect.anchorMin = randomRect.anchorMax = new Vector2(0.5f, 0f);
         randomRect.pivot = new Vector2(1f, 0f);
@@ -235,7 +192,7 @@ public sealed class LevelSelectScreen : MonoBehaviour
         randomRect.anchoredPosition = new Vector2(-14f, 16f);
         random.onClick.AddListener(LaunchRandom);
 
-        var close = UiStyle.TextButton(panel.transform, Loc.T("COMMON_BACK"), FrameAccent.Steel);
+        var close = UiStyle.TextButton(panel, Loc.T("COMMON_BACK"), FrameAccent.Steel);
         var closeRect = close.GetComponent<RectTransform>();
         closeRect.anchorMin = closeRect.anchorMax = new Vector2(0.5f, 0f);
         closeRect.pivot = new Vector2(0f, 0f);

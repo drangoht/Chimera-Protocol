@@ -44,6 +44,11 @@ public sealed class RunBootstrap : MonoBehaviour
         Vfx.Reset();
         ScreenShake.Reset();
 
+        // Même raison, sur des compteurs : gel et brûlure sont cumulés dans des champs STATIQUES, que
+        // rien ne remettait à zéro. Deux runs de suite dans le même processus additionnaient donc leurs
+        // totaux, et le diagnostic de la seconde partait avec les chiffres de la première.
+        EnemyBase.ResetStatusCounters();
+
         // Le biome décide de la faune, du palier de menace et de l'incarnation du boss. Le poser
         // avant StartRun évite qu'une run hérite en silence du choix de la précédente.
         if (GameManager.Instance != null) GameManager.Instance.CurrentBiomeId = RunConfig.BiomeId;

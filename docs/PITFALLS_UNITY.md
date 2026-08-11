@@ -1806,6 +1806,43 @@ une fois sur deux.
 
 ---
 
+### Un générateur d'aléa **privé** amorcé à zéro : déterministe, donc invisible
+
+`EnemySpawner` portait son propre `Pcg32 _rng = new(0UL)` et une méthode `SeedSpawns` que **personne
+n'appelait**. Conséquences, dans cet ordre de gravité :
+
+1. **En partie normale**, la faune et les élites sortaient dans le **même ordre à chaque run** —
+   `Gd.Randomize()` n'atteignait que le flux global, pas celui-ci. Pour un roguelite, c'est la
+   variété du niveau qui disparaît, et rien ne le dit : chaque run *paraît* aléatoire, seule une
+   comparaison de deux runs le révèle.
+2. **Au banc**, deux campagnes « à graines différentes » comparaient deux fois la **même** séquence
+   de spawn. Un tirage figé ne produit pas de bruit : il produit des résultats *stables*, donc
+   crédibles, et il resserre artificiellement l'écart entre deux réglages comparés.
+
+Un aléa privé n'est jamais neutre : soit il est amorcé par la graine de la run, soit il n'existe pas.
+
+⚠ **Et le corriger n'est pas une refacto — c'est un chantier à part.** Brancher ce tirage sur `Gd`
+(le flux de la run, ce que la documentation de `Gd` prescrit déjà mot pour mot) a été essayé le
+2026-08-11 : **9 vérifications sur 255 tombent dans `RunSmokeTest`**, à commencer par la survie du
+personnage — le banc est calibré sur la séquence de la graine zéro, et tout ce qui suit une mort
+prématurée casse en cascade. Le défaut est donc **documenté dans `EnemySpawner` et laissé en place** :
+le lever demande de trancher un arbitrage de gameplay (plus de variété d'une run à l'autre) **et** de
+recalibrer le banc, dans le même mouvement.
+
+**La leçon de méthode compte autant que le défaut** : un changement d'aléa se mesure toujours contre
+une référence rejouée. Sans le run de référence (0 échec sur 265), les 9 échecs se lisaient comme des
+régressions de la passe de refacto qui les accompagnait.
+
+### Deux définitions d'un même état : le HUD dit une chose, la règle en fait une autre
+
+`RegenReserve.IsSuppressed` teste `> 1e-4f`, et sa documentation explique pourquoi l'epsilon existe.
+Le HUD l'appelait ; `Player.UpdateRegen`, lui, testait `> 0f` en dur et décomptait la suspension par
+un `-= dt` non borné. Deux lectures du même champ : une fenêtre où l'icône annonce une régénération
+qui ne coule pas, et une durée qui file en négatif — que ce même HUD affiche (« ♥ -0,0s »).
+
+**Un état nommé par une règle pure se lit *uniquement* par cette règle.** Le jour où le seuil bouge,
+la copie ne bouge pas, et l'écart ne se voit qu'à l'écran, une fraction de seconde.
+
 ## Méthode
 
 ### Extraire du moteur, puis confronter — plutôt que lire les sources

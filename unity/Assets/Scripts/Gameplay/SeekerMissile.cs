@@ -151,18 +151,7 @@ public sealed class SeekerMissile : MonoBehaviour
         }
     }
 
+    /// <summary>Sans portée : un missile déjà lancé poursuit la cible vivante la plus proche, où qu'elle soit.</summary>
     private EnemyBase? FindNearest()
-    {
-        EnemyBase? best = null;
-        float bestSqr = float.MaxValue;
-        Vector2 me = transform.position;
-
-        foreach (var e in EnemyBase.Active)
-        {
-            if (e == null || e.IsDead) continue;
-            float sqr = ((Vector2)e.transform.position - me).sqrMagnitude;
-            if (sqr < bestSqr) { bestSqr = sqr; best = e; }
-        }
-        return best;
-    }
+        => EnemyBase.Nearest(transform.position, float.PositiveInfinity);
 }

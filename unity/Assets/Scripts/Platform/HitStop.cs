@@ -49,9 +49,6 @@ public static class HitStop
     /// <summary>Un ralenti est-il en cours ?</summary>
     public static bool Active => _running;
 
-    /// <summary>Vitesse imposée à l'instant, en fraction du nominal (1 = aucun ralenti).</summary>
-    public static float CurrentFraction => _running ? _scale : 1f;
-
     /// <summary>
     /// Déclenche le ralenti. Un nouvel appel <b>redémarre</b> l'effet plutôt que de s'y ajouter :
     /// deux ralentis cumulés se multiplieraient, et le jeu s'arrêterait pour de bon.

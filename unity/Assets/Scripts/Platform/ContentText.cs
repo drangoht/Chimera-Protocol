@@ -34,8 +34,8 @@ public static class ContentText
     public static string WeaponName(string id, string fallback) => Get("WPN", id, "NAME", fallback);
     public static string WeaponDesc(string id, string fallback) => Get("WPN", id, "DESC", fallback);
 
+    /// <summary>Une fusion se nomme sous le <b>même</b> préfixe qu'une arme : c'en est une.</summary>
     public static string FusionName(string id, string fallback) => Get("WPN", id, "NAME", fallback);
-    public static string FusionDesc(string id, string fallback) => Get("WPN", id, "DESC", fallback);
 
     public static string PassiveName(string id, string fallback) => Get("PAS", id, "NAME", fallback);
     public static string PassiveDesc(string id, string fallback) => Get("PAS", id, "DESC", fallback);
@@ -58,6 +58,14 @@ public static class ContentText
 
     public static string EnemyName(string id, string fallback) => Get("ENEMY", id, "NAME", fallback);
     public static string EnemyTag(string id, string fallback) => Get("ENEMY", id, "TAG", fallback);
+
+    /// <summary>
+    /// ⚠ <b>Aucun écran n'appelle encore cette méthode</b>, alors que <c>ui.csv</c> porte
+    /// <b>31 descriptions d'ennemis</b> écrites et traduites en trois langues (<c>ENEMY_*_DESC</c>).
+    /// Le bestiaire du Codex n'affiche que le rôle et les statistiques : ce texte existe, il est
+    /// contrôlé par <c>tools/audit_loc_keys.py</c>… et le joueur ne l'a jamais vu. Même famille que
+    /// le défaut corrigé en 2.0.1, à ceci près que le repli ne se voit même pas à l'écran.
+    /// </summary>
     public static string EnemyDesc(string id, string fallback) => Get("ENEMY", id, "DESC", fallback);
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -76,9 +84,24 @@ public static class ContentText
     {
         if (string.IsNullOrEmpty(id)) return fallback;
 
-        string key = $"{prefix}_{id.ToUpperInvariant()}_{field}";
+        string key = Key(prefix, id, field);
         string translated = Loc.T(key);
 
         return translated != key ? translated : fallback;
     }
+
+    /// <summary>
+    /// Clé de traduction d'un contenu : <c>("WPN", "tesla_coil", "NAME")</c> →
+    /// <c>WPN_TESLA_COIL_NAME</c>.
+    /// </summary>
+    /// <remarks>
+    /// Exposée parce que l'écran de montée de niveau, lui, doit <b>essayer plusieurs préfixes</b>
+    /// (une carte peut être une arme, un passif ou une carte d'écran) : il a besoin de la clé, pas
+    /// du texte. Il la fabriquait donc à la main, ce qui donnait une <b>seconde</b> définition de la
+    /// convention de nommage — celle-là même dont <c>tools/audit_loc_keys.py</c> est le contrôle.
+    /// Deux conventions, un seul audit : le jour où l'une bouge, l'autre affiche des noms d'armes en
+    /// français sans que rien ne le signale.
+    /// </remarks>
+    public static string Key(string prefix, string id, string field)
+        => $"{prefix}_{id.ToUpperInvariant()}_{field}";
 }

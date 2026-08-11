@@ -56,15 +56,19 @@ public abstract class WeaponBase : MonoBehaviour
     /// Recharge effective, bornée par <see cref="StatCaps"/>. Le plancher est ce qui a empêché,
     /// côté Godot, qu'un passif porte toutes les armes à la cadence maximale.
     /// </summary>
+    /// <remarks>
+    /// Les deux bornes — plafond de réduction et plancher de recharge — sont <b>déléguées</b> à
+    /// <see cref="StatCaps"/>. Elles étaient recopiées ici, et une formule d'équilibrage recopiée
+    /// finit toujours par diverger de sa règle : c'est exactement ce qui a rendu un banc entier
+    /// faux (cf. <c>docs/PITFALLS_UNITY.md</c>).
+    /// </remarks>
     protected float EffectiveCooldown
     {
         get
         {
-            var stats = Player.Instance?.Stats;
-            float reduction = stats != null
-                ? Mathf.Min(stats.CooldownReduction, StatCaps.MaxCooldownReduction)
-                : 0f;
-            return Mathf.Max(StatCaps.MinCooldown, BaseCooldown * (1f - reduction));
+            float reduction = StatCaps.CapCooldownReduction(
+                Player.Instance?.Stats.CooldownReduction ?? 0f);
+            return StatCaps.EffectiveCooldown(BaseCooldown, reduction);
         }
     }
 
@@ -164,18 +168,5 @@ public abstract class WeaponBase : MonoBehaviour
     /// Ennemi vivant le plus proche, dans la portée. Renvoie <c>null</c> s'il n'y en a aucun —
     /// c'est ce qui empêche l'arme de consommer sa recharge dans le vide.
     /// </summary>
-    protected EnemyBase? FindNearestEnemy()
-    {
-        EnemyBase? best = null;
-        float bestSqr = Range * Range;
-        Vector2 me = transform.position;
-
-        foreach (var e in EnemyBase.Active)
-        {
-            if (e == null || e.IsDead) continue;
-            float sqr = ((Vector2)e.transform.position - me).sqrMagnitude;
-            if (sqr < bestSqr) { bestSqr = sqr; best = e; }
-        }
-        return best;
-    }
+    protected EnemyBase? FindNearestEnemy() => EnemyBase.Nearest(transform.position, Range);
 }

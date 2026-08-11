@@ -428,10 +428,6 @@ public static class SaturationTable
             _ => (1, 0, 0),   // Normal
         };
 
-    /// <summary>Version courante du schéma de saturation dans <c>settings.cfg</c>.</summary>
-    /// <remarks>1 = un cran global · 2 = un cran par niveau.</remarks>
-    public const int SchemaVersion = 2;
-
     /// <summary>
     /// Convertit un état de saturation <b>global</b> (schéma 1) en état <b>par niveau</b> (schéma 2) :
     /// le cran choisi et le cran débloqué sont <b>diffusés à tous les biomes</b>.

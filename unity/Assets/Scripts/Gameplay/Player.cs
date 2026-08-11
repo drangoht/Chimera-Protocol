@@ -521,13 +521,21 @@ public sealed class Player : MonoBehaviour
 
     private void UpdateRegen(float dt)
     {
-        if (Stats.RegenSuppressLeft > 0f)
+        // Suspension sous le feu : on coupe la SOURCE, la réserve déjà constituée continue
+        // d'absorber (règle du cran de saturation, GDD §33.7).
+        //
+        // ⚠ Le décompte et le test appartiennent à `RegenReserve`, ils ne se réécrivent pas ici.
+        // Le test posé en dur était `> 0f` là où la règle impose un epsilon, et le HUD, lui,
+        // appelait déjà `IsSuppressed` : deux définitions du même état, donc une fenêtre où l'icône
+        // annonce une régénération qui ne coule pas. Le décompte, non borné, laissait de surcroît
+        // filer une durée négative — que ce même HUD affiche.
+        if (RegenReserve.IsSuppressed(Stats.RegenSuppressLeft))
         {
-            // Suspension sous le feu : on coupe la SOURCE, la réserve déjà constituée continue
-            // d'absorber (règle du cran de saturation, GDD §33.7).
-            Stats.RegenSuppressLeft -= dt;
+            Stats.RegenSuppressLeft = RegenReserve.TickSuppression(Stats.RegenSuppressLeft, dt);
             return;
         }
+
+        Stats.RegenSuppressLeft = 0f;
 
         if (Stats.HpRegenPerSecond <= 0f) return;
 
@@ -605,7 +613,7 @@ public sealed class Player : MonoBehaviour
         }
 
         // Tout coup encaissé suspend la régénération, même entièrement absorbé.
-        Stats.RegenSuppressLeft = RegenReserve.SuppressionSeconds;
+        Stats.RegenSuppressLeft = RegenReserve.Suppress();
 
         // Épines : la greffe rend une fraction du coup à ce qui l'a porté. Calculée sur le montant
         // ENTRANT et non sur le net — c'est le coup reçu qui est renvoyé, pas ce qu'il en reste après
@@ -740,9 +748,6 @@ public sealed class Player : MonoBehaviour
         if (fraction <= 0f) return;
         HealFlat(Stats.MaxHp * fraction);
     }
-
-    /// <summary>Le joueur est-il invulnérable en ce moment ?</summary>
-    public bool IsInvulnerable => _invulnTimer > 0f;
 
     /// <summary>Le joueur est-il mort ?</summary>
     public bool IsDead => _dead;

@@ -50,9 +50,6 @@ public sealed class IrradiationWarp : MonoBehaviour
     /// <summary>Intensité de déformation appliquée à l'instant — observable pour les vérifications.</summary>
     public float Level => _level;
 
-    /// <summary>Le sprite est-il déformé à l'instant ?</summary>
-    public bool Warped => _level > 0.02f;
-
     /// <summary>
     /// Signale que l'entité est <b>dans</b> le champ, à cette intensité. Appelé à chaque image par la
     /// source ; l'absence d'appel vaut sortie du champ, et la déformation se résorbe d'elle-même.

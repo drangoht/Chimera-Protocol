@@ -178,7 +178,7 @@ public sealed class RunHud : MonoBehaviour
         // composantes à partir du même total qu'il crédite. Deux calculs finiraient par diverger, et
         // la somme animée ne collerait plus au montant reçu.
         // ⚠ `cores` valait ZÉRO en dur : l'écran affichait « Noyaux d'Aether : 0 » quoi qu'il arrive,
-        // et la part des Noyaux dans les Échos gagnés — jusqu'à 22 selon EchoSettings — était
+        // et la part des Noyaux dans les Échos gagnés — jusqu'à 22 selon `EchoParams` — était
         // silencieusement perdue.
         _runEnd?.Show(victory, runSeconds: seconds, kills: kills,
                       cores: GameManager.Instance?.CoresCollected ?? 0,

@@ -15,7 +15,21 @@ using System.Text.Json;
 /// </summary>
 public static class MetaUpgradeTable
 {
-    /// <summary>Paramètres de la formule d'Échos, lus dans <c>echoesFormula</c>.</summary>
+    /// <summary>
+    /// Paramètres de la formule d'Échos, lus dans <c>echoesFormula</c>.
+    ///
+    /// <para><b>Un seul porteur.</b> <see cref="EchoFormula"/> attend treize arguments ; les passer un
+    /// par un depuis chaque appelant multiplierait les occasions d'en intervertir deux — une erreur
+    /// invisible, puisque le résultat reste un nombre plausible. Il en existait <b>deux</b>, cette
+    /// classe et un jumeau côté moteur qui redéclarait les huit mêmes champs avec les huit mêmes
+    /// valeurs ; c'était le jumeau que le jeu utilisait, si bien que le bloc <c>echoesFormula</c>
+    /// était lu ici, testé, et <b>jeté</b> — les valeurs coïncidant, rien ne dépassait.</para>
+    ///
+    /// <para>⚠ <b>Source unique du total.</b> Le bilan de fin de run affiche une somme animée et
+    /// crédite un total : les deux <b>doivent</b> venir du même calcul. Sous Godot ils venaient de
+    /// deux endroits différents et divergeaient dès qu'un multiplicateur de palier entrait en jeu —
+    /// le joueur voyait un chiffre et en recevait un autre.</para>
+    /// </summary>
     public sealed class EchoParams
     {
         public int TimeDiv   = 20;
@@ -26,6 +40,35 @@ public static class MetaUpgradeTable
         public int CapCores  = 22;
         public double OvertimeDampening = 0.15;
         public int OvertimeBonusCap = 100;
+
+        /// <summary>Réglages du jeu publié, quand aucun document n'a été chargé.</summary>
+        public static readonly EchoParams Default = new();
+
+        /// <summary>
+        /// Total gagné. <b>Point d'entrée unique</b> : tout affichage part de cette valeur et se
+        /// contente de la parcourir.
+        /// </summary>
+        public int Total(int runSeconds, int kills, int cores, double tierMult = 1.0)
+            => Detailed(runSeconds, kills, cores, tierMult).Total;
+
+        /// <summary>Même calcul, en exposant à part le bonus d'overtime pour l'affichage détaillé.</summary>
+        /// <remarks>
+        /// ⚠ <b>Le plafond de temps passé à la formule est <c>runSeconds</c> lui-même</b>, jamais les
+        /// 780 s de <c>capTimeSecs</c> (champ que ni ce porteur ni son défunt jumeau ne déclarent).
+        /// <c>min(t, capTimeSecs)</c> vaut donc toujours <c>t</c> et <c>max(0, t − capTimeSecs)</c>
+        /// toujours zéro : le temps n'est <b>pas plafonné</b> et le bonus de surcharge est
+        /// <b>toujours nul</b>, alors que <c>meta_upgrades.json</c> calibre l'inverse (211 Échos pour
+        /// une run complète, 311 pour une run extrême — plafond explicite contre le farm). Les tests
+        /// de <see cref="EchoFormula"/>, eux, passent bien 780 : la règle est juste, c'est l'appel qui
+        /// ne l'est pas. Corriger déplace l'économie du jeu — décision d'équilibrage, pas de refacto :
+        /// c'est pourquoi ce comportement est reconduit tel quel ici.
+        /// </remarks>
+        public (int Total, int OvertimeBonus) Detailed(int runSeconds, int kills, int cores,
+                                                       double tierMult = 1.0)
+            => EchoFormula.CalculateDetailed(runSeconds, kills, cores,
+                                             TimeDiv, KillDiv, CoreMult, BaseBonus,
+                                             runSeconds, CapKills, CapCores,
+                                             OvertimeDampening, OvertimeBonusCap, tierMult);
     }
 
     /// <summary>Contenu complet du fichier de méta-progression.</summary>

@@ -6,6 +6,23 @@
 
 - Pile technique : **Unity 6.5 (C#, URP 2D)** depuis la 2.0.0. **Version en ligne : 2.0.1**
   (2026-08-11).
+- **Passe de code mort & refacto SOLID (2026-08-11, non publiée).** `tools/audit_unused_members.py`
+  sortait **68 candidats** ; après vérification un par un, **40 étaient morts pour de bon**
+  (supprimés) et les autres étaient l'inverse — des règles **testées que le moteur n'appelait pas**,
+  parce qu'il en tenait une seconde copie. Recâblages : `StatCaps.EffectiveCooldown` (les deux bornes
+  d'équilibrage étaient recopiées dans `WeaponBase`), `MusicIntensity.Select` (machine à états de la
+  musique réécrite à la main dans `MusicDirector`), `EliteAffixTable.ShouldBeElite`/`Pick`,
+  `RegenReserve.Suppress`/`TickSuppression`/`IsSuppressed` (le HUD et le joueur testaient le **même**
+  état de deux façons), `EliteAffixTable.RegenDelaySeconds`, `EnemyBase.ResetStatusCounters`, et la
+  convention de clés de traduction, qui vivait en double dans `LevelUpScreen` alors que
+  `tools/audit_loc_keys.py` n'en contrôle qu'une. Duplications structurelles retirées :
+  `UiStyle.ScreenCanvas` + `UiStyle.VerticalList` (≈40 lignes recopiées dans 5 écrans),
+  `EnemyBase.Nearest` (4 copies mot pour mot), `EchoSettings` (jumeau de
+  `MetaUpgradeTable.EchoParams`, supprimé). **626 tests verts, build Unity sans erreur.** Deux
+  défauts trouvés au passage sont documentés mais **non corrigés**, car ce sont des décisions de
+  design : le **plafond de temps de la formule d'Échos** (`capTimeSecs` reçoit `runSeconds`, donc le
+  bonus d'overtime est toujours nul et le temps jamais plafonné) et les **31 descriptions d'ennemis**
+  traduites en trois langues que le bestiaire n'affiche pas.
 - **Localisation réparée — 2.0.1 (2026-08-11).** Tout le contenu nommé (12 armes, 9 fusions,
   8 greffes, 19 améliorations du Hub, 51 ennemis) s'affichait **en français dans les trois langues** :
   les écrans lisaient le champ `name` des JSON de `StreamingAssets/data`, écrits en français, pendant

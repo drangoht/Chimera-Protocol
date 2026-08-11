@@ -22,8 +22,18 @@ public sealed class MusicDirector : MonoBehaviour
     /// <summary>Intensité lissée, entre 0 et 1 — observable pour les bancs et le diagnostic.</summary>
     public float Intensity { get; private set; }
 
-    /// <summary>Piste dominante : « calm », « combat » ou « boss ».</summary>
-    public string CurrentTrack { get; private set; } = "calm";
+    /// <summary>Couche au premier plan. La décision vient de <see cref="MusicIntensity.Select"/>.</summary>
+    private MusicLayer _layer = MusicLayer.Calm;
+
+    /// <summary>Piste dominante : « calm », « combat » ou « boss » — pour le banc et le diagnostic.</summary>
+    public string CurrentTrack => NameOf(_layer);
+
+    private static string NameOf(MusicLayer layer) => layer switch
+    {
+        MusicLayer.Boss   => "boss",
+        MusicLayer.Combat => "combat",
+        _                 => "calm",
+    };
 
     /// <summary>Volume de la musique, 0 à 1.</summary>
     public float MusicVolume { get; set; } = 0.8f;
@@ -32,7 +42,6 @@ public sealed class MusicDirector : MonoBehaviour
     private AudioSource? _combat;
     private AudioSource? _boss;
 
-    private bool _inCombat;
     private float _holdLeft;
     private string _biome = "sanctuaire";
 
@@ -67,7 +76,7 @@ public sealed class MusicDirector : MonoBehaviour
         Restart(_boss);
 
         Intensity = 0f;
-        _inCombat = false;
+        _layer = MusicLayer.Calm;
         _holdLeft = 0f;
         ApplyVolumes(1f, 0f, 0f);
     }
@@ -85,45 +94,52 @@ public sealed class MusicDirector : MonoBehaviour
 
         Intensity = MusicIntensity.Smooth(Intensity, target, dt);
 
-        UpdateCombatState(dt);
+        UpdateLayer(dt);
         UpdateMix(dt);
     }
 
     /// <summary>
-    /// Bascule calme ↔ combat, avec <b>hystérésis et durée de maintien</b>. Sans elles, l'intensité
-    /// oscillant autour du seuil ferait clignoter la musique plusieurs fois par minute — le défaut le
-    /// plus fatigant qu'une musique adaptative puisse produire.
+    /// Choisit la couche au premier plan, avec <b>hystérésis et durée de maintien</b>. Sans elles,
+    /// l'intensité oscillant autour du seuil ferait clignoter la musique plusieurs fois par minute —
+    /// le défaut le plus fatigant qu'une musique adaptative puisse produire.
     /// </summary>
-    private void UpdateCombatState(float dt)
-    {
-        if (_holdLeft > 0f) { _holdLeft -= dt; return; }
-
-        if (!_inCombat && Intensity >= MusicIntensity.CombatEnter)
-        {
-            _inCombat = true;
-            _holdLeft = MusicIntensity.MinHoldSec;
-        }
-        else if (_inCombat && Intensity <= MusicIntensity.CombatExit)
-        {
-            _inCombat = false;
-            _holdLeft = MusicIntensity.MinHoldSec;
-        }
-    }
-
-    private void UpdateMix(float dt)
+    /// <remarks>
+    /// ⚠ <b>Les seuils ne sont pas relus ici.</b> <see cref="MusicIntensity.Select"/> porte
+    /// l'hystérésis (entrer au-dessus de <c>CombatEnter</c>, ne ressortir que sous <c>CombatExit</c>)
+    /// et la priorité du boss ; ce corps ne garde que ce qui demande une horloge, le <b>verrou de
+    /// durée</b>. Cette machine à états existait ici en double, réécrite à la main, pendant que la
+    /// version testée dormait — d'où <c>Select</c> jamais appelée par le jeu.
+    ///
+    /// <para>Le boss ne patiente pas : son apparition doit s'entendre sur-le-champ.</para>
+    /// </remarks>
+    private void UpdateLayer(float dt)
     {
         bool bossAlive = false;
         foreach (var enemy in EnemyBase.Active)
             if (enemy is RustedCore && !enemy.IsDead) { bossAlive = true; break; }
 
-        CurrentTrack = bossAlive ? "boss" : _inCombat ? "combat" : "calm";
+        if (_holdLeft > 0f) _holdLeft -= dt;
 
-        float fade = bossAlive ? MusicIntensity.BossCrossfadeSec : MusicIntensity.CrossfadeSec;
+        var wanted = MusicIntensity.Select(_layer, Intensity, bossAlive);
+        if (wanted == _layer) return;
+
+        bool urgent = wanted == MusicLayer.Boss || _layer == MusicLayer.Boss;
+        if (!urgent && _holdLeft > 0f) return;
+
+        _layer = wanted;
+        _holdLeft = MusicIntensity.MinHoldSec;
+    }
+
+    private void UpdateMix(float dt)
+    {
+        float fade = _layer == MusicLayer.Boss
+            ? MusicIntensity.BossCrossfadeSec
+            : MusicIntensity.CrossfadeSec;
         float step = fade > 0f ? dt / fade : 1f;
 
-        Approach(_calm,   CurrentTrack == "calm"   ? 1f : 0f, step);
-        Approach(_combat, CurrentTrack == "combat" ? 1f : 0f, step);
-        Approach(_boss,   CurrentTrack == "boss"   ? 1f : 0f, step);
+        Approach(_calm,   _layer == MusicLayer.Calm   ? 1f : 0f, step);
+        Approach(_combat, _layer == MusicLayer.Combat ? 1f : 0f, step);
+        Approach(_boss,   _layer == MusicLayer.Boss   ? 1f : 0f, step);
     }
 
     private void Approach(AudioSource? source, float target, float step)
@@ -185,7 +201,7 @@ public sealed class MusicDirector : MonoBehaviour
         if (_combat != null) _combat.Stop();
         if (_boss != null) _boss.Stop();
 
-        CurrentTrack = "calm";
+        _layer = MusicLayer.Calm;
         ApplyVolumes(1f, 0f, 0f);
     }
 }

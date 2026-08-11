@@ -50,9 +50,6 @@ public sealed class InventorySystem : MonoBehaviour
     /// <summary>Passifs portés et leur niveau — lu tel quel par <see cref="LevelUpPool"/>.</summary>
     public IReadOnlyDictionary<string, int> PassiveLevels => _passiveLevels;
 
-    /// <summary>Prises de chaque carte de surcharge — sans plafond, par construction.</summary>
-    public IReadOnlyDictionary<string, int> OverloadTakes => _overloadTakes;
-
     /// <summary>
     /// Rareté d'une carte : <b>source unique</b> du poids de tirage et du cadre affiché.
     /// </summary>

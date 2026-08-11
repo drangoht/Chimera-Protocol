@@ -201,40 +201,15 @@ public sealed class PauseScreen : MonoBehaviour
         titleRect.offsetMax = new Vector2(-24f, -24f);
 
         // ─── Corps : SEUL élément qui défile ──────────────────────────────────
-        var scrollGo = UiStyle.NewUiObject("BodyScroll", panel.transform);
-        var scrollRect = scrollGo.GetComponent<RectTransform>();
-        scrollRect.anchorMin = new Vector2(0f, 0f);
-        scrollRect.anchorMax = new Vector2(1f, 1f);
-        scrollRect.offsetMin = new Vector2(24f, 120f);   // laisse la place aux boutons, en bas
-        scrollRect.offsetMax = new Vector2(-24f, -100f);
+        // ⚠ `controlChildSize: false` : le corps est un bloc de TEXTE, pas une liste de fiches. La
+        // colonne ne doit donc pas lui imposer sa largeur — le résumé de run garde la sienne.
+        var list = UiStyle.VerticalList(panel.transform,
+                                        offsetMin: new Vector2(24f, 120f),   // place aux boutons, en bas
+                                        offsetMax: new Vector2(-24f, -100f),
+                                        spacing: 0f, name: "BodyScroll",
+                                        controlChildSize: false);
 
-        var scroll = scrollGo.AddComponent<ScrollRect>();
-        UiStyle.ConfigureScroll(scroll);
-        scrollGo.AddComponent<RectMask2D>();
-
-        var content = UiStyle.NewUiObject("Content", scrollGo.transform);
-        var contentRect = content.GetComponent<RectTransform>();
-        contentRect.anchorMin = new Vector2(0f, 1f);
-        contentRect.anchorMax = new Vector2(1f, 1f);
-        contentRect.pivot = new Vector2(0.5f, 1f);
-
-        // ⚠ Largeur remise à ZÉRO. Un RectTransform naît en 100 × 100 : étiré entre deux ancres
-        // horizontales, il vaut alors « largeur du parent + 100 » et déborde de 50 px de CHAQUE
-        // côté de sa fenêtre de défilement. Le masque rogne le reste, et ce sont les premières
-        // lettres de chaque ligne qui disparaissent — un défaut qu'on lit comme une faute de texte
-        // et non comme un défaut de mise en page.
-        contentRect.sizeDelta = Vector2.zero;
-        contentRect.offsetMin = Vector2.zero;
-        contentRect.offsetMax = Vector2.zero;
-
-        var fitter = content.AddComponent<ContentSizeFitter>();
-        fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-        content.AddComponent<VerticalLayoutGroup>().childForceExpandHeight = false;
-
-        scroll.content = contentRect;
-        scroll.viewport = scrollRect;
-
-        _body = UiStyle.Label(content.transform, "", 20, UiPalette.OffWhite);
+        _body = UiStyle.Label(list.Content, "", 20, UiPalette.OffWhite);
 
         // ─── Boutons : HORS zone de défilement, donc toujours atteignables ────
         var buttonRow = UiStyle.NewUiObject("Buttons", panel.transform);

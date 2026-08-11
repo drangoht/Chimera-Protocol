@@ -27,14 +27,8 @@ public static class UiStyle
     /// <summary>Épaisseur du liseré du repli plat, en pixels de référence.</summary>
     public const float BorderWidth = 2f;
 
-    /// <summary>Marge intérieure standard d'un panneau.</summary>
-    public const float PanelPadding = 24f;
-
     /// <summary>Marge entre le texte d'un bouton et son liseré.</summary>
     public const float ButtonTextPadding = 14f;
-
-    /// <summary>Sprite blanc partagé — voir <see cref="UiPrimitives.White"/>.</summary>
-    public static Sprite WhiteSprite => UiPrimitives.White;
 
     /// <summary>
     /// Cadre par nom de fichier. Le chargement et son cache vivent dans <see cref="UiFrames"/>
@@ -494,6 +488,122 @@ public static class UiStyle
         var catcher = viewport.AddComponent<Image>();
         catcher.color = new Color(0f, 0f, 0f, 0f);
         catcher.raycastTarget = true;
+    }
+
+    /// <summary>Ce qu'un écran plein cadre rend : sa racine (à activer/désactiver) et son panneau.</summary>
+    public readonly struct Screen
+    {
+        /// <summary>Racine du canvas — c'est elle que l'écran montre et cache.</summary>
+        public readonly GameObject Root;
+        /// <summary>Panneau encadré, parent de tout le contenu.</summary>
+        public readonly Transform Panel;
+
+        public Screen(GameObject root, Transform panel) { Root = root; Panel = panel; }
+    }
+
+    /// <summary>
+    /// Canvas plein écran d'un menu : fond assombri et panneau encadré, prêt à recevoir un en-tête.
+    /// </summary>
+    /// <param name="sortingOrder">
+    /// Ordre d'affichage. C'est lui qui décide quel écran passe devant quel autre : les valeurs
+    /// utilisées se lisent d'un coup d'œil dans les appels (Hub 90, Niveaux 92, Défis 94, Codex 95).
+    /// </param>
+    /// <remarks>
+    /// Les marges par défaut sont celles du jeu publié. Ces quinze lignes étaient recopiées dans
+    /// quatre écrans : un menu ajouté demain les recopiait une cinquième fois, et une retouche de
+    /// gouttière obligeait à passer partout.
+    /// </remarks>
+    public static Screen ScreenCanvas(Transform owner, string name, int sortingOrder,
+                                      Vector2? panelMargin = null, Vector2? panelMarginTop = null)
+    {
+        var canvasGo = new GameObject(name, typeof(Canvas), typeof(CanvasScaler),
+                                      typeof(GraphicRaycaster));
+        canvasGo.transform.SetParent(owner, false);
+        UiCanvas.Configure(canvasGo, sortingOrder);
+
+        ScreenBackdrop(canvasGo.transform);
+
+        var panel = NewUiObject("Panel", canvasGo.transform);
+        var panelRect = panel.GetComponent<RectTransform>();
+        panelRect.anchorMin = Vector2.zero;
+        panelRect.anchorMax = Vector2.one;
+        panelRect.offsetMin = panelMargin    ?? new Vector2(60f, 40f);
+        panelRect.offsetMax = panelMarginTop ?? new Vector2(-60f, -20f);
+
+        return new Screen(canvasGo, panel.transform);
+    }
+
+    /// <summary>
+    /// Ce qu'une liste défilante rend à son écran : sa fenêtre (pour la redimensionner ensuite) et
+    /// son contenu (où empiler les lignes).
+    /// </summary>
+    public readonly struct ScrollList
+    {
+        public readonly ScrollRect Scroll;
+        /// <summary>Fenêtre — c'est elle qu'on bouge pour faire de la place à un en-tête.</summary>
+        public readonly RectTransform Viewport;
+        public readonly RectTransform ContentRect;
+        /// <summary>Parent des lignes.</summary>
+        public readonly Transform Content;
+
+        public ScrollList(ScrollRect scroll, RectTransform viewport, RectTransform content)
+        {
+            Scroll = scroll; Viewport = viewport; ContentRect = content; Content = content.transform;
+        }
+    }
+
+    /// <summary>
+    /// Liste verticale défilante occupant <paramref name="parent"/> moins les marges données —
+    /// fenêtre masquée, contenu empilé de haut en bas, hauteur ajustée au contenu.
+    /// </summary>
+    /// <param name="controlChildSize">
+    /// Vrai (défaut) : la colonne impose sa largeur et la hauteur de fiche à ses lignes — ce que
+    /// veulent les listes de <b>fiches</b> (Hub, Codex, Défis, Niveaux). Faux : les enfants gardent
+    /// leur taille propre, ce dont a besoin un bloc de texte libre (écran de pause).
+    /// </param>
+    /// <remarks>
+    /// ⚠ <b>La largeur du contenu est remise à ZÉRO</b>, et c'est le piège que cette fabrique existe
+    /// pour ne plus jamais reposer. Un <c>RectTransform</c> naît en 100 × 100 : étiré entre deux
+    /// ancres horizontales, il vaut « largeur du parent + 100 » et déborde de 50 px de <b>chaque</b>
+    /// côté de sa fenêtre. Le masque rogne le reste, et ce sont les premières lettres de chaque ligne
+    /// qui disparaissent — un défaut qu'on lit comme une faute de frappe, pas comme une mise en page.
+    /// Ces vingt-cinq lignes étaient recopiées dans cinq écrans, commentaire compris.
+    /// </remarks>
+    public static ScrollList VerticalList(Transform parent, Vector2 offsetMin, Vector2 offsetMax,
+                                          float spacing, string name = "Scroll",
+                                          bool controlChildSize = true)
+    {
+        var scrollGo = NewUiObject(name, parent);
+        var viewport = scrollGo.GetComponent<RectTransform>();
+        viewport.anchorMin = Vector2.zero;
+        viewport.anchorMax = Vector2.one;
+        viewport.offsetMin = offsetMin;
+        viewport.offsetMax = offsetMax;
+
+        var scroll = scrollGo.AddComponent<ScrollRect>();
+        ConfigureScroll(scroll);
+        scrollGo.AddComponent<RectMask2D>();
+
+        var content = NewUiObject("Content", scrollGo.transform);
+        var contentRect = content.GetComponent<RectTransform>();
+        contentRect.anchorMin = new Vector2(0f, 1f);
+        contentRect.anchorMax = new Vector2(1f, 1f);
+        contentRect.pivot = new Vector2(0.5f, 1f);
+        contentRect.sizeDelta = Vector2.zero;
+
+        var layout = content.AddComponent<VerticalLayoutGroup>();
+        layout.spacing = spacing;
+        layout.childForceExpandHeight = false;
+        layout.childControlHeight = controlChildSize;
+        layout.childControlWidth = controlChildSize;
+
+        var fitter = content.AddComponent<ContentSizeFitter>();
+        fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+        scroll.content = contentRect;
+        scroll.viewport = viewport;
+
+        return new ScrollList(scroll, viewport, contentRect);
     }
 
     /// <summary>Séparateur horizontal teinté.</summary>

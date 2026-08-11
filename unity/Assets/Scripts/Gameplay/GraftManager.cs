@@ -417,7 +417,7 @@ public sealed class GraftManager : MonoBehaviour
 
         for (int i = 0; i < _turretCount; i++)
         {
-            var target = NearestEnemy(origin, _turretRange);
+            var target = EnemyBase.Nearest(origin, _turretRange);
             if (target == null) return;
 
             var go = Instantiate(prefab, origin, Quaternion.identity);
@@ -431,20 +431,6 @@ public sealed class GraftManager : MonoBehaviour
             Vector2 dir = ((Vector2)target.transform.position - origin).normalized;
             bullet.Launch(dir * TurretBulletSpeed, _turretDamage, _turretRange);
         }
-    }
-
-    private static EnemyBase? NearestEnemy(Vector2 from, float range)
-    {
-        EnemyBase? best = null;
-        float bestSqr = range * range;
-
-        foreach (var enemy in EnemyBase.Active)
-        {
-            if (enemy == null || enemy.IsDead) continue;
-            float sqr = ((Vector2)enemy.transform.position - from).sqrMagnitude;
-            if (sqr < bestSqr) { bestSqr = sqr; best = enemy; }
-        }
-        return best;
     }
 
     /// <summary>

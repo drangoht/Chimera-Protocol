@@ -146,17 +146,9 @@ public static class DebugHooks
         return _saturation;
     }
 
-    /// <summary><c>--biome=&lt;id&gt;</c> : biome joué, ou <c>null</c>.</summary>
-    public static string? ForcedBiome => _biomeRead ? _biome : ReadBiome();
-    private static bool _biomeRead;
-    private static string? _biome;
-
-    private static string? ReadBiome()
-    {
-        _biome = ValueFlag("--biome=");
-        _biomeRead = true;
-        return _biome;
-    }
+    // ⚠ `--biome=<id>` n'est PAS lu ici : il est analysé par `RunConfig.FromCommandLine`, qui le
+    // porte jusqu'au décor et au spawn. Une seconde lecture a existé ici, sans appelant — deux
+    // analyseurs pour un même drapeau, dont un seul décidait quoi que ce soit.
 
     /// <summary><c>--saturate-arsenal</c> : armes et passifs au niveau maximum dès le départ.</summary>
     public static bool SaturateArsenal => _saturateArsenal ??= HasFlag("--saturate-arsenal");
@@ -235,7 +227,7 @@ public static class DebugHooks
     public static void Reset()
     {
         _powerCurve = _autoPlay = _invulnerable = _saturateArsenal = _forceElites = _trailerMode = null;
-        _seedRead = _timeScaleRead = _startAtRead = _runLimitRead = _saturationRead = _biomeRead = false;
+        _seedRead = _timeScaleRead = _startAtRead = _runLimitRead = _saturationRead = false;
         _languageRead = false;
     }
 }

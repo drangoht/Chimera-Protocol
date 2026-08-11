@@ -344,32 +344,20 @@ public sealed class CodexScreen : MonoBehaviour
 
     private void BuildUi()
     {
-        var canvasGo = new GameObject("CodexCanvas",
-            typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
-        canvasGo.transform.SetParent(transform, false);
-
-        UiCanvas.Configure(canvasGo, 95);
-
-        _root = canvasGo;
-        UiStyle.ScreenBackdrop(canvasGo.transform);
-
-        var panel = UiStyle.NewUiObject("Panel", canvasGo.transform);
-        var panelRect = panel.GetComponent<RectTransform>();
-        panelRect.anchorMin = Vector2.zero;
-        panelRect.anchorMax = Vector2.one;
-        panelRect.offsetMin = new Vector2(60f, 40f);
-        panelRect.offsetMax = new Vector2(-60f, -20f);
+        var screen = UiStyle.ScreenCanvas(transform, "CodexCanvas", sortingOrder: 95);
+        _root = screen.Root;
+        var panel = screen.Panel;
 
         // ⚠ La valeur RENVOYÉE par Header donne le bas du liseré. L'ignorer — ce que faisait le
         // portage — pose les onglets à une ordonnée devinée : ils chevauchaient le trait, qui
         // passait derrière eux. Tout ce qui suit se cale désormais sur cette mesure.
-        float headerBottom = UiStyle.Header(panel.transform, Loc.T("MENU_CODEX"), FrameAccent.Violet);
+        float headerBottom = UiStyle.Header(panel, Loc.T("MENU_CODEX"), FrameAccent.Violet);
 
-        BuildTabs(panel.transform, headerBottom);
+        BuildTabs(panel, headerBottom);
 
         // Le compteur « découverts / total » est aligné sur la rangée d'onglets, à sa droite : les
         // deux disent l'état de l'onglet courant, ils appartiennent à la même ligne de lecture.
-        _header = UiStyle.Label(panel.transform, "", 22, UiPalette.Cyan, TextAnchor.MiddleRight);
+        _header = UiStyle.Label(panel, "", 22, UiPalette.Cyan, TextAnchor.MiddleRight);
         var headerRect = _header.GetComponent<RectTransform>();
         headerRect.anchorMin = new Vector2(1f, 1f);
         headerRect.anchorMax = new Vector2(1f, 1f);
@@ -380,48 +368,19 @@ public sealed class CodexScreen : MonoBehaviour
         // Sous les onglets, jamais dessus : la liste commence là où la rangée finit.
         _listTop = headerBottom + TabHeight + 12f;
 
-        var scrollGo = UiStyle.NewUiObject("Scroll", panel.transform);
-        var scrollRect = scrollGo.GetComponent<RectTransform>();
-        scrollRect.anchorMin = Vector2.zero;
-        scrollRect.anchorMax = Vector2.one;
-        scrollRect.offsetMin = new Vector2(28f, 88f);
-        scrollRect.offsetMax = new Vector2(-28f, -_listTop);
+        var list = UiStyle.VerticalList(panel,
+                                        offsetMin: new Vector2(28f, 88f),
+                                        offsetMax: new Vector2(-28f, -_listTop),
+                                        spacing: 6f);
+        _list = list.Content;
 
-        var scroll = scrollGo.AddComponent<ScrollRect>();
-        UiStyle.ConfigureScroll(scroll);
-        scrollGo.AddComponent<RectMask2D>();
-
-        var content = UiStyle.NewUiObject("Content", scrollGo.transform);
-        var contentRect = content.GetComponent<RectTransform>();
-        contentRect.anchorMin = new Vector2(0f, 1f);
-        contentRect.anchorMax = new Vector2(1f, 1f);
-        contentRect.pivot = new Vector2(0.5f, 1f);
-
-        // ⚠ Largeur remise à ZÉRO. Un RectTransform naît en 100 × 100 : étiré entre deux ancres
-        // horizontales, il vaut alors « largeur du parent + 100 » et déborde de 50 px de CHAQUE
-        // côté de sa fenêtre de défilement. Le masque rogne le reste, et ce sont les premières
-        // lettres de chaque ligne qui disparaissent — un défaut qu'on lit comme une faute de texte
-        // et non comme un défaut de mise en page.
-        contentRect.sizeDelta = Vector2.zero;
-
-        var layout = content.AddComponent<VerticalLayoutGroup>();
-        layout.spacing = 6f;
-        layout.childForceExpandHeight = false;
-        layout.childControlHeight = true;
-        layout.childControlWidth = true;
-
-        var fitter = content.AddComponent<ContentSizeFitter>();
-        fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-
-        scroll.content = contentRect;
-        scroll.viewport = scrollRect;
-        _list = content.transform;
-        _scrollRect = scrollRect;
+        // La fenêtre est gardée : le bandeau d'introduction la repousse vers le bas quand il parle.
+        _scrollRect = list.Viewport;
 
         // Bandeau d'introduction, entre les onglets et la liste. Il n'occupe la place que lorsqu'il
         // a quelque chose à dire — d'où l'objet désactivé plutôt qu'une chaîne vide, qui laisserait
         // un trou de 40 px en haut des trois autres onglets.
-        _intro = UiStyle.Label(panel.transform, "", 18, UiPalette.Dim, TextAnchor.UpperLeft);
+        _intro = UiStyle.Label(panel, "", 18, UiPalette.Dim, TextAnchor.UpperLeft);
         var introRect = _intro.GetComponent<RectTransform>();
         introRect.anchorMin = new Vector2(0f, 1f);
         introRect.anchorMax = new Vector2(1f, 1f);
@@ -430,7 +389,7 @@ public sealed class CodexScreen : MonoBehaviour
         introRect.offsetMax = new Vector2(-28f, -150f);
         _intro.gameObject.SetActive(false);
 
-        _close = UiStyle.TextButton(panel.transform, Loc.T("COMMON_BACK"), FrameAccent.Steel);
+        _close = UiStyle.TextButton(panel, Loc.T("COMMON_BACK"), FrameAccent.Steel);
         var closeRect = _close.GetComponent<RectTransform>();
         closeRect.anchorMin = closeRect.anchorMax = new Vector2(0.5f, 0f);
         closeRect.pivot = new Vector2(0.5f, 0f);

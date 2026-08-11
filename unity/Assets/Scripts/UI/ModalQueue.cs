@@ -78,12 +78,6 @@ public static class ModalQueue
         TryOpenNext();
     }
 
-    /// <summary>
-    /// Ouvre immédiatement ce qui attend, sans passer par la fin de frame. Réservé aux contextes
-    /// qui ne disposent pas de la boucle de jeu (bancs, tests).
-    /// </summary>
-    public static void FlushImmediate() => FlushOpen();
-
     /// <summary>Ferme la modale courante et enchaîne sur la suivante s'il y en a une.</summary>
     public static void Close(ModalKind kind)
     {

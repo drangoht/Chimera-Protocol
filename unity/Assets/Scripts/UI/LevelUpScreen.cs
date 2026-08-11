@@ -456,8 +456,16 @@ public sealed class LevelUpScreen : MonoBehaviour
 
         // Trois familles, trois préfixes de clé. La recherche s'arrête à la première qui répond :
         // une clé absente renvoie son propre nom, ce qui se repère immédiatement à l'écran.
-        string name = FirstTranslated($"WPN_{slug}_NAME", $"PAS_{slug}_NAME", $"CARD_{slug}", card.Id);
-        string desc = FirstTranslated($"WPN_{slug}_DESC", $"PAS_{slug}_DESC", $"CARD_{slug}_DESC", "");
+        //
+        // ⚠ Les clés de CONTENU (arme, passif) se fabriquent par `ContentText.Key` et non à la main :
+        // c'est la convention que `tools/audit_loc_keys.py` contrôle. Seule `CARD_*` appartient à cet
+        // écran — elle nomme les cartes qui ne désignent aucun contenu (soin, bonus d'XP).
+        string name = FirstTranslated(ContentText.Key("WPN", card.Id, "NAME"),
+                                      ContentText.Key("PAS", card.Id, "NAME"),
+                                      $"CARD_{slug}", card.Id);
+        string desc = FirstTranslated(ContentText.Key("WPN", card.Id, "DESC"),
+                                      ContentText.Key("PAS", card.Id, "DESC"),
+                                      $"CARD_{slug}_DESC", "");
 
         // Le niveau visé n'est pas un détail : « Lance Cryo » au niveau 1 et au niveau 12 sont deux
         // décisions très différentes.

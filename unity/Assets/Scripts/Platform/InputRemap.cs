@@ -73,9 +73,6 @@ public static class InputRemap
         return keys.Count > 0 ? keys[0].ToString() : "—";
     }
 
-    /// <summary>Touches actuellement associées à une action.</summary>
-    public static IReadOnlyList<KeyCode> Bindings(GameAction action) => _bindings[action];
-
     /// <summary>Remplace les touches d'une action. Une liste vide est refusée.</summary>
     public static void Rebind(GameAction action, params KeyCode[] keys)
     {

@@ -39,7 +39,4 @@ public static class DataFiles
         _cache[fileName] = text;
         return text;
     }
-
-    /// <summary>Vide le cache — utile après une édition à chaud pendant l'équilibrage.</summary>
-    public static void ClearCache() => _cache.Clear();
 }

@@ -119,6 +119,7 @@ ALLOWED: dict[str, str] = {
     "{biomeName} — saturation {saturation}": "presence Discord — meme raison",
     "{stats.Speed:F0} px/s": "unite de mesure, identique dans les trois langues",
     "VfxAdditive (runtime)": "nom d'un materiau cree a l'execution, jamais affiche",
+    "Scroll": "nom par defaut du GameObject d'une liste defilante (UiStyle.VerticalList), jamais affiche",
 }
 
 # Noms d'objets de scene. Ils ont exactement la forme d'un libelle — un mot capitalise, sans espace —

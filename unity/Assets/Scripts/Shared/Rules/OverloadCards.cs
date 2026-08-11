@@ -33,8 +33,9 @@ using System.Collections.Generic;
 /// </summary>
 public static class OverloadCards
 {
-    /// <summary>Type de carte porté par <c>LevelUpCardData.CardType</c> pour toute la famille.</summary>
-    public const string CardType = "overload";
+    // La famille est portée par `LevelUpCardKind.Overload` — une valeur d'énumération, vérifiée à
+    // la compilation. La constante chaîne « overload » qui vivait ici la doublait sans que rien ne
+    // la lise : deux façons de désigner la même famille, dont une seule décidait quoi que ce soit.
 
     /// <summary>Une carte de surcharge : identité + delta appliqué à chaque prise.</summary>
     public sealed class Card

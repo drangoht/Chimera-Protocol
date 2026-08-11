@@ -133,6 +133,36 @@ public class EnemyBase : MonoBehaviour
     /// <summary>Remet les cumuls à zéro — début de run, ou banc.</summary>
     public static void ResetStatusCounters() { SlowsApplied = 0; BurnsApplied = 0; }
 
+    /// <summary>
+    /// Ennemi vivant le plus proche de <paramref name="from"/>, dans <paramref name="range"/>
+    /// (<see cref="float.PositiveInfinity"/> pour « sans limite »). <c>null</c> s'il n'y en a aucun —
+    /// c'est ce qui empêche une arme de consommer sa recharge dans le vide.
+    /// </summary>
+    /// <remarks>
+    /// Le balayage appartient au <b>registre</b>, pas à ses clients : il en existait quatre copies
+    /// mot pour mot (arme, missile, tourelle greffée, gestionnaire de greffes). Une seule ici, et
+    /// c'est aussi le seul endroit à retoucher le jour où le registre cessera d'être une liste
+    /// linéaire — ce que la cible de 200-300 entités finira par demander.
+    ///
+    /// <para>Le filtrage par prédicat est volontairement absent : il obligerait chaque appelant à
+    /// allouer une fermeture à chaque tir. Les rares tirs à exclusion (la chaîne de la Bobine Tesla)
+    /// gardent donc leur propre parcours.</para>
+    /// </remarks>
+    public static EnemyBase? Nearest(Vector2 from, float range)
+    {
+        EnemyBase? best = null;
+        float bestSqr = float.IsPositiveInfinity(range) ? float.MaxValue : range * range;
+
+        foreach (var e in Active)
+        {
+            if (e == null || e.IsDead) continue;
+
+            float sqr = ((Vector2)e.transform.position - from).sqrMagnitude;
+            if (sqr < bestSqr) { bestSqr = sqr; best = e; }
+        }
+        return best;
+    }
+
     public static (int Slowed, int Burning) StatusCounts()
     {
         int slowed = 0, burning = 0;
@@ -411,8 +441,11 @@ public class EnemyBase : MonoBehaviour
 
         // Régénérant : ne se soigne que s'il n'a pas été frappé récemment. C'est ce délai qui
         // impose un pic de dégâts plutôt qu'une attrition — sans lui, l'affixe serait un simple
-        // sac de PV.
-        if (_mods.RegenFractionPerSecond > 0f && _timeSinceHit > 1.5f && _currentHp < MaxHp)
+        // sac de PV. Le délai est une valeur d'ÉQUILIBRAGE : il vit dans la table des affixes, pas
+        // recopié ici (il l'était, à l'identique — jusqu'au jour où l'un des deux aurait bougé).
+        if (_mods.RegenFractionPerSecond > 0f
+            && _timeSinceHit > EliteAffixTable.RegenDelaySeconds
+            && _currentHp < MaxHp)
         {
             _regenAccumulator += MaxHp * _mods.RegenFractionPerSecond * dt;
             if (_regenAccumulator >= 1f)

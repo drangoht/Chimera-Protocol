@@ -31,9 +31,6 @@ public sealed class Singularity : WeaponBase
     /// <summary>Rotation des bras du vortex, en radians/s — la valeur du jeu publié.</summary>
     public const float SpinSpeed = 3.2f;
 
-    /// <summary>Zones actuellement actives — observable pour les tests et le HUD.</summary>
-    public int ActiveWells => _wells.Count;
-
     private sealed class Well
     {
         public Vector2 Center;

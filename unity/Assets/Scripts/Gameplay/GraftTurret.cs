@@ -145,7 +145,10 @@ public sealed class GraftTurret : MonoBehaviour
     {
         if (_player == null || !_followsCdr) return _cooldown;
 
-        float reduction = Mathf.Min(_player.Stats.CooldownReduction, StatCaps.MaxCooldownReduction);
+        // ⚠ Le plancher est celui de la tourelle, pas celui des armes : une greffe ne suit pas la
+        // cadence minimale de l'arsenal. Seul le PLAFOND de réduction est partagé — et il l'est
+        // par la règle, pas par une copie de sa valeur.
+        float reduction = StatCaps.CapCooldownReduction(_player.Stats.CooldownReduction);
         return Mathf.Max(_cooldownFloor, _cooldown * (1f - reduction));
     }
 
@@ -168,7 +171,7 @@ public sealed class GraftTurret : MonoBehaviour
             _link.SetPosition(1, transform.position);
         }
 
-        var target = NearestEnemy(transform.position, _range);
+        var target = EnemyBase.Nearest(transform.position, _range);
 
         // Le CANON pointe sa cible même quand il ne peut pas tirer : c'est ce qui rend la couverture
         // de la tourelle lisible avant le tir, donc anticipable. Le châssis, lui, ne bouge jamais —
@@ -269,19 +272,4 @@ public sealed class GraftTurret : MonoBehaviour
     private readonly List<EnemyBase> _expired = new();
     private readonly List<EnemyBase> _expiredKeys = new();
 
-    private static EnemyBase? NearestEnemy(Vector2 from, float range)
-    {
-        EnemyBase? best = null;
-        float bestSqr = range * range;
-
-        foreach (var enemy in EnemyBase.Active)
-        {
-            if (enemy == null || enemy.IsDead) continue;
-
-            float sqr = ((Vector2)enemy.transform.position - from).sqrMagnitude;
-            if (sqr < bestSqr) { bestSqr = sqr; best = enemy; }
-        }
-
-        return best;
-    }
 }

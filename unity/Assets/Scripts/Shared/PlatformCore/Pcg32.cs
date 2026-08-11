@@ -110,7 +110,4 @@ public sealed class Pcg32
     /// conclure quoi que ce soit d'une comparaison inter-moteurs.</para>
     /// </remarks>
     public double RangeDouble(double from, double to) => from + NextFloat() * (to - from);
-
-    /// <summary>Réel dans [0, 1[ — utilitaire sans équivalent Godot direct, pour du code neuf.</summary>
-    public double NextDoubleExclusive() => NextUInt() / 4294967296.0;
 }

@@ -42,8 +42,4 @@ public static class CardRarityTable
 
         return table;
     }
-
-    /// <summary>Rareté d'une carte, ou <see cref="Fallback"/> si la table ne la connaît pas.</summary>
-    public static string Of(IReadOnlyDictionary<string, string> table, string id)
-        => table.TryGetValue(id, out string? rarity) ? rarity : Fallback;
 }

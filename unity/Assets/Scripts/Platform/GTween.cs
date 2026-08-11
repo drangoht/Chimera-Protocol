@@ -89,41 +89,6 @@ public sealed class GTween
         => AddInterpolation(v => setter(Mathf.LerpUnclamped(from, to, (float)v)),
                             duration, trans, ease, delay, parallel: false);
 
-    /// <summary>Interpole un réel, en parallèle de l'entrée précédente.</summary>
-    public GTween JoinFloat(Action<float> setter, float from, float to, float duration,
-                            TransType trans = TransType.Linear, EaseType ease = EaseType.In,
-                            float delay = 0f)
-        => AddInterpolation(v => setter(Mathf.LerpUnclamped(from, to, (float)v)),
-                            duration, trans, ease, delay, parallel: true);
-
-    /// <summary>Interpole une couleur, dans une nouvelle étape.</summary>
-    public GTween TweenColor(Action<Color> setter, Color from, Color to, float duration,
-                             TransType trans = TransType.Linear, EaseType ease = EaseType.In,
-                             float delay = 0f)
-        => AddInterpolation(v => setter(Color.LerpUnclamped(from, to, (float)v)),
-                            duration, trans, ease, delay, parallel: false);
-
-    /// <summary>Interpole une couleur, en parallèle.</summary>
-    public GTween JoinColor(Action<Color> setter, Color from, Color to, float duration,
-                            TransType trans = TransType.Linear, EaseType ease = EaseType.In,
-                            float delay = 0f)
-        => AddInterpolation(v => setter(Color.LerpUnclamped(from, to, (float)v)),
-                            duration, trans, ease, delay, parallel: true);
-
-    /// <summary>Interpole un vecteur, dans une nouvelle étape.</summary>
-    public GTween TweenVector2(Action<Vector2> setter, Vector2 from, Vector2 to, float duration,
-                               TransType trans = TransType.Linear, EaseType ease = EaseType.In,
-                               float delay = 0f)
-        => AddInterpolation(v => setter(Vector2.LerpUnclamped(from, to, (float)v)),
-                            duration, trans, ease, delay, parallel: false);
-
-    /// <summary>Interpole un vecteur, en parallèle.</summary>
-    public GTween JoinVector2(Action<Vector2> setter, Vector2 from, Vector2 to, float duration,
-                              TransType trans = TransType.Linear, EaseType ease = EaseType.In,
-                              float delay = 0f)
-        => AddInterpolation(v => setter(Vector2.LerpUnclamped(from, to, (float)v)),
-                            duration, trans, ease, delay, parallel: true);
-
     /// <summary>Ajoute une attente — équivalent de <c>tween_interval</c>.</summary>
     public GTween AppendInterval(float seconds)
     {

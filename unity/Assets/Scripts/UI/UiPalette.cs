@@ -39,16 +39,18 @@ public static class UiPalette
 
     public static readonly Color Steel          = Rgb(0x24, 0x24, 0x40);
     public static readonly Color SteelHighlight = Rgb(0x3A, 0x3A, 0x5C);
-    public static readonly Color SteelShadow    = Rgb(0x12, 0x12, 0x23);
-    public static readonly Color SteelContact   = Rgb(0x0B, 0x0B, 0x16);
-    public static readonly Color Amber          = Rgb(0x99, 0x7A, 0x1E);
+
+    // ⚠ Les tons sombres du métal (#121223 ombre, #0B0B16 contact) et l'ambre danger (#997A1E) ne
+    // vivent plus ici : ils sont *dérivés* par `shade()` et cuits dans les textures de cadre par
+    // `tools/generate_ui_frames.py`, seul endroit qui s'en serve (cf. docs/ART_BRIEF_UI_FRAMES.md
+    // §3.0). Les redéclarer côté C# donnait deux définitions d'une même teinte, dont une que
+    // personne ne lisait — et donc deux endroits où retoucher le métal.
 
     // ─── États ────────────────────────────────────────────────────────────────
 
     public static readonly Color Dim     = new(0.55f, 0.57f, 0.66f, 1f);
     public static readonly Color Danger  = new(1f,    0.55f, 0.20f, 1f);
     public static readonly Color Success = new(0.30f, 1f,    0.50f, 1f);
-    public static readonly Color Magenta = new(0.85f, 0.30f, 0.80f, 1f);
     public static readonly Color Rust    = new(0.85f, 0.45f, 0.30f, 1f);
 
     /// <summary>Couleur d'accent associée à une rareté de carte.</summary>

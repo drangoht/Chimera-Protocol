@@ -82,6 +82,22 @@ public sealed class EnemySpawner : MonoBehaviour
     private float _bossTimer = 4f;
 
     private Dictionary<string, EnemyTable.EnemyDef> _bestiary = new();
+
+    /// <summary>
+    /// Tirage du spawn — <b>générateur privé, amorcé à zéro, et que personne ne réamorce</b>.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ <b>Défaut connu, laissé en l'état sciemment (2026-08-11).</b> <see cref="SeedSpawns"/> n'a
+    /// aucun appelant : ni <c>--seed</c> ni <c>Gd.Randomize()</c> n'atteignent ce flux. Conséquences —
+    /// la faune et les élites sortent dans le <b>même ordre à chaque partie</b>, et deux campagnes de
+    /// banc « à graines différentes » comparent deux fois la <b>même</b> séquence de spawn.
+    ///
+    /// <para>Le corriger <b>n'est pas une refacto</b> : le brancher sur le flux de la run change la
+    /// séquence, et <c>RunSmokeTest</c> est calibré sur celle-ci — mesuré, 9 vérifications sur 255
+    /// tombent, à commencer par la survie du personnage. C'est donc un arbitrage de gameplay (plus de
+    /// variété d'une run à l'autre) doublé d'un recalibrage du banc, à mener pour lui-même. Détail :
+    /// <c>docs/PITFALLS_UNITY.md</c> §« Un générateur d'aléa privé amorcé à zéro ».</para>
+    /// </remarks>
     private readonly Pcg32 _rng = new(0UL);
 
     /// <summary>Biome courant — restreint le pool aux ennemis qui lui appartiennent.</summary>
@@ -383,16 +399,16 @@ public sealed class EnemySpawner : MonoBehaviour
         // ⚠ `--force-elites` était lu par DebugHooks et consommé par personne : le drapeau existait,
         // se documentait, et ne promouvait jamais rien. Un outil de banc mort ne se signale pas —
         // on conclut que les affixes sont rares, pas que le drapeau est débranché.
-        if (!DebugHooks.ForceElites)
-        {
-            float chance = EliteAffixTable.EliteChance(minutes, EliteFrequencyMult, EliteChanceCap);
-            if (_rng.NextFloat() >= chance) return;
-        }
+        if (!DebugHooks.ForceElites
+            && !EliteAffixTable.ShouldBeElite(minutes, _rng.NextFloat(), EliteFrequencyMult, EliteChanceCap))
+            return;
 
+        // ⚠ Le choix de l'affixe reste un tirage ENTIER et n'appelle donc pas `EliteAffixTable.Pick`,
+        // qui attend un réel dans [0,1[. Les deux répartitions sont identiques, mais elles ne
+        // consomment pas le même nombre de valeurs : basculer déplacerait toute la suite du flux, et
+        // avec elle le déroulement des runs de banc. Un changement de tirage n'est jamais cosmétique.
         var affixes = EliteAffixTable.All;
-        var affix = affixes[_rng.RangeInt(0, affixes.Length - 1)];
-
-        enemy.ApplyElite(affix);
+        enemy.ApplyElite(affixes[_rng.RangeInt(0, affixes.Length - 1)]);
         ElitesSpawned++;
     }
 
@@ -403,7 +419,10 @@ public sealed class EnemySpawner : MonoBehaviour
     [Tooltip("Plafond de probabilité d'élite. Paramètre, et non simple facteur : voir EliteAffixTable.")]
     public float EliteChanceCap = EliteAffixTable.MaxChance;
 
-    /// <summary>Force la graine du tirage, pour rendre une campagne de banc reproductible.</summary>
+    /// <summary>
+    /// Force la graine du tirage, pour rendre une campagne de banc reproductible.
+    /// <b>Aucun appelant</b> — voir la remarque de <see cref="_rng"/>, qui explique pourquoi.
+    /// </summary>
     public void SeedSpawns(ulong seed) => _rng.Seed(seed);
 
     /// <summary>

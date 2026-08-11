@@ -79,7 +79,9 @@ transposés) · `SpriteFramesAsset`
   `SeekerMissile`, `SeekerSwarm`, `DroneSwarm`, `GraftTurret`, `Glaive` · fusions dans
   `Gameplay/Fusions/` (9)
 - **Run** : `GameManager`, `RunBootstrap`, `RunConfig`, `XpSystem`, `XpOrb`, `InventorySystem`,
-  `MetaProgression`, `ChallengeSystem`, `EchoSettings`, `GameSettings`, `AetherCore*`
+  `MetaProgression`, `ChallengeSystem`, `GameSettings`, `AetherCore*`
+  (les paramètres **et** le calcul des Échos vivent dans `Rules/MetaUpgradeTable.EchoParams` —
+  `Gameplay/EchoSettings.cs` en était un doublon, supprimé le 2026-08-11)
 - **Arène** : `ArenaRenderer`, `ArenaObstacles`, `FloorFeatures`, `BiomeAtmosphere`
 - **Mesure** : `PowerTelemetry`, `BossTelemetry`, `BenchAutoPilot`
 - **VFX** : `Gameplay/Vfx/` (14 fichiers : `Vfx`, `VfxPrimitives`, `ChampionOverlay`, `ScreenShake`…)
@@ -91,6 +93,10 @@ transposés) · `SpriteFramesAsset`
 `GameScenes` · `ModalQueue` · `UiFocusGuard` / `UiFocusPulse` / `UiVignette` ·
 ⚠ **Aucun écran de sélection de personnage n'existe côté Unity** — il n'a pas été porté.
 **`UiPalette`** (couleurs) et **`UiStyle`** (cadres « plaque blindée ») — jamais de couleur en dur.
+⚠ **Un écran de menu ne construit plus son canvas à la main** : `UiStyle.ScreenCanvas(...)` (canvas +
+fond + panneau) et `UiStyle.VerticalList(...)` (fenêtre de défilement + colonne) sont les deux
+fabriques à utiliser. Les quarante lignes qu'elles remplacent étaient recopiées dans quatre à cinq
+écrans, commentaires compris — dont l'avertissement sur la largeur du contenu à remettre à zéro.
 
 ## §Data — `unity/Assets/StreamingAssets/data/*.json` (tuning sans recompiler)
 `weapons.json` (5 niveaux/arme) · `enemies.json` + `enemies_biome_expansion.json` ·

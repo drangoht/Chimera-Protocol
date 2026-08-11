@@ -48,11 +48,18 @@ public sealed class RunEndScreen : MonoBehaviour
     /// Affiche le bilan. Le total d'Échos est calculé <b>ici et une seule fois</b> ; l'animation
     /// ne fait que le parcourir.
     /// </summary>
+    /// <remarks>
+    /// Sans paramètres explicites, ce sont ceux du <b>catalogue chargé</b> qui servent — donc le bloc
+    /// <c>echoesFormula</c> de <c>meta_upgrades.json</c>. L'écran s'appuyait auparavant sur un jeu de
+    /// valeurs codées côté moteur : identiques à celles du fichier, donc invisibles, mais retoucher
+    /// le fichier n'aurait rien changé au montant crédité.
+    /// </remarks>
     public void Show(bool victory, int runSeconds, int kills, int cores, double tierMult = 1.0,
-                     EchoSettings? settings = null)
+                     MetaUpgradeTable.EchoParams? settings = null)
     {
         // Source UNIQUE du total : l'animation ci-dessous ne fera que le parcourir.
-        EchoesEarned = (settings ?? EchoSettings.Default).Total(runSeconds, kills, cores, tierMult);
+        EchoesEarned = (settings ?? MetaProgression.Catalog.Echoes)
+            .Total(runSeconds, kills, cores, tierMult);
         DisplayedEchoes = 0;
 
         if (_title != null)

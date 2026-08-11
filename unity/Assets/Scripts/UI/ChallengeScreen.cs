@@ -63,27 +63,15 @@ public sealed class ChallengeScreen : MonoBehaviour
 
     private void BuildUi()
     {
-        var canvasGo = new GameObject("ChallengeCanvas",
-            typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
-        canvasGo.transform.SetParent(transform, false);
+        var screen = UiStyle.ScreenCanvas(transform, "ChallengeCanvas", sortingOrder: 94);
+        _root = screen.Root;
+        var panel = screen.Panel;
 
-        UiCanvas.Configure(canvasGo, 94);
-
-        _root = canvasGo;
-        UiStyle.ScreenBackdrop(canvasGo.transform);
-
-        var panel = UiStyle.NewUiObject("Panel", canvasGo.transform);
-        var panelRect = panel.GetComponent<RectTransform>();
-        panelRect.anchorMin = Vector2.zero;
-        panelRect.anchorMax = Vector2.one;
-        panelRect.offsetMin = new Vector2(60f, 40f);
-        panelRect.offsetMax = new Vector2(-60f, -20f);
-
-        UiStyle.Header(panel.transform, Loc.T("CHALLENGES_TITLE"), FrameAccent.Gold);
+        UiStyle.Header(panel, Loc.T("CHALLENGES_TITLE"), FrameAccent.Gold);
 
         // Ce que sont les défis, dit AVANT la liste : un joueur qui découvre cet écran voit sinon
         // treize objectifs sans savoir qu'ils se valident en fin de run ni ce qu'ils rapportent.
-        var intro = UiStyle.Label(panel.transform, Loc.T("CHALLENGES_INTRO"), 19,
+        var intro = UiStyle.Label(panel, Loc.T("CHALLENGES_INTRO"), 19,
                                   UiPalette.Dim, TextAnchor.UpperLeft);
         var introRect = intro.GetComponent<RectTransform>();
         introRect.anchorMin = new Vector2(0f, 1f);
@@ -92,7 +80,7 @@ public sealed class ChallengeScreen : MonoBehaviour
         introRect.offsetMin = new Vector2(28f, -128f);
         introRect.offsetMax = new Vector2(-28f, -92f);
 
-        _header = UiStyle.Label(panel.transform, "", 22, UiPalette.Cyan, TextAnchor.UpperLeft);
+        _header = UiStyle.Label(panel, "", 22, UiPalette.Cyan, TextAnchor.UpperLeft);
         var headerRect = _header.GetComponent<RectTransform>();
         headerRect.anchorMin = new Vector2(0f, 1f);
         headerRect.anchorMax = new Vector2(1f, 1f);
@@ -101,45 +89,14 @@ public sealed class ChallengeScreen : MonoBehaviour
         headerRect.offsetMax = new Vector2(-28f, -132f);
 
         // Treize défis ne tiennent pas dans un panneau : la liste défile, comme au Hub.
-        var scrollGo = UiStyle.NewUiObject("Scroll", panel.transform);
-        var scrollRect = scrollGo.GetComponent<RectTransform>();
-        scrollRect.anchorMin = Vector2.zero;
-        scrollRect.anchorMax = Vector2.one;
-        scrollRect.offsetMin = new Vector2(28f, 86f);
-        scrollRect.offsetMax = new Vector2(-28f, -176f);
+        var list = UiStyle.VerticalList(panel,
+                                        offsetMin: new Vector2(28f, 86f),
+                                        offsetMax: new Vector2(-28f, -176f),
+                                        spacing: 8f);
 
-        var scroll = scrollGo.AddComponent<ScrollRect>();
-        UiStyle.ConfigureScroll(scroll);
-        scrollGo.AddComponent<RectMask2D>();
+        foreach (var def in ChallengeSystem.All) BuildRow(list.Content, def);
 
-        var content = UiStyle.NewUiObject("Content", scrollGo.transform);
-        var contentRect = content.GetComponent<RectTransform>();
-        contentRect.anchorMin = new Vector2(0f, 1f);
-        contentRect.anchorMax = new Vector2(1f, 1f);
-        contentRect.pivot = new Vector2(0.5f, 1f);
-
-        // ⚠ Largeur remise à ZÉRO. Un RectTransform naît en 100 × 100 : étiré entre deux ancres
-        // horizontales, il vaut alors « largeur du parent + 100 » et déborde de 50 px de CHAQUE
-        // côté de sa fenêtre de défilement. Le masque rogne le reste, et ce sont les premières
-        // lettres de chaque ligne qui disparaissent — un défaut qu'on lit comme une faute de texte
-        // et non comme un défaut de mise en page.
-        contentRect.sizeDelta = Vector2.zero;
-
-        var layout = content.AddComponent<VerticalLayoutGroup>();
-        layout.spacing = 8f;
-        layout.childForceExpandHeight = false;
-        layout.childControlHeight = true;
-        layout.childControlWidth = true;
-
-        var fitter = content.AddComponent<ContentSizeFitter>();
-        fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-
-        scroll.content = contentRect;
-        scroll.viewport = scrollRect;
-
-        foreach (var def in ChallengeSystem.All) BuildRow(content.transform, def);
-
-        _close = UiStyle.TextButton(panel.transform, Loc.T("COMMON_BACK"), FrameAccent.Steel);
+        _close = UiStyle.TextButton(panel, Loc.T("COMMON_BACK"), FrameAccent.Steel);
         var closeRect = _close.GetComponent<RectTransform>();
         closeRect.anchorMin = closeRect.anchorMax = new Vector2(0.5f, 0f);
         closeRect.pivot = new Vector2(0.5f, 0f);
