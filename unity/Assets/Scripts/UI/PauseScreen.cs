@@ -201,13 +201,17 @@ public sealed class PauseScreen : MonoBehaviour
         titleRect.offsetMax = new Vector2(-24f, -24f);
 
         // ─── Corps : SEUL élément qui défile ──────────────────────────────────
-        // ⚠ `controlChildSize: false` : le corps est un bloc de TEXTE, pas une liste de fiches. La
-        // colonne ne doit donc pas lui imposer sa largeur — le résumé de run garde la sienne.
+        //
+        // ⚠ La colonne DOIT imposer sa largeur à son enfant, y compris — surtout — quand cet enfant
+        // est un simple bloc de texte. Un `RectTransform` neuf mesure 100 × 100 : privé de contrôle
+        // de largeur, le résumé de run s'affiche sur une colonne de 100 px et se fait tronquer.
+        // C'est arrivé, et aucun test ne l'a vu : la pause s'ouvre, se ferme et se navigue très bien
+        // en étant illisible. La tournée de captures ne la photographiait pas non plus — elle le
+        // fait depuis.
         var list = UiStyle.VerticalList(panel.transform,
                                         offsetMin: new Vector2(24f, 120f),   // place aux boutons, en bas
                                         offsetMax: new Vector2(-24f, -100f),
-                                        spacing: 0f, name: "BodyScroll",
-                                        controlChildSize: false);
+                                        spacing: 0f, name: "BodyScroll");
 
         _body = UiStyle.Label(list.Content, "", 20, UiPalette.OffWhite);
 

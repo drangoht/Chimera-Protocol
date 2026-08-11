@@ -177,6 +177,25 @@ public sealed class ScreenshotTour : MonoBehaviour
             SpawnSwarmAroundPlayer(10);
         }
 
+        // ⚠ L'écran de PAUSE se photographie ICI, et pas plus loin : son corps est le résumé de la
+        // partie en cours, et les mises en scène qui suivent vident l'inventaire (`ResetForRun`)
+        // pour isoler une arme à la fois. Photographié après elles, il annonce « aucune arme » —
+        // exact à cet instant, et parfaitement trompeur comme image de contrôle.
+        //
+        // Il manquait tout court à cette tournée, et ça s'est payé : une refonte de sa zone de
+        // défilement a réduit le résumé à une colonne de 100 px, tronquée. Rien ne l'a signalé — le
+        // banc vérifie que la pause s'ouvre, se ferme et rend la main, ce qu'elle faisait très bien
+        // en étant illisible. **C'est le joueur qui l'a vu.** Un écran qu'aucune image ne montre est
+        // un écran que personne ne relit.
+        var pause = FindFirstObjectByType<PauseScreen>();
+        if (pause != null)
+        {
+            pause.Open();
+            yield return new WaitForSecondsRealtime(0.5f);
+            yield return Shot("pause", keepModal: true);
+            pause.Resume();
+        }
+
         yield return ShootStatusEffects();
         yield return ShootChimera();
 

@@ -556,11 +556,6 @@ public static class UiStyle
     /// Liste verticale défilante occupant <paramref name="parent"/> moins les marges données —
     /// fenêtre masquée, contenu empilé de haut en bas, hauteur ajustée au contenu.
     /// </summary>
-    /// <param name="controlChildSize">
-    /// Vrai (défaut) : la colonne impose sa largeur et la hauteur de fiche à ses lignes — ce que
-    /// veulent les listes de <b>fiches</b> (Hub, Codex, Défis, Niveaux). Faux : les enfants gardent
-    /// leur taille propre, ce dont a besoin un bloc de texte libre (écran de pause).
-    /// </param>
     /// <remarks>
     /// ⚠ <b>La largeur du contenu est remise à ZÉRO</b>, et c'est le piège que cette fabrique existe
     /// pour ne plus jamais reposer. Un <c>RectTransform</c> naît en 100 × 100 : étiré entre deux
@@ -568,10 +563,14 @@ public static class UiStyle
     /// côté de sa fenêtre. Le masque rogne le reste, et ce sont les premières lettres de chaque ligne
     /// qui disparaissent — un défaut qu'on lit comme une faute de frappe, pas comme une mise en page.
     /// Ces vingt-cinq lignes étaient recopiées dans cinq écrans, commentaire compris.
+    ///
+    /// <para>⚠ Le même 100 × 100 explique pourquoi la colonne <b>contrôle toujours la taille de ses
+    /// enfants</b>. Un paramètre a existé pour s'en dispenser, au motif qu'un bloc de texte devait
+    /// garder « sa » largeur : il n'en a pas: il naît à 100 px, et le texte sort sur une colonne
+    /// étroite et tronquée. Ce n'est pas une option, c'est un défaut — d'où sa disparition.</para>
     /// </remarks>
     public static ScrollList VerticalList(Transform parent, Vector2 offsetMin, Vector2 offsetMax,
-                                          float spacing, string name = "Scroll",
-                                          bool controlChildSize = true)
+                                          float spacing, string name = "Scroll")
     {
         var scrollGo = NewUiObject(name, parent);
         var viewport = scrollGo.GetComponent<RectTransform>();
@@ -594,8 +593,8 @@ public static class UiStyle
         var layout = content.AddComponent<VerticalLayoutGroup>();
         layout.spacing = spacing;
         layout.childForceExpandHeight = false;
-        layout.childControlHeight = controlChildSize;
-        layout.childControlWidth = controlChildSize;
+        layout.childControlHeight = true;
+        layout.childControlWidth = true;
 
         var fitter = content.AddComponent<ContentSizeFitter>();
         fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;

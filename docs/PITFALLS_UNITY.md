@@ -790,6 +790,28 @@ ramassables.
 
 ## Interface
 
+### 100 × 100 : la taille d'un `RectTransform` neuf, et la cause de deux défauts opposés
+
+Un `RectTransform` créé par code naît en **100 × 100**. Cette seule valeur produit deux dégâts
+inverses selon le contexte, et **aucun des deux ne se voit en lisant le code** :
+
+- **Étiré entre deux ancres horizontales**, il vaut « largeur du parent **+ 100** » et déborde de
+  50 px de chaque côté. Le masque de défilement rogne le reste : ce sont les **premières lettres de
+  chaque ligne** qui disparaissent, ce qu'on lit comme une faute de frappe. D'où le
+  `sizeDelta = Vector2.zero` de `UiStyle.VerticalList`.
+- **Dans une colonne qui ne contrôle pas la largeur de ses enfants** (`childControlWidth = false`),
+  il *garde* ses 100 px : le texte sort sur une colonne étroite et tronquée. C'est arrivé à l'écran
+  de pause le 2026-08-11, sur un paramètre ajouté au motif qu'« un bloc de texte doit garder sa
+  largeur ». Il n'en a pas : il naît à 100 px. Le paramètre a été supprimé — la colonne contrôle
+  **toujours** la taille de ses enfants.
+
+⚠ **Et rien ne l'a signalé.** Le banc vérifie que la pause s'ouvre, se ferme et rend la main : elle
+faisait tout cela parfaitement **en étant illisible**. La tournée de captures, elle, ne la
+photographiait pas — elle le fait depuis, **juste après les captures de run** et non à la fin, parce
+que les mises en scène qui suivent vident l'inventaire (`ResetForRun`) et donneraient une image de
+contrôle qui annonce « aucune arme ». **Un écran qu'aucune image ne montre est un écran que personne
+ne relit.**
+
 ### Un réglage d'import ne s'applique **pas** à un asset déjà importé
 
 Les cadres « plaque blindée » étaient importés à **1 px/unité** comme le reste du projet. Or une
