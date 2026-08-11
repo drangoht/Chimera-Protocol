@@ -198,6 +198,24 @@ public sealed class Player : MonoBehaviour
     public float ChillMultiplier => _chillMult;
 
     /// <summary>
+    /// Vitesse de déplacement <b>réellement appliquée</b> à l'instant, en pixels par seconde :
+    /// statistique, Célérité, plafond et gel compris.
+    /// </summary>
+    /// <remarks>
+    /// La vitesse est plafonnée par <see cref="StatCaps"/> — la même source que côté Godot. Les deux
+    /// sources se <b>multiplient</b> : un gel ne doit ni effacer une Célérité, ni être effacé par
+    /// elle. Le plafond ne borne que le haut — un ralentissement passe dessous.
+    ///
+    /// <para>⚠ Exposée parce que d'autres systèmes doivent <b>courir après le joueur</b> et n'ont
+    /// aucun moyen de deviner cette composition. L'aimantation des orbes lisait <c>Stats.Speed</c>,
+    /// qui ignore et la Célérité et le plafond : une seule copie de cette formule suffit, et c'est
+    /// celle-ci. La ruade n'y figure pas — elle impose sa vitesse, ne dure qu'un instant, et un orbe
+    /// n'a pas à suivre une esquive.</para>
+    /// </remarks>
+    public float CurrentSpeed =>
+        Mathf.Min(Stats.Speed * SpeedMultiplier, StatCaps.MaxSpeed) * _chillMult;
+
+    /// <summary>
     /// Ralentit le joueur pendant <paramref name="duration"/> secondes (nova et cône du Givre).
     /// </summary>
     /// <remarks>
@@ -248,11 +266,7 @@ public sealed class Player : MonoBehaviour
             InputRemap.WasPressedThisFrame(GameAction.Dash))
             StartDash(input);
 
-        // La vitesse est plafonnée par StatCaps — la même source que côté Godot.
-        // Les deux sources se MULTIPLIENT : un gel ne doit ni effacer une Célérité, ni être effacé
-        // par elle. Le plafond ne borne que le haut — un ralentissement passe dessous.
-        float speed = Mathf.Min(Stats.Speed * SpeedMultiplier, StatCaps.MaxSpeed) * _chillMult;
-        Velocity = input * speed;
+        Velocity = input * CurrentSpeed;
 
         // Pendant la ruade, la vitesse est IMPOSÉE : elle ne passe pas par le plafond, sans quoi une
         // esquive ne serait qu'un déplacement ordinaire et ne sortirait jamais d'un encerclement.

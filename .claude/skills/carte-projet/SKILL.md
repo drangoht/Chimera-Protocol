@@ -57,7 +57,9 @@ La table de destination fait autorité : **`tools/unity_paths.py`**.
 `EliteAffixTable` · `EnemyScaling` · `EnemyTable` · `FloorFeatureLayout` · `GodotConfig` (migration
 des `settings.cfg` de joueurs venus de la 1.26.0) · `GraftTable` · `LevelThreat` · `LevelUpCharges` ·
 `LevelUpPool` · `LocTable` · `MetaUpgradeTable` · `MusicIntensity` · `OverloadCards` ·
-`OvertimeEscalation` · `PassiveScaling` · `PassiveTable` · `PressureMeter` · `RarityWeights` ·
+`OvertimeEscalation` · `PassiveScaling` · `PassiveTable` · **`PickupMagnet`** (aimantation des orbes :
+sa vitesse se calcule *contre* celle du porteur, jamais dans l'absolu) · `PressureMeter` ·
+`RarityWeights` ·
 `RegenReserve` · `SaturationTable` · `SaveData` / `SaveMigration` / `SettingsData` · `SpawnCurve` ·
 `StartingPerks` · `StatCaps` · `Titles` · `VersionCompare` · `WeaponFusion` · `WeaponLeveling` ·
 `WeaponSfx` · `WeaponTable` · `WeightedPicker` · `XpCurve`

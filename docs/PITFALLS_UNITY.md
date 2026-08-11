@@ -790,6 +790,30 @@ ramassables.
 
 ## Interface
 
+### Deux constantes qui ne se connaissent pas : le joueur courait plus vite que ses propres orbes
+
+`XpOrb` posait sa vitesse d'attraction à **300 px/s**. `StatCaps.MaxSpeed` plafonne le joueur à
+**380**. Deux nombres, deux fichiers, aucun lien — et l'un dépasse l'autre : au-delà de 300 px/s,
+**l'orbe ne rattrape plus jamais son porteur**. Il le suit en file au ras du sol jusqu'à sortir du
+rayon d'aimantation, puis s'arrête. Même sous le plafond le défaut était visible : à la vitesse de
+base, l'orbe ne gagnait que 100 px/s et mettait **0,84 s** à franchir le rayon — d'où la queue
+d'orbes derrière un joueur qui traverse une zone qu'il vient de nettoyer.
+
+**Rien ne pouvait le signaler** : de l'XP jamais ramassée ne se compte nulle part, aucun compteur ne
+baisse, aucun test ne s'en émeut. C'est **le joueur qui l'a vu**, et il l'a décrit comme un défaut
+d'affichage (« une traînée au sol ») — ce qui est exactement ce qu'on voit quand une poursuite
+n'aboutit pas.
+
+**La parade est de forme, pas de valeur.** Ce qui se règle n'est plus la vitesse de l'orbe mais la
+vitesse à laquelle il **gagne du terrain** (`PickupMagnet.SpeedAgainst(carrierSpeed)`), si bien que
+le dépassement est impossible par construction — et testé sur toute la plage, plafond compris. La
+leçon générale : **une vitesse de poursuite ne se pose jamais dans l'absolu**, elle se pose contre la
+vitesse de ce qu'elle poursuit.
+
+⚠ Corollaire : la vitesse « réelle » du joueur n'est pas `Stats.Speed`. Elle compose la statistique,
+la Célérité, le plafond et le gel — d'où `Player.CurrentSpeed`, désormais la seule écriture de cette
+formule.
+
 ### 100 × 100 : la taille d'un `RectTransform` neuf, et la cause de deux défauts opposés
 
 Un `RectTransform` créé par code naît en **100 × 100**. Cette seule valeur produit deux dégâts

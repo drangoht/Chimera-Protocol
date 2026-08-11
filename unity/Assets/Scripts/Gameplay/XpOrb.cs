@@ -15,17 +15,9 @@ using UnityEngine;
 /// </summary>
 public sealed class XpOrb : MonoBehaviour
 {
-    /// <summary>Distance à laquelle l'orbe se met à suivre le joueur.</summary>
-    private const float MagnetRadius = 100f;
-
-    /// <summary>Vitesse d'attraction, en unités par seconde.</summary>
-    private const float MagnetSpeed = 300f;
-
-    /// <summary>Distance de ramassage effectif.</summary>
-    private const float PickupRadius = 16f;
-
-    /// <summary>Multiplicateur de vitesse quand un aimant force l'attraction de toute l'arène.</summary>
-    private const float ForcedMagnetBoost = 2.5f;
+    // ⚠ Rayon, vitesse et distance de ramassage vivent dans `PickupMagnet` — et surtout, la vitesse
+    // s'y CALCULE contre celle du porteur. Elle était posée ici en dur (300 px/s), sans rapport avec
+    // le plafond de vitesse du joueur (380) : au-delà, l'orbe ne rattrapait plus rien.
 
     /// <summary>Échelles visuelles par palier (T1 → T4).</summary>
     private static readonly float[] TierScales = { 1.0f, 1.25f, 1.5f, 1.75f };
@@ -91,11 +83,13 @@ public sealed class XpOrb : MonoBehaviour
         Vector2 target = player.transform.position;
         float dist = Vector2.Distance(me, target);
 
-        if (dist < PickupRadius) { Collect(); return; }
+        if (dist < PickupMagnet.PickupRadius) { Collect(); return; }
 
-        if (!ForceMagnet && dist > MagnetRadius) return;
+        if (!ForceMagnet && dist > PickupMagnet.Radius) return;
 
-        float speed = ForceMagnet ? MagnetSpeed * ForcedMagnetBoost : MagnetSpeed;
+        // La vitesse se mesure contre celle du PORTEUR, pas dans l'absolu : c'est ce qui garantit que
+        // l'orbe gagne toujours du terrain, quels que soient les servomoteurs achetés au Hub.
+        float speed = PickupMagnet.SpeedAgainst(player.CurrentSpeed, ForceMagnet);
         Vector2 dir = (target - me) / Mathf.Max(dist, 0.001f);
         transform.position = me + dir * speed * Time.deltaTime;
     }
