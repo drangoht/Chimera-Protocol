@@ -4,6 +4,58 @@
 > `release-manager`). Entrées en ordre décroissant (la plus récente en haut). Ton orienté
 > joueur, EN puis FR (audience itch surtout anglophone).
 
+## v2.0.1 — The English and Spanish versions were half French (2026-08-11)
+
+**Fixed — every name in the game was showing in French, whatever language you picked**
+- Weapons, fusions, grafts, Hub upgrades, bestiary entries: all of it came out in French in the
+  English and Spanish builds. The Hub was the clearest symptom — an English header sitting on top of
+  nineteen French lines.
+- The translations were not missing. **109 of them were already in the localisation table, in all
+  three languages, read by nothing at all** — while the screens printed hard-coded French right next
+  to them. The mechanism that does it correctly was in the code too, applied to four passive items
+  and nothing else.
+- Everything named now goes through the translation table, and a check refuses to let a piece of
+  content ship without its three languages. It also refuses the opposite — a stray translation that
+  no longer matches anything — which caught a duplicate set of weapon names an hour after it was
+  written.
+
+**Fixed — the screens that were speaking French too**
+- The level-up title (which now announces the level you reached, as it always meant to), the whole
+  end-of-run screen — title, stats, button — the level counter in the HUD, the dodge hint, and the
+  banner announcing the Rusted Core.
+
+**Note — how this was found**
+- By watching the raw footage shot for the trailer. Not by a test: a wrong language never crashes,
+  never fails an assertion, and looks perfectly fine to the person who wrote it. It only exists on
+  screen, in a language that person doesn't read the game in.
+
+---
+
+**Corrigé — tous les noms du jeu s'affichaient en français, quelle que soit la langue choisie**
+- Armes, fusions, greffes, améliorations du Hub, entrées du bestiaire : tout sortait en français
+  dans les versions anglaise et espagnole. Le Hub en était le symptôme le plus net — un en-tête
+  anglais posé au-dessus de dix-neuf lignes françaises.
+- Les traductions ne manquaient pas. **109 d'entre elles étaient déjà dans la table de
+  localisation, dans les trois langues, lues par rien du tout** — pendant que les écrans écrivaient
+  du français en dur juste à côté. Le mécanisme qui fait les choses correctement était là aussi,
+  appliqué à quatre objets passifs et à rien d'autre.
+- Tout ce qui porte un nom passe désormais par la table, et un contrôle refuse qu'un contenu parte
+  sans ses trois langues. Il refuse aussi l'inverse — une traduction orpheline qui ne correspond
+  plus à rien — ce qui a permis d'attraper un jeu de noms d'armes en double une heure après l'avoir
+  écrit.
+
+**Corrigé — les écrans qui parlaient français eux aussi**
+- Le titre de montée de niveau (qui annonce enfin le niveau atteint, comme il l'a toujours voulu),
+  tout l'écran de fin de partie — titre, statistiques, bouton —, le compteur de niveau du HUD,
+  l'indication d'esquive, et le bandeau qui annonce le Noyau Rouillé.
+
+**Note — comment ça a été trouvé**
+- En regardant les rushes tournés pour le trailer. Pas par un test : une mauvaise langue ne plante
+  pas, ne fait échouer aucune assertion, et paraît parfaitement normale à celui qui l'a écrite. Elle
+  n'existe qu'à l'écran, dans une langue qu'il ne joue pas.
+
+---
+
 ## v2.0.0 — Same game, rebuilt from the ground up (2026-08-10)
 
 **Changed — Chimera Protocol now runs on a different engine**
