@@ -156,7 +156,7 @@ public sealed class PauseScreen : MonoBehaviour
             foreach (string id in Assimilation.Equipped)
             {
                 var def = Assimilation.Config.GraftById(id);
-                sb.AppendLine("   " + (def != null ? def.Name : id));
+                sb.AppendLine("   " + ContentText.GraftName(id, def != null ? def.Name : id));
             }
         }
 

@@ -103,8 +103,11 @@ public sealed class HubScreen : MonoBehaviour
             int cost = MetaProgression.NextCost(row.Def.Id);
             bool maxed = cost < 0;
 
-            row.Name.text = row.Def.Name;
-            row.Description.text = row.Def.Description;
+            // Le texte des améliorations vient de `ui.csv`, pas de `meta_upgrades.json` : la donnée
+            // est écrite en français, et le Hub affichait donc dix-neuf lignes françaises sous un
+            // en-tête traduit. Le nom du JSON ne sert plus que de repli.
+            row.Name.text = ContentText.MetaName(row.Def.Id, row.Def.Name);
+            row.Description.text = ContentText.MetaDesc(row.Def.Id, row.Def.Description);
             row.Level.text = Loc.T("HUB_LEVEL", level, row.Def.MaxLevel);
             row.Cost.text = maxed ? Loc.T("HUB_MAX") : Loc.T("HUB_COST", cost);
 
@@ -365,10 +368,13 @@ public sealed class HubScreen : MonoBehaviour
             textLayout.childControlHeight = true;
             textLayout.childControlWidth = true;
 
-            var name = UiStyle.Label(textColumn.transform, def.Name, 24, UiPalette.OffWhite);
+            var name = UiStyle.Label(textColumn.transform,
+                                     ContentText.MetaName(def.Id, def.Name), 24, UiPalette.OffWhite);
             name.gameObject.AddComponent<LayoutElement>().preferredHeight = 30f;
 
-            var description = UiStyle.Label(textColumn.transform, def.Description, 19, UiPalette.Dim);
+            var description = UiStyle.Label(textColumn.transform,
+                                            ContentText.MetaDesc(def.Id, def.Description), 19,
+                                            UiPalette.Dim);
             description.gameObject.AddComponent<LayoutElement>().flexibleHeight = 1f;
 
             var level = Column(panel.transform, 190f, UiPalette.Cyan);

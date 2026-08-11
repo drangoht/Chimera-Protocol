@@ -5,9 +5,21 @@ Pipeline en trois passes (plus simple a debugger qu'un unique filter_complex a 2
                  (1280x720 -> 2560x1440 : facteur ENTIER, donc pixel art net ; un 1080p
                  imposerait un x1.5 non entier et baverait), texte incruste si demande.
   2. CONCAT      concatenation par le demuxer `concat`.
-  3. MIXAGE      trois morceaux de la bande-son enchaines en fondu (cf. MUSIC_EDL) par-dessus
-                 l'audio des plans garde tres bas (texture des impacts sans empiler deux
-                 musiques differentes), puis encodage final H.264 pour YouTube.
+  3. MIXAGE      trois morceaux de la bande-son enchaines en fondu (cf. MUSIC_EDL), puis
+                 encodage final H.264 pour YouTube.
+
+CE QUI A CHANGE AVEC LE PORTAGE UNITY
+-------------------------------------
+Les rushes sont des **mp4 muets**, et non plus les .avi sonores du Movie Maker de Godot : un build
+Unity ne sait pas ecrire le mix audio en meme temps qu'il ralentit son horloge de rendu
+(cf. `Bench/TrailerRecorder.cs`). La bande-son du montage est donc **entierement** remontee depuis
+les pistes du jeu -- la ou l'ancien montage y superposait l'audio des plans a bas volume pour en
+garder les transitoires (tirs, impacts, ramassages). C'est la seule perte du portage, et elle ne
+s'entend que sur les plans d'action.
+
+Et surtout : chaque prise est desormais **mise en scene** (un plan = une prise, filmee pour sa
+duree exacte). Les timecodes de l'EDL ne sont donc plus releves apres coup sur une planche-contact,
+ils sont connus d'avance -- et ils survivent a une recapture.
 
 PIEGE drawtext sous Windows : le texte accentue passe par `textfile=` (fichiers UTF-8 ecrits
 dans trailer/txt/), et les chemins y sont RELATIFS avec des slashes -- un backslash ou un `:`
@@ -42,17 +54,17 @@ CYAN = "0x44FFEE"
 GOLD = "0xFFCC44"
 WHITE = "0xD9D9F2"
 
-# Volume de l'audio des plans dans le mix final. Bas VOLONTAIREMENT : chaque rush porte deja
-# la musique du jeu, et deux musiques differentes superposees a volume egal se battent. Depuis
-# le passage au metal (1.17.0) les deux sont rythmiques, donc encore plus bas qu'avant : ce qui
-# doit rester, ce sont les transitoires (tirs, explosions, ramassages), pas le fond musical.
-CLIP_GAIN = 0.12
-
 # ---------------------------------------------------------------------------
 # CARTONS DE TEXTE — cle -> traduction. L'EDL ne porte que la cle (cf. `--lang`).
 #   Un `|` separe le titre du sous-titre (police plus petite, cyan).
 #   Registre voulu : imperatif, court, meme voix que la tagline officielle du jeu
 #   ("Don't kill the monsters. Become them." / INTRO_TAGLINE de localization/ui.csv).
+#
+# ⚠ CONTENT annoncait « 4 CHARACTERS » : c'est FAUX depuis le portage. L'ecran de choix de
+#   personnage n'a jamais ete porte sous Unity, et rien dans le code n'en parle plus (verifie :
+#   aucune occurrence de `CharacterSelect` dans unity/Assets/Scripts). Les trois chiffres annonces
+#   sont desormais comptes dans les donnees : 5 biomes (LevelThreat.Order), 12 armes et 9 fusions
+#   (weapons.json). Un trailer qui promet un contenu absent se paie en remboursements.
 # ---------------------------------------------------------------------------
 TEXTS = {
     "en": {
@@ -60,7 +72,7 @@ TEXTS = {
         "ORGANS":  "TEAR OUT THEIR ORGANS",
         "CHIMERA": "BECOME THE CHIMERA",
         "BOSS":    "FACE THE LIVING RUST",
-        "CONTENT": "4 CHARACTERS · 12 WEAPONS · 9 FUSIONS",
+        "CONTENT": "5 BIOMES · 12 WEAPONS · 9 FUSIONS",
         "STORE":   "AVAILABLE ON ITCH.IO|drangoht.itch.io/chimera-protocol",
     },
     "fr": {
@@ -68,77 +80,89 @@ TEXTS = {
         "ORGANS":  "ARRACHEZ LEURS ORGANES",
         "CHIMERA": "DEVENEZ LA CHIMÈRE",
         "BOSS":    "AFFRONTEZ LA ROUILLE VIVANTE",
-        "CONTENT": "4 PERSONNAGES · 12 ARMES · 9 FUSIONS",
+        "CONTENT": "5 BIOMES · 12 ARMES · 9 FUSIONS",
         "STORE":   "DISPONIBLE SUR ITCH.IO|drangoht.itch.io/chimera-protocol",
     },
 }
 
 # ---------------------------------------------------------------------------
 # EDL — (source, debut_s, duree_s, cle_texte|None, couleur)
-#   Repere sur les planches-contact de trailer/raw/sheet_*.png (`tools/trailer_sheets.py`).
-#   Rythme : plans longs a l'ouverture (narration), de plus en plus courts a l'escalade.
 #
-#   ATTENTION : ces timecodes ne survivent PAS a une recapture. Les runs sont randomisees,
-#   donc apres `tools/record_trailer.py` il faut regenerer les planches et re-caler chaque
-#   plan -- surtout les modales (level-up, assimilation, fusion) qui ne durent que ~2 s et
-#   dont un plan mal cale ne montrerait qu'un ecran de menu fige.
-#   Dernier recalage : 2026-07-28 (rushes ANGLAIS, `record_trailer.py --lang=en`).
+#   Les timecodes viennent de la MISE EN SCENE des prises (`Bench/TrailerRecorder.cs`), pas d'un
+#   reperage a la planche-contact : la prise `meta` montre six ecrans de 3 s dans un ordre fixe, la
+#   prise `chimera` trois jeux de greffes de 3 s, `intro` deroule ses six beats aux memes instants
+#   a chaque capture. Une recapture rend donc le meme decoupage -- ce qui n'etait pas vrai des
+#   rushes Godot, tires de runs aleatoires.
+#
+#   Rythme : plans longs a l'ouverture (narration), de plus en plus courts a l'escalade.
+#   Verifie sur planches : `python tools/trailer_sheets.py <source> --step 1`.
 # ---------------------------------------------------------------------------
 EDL = [
     # -- A. Ouverture narrative (cinematique d'intro, ~9 s)
-    #    Ouverture DIRECTE sur la cinematique, sans plan d'action prealable : le trailer
-    #    s'installe sur la narration. Les plans sont sombres, d'ou le fondu d'ouverture court
-    #    (0.4 s) de finalize() -- rallonger le noir de tete tuerait la retention YouTube.
-    #    Beats retenus : l'origine (1), la naissance de la Rouille (3), puis le beat 6 qui
-    #    ENONCE le pitch du jeu (« tear a piece of it free — and let it become part of you »).
-    ("intro",           1.6, 3.2, None, None),
-    ("intro",          10.4, 2.8, None, None),
-    ("intro",          24.0, 3.2, None, None),
+    #    Ouverture DIRECTE sur la cinematique, sans plan d'action prealable : le trailer s'installe
+    #    sur la narration. Les plans sont sombres, d'ou le fondu d'ouverture court (0.4 s) de
+    #    finalize() -- rallonger le noir de tete tuerait la retention YouTube.
+    #    Beats retenus : l'origine (0.5-3.5), la naissance de la Rouille (10-13), puis le beat 6
+    #    (22-26) qui ENONCE le pitch du jeu (« tear a piece of it free — and let it become part of
+    #    you »). Les six beats tiennent 0-26 s ; le titre est devoile a 27.5.
+    ("intro",          0.8, 3.0, None, None),
+    ("intro",         10.2, 3.0, None, None),
+    ("intro",         22.2, 3.4, None, None),
 
-    # -- B. Le jeu : les biomes (~14 s)
-    ("gp_sanctuaire",  52.4, 2.8, "SWARM", CYAN),
-    ("long_neon",     100.8, 2.8, None, None),
-    ("gp_givre",       39.4, 2.6, None, None),
-    ("long_fournaise",105.0, 2.8, None, None),
-    ("gp_aether",      43.6, 2.6, None, None),
+    # -- B. Le jeu : les cinq biomes (~13 s)
+    #    Un plan par biome, dans l'ordre de menace croissante du jeu. Chaque prise est deja calee sur
+    #    sa minute de run (`--start-at`), donc n'importe quel instant du rush est « en pleine action »
+    #    : les bornes ne servent qu'a varier les compositions.
+    #    ⚠ Sanctuaire s'arrete a 5.4 : une modale d'Assimilation s'ouvre vers 10 s dans ce rush.
+    #    `KeepClear` la referme en une image, mais une image de modale plein ecran au milieu d'un
+    #    plan se voit — c'est un flash blanc.
+    ("gp_sanctuaire",  2.6, 2.8, "SWARM", CYAN),
+    ("gp_aether",      8.4, 2.6, None, None),
+    ("gp_givre",      11.4, 2.6, None, None),
+    ("gp_neon",       14.2, 2.6, None, None),
+    ("gp_fournaise",  11.4, 2.6, None, None),
 
-    # -- C. Progression : assimilation / fusion (~8 s)
-    #    Bornes serrees : ces deux ecrans modaux ne durent qu'environ 2,5 s chacun a l'ecran
-    #    (Stalker Wave a 10,6-13,2 ; Armored Charge a 151,8-154,0), et un level-up suit
-    #    immediatement les deux -- deborder d'une demi-seconde tombe sur les cartes.
-    ("long_fournaise", 10.6, 2.6, "ORGANS", GOLD),
-    ("long_neon",     151.6, 2.4, "CHIMERA", GOLD),
-    #    Retour au jeu APRES la fusion : la chimere evoluee en action.
-    ("long_neon",     157.4, 2.6, None, None),
+    # -- C. Progression : la decision, puis le corps qui mute (~8 s)
+    #    L'ecran de montee de niveau est presente des la premiere image de sa prise. Le gros plan de
+    #    chimere enchaine trois jeux de greffes de 3 s : corps nu+oeil (0-3), onde/servos/symbiote
+    #    (3-6), les deux fusions (6-9). Le dernier porte le plus d'appendices — d'ou le carton
+    #    « BECOME THE CHIMERA » dessus, et non sur le premier.
+    ("levelup",        0.4, 2.6, None, None),
+    ("chimera",        3.4, 2.4, "ORGANS", GOLD),
+    ("chimera",        6.2, 2.6, "CHIMERA", GOLD),
 
-    # -- D. Escalade : late game + boss (~15 s)
-    ("long_fournaise",177.4, 2.4, None, None),
-    ("long_neon",     209.4, 2.4, None, None),
-    ("long_fournaise",205.0, 2.4, None, None),
-    ("long_neon",     231.0, 2.2, None, None),
-    #    Le boss tue le joueur a 23 s dans ce rush : tout doit tenir avant. Le carton est sur le
-    #    SECOND plan, pas le premier : c'est la que le Colosse est proche et lisible (20-22 s),
-    #    alors qu'il n'est qu'un point lointain dans les premieres secondes du rush.
-    ("boss_tank",      12.4, 2.4, None, None),
-    ("boss_tank",      18.6, 2.8, "BOSS", CYAN),
+    # -- D. Escalade : fin de partie + boss (~10 s)
+    #    Le Noyau Rouille est invoque des la 2e seconde de sa prise, mais il reste LOIN du joueur la
+    #    plupart du temps : a 20 s ils sont enfin dans le meme cadre — c'est la, et seulement la,
+    #    que le carton du boss est lisible.
+    ("gp_fournaise",  17.4, 2.2, None, None),
+    ("gp_neon",        5.4, 2.2, None, None),
+    ("boss",           7.4, 2.4, None, None),
+    ("boss",          20.4, 3.0, "BOSS", CYAN),
 
-    # -- E. Meta / menus (~12 s)
-    ("charsel",         3.2, 2.2, "CONTENT", CYAN),
-    ("arsenal",         4.0, 1.9, None, None),
-    ("bestiary",        4.0, 1.9, None, None),
-    ("chimera_codex",   4.0, 1.9, None, None),
-    ("challenges",      4.0, 1.9, None, None),
-    ("hub",             5.0, 2.1, None, None),
+    # -- E. Meta / menus (~11 s)
+    #    Ordre de la prise `meta`, releve sur planche : hub 0-2.8, carte des niveaux 2.8-5.2, puis
+    #    les trois onglets du Codex (bestiaire 5.2-8.2, arsenal 8.2-11.2, chimere 11.2-14.2) et les
+    #    defis 14.2-17.2. Les bornes sont prises au MILIEU de chaque fenetre : la mise en scene monte
+    #    l'ecran suivant sur une frame, et une coupe posee sur la bascule attraperait le precedent.
+    #    Le bestiaire (5.2-8.2) est le seul onglet ECARTE : il montre ce qu'on affronte, quand
+    #    l'arsenal et la chimere montrent ce qu'on devient — et le trailer vient de passer trente
+    #    secondes a montrer des ennemis. Cinq ecrans de liste d'affilee suffisent deja a plomber le
+    #    rythme juste apres le boss.
+    ("meta",           0.8, 2.0, "CONTENT", CYAN),
+    ("meta",           3.4, 1.8, None, None),
+    ("meta",           9.0, 1.8, None, None),
+    ("meta",          12.0, 1.8, None, None),
+    ("meta",          15.0, 1.8, None, None),
 
-    # -- F. Final (~12 s)
-    #    Le reveal du titre (29,4) puis le menu (33,2) : deux plans plutot qu'un seul long,
-    #    pour que le carton itch.io tombe sur le menu et pas par-dessus la tagline du jeu.
-    ("long_fournaise",265.0, 2.4, None, None),
-    ("long_neon",     289.0, 2.3, None, None),
-    #    30.0 et pas 29.4 : la fin du beat 6 (deja vu en ouverture) tient encore l'ecran ; on
-    #    entre directement sur le flash blanc de la cinematique qui devoile le titre.
-    ("intro",          30.0, 2.8, None, None),
-    ("intro",          33.2, 4.0, "STORE", GOLD),
+    # -- F. Final (~8 s)
+    #    27.0 et pas 26.2 : le beat 6 tient l'ecran jusqu'a 26.0 et le flash blanc part a 26.5. Une
+    #    coupe posee avant lui rendait une seconde de plan MORT — le drone, sans texte, sans
+    #    mouvement — juste avant le seul moment spectaculaire de la cinematique.
+    #    Deux plans plutot qu'un seul long : le carton itch.io tombe ainsi sur le menu, et pas
+    #    par-dessus la tagline du jeu qu'affiche l'ecran-titre.
+    ("intro",         27.0, 3.6, None, None),
+    ("menu",           0.6, 4.4, "STORE", GOLD),
 ]
 
 TOTAL = sum(e[2] for e in EDL)
@@ -148,18 +172,20 @@ TOTAL = sum(e[2] for e in EDL)
 #   Trois morceaux de la bande-son du jeu (metal industriel, 1.17.0) enchaines par
 #   fondu croise de XFADE. Les bornes sont calees sur la structure du montage :
 #     0.0   theme principal      — narration de la cinematique
-#     9.2   run neon (refrain)   — entree du gameplay, 160 BPM
-#    39.8   theme de boss        — arrivee du boss, tenu jusqu'au carton final
+#     9.4   run neon (refrain)   — premiere image de gameplay, 160 BPM
+#    34.6   theme de boss        — premier plan de boss, tenu jusqu'au carton final
 #
-#   Choix des pistes : PAS `music_intro.ogg` ici, alors que c'est la musique qui joue sur les
-#   plans de cinematique -- la meme piste jouee deux fois avec un decalage donne un doublage
-#   sale. Meme raison pour les biomes : les plans de gameplay viennent surtout de neon et
-#   fournaise, et l'audio des rushes est justement attenue a CLIP_GAIN.
+#   Choix des pistes : PAS `music_intro.ogg`, alors que c'est la musique qui joue sur les plans de
+#   cinematique -- depuis que les rushes sont muets, elle ne s'entend plus dans le rush, mais la
+#   remonter ici ferait entrer le trailer sur la piste la plus calme du jeu.
+#
+#   ⚠ C'est la SEULE source sonore du montage : les rushes Unity n'ont pas d'audio, donc plus
+#   aucun transitoire de jeu (tirs, impacts, ramassages) ne vient texturer les plans d'action.
 # ---------------------------------------------------------------------------
 MUSIC_EDL = [
     ("unity/Assets/Resources/Audio/music/music_menu.ogg",             0.0),
-    ("unity/Assets/Resources/Audio/music/music_run_neon_combat.ogg",  9.2),
-    ("unity/Assets/Resources/Audio/music/music_run_boss.ogg",        39.8),
+    ("unity/Assets/Resources/Audio/music/music_run_neon_combat.ogg",  9.4),
+    ("unity/Assets/Resources/Audio/music/music_run_boss.ogg",        34.6),
 ]
 
 XFADE = 1.6
@@ -212,9 +238,9 @@ def extract():
         raise SystemExit(f"Langue inconnue : {LANG} (dispo : {', '.join(TEXTS)})")
     for i, (src, start, dur, key, color) in enumerate(EDL):
         text = TEXTS[LANG][key] if key else None
-        avi = os.path.join(RAW, f"{src}.avi")
-        if not os.path.exists(avi):
-            raise SystemExit(f"Rush manquant : {avi} (relancer tools/record_trailer.py {src})")
+        rush = os.path.join(RAW, f"{src}.mp4")
+        if not os.path.exists(rush):
+            raise SystemExit(f"Rush manquant : {rush} (relancer tools/record_trailer.py {src})")
         out = os.path.join(CLIPS, f"{i:02d}_{src}.mp4")
 
         # NEAREST : upscale x2 exact, aucun lissage -> le pixel art reste net.
@@ -223,13 +249,14 @@ def extract():
             vf.extend(text_filters(i, text, color, dur))
         vf.append("fps=60,format=yuv420p")
 
+        # `-an` : les rushes Unity sont muets, mais un plan SANS piste audio et un plan qui en a une
+        # ne se concatenent pas par copie -- le demuxer `concat` exige des flux identiques. On coupe
+        # donc explicitement, pour que tous les intermediaires aient la meme forme.
         run([
             "ffmpeg", "-v", "error", "-y",
-            "-ss", f"{start}", "-i", avi, "-t", f"{dur}",
-            "-vf", ",".join(vf),
-            "-af", f"volume={CLIP_GAIN},afade=t=in:d=0.05,afade=t=out:st={max(0, dur - 0.1)}:d=0.1",
+            "-ss", f"{start}", "-i", rush, "-t", f"{dur}",
+            "-vf", ",".join(vf), "-an",
             "-c:v", "libx264", "-crf", "14", "-preset", "veryfast",
-            "-c:a", "aac", "-b:a", "192k", "-ar", "48000", "-ac", "2",
             out,
         ])
         print(f"  [{i:02d}] {src} {start:>6.1f}s +{dur:.1f}s"
@@ -248,7 +275,7 @@ def concat():
 
 
 def finalize(concat_mp4):
-    """Musique continue + audio des plans, fondus d'ouverture/fermeture, encodage YouTube."""
+    """Musique continue par-dessus le montage muet, fondus d'ouverture/fermeture, encodage YouTube."""
     # Chaine de fondus croises : chaque morceau est coupe a la duree qui le mene jusqu'a
     # l'entree du suivant, PLUS le recouvrement du fondu (acrossfade consomme XFADE de la
     # fin du precedent, donc sans cette marge le fondu mordrait sur la section utile).
@@ -266,13 +293,10 @@ def finalize(concat_mp4):
 
     filt = (
         "".join(segs) + chain +
-        f"[mus]volume=0.95,afade=t=out:st={TOTAL - 2.6}:d=2.6[musf];"
-        # Audio des plans (deja attenue a l'extraction) + musique.
-        f"[0:a]volume=1.0[clips];"
-        # Normalisation de diffusion : la somme musique + plans sortait a -8 LUFS (YouTube
-        # normalise a -14 et un tel niveau ecrete). TP=-1.5 dBTP garde une marge pour le
+        # Normalisation de diffusion : YouTube ramene tout a -14 LUFS, et un master plus fort y est
+        # simplement attenue -- en gardant ses ecretages. TP=-1.5 dBTP laisse une marge au
         # reencodage lossy de la plateforme.
-        f"[clips][musf]amix=inputs=2:duration=first:dropout_transition=0:normalize=0,"
+        f"[mus]volume=0.95,afade=t=out:st={TOTAL - 2.6}:d=2.6,"
         f"loudnorm=I=-14:TP=-1.5[aout];"
         # Video : ouverture depuis le noir, fermeture au noir.
         # Ouverture courte (0.4 s) : le trailer demarre sur la cinematique, deja tres sombre --

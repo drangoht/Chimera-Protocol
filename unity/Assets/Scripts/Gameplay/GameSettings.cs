@@ -29,7 +29,12 @@ public static class GameSettings
 
             // La langue est POUSSÉE vers la couche de traduction : celle-ci ne peut pas dépendre du
             // Gameplay sans créer un cycle entre assemblies.
-            Loc.Language = _current.Language;
+            //
+            // ⚠ `--lang=` gagne sur la préférence, et n'est PAS réécrit dans `_current` : un drapeau
+            // ne laisse pas sa trace dans les réglages du joueur. Appliqué ICI, au point unique où la
+            // langue est posée — poussé plus tard depuis un `Start`, il arriverait après les écrans
+            // qui ont déjà lu leurs libellés, et la capture sortirait à moitié traduite.
+            Loc.Language = DebugHooks.Language ?? _current.Language;
 
             ApplyDisplay(_current);
             ApplyVolumes(_current);

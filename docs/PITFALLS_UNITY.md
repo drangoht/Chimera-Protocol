@@ -1595,6 +1595,35 @@ D'où `WeaponBase.ApplyLevelStats(stats)`, appelé par l'inventaire, que chaque 
 surcharge pour lire ce qui la concerne. *Une donnée analysée n'est pas une donnée appliquée* — même
 famille que la table de fusions parsée et jamais consommée.
 
+### Un repli silencieux sur la donnée fait passer un jeu à moitié traduit pour un jeu qui marche
+
+Tout le contenu nommé (armes, greffes, améliorations du Hub, ennemis) vit dans les JSON de
+`StreamingAssets/data`, **écrit en français**. Les écrans affichaient ce texte tel quel. Un joueur
+anglophone voyait donc un Hub dont l'en-tête était traduit et les dix-neuf lignes ne l'étaient pas,
+un Codex entièrement français, des noms d'armes français dans son HUD — dans un jeu qui se déclare
+localisé EN/FR/ES. **Trouvé en regardant les rushes du trailer, pas par un test.**
+
+Trois couches du même défaut, et c'est la troisième qui compte :
+
+1. Le texte affiché venait de la donnée au lieu de `ui.csv`.
+2. `ui.csv` portait déjà **109 clés traduites que rien ne lisait** (16 `GRAFT_`, 93 `ENEMY_`), plus
+   `LEVELUP_TITLE`, `RUNEND_VICTORY`, `RUNEND_TIME`, `HUD_DASH_HINT`… pendant que les écrans
+   écrivaient le français **en dur** juste à côté.
+3. Et `UiNames` appliquait déjà la bonne parade — **aux quatre passifs seulement**. Deux règles dans
+   une même méthode, et seule la moins visible était la bonne.
+
+Le repli sur la donnée est **volontaire** : mieux vaut un nom français qu'un blanc ou une clé brute.
+Mais il est silencieux, et un défaut silencieux dans du texte ne se voit qu'en lisant l'écran dans
+la langue concernée — ce que personne ne fait. La parade n'est donc pas dans le code :
+**`tools/audit_loc_keys.py`** déclare toute clé absente comme une erreur, et `Platform/ContentText.cs`
+construit exactement les mêmes clés. Les deux bougent ensemble.
+
+⚠ Corollaire, payé le jour même : l'audit ne voyait que les **absences**. En ajoutant les clés
+manquantes des armes, un préfixe `WEAPON_` complet a été créé… alors que les vingt-et-une entrées
+existaient déjà sous **`WPN_`**, lues par les cartes de montée de niveau. Deux tables pour les mêmes
+douze armes, et rien pour s'en plaindre. L'audit contrôle depuis les deux sens : toute clé qui porte
+un préfixe de la convention sans correspondre à un contenu est signalée **orpheline**.
+
 ### Une primitive de dépannage finit toujours par arriver à l'écran
 
 `UiPrimitives.White` — un carré — servait de silhouette aux **drones orbitaux**. Rien ne cassait :

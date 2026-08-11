@@ -57,14 +57,14 @@ public sealed class RunEndScreen : MonoBehaviour
 
         if (_title != null)
         {
-            _title.text = victory ? "VICTOIRE" : "FIN DE RUN";
+            _title.text = victory ? Loc.T("RUNEND_VICTORY") : Loc.T("RUNEND_DEATH");
             _title.color = victory ? UiPalette.Gold : UiPalette.Rust;
         }
 
         if (_stats != null)
-            _stats.text = $"Temps : {runSeconds / 60:00}:{runSeconds % 60:00}\n" +
-                          $"Éliminations : {kills}\n" +
-                          $"Noyaux d'Aether : {cores}";
+            _stats.text = $"{Loc.T("RUNEND_TIME")} : {runSeconds / 60:00}:{runSeconds % 60:00}\n" +
+                          $"{Loc.T("RUNEND_KILLS")} : {kills}\n" +
+                          $"{Loc.T("RUNEND_CORES")} : {cores}";
 
         if (_root != null) _root.SetActive(true);
 
@@ -92,14 +92,14 @@ public sealed class RunEndScreen : MonoBehaviour
             float t = Mathf.Clamp01(elapsed / duration);
 
             DisplayedEchoes = Mathf.RoundToInt(Mathf.Lerp(0f, EchoesEarned, t));
-            if (_echoes != null) _echoes.text = $"+{DisplayedEchoes} Échos";
+            if (_echoes != null) _echoes.text = Loc.T("RUNEND_ECHOES_GAINED", DisplayedEchoes);
             yield return null;
         }
 
         // Atterrissage exact sur le total : un arrondi d'interpolation ne doit jamais laisser
         // l'affichage à une unité près du montant crédité.
         DisplayedEchoes = EchoesEarned;
-        if (_echoes != null) _echoes.text = $"+{DisplayedEchoes} Échos";
+        if (_echoes != null) _echoes.text = Loc.T("RUNEND_ECHOES_GAINED", DisplayedEchoes);
         _countUp = null;
     }
 
@@ -108,7 +108,7 @@ public sealed class RunEndScreen : MonoBehaviour
     {
         if (_countUp != null) { StopCoroutine(_countUp); _countUp = null; }
         DisplayedEchoes = EchoesEarned;
-        if (_echoes != null) _echoes.text = $"+{DisplayedEchoes} Échos";
+        if (_echoes != null) _echoes.text = Loc.T("RUNEND_ECHOES_GAINED", DisplayedEchoes);
     }
 
     private void BuildUi()
@@ -137,12 +137,20 @@ public sealed class RunEndScreen : MonoBehaviour
         layout.childControlHeight = true;
         layout.childControlWidth = true;
 
-        _title = UiStyle.Label(column.transform, "FIN DE RUN", 40, UiPalette.Rust, TextAnchor.UpperCenter);
+        // Les libellés de construction sont ceux d'un écran encore vide : `Show` les réécrit tous.
+        // Ils passent quand même par la table — un écran ouvert par un chemin qui oublierait `Show`
+        // afficherait sinon du français figé dans les trois langues.
+        _title = UiStyle.Label(column.transform, Loc.T("RUNEND_DEATH"), 40, UiPalette.Rust,
+                               TextAnchor.UpperCenter);
         UiStyle.Separator(column.transform, UiPalette.Gold);
         _stats = UiStyle.Label(column.transform, "", 22, UiPalette.OffWhite, TextAnchor.UpperCenter);
-        _echoes = UiStyle.Label(column.transform, "+0 Échos", 32, UiPalette.Gold, TextAnchor.UpperCenter);
+        _echoes = UiStyle.Label(column.transform, Loc.T("RUNEND_ECHOES_GAINED", 0), 32,
+                                UiPalette.Gold, TextAnchor.UpperCenter);
 
-        var button = UiStyle.TextButton(column.transform, "Retour au menu", FrameAccent.Cyan);
+        // ⚠ `RUNEND_MENU` et non `RUNEND_HUB` : ce bouton va au MENU PRINCIPAL (cf. `RunHud`), pas au
+        // Hub. La clé du Hub existe et se serait posée là sans qu'aucun test ne bronche — elle aurait
+        // simplement promis au joueur une destination qui n'est pas la sienne.
+        var button = UiStyle.TextButton(column.transform, Loc.T("RUNEND_MENU"), FrameAccent.Cyan);
         button.onClick.AddListener(() =>
         {
             if (_root != null) _root.SetActive(false);

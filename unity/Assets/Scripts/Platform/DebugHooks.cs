@@ -166,6 +166,41 @@ public static class DebugHooks
     public static bool ForceElites => _forceElites ??= HasFlag("--force-elites");
     private static bool? _forceElites;
 
+    // ─── Capture ──────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// <c>--trailer</c> : masque ce qui n'a rien à faire dans une vidéo — tampon de version, invite
+    /// « appuyer pour passer ».
+    /// </summary>
+    /// <remarks>
+    /// Ces deux mentions sont utiles au joueur et <b>datent</b> la vidéo : un trailer qui affiche
+    /// <c>v2.0.0-37c9d64</c> dans un coin devient faux à la version suivante, alors que rien du jeu
+    /// n'a changé à l'image.
+    /// </remarks>
+    public static bool TrailerMode => _trailerMode ??= HasFlag("--trailer");
+    private static bool? _trailerMode;
+
+    /// <summary>
+    /// <c>--lang=&lt;en|fr|es&gt;</c> : langue de la session, ou <c>null</c> pour celle du joueur.
+    /// </summary>
+    /// <remarks>
+    /// <para>Tout le texte à l'écran en dépend : narration de la cinématique, bandeaux de biome,
+    /// cartes de montée de niveau, menus. Sans ce drapeau, une capture prend la langue du <b>poste</b>
+    /// — qui n'est pas forcément celle de la vidéo qu'on monte, et l'on ne s'en aperçoit qu'au
+    /// montage, une fois les rushes tournés.</para>
+    /// <para><b>Non persisté</b> : la préférence du joueur n'est pas touchée.</para>
+    /// </remarks>
+    public static string? Language => _languageRead ? _language : ReadLanguage();
+    private static bool _languageRead;
+    private static string? _language;
+
+    private static string? ReadLanguage()
+    {
+        _language = ValueFlag("--lang=");
+        _languageRead = true;
+        return _language;
+    }
+
     // ─── Lecture ──────────────────────────────────────────────────────────────
 
     private static float ReadFloat(string prefix, ref float slot, ref bool read)
@@ -199,7 +234,8 @@ public static class DebugHooks
     /// <summary>Oublie tout ce qui a été lu — réservé aux tests, qui jouent plusieurs configurations.</summary>
     public static void Reset()
     {
-        _powerCurve = _autoPlay = _invulnerable = _saturateArsenal = _forceElites = null;
+        _powerCurve = _autoPlay = _invulnerable = _saturateArsenal = _forceElites = _trailerMode = null;
         _seedRead = _timeScaleRead = _startAtRead = _runLimitRead = _saturationRead = _biomeRead = false;
+        _languageRead = false;
     }
 }

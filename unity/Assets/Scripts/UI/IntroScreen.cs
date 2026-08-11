@@ -98,6 +98,12 @@ public sealed class IntroScreen : MonoBehaviour
 
         // Ensuite : n'importe quelle touche, n'importe quel clic. Un joueur qui veut passer ne doit
         // pas chercher LA touche.
+        //
+        // ⚠ Sauf en capture : « n'importe quelle touche » inclut celles que quelqu'un tape ailleurs
+        // pendant les vingt minutes que dure une tournée. La prise partait alors au menu au bout de
+        // trois secondes, et cela ne se voyait qu'au montage.
+        if (DebugHooks.TrailerMode) return;
+
         if (!Finished && (Input.anyKeyDown || Input.GetMouseButtonDown(0))) Skip();
     }
 
@@ -132,7 +138,7 @@ public sealed class IntroScreen : MonoBehaviour
             StartCoroutine(RunShot(i));
 
             yield return FadeText(_line, 0f, 1f, 0.7f);
-            yield return new WaitForSecondsRealtime(Holds[i]);
+            yield return Hold(Holds[i]);
             yield return FadeText(_line, 1f, 0f, 0.4f);
         }
 
@@ -177,7 +183,7 @@ public sealed class IntroScreen : MonoBehaviour
         StartCoroutine(SlowZoom(1.05f, 1f, 6.5f));
 
         // Corruption progressive de la teinte : bleu machine → rouille.
-        yield return new WaitForSecondsRealtime(1.4f);
+        yield return Hold(1.4f);
         yield return TintTo(drone, new Color(0.6f, 0.85f, 1f), Rust, 1.6f);
 
         if (drone != null)
@@ -231,7 +237,7 @@ public sealed class IntroScreen : MonoBehaviour
         StartCoroutine(Emit(new Vector2(0f, -120f), Cyan, 40, 60f, 60f, Vector2.up, 1.8f, 7f));
         StartCoroutine(SlowZoom(1f, 1.15f, 7f));
 
-        yield return new WaitForSecondsRealtime(1.6f);
+        yield return Hold(1.6f);
 
         StartCoroutine(FadeSprite(aura, 0f, 0.9f, 1.2f));
         yield return ScaleTo(aura, 0.5f, 7f, 1.8f);
@@ -265,18 +271,18 @@ public sealed class IntroScreen : MonoBehaviour
         StartCoroutine(FadeSprite(enemy, 1f, 0f, 0.6f));
         StartCoroutine(Emit(enemyStop, Rust, 26, 150f, 20f, pull, 1.8f, 1.2f));
 
-        yield return new WaitForSecondsRealtime(0.35f);
+        yield return Hold(0.35f);
         StartCoroutine(Emit(enemyStop + pull * 45f, Cyan, 22, 150f, 16f, pull, 1.6f, 1.2f));
 
         // 3) Mutation : le fragment atteint le joueur — l'aura éclôt, et sa teinte change.
-        yield return new WaitForSecondsRealtime(0.85f);
+        yield return Hold(0.85f);
 
         var aura = MakeSprite(FusionAura, playerPos, 0.5f, new Color(Cyan.r, Cyan.g, Cyan.b, 0f));
         StartCoroutine(ScaleTo(aura, 0.5f, 4f, 0.3f));
         StartCoroutine(FadeSprite(aura, 0f, 0.8f, 0.3f));
         StartCoroutine(TintTo(player, Color.white, new Color(0.75f, 0.85f, 0.85f), 0.5f));
 
-        yield return new WaitForSecondsRealtime(0.3f);
+        yield return Hold(0.3f);
         yield return FadeSprite(aura, 0.8f, 0f, 1.2f);
     }
 
@@ -294,7 +300,7 @@ public sealed class IntroScreen : MonoBehaviour
 
         yield return FadeText(_title, 0f, 1f, 0.8f);
         yield return FadeText(_tagline, 0f, 1f, 0.6f);
-        yield return new WaitForSecondsRealtime(2.6f);
+        yield return Hold(2.6f);
     }
 
     // ─── Fabriques ────────────────────────────────────────────────────────────
@@ -362,6 +368,25 @@ public sealed class IntroScreen : MonoBehaviour
         return renderer;
     }
 
+    /// <summary>
+    /// Attente de <paramref name="seconds"/>, mesurée sur l'horloge <b>non mise à l'échelle</b> —
+    /// jamais sur le temps mur.
+    /// </summary>
+    /// <remarks>
+    /// <para>Remplace <c>WaitForSecondsRealtime</c>, qui lisait <c>Time.realtimeSinceStartup</c>. La
+    /// différence est nulle en jeu — la cinématique n'est jamais en pause — et décisive en
+    /// <b>capture vidéo</b> : sous <c>Time.captureFramerate</c>, une image de jeu coûte plusieurs
+    /// dizaines de millisecondes réelles, si bien qu'un plan « de 3,4 s » tenait moins d'une demi
+    /// seconde à l'écran dans le film. Les six plans défilaient trop vite pour être lus, et rien ne
+    /// le signalait : chaque image, prise isolément, était juste.</para>
+    /// <para>Le reste du fichier comptait déjà en <c>unscaledDeltaTime</c> — ces attentes étaient les
+    /// dernières à suivre une autre horloge.</para>
+    /// </remarks>
+    private static IEnumerator Hold(float seconds)
+    {
+        for (float t = 0f; t < seconds; t += Time.unscaledDeltaTime) yield return null;
+    }
+
     private IEnumerator PlayFrames(SpriteRenderer renderer, SpriteFramesAsset.Animation clip)
     {
         float step = clip.Speed > 0f ? 1f / clip.Speed : 0.125f;
@@ -369,7 +394,7 @@ public sealed class IntroScreen : MonoBehaviour
         for (int i = 0; renderer != null; i++)
         {
             renderer.sprite = clip.Frames[i % clip.Frames.Length];
-            yield return new WaitForSecondsRealtime(step);
+            yield return Hold(step);
         }
     }
 
@@ -391,7 +416,7 @@ public sealed class IntroScreen : MonoBehaviour
                 StartCoroutine(OneParticle(sprite, origin, color, velocity, spreadDeg, direction, scale));
 
             elapsed += 0.18f;
-            yield return new WaitForSecondsRealtime(0.18f);
+            yield return Hold(0.18f);
         }
     }
 
@@ -590,8 +615,11 @@ public sealed class IntroScreen : MonoBehaviour
         Center(_tagline, new Vector2(1400f, 60f), -60f);
         _tagline.gameObject.SetActive(false);
 
-        // ⚠ Affiché en PERMANENCE : une intro qu'on ne sait pas passer se subit.
-        _skipHint = UiStyle.Label(canvasGo.transform, "— " + Loc.T("INTRO_SKIP") + " —", 18,
+        // ⚠ Affiché en PERMANENCE : une intro qu'on ne sait pas passer se subit. Sauf en capture
+        // vidéo, où personne ne peut appuyer sur quoi que ce soit et où l'invite ne fait que salir
+        // le plan.
+        _skipHint = UiStyle.Label(canvasGo.transform,
+                                  DebugHooks.TrailerMode ? "" : "— " + Loc.T("INTRO_SKIP") + " —", 18,
                                   UiPalette.Dim, TextAnchor.LowerCenter);
         var hintRect = _skipHint.GetComponent<RectTransform>();
         hintRect.anchorMin = hintRect.anchorMax = new Vector2(0.5f, 0f);

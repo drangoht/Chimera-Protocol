@@ -466,3 +466,56 @@ PERKS_INTRO,"Starting perks are start-of-run bonuses, unlocked by completing Cha
 PERK_STATUS_LOCKED,Locked,Verrouillé,Bloqueado
 COMMON_ON,On,Activé,Activado
 COMMON_OFF,Off,Désactivé,Desactivado
+META_HP_BOOST_NAME,Reinforced Body,Corps Renforcé,Cuerpo Reforzado
+META_HP_BOOST_DESC,+20 max HP per level. You start with more survival headroom.,+20 HP maximum par niveau. Vous partez avec plus de marge de survie.,+20 PV máximos por nivel. Empiezas con más margen de supervivencia.
+META_DAMAGE_BOOST_NAME,Offensive Calibration,Calibration Offensive,Calibración Ofensiva
+META_DAMAGE_BOOST_DESC,+1 base damage per level (applies to every weapon through an extra +10% damage multiplier).,+1 dégât de base par niveau (s'applique à toutes les armes via un multiplicateur de dégâts additionnel de +10%).,+1 de daño base por nivel (se aplica a todas las armas mediante un multiplicador de daño adicional del +10%).
+META_SPEED_BOOST_NAME,Upgraded Servos,Servos Améliorés,Servos Mejorados
+META_SPEED_BOOST_DESC,+15 px/s to starting movement speed per level.,+15 px/s à la vitesse de départ par niveau.,+15 px/s a la velocidad inicial por nivel.
+META_COOLDOWN_REDUCTION_NAME,Aether Sync,Synchronisation Aether,Sincronización Aether
+META_COOLDOWN_REDUCTION_DESC,"-5% cooldown on every weapon per level, from the start of the run.",-5% de cooldown sur toutes les armes par niveau dès le début de run.,"-5% de enfriamiento en todas las armas por nivel, desde el inicio de la partida."
+META_DAMAGE_REDUCTION_NAME,Composite Armour,Blindage Composite,Blindaje Compuesto
+META_DAMAGE_REDUCTION_DESC,"-5% damage taken per level (stacks with Reinforced Plating, global hard cap 40%).","-5% de dégâts reçus par niveau (cumulable avec la Plaque Renforcée, plafond global 40%).","-5% de daño recibido por nivel (acumulable con la Placa Reforzada, tope global del 40%)."
+META_REROLL_NAME,Tactical Recalibration,Recalibrage Tactique,Recalibración Táctica
+META_REROLL_DESC,Redraws the cards offered on level up. +1 use per run per level (max 3).,Renouvelle les cartes proposées à la montée de niveau. +1 utilisation par run et par niveau (max 3).,Renueva las cartas ofrecidas al subir de nivel. +1 uso por partida y por nivel (máx. 3).
+META_SKIP_NAME,Selection Skip,Esquive de Sélection,Omisión de Selección
+META_SKIP_DESC,Lets you skip a card selection (you keep the level without taking an upgrade). +1 use per run per level (max 3).,"Permet de passer une sélection de cartes (vous gardez le niveau, sans choisir d'amélioration). +1 utilisation par run et par niveau (max 3).",Permite omitir una selección de cartas (conservas el nivel sin elegir mejora). +1 uso por partida y por nivel (máx. 3).
+META_HP_BOOST_2_NAME,Armoured Plate,Plaque Blindée,Placa Blindada
+META_HP_BOOST_2_DESC,+35 extra max HP per level (2 levels). Extends Reinforced Body for tank builds.,+35 HP maximum supplémentaires par niveau (2 niveaux). Extension du Corps Renforcé pour les builds tank.,+35 PV máximos adicionales por nivel (2 niveles). Amplía el Cuerpo Reforzado para builds de tanque.
+META_DAMAGE_BOOST_2_NAME,Advanced Calibration,Calibration Avancée,Calibración Avanzada
+META_DAMAGE_BOOST_2_DESC,+8% extra damage per level (3 levels). Extends Offensive Calibration for long runs.,+8% dégâts supplémentaires par niveau (3 niveaux). Extension de la Calibration Offensive pour les runs longues.,+8% de daño adicional por nivel (3 niveles). Amplía la Calibración Ofensiva para partidas largas.
+META_COOLDOWN_REDUCTION_2_NAME,Aether Sync II,Synchronisation Aether II,Sincronización Aether II
+META_COOLDOWN_REDUCTION_2_DESC,-4% extra cooldown per level (2 levels). Extends Aether Sync.,-4% de cooldown supplémentaire par niveau (2 niveaux). Extension de la Synchronisation Aether.,-4% de enfriamiento adicional por nivel (2 niveles). Amplía la Sincronización Aether.
+META_DAMAGE_REDUCTION_2_NAME,Composite Armour II,Blindage Composite II,Blindaje Compuesto II
+META_DAMAGE_REDUCTION_2_DESC,-4% extra damage taken per level (2 levels). Approaches the global 40% hard cap when stacked with in-run Reinforced Plating.,-4% de dégâts reçus supplémentaire par niveau (2 niveaux). Approche le plafond global de 40% si cumulé avec la Plaque Renforcée in-run.,-4% de daño recibido adicional por nivel (2 niveles). Se acerca al tope global del 40% si se acumula con la Placa Reforzada en partida.
+META_EXTRA_LIFE_NAME,Emergency Core,Noyau de Secours,Núcleo de Emergencia
+META_EXTRA_LIFE_DESC,"An emergency core brings you back to 30% HP instead of dying. +1 charge per level, refilled every run (2 levels max).","Un noyau d'urgence vous ramène à 30% HP au lieu de mourir. +1 charge par niveau, rechargée à chaque run (2 niveaux max).","Un núcleo de emergencia te devuelve al 30% de PV en lugar de morir. +1 carga por nivel, recargada en cada partida (máx. 2 niveles)."
+META_DAMAGE_ABSORB_NAME,Adaptive Plate,Plaque Adaptative,Placa Adaptativa
+META_DAMAGE_ABSORB_DESC,"The first hits taken in the run are fully absorbed (0 damage). +1 charge per level, refilled every run (3 levels max).","Les premiers coups reçus dans la run sont totalement absorbés (0 dégât). +1 charge par niveau, rechargée à chaque run (3 niveaux max).","Los primeros golpes recibidos en la partida se absorben por completo (0 daño). +1 carga por nivel, recargada en cada partida (máx. 3 niveles)."
+META_HP_REGEN_NAME,Self-Repair,Auto-Réparation,Autorreparación
+META_HP_REGEN_DESC,"Regenerates HP continuously during the run. +0.4 HP/s per level (3 levels, max 1.2 HP/s). At full health the flow fills a reserve that soaks up the next hit. Every hit taken cuts it for 4 s: you have to break off to repair.","Régénère des HP en continu pendant la run. +0,4 HP/s par niveau (3 niveaux, max 1,2 HP/s). À PV pleins, le débit remplit une réserve qui encaisse le prochain coup. Chaque coup encaissé la coupe 4 s : il faut décrocher pour se réparer.","Regenera PV de forma continua durante la partida. +0,4 PV/s por nivel (3 niveles, máx. 1,2 PV/s). Con la vida al máximo, el caudal llena una reserva que absorbe el próximo golpe. Cada golpe recibido la corta 4 s: hay que replegarse para repararse."
+META_CORE_MAGNETISM_NAME,Core Resonance,Résonance de Noyau,Resonancia de Núcleo
+META_CORE_MAGNETISM_DESC,Increases the pickup radius for Aether Cores. +15/+15/+20 px per level (base 20 px → 70 px max).,Augmente le rayon de ramassage des Noyaux d'Aether. +15/+15/+20 px par niveau (base 20 px → 70 px max).,Aumenta el radio de recogida de los Núcleos de Aether. +15/+15/+20 px por nivel (base 20 px → 70 px máx.).
+META_OVERTIME_STABILIZER_NAME,Overload Stabiliser,Stabilisateur de Surcharge,Estabilizador de Sobrecarga
+META_OVERTIME_STABILIZER_DESC,"Softens the Overtime escalation (enemy spawn and scaling). -5% per level (3 levels, max -15%).","Réduit l'agressivité de l'escalade en Overtime (spawn et scaling ennemis). -5% par niveau (3 niveaux, max -15%).","Reduce la agresividad de la escalada en Tiempo Extra (aparición y escalado de enemigos). -5% por nivel (3 niveles, máx. -15%)."
+META_BONUS_MAGNET_NAME,Auxiliary Magnet,Aimant Auxiliaire,Imán Auxiliar
+META_BONUS_MAGNET_DESC,"+1 Magnet spawn per run per level (2 levels, base 3 → up to 5 per run).","+1 apparition de l'Aimant par run et par niveau (2 niveaux, base 3 → jusqu'à 5 par run).","+1 aparición del Imán por partida y por nivel (2 niveles, base 3 → hasta 5 por partida)."
+META_GRAFT_SLOTS_NAME,Assimilation Matrix,Matrice d'Assimilation,Matriz de Asimilación
+META_GRAFT_SLOTS_DESC,"+1 graft slot (Assimilation). Base 3, up to 5. Fundamentally changes the chimera's power.","+1 emplacement de greffe (Assimilation). Base 3, jusqu'à 5. Change fondamentalement le pouvoir de la chimère.","+1 espacio de injerto (Asimilación). Base 3, hasta 5. Cambia radicalmente el poder de la quimera."
+META_GRAFT_METABOLISM_NAME,Voracious Metabolism,Métabolisme Vorace,Metabolismo Voraz
+META_GRAFT_METABOLISM_DESC,-10% assimilation gauge threshold per level (max -30%). Grafts come sooner.,-10% de seuil de jauge d'assimilation par niveau (max -30%). Les greffes arrivent plus vite.,-10% del umbral del medidor de asimilación por nivel (máx. -30%). Los injertos llegan antes.
+UNIT_HP,HP,PV,PV
+UNIT_DPS,dmg/s,dgt/s,daño/s
+UNIT_DAMAGE,dmg,dgt,daño
+UNIT_SECONDS,s,s,s
+CODEX_RATE,rate,cadence,cadencia
+CODEX_MAX_LEVEL,max level,niveau max,nivel máx.
+RUNEND_ECHOES_GAINED,+{0} Echoes,+{0} Échos,+{0} Ecos
+RUNEND_MENU,Back to menu,Retour au menu,Volver al menú
+ASSIM_SLOT_FREED,(a slot is freed),(un emplacement se libère),(se libera un espacio)
+ASSIM_SLOTS,Slots {0}/{1},Emplacements {0}/{1},Espacios {0}/{1}
+ASSIM_SLOTS_FULL,Slots FULL ({0}) — the oldest will give way,Emplacements PLEINS ({0}) — la plus ancienne cédera sa place,Espacios LLENOS ({0}) — el más antiguo cederá su lugar
+ASSIM_DECLINE_HINT,Refusing raises this gauge's threshold.,Refuser relève le seuil de cette jauge.,Rechazar eleva el umbral de este medidor.
+HUD_LEVEL,LV {0},NIV {0},NIV {0}
+HUD_BOSS_INCOMING,THE RUSTED CORE IS COMING,LE NOYAU ROUILLÉ ARRIVE,EL NÚCLEO OXIDADO SE ACERCA
+HUD_RUN_CONTINUES,THE RUN CONTINUES,LA RUN CONTINUE,LA PARTIDA CONTINÚA

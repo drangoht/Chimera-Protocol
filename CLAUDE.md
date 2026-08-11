@@ -37,8 +37,10 @@ validé en jouant. **626 tests.** ▶ L'auteur veut **jouer avant de publier** �
 
 ⚠ **La leçon du portage, toujours en vigueur : déclaré n'est pas consommé.** Neuf fois une donnée,
 une règle ou un système entier existait, était testé, et n'était appelé par rien — trouvé en jouant,
-jamais par l'automatisation. Deux outils sont nés de là : `tools/audit_json_keys.py` et
-`tools/audit_unused_members.py`. **Les lancer après tout ajout de données ou de règle.**
+jamais par l'automatisation. Trois outils sont nés de là : `tools/audit_json_keys.py`,
+`tools/audit_unused_members.py` et **`tools/audit_loc_keys.py`** (tout le contenu nommé était affiché
+**en français dans les trois langues**, alors que 109 clés traduites dormaient dans `ui.csv`).
+**Les lancer après tout ajout de données, de règle ou de texte affiché.**
 
 ## Équipe d'agents
 
@@ -90,7 +92,11 @@ quand une phase se termine, relire les agents qu'elle concerne (dernière passe 
   gratuit, non commercial)** : `docs/AUDIO_CREDITS.md`.
   ⚠ Une arme absente de la table **`WeaponSfx`** est **muette** — 14 l'ont été sans que rien ne le dise.
 - Localisation EN/FR/ES : `unity/Assets/StreamingAssets/localization/ui.csv` → `Loc.T("CLÉ")`
-  (lu tel quel, aucune étape d'import).
+  (lu tel quel, aucune étape d'import). Le **contenu nommé** (armes, greffes, améliorations, ennemis)
+  passe par `Platform/ContentText.cs`, qui déduit la clé de l'identifiant (`tesla_coil` →
+  `WPN_TESLA_COIL_NAME`) et **replie sur le texte français du JSON** si elle manque.
+  ⚠ Ce repli est silencieux : le contrôle est `tools/audit_loc_keys.py`, à lancer après tout ajout
+  de contenu. Il vérifie les deux sens — clé absente **et** clé orpheline.
 - Performance cible : 200–300 entités simultanées ; I-frames joueur 0,45 s (CRITIQUE pour les nuées).
 - Palette UI : fond `#1A1A2E`, cyan `#44FFEE`, violet `#AA44FF`, or `#FFCC44`, blanc cassé `#D9D9F2`.
   Police : Share Tech Mono ; VT323 en réserve.

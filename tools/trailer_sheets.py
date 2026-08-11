@@ -1,21 +1,24 @@
 """Planches-contact des rushes du trailer -- une vignette horodatee toutes les N secondes.
 
-A quoi ca sert : l'EDL de `tools/build_trailer.py` designe ses plans par des TIMECODES dans
-les rushes (`long_neon` a 185.4 s...). Or chaque recapture rejoue des runs randomisees : apres
-un passage de `tools/record_trailer.py`, ces timecodes ne montrent plus la meme chose. La
-planche permet de re-reperer les bons instants d'un coup d'oeil au lieu de scruter 5 min de
-video.
+A quoi ca sert : l'EDL de `tools/build_trailer.py` designe ses plans par des TIMECODES dans les
+rushes. Depuis la capture Unity (`Bench/TrailerRecorder.cs`) chaque prise est MISE EN SCENE, donc
+ces timecodes sont connus d'avance et survivent a une recapture -- ce qui n'etait pas le cas des
+rushes Godot, tires de runs aleatoires qu'il fallait re-caler a chaque fois.
+
+La planche ne sert donc plus a CHERCHER les plans, mais a VERIFIER qu'ils montrent bien ce que la
+mise en scene promet. C'est la seule etape qui regarde l'image : un rush peut avoir le bon nombre
+d'images, la bonne duree, et ne montrer qu'une arene vide ou une modale restee ouverte.
 
 Le timecode incruste sur chaque vignette est celui a lire dans l'EDL.
 
 Usage :
     python tools/trailer_sheets.py                    # toutes les sources de l'EDL
-    python tools/trailer_sheets.py long_neon boss     # sources choisies
-    python tools/trailer_sheets.py long_neon --step 3 # vignette toutes les 3 s
-    python tools/trailer_sheets.py long_fournaise --range 180-200 --step 1
+    python tools/trailer_sheets.py meta boss          # sources choisies
+    python tools/trailer_sheets.py gp_neon --step 2   # vignette toutes les 2 s
+    python tools/trailer_sheets.py meta --range 0-19 --step 1
 
-`--range` sert a caler les plans COURTS sur un evenement bref : une modale d'Assimilation ou
-de fusion ne reste que ~2 s a l'ecran, donc invisible sur une planche au pas de 5 s.
+`--range` sert a verifier les plans COURTS : un ecran de la prise `meta` ne tient que 3 s, une
+modale de montee de niveau environ 2 s -- invisibles sur une planche au pas de 5 s.
 """
 import os
 import subprocess
@@ -30,13 +33,13 @@ THUMB_W = 320
 
 
 def sheet(name, step, window=None):
-    avi = os.path.join(RAW, f"{name}.avi")
-    if not os.path.exists(avi):
-        print(f"  !! rush manquant : {name}.avi")
+    rush = os.path.join(RAW, f"{name}.mp4")
+    if not os.path.exists(rush):
+        print(f"  !! rush manquant : {name}.mp4")
         return False
 
     dur = float(subprocess.run(
-        ["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", avi],
+        ["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", rush],
         capture_output=True, text=True, check=True).stdout.strip())
 
     start, end = window if window else (0.0, dur)
@@ -61,7 +64,7 @@ def sheet(name, step, window=None):
 
     subprocess.run(
         ["ffmpeg", "-v", "error", "-y",
-         "-ss", f"{start}", "-i", avi, "-t", f"{end - start}",
+         "-ss", f"{start}", "-i", rush, "-t", f"{end - start}",
          "-vf", vf, "-frames:v", "1", out],
         cwd=PROJ, check=True)
     print(f"  -> {os.path.basename(out)}  ({start:.0f}-{end:.0f}s, "

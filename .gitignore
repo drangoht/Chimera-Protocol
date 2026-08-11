@@ -77,8 +77,15 @@ docs/ui_sheet_*.png
 docs/ui_step*.png
 docs/verif_*.png
 
+# ─── Trailer ────────────────────────────────────────────────────────────────
+# Rushes, plans intermédiaires et montage final : ~350 Mo par tournée, tous REGÉNÉRABLES —
+# `tools/record_trailer.py --all` puis `tools/build_trailer.py`. Depuis que chaque prise est mise
+# en scène, une recapture rend le même découpage : rien ne justifie de versionner la vidéo.
+trailer/
+
 # ─── Divers ─────────────────────────────────────────────────────────────────
 tools/__pycache__/
 tools/_tmp_*.py
+unity_build.log
 .DS_Store
 Thumbs.db

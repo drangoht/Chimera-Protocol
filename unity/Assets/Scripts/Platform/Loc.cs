@@ -17,7 +17,17 @@ public static class Loc
     /// dans la couche Platform, qui ne peut pas dépendre du Gameplay sans créer un cycle entre
     /// assemblies.
     /// </summary>
-    public static string Language { get; set; } = "fr";
+    /// <remarks>
+    /// ⚠ La valeur initiale lit <c>--lang=</c> <b>ici</b>, à l'initialisation du champ, et pas
+    /// seulement au chargement des réglages. Le drapeau y était bien appliqué — trop tard : les
+    /// premiers écrans demandent leurs libellés avant que quoi que ce soit n'ait touché
+    /// <c>GameSettings.Current</c>, et une capture lancée avec <c>--lang=en</c> sortait un menu
+    /// entièrement français. Rien ne le signalait : le journal annonçait « 467 libellés chargés »,
+    /// et il fallait regarder l'image pour le voir. C'est la même parade que
+    /// <c>RunConfig.BiomeFromCommandLine</c>, pour la même raison — un drapeau lu depuis un
+    /// <c>Start</c> arrive après ceux qui le consultent.
+    /// </remarks>
+    public static string Language { get; set; } = DebugHooks.Language ?? "fr";
 
     private static LocTable.Document Doc
     {
@@ -61,5 +71,17 @@ public static class Loc
     }
 
     /// <summary>Oublie la table — à appeler si la langue change en cours de session.</summary>
-    public static void Reset() => _doc = null;
+    /// <remarks>
+    /// ⚠ Vide aussi les caches de texte <b>dérivés</b> de la table, et non la seule table : depuis
+    /// que les noms d'armes viennent d'ici, <see cref="UiNames"/> garde une copie résolue dans la
+    /// langue où on la lui a demandée. Recharger la table sans la vider laissait un HUD dans
+    /// l'ancienne langue au milieu d'une interface traduite — le genre de défaut qu'on ne voit
+    /// qu'en changeant de langue en cours de partie, donc jamais.
+    /// C'est le point UNIQUE où cet oubli se fait : tout nouveau cache de texte se vide ici.
+    /// </remarks>
+    public static void Reset()
+    {
+        _doc = null;
+        UiNames.Reset();
+    }
 }

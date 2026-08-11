@@ -65,9 +65,11 @@ public sealed class AssimilationScreen : MonoBehaviour
 
         var fusion = def as GraftTable.FusionDef;
 
+        string name = ContentText.GraftName(def.Id, def.Name);
+
         if (_title != null)
         {
-            _title.text = fusion != null ? $"{Loc.T("ASSIM_FUSION_TAG")} — {def.Name}" : def.Name;
+            _title.text = fusion != null ? $"{Loc.T("ASSIM_FUSION_TAG")} — {name}" : name;
         }
 
         if (_body != null)
@@ -79,13 +81,14 @@ public sealed class AssimilationScreen : MonoBehaviour
             // emplacement. Lui afficher « la plus ancienne cédera sa place » ferait refuser la
             // meilleure offre du jeu par crainte de perdre autre chose.
             string slots = fusion != null
-                ? $"{string.Join(" + ", FusionSourceNames(fusion))} → {def.Name}   (un emplacement se libère)"
+                ? $"{string.Join(" + ", FusionSourceNames(fusion))} → {name}   " +
+                  Loc.T("ASSIM_SLOT_FREED")
                 : Assimilation.HasFreeSlot
-                    ? $"Emplacements {Assimilation.Equipped.Count}/{Assimilation.SlotCount}"
-                    : $"Emplacements PLEINS ({Assimilation.SlotCount}) — la plus ancienne cédera sa place";
+                    ? Loc.T("ASSIM_SLOTS", Assimilation.Equipped.Count, Assimilation.SlotCount)
+                    : Loc.T("ASSIM_SLOTS_FULL", Assimilation.SlotCount);
 
-            _body.text = $"{def.Description}\n\n{slots}\n" +
-                         "Refuser relève le seuil de cette jauge.";
+            _body.text = $"{ContentText.GraftDesc(def.Id, def.Description)}\n\n{slots}\n" +
+                         Loc.T("ASSIM_DECLINE_HINT");
         }
 
         if (_accept != null && EventSystem.current != null)
@@ -200,7 +203,7 @@ public sealed class AssimilationScreen : MonoBehaviour
         foreach (string id in fusion.Requires)
         {
             var source = Assimilation.Config.GraftById(id);
-            names.Add(source != null ? source.Name : id);
+            names.Add(ContentText.GraftName(id, source != null ? source.Name : id));
         }
 
         return names;

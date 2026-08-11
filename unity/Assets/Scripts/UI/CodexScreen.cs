@@ -146,11 +146,40 @@ public sealed class CodexScreen : MonoBehaviour
                 : System.Array.Exists(def.Biomes,
                                       b => scores.ContainsKey(b) || completions.ContainsKey(b));
 
-            AddEntry(seen, def.Name,
-                     $"{def.Role}   {def.MaxHp:F0} PV   {def.DamagePerSecond:F0} dgt/s" +
-                     (def.PrimaryBiome.Length > 0 ? $"   {def.PrimaryBiome}" : ""),
+            // ⚠ `def.Role` est un RÔLE DE DONNÉES (« swarm », « elite »…), pas un libellé : il sert au
+            // spawn et au routage des jauges. Le bestiaire affiche la version écrite pour le joueur,
+            // qui vit dans `ui.csv` sous le suffixe TAG — la donnée reste anglaise et technique, le
+            // texte affiché est traduit.
+            AddEntry(seen, ContentText.EnemyName(def.Id, def.Name),
+                     $"{ContentText.EnemyTag(def.Id, def.Role)}   " +
+                     $"{def.MaxHp:F0} {Loc.T("UNIT_HP")}   " +
+                     $"{def.DamagePerSecond:F0} {Loc.T("UNIT_DPS")}" +
+                     (def.PrimaryBiome.Length > 0 ? "   " + BiomeName(def.PrimaryBiome) : ""),
                      icon: PortraitOf(def));
         }
+    }
+
+    /// <summary>Rareté traduite (<c>common</c> → « Commun »), ou la valeur brute si la clé manque.</summary>
+    private static string RarityName(string rarity)
+    {
+        string key = $"RARITY_{rarity.ToUpperInvariant()}";
+        string translated = Loc.T(key);
+        return translated != key ? translated : rarity;
+    }
+
+    /// <summary>
+    /// Nom traduit d'un biome, ou son identifiant si la clé manque.
+    /// </summary>
+    /// <remarks>
+    /// Les cartes de sélection de niveau lisent la même clé (<c>BIOME_&lt;SLUG&gt;_NAME</c>) sans
+    /// repli : là-bas une clé manquante saute aux yeux, elle occupe le titre de la carte. Ici elle
+    /// se perdrait au bout d'une ligne de statistiques.
+    /// </remarks>
+    private static string BiomeName(string biomeId)
+    {
+        string key = $"BIOME_{biomeId.ToUpperInvariant()}_NAME";
+        string translated = Loc.T(key);
+        return translated != key ? translated : biomeId;
     }
 
     /// <summary>
@@ -187,9 +216,10 @@ public sealed class CodexScreen : MonoBehaviour
             bool known = GameSettings.IsWeaponDiscovered(def.Id);
             var stats = WeaponTable.StatsAt(def, 1);
 
-            AddEntry(known, def.Name,
-                     $"{def.Rarity}   {stats.Damage:F0} dgt   cadence {stats.Cooldown:F2} s" +
-                     $"   niveau max {def.MaxLevel}",
+            AddEntry(known, ContentText.WeaponName(def.Id, def.Name),
+                     $"{RarityName(def.Rarity)}   {stats.Damage:F0} {Loc.T("UNIT_DAMAGE")}   " +
+                     $"{Loc.T("CODEX_RATE")} {stats.Cooldown:F2} {Loc.T("UNIT_SECONDS")}   " +
+                     $"{Loc.T("CODEX_MAX_LEVEL")} {def.MaxLevel}",
                      def.Id);
         }
     }
@@ -197,10 +227,14 @@ public sealed class CodexScreen : MonoBehaviour
     private void BuildChimera()
     {
         foreach (var def in Assimilation.Config.Grafts)
-            AddEntry(GameSettings.IsGraftDiscovered(def.Id), def.Name, def.Description, def.Id);
+            AddEntry(GameSettings.IsGraftDiscovered(def.Id),
+                     ContentText.GraftName(def.Id, def.Name),
+                     ContentText.GraftDesc(def.Id, def.Description), def.Id);
 
         foreach (var fusion in Assimilation.Config.Fusions)
-            AddEntry(GameSettings.IsGraftDiscovered(fusion.Id), fusion.Name, fusion.Description, fusion.Id);
+            AddEntry(GameSettings.IsGraftDiscovered(fusion.Id),
+                     ContentText.GraftName(fusion.Id, fusion.Name),
+                     ContentText.GraftDesc(fusion.Id, fusion.Description), fusion.Id);
     }
 
     /// <summary>

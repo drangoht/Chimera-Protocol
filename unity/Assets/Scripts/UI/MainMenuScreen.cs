@@ -266,6 +266,11 @@ public sealed class MainMenuScreen : MonoBehaviour
     /// </summary>
     private static void BuildVersionStamp(Transform parent)
     {
+        // …sauf dans une vidéo, où il ne sert personne et DATE le plan : un trailer qui affiche
+        // « v2.0.0-37c9d64 » devient faux à la version suivante sans que rien du jeu n'ait changé à
+        // l'image.
+        if (DebugHooks.TrailerMode) return;
+
         // Le SHA autant que le numéro : deux binaires peuvent porter la même version et ne pas être
         // le même code — c'est arrivé, et le tampon est ce qui l'aurait montré du premier coup d'œil.
         var stamp = UiStyle.Label(parent, BuildInfo.Label, 16,

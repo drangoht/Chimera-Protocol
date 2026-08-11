@@ -39,18 +39,19 @@ public static class UiNames
 
         var table = WeaponTable.Parse(json);
 
-        foreach (var (id, def) in table.Weapons) names[id] = def.Name;
-        foreach (var (id, def) in table.Fusions) names[id] = def.Name;
+        // ⚠ Le nom du JSON n'est qu'un REPLI. Il est écrit en français, et le prendre tel quel
+        // affichait « Bobine Tesla » dans le HUD d'un joueur anglophone — sur un écran dont tout le
+        // reste était traduit. Les passifs, eux, passaient déjà par leur clé : le portage avait donc
+        // deux règles dans la même méthode, et seule la moins visible était la bonne.
+        foreach (var (id, def) in table.Weapons) names[id] = ContentText.WeaponName(id, def.Name);
+        foreach (var (id, def) in table.Fusions) names[id] = ContentText.FusionName(id, def.Name);
 
-        // ⚠ Les passifs ne sont PAS dans weapons.json : ils ont leur propre table, et leur nom
-        // s'obtient par clé de traduction. Sans cette boucle, l'arsenal du HUD afficherait le nom
-        // traduit de ses armes et l'identifiant brut de ses passifs — sur la même colonne.
+        // Les passifs ne sont PAS dans weapons.json : ils ont leur propre table, et pas de nom de
+        // repli à en tirer — d'où l'identifiant rendu lisible. Sans cette boucle, l'arsenal du HUD
+        // afficherait le nom traduit de ses armes et l'identifiant brut de ses passifs, sur la même
+        // colonne.
         foreach (string id in PassiveIds)
-        {
-            string key = $"PAS_{id.ToUpperInvariant()}_NAME";
-            string translated = Loc.T(key);
-            names[id] = translated != key ? translated : Pretty(id);
-        }
+            names[id] = ContentText.PassiveName(id, Pretty(id));
 
         return names;
     }

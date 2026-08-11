@@ -53,6 +53,7 @@ public sealed class LevelUpScreen : MonoBehaviour
 
     private readonly List<LevelUpCard> _cards = new();
     private GameObject? _root;
+    private Text? _title;
     private Transform? _cardRow;
     private Button? _firstButton;
     private Button? _rerollButton;
@@ -99,6 +100,14 @@ public sealed class LevelUpScreen : MonoBehaviour
         if (_root == null) return;
 
         _root.SetActive(true);
+
+        // Le niveau atteint, relu à l'ouverture. `XpSystem` peut manquer (banc, écran présenté à la
+        // main pour une capture) : le titre retombe alors sur le premier niveau plutôt que de rien
+        // afficher.
+        if (_title != null)
+            _title.text = Loc.T("LEVELUP_TITLE",
+                                XpSystem.Instance != null ? XpSystem.Instance.CurrentLevel : 1);
+
         RefreshActions();
         BuildCards();
 
@@ -151,7 +160,12 @@ public sealed class LevelUpScreen : MonoBehaviour
         panelRect.sizeDelta = new Vector2(1420f, 680f);
         panelRect.anchoredPosition = Vector2.zero;
 
-        var title = UiStyle.Label(panel.transform, "MONTÉE DE NIVEAU", 34, UiPalette.Gold, TextAnchor.UpperCenter);
+        // ⚠ `LEVELUP_TITLE` porte le numéro de niveau (« Level {0}! ») : la clé existait, traduite en
+        // trois langues, et l'écran affichait à la place un titre français figé. Le niveau est relu à
+        // chaque ouverture — construit une fois pour toutes, il annoncerait éternellement le premier.
+        var title = UiStyle.Label(panel.transform, Loc.T("LEVELUP_TITLE", 1), 34, UiPalette.Gold,
+                                  TextAnchor.UpperCenter);
+        _title = title;
         var titleRect = title.GetComponent<RectTransform>();
         titleRect.anchorMin = new Vector2(0f, 1f);
         titleRect.anchorMax = new Vector2(1f, 1f);

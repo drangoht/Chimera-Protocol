@@ -138,7 +138,7 @@ public sealed class HUD : MonoBehaviour
 
     private void OnGraftEquipped(GraftTable.GraftDef def) => RefreshGraftSlots();
 
-    private void OnOvertimeStarted() => Announce("LE NOYAU ROUILLÉ ARRIVE");
+    private void OnOvertimeStarted() => Announce(Loc.T("HUD_BOSS_INCOMING"));
 
     /// <summary>
     /// Annonce la <b>complétion du niveau</b> à la chute du boss.
@@ -154,7 +154,7 @@ public sealed class HUD : MonoBehaviour
     /// fait immédiatement naître — « et maintenant ? ».</para>
     /// </remarks>
     private void OnBossDown()
-        => Announce($"{Loc.T("LEVEL_COMPLETE")}\nLA RUN CONTINUE", 7f);
+        => Announce($"{Loc.T("LEVEL_COMPLETE")}\n{Loc.T("HUD_RUN_CONTINUES")}", 7f);
 
     /// <summary>Affiche un bandeau temporaire au centre de l'écran.</summary>
     public void Announce(string message, float seconds = 4f)
@@ -258,7 +258,8 @@ public sealed class HUD : MonoBehaviour
         {
             int threshold = Mathf.Max(1, xp.XpToNextLevel);
             if (_xpFill != null) _xpFill.fillAmount = Mathf.Clamp01((float)xp.CurrentXp / threshold);
-            if (_levelLabel != null) _levelLabel.text = $"NIV {xp.CurrentLevel}";
+            // « NIV » était écrit en dur, dans le seul élément d'interface visible en permanence.
+            if (_levelLabel != null) _levelLabel.text = Loc.T("HUD_LEVEL", xp.CurrentLevel);
         }
 
         var gm = GameManager.Instance;
@@ -441,7 +442,7 @@ public sealed class HUD : MonoBehaviour
         // ⚠ Le libellé passait en couleur de FOND pendant la recharge — c'est-à-dire qu'il
         // DISPARAISSAIT au moment précis où il a quelque chose à dire. Il reste donc toujours
         // lisible ; c'est la jauge, et non le texte, qui porte l'état.
-        _dashLabel.text = $"{InputRemap.DisplayName(GameAction.Dash)} — esquive";
+        _dashLabel.text = Loc.T("HUD_DASH_HINT", InputRemap.DisplayName(GameAction.Dash));
         _dashLabel.color = ready ? Cyan : DimCyan;
 
         if (_dashGauge != null) _dashGauge.SetActive(true);
