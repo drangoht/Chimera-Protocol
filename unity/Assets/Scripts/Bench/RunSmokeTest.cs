@@ -293,32 +293,49 @@ public sealed class RunSmokeTest : MonoBehaviour
             int before = gm.CoresCollected;
             playerGo.transform.position = Vector3.zero;
 
-            // Posé LOIN du joueur, puis le joueur marche dessus : c'est la boucle réelle.
-            AetherCoreSpawner.SpawnAt(new Vector3(200f, 0f, 0f));
+            // Posé LOIN du joueur : hors du rayon d'aimantation, il ne doit pas bouger d'un pixel.
+            // C'est ce qui reste du parti pris d'origine — le Noyau vient au joueur, mais il faut
+            // s'en approcher.
+            var far = new Vector3(400f, 0f, 0f);
+            AetherCoreSpawner.SpawnAt(far);
+            yield return null;
             yield return null;
 
-            int placed = FindObjectsByType<AetherCore>(FindObjectsSortMode.None).Length;
-            Check("noyau : depose dans l'arene", placed > 0, $"{placed} noyau(x) present(s)");
+            var placedCores = FindObjectsByType<AetherCore>(FindObjectsSortMode.None);
+            Check("noyau : depose dans l'arene", placedCores.Length > 0,
+                  $"{placedCores.Length} noyau(x) present(s)");
 
-            Check("noyau : ne s'aspire pas comme un orbe",
-                  gm.CoresCollected == before,
-                  $"a 200 px, compteur {gm.CoresCollected} (attendu {before})");
+            float drift = placedCores.Length > 0
+                ? Vector3.Distance(placedCores[0].transform.position, far) : 0f;
 
-            for (int i = 0; i < 40 && gm.CoresCollected == before; i++)
-            {
-                playerGo.transform.position = Vector3.MoveTowards(
-                    playerGo.transform.position, new Vector3(200f, 0f, 0f), 12f);
-                yield return null;
-            }
+            Check("noyau : immobile hors du rayon d'aimantation",
+                  drift < 1f && gm.CoresCollected == before,
+                  $"a 400 px, derive {drift:F1} px, compteur {gm.CoresCollected} (attendu {before})");
 
-            Check("noyau : ramasse au contact et comptabilise", gm.CoresCollected > before,
-                  $"{gm.CoresCollected} noyau(x) ramasse(s)");
+            // Puis le joueur entre dans le rayon SANS aller au contact, et s'arrête : depuis le
+            // 2026-08-12 le Noyau doit finir le trajet tout seul. Avant, il attendait qu'on lui
+            // marche dessus — et un Noyau apparu sous une nuée de fin de partie était perdu.
+            playerGo.transform.position = new Vector3(400f - PickupMagnet.Radius * 0.7f, 0f, 0f);
 
-            // Le rayon suit la méta-progression, seule chose qu'elle élargit.
-            Check("noyau : le rayon suit core_magnetism",
-                  Mathf.Approximately(AetherCore.RadiusForLevel(0), 20f)
-                  && Mathf.Approximately(AetherCore.RadiusForLevel(3), 70f),
-                  $"niv0={AetherCore.RadiusForLevel(0):F0} px, niv3={AetherCore.RadiusForLevel(3):F0} px");
+            // ⚠ Une attente en SECONDES, jamais en images. Le banc tourne à ~0,4 ms par image en
+            // mode sans affichage : cent images n'y valent que quatre centièmes de seconde, et une
+            // boucle « for » y mesurerait la cadence du banc au lieu de la vitesse du Noyau.
+            // 70 px à franchir, 420 px/s de rapprochement : un cinquième de seconde suffit.
+            yield return new WaitForSeconds(0.6f);
+
+            Check("noyau : rejoint le joueur qui entre dans son rayon", gm.CoresCollected > before,
+                  $"{gm.CoresCollected} noyau(x) ramasse(s) sans aller au contact");
+
+            // core_magnetism a changé de cible le 2026-08-12 : il n'élargit plus un rayon de contact
+            // devenu sans objet, il élargit la portée d'AIMANTATION. Sans cette redirection,
+            // l'amélioration devenait payante et sans effet — pour la quatrième fois du projet.
+            Check("noyau : core_magnetism elargit l'aimantation",
+                  Mathf.Approximately(PickupMagnet.AttractRadius(0f), 100f)
+                  && Mathf.Approximately(
+                        PickupMagnet.AttractRadius(AetherCore.RadiusForLevel(3) - AetherCore.BaseRadius),
+                        150f),
+                  $"niv0={PickupMagnet.AttractRadius(0f):F0} px, " +
+                  $"niv3={PickupMagnet.AttractRadius(AetherCore.RadiusForLevel(3) - AetherCore.BaseRadius):F0} px");
 
             // La règle de butin vient des données : une table vide voudrait dire que plus aucun
             // ennemi n'en laisse tomber, et rien ne le signalerait en jeu avant des minutes.
@@ -327,6 +344,8 @@ public sealed class RunSmokeTest : MonoBehaviour
 
             Destroy(coreSpawnerGo);
         }
+
+        yield return RunMagnetChecks(orbPrefab, playerGo);
 
         // ─── Dégâts de contact et i-frames ─────────────────────────────────────
         // On colle un ennemi au joueur : un seul coup doit passer par fenêtre de 0,45 s.
@@ -384,6 +403,106 @@ public sealed class RunSmokeTest : MonoBehaviour
               $"{gm.RunTime:F1} s");
 
         Report();
+    }
+
+    /// <summary>
+    /// L'Aimant, de bout en bout : il apparaît, on marche dessus, et <b>tout</b> ce qui traîne au sol
+    /// vient au joueur.
+    ///
+    /// <para><b>Ce système n'avait jamais été porté</b> — ni l'objet, ni son spawner, ni son effet —
+    /// alors que l'amélioration <c>bonus_magnet</c> restait achetable au Hub à 770 Échos pour
+    /// « +1 apparition par run ». Ces vérifications sont la parade du défaut favori du projet :
+    /// <i>déclaré n'est pas consommé</i>. Elles suivent la <b>chaîne entière</b>, du calendrier à
+    /// l'orbe qui bouge — vérifier la seule table laisserait passer exactement ce qui s'est passé.</para>
+    /// </summary>
+    private IEnumerator RunMagnetChecks(GameObject? orbPrefab, GameObject playerGo)
+    {
+        if (orbPrefab == null) yield break;
+
+        var spawnerGo = new GameObject("MagnetSpawner");
+        var magnetSpawner = spawnerGo.AddComponent<MagnetSpawner>();
+
+        yield return null;   // le calendrier se tire à la première image, pas dans Start
+
+        // Au moins les trois fenêtres de base — une sauvegarde qui porte `bonus_magnet` en ajoute.
+        Check("aimant : le calendrier est tire pour la run",
+              magnetSpawner.SpawnTimes.Length >= MagnetSchedule.Windows.Count,
+              $"{magnetSpawner.SpawnTimes.Length} apparitions prevues");
+
+        playerGo.transform.position = Vector3.zero;
+
+        // Deux orbes hors de portée d'aimantation : sans l'Aimant, elles ne bougeraient jamais.
+        var orbs = new List<XpOrb>();
+        foreach (var offset in new[] { new Vector3(600f, 0f, 0f), new Vector3(0f, -500f, 0f) })
+        {
+            var go = Instantiate(orbPrefab, offset, Quaternion.identity);
+            go.SetActive(true);
+            var orb = go.GetComponent<XpOrb>();
+            if (orb != null) orbs.Add(orb);
+        }
+
+        yield return null;
+
+        Check("aimant : des orbes hors de portee attendent au sol",
+              orbs.Count == 2 && orbs.TrueForAll(o => o != null && !o.ForceMagnet),
+              $"{orbs.Count} orbe(s) posee(s)");
+
+        // L'Aimant est posé loin, puis le joueur marche dessus : c'est la boucle réelle. Lui ne
+        // s'aimante pas — c'est le seul ramassage du jeu qui demande encore le détour.
+        var drop = new Vector3(300f, 0f, 0f);
+        magnetSpawner.SpawnAt(drop);
+        yield return null;
+
+        var pickup = FindFirstObjectByType<MagnetPickup>();
+        Check("aimant : depose dans l'arene et habille",
+              pickup != null && pickup.GetComponent<SpriteRenderer>()?.sprite != null,
+              pickup != null ? "silhouette posee" : "aucun aimant dans la scene");
+
+        int collectedBefore = MagnetPickup.CollectedCount;
+
+        for (int i = 0; i < 60 && MagnetPickup.CollectedCount == collectedBefore; i++)
+        {
+            playerGo.transform.position =
+                Vector3.MoveTowards(playerGo.transform.position, drop, 12f);
+            yield return null;
+        }
+
+        Check("aimant : ramasse au contact", MagnetPickup.CollectedCount > collectedBefore,
+              $"{MagnetPickup.CollectedCount} aimant(s) ramasse(s)");
+
+        // LE point : l'effet ne s'arrête pas au rayon d'aimantation ordinaire. Une orbe posée à
+        // 600 px doit venir, sinon l'objet ne fait rien de ce que sa description promet.
+        int hooked = 0;
+        foreach (var orb in orbs) if (orb != null && orb.ForceMagnet) hooked++;
+
+        Check("aimant : rappelle TOUTES les orbes de l'arene", hooked == orbs.Count,
+              $"{hooked}/{orbs.Count} orbe(s) rappelee(s)");
+
+        // Et le drapeau doit se traduire en MOUVEMENT : c'est la moitié que le portage perd
+        // d'habitude — la donnée est posée, elle est même testée, et personne ne la lit.
+        var tracked = orbs.Find(o => o != null);
+        float distBefore = tracked != null
+            ? Vector3.Distance(tracked.transform.position, playerGo.transform.position) : 0f;
+
+        // ⚠ En SECONDES, pas en images : le banc tourne à ~0,4 ms par image en mode sans affichage,
+        // et cinq images n'y déplaçaient l'orbe que de 2 px — un écart qu'un simple bruit de calcul
+        // aurait suffi à produire. Un dixième de seconde en vaut une centaine, et reste sous le
+        // tiers de seconde qu'il faut à l'orbe pour couvrir les 300 px et disparaître, ramassée.
+        yield return new WaitForSeconds(0.1f);
+
+        bool closer = tracked == null   // ramassée en chemin : elle a forcément avancé
+                      || Vector3.Distance(tracked.transform.position, playerGo.transform.position)
+                         < distBefore - 1f;
+
+        float distAfter = tracked != null
+            ? Vector3.Distance(tracked.transform.position, playerGo.transform.position) : 0f;
+
+        Check("aimant : les orbes rappelees se rapprochent vraiment", closer,
+              tracked == null ? $"{distBefore:F0} px -> ramassee"
+                              : $"{distBefore:F0} px -> {distAfter:F0} px");
+
+        foreach (var orb in orbs) if (orb != null) Destroy(orb.gameObject);
+        Destroy(spawnerGo);
     }
 
     /// <summary>

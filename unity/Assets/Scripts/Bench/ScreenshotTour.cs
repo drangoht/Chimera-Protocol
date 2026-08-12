@@ -499,6 +499,53 @@ public sealed class ScreenshotTour : MonoBehaviour
         yield return Play(0.35f);
         yield return Shot("lame-boomerang-2");
 
+        // ─── L'Aimant, et l'arène qui se vide ─────────────────────────────────
+        // Ce système entier n'avait jamais été porté, et sa silhouette est dessinée à l'exécution :
+        // aucun test ne peut dire si un fer à cheval se lit comme un fer à cheval. Le premier cliché
+        // le montre posé au sol au milieu des orbes, le second l'arène après ramassage — c'est le
+        // couple d'images qui répond, pas l'objet seul.
+        inv.ResetForRun();
+
+        var magnetSpawner = FindFirstObjectByType<MagnetSpawner>();
+        if (magnetSpawner != null)
+        {
+            var orbPrefab = Spawner.Load("res://scenes/entities/XpOrb.tscn");
+            Vector2 home = player.transform.position;
+
+            if (orbPrefab != null)
+                for (int i = 0; i < 24; i++)
+                {
+                    float a = i / 24f * Mathf.PI * 2f;
+                    float r = 200f + (i % 4) * 70f;
+                    var go = Instantiate(orbPrefab,
+                        home + new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * r, Quaternion.identity);
+                    go.SetActive(true);
+                }
+
+            magnetSpawner.SpawnAt(home + new Vector2(90f, 0f));
+            yield return Play(0.2f);
+
+            int posees = FindObjectsByType<XpOrb>(FindObjectsSortMode.None).Length;
+            var pickup = FindFirstObjectByType<MagnetPickup>();
+
+            Debug.Log($"[SHOTS] aimant : {(pickup != null ? "au sol" : "ABSENT")}, " +
+                      $"sprite {(pickup?.GetComponent<SpriteRenderer>()?.sprite == MagnetSprite.Get() ? "fer a cheval dedie" : "ABSENT")}, " +
+                      $"{posees} orbe(s) semee(s)");
+
+            yield return Shot("aimant");
+
+            // Le joueur marche dessus, puis on laisse la convergence se jouer : c'est le geste, et
+            // c'est lui qu'il faut voir — un aimant qui ne vide pas l'écran n'est pas un aimant.
+            player.transform.position = home + new Vector2(90f, 0f);
+            yield return Play(0.45f);
+
+            int restantes = FindObjectsByType<XpOrb>(FindObjectsSortMode.None).Length;
+            Debug.Log($"[SHOTS] aimant : {posees} orbes avant, {restantes} apres " +
+                      $"({MagnetPickup.CollectedCount} aimant(s) ramasse(s))");
+
+            yield return Shot("aimant-2");
+        }
+
         // ─── La singularité, posée SUR le décor ───────────────────────────────
         // Sans pilier dans le champ, l'image ne montre que le vortex : c'est précisément la capture
         // qui ne répond pas à la question posée. Le joueur est donc déplacé contre un obstacle, et

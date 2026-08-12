@@ -39,7 +39,7 @@ unity/
     StreamingAssets/data/       JSON de tuning — voir §Data
     StreamingAssets/localization/ ui.csv (source unique) ; clé via Loc.T("CLÉ")
   ProjectSettings/              bundleVersion (posée par le script de release), icônes, URP
-tests/                          xUnit — compile Shared/ par chemin (626 tests). `dotnet test tests/…`
+tests/                          xUnit — compile Shared/ par chemin (673 tests). `dotnet test tests/…`
 tools/                          Générateurs d'assets, banc, release — voir §Outils
 docs/                           GDD.md + briefs/plans — voir §Docs
 docs/archive-godot/             Documents de l'ère Godot (périmés sur les chemins, valides sur le fond)
@@ -52,14 +52,19 @@ des deux ne lève aucune erreur : le générateur annonce « écrit », le jeu a
 La table de destination fait autorité : **`tools/unity_paths.py`**.
 
 ## §Rules — `unity/Assets/Scripts/Shared/Rules/` (logique pure, testée)
-`ArenaLayout` · `AutoPilotPolicy` · `BiomeUnlock` · `BossIncarnations` · `BossPhases` ·
+`ArenaLayout` · `AutoPilotPolicy` · `BiomeUnlock` · **`BoomerangReturn`** (retour du glaive : sa
+vitesse se calcule *contre* celle du lanceur, jumelle de `PickupMagnet`) · `BossIncarnations` ·
+`BossPhases` ·
 `CardRarityTable` · `ChallengeTable` · `CrowdControlCaps` · `DifficultyTuning` · `EchoFormula` ·
 `EliteAffixTable` · `EnemyScaling` · `EnemyTable` · `FloorFeatureLayout` · `GodotConfig` (migration
 des `settings.cfg` de joueurs venus de la 1.26.0) · `GraftTable` · `LevelThreat` · `LevelUpCharges` ·
-`LevelUpPool` · `LocTable` · `MetaUpgradeTable` · `MusicIntensity` · `OverloadCards` ·
-`OvertimeEscalation` · `PassiveScaling` · `PassiveTable` · **`PickupMagnet`** (aimantation des orbes :
-sa vitesse se calcule *contre* celle du porteur, jamais dans l'absolu) · `PressureMeter` ·
-`RarityWeights` ·
+`LevelUpPool` (⚠ une main est **toujours pleine** : le manque est comblé par les cartes de surcharge,
+carte par carte) · `LocTable` · **`MagnetSchedule`** (fenêtres d'apparition de l'Aimant + `bonus_magnet`) ·
+`MetaUpgradeTable` · `MusicIntensity` · `OverloadCards` ·
+`OvertimeEscalation` · `PassiveScaling` · `PassiveTable` · **`PickupMagnet`** (aimantation des orbes
+**et des Noyaux d'Aether** : sa vitesse se calcule *contre* celle du porteur, jamais dans l'absolu ;
+`AttractRadius` porte le rayon du Noyau, que `core_magnetism` élargit de 100 à 150 px) ·
+`PressureMeter` · `RarityWeights` ·
 `RegenReserve` · `SaturationTable` · `SaveData` / `SaveMigration` / `SettingsData` · `SpawnCurve` ·
 `StartingPerks` · `StatCaps` · `Titles` · `VersionCompare` · `WeaponFusion` · `WeaponLeveling` ·
 `WeaponSfx` · `WeaponTable` · `WeightedPicker` · `XpCurve`
@@ -84,6 +89,10 @@ transposés) · `SpriteFramesAsset`
   `MetaProgression`, `ChallengeSystem`, `GameSettings`, `AetherCore*`
   (les paramètres **et** le calcul des Échos vivent dans `Rules/MetaUpgradeTable.EchoParams` —
   `Gameplay/EchoSettings.cs` en était un doublon, supprimé le 2026-08-11)
+- **Ramassages** : `XpOrb`, `AetherCore` (aimanté depuis le 2026-08-12),
+  **`MagnetPickup` / `MagnetSpawner` / `MagnetSprite`** — l'Aimant, porté le 2026-08-12 : il
+  n'existait pas sous Unity alors que `bonus_magnet` restait achetable au Hub à 770 Échos. Silhouette
+  dessinée à l'exécution, **aucun prefab**. Seul ramassage du jeu qui ne s'aimante pas.
 - **Arène** : `ArenaRenderer`, `ArenaObstacles`, `FloorFeatures`, `BiomeAtmosphere`
 - **Mesure** : `PowerTelemetry`, `BossTelemetry`, `BenchAutoPilot`
 - **VFX** : `Gameplay/Vfx/` (14 fichiers : `Vfx`, `VfxPrimitives`, `ChampionOverlay`, `ScreenShake`…)
@@ -179,7 +188,7 @@ pages store itch · `archive-godot/` (ère Godot).
   rien ne la lisait. Vérifier au banc, pas sur la table.
 
 ## Commandes utiles
-- **Tests** : `dotnet test tests/ChimeraProtocol.Tests.csproj` (626 tests, aucun moteur requis)
+- **Tests** : `dotnet test tests/ChimeraProtocol.Tests.csproj` (673 tests, aucun moteur requis)
 - **Build du jeu** :
   `Unity.exe -batchmode -quit -projectPath unity -executeMethod BuildBench.Windows64Game`
   (autres cibles : `Windows64PlatformSmoke`, `Windows64RunSmoke`, `Windows64Il2cpp`)

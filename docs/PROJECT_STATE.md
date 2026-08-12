@@ -6,6 +6,34 @@
 
 - Pile technique : **Unity 6.5 (C#, URP 2D)** depuis la 2.0.0. **Version en ligne : 2.0.1**
   (2026-08-11).
+- **Quatre défauts signalés en jouant, corrigés le 2026-08-12 (non publiés).** Aucun n'a été trouvé
+  par l'automatisation ; les quatre l'ont été manette en main.
+  1. **La Lame Boomerang mettait six secondes à revenir.** Sa vitesse était posée à 420 px/s, aller
+     *et* retour, contre un joueur qui plafonne à 380 : **40 px/s de gain**. Comme la recharge de
+     l'arme attend le retour, elle **cessait progressivement de tirer à mesure que le joueur achetait
+     de la vitesse**. C'est mot pour mot le défaut des orbes d'XP corrigé la veille — la parade avait
+     été appliquée au *site trouvé*, pas à la *classe de défauts*. Nouvelle règle pure
+     `BoomerangReturn`, jumelle de `PickupMagnet` : retour ≤ 0,8 s à toute vitesse (contre 1,1 → 6,0).
+  2. **L'Aimant n'existait pas sous Unity.** Ni l'objet, ni son spawner, ni son effet — alors que
+     l'amélioration `bonus_magnet` restait achetable au Hub à **770 Échos cumulés** pour
+     « +1 apparition par run ». **Quatrième occurrence de « déclaré n'est pas consommé »**, et la
+     deuxième où le joueur *payait* pour du vide (cf. le cran IV de saturation). Porté avec sa règle
+     pure (`MagnetSchedule` : 3 fenêtres + 1 par niveau, en overtime), sa silhouette dessinée à
+     l'exécution (`MagnetSprite`, aucun PNG donc aucun maillon d'import) et son effet global.
+  3. **Les Noyaux d'Aether s'aimantent** comme les orbes d'XP, sur demande du joueur. Renversement
+     assumé d'un parti pris de design (le Noyau était le seul objet exigeant de traverser le danger) :
+     en fin de partie il était perdu, pas arbitré. `core_magnetism` a été **redirigé** vers le rayon
+     d'aimantation (100 → 150 px) au lieu du rayon de contact devenu sans objet — sans quoi
+     l'amélioration devenait à son tour payante et sans effet. Le rôle « aller le chercher » passe à
+     l'Aimant, désormais seul ramassage non magnétisé.
+  4. **Le menu de montée de niveau proposait 1 ou 2 cartes en fin de run.** La bascule sur les cartes
+     de surcharge ne répondait qu'au pool *totalement* vide, or un pool **s'assèche**. Un test
+     verrouillait même le comportement (`Assert.Single`) : le défaut était documenté comme
+     intentionnel. La complétion se fait désormais **carte par carte manquante**, et l'invariant testé
+     est « une main est toujours pleine ».
+
+  **673 tests** (+36), build Unity sans erreur, `RunSmokeTest` **271 OK / 0 échec** (+6 : la chaîne
+  entière de l'Aimant, du calendrier à l'orbe qui bouge). Silhouette de l'Aimant **jugée sur image**.
 - **Passe de code mort & refacto SOLID (2026-08-11, non publiée).** `tools/audit_unused_members.py`
   sortait **68 candidats** ; après vérification un par un, **40 étaient morts pour de bon**
   (supprimés) et les autres étaient l'inverse — des règles **testées que le moteur n'appelait pas**,

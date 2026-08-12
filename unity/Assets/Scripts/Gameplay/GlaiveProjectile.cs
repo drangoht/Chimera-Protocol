@@ -8,6 +8,12 @@ using UnityEngine;
 /// ensemble, un glaive qui traverse lentement une nuée infligerait ses dégâts à chaque frame de
 /// contact, ce qui en ferait de très loin l'arme la plus forte du jeu.</para>
 ///
+/// <para><b>Le retour se mesure contre le joueur</b>, jamais dans l'absolu — <see cref="BoomerangReturn"/>.
+/// La lame partait et revenait à 420 px/s fixes, quand un joueur équipé atteint 380 : elle ne gagnait
+/// alors que 40 px/s sur lui et mettait <b>six secondes</b> à rentrer. Comme la recharge de l'arme
+/// attend le retour, le Glaive paraissait tout simplement cesser de tirer à mesure que le joueur
+/// achetait de la vitesse — la punition exacte de ce qu'il venait d'améliorer.</para>
+///
 /// <para><b>Il TOURNE, et c'est une croix.</b> Le portage lui donnait le sprite d'un tir de sentinelle
 /// ennemie, teinté violet, parfaitement immobile — soit la forme et la couleur d'un projectile
 /// hostile pour l'arme que l'icône, le Codex et l'écran de montée de niveau montrent tous comme une
@@ -108,7 +114,10 @@ public sealed class GlaiveProjectile : MonoBehaviour
             Vector2 toHome = home - me;
             if (toHome.magnitude < 24f) { Destroy(gameObject); return; }
 
-            transform.position = me + toHome.normalized * Speed * dt;
+            // ⚠ PAS `Speed` : la vitesse de retour se calcule CONTRE celle du porteur, sans quoi une
+            // lame lancée par un joueur rapide ne le rattrape plus (cf. `BoomerangReturn`).
+            float back = BoomerangReturn.SpeedAgainst(Speed, player != null ? player.CurrentSpeed : 0f);
+            transform.position = me + toHome.normalized * back * dt;
         }
 
         DamageAround(transform.position);

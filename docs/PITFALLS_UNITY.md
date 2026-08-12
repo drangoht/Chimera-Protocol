@@ -814,6 +814,37 @@ vitesse de ce qu'elle poursuit.
 la Célérité, le plafond et le gel — d'où `Player.CurrentSpeed`, désormais la seule écriture de cette
 formule.
 
+⚠⚠ **Le même défaut est revenu le 2026-08-12, sur une autre entité — et personne ne l'avait cherché.**
+`GlaiveProjectile` posait sa vitesse à **420 px/s**, aller *et* retour. Contre un joueur à 380, la
+lame ne gagnait plus que **40 px/s** : elle mettait **six secondes** à rentrer là où elle en met une
+à vitesse de base. Et comme la recharge de l'arme attend le retour, **la Lame Boomerang cessait
+progressivement de tirer à mesure que le joueur achetait de la vitesse** — la punition exacte de ce
+qu'il venait d'améliorer. Signalé en jouant, encore, et décrit comme un défaut de rythme (« les
+boomerangs sont trop lents à revenir »).
+
+Corrigé par `BoomerangReturn.SpeedAgainst(outboundSpeed, carrierSpeed)`, jumelle de `PickupMagnet`.
+**La leçon à retenir n'est pas « corriger le glaive »** : c'est que la parade de 2026-08-11 avait
+été appliquée *au site trouvé* et non *à la classe de défauts*. Le contrôle à faire, une fois pour
+toutes : **inventorier tout ce qui poursuit le joueur** et vérifier que chacun se règle contre lui.
+Aujourd'hui la liste est close — orbes d'XP, Noyaux d'Aether, glaive — mais toute entité future qui
+« revient vers le joueur » ou « le suit » rejoint cet inventaire, pas une constante en dur.
+
+### Une bascule binaire sur un pool qui s'assèche : le menu à une carte
+
+`LevelUpPool.Build` basculait sur les cartes de surcharge quand le pool ordinaire était
+**totalement** vide. Or un pool ne s'épuise pas d'un coup : il s'assèche. Entre « il reste trois
+choix » et « il n'en reste aucun », il reste **un** ou **deux** — et l'écran dont tout l'intérêt est
+d'offrir un choix en proposait un seul, en fin de run, au moment où il pèse le plus. Un test
+verrouillait même le comportement (`Assert.Single`), ce qui l'a rendu invisible pendant tout le
+portage : le défaut était *documenté comme intentionnel*.
+
+Signalé en jouant le 2026-08-12. Parade : la complétion s'applique **par degrés**, carte par carte
+manquante (`TopUpWithOverload`), et l'invariant testé n'est plus « ne lève pas d'erreur » mais
+« **une main est toujours pleine** », vérifié sur toute la matrice de saturation.
+
+**Leçon générale** : un filet de sécurité déclenché par une condition *tout ou rien* laisse passer
+tout le dégradé qui mène à elle. Chercher la condition continue, pas le cas limite.
+
 ### 100 × 100 : la taille d'un `RectTransform` neuf, et la cause de deux défauts opposés
 
 Un `RectTransform` créé par code naît en **100 × 100**. Cette seule valeur produit deux dégâts

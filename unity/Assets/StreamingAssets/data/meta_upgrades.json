@@ -44,10 +44,11 @@
       { "enemyId": "grafted_colossus", "dropCount": 1, "dropChance": 1.0 }
     ],
     "collectionRadiusPx": 20,
-    "autoMagnet": false,
+    "autoMagnet": true,
     "placeholderColor": "#AA44FF",
     "_note_xp_orb_color": "#AAFF44 (jaune-vert) — bien distinct du violet Noyau",
-    "_note_core_magnetism": "L'upgrade meta 'core_magnetism' ajoute un bonus (statTarget CoreCollectionRadiusBonus, lu directement par AetherCore depuis MetaProgressionSystem, pas de champ PlayerStats) à collectionRadiusPx : jusqu'à +50 px (70 px total)."
+    "_note_auto_magnet": "PASSÉ À true le 2026-08-12, sur demande du joueur après l'avoir joué. Le Noyau se ramassait à la main depuis l'origine : c'était le seul objet du jeu qui demandait de traverser volontairement le danger, et cette décision — y aller ou renoncer — était ce qu'il apportait à la boucle. En pratique, un Noyau apparu sous une nuée de fin de partie n'était pas un arbitrage, il était perdu. Il s'aimante donc comme une orbe d'XP (PickupMagnet.SpeedAgainst), et obéit à l'Aimant. Ce qui reste du parti pris : il faut toujours s'en APPROCHER — 100 px de rayon d'aimantation, pas l'arène entière.",
+    "_note_core_magnetism": "L'upgrade meta 'core_magnetism' ajoute un bonus (statTarget CoreCollectionRadiusBonus, lu directement par AetherCore depuis MetaProgression, pas de champ PlayerStats). REDIRIGÉ le 2026-08-12 : il ne s'ajoute plus à collectionRadiusPx — devenu sans objet puisque le Noyau vient au joueur — mais au rayon d'AIMANTATION (PickupMagnet.AttractRadius) : 100 px de base, jusqu'à 150. Même valeur (+15/+15/+20), même prix, mais elle décide encore de quelque chose."
   },
 
   "runEndConditions": {
@@ -222,12 +223,12 @@
     {
       "id": "core_magnetism",
       "name": "Résonance de Noyau",
-      "description": "Augmente le rayon de ramassage des Noyaux d'Aether. +15/+15/+20 px par niveau (base 20 px → 70 px max).",
+      "description": "Les Noyaux d'Aether viennent à vous. +15/+15/+20 px de rayon d'aimantation par niveau (base 100 px → 150 px max).",
       "maxLevel": 3,
       "costPerLevel": [170, 420, 1000],
       "effectPerLevel": [15, 15, 20],
       "statTarget": "CoreCollectionRadiusBonus",
-      "_designNote": "NOUVEAU 2026-07-02. PAS un champ PlayerStats — AetherCore.cs lit directement MetaProgressionSystem.Instance.GetUpgradeLevel(\"core_magnetism\") à son _Ready() pour ajuster le rayon de son CollisionShape2D (base 20 px + bonus cumulé selon les niveaux). Reste un ramassage MANUEL (le joueur doit toujours marcher dessus, cf. §9.1) — l'item ne casse pas l'intention de design du risque assumé, il réduit juste la précision du pixel-perfect requis. N'inflate pas la formule d'Échos : capCores (22) plafonne déjà la contribution des noyaux en phase standard, et l'overtimeDampening/overtimeBonusCap contiennent l'excédent en overtime."
+      "_designNote": "NOUVEAU 2026-07-02, REDIRIGÉ le 2026-08-12. PAS un champ PlayerStats — AetherCore.cs lit directement MetaProgression.LevelOf(\"core_magnetism\") à son Start() pour ajuster son rayon. Jusqu'au 2026-08-12 le Noyau se ramassait À LA MAIN et ce bonus élargissait le rayon de ramassage (20 → 70 px). Le joueur a demandé qu'il s'aimante comme une orbe d'XP, l'ayant joué : un Noyau apparu sous une nuée de fin de partie n'était pas un arbitrage, il était perdu. Le bonus s'applique donc désormais au rayon d'AIMANTATION (PickupMagnet.AttractRadius : 100 px de base → 150 px), pas au rayon de contact — même valeur, même progression, même prix, mais elle décide encore de quelque chose. Sans cette redirection l'item devenait la deuxième amélioration payante sans effet du projet. N'inflate pas la formule d'Échos : capCores (22) plafonne déjà la contribution des noyaux en phase standard, et l'overtimeDampening/overtimeBonusCap contiennent l'excédent en overtime."
     },
     {
       "id": "overtime_stabilizer",

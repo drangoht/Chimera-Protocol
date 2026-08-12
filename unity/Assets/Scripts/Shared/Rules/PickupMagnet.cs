@@ -44,6 +44,25 @@ public static class PickupMagnet
     public const float ForcedBoost = 2.5f;
 
     /// <summary>
+    /// Rayon d'aimantation d'un ramassage qui bénéficie d'un <b>bonus de portée</b> — aujourd'hui le
+    /// seul Noyau d'Aether, dont <c>core_magnetism</c> élargit la prise.
+    /// </summary>
+    /// <remarks>
+    /// <para>Le Noyau ne s'aspirait pas : il fallait marcher dessus, et c'était son intérêt de design
+    /// — le seul objet du jeu qui demande de traverser volontairement le danger. Le joueur a tranché
+    /// autrement le 2026-08-12 (« les orbes d'Aether devraient également être attirées comme les
+    /// orbes d'XP ») : en pratique, un Noyau apparu sous une nuée en fin de partie n'était pas un
+    /// arbitrage, il était perdu.</para>
+    ///
+    /// <para><b>Ce que devient <c>core_magnetism</c>.</b> Son bonus (+15/+15/+20 px) ne s'ajoute plus
+    /// à un rayon de <i>ramassage</i> de 20 px — inutile dès lors que le Noyau vient tout seul — mais
+    /// au rayon d'<i>aimantation</i> : 100 px de base, jusqu'à 150. L'amélioration garde donc
+    /// exactement son sens (elle élargit la prise) et sa valeur relative, au lieu de devenir la
+    /// deuxième amélioration payante sans effet de ce projet.</para>
+    /// </remarks>
+    public static float AttractRadius(float radiusBonus) => Radius + Math.Max(0f, radiusBonus);
+
+    /// <summary>
     /// Distance de ramassage effectif, en pixels.
     /// </summary>
     /// <remarks>

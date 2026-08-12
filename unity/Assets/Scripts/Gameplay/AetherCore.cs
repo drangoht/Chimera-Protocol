@@ -1,21 +1,38 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// Noyau d'Aether — la monnaie de méta-progression, ramassée <b>à la main</b> (port d'<c>AetherCore</c>).
+/// Noyau d'Aether — la monnaie de méta-progression (port d'<c>AetherCore</c>).
 ///
-/// <para><b>Il ne s'aspire pas, et c'est tout son intérêt.</b> Les orbes d'XP viennent au joueur dès
-/// qu'il approche ; un Noyau exige d'aller le <i>chercher</i>, et il apparaît là où la nuée se
-/// trouve. C'est le seul objet du jeu qui demande de traverser volontairement le danger, et cette
-/// décision — y aller ou renoncer — est ce qu'il apporte à la boucle. Le rendre magnétique le
-/// transformerait en orbe d'XP violette.</para>
+/// <para><b>Il s'aimante depuis le 2026-08-12, et c'est un renversement assumé.</b> Le Noyau était
+/// jusque-là le seul objet du jeu à se ramasser <i>à la main</i> : il apparaît là où la nuée se
+/// trouve, et aller le chercher ou y renoncer était la décision qu'il apportait à la boucle. Le
+/// joueur a tranché autrement après l'avoir joué (« les orbes d'Aether devraient également être
+/// attirées par le joueur comme les orbes d'XP »), et la mesure lui donne raison : en fin de partie,
+/// un Noyau posé sous trois cents ennemis n'est pas un arbitrage, c'est une monnaie perdue.</para>
 ///
-/// <para>Le rayon de ramassage est la <b>seule</b> chose que la méta-progression élargit
-/// (<c>core_magnetism</c> : 20 px de base, jusqu'à 70). L'amélioration rend la traversée moins
-/// précise, jamais inutile.</para>
+/// <para><b>Ce qui reste du parti pris d'origine.</b> Le Noyau garde son rayon d'aimantation
+/// <i>propre</i>, distinct de celui des orbes uniquement par ce que la méta-progression y ajoute
+/// (<c>core_magnetism</c> : 100 px de base, jusqu'à 150 — cf. <see cref="PickupMagnet.AttractRadius"/>).
+/// Il faut donc toujours <b>s'en approcher</b> ; ce n'est plus le dernier pixel qui se paie, c'est
+/// l'aller-retour. Il conserve aussi sa pulsation et son propre son : ramasser un Noyau reste un
+/// événement de run, pas un grain d'XP parmi des centaines.</para>
 /// </summary>
 public sealed class AetherCore : MonoBehaviour
 {
-    /// <summary>Rayon de ramassage de base, en pixels — <c>meta_upgrades.json</c>, <c>collectionRadiusPx</c>.</summary>
+    /// <summary>
+    /// Noyaux posés dans l'arène. Tenue comme celle des orbes d'XP, et pour la même raison :
+    /// l'Aimant doit pouvoir les rappeler tous d'un coup sans balayer la scène entière.
+    /// </summary>
+    public static readonly List<AetherCore> Active = new();
+
+    /// <summary>Attraction forcée depuis toute l'arène (ramassage d'un Aimant).</summary>
+    public bool ForceMagnet { get; set; }
+
+    /// <summary>
+    /// Rayon de <b>ramassage effectif</b>, en pixels — <c>meta_upgrades.json</c>, <c>collectionRadiusPx</c>.
+    /// C'est le contact des deux corps, la même valeur que <see cref="PickupMagnet.PickupRadius"/>.
+    /// </summary>
     public const float BaseRadius = 20f;
 
     /// <summary>Bonus de rayon accordé par chaque niveau de <c>core_magnetism</c>.</summary>
@@ -28,8 +45,14 @@ public sealed class AetherCore : MonoBehaviour
     private SpriteRenderer? _renderer;
     private bool _collected;
 
-    /// <summary>Rayon effectif après méta-progression — observable pour les vérifications.</summary>
+    /// <summary>Rayon de ramassage effectif après méta-progression — observable pour les vérifications.</summary>
     public float Radius => _radius;
+
+    /// <summary>
+    /// Rayon à partir duquel le Noyau se met à suivre le joueur. Le bonus de <c>core_magnetism</c>
+    /// s'y reporte tel quel : c'est là qu'il se ressent désormais.
+    /// </summary>
+    public float AttractRadius => PickupMagnet.AttractRadius(_radius - BaseRadius);
 
     /// <summary>Rayon de ramassage pour un niveau d'amélioration donné. Logique pure et testable.</summary>
     public static float RadiusForLevel(int level)
@@ -38,6 +61,10 @@ public sealed class AetherCore : MonoBehaviour
         for (int i = 0; i < level && i < RadiusPerLevel.Length; i++) radius += RadiusPerLevel[i];
         return radius;
     }
+
+    private void OnEnable() => Active.Add(this);
+
+    private void OnDisable() => Active.Remove(this);
 
     private void Start()
     {
@@ -61,7 +88,19 @@ public sealed class AetherCore : MonoBehaviour
         var player = Player.Instance;
         if (player == null || player.IsDead) return;
 
-        if (Vector2.Distance(transform.position, player.transform.position) <= _radius) Collect();
+        Vector2 me = transform.position;
+        Vector2 target = player.transform.position;
+        float dist = Vector2.Distance(me, target);
+
+        if (dist <= _radius) { Collect(); return; }
+
+        if (!ForceMagnet && dist > AttractRadius) return;
+
+        // Même règle que les orbes d'XP : la vitesse se mesure contre celle du PORTEUR, jamais dans
+        // l'absolu. Un Noyau qu'un joueur rapide sème derrière lui serait pire que pas de Noyau du
+        // tout — il aurait fait l'aller-retour pour rien.
+        float speed = PickupMagnet.SpeedAgainst(player.CurrentSpeed, ForceMagnet);
+        transform.position = me + (target - me) / Mathf.Max(dist, 0.001f) * speed * Time.deltaTime;
     }
 
     private void Collect()

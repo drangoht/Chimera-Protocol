@@ -23,7 +23,7 @@ URP 2D). Le dépôt ne contient plus qu'un moteur : Godot a été retiré le **2
 ## Phase actuelle
 
 **Migration Unity terminée. 2.0.0 publiée le 2026-08-10, 2.0.1 le 2026-08-11.** Le jeu est jouable
-de bout en bout, avec son, validé en jouant. **626 tests.** ▶ Toujours essayer
+de bout en bout, avec son, validé en jouant. **673 tests.** ▶ Toujours essayer
 `tools/release_unity.ps1 -DryRun` avant de publier pour de bon.
 
 **2.0.1 — la leçon du portage a frappé une dixième fois, sur le TEXTE.** Tout le contenu nommé
@@ -34,6 +34,16 @@ trailer** — le pipeline vidéo a été reporté sous Unity dans la foulée (`B
 `tools/record_trailer.py`, chaque plan mis en scène, timecodes stables d'une recapture à l'autre).
 ▶ **Reste à faire côté utilisateur : coller le devlog 2.0.1 sur itch** (`docs/DEVLOG.md`, EN puis FR).
 
+**2026-08-12 — quatre défauts signalés en jouant, corrigés, non publiés.** (1) La **Lame Boomerang**
+mettait 6 s à revenir face à un joueur rapide, et son arme cessait donc de tirer : la parade du
+2026-08-11 (`PickupMagnet`) avait été appliquée au *site trouvé*, pas à la *classe de défauts* →
+`BoomerangReturn`. (2) L'**Aimant n'existait pas** sous Unity, alors que `bonus_magnet` restait
+achetable à 770 Échos — porté avec `MagnetSchedule` / `MagnetPickup` / `MagnetSpawner` /
+`MagnetSprite`. (3) Les **Noyaux d'Aether s'aimantent** (renversement de design assumé) et
+`core_magnetism` a été redirigé vers le rayon d'aimantation, sans quoi il devenait payant et sans
+effet. (4) Le **menu de montée de niveau proposait 1 ou 2 cartes** en fin de run — un test
+verrouillait même ce comportement. **673 tests, banc 271/0.**
+
 **Le dépôt est mono-moteur depuis le 2026-08-10.** Ce qui a changé :
 - `src/`, `scenes/`, `project.godot`, le `.csproj`/`.sln` Godot, `assets/`, `data/` et
   `localization/` racine ont été **supprimés** — tout vit sous `unity/Assets/`.
@@ -43,12 +53,17 @@ trailer** — le pipeline vidéo a été reporté sous Unity dans la foulée (`B
   (table de destination) et **`tools/spriteframes.py`** (manifestes d'animation, ex-`.tres`).
 - Doc de l'ère Godot conservée sous **`docs/archive-godot/`** (fond valable, chemins périmés).
 
-⚠ **La leçon du portage, toujours en vigueur : déclaré n'est pas consommé.** Neuf fois une donnée,
+⚠ **La leçon du portage, toujours en vigueur : déclaré n'est pas consommé.** Dix fois une donnée,
 une règle ou un système entier existait, était testé, et n'était appelé par rien — trouvé en jouant,
 jamais par l'automatisation. Trois outils sont nés de là : `tools/audit_json_keys.py`,
 `tools/audit_unused_members.py` et **`tools/audit_loc_keys.py`** (tout le contenu nommé était affiché
 **en français dans les trois langues**, alors que 109 clés traduites dormaient dans `ui.csv`).
 **Les lancer après tout ajout de données, de règle ou de texte affiché.**
+⚠ **Aucun des trois n'aurait attrapé la dixième** (l'Aimant, 2026-08-12) : le système entier était
+*absent*, pas déclaré-non-lu — rien à comparer. Le seul signal était côté **joueur**, qui pouvait
+acheter `bonus_magnet` (770 Échos) pour étendre un objet inexistant. **Deuxième fois qu'une
+amélioration du Hub se paie sur du vide** (cf. le cran IV de saturation). Contrôle à faire à la main :
+toute entrée de `meta_upgrades.json` doit pointer un système qui **existe** côté Unity.
 
 ## Équipe d'agents
 
@@ -78,7 +93,7 @@ quand une phase se termine, relire les agents qu'elle concerne (dernière passe 
 - **Logique pure testable** : `unity/Assets/Scripts/Shared/Rules/` — classes statiques **sans
   dépendance moteur** (`XpCurve`, `EnemyScaling`, `SaturationTable`…). Les `MonoBehaviour` y délèguent.
   `Shared/PlatformCore/` porte le socle déterministe (`Pcg32`, `TimerWheel`, `Easing`).
-- **Tests unitaires** : xUnit, `dotnet test tests/ChimeraProtocol.Tests.csproj` — **626 tests**.
+- **Tests unitaires** : xUnit, `dotnet test tests/ChimeraProtocol.Tests.csproj` — **673 tests**.
   Ils compilent `Shared/` **par chemin** : aucun moteur, aucun build requis.
 - ⚠ **`Art/` ≠ `Resources/`** : `Art/` est consommé par **GUID** (planches d'animation), `Resources/`
   **par chemin** (`Resources.Load`) et embarqué en entier dans le binaire. Se tromper de dossier ne

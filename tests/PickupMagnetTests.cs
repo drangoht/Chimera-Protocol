@@ -80,6 +80,28 @@ public class PickupMagnetTests
         Assert.InRange(PickupMagnet.PickupRadius, 18f, 21f);
     }
 
+    /// <summary>
+    /// Le Noyau d'Aether s'aimante depuis le 2026-08-12, et <c>core_magnetism</c> a suivi : son bonus
+    /// (+15/+15/+20 px) porte désormais sur le rayon d'<b>aimantation</b> et non sur celui du contact.
+    /// Sans cette redirection, l'amélioration devenait payante et sans effet — un défaut que ce projet
+    /// a déjà rencontré trois fois.
+    /// </summary>
+    [Theory]
+    [InlineData(0f, 100f)]     // aucun niveau
+    [InlineData(15f, 115f)]    // niveau 1
+    [InlineData(30f, 130f)]    // niveau 2
+    [InlineData(50f, 150f)]    // niveau 3, le maximum
+    public void LeBonusDeResonanceElargitLeRayonDAimantation(float bonus, float expected)
+    {
+        Assert.Equal(expected, PickupMagnet.AttractRadius(bonus), 3);
+    }
+
+    [Fact]
+    public void UnBonusNegatifNeRetrecitJamaisLAimantation()
+    {
+        Assert.Equal(PickupMagnet.Radius, PickupMagnet.AttractRadius(-50f), 3);
+    }
+
     [Fact]
     public void LeRayonDAimantationLaisseLeJoueurAllerChercherSonXp()
     {

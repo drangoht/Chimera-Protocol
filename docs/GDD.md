@@ -155,13 +155,20 @@ Trois archétypes prévus à terme (un seul requis pour le MVP, cf. §13) :
   - Non magnétisé : le joueur doit marcher sur l'orbe (prise de risque intentionnelle)
   - PointLight2D rouge pulsant pour la lisibilité en combat dense
 
-### Item Aimant (aspiration d'XP) — ajouté 2026-06-28
+### Item Aimant (aspiration d'XP) — ajouté 2026-06-28, **porté sous Unity le 2026-08-12**
 
 - **Aimant** (fer à cheval gris + pointes rouges, halo cyan pulsant) : **item à apparition programmée**, pas un drop d'ennemi.
-  - Apparition via `MagnetSpawner` (Node dans `Game.tscn`) : **au maximum 3 fois par run**, à des positions aléatoires dans l'arène (≥ 150 px des murs).
-  - Fenêtres temporelles : ~2-5 min, ~6-10 min, et **une « proche de la fin »** (~12-13 min, autour de l'arrivée du boss final). Aucune apparition après la fin de run.
-  - Effet au contact du joueur : attire **toutes les orbes d'XP présentes dans l'arène** vers lui (`XpOrb.ForceMagnet` → attraction à toute distance, ~2,5× la vitesse de magnétisation normale). Aspiration globale façon Vampire Survivors.
-  - Non magnétisé : le joueur doit marcher dessus (comme l'orbe HP).
+  - Apparition via `MagnetSpawner` (objet de la scène de jeu) : **au maximum 3 fois par run**, à des positions aléatoires dans l'arène (≥ 150 px des murs). Le calendrier est une règle pure — `Shared/Rules/MagnetSchedule.cs`.
+  - Fenêtres temporelles : ~2-5 min, ~6-10 min, et **une « proche de la fin »** (~11,7-12,7 min, juste avant l'arrivée du boss final). Aucune apparition après la fin de run.
+  - Effet au contact du joueur : attire **toutes les orbes d'XP et tous les Noyaux d'Aether présents dans l'arène** vers lui (`ForceMagnet` → attraction à toute distance, ×2,5 la vitesse de magnétisation normale). Aspiration globale façon Vampire Survivors. Le drapeau est posé sur ce qui est **présent** : ce qui tombe après reste ordinaire.
+  - Non magnétisé : le joueur doit marcher dessus. C'est désormais le **seul** ramassage du jeu qui demande le détour, depuis que le Noyau s'aimante (§9.1) — et c'est ce qui le justifie : il paie en une fois tout ce que la run a semé ailleurs.
+  - Sa silhouette est **dessinée à l'exécution** (`Gameplay/MagnetSprite.cs`), comme le glaive et le missile : aucun PNG, aucun `.meta`, donc aucun maillon d'import à casser en silence.
+
+> ⚠ **Ce système entier n'avait pas été porté sous Unity** — ni l'objet, ni son spawner, ni son effet
+> — alors que `bonus_magnet` restait achetable au Hub à **770 Échos cumulés** pour « +1 apparition par
+> run » d'un objet qui n'apparaissait jamais. Quatrième occurrence de *déclaré n'est pas consommé*,
+> trouvée en jouant le 2026-08-12. Cf. le cran IV de saturation, qui coupait trois filets du Hub qui
+> n'existaient pas : une règle qui marche exactement comme écrit, sur du vide.
 
 ### Choix de montée de niveau
 
@@ -176,7 +183,15 @@ Trois archétypes prévus à terme (un seul requis pour le MVP, cf. §13) :
 **Règles de présentation des 3 cartes** :
 1. Jamais 2 cartes du même id dans les 3 propositions.
 2. Une fusion est forcée si conditions remplies depuis ≥ 1 niveau sans avoir été proposée.
-3. Si moins de 3 cartes uniques disponibles, compléter avec un bonus de 50 XP à la place.
+3. **Si moins de 3 cartes uniques disponibles, compléter avec des cartes de surcharge** (§33), dans
+   leur ordre d'affichage — jamais tirées au sort parmi les autres, sinon la surcharge mangerait une
+   arme encore montable au lieu de boucher le trou qu'elle laisse. Une main est **toujours pleine**.
+   - ⚠ Corrigé le **2026-08-12**, signalé en jouant (« vers la fin de run le menu de level up affiche
+     de temps en temps 1 ou 2 items seulement »). La bascule du §33 ne répondait qu'au pool
+     *totalement* vide ; or le pool ne s'épuise pas d'un coup, il **s'assèche**. Entre les deux,
+     l'écran dont tout l'intérêt est d'offrir un choix en proposait un seul. La règle Godot d'origine
+     — compléter avec « un bonus de 50 XP » — était pire encore : de l'XP pour gagner des niveaux qui
+     ne donnent rien, la boucle fermée que le §33 a précisément supprimée.
 4. Transition écran level-up : fond instantané + scale-in des 3 cartes sur 0,08 s, durée perçue < 0,2 s.
 
 - **Fusions/évolutions** : transforment une arme + un passif en une forme unique (nouveau
@@ -327,10 +342,31 @@ Les Noyaux d'Aether sont des collectables **distincts des orbes XP** :
      de l'arène (min 150 px des murs), indépendamment des ennemis.
   2. **Drop ennemi** : chaque **Colosse Greffé** lâche 1 Noyau à sa mort (100% de chance).
      Logique : l'ennemi le plus difficile → récompense tangible et mémorable.
-- **Ramassage MANUEL** uniquement — pas d'aspiration automatique. Rayon de collecte : **20 px**
-  (contact quasi-direct). Objectif de design : forcer le joueur à se déplacer et prendre des
-  risques pour récupérer les Noyaux, créant une tension supplémentaire.
+- **Ramassage AIMANTÉ depuis le 2026-08-12** — rayon d'aimantation **100 px** (jusqu'à 150 avec
+  `core_magnetism`), rayon de contact toujours 20 px, vitesse calculée contre celle du joueur comme
+  pour les orbes (`PickupMagnet.SpeedAgainst`). Le Noyau obéit aussi à l'Aimant (§ item Aimant).
 - **Valeur en Échos** : voir formule §9.2 — chaque Noyau ramassé contribue **5 Échos** au total.
+
+> **Renversement du 2026-08-12 — pourquoi le ramassage manuel a sauté.** Le Noyau était le seul
+> objet du jeu à se ramasser à la main : rayon de collecte 20 px, contact quasi-direct, l'intention
+> étant de *forcer le joueur à se déplacer et à prendre des risques*, et d'en faire le seul objet qui
+> demande de traverser volontairement le danger. La décision « y aller ou renoncer » était ce qu'il
+> apportait à la boucle.
+>
+> Le joueur l'a demandé autrement après l'avoir joué (2026-08-12) : « les orbes d'Aether devraient
+> également être attirées par le joueur comme les orbes d'XP ». En pratique, un Noyau apparu sous
+> trois cents ennemis en fin de partie n'était pas un arbitrage — il était perdu, et la seule monnaie
+> de méta-progression du jeu avec lui.
+>
+> **Ce qui reste du parti pris** : le Noyau garde son propre rayon (100 px, pas l'arène), donc il faut
+> toujours **s'en approcher** ; ce n'est plus le dernier pixel qui se paie, c'est l'aller-retour. Il
+> garde aussi sa pulsation et son son propre — ramasser un Noyau reste un événement de run.
+>
+> **Conséquence sur `core_magnetism`** : son bonus (+15/+15/+20 px) a été **redirigé** vers le rayon
+> d'aimantation (100 → 150 px) au lieu du rayon de contact, devenu sans objet. Sans cette
+> redirection, l'amélioration devenait payante et sans effet — le défaut que ce projet a déjà
+> rencontré trois fois. Le rôle « aller chercher sa récompense au milieu du danger » passe à
+> l'**Aimant**, qui est désormais le seul ramassage non magnétisé du jeu.
 
 ### 9.2 Formule de calcul des Échos en fin de run — v2 (2026-07-02, à plafond souple)
 

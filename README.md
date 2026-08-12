@@ -232,7 +232,7 @@ chimera-protocol/
 │   ├── Assets/Art/              Sprites sources, consommés par GUID (+ branding/icon.png)
 │   ├── Assets/Resources/        Chargé par chemin à l'exécution : Ui, UiFrames, Audio, Vfx, Fonts…
 │   └── Assets/StreamingAssets/  data/*.json (tuning) + localization/ui.csv
-├── tests/                       xUnit — compile Shared/ par chemin (626 tests, aucun moteur requis)
+├── tests/                       xUnit — compile Shared/ par chemin (673 tests, aucun moteur requis)
 ├── tools/                       Générateurs d'assets, banc de mesure, audits, release (Python/PS)
 └── docs/                        GDD.md, PITFALLS_UNITY.md, TEST_REPORT.md… + archive-godot/
 ```

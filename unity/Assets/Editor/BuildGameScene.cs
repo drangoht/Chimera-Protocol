@@ -399,6 +399,13 @@ public static class BuildGameScene
         var coreSpawnerGo = new GameObject("AetherCoreSpawner", typeof(AetherCoreSpawner));
         coreSpawnerGo.GetComponent<AetherCoreSpawner>().CorePrefab = corePrefab;
 
+        // L'Aimant : trois apparitions par run, tirées dans des fenêtres, et non une cadence.
+        //
+        // ⚠ Ce spawner n'a AUCUN gabarit à recevoir — l'Aimant dessine sa propre silhouette. Et il
+        // n'avait jamais été porté : l'amélioration `bonus_magnet` restait pourtant achetable au Hub
+        // depuis la 2.0.0, à 770 Échos, pour étendre un objet qui n'apparaissait jamais.
+        var magnetSpawnerGo = new GameObject("MagnetSpawner", typeof(MagnetSpawner));
+
         var bootGo = new GameObject("RunBootstrap", typeof(RunBootstrap));
 
         // Sans EventSystem, les ecrans modaux ne recoivent ni clic ni focus manette.
@@ -407,7 +414,7 @@ public static class BuildGameScene
             typeof(UnityEngine.EventSystems.StandaloneInputModule));
 
         foreach (var go in new[] { camGo, systems, arenaGo, playerGo, spawnerGo, coreSpawnerGo,
-                                   bootGo, eventSystem })
+                                   magnetSpawnerGo, bootGo, eventSystem })
             EditorSceneManager.MoveGameObjectToScene(go, scene);
 
         EditorSceneManager.SaveScene(scene, GameScenes.PathOf(GameScenes.Game));

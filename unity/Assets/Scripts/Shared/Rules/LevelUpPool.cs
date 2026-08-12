@@ -40,6 +40,14 @@ public readonly struct LevelUpCard
 ///
 /// <para>C'est exactement le genre de règle qu'un portage perd sans bruit : tout continue de
 /// fonctionner, le jeu devient simplement injouable en fin de partie.</para>
+///
+/// <para><b>La bascule était binaire, et c'était le trou.</b> Elle ne se déclenchait que sur un pool
+/// <i>totalement</i> vide. Entre les deux — une seule passive non saturée, deux armes encore
+/// montables — le joueur recevait une main de <b>une ou deux cartes</b> en fin de run : pas un choix,
+/// un ultimatum, sur l'écran dont tout l'intérêt est d'en offrir un. Signalé en jouant le
+/// 2026-08-12 (« vers la fin de run le menu affiche de temps en temps 1 ou 2 items »). Le pool ne
+/// s'épuise pas d'un coup, il s'assèche ; la réponse doit donc s'appliquer par degrés, carte par
+/// carte manquante.</para>
 /// </summary>
 public static class LevelUpPool
 {
@@ -47,8 +55,8 @@ public static class LevelUpPool
     public const int CardsPerLevel = 3;
 
     /// <summary>
-    /// Construit le choix. Renvoie jusqu'à <see cref="CardsPerLevel"/> cartes, et <b>bascule sur les
-    /// cartes de surcharge</b> si le pool ordinaire est épuisé.
+    /// Construit le choix. Renvoie <b>toujours</b> <see cref="CardsPerLevel"/> cartes : ce que le pool
+    /// ordinaire ne fournit plus est complété par les <b>cartes de surcharge</b>.
     /// </summary>
     /// <param name="ownedWeapons">Armes portées et leur niveau.</param>
     /// <param name="allWeaponIds">Toutes les armes existantes.</param>
@@ -136,7 +144,32 @@ public static class LevelUpPool
             remaining.RemoveAt(index);
         }
 
+        TopUpWithOverload(chosen);
         return chosen;
+    }
+
+    /// <summary>
+    /// Complète une main incomplète avec des cartes de surcharge, dans leur ordre d'affichage.
+    /// </summary>
+    /// <remarks>
+    /// <para>C'est le <b>même</b> filet que la bascule du pool vide, appliqué par degrés : la
+    /// surcharge est précisément la progression sans plafond, donc la seule chose qui reste à offrir
+    /// quand le contenu fini se raréfie. Une main de deux cartes n'était pas « un pool plus petit »,
+    /// c'était l'écran de choix qui cessait d'en être un.</para>
+    ///
+    /// <para>⚠ <b>Ajoutées à la fin, jamais tirées au sort parmi les autres.</b> Les faire concourir
+    /// au tirage pondéré les ferait apparaître à la place d'une arme encore montable — la surcharge
+    /// mangerait le contenu au lieu de boucher le trou qu'il laisse.</para>
+    /// </remarks>
+    private static void TopUpWithOverload(List<LevelUpCard> chosen)
+    {
+        if (chosen.Count >= CardsPerLevel) return;
+
+        foreach (var card in OverloadCards.All)
+        {
+            if (chosen.Count >= CardsPerLevel) return;
+            chosen.Add(new LevelUpCard(LevelUpCardKind.Overload, card.Id, 1));
+        }
     }
 
     /// <summary>Les trois cartes de surcharge, proposées quand plus rien d'autre n'est disponible.</summary>
