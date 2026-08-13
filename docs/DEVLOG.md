@@ -4,6 +4,51 @@
 > `release-manager`). Entrées en ordre décroissant (la plus récente en haut). Ton orienté
 > joueur, EN puis FR (audience itch surtout anglophone).
 
+## v2.2.0 — Play it in your browser (2026-08-13)
+
+**New — the whole game, in a browser tab**
+- No download, no install: click **Run game** on this page and play. Same game, same content, same
+  three languages — the full run, the Hub, the Codex, Assimilation, the bosses.
+- **It holds 60 frames per second**, measured over three minutes with 200 enemies on screen, a full
+  arsenal, in overtime and during a boss fight. A browser is not the compromise it used to be.
+- The Windows download is still here and still the reference build. Nothing about it changes.
+
+**Worth knowing before you start**
+- The first load pulls about **35 MB**. Your browser caches it afterwards, so the next session
+  starts almost instantly.
+- **Your browser progress is its own save.** Echoes, Hub upgrades, records, unlocked biomes and the
+  arsenal you have discovered live in *this browser*, separately from a Windows install. Playing
+  both means two separate profiles — and clearing your browser's site data erases the browser one.
+- Two things simply don't exist in a tab: the **Quit** entry (closing the tab is the way out) and
+  **Discord Rich Presence**, which needs a desktop client to talk to. They are hidden rather than
+  left there doing nothing.
+- Prefer it big: the fullscreen button sits at the bottom right of the frame.
+
+---
+
+**Nouveau — le jeu entier, dans un onglet**
+- Aucun téléchargement, aucune installation : cliquez sur **Run game** sur cette page et jouez. Même
+  jeu, même contenu, mêmes trois langues — la run complète, le Hub, le Codex, l'Assimilation, les
+  boss.
+- **Il tient 60 images par seconde**, mesurées sur trois minutes avec 200 ennemis à l'écran, un
+  arsenal complet, en prolongation et pendant un combat de boss. Un navigateur n'est plus le
+  compromis qu'il a été.
+- La version Windows reste disponible et reste la référence. Rien n'y change.
+
+**Bon à savoir avant de commencer**
+- Le premier chargement récupère environ **35 Mo**. Votre navigateur les garde ensuite en cache : la
+  session suivante démarre presque instantanément.
+- **Votre progression dans le navigateur est une sauvegarde à part.** Échos, améliorations du Hub,
+  records, biomes débloqués et arsenal découvert vivent dans *ce navigateur*, séparément d'une
+  installation Windows. Jouer aux deux, c'est deux profils distincts — et vider les données de site
+  de votre navigateur efface celui-ci.
+- Deux choses n'existent tout simplement pas dans un onglet : l'entrée **Quitter** (on sort en
+  fermant l'onglet) et la **présence Discord**, qui a besoin d'un client installé pour dialoguer.
+  Elles sont masquées plutôt que laissées là sans effet.
+- À voir en grand : le bouton plein écran est en bas à droite du cadre.
+
+---
+
 ## v2.1.1 — Aiming has been broken this whole time (2026-08-13)
 
 **Fixed — mouse aiming never worked**
