@@ -73,9 +73,16 @@ carte par carte) · `LocTable` · **`MagnetSchedule`** (fenêtres d'apparition d
 `Spawner` (charge un prefab par son ancien chemin `res://scenes/…` traduit en `Prefabs/…`) ·
 `AudioSystem` · `MusicDirector` (dans Gameplay) · `Loc` · `UserData` (sauvegardes) ·
 `UiCanvas` / `UiFonts` / `UiFrames` / `UiIcons` / `UiNames` / `UiPrimitives` · `SceneRoot` ·
-`PlatformHost` · `FrameAnimator` · `GTween` · `HitStop` · `InputRemap` · `DebugHooks` ·
+`PlatformHost` · `FrameAnimator` · `GTween` · `HitStop` · `DebugHooks` ·
 `BuildInfo` (tampon `v<version>-<sha>`) · `DiscordPresence` · `DataFiles` · `Gd` (utilitaires
 transposés) · `SpriteFramesAsset`
+
+**Entrées — les DEUX seuls fichiers qui touchent aux périphériques** (paquet Input System depuis le
+2026-08-13) : `InputRemap` (actions de jeu remappables — déplacement, dash) et `RawInput` (Échap,
+« n'importe quelle touche », clic, curseur, stick droit). Tout le reste passe par eux ; un écran qui
+lit une touche directement est un défaut — `Keyboard.current` peut être **nul**, et l'exception
+qui s'ensuit saute la fin de la méthode appelante sans rien signaler
+(→ `docs/PITFALLS_UNITY.md` §Entrées).
 
 ## §Gameplay — `unity/Assets/Scripts/Gameplay/`
 - **Joueur** : `Player`, `PlayerStats`, `ChimeraBody`, `RunCamera`, `Assimilation`, `GraftManager`

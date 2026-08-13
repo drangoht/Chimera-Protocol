@@ -104,7 +104,7 @@ public sealed class IntroScreen : MonoBehaviour
         // trois secondes, et cela ne se voyait qu'au montage.
         if (DebugHooks.TrailerMode) return;
 
-        if (!Finished && (Input.anyKeyDown || Input.GetMouseButtonDown(0))) Skip();
+        if (!Finished && RawInput.AnyInputThisFrame()) Skip();
     }
 
     /// <summary>Délai avant qu'une entrée puisse passer la cinématique, en secondes.</summary>

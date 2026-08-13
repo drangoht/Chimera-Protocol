@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 /// <summary>Actions de jeu remappables — reprises telles quelles de l'<c>InputMap</c> Godot.</summary>
 public enum GameAction { MoveUp, MoveDown, MoveLeft, MoveRight, Dash }
@@ -21,27 +22,55 @@ public enum GameAction { MoveUp, MoveDown, MoveLeft, MoveRight, Dash }
 /// rend l'aide mensongère.</para>
 ///
 /// <para>Les défauts reprennent ceux de Godot : ZQSD <b>et</b> WASD <b>et</b> les flèches, pour
-/// couvrir les dispositions AZERTY et QWERTY sans réglage.</para>
+/// couvrir les dispositions AZERTY et QWERTY sans réglage. <b>C'est la position physique de la
+/// touche qui est liée, pas la lettre gravée dessus</b> — <c>Key.Z</c> et <c>Key.W</c> désignent
+/// deux emplacements, et un clavier AZERTY grave « z » sur celui que QWERTY appelle W. Lier les
+/// deux couvre donc les deux dispositions, exactement comme le faisaient les <c>KeyCode</c>.</para>
+///
+/// <para><b>Migration Input System (2026-08-13).</b> Le paquet remplace l'ancien Input Manager,
+/// marqué pour dépréciation. Deux écarts de comportement méritaient d'être traités ici :</para>
+/// <list type="bullet">
+///   <item><description><c>Keyboard.current</c> peut être <b>nul</b> — au banc headless, dans un
+///   build sans périphérique, ou pendant la frame qui suit un débranchement. L'ancien
+///   <c>Input.GetKey</c> ne pouvait pas échouer ; ici, l'oubli d'un test se paie en
+///   <c>NullReferenceException</c> à chaque frame. Toutes les lectures passent donc par
+///   <see cref="Held"/>.</description></item>
+///   <item><description><see cref="DisplayName"/> lit désormais le libellé <b>réel de la
+///   disposition installée</b> (<c>InputControl.displayName</c>) : sur un clavier AZERTY, la touche
+///   « aller en haut » s'annonce « Z » et non « W » comme le faisait l'ancien
+///   <c>KeyCode.ToString()</c>. C'est précisément ce que la remarque de classe ci-dessus
+///   exige.</description></item>
+/// </list>
 /// </summary>
 public static class InputRemap
 {
-    private static readonly Dictionary<GameAction, List<KeyCode>> _bindings = new()
+    private static readonly Dictionary<GameAction, List<Key>> _bindings = new()
     {
-        [GameAction.MoveUp]    = new() { KeyCode.Z, KeyCode.W, KeyCode.UpArrow },
-        [GameAction.MoveDown]  = new() { KeyCode.S, KeyCode.DownArrow },
-        [GameAction.MoveLeft]  = new() { KeyCode.Q, KeyCode.A, KeyCode.LeftArrow },
-        [GameAction.MoveRight] = new() { KeyCode.D, KeyCode.RightArrow },
-        [GameAction.Dash]      = new() { KeyCode.LeftShift, KeyCode.RightShift },
+        [GameAction.MoveUp]    = new() { Key.Z, Key.W, Key.UpArrow },
+        [GameAction.MoveDown]  = new() { Key.S, Key.DownArrow },
+        [GameAction.MoveLeft]  = new() { Key.Q, Key.A, Key.LeftArrow },
+        [GameAction.MoveRight] = new() { Key.D, Key.RightArrow },
+        [GameAction.Dash]      = new() { Key.LeftShift, Key.RightShift },
     };
 
     /// <summary>Signalé après un remap, pour que l'interface rafraîchisse ses libellés.</summary>
     public static event Action? BindingsChanged;
 
+    /// <summary>
+    /// Le contrôle d'une touche, ou <c>null</c> s'il n'y a pas de clavier — le seul point du
+    /// fichier qui touche au périphérique.
+    /// </summary>
+    private static UnityEngine.InputSystem.Controls.KeyControl? Held(Key key)
+    {
+        var keyboard = Keyboard.current;
+        return keyboard != null && key != Key.None ? keyboard[key] : null;
+    }
+
     /// <summary>L'action est-elle maintenue ?</summary>
     public static bool IsPressed(GameAction action)
     {
         foreach (var key in _bindings[action])
-            if (Input.GetKey(key)) return true;
+            if (Held(key)?.isPressed == true) return true;
         return false;
     }
 
@@ -49,7 +78,7 @@ public static class InputRemap
     public static bool WasPressedThisFrame(GameAction action)
     {
         foreach (var key in _bindings[action])
-            if (Input.GetKeyDown(key)) return true;
+            if (Held(key)?.wasPressedThisFrame == true) return true;
         return false;
     }
 
@@ -66,21 +95,28 @@ public static class InputRemap
     /// <summary>
     /// Libellé de la <b>première</b> touche associée, pour l'affichage. À utiliser partout où une
     /// touche est annoncée au joueur — voir la remarque de classe.
+    ///
+    /// <para>Sans clavier branché, on ne peut pas connaître la disposition : le nom de la touche
+    /// physique fait alors office de repli, plutôt qu'un tiret qui laisserait croire que l'action
+    /// n'est liée à rien.</para>
     /// </summary>
     public static string DisplayName(GameAction action)
     {
         var keys = _bindings[action];
-        return keys.Count > 0 ? keys[0].ToString() : "—";
+        if (keys.Count == 0) return "—";
+
+        string? layout = Held(keys[0])?.displayName;
+        return string.IsNullOrEmpty(layout) ? keys[0].ToString() : layout!.ToUpperInvariant();
     }
 
     /// <summary>Remplace les touches d'une action. Une liste vide est refusée.</summary>
-    public static void Rebind(GameAction action, params KeyCode[] keys)
+    public static void Rebind(GameAction action, params Key[] keys)
     {
         if (keys == null || keys.Length == 0)
             throw new ArgumentException("Une action sans touche serait injouable et invisible.",
                                         nameof(keys));
 
-        _bindings[action] = new List<KeyCode>(keys);
+        _bindings[action] = new List<Key>(keys);
         BindingsChanged?.Invoke();
     }
 }

@@ -73,7 +73,7 @@ public sealed class LevelSelectScreen : MonoBehaviour
 
     private void Update()
     {
-        if (IsVisible && Input.GetKeyDown(KeyCode.Escape)) Close();
+        if (IsVisible && RawInput.EscapePressedThisFrame()) Close();
     }
 
     private void Close()

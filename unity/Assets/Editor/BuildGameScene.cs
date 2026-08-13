@@ -259,6 +259,28 @@ public static class BuildGameScene
     }
 
     /// <summary>
+    /// L'<c>EventSystem</c> d'une scène, avec le module d'entrée du paquet Input System.
+    ///
+    /// <para><b>⚠ Le piège que cette fabrique existe pour éviter.</b> Un
+    /// <c>InputSystemUIInputModule</c> posé sur un objet n'a, par défaut, <b>aucune action</b>
+    /// assignée : il se comporte exactement comme un module absent — les boutons ne reçoivent ni
+    /// clic, ni focus, ni navigation — <b>sans lever la moindre erreur</b>. C'est le même mode
+    /// d'échec que l'<c>EventSystem</c> manquant que les trois appelants signalaient déjà, et il est
+    /// encore plus discret puisque le composant, lui, est bien là. <c>AssignDefaultActions()</c>
+    /// installe les actions standard (navigation, submit, cancel, pointeur) que l'ancien
+    /// <c>StandaloneInputModule</c> tirait des axes de l'Input Manager.</para>
+    /// </summary>
+    private static GameObject NewEventSystem()
+    {
+        var go = new GameObject("EventSystem",
+            typeof(UnityEngine.EventSystems.EventSystem),
+            typeof(UnityEngine.InputSystem.UI.InputSystemUIInputModule));
+
+        go.GetComponent<UnityEngine.InputSystem.UI.InputSystemUIInputModule>().AssignDefaultActions();
+        return go;
+    }
+
+    /// <summary>
     /// Scène de la cinématique d'ouverture — <b>première scène du build</b>, donc celle qui se
     /// charge au lancement.
     /// </summary>
@@ -285,9 +307,7 @@ public static class BuildGameScene
         var introGo = new GameObject("Intro", typeof(IntroScreen), typeof(MusicDirector));
 
         // Sans EventSystem, un clic ne parvient à personne — et l'intro se passe aussi au clic.
-        var eventSystem = new GameObject("EventSystem",
-            typeof(UnityEngine.EventSystems.EventSystem),
-            typeof(UnityEngine.EventSystems.StandaloneInputModule));
+        var eventSystem = NewEventSystem();
 
         foreach (var go in new[] { camGo, introGo, eventSystem })
             EditorSceneManager.MoveGameObjectToScene(go, scene);
@@ -319,9 +339,7 @@ public static class BuildGameScene
 
         // Un EventSystem est INDISPENSABLE : sans lui, aucun bouton ne reçoit de clic ni de focus,
         // et le menu paraît simplement inerte — sans la moindre erreur.
-        var eventSystem = new GameObject("EventSystem",
-            typeof(UnityEngine.EventSystems.EventSystem),
-            typeof(UnityEngine.EventSystems.StandaloneInputModule));
+        var eventSystem = NewEventSystem();
 
         foreach (var go in new[] { camGo, menuGo, toolsGo, eventSystem })
             EditorSceneManager.MoveGameObjectToScene(go, scene);
@@ -409,9 +427,7 @@ public static class BuildGameScene
         var bootGo = new GameObject("RunBootstrap", typeof(RunBootstrap));
 
         // Sans EventSystem, les ecrans modaux ne recoivent ni clic ni focus manette.
-        var eventSystem = new GameObject("EventSystem",
-            typeof(UnityEngine.EventSystems.EventSystem),
-            typeof(UnityEngine.EventSystems.StandaloneInputModule));
+        var eventSystem = NewEventSystem();
 
         foreach (var go in new[] { camGo, systems, arenaGo, playerGo, spawnerGo, coreSpawnerGo,
                                    magnetSpawnerGo, bootGo, eventSystem })

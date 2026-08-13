@@ -83,6 +83,20 @@ Singularité couvrir celui du Champ. Contrôle désormais **arme par arme**. **U
 qu'il vise est pire qu'absent : il rend un verdict rassurant. Tout durcissement se valide en
 réintroduisant le défaut.**
 
+**2026-08-13 (3) — entrées portées sur le paquet Input System** (non publié ; détail :
+`docs/PITFALLS_UNITY.md` §Entrées). L'Input Manager est marqué pour dépréciation :
+`com.unity.inputsystem` 1.20.0, `activeInputHandler` à **1**, les trois `EventSystem` sur
+`InputSystemUIInputModule`. Tout ce qui touche un périphérique tient désormais dans **deux
+fichiers** — `Platform/InputRemap.cs` et `Platform/RawInput.cs` — au lieu de ~20 appels dispersés.
+⚠ **Trois des quatre pièges du domaine ne lèvent rien** : un module d'entrée sans
+`AssignDefaultActions()` est *inerte sans erreur* ; `Keyboard.current` est **nul** sans clavier ; et
+un paquet installé reste invisible tant que l'`.asmdef` ne le référence pas.
+⚠⚠ **Onzième « déclaré non consommé », trouvé en migrant : la visée était morte.**
+`Player.UpdateAim()` lisait deux axes — `RightStickX`/`RightStickY` — **jamais déclarés** dans
+`InputManager.asset` ; l'exception levée chaque frame **sautait la fin de la méthode**, donc la visée
+souris et le réticule. ▶ **À valider en jouant : la Lance Vectorielle se vise-t-elle ?**
+**673 tests, banc 273/0** (après 9/263 puis 1/273 sur le **même binaire** — instabilité connue).
+
 **Le dépôt est mono-moteur depuis le 2026-08-10.** Ce qui a changé :
 - `src/`, `scenes/`, `project.godot`, le `.csproj`/`.sln` Godot, `assets/`, `data/` et
   `localization/` racine ont été **supprimés** — tout vit sous `unity/Assets/`.

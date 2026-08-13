@@ -5,8 +5,10 @@ using UnityEngine.UI;
 /// <summary>
 /// Garde la sélection clavier/manette <b>vivante</b>.
 ///
-/// <para><b>Le défaut qu'il corrige</b> : <c>StandaloneInputModule</c> appelle
-/// <c>SetSelectedGameObject(null)</c> à chaque clic qui ne tombe sur aucun élément. Un joueur qui
+/// <para><b>Le défaut qu'il corrige</b> : le module d'entrée d'uGUI appelle
+/// <c>SetSelectedGameObject(null)</c> à chaque clic qui ne tombe sur aucun élément — l'ancien
+/// <c>StandaloneInputModule</c> le faisait sans recours, et <c>InputSystemUIInputModule</c> le fait
+/// toujours (<c>deselectOnBackgroundClick</c>, actif par défaut). Un joueur qui
 /// clique une fois à côté d'un bouton — ou qui ferme un écran à la souris — n'a plus aucune
 /// sélection, et les flèches ne font alors <b>plus rien du tout</b> jusqu'à ce qu'il reclique sur un
 /// bouton. Sous Godot, le focus survit au clic dans le vide ; c'est un écart de moteur, pas un choix

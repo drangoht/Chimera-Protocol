@@ -6,6 +6,33 @@
 
 - Pile technique : **Unity 6.5 (C#, URP 2D)** depuis la 2.0.0. **Version en ligne : 2.1.0** (2026-08-13,
   build itch #1880415).
+- **Entrées portées sur le paquet Input System (2026-08-13, non publié).** L'Input Manager est
+  marqué pour dépréciation par Unity ; `com.unity.inputsystem` 1.20.0 installé,
+  `activeInputHandler` passé à **1** (Input System seul), ce qui éteint l'avertissement. Détail des
+  pièges : **`docs/PITFALLS_UNITY.md` §Entrées**.
+  - Toutes les lectures de périphérique tiennent désormais dans **deux fichiers** :
+    `Platform/InputRemap.cs` (actions remappables) et `Platform/RawInput.cs` (Échap, touche
+    quelconque, clic, curseur, stick droit). Avant, une vingtaine d'appels `Input.*` étaient
+    dispersés dans 10 fichiers — rien n'était vérifiable d'un grep.
+  - Les trois `EventSystem` passent de `StandaloneInputModule` à `InputSystemUIInputModule`, via une
+    fabrique unique `BuildGameScene.NewEventSystem()` qui appelle **`AssignDefaultActions()`** —
+    sans quoi le module est **inerte sans lever d'erreur**. Scènes régénérées.
+  - **`DisplayName` s'améliore au passage** : le libellé d'une touche vient maintenant de la
+    disposition installée (`InputControl.displayName`), donc « Z » sur un clavier AZERTY là où
+    l'ancien `KeyCode.ToString()` affichait « W ». C'est ce que la règle « une capacité annonce sa
+    touche » exigeait depuis le début.
+  - ⚠ **Un défaut réel trouvé en migrant : la visée ne fonctionnait pas.** `Player.UpdateAim()`
+    lisait `Input.GetAxisRaw("RightStickX"/"RightStickY")` — **deux axes jamais déclarés** dans
+    `InputManager.asset`. L'`ArgumentException` levée à chaque frame interrompait la méthode :
+    **la branche de visée à la souris et la pose du réticule n'étaient jamais atteintes**. La plainte
+    correspondante côté joueur est « la Lance Vectorielle ne se vise pas » — exactement ce que le
+    commentaire de la méthode prétendait avoir corrigé. **Onzième fois** qu'une règle écrite et
+    commentée n'est atteinte par personne. ▶ **À valider en jouant** : viser à la souris avec la
+    Lance Vectorielle, et vérifier que le réticule apparaît.
+  - **673 tests, banc 273/0.** ⚠ Le banc a d'abord rendu **9/263**, puis **1/273**, puis **273/0**
+    sur le **même binaire** — l'instabilité déjà relevée le 2026-08-13, sans rapport avec ce
+    chantier. Le compte de vérifications qui *baisse* (263 < 273) signale la cascade, pas une
+    régression.
 - **Le Champ de Surcharge ne grandissait pas (2026-08-13, publié en 2.1.0).** Signalé en jouant (« trop
   discret »). Détail : **`docs/GDD.md` §36**.
   - `weapons.json` déclare `radius` **100 → 200 px** et `knockbackPx` **40 → 60** sur cinq paliers ;

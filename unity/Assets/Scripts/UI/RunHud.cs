@@ -91,7 +91,7 @@ public sealed class RunHud : MonoBehaviour
     {
         // Échap ouvre la pause — sauf si une modale est déjà ouverte : deux pauses imbriquées se
         // disputeraient la reprise, et l'une d'elles laisserait le jeu figé.
-        if (Input.GetKeyDown(KeyCode.Escape) && !ModalQueue.IsOpen)
+        if (RawInput.EscapePressedThisFrame() && !ModalQueue.IsOpen)
             _pause?.Toggle();
     }
 

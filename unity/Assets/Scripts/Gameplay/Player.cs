@@ -335,23 +335,39 @@ public sealed class Player : MonoBehaviour
             return;
         }
 
-        Vector2 stick = new(Input.GetAxisRaw("RightStickX"), -Input.GetAxisRaw("RightStickY"));
+        // ⚠ Ces deux lectures passaient par des axes de l'Input Manager — dont "RightStickX" et
+        // "RightStickY" qui n'ont JAMAIS été déclarés dans InputManager.asset. Unity lève alors une
+        // ArgumentException à chaque frame, ce qui interrompait cette méthode ici même : la branche
+        // souris ci-dessous n'était donc jamais atteinte et le réticule jamais posé. Le stick se lit
+        // maintenant sur le périphérique directement, sans table d'axes à tenir à jour.
+        //
+        // Le Y n'est plus inversé : les axes joystick de l'ancienne API pointaient vers le bas,
+        // rightStick pointe vers le haut, comme le monde.
+        Vector2 stick = RawInput.RightStick();
         if (stick.magnitude < AimStickDeadzone) stick = Vector2.zero;
 
-        var mouse = Input.mousePosition;
-        if ((mouse - _lastMousePosition).sqrMagnitude > 1f) { _gamepadAim = false; _lastMousePosition = mouse; }
+        Vector2? pointer = RawInput.PointerPosition();
+        if (pointer is { } mouse)
+        {
+            if (((Vector3)mouse - _lastMousePosition).sqrMagnitude > 1f)
+            {
+                _gamepadAim = false;
+                _lastMousePosition = mouse;
+            }
+        }
+
         if (stick != Vector2.zero) _gamepadAim = true;
 
         if (_gamepadAim)
         {
             if (stick != Vector2.zero) AimDirection = stick.normalized;   // sinon : garde la dernière
         }
-        else
+        else if (pointer is { } cursor)
         {
             var camera = Camera.main;
             if (camera != null)
             {
-                Vector2 world = camera.ScreenToWorldPoint(mouse);
+                Vector2 world = camera.ScreenToWorldPoint(cursor);
                 Vector2 toMouse = world - (Vector2)transform.position;
                 if (toMouse.sqrMagnitude > 1f) AimDirection = toMouse.normalized;
             }

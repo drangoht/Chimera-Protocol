@@ -683,7 +683,113 @@ n'est nécessaire.** Vérifié jusqu'en IL2CPP, sérialisation par réflexion co
 
 ---
 
+## Entrées
+
+> Migration du **paquet Input System** (`com.unity.inputsystem` 1.20.0), le 2026-08-13, en
+> remplacement de l'Input Manager marqué pour dépréciation. Le périmètre était petit — une vingtaine
+> d'appels — mais **trois des quatre pièges ci-dessous ne lèvent aucune erreur**.
+
+### Un axe jamais déclaré fait sauter **la fin de la méthode**, pas seulement sa ligne
+
+**Le défaut trouvé en migrant** : `Player.UpdateAim()` lisait `Input.GetAxisRaw("RightStickX")` et
+`"RightStickY"` — deux axes qui **n'ont jamais existé** dans `InputManager.asset`. Unity lève alors
+une `ArgumentException` ; Unity l'attrape au niveau de l'`Update`, mais **le reste de la méthode ne
+s'exécute pas**. Tout ce qui suivait était donc mort : la branche de visée à la souris et la pose du
+réticule.
+
+Le symptôme côté joueur n'est jamais « il manque un axe » : c'est « **la Lance Vectorielle ne se
+vise pas** » — exactement la plainte que le commentaire de la méthode disait avoir corrigée.
+C'est la leçon du portage sur un troisième support : une règle écrite, commentée, et que le moteur
+n'atteint jamais.
+
+**Ce que la migration change** : un stick se lit sur le périphérique
+(`Gamepad.current.rightStick`), sans table d'axes à tenir à jour — la classe entière de défaut
+disparaît.
+
+⚠ **Le Y n'est plus inversé.** Les axes joystick de l'ancienne API pointaient vers le bas, d'où le
+`-` devant `GetAxisRaw("RightStickY")` ; `rightStick.ReadValue()` pointe vers le haut, comme le
+monde. Recopier l'ancienne ligne inverse la visée verticale.
+
+### `Keyboard.current`, `Mouse.current`, `Gamepad.current` sont **nuls** sans périphérique
+
+`Input.GetKey` ne pouvait pas échouer : sans clavier, il rendait `false`. La nouvelle API rend
+`null`, et l'oubli d'un test se paie en `NullReferenceException` **à chaque frame**, dans un
+`Update` — donc avec le piège ci-dessus en prime : tout ce qui suit l'appel est sauté.
+
+Le cas n'est pas théorique : **au banc headless**, dans un build lancé sans souris, et pendant la
+frame qui suit un débranchement de manette.
+
+**Parade du projet** : toutes ces lectures passent par `Platform/RawInput.cs` (entrées non
+remappables) et `Platform/InputRemap.cs` (actions de jeu). Un écran qui teste une touche sans passer
+par l'un des deux est un candidat au défaut — et c'est **greppable**, ce qui était impossible quand
+vingt appels à `Input.*` étaient éparpillés.
+
+### Un `InputSystemUIInputModule` sans actions est **inerte, sans erreur**
+
+Posé par code (`AddComponent`), le module n'a **aucune action assignée** : ni clic, ni focus, ni
+navigation. Il se comporte exactement comme un `EventSystem` absent — panne que ce projet avait déjà
+rencontrée — mais **en plus discret**, puisque le composant, lui, est bien présent dans la scène.
+
+**Parade** : appeler `AssignDefaultActions()` juste après l'ajout. Dans ce projet, les trois
+`EventSystem` sortent d'une fabrique unique, `BuildGameScene.NewEventSystem()`.
+
+**Contrôle** — la scène générée doit porter les actions, pas seulement le composant :
+
+```bash
+grep -A28 "InputSystemUIInputModule" unity/Assets/Scenes/MainMenu.unity \
+  | grep -E "m_(Point|Move|Submit|Cancel|LeftClick)Action"
+```
+
+Cinq lignes avec un `fileID` non nul. `m_MoveAction` est celle de la **navigation clavier** — la
+fonction qui manquait historiquement au menu (« Entrée et Échap agissent, les flèches non »).
+
+### Le paquet installé reste **invisible** tant que l'`.asmdef` ne le référence pas
+
+Même piège que « uGUI est un paquet, pas un module », et il se reproduit à l'identique : le
+manifeste porte `com.unity.inputsystem`, le Package Manager le montre installé, et la compilation
+rend `error CS0234: The type or namespace name 'InputSystem' does not exist in the namespace
+'UnityEngine'`.
+
+Il faut ajouter **`Unity.InputSystem`** aux `references` de chaque `.asmdef` concerné — ici
+`ChimeraProtocol.Platform`, `.Gameplay` et `.UI`. Les scripts sans `.asmdef` (`Assets/Editor/`,
+`Scripts/Bench/`) tombent dans `Assembly-CSharp`, qui référence les paquets automatiquement : ils
+compilent, ce qui rend l'erreur **partielle** et fait croire à un problème d'API.
+
+### `activeInputHandler` : c'est lui qui éteint l'avertissement de dépréciation
+
+Dans `ProjectSettings/ProjectSettings.asset` — `0` = Input Manager (déprécié), `1` = Input System,
+`2` = les deux. **L'avertissement ne disparaît qu'en `1`.**
+
+Le `2` sert de palier de migration : il laisse cohabiter l'ancienne API et la nouvelle le temps de
+porter le code. ⚠ En `1`, un `Input.*` oublié **compile toujours** — l'ancienne API existe encore —
+et ne lève qu'à l'exécution. Le filet n'est donc pas le compilateur mais un grep, à passer avant de
+basculer :
+
+```bash
+rg '\bInput\.[A-Za-z]|KeyCode\.|StandaloneInputModule|GetAxis|anyKeyDown' unity/Assets --glob '*.cs'
+```
+
+Ne doivent rester que des mentions **en commentaire**.
+
+---
+
 ## Build et outillage
+
+### Un build de banc laisse `productName` **modifié dans le dépôt**
+
+`BuildBench` pose `PlayerSettings.productName` au début de chaque build — `"Chimera Protocol"` pour
+le jeu, `"ChimeraProtocolBench"` pour les bancs — et **ne le restaure jamais**. Le dernier build
+lancé décide donc de ce que contient `ProjectSettings.asset`, et un banc laisse le dépôt sale.
+
+**Pourquoi ça compte** : `productName` détermine le **chemin de sauvegarde du joueur**
+(`AppData/LocalLow/drangoht/<productName>/`). Un build lancé depuis l'éditeur à la main, après un
+banc, produit un jeu qui écrit ses sauvegardes **ailleurs** — et le joueur retrouve un profil vide.
+Les points d'entrée scriptés s'en sortent parce qu'ils reposent le nom eux-mêmes ; c'est le chemin
+manuel qui est piégé.
+
+⚠ Même classe que « un outil ne laisse pas sa mise en scène dans la sauvegarde du joueur » (cf. la
+tournée de captures qui calibrait le banc). **Vérifier `git status` après un build de banc** et
+restaurer le nom avant de commiter.
 
 ### Bee met les **échecs** en cache — un échec instantané n'est pas un échec
 

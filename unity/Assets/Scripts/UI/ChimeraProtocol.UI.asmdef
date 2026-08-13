@@ -6,7 +6,8 @@
         "ChimeraProtocol.PlatformCore",
         "ChimeraProtocol.Rules",
         "ChimeraProtocol.Gameplay",
-        "UnityEngine.UI"
+        "UnityEngine.UI",
+        "Unity.InputSystem"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

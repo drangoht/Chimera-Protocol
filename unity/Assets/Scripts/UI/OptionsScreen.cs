@@ -97,7 +97,7 @@ public sealed class OptionsScreen : MonoBehaviour
         // remap en cours, refermerait l'écran d'un coup.
         if (_awaiting != null) { CaptureBinding(); return; }
 
-        if (Input.GetKeyDown(KeyCode.Escape)) Close();
+        if (RawInput.EscapePressedThisFrame()) Close();
     }
 
     private void Close()
@@ -423,28 +423,22 @@ public sealed class OptionsScreen : MonoBehaviour
     /// </summary>
     private void CaptureBinding()
     {
-        if (_awaiting == null || !Input.anyKeyDown) return;
+        if (_awaiting == null) return;
 
-        if (Input.GetKeyDown(KeyCode.Escape))
+        if (RawInput.EscapePressedThisFrame())
         {
             _awaiting = null;
             Refresh();
             return;
         }
 
-        foreach (KeyCode key in System.Enum.GetValues(typeof(KeyCode)))
-        {
-            // Les boutons de souris partagent l'énumération des touches : les accepter lierait une
-            // action au clic qui vient de valider le bouton lui-même.
-            if (key >= KeyCode.Mouse0 && key <= KeyCode.Mouse6) continue;
-            if (!Input.GetKeyDown(key)) continue;
+        var key = RawInput.FirstKeyPressedThisFrame();
+        if (key == UnityEngine.InputSystem.Key.None) return;
 
-            InputRemap.Rebind(_awaiting.Value, key);
-            _awaiting = null;
-            AudioSystem.PlaySfx("sfx_ui_button", pitchVariation: 0f);
-            Refresh();
-            return;
-        }
+        InputRemap.Rebind(_awaiting.Value, key);
+        _awaiting = null;
+        AudioSystem.PlaySfx("sfx_ui_button", pitchVariation: 0f);
+        Refresh();
     }
 
     // ─── Remise à zéro totale ─────────────────────────────────────────────────
