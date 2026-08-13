@@ -11,7 +11,9 @@
   three languages — the full run, the Hub, the Codex, Assimilation, the bosses.
 - **It holds 60 frames per second**, measured over three minutes with 200 enemies on screen, a full
   arsenal, in overtime and during a boss fight. A browser is not the compromise it used to be.
-- The Windows download is still here and still the reference build. Nothing about it changes.
+- The Windows download is still here and still the reference build. It moves to 2.2.0 too, so both
+  stay on the same version — but **nothing changes in how it plays**: the work under it is plumbing
+  the browser needed (how the game loads its data, how it reads launch options).
 
 **Worth knowing before you start**
 - The first load pulls about **35 MB**. Your browser caches it afterwards, so the next session
@@ -33,7 +35,10 @@
 - **Il tient 60 images par seconde**, mesurées sur trois minutes avec 200 ennemis à l'écran, un
   arsenal complet, en prolongation et pendant un combat de boss. Un navigateur n'est plus le
   compromis qu'il a été.
-- La version Windows reste disponible et reste la référence. Rien n'y change.
+- La version Windows reste disponible et reste la référence. Elle passe aussi en 2.2.0, pour que les
+  deux restent sur la même version — mais **rien ne change à la façon dont elle se joue** : le
+  travail qu'elle embarque est la tuyauterie qu'il fallait au navigateur (comment le jeu charge ses
+  données, comment il lit ses options de lancement).
 
 **Bon à savoir avant de commencer**
 - Le premier chargement récupère environ **35 Mo**. Votre navigateur les garde ensuite en cache : la
