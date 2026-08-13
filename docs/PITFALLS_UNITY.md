@@ -981,6 +981,26 @@ une capture d'écran par l'extension. La console, elle, reste lisible.
 part des images sous 30. Une moyenne seule ne voit pas l'à-coup — même erreur de méthode que mesurer
 la pression subie par une moyenne de dégâts.
 
+### Publier en web : deux réglages de page qu'aucun script ne pose
+
+`butler push` suffit à envoyer le build, **pas à le rendre jouable**. Deux choses vivent uniquement
+dans les réglages de la page itch.io, et le canal `html5` ne les implique pas :
+
+1. **« Kind of project » doit valoir HTML.** Tant qu'il vaut « Downloadable », l'upload est
+   parfaitement en ligne, étiqueté « Play in browser » dans la liste des fichiers… et la page
+   n'affiche **aucun lecteur**. Le jeu se télécharge au lieu de se lancer. Constaté après la
+   publication de la 2.2.0.
+2. **La case « This file will be played in the browser » doit être sur le bon fichier.**
+   ⚠⚠ En basculant le projet en HTML, itch l'a cochée sur l'upload **Windows** — le premier de la
+   liste — et non sur le zip web. L'état enregistré était donc : lancer un exécutable Windows dans un
+   navigateur. Rien ne le signale ; la page affiche simplement un lecteur qui ne démarre pas.
+   **Vérifier le fichier coché, pas seulement la présence de la case.**
+
+Le reste (dimensions du lecteur, bouton plein écran) se règle une fois : **960 × 600**, qui est la
+valeur exacte de `defaultScreenWidthWeb/HeightWeb` du projet — accorder l'iframe au canevas évite
+toute mise à l'échelle. Laisser « Automatically start on page load » **décoché** : itch le déconseille
+explicitement pour Unity, dont le chargement fige la page.
+
 ### Ce qui disparaît de l'interface, et pourquoi
 
 `Application.Quit()` ne ferme rien dans un navigateur : l'entrée « Quitter » du menu principal
