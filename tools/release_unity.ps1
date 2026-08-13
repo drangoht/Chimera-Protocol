@@ -292,5 +292,16 @@ Pop-Location
 # --- 8. Etat ------------------------------------------------------------------------
 & $Butler status $Itch
 Write-Host "`nPublication OK — version $Version poussee sur $Itch`:$Channel" -ForegroundColor Green
-Write-Host "Les joueurs de l'app itch.io recevront la mise a jour automatiquement ;" -ForegroundColor Green
-Write-Host "les autres verront le bandeau au prochain lancement." -ForegroundColor Green
+
+# ⚠ Ce qu'on annonce doit etre vrai pour la cible qu'on vient de publier. Le message d'origine —
+# auto-update de l'app itch et bandeau au prochain lancement — ne decrit QUE la version telechargeable :
+# une page web n'a pas d'auto-update (elle sert toujours le build courant) et son bandeau est
+# desactive. L'afficher apres un push web decrivait une mecanique qui n'existe pas.
+if ($Target -eq "web") {
+    Write-Host "La page sert le nouveau build des qu'itch a fini de le traiter." -ForegroundColor Green
+    Write-Host "⚠ Prerequis cote itch.io, a faire UNE fois : « Kind of project » = HTML." -ForegroundColor Yellow
+    Write-Host "  Tant que le projet est « Downloadable », ce build se telecharge au lieu de se jouer." -ForegroundColor Yellow
+} else {
+    Write-Host "Les joueurs de l'app itch.io recevront la mise a jour automatiquement ;" -ForegroundColor Green
+    Write-Host "les autres verront le bandeau au prochain lancement." -ForegroundColor Green
+}
