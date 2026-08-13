@@ -230,7 +230,10 @@ Write-Host "Staging pret : $Staging" -ForegroundColor Cyan
 # --- 6. Push Butler ----------------------------------------------------------------
 if ($DryRun) {
     Write-Host "`nA BLANC : tout est pret, rien n'a ete publie." -ForegroundColor Green
-    Write-Host "  binaire  : $Exe" -ForegroundColor DarkGray
+    # ⚠ Ce qu'on annonce doit exister : il n'y a pas d'executable dans un build web, et afficher son
+    # chemin donnait une ligne parfaitement credible designant un fichier absent. Un essai a blanc
+    # sert justement a verifier ce qu'on s'apprete a publier — il ne peut pas mentir dessus.
+    Write-Host "  build    : $(if ($Target -eq 'web') { $BuildDir } else { $Exe })" -ForegroundColor DarkGray
     Write-Host "  staging  : $Staging" -ForegroundColor DarkGray
     Write-Host "  tampon   : v$Version-$sha" -ForegroundColor DarkGray
     Write-Host "Relance sans -DryRun pour pousser sur $Itch`:$Channel." -ForegroundColor Green
@@ -244,13 +247,23 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 # --- 7. Manifeste de version -------------------------------------------------------
-# Les joueurs venus du web n'ont pas l'auto-update de l'app itch : le menu lit ce fichier sur
-# raw.githubusercontent et leur annonce la nouvelle version. Sans ce push, la release existe pour
+# Les joueurs qui ont TELECHARGE le jeu n'ont pas l'auto-update de l'app itch : le menu lit ce fichier
+# sur raw.githubusercontent et leur annonce la nouvelle version. Sans ce push, la release existe pour
 # butler et pour personne d'autre.
-$parts = $Itch.Split("/")
-$itchUrl = "https://$($parts[0]).itch.io/$($parts[1])"
-$manifest = [ordered]@{ version = $Version; url = $itchUrl }
-($manifest | ConvertTo-Json) | Out-File -FilePath (Join-Path $ProjectRoot "version.json") -Encoding utf8
+#
+# ⚠ Le manifeste decrit la version TELECHARGEABLE, donc il n'appartient qu'a la cible Windows. Un
+# joueur web est toujours sur la derniere version — la page sert le build courant — et le bandeau y
+# est desactive. Le pousser depuis une release web annoncerait donc, a tous les joueurs Windows, une
+# mise a jour qui n'existe pas : ils iraient telecharger le binaire qu'ils ont deja. C'est la meme
+# famille de defaut que le tampon de build qui survivait a sa release et mentait aux builds suivants.
+if ($Target -eq "web") {
+    Write-Host "Manifeste inchange : une release web n'annonce rien aux joueurs Windows." -ForegroundColor DarkGray
+} else {
+    $parts = $Itch.Split("/")
+    $itchUrl = "https://$($parts[0]).itch.io/$($parts[1])"
+    $manifest = [ordered]@{ version = $Version; url = $itchUrl }
+    ($manifest | ConvertTo-Json) | Out-File -FilePath (Join-Path $ProjectRoot "version.json") -Encoding utf8
+}
 
 Push-Location $ProjectRoot
 # build_sha.txt n'est PLUS commite : depuis qu'il est repose a chaque build, c'est un artefact et non
@@ -258,7 +271,11 @@ Push-Location $ProjectRoot
 git add version.json "unity/ProjectSettings/ProjectSettings.asset"
 git diff --cached --quiet
 if ($LASTEXITCODE -ne 0) {
-    git commit -m "chore(release): $Version (manifeste, version du projet, tampon de build)"
+    # Le message doit dire ce qui est REELLEMENT commite : une release web ne touche pas au manifeste,
+    # et annoncer le contraire rendrait l'historique faux la ou on vient le consulter.
+    $what = if ($Target -eq "web") { "version du projet (canal web)" }
+            else { "manifeste, version du projet, tampon de build" }
+    git commit -m "chore(release): $Version ($what)"
     # ⚠ Ne PAS tester $? apres un exe natif : git ecrit sa progression sur stderr meme quand tout
     # va bien, ce qui met $? a faux. Seul $LASTEXITCODE fait foi.
     if ($LASTEXITCODE -eq 0) {
