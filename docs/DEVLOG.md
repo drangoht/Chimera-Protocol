@@ -4,6 +4,92 @@
 > `release-manager`). Entrées en ordre décroissant (la plus récente en haut). Ton orienté
 > joueur, EN puis FR (audience itch surtout anglophone).
 
+## v2.1.0 — Epics that look epic, and a weapon that never grew (2026-08-13)
+
+**New — rarity you can feel, not just read**
+- Epic cards now carry a breathing violet aura, land with an overshoot instead of appearing, and
+  wear their rarity in colour. Rares get a thinner cyan one. **Commons get nothing** — the gap
+  between the three *is* the information.
+- Fusion cards get their own gold aura and a **[Fusion]** label. Gold is the colour this game uses
+  everywhere for *earned, permanent*, and no base weapon uses it.
+- Cards arrive 70 ms apart. Three cards dropped as one block read as a single image; a cascade makes
+  you compare them.
+
+**New — forging a fusion is finally an event**
+- It used to be a sound and nothing else: the screen closed, the run resumed, and a weapon had
+  quietly changed shape somewhere in the swarm. The hardest card in the game applied more discreetly
+  than picking up an XP orb.
+- Now: three shockwaves over 0.45 s, two crowns of rays, a short slow-motion — and a banner naming
+  the weapon, with its icon, so you can find it again in your loadout thirty seconds later.
+- Fused weapons are **marked in gold** in the HUD loadout, and leave a gold ring around you every
+  time they fire. A fusion inherits its parent's visuals; nothing used to tell them apart mid-fight.
+
+**Fixed — the Overload Field never grew**
+- Reported as *"it's too subtle"*. It was worse than subtle: its radius was supposed to go from 100
+  to 200 px and its knockback from 40 to 60 across five levels, and **neither value was ever read**.
+  Maxing it left you with the level-1 zone — on the one weapon whose radius *is* the mechanic.
+- Four more dead values turned up in the same sweep: the Singularity's radius and duration, the Cryo
+  Lance's slow strength, the Pyre Stream's burn damage. All four now scale as intended. **These
+  weapons are stronger than they were** — that is the fix, not a side effect.
+- Its visuals were rebuilt too: a permanent field that charges up as the pulse approaches, an
+  electric arc to every enemy hit, and two shockwaves — the outer one reaching exactly your radius,
+  which is the only thing that ever told you how far the field reaches.
+
+**Fixed — carried over from the previous build, never shipped**
+- The **Boomerang Blade** took six seconds to come back once you bought enough speed, and the weapon
+  stops firing until it returns. Its return speed is now measured against yours, not in a vacuum.
+- The **Magnet didn't exist** — while the Hub happily sold you *+1 Magnet per run* for 770 Echoes.
+  It exists now.
+- **Aether Cores are magnetised** like XP orbs. Late in a run they were being lost, not gambled for.
+- The **level-up screen sometimes offered one or two cards** instead of three, near the end of a run.
+  A hand is always full now.
+
+---
+
+**Nouveau — la rareté se sent, elle ne se lit plus seulement**
+- Les cartes épiques portent une aura violette qui respire, arrivent avec un dépassement au lieu
+  d'apparaître, et affichent leur rareté en couleur. Les rares en ont une, cyan et plus fine.
+  **Les communes n'ont rien** — c'est l'écart entre les trois qui porte l'information.
+- Les cartes de fusion ont leur aura dorée et une étiquette **[Fusion]**. L'or est la couleur que ce
+  jeu emploie partout pour « acquis, définitif », et aucune arme de base ne l'utilise.
+- Les cartes arrivent décalées de 70 ms. Trois cartes posées d'un bloc forment une seule image ; une
+  arrivée en cascade les fait comparer.
+
+**Nouveau — forger une fusion est enfin un événement**
+- C'était un son, et rien d'autre : l'écran se refermait, la partie reprenait, et une arme avait
+  discrètement changé de forme au milieu de la nuée. La carte la plus difficile du jeu s'appliquait
+  plus discrètement qu'un ramassage d'orbe d'XP.
+- Désormais : trois ondes sur 0,45 s, deux couronnes de rayons, un bref ralenti — et un bandeau qui
+  nomme l'arme, avec son icône, pour la retrouver dans son arsenal trente secondes plus tard.
+- Les armes fusionnées sont **en doré** dans l'arsenal du HUD, et laissent un anneau doré autour de
+  vous à chaque tir. Une fusion hérite des effets de son arme d'origine ; rien ne les distinguait
+  plus en plein combat.
+
+**Corrigé — le Champ de Surcharge ne grandissait pas**
+- Signalé comme « trop discret ». C'était pire que discret : son rayon devait passer de 100 à 200 px
+  et son recul de 40 à 60 sur cinq niveaux, et **aucune des deux valeurs n'était lue**. Le monter au
+  maximum laissait la zone du niveau 1 — sur la seule arme dont le rayon *est* la mécanique.
+- Quatre autres valeurs mortes sont sorties du même relevé : le rayon et la durée de la Singularité,
+  la force du ralentissement de la Lance Cryo, les dégâts de brûlure du Flux de Braise. Les quatre
+  progressent maintenant comme prévu. **Ces armes sont plus fortes qu'avant** — c'est le correctif,
+  pas un effet de bord.
+- Ses effets ont été refaits : un champ permanent qui se charge à l'approche de l'impulsion, un arc
+  électrique vers chaque ennemi touché, et deux ondes — la plus grande atteignant exactement votre
+  rayon, seule chose qui ait jamais dit jusqu'où porte le champ.
+
+**Corrigé — hérité de la version précédente, jamais publié**
+- La **Lame Boomerang** mettait six secondes à revenir dès qu'on achetait assez de vitesse, et
+  l'arme cesse de tirer tant qu'elle n'est pas rentrée. Sa vitesse de retour se mesure désormais
+  contre la vôtre, et non dans l'absolu.
+- L'**Aimant n'existait pas** — alors que le Hub vous vendait « +1 Aimant par partie » pour
+  770 Échos. Il existe.
+- Les **Noyaux d'Aether s'aimantent** comme les orbes d'XP. En fin de partie ils étaient perdus, pas
+  arbitrés.
+- L'écran de **montée de niveau proposait parfois une ou deux cartes** au lieu de trois, en fin de
+  partie. Une main est désormais toujours pleine.
+
+---
+
 ## v2.0.2 — The main menu, and the boss announcing its own translation key (2026-08-11)
 
 **Fixed — the main menu was still in French**

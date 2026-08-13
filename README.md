@@ -8,6 +8,18 @@ Dans un monde ravagé par **la Rouille Vivante** (corruption mi-organique, mi-m�
 
 ## État du projet
 
+**Les épiques ont enfin l'air épiques — et une arme qui ne grandissait pas** *(2026-08-13, v2.1.0)* —
+la rareté d'une carte ne tenait qu'à un cadre et à un mot, dans un écran qui met le jeu en pause au
+milieu d'une nuée : les épiques portent désormais une aura qui respire, arrivent avec un dépassement,
+et les fusions ont leur or à elles. **Forger une fusion** devient un événement — trois ondes, un bref
+ralenti, un bandeau qui nomme l'arme — et les armes fusionnées se reconnaissent en plein combat, en
+doré. Surtout : le **Champ de Surcharge ne grandissait pas du tout**. Son rayon devait doubler sur
+cinq niveaux ; la valeur n'était lue par personne. Quatre autres valeurs mortes ont suivi (Singularité,
+Lance Cryo, Flux de Braise) — **ces armes sont plus fortes qu'avant, et c'est le correctif**. Cette
+version embarque aussi les correctifs jamais publiés de la veille : la Lame Boomerang qui ne revenait
+plus, l'**Aimant qui n'existait pas** alors que le Hub le vendait 770 Échos, les Noyaux d'Aether
+aimantés, et le menu de niveau qui ne proposait parfois qu'une carte.
+
 **Bande-son metal & musique adaptative** *(2026-07-27, v1.17.0)* — la bande-son chiptune est
 entièrement remplacée par du **metal industriel** : guitares down-tuned, batterie qui cogne, basse
 saturée, avec des synthés analogiques et des **chœurs sans paroles** par-dessus. Chaque biome a sa
