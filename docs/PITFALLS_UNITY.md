@@ -1327,6 +1327,29 @@ Une marge **supérieure**, elle, ouvre un vide entre la lueur et le contenu.
 ⚠ Le même défaut a frappé deux fois dans la même session : le halo du bandeau de fusion dessinait une
 **ellipse** dont le bord traversait le cadre du panneau en diagonale.
 
+### Une clé lue AILLEURS fait passer pour lue la clé homonyme — l'audit rend un verdict rassurant
+
+`tools/audit_json_keys.py` a été écrit pour attraper « une donnée déclarée que rien ne consomme ».
+Il a manqué cinq clés de palier d'arme (`radius`, `knockbackPx`, `duration`, `slowMult`, `burnDps`),
+et le Champ de Surcharge est resté **cinq paliers durant à son rayon de niveau 1** — la moitié du
+rayon promis, sur la seule arme dont le rayon *est* la mécanique.
+
+Deux angles morts successifs, même cause à chaque fois : la clé n'était reliée ni à son fichier ni à
+son consommateur.
+
+1. **« la chaîne apparaît quelque part dans le code »** — `"knockbackPx"` était lu par `GraftManager`
+   pour une *greffe*. Cela suffisait à couvrir la clé homonyme des *armes*.
+2. **« la chaîne apparaît dans un `Shape()` quelque part »** — premier durcissement, encore global :
+   `Singularity` demande `radius`, ce qui couvrait le `radius` que le Champ ne demandait pas.
+
+Le contrôle n'est fermé qu'**arme par arme** : les clés de palier de chaque arme confrontées aux
+seuls `Shape()` de *sa* classe et de ses classes de base (l'héritage compte — `OverloadAegis`
+profite du `Shape` d'`OverloadField`, comme à l'exécution).
+
+⚠ **Tout durcissement d'audit se valide en réintroduisant le défaut.** Les deux versions aveugles
+affichaient « aucune clé orpheline » avec le même aplomb que la version correcte. Ici : remettre
+`Radius = Radius` dans `OverloadField.ApplyLevelStats` doit faire sortir `overload_field : radius`.
+
 ### `Present` ne rouvre pas une modale déjà ouverte — la capture montre alors la scène d'avant
 
 `LevelUpScreen.Present` passe par `ModalQueue.Request`. Si la modale est **déjà** ouverte, la file

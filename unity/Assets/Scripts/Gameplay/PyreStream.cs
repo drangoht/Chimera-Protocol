@@ -45,6 +45,11 @@ public class PyreStream : WeaponBase
         Range        = stats.Shape("range", Range);
         ConeAngle    = stats.Shape("coneAngle", ConeAngle);
         BurnDuration = stats.Shape("burnDuration", BurnDuration);
+
+        // ⚠ Ajoutée le 2026-08-13 : `burnDps` était déclarée par palier et lue par personne. La
+        // brûlure — la mécanique entière de l'arme — restait donc à sa valeur de niveau 1, et seul
+        // le dégât d'impact progressait. Trouvée en croisant clés déclarées et clés consommées.
+        BurnDps      = stats.Shape("burnDps", BurnDps);
     }
 
     protected override bool TryFire()

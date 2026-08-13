@@ -95,10 +95,12 @@ transposés) · `SpriteFramesAsset`
   dessinée à l'exécution, **aucun prefab**. Seul ramassage du jeu qui ne s'aimante pas.
 - **Arène** : `ArenaRenderer`, `ArenaObstacles`, `FloorFeatures`, `BiomeAtmosphere`
 - **Mesure** : `PowerTelemetry`, `BossTelemetry`, `BenchAutoPilot`
-- **VFX** : `Gameplay/Vfx/` (15 fichiers : `Vfx`, `VfxPrimitives`, `ChampionOverlay`, `ScreenShake`…),
+- **VFX** : `Gameplay/Vfx/` (16 fichiers : `Vfx`, `VfxPrimitives`, `ChampionOverlay`, `ScreenShake`…),
   dont **`FusionFanfare`** — les trois ondes + le ralenti de la forge d'une fusion, déclenchés par
   `RunHud` sur `InventorySystem.FusionApplied` (l'inventaire n'appelle aucun écran : `Gameplay` ne
-  référence pas `UI`)
+  référence pas `UI`) — et **`FusionMark`**, la signature **dorée** posée au tir de toute arme
+  fusionnée. ⚠ Elle est appelée depuis **`WeaponBase`**, au même point que le son de tir : une marque
+  écrite fusion par fusion ne se porterait jamais en entier (cf. les 14 armes muettes).
 
 ## §UI — `unity/Assets/Scripts/UI/`
 `MainMenuScreen` · `IntroScreen` · `LevelSelectScreen` · `HubScreen` ·
@@ -131,6 +133,11 @@ branchée sur rien.)
 
 ⚠ **Une clé déclarée n'est pas une clé lue.** `tools/audit_json_keys.py` compare les clés du JSON
 aux littéraux du code : il a trouvé 8 armes qui ne grandissaient que par leurs dégâts.
+⚠⚠ **Et il a été aveugle deux fois** (2026-08-13) : comparer aux littéraux *globaux* ne relie une clé
+ni à son fichier ni à son consommateur — `"knockbackPx"` lu par `GraftManager` pour une **greffe**
+couvrait la clé homonyme des **armes**, et le Champ de Surcharge est resté 5 paliers durant à son
+rayon de niveau 1. Le contrôle est désormais **arme par arme** (`Shape()` de sa classe et de ses
+bases). **Tout durcissement se valide en réintroduisant le défaut.**
 ⚠ **Un texte affiché n'est pas un texte traduit.** `tools/audit_loc_keys.py` : tout le contenu nommé
 sortait **en français dans les trois langues**, le repli étant silencieux. Il contrôle les deux sens
 — clé absente et clé orpheline.

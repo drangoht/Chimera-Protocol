@@ -423,6 +423,49 @@ public sealed class ScreenshotTour : MonoBehaviour
 
         yield return new WaitForSecondsRealtime(0.9f);
         yield return Shot("fusions-2");
+
+        yield return ShootOverloadField();
+    }
+
+    /// <summary>
+    /// Photographie le <b>Champ de Surcharge au niveau 5</b> : son aura permanente, et l'impulsion
+    /// qui la décharge.
+    /// </summary>
+    /// <remarks>
+    /// <para>Signalé « trop discret » en jouant, pour deux raisons qu'une seule image ne sépare pas :
+    /// l'arme <b>ne grandissait pas</b> (rayon figé à celui du niveau 1, faute de lire <c>radius</c>)
+    /// et n'existait à l'écran que pendant les 0,22 s de son onde. Le relevé donne donc le
+    /// <b>rayon effectif</b> : sans lui, une capture montrant un petit champ ne distingue pas « le
+    /// niveau n'est pas appliqué » de « l'effet est trop pâle ».</para>
+    ///
+    /// <para>Deux clichés à des instants choisis : l'un pendant la <b>charge</b> — l'aura seule, ce
+    /// que le joueur voit 90 % du temps — l'autre <b>juste après</b> une impulsion, avec ses ondes et
+    /// ses arcs. Un seul cliché ne dirait rien du contraste entre les deux, qui est tout l'effet.</para>
+    /// </remarks>
+    private IEnumerator ShootOverloadField()
+    {
+        var inv = InventorySystem.Instance;
+        if (inv == null) yield break;
+
+        inv.ResetForRun();
+        for (int i = 0; i < 5; i++) inv.AcquireOrLevelUp("overload_field");
+
+        SpawnSwarmAroundPlayer(18);
+        yield return Play(1.4f);
+
+        var field = FindFirstObjectByType<OverloadField>();
+
+        Debug.Log($"[SHOTS] surcharge : rayon {(field != null ? field.Radius : -1f):F0} px " +
+                  $"(niveau 5 attendu 200), recul {(field != null ? field.Knockback : -1f):F0} px, " +
+                  $"{(field != null ? field.LastPulseHits : -1)} cible(s) a la derniere impulsion — " +
+                  $"nuage {Describe(field != null ? field.Field : null)}");
+
+        yield return Shot("surcharge-charge");
+
+        // Assez pour qu'une impulsion soit partie (1,5 s de recharge au niveau 5), sans laisser ses
+        // ondes s'éteindre : elles vivent 0,3 s.
+        yield return Play(1.5f);
+        yield return Shot("surcharge-impulsion");
     }
 
     private static string Describe(AuraCloud? cloud)

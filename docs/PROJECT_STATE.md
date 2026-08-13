@@ -6,6 +6,34 @@
 
 - Pile technique : **Unity 6.5 (C#, URP 2D)** depuis la 2.0.0. **Version en ligne : 2.0.1**
   (2026-08-11).
+- **Le Champ de Surcharge ne grandissait pas (2026-08-13, non publié).** Signalé en jouant (« trop
+  discret »). Détail : **`docs/GDD.md` §36**.
+  - `weapons.json` déclare `radius` **100 → 200 px** et `knockbackPx` **40 → 60** sur cinq paliers ;
+    la classe n'implémentait pas `ApplyLevelStats`, donc **aucune des deux n'était lue**. Le
+    croisement déclaré/consommé en a sorti **quatre autres** : `duration` + `radius` (Singularité),
+    `slowMult` (Lance Cryo), `burnDps` (Flux de Braise). Toutes branchées.
+  - ⚠ **C'est un renforcement de quatre armes, pas un correctif d'affichage.** Deux restent bornées
+    par des plafonds en place (`CrowdControlCaps`, plafond de brûlure) ; la zone du Champ et celle du
+    puits ne le sont pas — **à mesurer au banc de puissance** avant publication.
+  - VFX : aura permanente qui se charge (le carré de l'avancement de recharge), arc électrique vers
+    chaque cible (plafonné à 10, visant le point d'arrivée du recul), deux ondes dont la plus grande
+    atteint exactement le rayon. Et une **signature dorée** commune à toute arme fusionnée
+    (`FusionMark`, appelée depuis `WeaponBase` au même point que le son de tir).
+  - ⚠ **Le banc est tombé à 9 échecs sur 263 — et la RÉFÉRENCE les reproduit à l'identique.**
+    `git stash` + reconstruction de `HEAD` : mêmes neuf lignes, même ordre. Donc **rien à voir avec
+    ces changements**, et rien à voir non plus avec le réglage de difficulté (rejoué à 0 : identique).
+    Le banc passait pourtant à **273/0** en début de journée, sur le même dépôt. Ce qui a changé
+    entre-temps est **`settings.json`, réécrit à 17:19 par la tournée de captures** — qui y a laissé
+    `completions.sanctuaire = 1` et des records. Le banc lit cet état ; l'outil de captures est donc
+    en train de **calibrer le banc**, exactement ce que le piège « un outil ne laisse pas sa mise en
+    scène dans la sauvegarde du joueur » interdit. **À instruire séparément** : le symptôme est une
+    mort prématurée du personnage, qui saborde en cascade quatre blocs de vérifications.
+  - ⚠⚠ **`audit_json_keys.py` a été aveugle deux fois** sur ce défaut, qu'il existe pourtant pour
+    attraper : comparer aux littéraux *globaux* ne relie une clé ni à son fichier ni à son
+    consommateur (`"knockbackPx"` lu par `GraftManager` pour une **greffe** couvrait celle des
+    **armes**) ; puis restreindre aux `Shape()` *globaux* laissait le `radius` de `Singularity`
+    couvrir celui du Champ. Le contrôle est désormais **arme par arme**, héritage suivi, et vérifié
+    en réintroduisant le défaut.
 - **Mise en scène de la rareté et de la fusion (2026-08-13, non publiée).** Demandé en jouant :
   « les items Épiques et les évolutions d'armes devraient être plus juicy ». Toute la hiérarchie
   reposait sur des signaux **immobiles** — un cadre et un mot — dans un écran qui met le jeu en pause

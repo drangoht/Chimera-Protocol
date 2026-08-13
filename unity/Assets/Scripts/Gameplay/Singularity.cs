@@ -62,6 +62,13 @@ public sealed class Singularity : WeaponBase
     {
         TickInterval = stats.Shape("tickInterval", TickInterval);
         PullSpeed    = stats.Shape("pullSpeed", PullSpeed);
+
+        // ⚠ Ajoutées le 2026-08-13 : `radius` et `duration` étaient déclarées sur les cinq paliers de
+        // `weapons.json` et lues par personne. Le puits gardait la taille et la durée du niveau 1
+        // jusqu'au niveau 20 — la même famille de défaut que le Champ de Surcharge, trouvée en
+        // croisant les clés déclarées avec les clés consommées plutôt qu'arme par arme.
+        Radius       = stats.Shape("radius", Radius);
+        Duration     = stats.Shape("duration", Duration);
     }
 
     protected override bool TryFire()

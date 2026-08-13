@@ -59,6 +59,26 @@ trompe de sujet valide ce qu'il n'a pas regardé.** **673 tests, banc 273/0.**
 sont sabordés en cascade. Le run suivant, **même binaire**, est passé à 273/0 — la survie du joueur au
 banc n'est pas déterministe. **Rejouer avant de conclure.**
 
+**2026-08-13 (2) — « l'overload field est trop discret », non publié** (détail : `docs/GDD.md` §36).
+Deux causes : l'arme **ne grandissait pas** (`radius` 100→200 et `knockbackPx` 40→60 déclarés,
+**lus par personne**) et n'existait à l'écran que 9 % du temps. Le croisement déclaré/consommé a sorti
+**4 autres clés mortes** (Singularité, Lance Cryo, Flux de Braise) — toutes branchées. ⚠ **C'est un
+renforcement de 4 armes** : 2 restent bornées par les plafonds existants, la zone du Champ et celle du
+puits **restent à mesurer au banc**. Ajouté aussi : `FusionMark`, signature **dorée** au tir de toute
+arme fusionnée (appelée depuis `WeaponBase`, au point du son de tir).
+⚠ **Le banc est tombé à 9/263, et la RÉFÉRENCE reproduit les neuf lignes à l'identique** (`git stash`
++ rebuild de `HEAD`) — donc **rien à voir avec ces changements**. Il passait à 273/0 le matin même.
+Seul changement entre les deux : **`settings.json` réécrit à 17:19 par la tournée de captures**
+(`completions.sanctuaire = 1`, records). Le banc lit cet état → **l'outil de captures calibre le
+banc**, ce que le piège « un outil ne laisse pas sa mise en scène dans la sauvegarde » interdit.
+**À instruire séparément.**
+⚠⚠ **`audit_json_keys.py` a raté ce défaut DEUX FOIS** — il existe pourtant pour ça. Comparer aux
+littéraux *globaux* ne relie une clé ni à son fichier ni à son consommateur (`"knockbackPx"` lu pour
+une **greffe** couvrait celui des **armes**) ; puis les `Shape()` globaux laissaient le `radius` de la
+Singularité couvrir celui du Champ. Contrôle désormais **arme par arme**. **Un audit qui rate ce
+qu'il vise est pire qu'absent : il rend un verdict rassurant. Tout durcissement se valide en
+réintroduisant le défaut.**
+
 **Le dépôt est mono-moteur depuis le 2026-08-10.** Ce qui a changé :
 - `src/`, `scenes/`, `project.godot`, le `.csproj`/`.sln` Godot, `assets/`, `data/` et
   `localization/` racine ont été **supprimés** — tout vit sous `unity/Assets/`.

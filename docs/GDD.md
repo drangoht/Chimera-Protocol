@@ -3431,3 +3431,84 @@ l'ellipse traversait le cadre en diagonale.
 `ModalQueue.Request`, qui ne rouvre pas une modale déjà ouverte. L'image nommée « cartes-raretes »
 photographiait trois cartes de surcharge, toutes de même rareté — soit exactement l'image qu'on
 voulait remplacer. **Un outil de contrôle qui se trompe de sujet valide ce qu'il n'a pas regardé.**
+
+---
+
+## 36. Le Champ de Surcharge ne grandissait pas — et l'audit ne pouvait pas le dire (2026-08-13)
+
+Signalé en jouant : « l'overload field est trop discret ». Deux causes superposées, et la première
+n'est pas cosmétique.
+
+### 36.1 Cinq paliers de géométrie que personne ne lisait
+
+`weapons.json` déclare, pour cette arme, `radius` **100 → 200 px** et `knockbackPx` **40 → 60** sur
+ses cinq paliers. La classe n'implémentait pas `ApplyLevelStats` : **aucune des deux clés n'était
+lue**. Un joueur qui montait l'arme au niveau 5 gardait la zone du niveau 1 — la moitié du rayon
+promis, sur la seule arme du jeu dont le rayon *est* la mécanique.
+
+Le croisement des clés déclarées et des clés consommées en a sorti **quatre autres**, sur trois
+armes : `duration` et `radius` (Singularité), `slowMult` (Lance Cryo), `burnDps` (Flux de Braise).
+Toutes branchées. ⚠ **C'est un renforcement de quatre armes**, pas un simple correctif d'affichage :
+la Lance Cryo ralentit désormais plus fort en montant, le Flux de Braise brûle plus fort, la
+Singularité tient plus longtemps sur un rayon plus large. Deux d'entre elles restent bornées par des
+plafonds déjà en place (`CrowdControlCaps` pour le ralentissement, le plafond de brûlure) ; les deux
+autres — zone du Champ, zone et durée du puits — ne le sont pas et **restent à mesurer au banc**.
+
+### 36.2 Une arme qui n'existe que 9 % du temps
+
+Une onde de 0,22 s toutes les 2,5 s, et rien entre les deux : pas même sur les ennemis frappés, qui
+encaissaient et reculaient de 40 px sans qu'aucun trait ne relie la cause à l'effet. Dans une mêlée
+où dix choses infligent des dégâts en même temps, une arme sans trace **n'est pas créditée de ses
+kills** par le joueur.
+
+Trois ajouts, tous dictés par ce que l'arme *est* :
+
+1. **Une aura permanente qui se charge.** Le champ est une zone d'exclusion : il existe en
+   permanence, pas seulement à l'impulsion. L'opacité suit le **carré** de l'avancement de recharge —
+   basse longtemps, puis franche sur le dernier tiers. Une montée linéaire se lit comme une lueur qui
+   varie sans raison ; une montée tardive se lit comme une **charge**, et annonce la décharge assez
+   tôt pour qu'on décide de rester ou de fuir.
+2. **Un arc électrique vers chaque cible**, plafonné à dix. C'est lui qui dit « c'est *moi* qui t'ai
+   touché ». Il vise le point d'**arrivée** du recul : le même trait montre alors qui est frappé et
+   où il est repoussé.
+3. **Deux ondes plutôt qu'une**, la plus grande atteignant exactement le rayon. Une onde isolée se
+   lit comme un cercle de portée ; deux qui se suivent se lisent comme une détonation. Et c'est la
+   grande qui **enseigne au joueur jusqu'où porte son champ** — rien d'autre ne le lui dit.
+
+### 36.3 Les fusions ne se voyaient plus une fois forgées
+
+Corollaire signalé dans la foulée : « je vois bien l'animation quand on les récupère, mais c'est
+in-game que je voudrais qu'on les remarque ». Une fusion hérite du VFX de son archétype — l'Égide
+dessine le champ violet du Champ de Surcharge, la Lame de Fusion l'anneau de la Lame Plasma. Le
+joueur savait qu'il avait fusionné ; il ne le **voyait** plus.
+
+D'où une **signature dorée** commune : un anneau fin et quatre éclats, posés au tir de toute arme
+fusionnée. L'or est la couleur que le jeu emploie partout pour « acquis, définitif » — Échos,
+récompenses, bandeau de fusion — et **aucune arme de base ne l'utilise** : une teinte inemployée
+ailleurs se reconnaît sans être apprise.
+
+- **Un anneau, pas un halo.** Une fusion est portée par le joueur : un halo posé sur lui masquerait
+  sa silhouette, donc sa position — la seule information dont il ne peut jamais se passer.
+- **Un point unique, jamais neuf appels.** La marque est posée par `WeaponBase` après un tir réussi,
+  exactement où le son de tir est joué et pour la même raison : quatorze armes sur seize sont restées
+  muettes parce qu'un appel écrit arme par arme ne se porte jamais en entier.
+- **Espacée de 0,22 s minimum.** La Lame de Fusion frappe toutes les 0,35 s : sans borne, la marque
+  deviendrait un clignotement continu — c'est-à-dire un fond, et un fond ne signale plus rien.
+
+### 36.4 L'outil qui devait attraper ça a été aveugle deux fois
+
+`tools/audit_json_keys.py` existe précisément pour ce défaut. Il l'a manqué, **deux fois de suite** :
+
+1. Sa méthode d'origine — une clé est « lue » si la chaîne apparaît **quelque part** dans le code —
+   ne relie une clé ni à son fichier ni à son consommateur. `"knockbackPx"` était lu par
+   `GraftManager` pour une *greffe* : cela suffisait à faire passer pour lue la clé homonyme des
+   *armes*.
+2. Le premier durcissement — restreindre aux appels `Shape()` — était encore global. `Singularity`
+   demande `radius`, ce qui couvrait le `radius` que le Champ de Surcharge ne demandait pas.
+
+Le contrôle n'est fermé qu'**arme par arme** : les clés de palier de chaque arme, confrontées aux
+seuls `Shape()` de *sa* classe et de ses bases. Vérifié en recassant volontairement le correctif —
+l'outil sort alors `overload_field : radius`.
+
+> **Un audit qui rate le défaut qu'il a été écrit pour attraper est plus dangereux qu'un audit
+> absent : il rend un verdict rassurant.** Tout durcissement se valide en réintroduisant le défaut.

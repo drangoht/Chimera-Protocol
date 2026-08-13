@@ -126,6 +126,21 @@ public abstract class WeaponBase : MonoBehaviour
     private string? _weaponId;
 
     /// <summary>
+    /// Cette arme est-elle une <b>fusion</b> ? Résolu une seule fois, au premier tir.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Le type ne le dit pas : une fusion s'écrit <c>FusionBlade : PlasmaBlade</c> et <b>hérite de
+    /// son archétype</b>, si bien qu'aucun test de type ne les sépare. L'inventaire, lui, sait
+    /// exactement ce qui a été forgé dans cette run — c'est la seule source qui fasse autorité.
+    /// </remarks>
+    public bool IsFusion => _isFusion ??= InventorySystem.Instance?.IsFusion(WeaponId) ?? false;
+
+    private bool? _isFusion;
+
+    /// <summary>Prochain instant où cette arme pourra reposer sa marque dorée (cf. <see cref="FusionMark"/>).</summary>
+    private float _nextFusionMark;
+
+    /// <summary>
     /// Son joué à chaque tir réussi, ou <c>null</c> pour les armes muettes à dessein
     /// (<see cref="WeaponSfx.Silent"/>).
     ///
@@ -137,6 +152,18 @@ public abstract class WeaponBase : MonoBehaviour
     /// explicitement muette, jamais muette par distraction.</para>
     /// </summary>
     protected virtual string? FireSfx => WeaponSfx.For(WeaponId);
+
+    /// <summary>
+    /// Avancement de la recharge, de 0 (vient de tirer) à 1 (prête à repartir).
+    /// </summary>
+    /// <remarks>
+    /// Sert aux armes dont l'effet est <b>permanent mais rythmé</b> : une aura qui s'intensifie à
+    /// l'approche de l'impulsion annonce la décharge au lieu de la subir. Sans cela, une arme pulsée
+    /// n'existe visuellement que pendant les deux dixièmes de seconde de son onde — soit moins de
+    /// 10 % du temps à 2,5 s de recharge.
+    /// </remarks>
+    public float ChargeRatio
+        => EffectiveCooldown <= 0f ? 1f : 1f - Mathf.Clamp01(_cooldownLeft / EffectiveCooldown);
 
     protected virtual void Awake() => CaptureSheetDamage();
 
@@ -156,6 +183,11 @@ public abstract class WeaponBase : MonoBehaviour
         // à l'oreille, en boucle, tout le temps où l'arène est vide.
         var sfx = FireSfx;
         if (sfx != null) AudioSystem.PlaySfx(sfx);
+
+        // La signature dorée des fusions se pose ICI, au même endroit que le son et pour la même
+        // raison : neuf fusions existent, et un appel écrit fusion par fusion ne se porte jamais en
+        // entier — quatorze armes sur seize sont restées muettes de cette façon.
+        if (IsFusion) FusionMark.TryDraw(ref _nextFusionMark, transform.position, Level);
 
         ShotsFired++;
         _cooldownLeft = EffectiveCooldown;

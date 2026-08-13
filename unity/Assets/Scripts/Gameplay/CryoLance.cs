@@ -46,6 +46,11 @@ public sealed class CryoLance : WeaponBase
     {
         Range        = stats.Shape("range", Range);
         SlowDuration = stats.Shape("slowDuration", SlowDuration);
+
+        // ⚠ Ajoutée le 2026-08-13 : `slowMult` était déclarée par palier et lue par personne — la
+        // lance ralentissait donc toujours de 20 %, quel que soit son niveau. C'est la statistique
+        // qui *définit* l'arme, et la seule que le joueur ne pouvait pas voir progresser.
+        SlowMult     = stats.Shape("slowMult", SlowMult);
     }
 
     protected override bool TryFire()
