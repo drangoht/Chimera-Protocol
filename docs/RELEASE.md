@@ -78,6 +78,13 @@ transposaient pas.
   métadonnées Windows d'un exécutable Unity décrivent le **moteur** (« 6000.5.6f1 »), pas le jeu :
   les interroger ne dit rien. Et l'horodatage ne vaut pas mieux — le build est incrémental, donc un
   binaire identique n'est pas réécrit.
+- ⚠ **Un `-DryRun` fait crier l'avertissement « arbre modifié » au run suivant.** L'essai à blanc
+  pose `bundleVersion` dans `ProjectSettings.asset` et ne le remet pas : le vrai run construit donc
+  depuis un arbre sale et tamponne `<sha>+`. **C'est bénin ici** — le seul écart est le numéro de
+  version, que le script commite juste après (`chore(release): X.Y.Z`). Mais l'avertissement existe
+  pour attraper un défaut réel (une release a déjà expédié le binaire de la version précédente) :
+  **le vérifier au lieu de l'ignorer**, en confrontant le commit de release au `git status`. Un
+  avertissement qui se déclenche à chaque publication est un avertissement qu'on cesse de lire.
 - **Le journal de build** doit contenir une réussite explicite. ⚠ Unity lancé par l'opérateur d'appel
   `&` rend la main **immédiatement sans rien faire** : pas de log, pas de code retour. D'où
   `Start-Process -Wait`.

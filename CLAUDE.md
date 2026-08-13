@@ -83,8 +83,8 @@ Singularité couvrir celui du Champ. Contrôle désormais **arme par arme**. **U
 qu'il vise est pire qu'absent : il rend un verdict rassurant. Tout durcissement se valide en
 réintroduisant le défaut.**
 
-**2026-08-13 (3) — entrées portées sur le paquet Input System** (non publié ; détail :
-`docs/PITFALLS_UNITY.md` §Entrées). L'Input Manager est marqué pour dépréciation :
+**2026-08-13 (3) — entrées portées sur le paquet Input System, publié en 2.1.1** (build itch
+#1880556 ; détail : `docs/PITFALLS_UNITY.md` §Entrées). L'Input Manager est marqué pour dépréciation :
 `com.unity.inputsystem` 1.20.0, `activeInputHandler` à **1**, les trois `EventSystem` sur
 `InputSystemUIInputModule`. Tout ce qui touche un périphérique tient désormais dans **deux
 fichiers** — `Platform/InputRemap.cs` et `Platform/RawInput.cs` — au lieu de ~20 appels dispersés.

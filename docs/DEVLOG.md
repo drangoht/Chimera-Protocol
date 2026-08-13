@@ -4,6 +4,46 @@
 > `release-manager`). Entrées en ordre décroissant (la plus récente en haut). Ton orienté
 > joueur, EN puis FR (audience itch surtout anglophone).
 
+## v2.1.1 — Aiming has been broken this whole time (2026-08-13)
+
+**Fixed — mouse aiming never worked**
+- The Vector Lance and Vector Beam are the only two weapons in the game you aim yourself. They were
+  reading a controller stick that **was never configured** — and the error that raised, every single
+  frame, killed the rest of the routine before it could reach the mouse. Mouse aiming and the
+  reticle were both dead code.
+- If you ever felt the Vector Lance fired where you were *running* instead of where you were
+  *pointing*, that was this. It aims where you point now, and the reticle shows you where.
+- Found while replacing Unity's deprecated input backend — not by playing. Seventeen of the
+  nineteen weapons never touch aiming, so the game stayed perfectly playable around the hole.
+
+**Changed — new input backend**
+- Input moved to Unity's current Input System. Nothing changes for you: same keys, same rebinding,
+  same controller support. It removes a whole class of failure where a control could reference a
+  setting that doesn't exist.
+- **Rebinding now shows the key printed on *your* keyboard.** On an AZERTY layout the move-up key
+  announced itself as "W" while sitting under your Z. It says Z now.
+
+---
+
+**Corrigé — la visée à la souris n'a jamais fonctionné**
+- La Lance Vectorielle et le Rayon Vectoriel sont les deux seules armes du jeu que l'on vise
+  soi-même. Elles lisaient un stick de manette **qui n'a jamais été configuré** — et l'erreur levée,
+  à chaque image, coupait la suite de la routine avant qu'elle n'atteigne la souris. La visée à la
+  souris et le réticule étaient du code mort.
+- Si vous avez eu l'impression que la Lance Vectorielle tirait là où vous *couriez* plutôt que là où
+  vous *pointiez*, c'était ça. Elle vise où vous pointez, et le réticule vous le montre.
+- Trouvé en remplaçant le système d'entrée déprécié d'Unity — pas en jouant. Dix-sept des dix-neuf
+  armes ne touchent jamais à la visée : le jeu restait parfaitement jouable autour du trou.
+
+**Changé — nouveau système d'entrée**
+- Les entrées passent sur l'Input System actuel d'Unity. Rien ne change pour vous : mêmes touches,
+  même remappage, même prise en charge des manettes. Cela supprime toute une classe de pannes où une
+  commande pouvait référencer un réglage inexistant.
+- **Le remappage affiche désormais la touche gravée sur *votre* clavier.** En AZERTY, « aller en
+  haut » s'annonçait « W » alors qu'elle est sous votre Z. Elle dit Z maintenant.
+
+---
+
 ## v2.1.0 — Epics that look epic, and a weapon that never grew (2026-08-13)
 
 **New — rarity you can feel, not just read**

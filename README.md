@@ -8,6 +8,15 @@ Dans un monde ravagé par **la Rouille Vivante** (corruption mi-organique, mi-m�
 
 ## État du projet
 
+**La visée était cassée depuis le début** *(2026-08-13, v2.1.1)* — la Lance Vectorielle et le Rayon
+Vectoriel sont les deux seules armes que l'on vise soi-même ; elles lisaient un stick de manette
+**jamais configuré**, et l'erreur levée à chaque image coupait la routine avant d'atteindre la
+souris. Visée souris et réticule étaient du code mort. Trouvé en remplaçant le système d'entrée
+déprécié d'Unity — pas en jouant : dix-sept armes sur dix-neuf ne touchent jamais à la visée, le jeu
+restait jouable autour du trou. Les entrées passent sur l'**Input System** ; rien ne change pour le
+joueur, sinon que le remappage affiche enfin la touche gravée sur **son** clavier (« Z » en AZERTY,
+là où il annonçait « W »).
+
 **Les épiques ont enfin l'air épiques — et une arme qui ne grandissait pas** *(2026-08-13, v2.1.0)* —
 la rareté d'une carte ne tenait qu'à un cadre et à un mot, dans un écran qui met le jeu en pause au
 milieu d'une nuée : les épiques portent désormais une aura qui respire, arrivent avec un dépassement,

@@ -4,9 +4,9 @@
 > implémenté — la mettre à jour à chaque ajout/refonte majeur. Le résumé de phase reste dans
 > `CLAUDE.md` ; le design complet dans `docs/GDD.md` ; la carte du code dans `/carte-projet`.
 
-- Pile technique : **Unity 6.5 (C#, URP 2D)** depuis la 2.0.0. **Version en ligne : 2.1.0** (2026-08-13,
-  build itch #1880415).
-- **Entrées portées sur le paquet Input System (2026-08-13, non publié).** L'Input Manager est
+- Pile technique : **Unity 6.5 (C#, URP 2D)** depuis la 2.0.0. **Version en ligne : 2.1.1** (2026-08-13,
+  build itch #1880556).
+- **Entrées portées sur le paquet Input System — publié en 2.1.1** (2026-08-13, build itch #1880556). L'Input Manager est
   marqué pour dépréciation par Unity ; `com.unity.inputsystem` 1.20.0 installé,
   `activeInputHandler` passé à **1** (Input System seul), ce qui éteint l'avertissement. Détail des
   pièges : **`docs/PITFALLS_UNITY.md` §Entrées**.
