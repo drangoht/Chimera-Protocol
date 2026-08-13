@@ -24,6 +24,7 @@ public static class BuildBench
     private const string OutDirSmokeIl2cpp = "Build/platform-smoke-il2cpp";
     private const string OutDirRunSmoke    = "Build/run-smoke";
     private const string OutDirGame        = "Build/game";
+    private const string OutDirWeb         = "Build/web";
 
     [MenuItem("Chimera/Build banc (Mono)")]
     public static void Windows64Mono()
@@ -67,17 +68,15 @@ public static class BuildBench
 
         ApplyGameIcon();
         StampGitSha();
+        StreamingManifest.Write();
 
         string projectRoot = Directory.GetParent(Application.dataPath)!.FullName;
         string outDir = Path.Combine(projectRoot, OutDirGame);
         Directory.CreateDirectory(outDir);
 
-        var scenes = new string[GameScenes.All.Length];
-        for (int i = 0; i < scenes.Length; i++) scenes[i] = GameScenes.PathOf(GameScenes.All[i]);
-
         var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
         {
-            scenes = scenes,
+            scenes = GameScenePaths(),
             locationPathName = Path.Combine(outDir, "ChimeraProtocol.exe"),
             target = BuildTarget.StandaloneWindows64,
             options = BuildOptions.None,
@@ -85,11 +84,115 @@ public static class BuildBench
 
         var summary = report.summary;
         Debug.Log($"[BUILD] jeu : resultat={summary.result} duree={summary.totalTime} " +
-                  $"taille={summary.totalSize} scenes={scenes.Length}");
+                  $"taille={summary.totalSize} scenes={GameScenes.All.Length}");
 
         if (summary.result != BuildResult.Succeeded) EditorApplication.Exit(1);
 
         WriteBuildStamp(outDir);
+    }
+
+    /// <summary>
+    /// Build <b>web</b> du jeu — la même chose, jouable dans un navigateur.
+    /// </summary>
+    /// <remarks>
+    /// <para>Usage : <c>-executeMethod BuildBench.WebGame</c>. Sortie : <c>unity/Build/web/</c>,
+    /// à pousser tel quel sur itch.io en cochant « This file will be played in the browser ».</para>
+    ///
+    /// <para><b>Les réglages sont posés ici, pas laissés à l'éditeur</b>, pour la même raison que
+    /// l'icône : un réglage fait à la souris ne vaut que sur le poste où il a été fait et se perd au
+    /// premier clone. Et trois d'entre eux ne se voient <b>jamais</b> à la compilation — ils
+    /// produisent un jeu qui démarre puis se comporte mal, ce qui est le pire des symptômes.</para>
+    /// </remarks>
+    [MenuItem("Chimera/Build du jeu (Web)")]
+    public static void WebGame()
+    {
+        PlayerSettings.companyName = "drangoht";
+        PlayerSettings.productName = "Chimera Protocol";
+        PlayerSettings.SplashScreen.show = false;
+
+        StampGitSha();
+        StreamingManifest.Write();
+        PluginPlatforms.Apply();
+        ApplyWebSettings();
+
+        string projectRoot = Directory.GetParent(Application.dataPath)!.FullName;
+        string outDir = Path.Combine(projectRoot, OutDirWeb);
+        Directory.CreateDirectory(outDir);
+
+        var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
+        {
+            scenes = GameScenePaths(),
+            // ⚠ En WebGL, c'est un DOSSIER et non un fichier : Unity y écrit index.html et Build/.
+            locationPathName = outDir,
+            target = BuildTarget.WebGL,
+            options = BuildOptions.None,
+        });
+
+        var summary = report.summary;
+        Debug.Log($"[BUILD] jeu web : resultat={summary.result} duree={summary.totalTime} " +
+                  $"taille={summary.totalSize} scenes={GameScenes.All.Length}");
+
+        if (summary.result != BuildResult.Succeeded) EditorApplication.Exit(1);
+
+        WriteBuildStamp(outDir);
+    }
+
+    /// <summary>
+    /// Réglages du lecteur web. Chacun corrige un défaut qui ne se voit qu'à l'exécution, dans un
+    /// navigateur, sur une machine qui n'est pas celle du développeur.
+    /// </summary>
+    private static void ApplyWebSettings()
+    {
+        var web = NamedBuildTarget.WebGL;
+
+        // ─── Mémoire ─────────────────────────────────────────────────────────
+        // Le projet livrait le défaut d'Unity : 32 Mo de tas initial. Un survivor tient 200 à 300
+        // entités simultanées à l'écran ; le tas grandit alors par paliers pendant la nuée, c'est-à-
+        // dire précisément au moment où le jeu ne peut pas se permettre une pause. Partir large ne
+        // coûte rien au chargement et supprime les à-coups de croissance.
+        PlayerSettings.WebGL.initialMemorySize = 512;
+        PlayerSettings.WebGL.maximumMemorySize = 2048;
+
+        // ─── Transport ───────────────────────────────────────────────────────
+        // Brotli comprime nettement mieux que Gzip sur du WebAssembly, mais le navigateur ne sait le
+        // décompresser que si le serveur annonce l'encodage. Le repli JS rend le build indépendant de
+        // cette configuration : il fonctionne sur itch.io comme sur un hébergement quelconque.
+        PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Brotli;
+        PlayerSettings.WebGL.decompressionFallback = true;
+
+        // Le .data pèse des dizaines de mégaoctets, dont l'essentiel est de la musique qui ne change
+        // pas d'une session à l'autre. Sans ce cache, chaque partie le retélécharge en entier.
+        PlayerSettings.WebGL.dataCaching = true;
+
+        // ─── Stripping ───────────────────────────────────────────────────────
+        // ⚠ WebGL est la SEULE plateforme dont le niveau par défaut est le plus agressif. Combiné à
+        // la sérialisation par réflexion de la sauvegarde, cela produit un jeu qui démarre, joue, et
+        // écrit une sauvegarde vide. Assets/link.xml protège les règles ; ce niveau protège le reste.
+        PlayerSettings.SetManagedStrippingLevel(web, ManagedStrippingLevel.Low);
+
+        // ─── Diagnostic ──────────────────────────────────────────────────────
+        // Les exceptions explicitement levées gardent leur pile dans la console du navigateur. Sans
+        // cela, une exception se manifeste par un jeu qui s'arrête — sans message. C'est le seul
+        // moyen d'instruire un défaut qu'on ne reproduit pas hors du navigateur ; le coût en vitesse
+        // se rediscutera une fois le portage mesuré.
+        PlayerSettings.WebGL.exceptionSupport = WebGLExceptionSupport.ExplicitlyThrownExceptionsOnly;
+
+        // Le jeu tourne en plein écran logique : c'est un survivor, pas une vignette dans une page.
+        PlayerSettings.WebGL.template = "APPLICATION:Default";
+        PlayerSettings.WebGL.powerPreference = WebGLPowerPreference.HighPerformance;
+
+        Debug.Log($"[BUILD] reglages web : tas {PlayerSettings.WebGL.initialMemorySize} Mo, " +
+                  $"{PlayerSettings.WebGL.compressionFormat} (repli " +
+                  $"{PlayerSettings.WebGL.decompressionFallback}), stripping Low.");
+    }
+
+    /// <summary>Chemins des scènes du jeu, dans l'ordre — la première est celle qui se charge.</summary>
+    private static string[] GameScenePaths()
+    {
+        var scenes = new string[GameScenes.All.Length];
+        for (int i = 0; i < scenes.Length; i++) scenes[i] = GameScenes.PathOf(GameScenes.All[i]);
+
+        return scenes;
     }
 
     /// <summary>

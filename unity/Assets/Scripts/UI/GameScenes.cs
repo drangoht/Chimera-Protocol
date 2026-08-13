@@ -11,8 +11,19 @@
 public static class GameScenes
 {
     /// <summary>
-    /// Cinématique d'ouverture — <b>point d'entrée du jeu</b>, comme sous Godot où
-    /// <c>run/main_scene</c> désigne <c>IntroScreen.tscn</c>. Elle porte le seul récit du jeu et se
+    /// Chargement des données — <b>point d'entrée du jeu</b> depuis le portage web.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Elle doit rester <b>première</b>. En WebGL, <c>StreamingAssets</c> est une URL : rien ne
+    /// peut lire une table d'armes ou un libellé traduit avant que <see cref="BootScreen"/> ait
+    /// terminé. Remettre l'intro en tête rendrait le jeu jouable sur Windows et faux en web —
+    /// armes sans paliers, interface affichant ses clés — sans erreur au build.
+    /// </remarks>
+    public const string Boot = "Boot";
+
+    /// <summary>
+    /// Cinématique d'ouverture — premier écran <b>visible</b> du jeu, comme sous Godot où
+    /// <c>run/main_scene</c> désignait <c>IntroScreen.tscn</c>. Elle porte le seul récit du jeu et se
     /// passe d'une touche.
     /// </summary>
     public const string Intro = "Intro";
@@ -27,7 +38,7 @@ public static class GameScenes
     /// Toutes les scènes à embarquer dans le build, <b>dans l'ordre</b> — la première est celle qui
     /// se charge au lancement.
     /// </summary>
-    public static readonly string[] All = { Intro, MainMenu, Game };
+    public static readonly string[] All = { Boot, Intro, MainMenu, Game };
 
     /// <summary>Chemin d'asset d'une scène, tel qu'attendu par le pipeline de build.</summary>
     public static string PathOf(string sceneName) => $"Assets/Scenes/{sceneName}.unity";

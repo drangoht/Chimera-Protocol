@@ -1,4 +1,6 @@
+#if !UNITY_WEBGL
 using DiscordRPC;
+#endif
 using UnityEngine;
 
 /// <summary>
@@ -17,11 +19,30 @@ using UnityEngine;
 ///
 /// <para>Les clés d'images (<c>chimera</c>, <c>chimera_small</c>) renvoient aux Art Assets du portail
 /// développeur Discord : elles ne vivent pas dans le dépôt.</para>
+///
+/// <para><b>⚠ Absente du build web, et il ne peut pas en être autrement.</b> La présence Discord
+/// passe par un canal local — un tube nommé — vers le client installé sur la machine. Une page web
+/// n'a accès ni à l'un ni à l'autre : la bibliothèque ouvre des sockets et des fils d'exécution que
+/// WebGL ne fournit pas. Le type entier est donc retiré de cette plateforme, et l'interrupteur des
+/// options avec lui (<see cref="Available"/>) — un réglage qu'on peut basculer sans effet est
+/// exactement ce que l'écran des options s'interdit, et c'est le défaut que cette classe a déjà
+/// corrigé une fois.</para>
 /// </summary>
 public sealed class DiscordPresence : MonoBehaviour
 {
     public static DiscordPresence? Instance { get; private set; }
 
+    /// <summary>
+    /// La présence a-t-elle un sens sur cette plateforme ? <b>À consulter avant d'offrir le
+    /// réglage</b> : sur le web, la réponse est non et l'interrupteur ne doit pas exister.
+    /// </summary>
+#if UNITY_WEBGL
+    public const bool Available = false;
+#else
+    public const bool Available = true;
+#endif
+
+#if !UNITY_WEBGL
     private const string AppId = "1523258677715406990";
     private const string LargeImageKey = "chimera";
     private const string SmallImageKey = "chimera_small";
@@ -31,6 +52,10 @@ public sealed class DiscordPresence : MonoBehaviour
 
     /// <summary>La présence est-elle réellement connectée ? Observable par les bancs.</summary>
     public bool IsConnected => _client != null;
+#else
+    /// <summary>Jamais connectée sur le web : il n'y a pas de client Discord à joindre.</summary>
+    public bool IsConnected => false;
+#endif
 
     /// <summary>Mises à jour poussées depuis le lancement — distingue « connecté » de « muet ».</summary>
     public int Updates { get; private set; }
@@ -46,7 +71,10 @@ public sealed class DiscordPresence : MonoBehaviour
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     private static void Install()
     {
-        if (Application.isBatchMode || Instance != null) return;
+        // Sur le web, ne rien installer du tout : un objet qui survit aux scènes pour ne rien faire
+        // est du bruit dans la hiérarchie, et un `Instance` non nul laisserait croire aux appelants
+        // qu'ils poussent un statut quelque part.
+        if (!Available || Application.isBatchMode || Instance != null) return;
 
         var host = new GameObject("[DiscordPresence]");
         host.AddComponent<DiscordPresence>();
@@ -84,6 +112,15 @@ public sealed class DiscordPresence : MonoBehaviour
 
     private void Connect()
     {
+#if UNITY_WEBGL
+        // Inatteignable : rien ne s'installe sur cette plateforme (voir Install). La branche existe
+        // pour que la classe compile sans la bibliothèque, qui est retirée du build web.
+        //
+        // ⚠ La condition est UNITY_WEBGL seul, sans `&& !UNITY_EDITOR`, et c'est le point important :
+        // l'éditeur basculé sur la plateforme Web compile SANS la bibliothèque — elle y est désactivée
+        // par l'importateur, exactement comme dans le build. Ajouter l'exception pour l'éditeur ferait
+        // référencer un type absent et casserait la compilation dès qu'on change de plateforme.
+#else
         try
         {
             _client = new DiscordRpcClient(AppId);
@@ -107,6 +144,7 @@ public sealed class DiscordPresence : MonoBehaviour
             _client?.Dispose();
             _client = null;
         }
+#endif
     }
 
     /// <summary>Présence « dans les menus » — l'état par défaut.</summary>
@@ -121,6 +159,9 @@ public sealed class DiscordPresence : MonoBehaviour
 
     private void Push(string details, string? state)
     {
+#if UNITY_WEBGL
+        _ = details; _ = state;
+#else
         if (_client == null) return;
 
         try
@@ -144,6 +185,7 @@ public sealed class DiscordPresence : MonoBehaviour
         {
             Debug.Log($"[DiscordPresence] mise a jour ignoree ({e.Message})");
         }
+#endif
     }
 
     /// <summary>
@@ -164,11 +206,13 @@ public sealed class DiscordPresence : MonoBehaviour
 
     private void Shutdown()
     {
+#if !UNITY_WEBGL
         if (_client == null) return;
 
         try { _client.ClearPresence(); } catch { /* le canal peut déjà être fermé */ }
         try { _client.Dispose(); } catch { /* idem */ }
 
         _client = null;
+#endif
     }
 }

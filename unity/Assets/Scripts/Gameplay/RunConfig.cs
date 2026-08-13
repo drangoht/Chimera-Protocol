@@ -28,7 +28,7 @@ public static class RunConfig
     /// </remarks>
     private static string? BiomeFromCommandLine()
     {
-        foreach (string arg in System.Environment.GetCommandLineArgs())
+        foreach (string arg in LaunchArgs.All)
         {
             if (!arg.StartsWith("--biome=", System.StringComparison.Ordinal)) continue;
 

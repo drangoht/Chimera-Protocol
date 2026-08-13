@@ -416,7 +416,10 @@ public sealed class HUD : MonoBehaviour
     {
         if (_fpsLabel == null) return;
 
-        if (!GameSettings.Current.ShowFps) { _fpsLabel.text = ""; return; }
+        // Le drapeau force l'affichage sans écrire dans les réglages : il sert à mesurer, pas à
+        // configurer. C'est le seul instrument utilisable en web, où rien ne peut être injecté de
+        // l'extérieur tant que le canevas tourne.
+        if (!DebugHooks.ShowFps && !GameSettings.Current.ShowFps) { _fpsLabel.text = ""; return; }
 
         _fpsAccumulator += Time.unscaledDeltaTime;
         _fpsFrames++;

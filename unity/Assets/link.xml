@@ -1,0 +1,24 @@
+<!--
+  Types que le compilateur AOT ne doit PAS supprimer.
+
+  Le « managed code stripping » retire tout ce qu'aucun appel ne désigne. C'est sans danger pour la
+  quasi-totalité du projet : les tables de tuning lisent leur JSON avec `JsonDocument.Parse`, qui
+  n'emprunte aucun chemin de réflexion et reste donc visible de l'analyse statique.
+
+  La SAUVEGARDE fait exception. `SaveMigration` appelle `JsonSerializer.Deserialize<SaveData>` et
+  `Serialize`, qui atteignent les propriétés par réflexion : rien dans le code ne les « appelle », et
+  l'analyse conclut légitimement qu'elles sont mortes. Le résultat serait une sauvegarde qui s'écrit
+  amputée de ses champs, ou qui se relit vide.
+
+  ⚠ Ce mode d'échec n'existe QUE dans un build AOT — IL2CPP, donc WebGL, où le niveau de stripping
+  par défaut est le plus agressif de toutes les plateformes. Il ne se reproduit ni dans l'éditeur, ni
+  dans les 673 tests unitaires, ni dans un build Mono. Et il frappe le seul endroit du jeu dont la
+  perte est irréversible pour le joueur : ses Échos, ses améliorations, ses records.
+
+  On préserve l'assembly de règles en entier plutôt que quelques types nommés : c'est de la logique
+  pure, son poids est négligeable, et une liste de types se périme au premier champ ajouté — en
+  silence, sur une seule plateforme.
+-->
+<linker>
+  <assembly fullname="ChimeraProtocol.Rules" preserve="all" />
+</linker>

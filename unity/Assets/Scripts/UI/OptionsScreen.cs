@@ -140,6 +140,15 @@ public sealed class OptionsScreen : MonoBehaviour
         Refresh();
     }
 
+    /// <summary>
+    /// Bascule le plein écran.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ En web, <b>c'est le seul endroit d'où l'appel puisse aboutir</b> : un navigateur n'accorde le
+    /// plein écran que pendant un geste de l'utilisateur, et un clic sur cet interrupteur en est un.
+    /// Le même appel rejoué au chargement des réglages est refusé et arrête le moteur — d'où son
+    /// retrait de <c>GameSettings.ApplyDisplay</c>.
+    /// </remarks>
     private static void SetFullscreen(bool on)
     {
         GameSettings.Current.DisplayMode = on ? 2 : 0;
@@ -264,9 +273,19 @@ public sealed class OptionsScreen : MonoBehaviour
         // interrupteur doit nommer ce qu'il ACTIVE — « Mode d'affichage : allumé » ne veut rien dire.
         AddSwitch(Loc.T("OPTIONS_DISPLAY_FULLSCREEN"), GameSettings.Current.DisplayMode == 2, SetFullscreen);
         AddSwitch(Loc.T("OPTIONS_SHAKE"), GameSettings.Current.ShakeIntensity > 0.01f, SetShake);
-        AddSwitch(Loc.T("OPTIONS_VSYNC"), GameSettings.Current.Vsync, SetVsync);
+        // ⚠ Pas de synchronisation verticale dans un navigateur : la cadence d'affichage y est
+        // imposée par `requestAnimationFrame`, et `QualitySettings.vSyncCount` y est purement et
+        // simplement ignoré. Même raison que pour Discord — un interrupteur qui ne pilote rien.
+        if (Application.platform != RuntimePlatform.WebGLPlayer)
+            AddSwitch(Loc.T("OPTIONS_VSYNC"), GameSettings.Current.Vsync, SetVsync);
         AddSwitch(Loc.T("OPTIONS_SHOW_FPS"), GameSettings.Current.ShowFps, SetFps);
-        AddSwitch(Loc.T("OPTIONS_DISCORD"), GameSettings.Current.Discord, SetDiscord);
+        // ⚠ L'interrupteur n'existe QUE là où la présence existe. Sur le web, la bibliothèque Discord
+        // est retirée du build — un canal local vers un client installé n'a pas d'équivalent dans un
+        // navigateur — et l'offrir quand même donnerait le réglage mort que cet écran s'interdit
+        // depuis qu'il en a eu un. Le champ reste dans la sauvegarde : elle est commune aux
+        // plateformes, et un joueur qui joue aux deux ne doit pas perdre son choix côté bureau.
+        if (DiscordPresence.Available)
+            AddSwitch(Loc.T("OPTIONS_DISCORD"), GameSettings.Current.Discord, SetDiscord);
 
         AddSelector(Loc.T("OPTIONS_DIFFICULTY"),
                     () => DifficultyName(GameSettings.Current.Difficulty), CycleDifficulty);

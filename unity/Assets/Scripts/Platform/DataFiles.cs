@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 
@@ -11,13 +10,18 @@ using UnityEngine;
 /// <c>StreamingAssets</c> conserve des fichiers lisibles sur disque dans le build ;
 /// <c>Resources</c> les empaquette dans l'exécutable, ce qui supprimerait cette propriété — et avec
 /// elle la possibilité d'ajuster l'équilibrage sans passer par un build.</para>
+///
+/// <para><b>La lecture elle-même vit dans <see cref="StreamingText"/></b> depuis le portage web :
+/// en WebGL, <c>streamingAssetsPath</c> est une URL et non un dossier. Cette classe garde son rôle —
+/// nommer les fichiers de tuning et signaler ceux qui manquent — et délègue les octets.</para>
 /// </summary>
 public static class DataFiles
 {
-    private static readonly Dictionary<string, string> _cache = new();
+    /// <summary>Sous-dossier des données, relatif à <c>StreamingAssets</c>.</summary>
+    private const string Folder = "data";
 
     /// <summary>Dossier des données, à côté de l'exécutable.</summary>
-    public static string Root => Path.Combine(Application.streamingAssetsPath, "data");
+    public static string Root => Path.Combine(Application.streamingAssetsPath, Folder);
 
     /// <summary>
     /// Lit un fichier de données par son nom (avec extension). Renvoie <c>null</c> et journalise si
@@ -26,17 +30,9 @@ public static class DataFiles
     /// </summary>
     public static string? Load(string fileName)
     {
-        if (_cache.TryGetValue(fileName, out string? cached)) return cached;
+        string? text = StreamingText.Read($"{Folder}/{fileName}");
+        if (text == null) Debug.LogError($"[DataFiles] fichier de tuning introuvable : {fileName}");
 
-        string path = Path.Combine(Root, fileName);
-        if (!File.Exists(path))
-        {
-            Debug.LogError($"[DataFiles] fichier de tuning introuvable : {path}");
-            return null;
-        }
-
-        string text = File.ReadAllText(path);
-        _cache[fileName] = text;
         return text;
     }
 }

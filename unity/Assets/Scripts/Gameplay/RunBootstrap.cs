@@ -255,7 +255,7 @@ public sealed class RunBootstrap : MonoBehaviour
     /// </summary>
     private void ApplyCommandLine()
     {
-        foreach (string arg in System.Environment.GetCommandLineArgs())
+        foreach (string arg in LaunchArgs.All)
         {
             if (arg == "--saturate-arsenal") { _saturateArsenal = true; continue; }
 

@@ -23,7 +23,9 @@ public sealed class ScreenshotTour : MonoBehaviour
     {
         bool wanted = false;
 
-        foreach (string arg in System.Environment.GetCommandLineArgs())
+        // ⚠ Via LaunchArgs : ce composant vit dans la scène du MENU et démarre donc aussi dans le
+        // build web, où l'accès direct à la ligne de commande peut lever — et sauter la fin du Start.
+        foreach (string arg in LaunchArgs.All)
         {
             if (arg == "--screenshots") wanted = true;
             else if (arg.StartsWith("--screenshots=", System.StringComparison.Ordinal))

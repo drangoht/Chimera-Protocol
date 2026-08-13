@@ -824,6 +824,143 @@ Sinon Unity continue silencieusement d'utiliser le pipeline intégré, et les lu
 
 ---
 
+## Web (WebGL)
+
+> Portage web entamé le **2026-08-13**. Ce qui suit est constaté dans le code du projet, pas repris
+> d'une documentation générale. **Le trait commun des cinq pièges : aucun ne lève d'erreur au
+> build.** Ils produisent un jeu qui compile, démarre, et se comporte mal — ou pire, qui se comporte
+> bien pendant la session d'essai et perd la progression du joueur à la suivante.
+
+### `streamingAssetsPath` est une **URL**, pas un dossier
+
+C'est le blocage structurant. Sur Windows, `File.ReadAllText(Path.Combine(streamingAssetsPath, …))`
+répond immédiatement, ce qui permettait à `DataFiles` et `Loc` de charger **paresseusement**, au
+premier besoin. En WebGL il n'existe aucun système de fichiers : la lecture ne peut être qu'un
+aller-retour réseau, donc asynchrone — et seize sites d'appel synchrones n'ont rien à quoi se
+raccrocher.
+
+**Parade : déplacer l'attente, pas la répandre.** Tout est chargé une fois par `StreamingText`,
+depuis la scène `Boot` placée **en tête** de `GameScenes.All`, avant que quoi que ce soit puisse
+lire. Les appelants restent synchrones et inchangés ; aucun écran ne sait sur quelle plateforme il
+tourne.
+
+⚠ **La liste des fichiers à charger ne peut pas être énumérée à l'exécution** — on ne demande pas à
+un serveur ce qu'il contient. Elle est donc écrite **par le build** (`StreamingManifest`), jamais à
+la main : une liste recopiée dans le code aurait marché sur Windows, où le disque répond à tout, et
+aurait produit un jeu amputé d'une table **en web seulement**, sans erreur au build.
+
+⚠ La scène `Boot` **ne peut afficher aucun texte traduit** : la table de traduction est précisément
+ce qu'elle attend.
+
+### ⚠⚠ Un invariant qu'un tiers peut annuler n'est pas un invariant
+
+**Trouvé au premier essai dans un navigateur, et c'est le défaut le plus instructif du portage web.**
+Le chargement des données était porté par la coroutine de `BootScreen`. Or `BenchAutoPlay` s'installe
+en `AfterSceneLoad` — donc **sur la scène de démarrage** — et, sous `--auto-play`, change de scène
+**dès sa première image**. Une coroutine appartient au composant qui la lance : elle est morte avec
+la scène, à mi-chargement, **sans erreur ni trace**. La partie démarrait sur des tables vides et tout
+le texte du jeu sortait sous forme de clés — `HUD_LEVEL`, `BIOME_NEON_NAME` en plein HUD.
+
+**Invisible sur Windows**, où le disque répond dans l'image même : la fenêtre pour perdre la course
+y dure quelques microsecondes. En web, le chargement dure des secondes — la course est perdue à tous
+les coups.
+
+Poser la règle « rien ne lit avant le démarrage » ne suffisait donc pas : il fallait qu'aucun tiers
+ne **puisse** l'annuler. → le chargement est lancé en `BeforeSceneLoad` par un objet
+`DontDestroyOnLoad` (`StreamingText.Install`), il va à son terme quoi qu'il arrive ; `BootScreen`
+**attend** `Preloaded` au lieu de le porter ; et tout pilote automatique consulte ce même drapeau
+avant de changer de scène.
+
+C'est la leçon du retour du glaive, appliquée à l'initialisation : **corriger la classe de défaut,
+pas le site où on l'a trouvé.** Le site était `BenchAutoPlay` ; la classe est « n'importe quel
+composant qui change de scène pendant que le jeu se prépare ».
+
+### `persistentDataPath` s'écrit en mémoire — et l'onglet l'emporte en se fermant
+
+`File.WriteAllText` y réussit, ne lève rien, et relire le fichier dans la foulée rend bien son
+contenu. **Tout paraît normal.** Mais rien n'a atteint IndexedDB : le système de fichiers est émulé
+en mémoire, et il faut appeler `FS.syncfs(false, …)` pour enregistrer réellement
+(`Plugins/WebGL/WebSaveSync.jslib`, appelé par `UserData.Flush`).
+
+⚠ **Le défaut ne se voit jamais pendant les essais** — c'est à la session suivante que le joueur
+retrouve un compte vierge. Il frappe le seul endroit du jeu dont la perte est irréversible : Échos,
+améliorations, records, arsenal découvert.
+
+⚠ Le booléen est contre-intuitif : `false` signifie « mémoire → stockage », c'est-à-dire
+enregistrer. `true` fait l'inverse et **écrase la partie en cours**.
+
+### Une DLL au `.meta` minimal est incluse sur **toutes** les plateformes
+
+`DiscordRPC.dll` arrivait avec un `.meta` de deux lignes : aucun réglage d'importateur, donc « Any
+Platform ». La bibliothèque ouvre un tube nommé et lance des fils d'exécution — rien de tout cela
+n'existe dans un navigateur. → `PluginPlatforms.Apply()`, appelé par le build, et non un `.meta`
+édité à la main.
+
+⚠ C'est cette exclusion qui rend vrais les `#if UNITY_WEBGL` du code appelant. Et la condition doit
+être `UNITY_WEBGL` **seul**, jamais `UNITY_WEBGL && !UNITY_EDITOR` : l'éditeur basculé sur la
+plateforme Web compile lui aussi sans la bibliothèque, et l'exception pour l'éditeur ferait
+référencer un type absent dès qu'on change de plateforme.
+
+### `Environment.GetCommandLineArgs()` — un navigateur n'a pas de ligne de commande
+
+Six fichiers l'interrogeaient chacun de leur côté, dont deux vivant dans la scène du **menu**
+(`SceneDiagnostic`, `ScreenshotTour`) : ils démarrent donc aussi dans le build web. Sur une
+plateforme où l'appel n'est pas pris en charge, il lève — et **l'exception saute la fin de la méthode
+appelante sans rien afficher**. C'est très exactement le défaut qui a supprimé la visée à la souris
+et le réticule pendant des mois (§Entrées).
+
+→ Point d'accès unique `LaunchArgs`, qui traduit la chaîne de requête de l'URL en arguments :
+`?biome=neon&invuln` vaut `--biome=neon --invuln`. **Tous les drapeaux documentés fonctionnent donc
+dans un navigateur.** La conversion elle-même est pure et testée (`Rules/LaunchQuery`, 11 tests) —
+ses cas limites (fragment, valeur encodée, clé vide) ne se manifesteraient autrement que par un
+drapeau silencieusement inopérant sur une seule plateforme.
+
+### WebGL est la seule plateforme dont le **stripping** est le plus agressif par défaut
+
+Sans danger pour la quasi-totalité du projet : les tables de tuning lisent leur JSON avec
+`JsonDocument.Parse`, qui n'emprunte aucun chemin de réflexion et reste visible de l'analyse
+statique. **La sauvegarde fait exception** — `SaveMigration` appelle `JsonSerializer.Deserialize<T>`,
+qui atteint les propriétés par réflexion : rien ne les « appelle », et l'analyse conclut
+légitimement qu'elles sont mortes.
+
+Le résultat serait une sauvegarde qui s'écrit amputée de ses champs. Ce mode d'échec **n'existe que
+dans un build AOT** : ni l'éditeur, ni les 684 tests, ni un build Mono ne le reproduisent.
+→ `Assets/link.xml` (assembly de règles préservée en entier) **et** `ManagedStrippingLevel.Low`.
+
+### L'audio : `Streaming` n'existe pas, et le PCM se paie au chargement
+
+Les 14 musiques étaient importées en `AudioClipLoadType.Streaming`. **Ce mode n'existe pas en
+WebGL** — le navigateur n'expose pas de lecture par tampon depuis un fichier local. Unity ne refuse
+pas le réglage : il en substitue un autre, en silence. Symptôme observé dans la console du
+navigateur, et nulle part ailleurs : `Trying to get length of sound which is not loaded yet`, soit
+une piste dont on ne peut pas connaître la durée — de quoi casser un fondu croisé sans jamais lever
+d'erreur.
+
+Et les effets étaient en **PCM** : sur disque, du son non compressé coûte de la place ; sur le web,
+il coûte du **temps de chargement chez le joueur**, payé avant le premier écran.
+
+→ Override explicite `SetOverrideSampleSettings("WebGL", …)` : musique en `CompressedInMemory`
+(décodée à la volée, sans charger 22 Mo dans le tas de l'onglet), effets en `DecompressOnLoad` mais
+**stockés en Vorbis**.
+
+⚠ **Un postprocessor ne vaut que pour ce qui est importé après lui.** Modifier ses règles ne touche
+aucun des 41 sons déjà présents — ils gardent les réglages figés dans leur `.meta`, et le jeu
+continue de se comporter comme avant, sans que rien ne le signale. D'où
+`Chimera/Reimporter tout l'audio`.
+
+### Ce qui disparaît de l'interface, et pourquoi
+
+`Application.Quit()` ne ferme rien dans un navigateur : l'entrée « Quitter » du menu principal
+n'existe pas en web, plutôt que d'être un bouton cliquable et sans effet — le défaut que l'écran des
+options s'interdit depuis l'interrupteur Discord qui ne pilotait rien. Même raisonnement pour cet
+interrupteur (`DiscordPresence.Available`) et pour `UpdateBanner`, qui annoncerait une mise à jour à
+un joueur servant déjà le build courant.
+
+⚠ Le champ `Discord` **reste dans la sauvegarde** : elle est commune aux plateformes, et un joueur
+qui joue aux deux ne doit pas perdre son choix côté bureau.
+
+---
+
 ## Assets
 
 ### `spritePixelsPerUnit = 1` — la décision la plus structurante du portage

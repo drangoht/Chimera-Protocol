@@ -44,6 +44,11 @@ public sealed class UpdateBanner : MonoBehaviour
     {
         _parent = parent;
 
+        // Un joueur web est, par construction, sur la dernière version : la page sert le build
+        // courant. Le bandeau n'aurait donc rien à annoncer — et, s'il le faisait, il proposerait
+        // d'aller télécharger ce que le navigateur exécute déjà.
+        if (Application.platform == RuntimePlatform.WebGLPlayer) return;
+
         // Lancé depuis l'application itch : l'auto-update s'en charge, et deux mécanismes qui
         // annoncent la même chose se contredisent tôt ou tard.
         if (!string.IsNullOrEmpty(System.Environment.GetEnvironmentVariable("ITCHIO_API_KEY"))) return;

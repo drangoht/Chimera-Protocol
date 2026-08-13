@@ -22,6 +22,28 @@ URP 2D). Le dépôt ne contient plus qu'un moteur : Godot a été retiré le **2
 
 ## Phase actuelle
 
+**2026-08-13 (4) — PORTAGE WEB (WebGL) : le jeu tourne dans un navigateur.** Build
+`BuildBench.WebGame` → `unity/Build/web/` (**35,4 Mo** : 26,9 de données + 8,2 de wasm) ; publication
+`tools/release_unity.ps1 -Target web`, canal itch **`html5`** (⚠ c'est le NOM du canal qui décide si
+le jeu se lance dans la page ou se télécharge). Vérifié dans Chrome : intro, menu, run sur le biome
+Néon, textes traduits. **684 tests.** Détail des six blocages → `docs/PITFALLS_UNITY.md` §Web.
+⚠ **Aucun des six ne lève d'erreur au build** — `streamingAssetsPath` est une **URL** (→ scène `Boot`
+en tête de `GameScenes.All` + manifeste écrit par le build) · `persistentDataPath` **s'écrit en
+mémoire** et l'onglet emporte tout sans `FS.syncfs` · une DLL au `.meta` minimal part sur **toutes**
+les plateformes · `GetCommandLineArgs` n'existe pas (→ `LaunchArgs` lit la **query string** :
+`?biome=neon&invuln` vaut les drapeaux, tous vérifiés) · WebGL a le **stripping le plus agressif**,
+fatal à la seule sauvegarde (→ `link.xml`) · `Streaming` audio n'existe pas.
+⚠⚠ **Le défaut du premier essai navigateur : un invariant qu'un tiers pouvait annuler.** Le
+préchargement était porté par la coroutine de `BootScreen` ; `--auto-play` change de scène à la
+première image et **tuait la coroutine à mi-chemin, sans erreur** → tout le texte du jeu **en clés**
+(`HUD_LEVEL` en plein HUD). Invisible sur Windows, systématique en web. Corrigé au niveau de la
+classe : chargement lancé en `BeforeSceneLoad` sur un objet `DontDestroyOnLoad`, `BootScreen`
+**attend** au lieu de porter, et tout pilote consulte `StreamingText.Preloaded`.
+▶ **Reste à mesurer : le framerate en nuée** (200-300 entités, WebGL mono-thread, sans Burst).
+L'instrument est en place — `?show-fps` — mais **la mesure elle-même n'a pas pu être faite** :
+l'extension du navigateur ne peut rien injecter tant que le canevas tourne.
+
+
 **Migration Unity terminée. 2.1.0 publiée le 2026-08-13** (2.0.0 le 08-10, 2.0.1 et 2.0.2 le 08-11) —
 build itch **#1880415**. Le jeu est jouable de bout en bout, avec son, validé en jouant.
 **673 tests.** ▶ Toujours essayer `tools/release_unity.ps1 -DryRun` avant de publier pour de bon.
@@ -139,6 +161,10 @@ quand une phase se termine, relire les agents qu'elle concerne (dernière passe 
 - Plateforme cible : Windows (.exe). Moteur : **Unity 6.5** (`6000.5.6f1`), C#, URP 2D.
 - **Build** : `Unity.exe -batchmode -quit -projectPath unity -executeMethod BuildBench.Windows64Game`
   → `unity/Build/game/ChimeraProtocol.exe` (ignoré par git, régénéré).
+  **Web** : `… -buildTarget WebGL -executeMethod BuildBench.WebGame` → `unity/Build/web/`.
+  ⚠ Le **premier** build d'une plateforme réimporte tous les assets (~20 min) ; les suivants ~3 min.
+  ⚠ Lancer Unity par `&` en PowerShell rend la main **immédiatement sans rien faire** :
+  `Start-Process -Wait`.
 - **Publication (itch.io + Butler)** : skill **`/publier-itch`** ou `tools/release_unity.ps1 -Version X.Y.Z`
   (essayer d'abord avec `-DryRun`), ou déléguer à l'agent **`release-manager`**. Le script pose lui-même
   `bundleVersion` — ne pas l'éditer à la main. Runbook : `docs/RELEASE.md` ; notes cumulées : `docs/DEVLOG.md`.

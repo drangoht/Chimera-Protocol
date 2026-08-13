@@ -8,6 +8,17 @@ Dans un monde ravagé par **la Rouille Vivante** (corruption mi-organique, mi-m�
 
 ## État du projet
 
+**Le jeu tourne dans un navigateur** *(2026-08-13)* — portage **WebGL** : intro, menu, run, textes
+traduits, vérifié dans Chrome. Le build web pèse **35,4 Mo** et se publie sur itch.io comme jeu
+jouable en ligne (`tools/release_unity.ps1 -Target web`). Rien ne change pour la version Windows, qui
+reste la référence. Six choses cassaient en web **sans qu'aucune ne lève d'erreur au build** : le
+dossier de données devient une simple adresse web, la sauvegarde s'écrivait dans une mémoire que
+l'onglet emporte en se fermant, et la présence Discord n'a pas d'équivalent dans une page. Les
+drapeaux de mise au point s'écrivent maintenant dans l'adresse
+(`…/index.html?biome=neon&show-fps`). ▶ Il reste à mesurer la **fluidité en pleine nuée** : un
+navigateur n'a ni fils d'exécution ni compilation optimisée, et le jeu tient 200 à 300 ennemis à
+l'écran.
+
 **La visée était cassée depuis le début** *(2026-08-13, v2.1.1)* — la Lance Vectorielle et le Rayon
 Vectoriel sont les deux seules armes que l'on vise soi-même ; elles lisaient un stick de manette
 **jamais configuré**, et l'erreur levée à chaque image coupait la routine avant d'atteindre la

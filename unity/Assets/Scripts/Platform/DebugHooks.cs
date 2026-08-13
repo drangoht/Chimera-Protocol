@@ -34,6 +34,28 @@ public static class DebugHooks
     private static bool? _powerCurve;
 
     /// <summary>
+    /// <c>--show-fps</c> : force le compteur d'images, sans toucher aux réglages du joueur.
+    /// </summary>
+    /// <remarks>
+    /// <para>Le compteur existait déjà, derrière un interrupteur des options — donc atteignable
+    /// seulement en naviguant dans les menus, ce qui suffisait tant qu'on jouait au clavier sur sa
+    /// propre machine.</para>
+    ///
+    /// <para><b>Le portage web l'a rendu nécessaire.</b> La cadence y est le premier risque — un
+    /// survivor tient 200 à 300 entités, et WebGL n'a ni fils d'exécution ni compilation Burst — et
+    /// c'est précisément la plateforme où l'instrumenter de l'extérieur est impossible : tant que le
+    /// canevas tourne, le navigateur ne laisse plus injecter le moindre script. Le seul instrument
+    /// utilisable est donc <b>dans le jeu</b>, et il doit s'activer depuis l'adresse
+    /// (<c>?show-fps</c>) puisqu'il n'y a pas de ligne de commande.</para>
+    ///
+    /// <para>⚠ Comme tous les drapeaux, il <b>n'écrit rien</b> dans les réglages : une mesure ne doit
+    /// pas laisser sa mise en scène dans la sauvegarde — le projet a déjà vu un outil de captures
+    /// calibrer son propre banc de cette façon.</para>
+    /// </remarks>
+    public static bool ShowFps => _showFps ??= HasFlag("--show-fps");
+    private static bool? _showFps;
+
+    /// <summary>
     /// <c>--seed=&lt;n&gt;</c> : graine du générateur global. Rend une run <b>reproductible</b> —
     /// mêmes vagues, mêmes tirages de cartes, mêmes affixes.
     /// </summary>
@@ -207,26 +229,15 @@ public static class DebugHooks
         return slot;
     }
 
-    private static bool HasFlag(string flag)
-    {
-        foreach (string arg in Environment.GetCommandLineArgs())
-            if (string.Equals(arg, flag, StringComparison.Ordinal)) return true;
+    private static bool HasFlag(string flag) => LaunchArgs.Has(flag);
 
-        return false;
-    }
-
-    private static string? ValueFlag(string prefix)
-    {
-        foreach (string arg in Environment.GetCommandLineArgs())
-            if (arg.StartsWith(prefix, StringComparison.Ordinal)) return arg.Substring(prefix.Length);
-
-        return null;
-    }
+    private static string? ValueFlag(string prefix) => LaunchArgs.Value(prefix);
 
     /// <summary>Oublie tout ce qui a été lu — réservé aux tests, qui jouent plusieurs configurations.</summary>
     public static void Reset()
     {
         _powerCurve = _autoPlay = _invulnerable = _saturateArsenal = _forceElites = _trailerMode = null;
+        _showFps = null;
         _seedRead = _timeScaleRead = _startAtRead = _runLimitRead = _saturationRead = false;
         _languageRead = false;
     }

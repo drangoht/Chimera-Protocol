@@ -18,9 +18,10 @@ public sealed class SceneDiagnostic : MonoBehaviour
 {
     private void Start()
     {
-        bool wanted = false;
-        foreach (string a in System.Environment.GetCommandLineArgs())
-            if (a == "--diagnostic") wanted = true;
+        // ⚠ Via LaunchArgs, et non `Environment.GetCommandLineArgs()` : ce composant vit dans la
+        // scène du MENU, donc il démarre aussi dans le build web — où l'appel direct peut lever, et
+        // où l'exception escamoterait silencieusement la suite de ce Start.
+        bool wanted = LaunchArgs.Has("--diagnostic");
 
         if (!wanted) { Destroy(this); return; }
 

@@ -34,6 +34,12 @@ public static class UserData
     {
         get
         {
+            // Aucun joueur web ne vient d'une installation Godot : il n'y a pas de machine à
+            // inspecter, seulement un espace de stockage propre à ce domaine. Chercher quand même
+            // ferait interroger un système de fichiers émulé pour un dossier Windows — inoffensif,
+            // mais c'est une question dont on connaît déjà la réponse.
+            if (Application.platform == RuntimePlatform.WebGLPlayer) return null;
+
             string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
             if (string.IsNullOrEmpty(appData)) return null;
 
@@ -118,11 +124,39 @@ public static class UserData
         {
             Directory.CreateDirectory(Path.GetDirectoryName(path)!);
             File.WriteAllText(path, content);
+
+            Flush();
         }
         catch (IOException e)
         {
             // Une écriture qui échoue en silence, c'est une progression perdue à la fermeture du jeu.
             Debug.LogError($"[UserData] ecriture impossible : {path} ({e.Message})");
         }
+    }
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+    [System.Runtime.InteropServices.DllImport("__Internal")]
+    private static extern void ChimeraSyncFilesystem();
+#endif
+
+    /// <summary>
+    /// Pousse réellement sur le disque ce que <see cref="File.WriteAllText"/> vient d'écrire.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Sans effet ailleurs que sur le web, et indispensable là.</b> Sur un vrai système de
+    /// fichiers, écrire c'est enregistrer. Dans un navigateur, <c>persistentDataPath</c> désigne un
+    /// système de fichiers émulé qui vit dans la mémoire de l'onglet : l'écriture réussit, la
+    /// relecture rend bien le contenu, et pourtant rien n'a atteint le stockage du navigateur.
+    /// Fermer l'onglet efface tout.</para>
+    ///
+    /// <para>⚠ Ce défaut ne se voit <b>jamais</b> pendant une session d'essai — c'est au lancement
+    /// suivant que le joueur retrouve un compte vierge. C'est exactement le sinistre que
+    /// <see cref="MigrateFromGodotIfNeeded"/> existe pour éviter, par un autre chemin.</para>
+    /// </remarks>
+    private static void Flush()
+    {
+#if UNITY_WEBGL && !UNITY_EDITOR
+        ChimeraSyncFilesystem();
+#endif
     }
 }

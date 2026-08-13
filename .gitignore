@@ -19,6 +19,16 @@ unity/[Uu]serSettings/
 unity/Assets/Resources/build_sha.txt
 unity/Assets/Resources/build_sha.txt.meta
 
+# Liste des fichiers de StreamingAssets, écrite par StreamingManifest.Write à chaque build — même
+# raison que ci-dessus : c'est un artefact, et le versionner produirait une liste qui prétend décrire
+# un build sans avoir été produite par lui. Absente d'un clone frais, l'éditeur retombe sur le
+# contenu réel du dossier ; seul un build web en a besoin, et un build web la régénère.
+unity/Assets/Resources/streaming_manifest.txt
+unity/Assets/Resources/streaming_manifest.txt.meta
+
+# Déposé à la racine du projet par le build WebGL (code Burst généré). Artefact de sortie.
+unity/Data/
+
 # ─── C# / .NET ──────────────────────────────────────────────────────────────
 bin/
 obj/

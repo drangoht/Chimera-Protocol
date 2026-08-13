@@ -43,6 +43,7 @@ public static class BuildGameScene
         GameObject miniBossPrefab = BuildMiniBossPrefab();
 
         BuildScene(enemyPrefab, bulletPrefab, orbPrefab, corePrefab, champions, miniBossPrefab);
+        BuildBoot();
         BuildIntro();
         BuildMainMenu();
         RegisterScenes();
@@ -281,8 +282,63 @@ public static class BuildGameScene
     }
 
     /// <summary>
-    /// Scène de la cinématique d'ouverture — <b>première scène du build</b>, donc celle qui se
-    /// charge au lancement.
+    /// Génère la <b>seule</b> scène de chargement, sans toucher aux autres.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="Run"/> régénère l'intégralité des prefabs et des scènes : c'est son rôle, mais
+    /// c'est aussi une réécriture de fichiers versionnés qu'on n'a aucune raison de provoquer pour
+    /// ajouter une scène. Ce point d'entrée fait le minimum et redéclare l'ordre de build.
+    /// </remarks>
+    [MenuItem("Chimera/Construire la scene de chargement")]
+    public static void RunBootOnly()
+    {
+        Directory.CreateDirectory(Path.Combine(Application.dataPath, "Scenes"));
+
+        BuildBoot();
+        RegisterScenes();
+
+        AssetDatabase.SaveAssets();
+        AssetDatabase.Refresh();
+        Debug.Log("[SCENE] scene de chargement generee.");
+    }
+
+    /// <summary>
+    /// Scène de chargement — <b>première scène du build</b>, donc celle qui se charge au lancement.
+    /// </summary>
+    /// <remarks>
+    /// <para>Volontairement nue : une caméra, un canevas construit par le script, rien d'autre. Elle
+    /// s'affiche à un moment où <b>aucune donnée n'est encore chargée</b> — ni table de traduction,
+    /// ni tuning — donc tout ce qui dépendrait de l'un ou de l'autre y serait faux.</para>
+    ///
+    /// <para><b>Pas d'AudioListener ici</b>, contrairement aux autres scènes : elle ne joue aucun son
+    /// et ne vit que le temps du chargement. Un second listener n'apporterait rien et le projet a
+    /// déjà payé cher les surprises d'audio (14 armes muettes, un jeu entier sans listener).</para>
+    /// </remarks>
+    private static void BuildBoot()
+    {
+        Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+
+        var camGo = new GameObject("MainCamera", typeof(Camera));
+        var cam = camGo.GetComponent<Camera>();
+        cam.orthographic = true;
+        cam.orthographicSize = 540f;
+        cam.backgroundColor = new Color(0.06f, 0.06f, 0.11f);
+        cam.clearFlags = CameraClearFlags.SolidColor;
+        camGo.transform.position = new Vector3(0f, 0f, -10f);
+        camGo.tag = "MainCamera";
+
+        var bootGo = new GameObject("Boot", typeof(BootScreen));
+
+        foreach (var go in new[] { camGo, bootGo })
+            EditorSceneManager.MoveGameObjectToScene(go, scene);
+
+        EditorSceneManager.SaveScene(scene, GameScenes.PathOf(GameScenes.Boot));
+        Debug.Log("[SCENE] boot ecrit : " + GameScenes.PathOf(GameScenes.Boot));
+    }
+
+    /// <summary>
+    /// Scène de la cinématique d'ouverture — premier écran <b>visible</b>, chargé par
+    /// <see cref="BuildBoot"/> une fois les données en mémoire.
     /// </summary>
     private static void BuildIntro()
     {

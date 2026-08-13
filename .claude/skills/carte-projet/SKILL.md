@@ -64,6 +64,8 @@ carte par carte) · `LocTable` · **`MagnetSchedule`** (fenêtres d'apparition d
 `OvertimeEscalation` · `PassiveScaling` · `PassiveTable` · **`PickupMagnet`** (aimantation des orbes
 **et des Noyaux d'Aether** : sa vitesse se calcule *contre* celle du porteur, jamais dans l'absolu ;
 `AttractRadius` porte le rayon du Noyau, que `core_magnetism` élargit de 100 à 150 px) ·
+**`LaunchQuery`** (chaîne de requête d'URL → arguments de ligne de commande : `?biome=neon&invuln`
+vaut `--biome=neon --invuln`, ce qui rend **tous les drapeaux utilisables dans un navigateur**) ·
 `PressureMeter` · `RarityWeights` ·
 `RegenReserve` · `SaturationTable` · `SaveData` / `SaveMigration` / `SettingsData` · `SpawnCurve` ·
 `StartingPerks` · `StatCaps` · `Titles` · `VersionCompare` · `WeaponFusion` · `WeaponLeveling` ·
@@ -72,6 +74,10 @@ carte par carte) · `LocTable` · **`MagnetSchedule`** (fenêtres d'apparition d
 ## §Platform — `unity/Assets/Scripts/Platform/`
 `Spawner` (charge un prefab par son ancien chemin `res://scenes/…` traduit en `Prefabs/…`) ·
 `AudioSystem` · `MusicDirector` (dans Gameplay) · `Loc` · `UserData` (sauvegardes) ·
+**`StreamingText`** (lecture de `StreamingAssets` — **le seul fichier qui sait que le web n'a pas de
+disque** : en WebGL ce chemin est une URL, donc tout est préchargé une fois par la scène `Boot`) ·
+**`LaunchArgs`** (drapeaux de lancement — ligne de commande sur Windows, **chaîne de requête de
+l'URL** en web ; point d'accès unique, cf. `Rules/LaunchQuery`) ·
 `UiCanvas` / `UiFonts` / `UiFrames` / `UiIcons` / `UiNames` / `UiPrimitives` · `SceneRoot` ·
 `PlatformHost` · `FrameAnimator` · `GTween` · `HitStop` · `DebugHooks` ·
 `BuildInfo` (tampon `v<version>-<sha>`) · `DiscordPresence` · `DataFiles` · `Gd` (utilitaires
@@ -110,6 +116,9 @@ qui s'ensuit saute la fin de la méthode appelante sans rien signaler
   écrite fusion par fusion ne se porterait jamais en entier (cf. les 14 armes muettes).
 
 ## §UI — `unity/Assets/Scripts/UI/`
+**`BootScreen`** (⚠ **première scène du build**, `GameScenes.Boot` : elle charge les données avant que
+quoi que ce soit puisse les lire — indispensable en web, où `StreamingAssets` est une URL. Elle
+**n'affiche aucun texte traduit** : la table de traduction est ce qu'elle attend) ·
 `MainMenuScreen` · `IntroScreen` · `LevelSelectScreen` · `HubScreen` ·
 `CodexScreen` · `ChallengeScreen` · `AssimilationScreen` · `LevelUpScreen` · `PauseScreen` ·
 `RunEndScreen` · `OptionsScreen` · `RunHud` (+ `HUD` côté Gameplay) · `UpdateBanner` ·
@@ -216,7 +225,12 @@ pages store itch · `archive-godot/` (ère Godot).
 - **Build du jeu** :
   `Unity.exe -batchmode -quit -projectPath unity -executeMethod BuildBench.Windows64Game`
   (autres cibles : `Windows64PlatformSmoke`, `Windows64RunSmoke`, `Windows64Il2cpp`)
+- **Build web** : `… -buildTarget WebGL -executeMethod BuildBench.WebGame` → `unity/Build/web/`.
+  ⚠ Le **premier** build d'une plateforme réimporte tous les assets (~20 min, l'audio surtout).
+  Réglages posés par le script, pas à la main (mémoire, Brotli + repli, stripping `Low`).
 - **Publier** : `tools/release_unity.ps1 -Version X.Y.Z -DryRun` puis sans `-DryRun`
+  (web : `-Target web`, qui pousse sur le canal **`html5`** — ⚠ c'est le NOM du canal qui décide,
+  côté itch.io, si le jeu se lance dans le navigateur ou se télécharge)
 - **Flags du jeu** (`DebugHooks`) : `--auto-play` · `--power-curve` · `--biome=<id>` ·
   `--timescale=<x>` (≤ 4) · `--run-limit=<s>` · `--seed=<n>` · `--start-at=<min>` ·
   `--saturate-arsenal` · `--saturation=<n>` · `--force-elites` · `--invuln` · `--lang=<en|fr|es>`

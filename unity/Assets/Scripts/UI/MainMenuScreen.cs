@@ -114,8 +114,15 @@ public sealed class MainMenuScreen : MonoBehaviour
         var codex = AddEntry(column.transform, Loc.T("MENU_CODEX"), FrameAccent.Cyan, enabled: true);
         codex.onClick.AddListener(OpenCodex);
 
-        var quit = AddEntry(column.transform, Loc.T("MENU_QUIT"), FrameAccent.Gold, enabled: true);
-        quit.onClick.AddListener(SceneRoot.Quit);
+        // ⚠ Pas d'entrée « Quitter » dans un navigateur : `Application.Quit()` n'y ferme rien du tout.
+        // Le bouton resterait présent, cliquable, et sans effet — c'est-à-dire exactement le défaut
+        // que l'écran des options s'interdit depuis l'interrupteur Discord qui ne pilotait rien. Sur
+        // le web, on quitte un jeu en fermant l'onglet ; le menu n'a pas à prétendre le contraire.
+        if (Application.platform != RuntimePlatform.WebGLPlayer)
+        {
+            var quit = AddEntry(column.transform, Loc.T("MENU_QUIT"), FrameAccent.Gold, enabled: true);
+            quit.onClick.AddListener(SceneRoot.Quit);
+        }
 
         BuildFocusChain(column.transform);
         BuildLanguageRow(canvasGo.transform);

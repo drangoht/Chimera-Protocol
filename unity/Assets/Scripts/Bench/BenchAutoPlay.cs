@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 /// <summary>
 /// Résout à la place du joueur les écrans qui attendent un choix — montée de niveau, assimilation
@@ -87,6 +88,20 @@ public sealed class BenchAutoPlay : MonoBehaviour
     private void EnsureRunStarted()
     {
         if (_runLaunched || GameManager.Instance != null) return;
+
+        // ⚠ Ne JAMAIS partir de la scène de démarrage. Ce pilote s'installe en `AfterSceneLoad`,
+        // donc sur cette scène-là, et changeait de scène dès sa première image : la partie démarrait
+        // sur des tables vides — tout le texte du jeu sortait en clés (« HUD_LEVEL »). Invisible sur
+        // Windows, où le disque répond dans l'image même ; systématique dans un navigateur, où le
+        // chargement dure des secondes.
+        //
+        // ⚠ La garde porte sur la SCÈNE, et pas seulement sur `StreamingText.Preloaded` : les deux
+        // changements de scène partiraient alors dans la même image — celui-ci vers la partie, celui
+        // de l'écran de démarrage vers l'intro — et le second gagnerait, en laissant ce pilote
+        // convaincu d'avoir lancé la run. Le jeu attendait alors sagement au menu, exactement le
+        // défaut que `EnsureRunStarted` existe pour empêcher.
+        if (!StreamingText.Preloaded) return;
+        if (SceneManager.GetActiveScene().name == GameScenes.Boot) return;
 
         _runLaunched = true;
         SceneRoot.ChangeScene(GameScenes.Game);

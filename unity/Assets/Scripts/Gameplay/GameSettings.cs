@@ -53,6 +53,23 @@ public static class GameSettings
     {
         if (Application.isBatchMode) return;   // rien à régler sans fenêtre
 
+        // ⚠ En web, on ne REJOUE pas le plein écran, et ce n'est pas un choix de confort.
+        //
+        // Un navigateur n'accorde le plein écran que pendant un geste de l'utilisateur — un clic, une
+        // touche. Ici l'appel part du chargement des réglages, donc de personne : le navigateur le
+        // refuse (« TypeError: not granted »), Unity y voit une erreur fatale et **arrête le
+        // moteur**. Or `DisplayMode` vaut 2 par défaut : le premier lancement de TOUT nouveau joueur
+        // web tombait dessus, sur un onglet qui se figeait sans message.
+        //
+        // Le plein écran reste possible — par l'interrupteur des options et par le bouton de la page,
+        // qui sont l'un et l'autre des gestes de l'utilisateur, donc accordés. La préférence
+        // enregistrée n'est pas perdue pour autant : elle continue de valoir côté bureau.
+        if (Application.platform == RuntimePlatform.WebGLPlayer)
+        {
+            ScreenShake.Intensity = settings.ShakeIntensity;
+            return;
+        }
+
         Screen.fullScreenMode = settings.DisplayMode == 2
             ? FullScreenMode.FullScreenWindow
             : FullScreenMode.Windowed;

@@ -1,4 +1,3 @@
-using System.IO;
 using UnityEngine;
 
 /// <summary>
@@ -6,10 +5,14 @@ using UnityEngine;
 ///
 /// <para>Le fichier <c>ui.csv</c> est copié tel quel dans <c>StreamingAssets</c> : il reste éditable
 /// sans recompiler, comme les données de tuning, et c'est le <b>même fichier</b> que celui utilisé
-/// par le projet Godot. L'analyse vit dans <see cref="LocTable"/> (pure et testée).</para>
+/// par le projet Godot. L'analyse vit dans <see cref="LocTable"/> (pure et testée), la lecture dans
+/// <see cref="StreamingText"/> (qui seul sait que le web n'a pas de disque).</para>
 /// </summary>
 public static class Loc
 {
+    /// <summary>Chemin de la table, relatif à <c>StreamingAssets</c>.</summary>
+    private const string CsvPath = "localization/ui.csv";
+
     private static LocTable.Document? _doc;
 
     /// <summary>
@@ -35,18 +38,18 @@ public static class Loc
         {
             if (_doc != null) return _doc;
 
-            string path = Path.Combine(Application.streamingAssetsPath, "localization", "ui.csv");
+            string? csv = StreamingText.Read(CsvPath);
 
-            if (!File.Exists(path))
+            if (csv == null)
             {
                 // Sans traduction, l'interface affiche ses clés : illisible, mais explicite — et bien
                 // préférable à des libellés vides qu'on prendrait pour un défaut d'affichage.
-                Debug.LogError($"[Loc] table de traduction introuvable : {path}");
+                Debug.LogError($"[Loc] table de traduction introuvable : {CsvPath}");
                 _doc = LocTable.Parse(null);
                 return _doc;
             }
 
-            _doc = LocTable.Parse(File.ReadAllText(path));
+            _doc = LocTable.Parse(csv);
             Debug.Log($"[Loc] {_doc.Count} libelles charges ({Language}).");
             return _doc;
         }

@@ -34,8 +34,9 @@
 
 param(
     [Parameter(Mandatory = $true)][string]$Version,
+    [ValidateSet("windows", "web")][string]$Target = "windows",
     [string]$Itch = "drangoht/chimera-protocol",
-    [string]$Channel = "windows",
+    [string]$Channel = "",
     [switch]$SkipBuild,
     [switch]$DryRun
 )
@@ -48,7 +49,31 @@ $ProjectRoot = Split-Path -Parent $PSScriptRoot
 $UnityProject = Join-Path $ProjectRoot "unity"
 $Unity = "C:\Program Files\Unity\Hub\Editor\6000.5.6f1\Editor\Unity.exe"
 
-$BuildDir = Join-Path $UnityProject "Build\game"
+# --- Cible ------------------------------------------------------------------------
+# Les deux cibles ne different que par CINQ choses : le dossier construit, la methode d'editeur qui
+# le produit, ce qu'on exige d'y trouver, ce qu'on copie et le canal itch.
+#
+# ⚠ Le canal decide, cote itch.io, si le fichier est JOUABLE DANS LE NAVIGATEUR : un canal nomme
+# `html5` (ou `html`, ou `web`) est reconnu comme tel, n'importe quel autre nom produit une archive a
+# telecharger. Un build web pousse sur un canal mal nomme s'installe donc parfaitement — et ne se joue
+# pas. Rien ne le signale.
+if ($Target -eq "web") {
+    $BuildDir      = Join-Path $UnityProject "Build\web"
+    $BuildMethod   = "BuildBench.WebGame"
+    $DefaultChannel = "html5"
+    # index.html : la page elle-meme. Build\ : le wasm et le chargeur. StreamingAssets\ : le tuning
+    # et les traductions, que le jeu web telecharge au demarrage — sans eux il demarre sur des tables
+    # vides, ce qui ne ressemble pas a une donnee manquante mais a un jeu casse.
+    $Required      = @("index.html", "Build", "StreamingAssets")
+} else {
+    $BuildDir      = Join-Path $UnityProject "Build\game"
+    $BuildMethod   = "BuildBench.Windows64Game"
+    $DefaultChannel = "windows"
+    $Required      = @("ChimeraProtocol_Data\Managed", "ChimeraProtocol_Data\StreamingAssets", "UnityPlayer.dll")
+}
+
+if (-not $Channel) { $Channel = $DefaultChannel }
+
 $Exe = Join-Path $BuildDir "ChimeraProtocol.exe"
 $DataDir = Join-Path $BuildDir "ChimeraProtocol_Data"
 $Staging = Join-Path $ProjectRoot "build\staging-unity"
@@ -67,6 +92,7 @@ if (-not $butler) {
 }
 $Butler = $butler.FullName
 Write-Host "Butler  : $Butler" -ForegroundColor Cyan
+Write-Host "Cible   : $Target ($BuildMethod)" -ForegroundColor Cyan
 Write-Host "Version : $Version  ->  $Itch`:$Channel" -ForegroundColor Cyan
 
 # --- 1. Version dans les reglages du projet ----------------------------------------
@@ -121,7 +147,7 @@ if (-not $SkipBuild) {
         "-batchmode", "-quit",
         "-projectPath", $UnityProject,
         "-logFile", $log,
-        "-executeMethod", "BuildBench.Windows64Game"
+        "-executeMethod", $BuildMethod
     )
 
     if ($proc.ExitCode -ne 0) { Fail "Build Unity echoue (code $($proc.ExitCode)) - voir $log" }
@@ -133,25 +159,25 @@ if (-not $SkipBuild) {
         Fail "Build Unity : aucune reussite confirmee dans $log"
     }
 
-    if (-not (Test-Path $Exe)) { Fail "Executable absent apres le build : $Exe" }
+    if ($Target -eq "windows" -and -not (Test-Path $Exe)) { Fail "Executable absent apres le build : $Exe" }
 
     # ⚠ La DATE de l'executable ne prouve rien sous Unity : le build est incremental, et un binaire
     # deja identique n'est pas reecrit — un horodatage anterieur est donc normal. La premiere version
     # de ce script echouait la-dessus sur un build parfaitement valide.
     # Ce qui tranche est la VERSION EMBARQUEE, verifiee plus bas : posee juste avant le build, elle ne
     # peut correspondre que si le binaire a bien ete reconstruit avec elle.
-    if ((Get-Item $Exe).LastWriteTime -lt $buildStart) {
+    if ($Target -eq "windows" -and (Get-Item $Exe).LastWriteTime -lt $buildStart) {
         Write-Host "Binaire non reecrit (build incremental) - la version embarquee tranchera." -ForegroundColor DarkGray
     }
 } else {
     Write-Host "SkipBuild : binaire existant reutilise." -ForegroundColor DarkGray
-    if (-not (Test-Path $Exe)) { Fail "SkipBuild demande mais aucun binaire : $Exe" }
+    if (-not (Test-Path $BuildDir)) { Fail "SkipBuild demande mais aucun build : $BuildDir" }
 }
 
 # --- 4. Verification du binaire ----------------------------------------------------
 # Ce qui part doit contenir de quoi tourner. Un dossier de donnees incomplet ne se voit qu'au
 # lancement, c'est-a-dire chez le joueur.
-foreach ($required in @("ChimeraProtocol_Data\Managed", "ChimeraProtocol_Data\StreamingAssets", "UnityPlayer.dll")) {
+foreach ($required in $Required) {
     $path = Join-Path $BuildDir $required
     if (-not (Test-Path $path)) { Fail "Element manquant dans le build : $required" }
 }
@@ -186,10 +212,18 @@ if ($stamp.sha -like "*+") {
 if (Test-Path $Staging) { Remove-Item $Staging -Recurse -Force }
 New-Item -ItemType Directory -Path $Staging -Force | Out-Null
 
-Copy-Item $Exe -Destination $Staging
-Copy-Item $DataDir -Destination $Staging -Recurse
-foreach ($file in Get-ChildItem $BuildDir -File | Where-Object { $_.Extension -in @(".dll", ".json") }) {
-    Copy-Item $file.FullName -Destination $Staging
+if ($Target -eq "web") {
+    # Tout le dossier, moins ce qu'Unity nomme lui-meme « DoNotShip » : des symboles de debogage
+    # Burst qui n'ont rien a faire chez un joueur et qui alourdiraient la page pour rien.
+    Copy-Item (Join-Path $BuildDir "*") -Destination $Staging -Recurse -Force -Exclude "*BurstDebugInformation*"
+    Get-ChildItem $Staging -Directory -Filter "*BurstDebugInformation*" |
+        Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+} else {
+    Copy-Item $Exe -Destination $Staging
+    Copy-Item $DataDir -Destination $Staging -Recurse
+    foreach ($file in Get-ChildItem $BuildDir -File | Where-Object { $_.Extension -in @(".dll", ".json") }) {
+        Copy-Item $file.FullName -Destination $Staging
+    }
 }
 Write-Host "Staging pret : $Staging" -ForegroundColor Cyan
 
