@@ -22,9 +22,13 @@ URP 2D). Le dépôt ne contient plus qu'un moteur : Godot a été retiré le **2
 
 ## Phase actuelle
 
-**Migration Unity terminée. 2.0.0 publiée le 2026-08-10, 2.0.1 le 2026-08-11.** Le jeu est jouable
-de bout en bout, avec son, validé en jouant. **673 tests.** ▶ Toujours essayer
-`tools/release_unity.ps1 -DryRun` avant de publier pour de bon.
+**Migration Unity terminée. 2.1.0 publiée le 2026-08-13** (2.0.0 le 08-10, 2.0.1 et 2.0.2 le 08-11) —
+build itch **#1880415**. Le jeu est jouable de bout en bout, avec son, validé en jouant.
+**673 tests.** ▶ Toujours essayer `tools/release_unity.ps1 -DryRun` avant de publier pour de bon.
+▶ **Reste côté utilisateur : coller le devlog 2.1.0 sur itch** (`docs/DEVLOG.md`, EN puis FR).
+⚠ **Publiée sans mesure au banc du renforcement de 4 armes** (§36) — décision de l'auteur. La zone du
+Champ de Surcharge et celle de la Singularité ne sont bornées par **aucun plafond** : premier endroit
+à regarder si la fin de partie paraît plus facile.
 
 **2.0.1 — la leçon du portage a frappé une dixième fois, sur le TEXTE.** Tout le contenu nommé
 (armes, greffes, améliorations du Hub, ennemis) sortait **en français dans les trois langues** :
@@ -34,7 +38,7 @@ trailer** — le pipeline vidéo a été reporté sous Unity dans la foulée (`B
 `tools/record_trailer.py`, chaque plan mis en scène, timecodes stables d'une recapture à l'autre).
 ▶ **Reste à faire côté utilisateur : coller le devlog 2.0.1 sur itch** (`docs/DEVLOG.md`, EN puis FR).
 
-**2026-08-12 — quatre défauts signalés en jouant, corrigés, non publiés.** (1) La **Lame Boomerang**
+**2026-08-12 — quatre défauts signalés en jouant, corrigés — publiés en 2.1.0.** (1) La **Lame Boomerang**
 mettait 6 s à revenir face à un joueur rapide, et son arme cessait donc de tirer : la parade du
 2026-08-11 (`PickupMagnet`) avait été appliquée au *site trouvé*, pas à la *classe de défauts* →
 `BoomerangReturn`. (2) L'**Aimant n'existait pas** sous Unity, alors que `bonus_magnet` restait
@@ -44,7 +48,7 @@ achetable à 770 Échos — porté avec `MagnetSchedule` / `MagnetPickup` / `Mag
 effet. (4) Le **menu de montée de niveau proposait 1 ou 2 cartes** en fin de run — un test
 verrouillait même ce comportement. **673 tests, banc 271/0.**
 
-**2026-08-13 — la rareté et la fusion se SENTENT enfin, non publié** (détail : `docs/GDD.md` §35).
+**2026-08-13 — la rareté et la fusion se SENTENT enfin, publié en 2.1.0** (détail : `docs/GDD.md` §35).
 Demandé en jouant. Toute la hiérarchie du jeu reposait sur des signaux **immobiles** : un cadre et un
 mot, dans un écran qui met le jeu en pause au milieu d'une nuée. Ajouté : aura respirante par rareté
 (`UiRarityFlare`), arrivée en cascade avec dépassement pour l'épique, étiquette colorée — et pour la
@@ -59,7 +63,7 @@ trompe de sujet valide ce qu'il n'a pas regardé.** **673 tests, banc 273/0.**
 sont sabordés en cascade. Le run suivant, **même binaire**, est passé à 273/0 — la survie du joueur au
 banc n'est pas déterministe. **Rejouer avant de conclure.**
 
-**2026-08-13 (2) — « l'overload field est trop discret », non publié** (détail : `docs/GDD.md` §36).
+**2026-08-13 (2) — « l'overload field est trop discret », publié en 2.1.0** (détail : `docs/GDD.md` §36).
 Deux causes : l'arme **ne grandissait pas** (`radius` 100→200 et `knockbackPx` 40→60 déclarés,
 **lus par personne**) et n'existait à l'écran que 9 % du temps. Le croisement déclaré/consommé a sorti
 **4 autres clés mortes** (Singularité, Lance Cryo, Flux de Braise) — toutes branchées. ⚠ **C'est un

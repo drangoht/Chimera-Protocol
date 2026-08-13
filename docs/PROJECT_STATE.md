@@ -4,9 +4,9 @@
 > implémenté — la mettre à jour à chaque ajout/refonte majeur. Le résumé de phase reste dans
 > `CLAUDE.md` ; le design complet dans `docs/GDD.md` ; la carte du code dans `/carte-projet`.
 
-- Pile technique : **Unity 6.5 (C#, URP 2D)** depuis la 2.0.0. **Version en ligne : 2.0.1**
-  (2026-08-11).
-- **Le Champ de Surcharge ne grandissait pas (2026-08-13, non publié).** Signalé en jouant (« trop
+- Pile technique : **Unity 6.5 (C#, URP 2D)** depuis la 2.0.0. **Version en ligne : 2.1.0** (2026-08-13,
+  build itch #1880415).
+- **Le Champ de Surcharge ne grandissait pas (2026-08-13, publié en 2.1.0).** Signalé en jouant (« trop
   discret »). Détail : **`docs/GDD.md` §36**.
   - `weapons.json` déclare `radius` **100 → 200 px** et `knockbackPx` **40 → 60** sur cinq paliers ;
     la classe n'implémentait pas `ApplyLevelStats`, donc **aucune des deux n'était lue**. Le
@@ -34,7 +34,7 @@
     **armes**) ; puis restreindre aux `Shape()` *globaux* laissait le `radius` de `Singularity`
     couvrir celui du Champ. Le contrôle est désormais **arme par arme**, héritage suivi, et vérifié
     en réintroduisant le défaut.
-- **Mise en scène de la rareté et de la fusion (2026-08-13, non publiée).** Demandé en jouant :
+- **Mise en scène de la rareté et de la fusion (2026-08-13, publiée en 2.1.0).** Demandé en jouant :
   « les items Épiques et les évolutions d'armes devraient être plus juicy ». Toute la hiérarchie
   reposait sur des signaux **immobiles** — un cadre et un mot — dans un écran qui met le jeu en pause
   au milieu d'une nuée. Détail complet : **`docs/GDD.md` §35**.
@@ -54,7 +54,7 @@
     quatre blocs se sont sabordés en cascade (« pas de joueur vivant »), en emportant leurs
     vérifications. Le run suivant, sur le *même* binaire, est passé à 273/0. La survie du joueur au
     banc n'est pas déterministe : **rejouer avant de conclure**, ici comme le 2026-08-11.
-- **Quatre défauts signalés en jouant, corrigés le 2026-08-12 (non publiés).** Aucun n'a été trouvé
+- **Quatre défauts signalés en jouant, corrigés le 2026-08-12 (publiés en 2.1.0).** Aucun n'a été trouvé
   par l'automatisation ; les quatre l'ont été manette en main.
   1. **La Lame Boomerang mettait six secondes à revenir.** Sa vitesse était posée à 420 px/s, aller
      *et* retour, contre un joueur qui plafonne à 380 : **40 px/s de gain**. Comme la recharge de
