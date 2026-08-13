@@ -948,6 +948,39 @@ aucun des 41 sons déjà présents — ils gardent les réglages figés dans leu
 continue de se comporter comme avant, sans que rien ne le signale. D'où
 `Chimera/Reimporter tout l'audio`.
 
+### ⚠⚠ Mesurer la cadence en web : un onglet en arrière-plan est bridé à 1 Hz
+
+**La cadence a été mesurée le 2026-08-13 : 60,0 images/s, tenues.** ~190 s de relevé continu
+(38 fenêtres de 5 s, ~11 400 images) sur le biome Néon, à **200 ennemis** — le plafond de foule —
+avec arsenal saturé, cran de saturation 3, en overtime et pendant un combat de boss. Pire image
+**18 ms**, trois pointes à 33 ms sur l'ensemble, **0 %** d'images sous 30. Le jeu est plafonné par la
+synchronisation verticale du navigateur, pas par la machine. *Le risque de performance du portage web
+n'existe pas.*
+
+⚠ **Mais la première mesure annonçait 1,0 image/s**, avec 100 % des images sous le seuil. Elle était
+entièrement fausse : Chrome **bride les onglets qui ne sont pas au premier plan à un rappel par
+seconde**, puis les suspend complètement (relevés à 0,0 fps avec des « images » de 43 puis 60 s).
+
+Deux signatures permettent de la reconnaître, et il faut les connaître **avant** de conclure :
+- la valeur est **exactement** 1,0 et la pire image **exactement** ~1005 ms — une vraie mesure ne
+  tombe pas sur des nombres ronds ;
+- surtout, elle **ne bouge pas quand la charge change**. Le relevé annonçait 1,0 pendant que la
+  population passait de 10 à 125 ennemis. Une mesure de performance qui ignore la charge ne mesure
+  pas la performance.
+
+C'est la famille de défaut que le projet connaît déjà — *un outil de contrôle qui se trompe de sujet
+valide ce qu'il n'a pas regardé* — mais dans le sens **alarmiste** cette fois : on aurait conclu à un
+désastre, et « optimisé » un jeu qui tourne au maximum de ce que l'écran peut afficher.
+
+⚠ L'instrument doit être **dans le jeu** (`--show-fps` → `FpsTelemetry`, relevé toutes les 5 s dans
+la console du navigateur). Rien ne peut le mesurer de l'extérieur : tant que le canevas tourne, il
+monopolise le fil principal et **aucune injection de script n'aboutit** — ni `Runtime.evaluate`, ni
+une capture d'écran par l'extension. La console, elle, reste lisible.
+
+⚠ Et le relevé porte **trois** chiffres, pas un (`Rules/FrameStats`) : moyenne, **pire image**, et
+part des images sous 30. Une moyenne seule ne voit pas l'à-coup — même erreur de méthode que mesurer
+la pression subie par une moyenne de dégâts.
+
 ### Ce qui disparaît de l'interface, et pourquoi
 
 `Application.Quit()` ne ferme rien dans un navigateur : l'entrée « Quitter » du menu principal

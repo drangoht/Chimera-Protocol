@@ -15,9 +15,9 @@ reste la référence. Six choses cassaient en web **sans qu'aucune ne lève d'er
 dossier de données devient une simple adresse web, la sauvegarde s'écrivait dans une mémoire que
 l'onglet emporte en se fermant, et la présence Discord n'a pas d'équivalent dans une page. Les
 drapeaux de mise au point s'écrivent maintenant dans l'adresse
-(`…/index.html?biome=neon&show-fps`). ▶ Il reste à mesurer la **fluidité en pleine nuée** : un
-navigateur n'a ni fils d'exécution ni compilation optimisée, et le jeu tient 200 à 300 ennemis à
-l'écran.
+(`…/index.html?biome=neon&show-fps`). **La fluidité tient : 60 images/s constantes**, mesurées sur
+trois minutes à 200 ennemis à l'écran, arsenal complet, en prolongation et pendant un combat de boss
+— le navigateur affiche tout ce qu'il peut afficher.
 
 **La visée était cassée depuis le début** *(2026-08-13, v2.1.1)* — la Lance Vectorielle et le Rayon
 Vectoriel sont les deux seules armes que l'on vise soi-même ; elles lisaient un stick de manette

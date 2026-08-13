@@ -39,9 +39,16 @@ première image et **tuait la coroutine à mi-chemin, sans erreur** → tout le 
 (`HUD_LEVEL` en plein HUD). Invisible sur Windows, systématique en web. Corrigé au niveau de la
 classe : chargement lancé en `BeforeSceneLoad` sur un objet `DontDestroyOnLoad`, `BootScreen`
 **attend** au lieu de porter, et tout pilote consulte `StreamingText.Preloaded`.
-▶ **Reste à mesurer : le framerate en nuée** (200-300 entités, WebGL mono-thread, sans Burst).
-L'instrument est en place — `?show-fps` — mais **la mesure elle-même n'a pas pu être faite** :
-l'extension du navigateur ne peut rien injecter tant que le canevas tourne.
+✅ **Cadence mesurée : 60,0 images/s, tenues.** ~190 s de relevé continu (~11 400 images) à
+**200 ennemis** — le plafond de foule — arsenal saturé, cran 3, en overtime et pendant un boss. Pire
+image **18 ms**, **0 %** sous 30. Le jeu est plafonné par la synchronisation verticale du navigateur,
+pas par la machine : *le risque de performance du portage web n'existe pas.*
+⚠⚠ **La première mesure annonçait 1,0 image/s** — Chrome bride les onglets en arrière-plan à 1 Hz.
+Elle ne bougeait pas quand la population passait de 10 à 125 ennemis : **une mesure de performance
+insensible à la charge ne mesure pas la performance.** L'onglet doit être au premier plan, et
+l'instrument doit être *dans le jeu* (`?show-fps` → `FpsTelemetry` + `Rules/FrameStats`, trois
+chiffres : moyenne, **pire image**, part sous 30) — rien ne peut le mesurer de l'extérieur, aucune
+injection de script n'aboutissant tant que le canevas tourne.
 
 
 **Migration Unity terminée. 2.1.0 publiée le 2026-08-13** (2.0.0 le 08-10, 2.0.1 et 2.0.2 le 08-11) —
