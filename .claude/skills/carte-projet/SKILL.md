@@ -95,14 +95,24 @@ transposés) · `SpriteFramesAsset`
   dessinée à l'exécution, **aucun prefab**. Seul ramassage du jeu qui ne s'aimante pas.
 - **Arène** : `ArenaRenderer`, `ArenaObstacles`, `FloorFeatures`, `BiomeAtmosphere`
 - **Mesure** : `PowerTelemetry`, `BossTelemetry`, `BenchAutoPilot`
-- **VFX** : `Gameplay/Vfx/` (14 fichiers : `Vfx`, `VfxPrimitives`, `ChampionOverlay`, `ScreenShake`…)
+- **VFX** : `Gameplay/Vfx/` (15 fichiers : `Vfx`, `VfxPrimitives`, `ChampionOverlay`, `ScreenShake`…),
+  dont **`FusionFanfare`** — les trois ondes + le ralenti de la forge d'une fusion, déclenchés par
+  `RunHud` sur `InventorySystem.FusionApplied` (l'inventaire n'appelle aucun écran : `Gameplay` ne
+  référence pas `UI`)
 
 ## §UI — `unity/Assets/Scripts/UI/`
 `MainMenuScreen` · `IntroScreen` · `LevelSelectScreen` · `HubScreen` ·
 `CodexScreen` · `ChallengeScreen` · `AssimilationScreen` · `LevelUpScreen` · `PauseScreen` ·
 `RunEndScreen` · `OptionsScreen` · `RunHud` (+ `HUD` côté Gameplay) · `UpdateBanner` ·
-`GameScenes` · `ModalQueue` · `UiFocusGuard` / `UiFocusPulse` / `UiVignette` ·
+`GameScenes` · `ModalQueue` · `UiFocusGuard` / `UiFocusPulse` / **`UiRarityFlare`** / `UiVignette` ·
+**`FusionBanner`** (annonce d'une fusion forgée — ordre 90 : au-dessus du HUD, sous les modales ;
+aucun `GraphicRaycaster`, il n'intercepte rien) ·
 ⚠ **Aucun écran de sélection de personnage n'existe côté Unity** — il n'a pas été porté.
+⚠ **La rareté d'une carte se joue sur trois signaux, pas un cadre** : cadre (`UiStyle.CardButton`),
+aura respirante (`UiRarityFlare`, posée chez le PARENT pour passer sous la carte) et courbe d'arrivée
+(`Back` pour l'épique, `Quad` pour le reste). Une **fusion** monte à `legendary` **à l'affichage
+seulement** — `RarityWeights` ne connaît que trois crans, et y ajouter le quatrième réglerait par
+accident la fréquence de la carte la plus rare du jeu.
 **`UiPalette`** (couleurs) et **`UiStyle`** (cadres « plaque blindée ») — jamais de couleur en dur.
 ⚠ **Un écran de menu ne construit plus son canvas à la main** : `UiStyle.ScreenCanvas(...)` (canvas +
 fond + panneau) et `UiStyle.VerticalList(...)` (fenêtre de défilement + colonne) sont les deux

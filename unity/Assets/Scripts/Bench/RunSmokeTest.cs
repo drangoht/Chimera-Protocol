@@ -1458,7 +1458,20 @@ public sealed class RunSmokeTest : MonoBehaviour
               inherited == weaponLevel, $"herite={inherited}, attendu={weaponLevel}");
         Check("fusion : l'arme source est retiree de l'arsenal", !inv.Has("impulse_cannon"));
         Check("fusion : enregistree comme forgee", inv.AppliedFusions.Count == 1);
+        Check("fusion : reconnue comme fusion par le HUD",
+              inv.IsFusion("rail_overcharged") && !inv.IsFusion("plasma_blade"));
         Check("fusion : non reforgeable", inv.ApplyFusion("rail_overcharged") == 0);
+
+        // ⚠ La fanfare est tracée par les EFFETS ÉMIS, jamais par « aucune erreur n'est levée ». Un
+        // effet purement décoratif est le cas d'école de la donnée déclarée et non consommée : il
+        // peut disparaître d'un refactoring sans qu'aucun test ne bronche, et personne ne s'en aperçoit
+        // avant d'avoir reforgé une fusion en jouant — c'est-à-dire des semaines plus tard.
+        int tracesBeforeFanfare = Vfx.TracesCreated;
+        FusionFanfare.Play(Vector2.zero);
+
+        Check("fusion : la fanfare emet des effets",
+              Vfx.TracesCreated > tracesBeforeFanfare,
+              $"{Vfx.TracesCreated - tracesBeforeFanfare} effets");
     }
 
     /// <summary>

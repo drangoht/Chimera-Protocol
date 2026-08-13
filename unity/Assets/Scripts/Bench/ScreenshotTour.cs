@@ -207,6 +207,9 @@ public sealed class ScreenshotTour : MonoBehaviour
             yield return Shot("montee-de-niveau", keepModal: true);
         }
 
+        yield return ShootRarityCards();
+        yield return ShootFusionForged();
+
         Debug.Log($"[SHOTS] {_index} captures ecrites dans {Path.GetFullPath(_dir)}");
         Application.Quit(0);
     }
@@ -717,6 +720,89 @@ public sealed class ScreenshotTour : MonoBehaviour
     /// un champion de 72.
     /// </summary>
     private const string SwarmSpriteId = "rust_swarm";
+
+    /// <summary>
+    /// Photographie une main qui contient les <b>trois raretés à la fois</b>, puis une carte de
+    /// fusion seule.
+    /// </summary>
+    /// <remarks>
+    /// <para>La capture précédente présente une main de <b>surcharge</b> : trois cartes de même
+    /// nature, donc trois cadres identiques. C'est exactement l'image qui ne permet pas de juger la
+    /// hiérarchie de rareté — celle qu'on croit avoir vérifiée en la regardant. Une aura ne se juge
+    /// pas seule : ce qui compte est l'<b>écart</b> entre commune, rare et épique, et l'écart ne se
+    /// voit que côte à côte.</para>
+    ///
+    /// <para>Les trois identifiants sont pris tels quels dans <c>rarityByCard</c>
+    /// (<c>impulse_cannon</c> commune, <c>tesla_coil</c> rare, <c>singularity</c> épique) : la rareté
+    /// affichée vient de l'inventaire, pas de la mise en scène, donc l'image montre bien ce que le
+    /// jeu déciderait.</para>
+    /// </remarks>
+    private IEnumerator ShootRarityCards()
+    {
+        var levelUp = FindFirstObjectByType<LevelUpScreen>();
+        if (levelUp == null) yield break;
+
+        var hand = new[]
+        {
+            new LevelUpCard(LevelUpCardKind.NewWeapon, "impulse_cannon", 1),
+            new LevelUpCard(LevelUpCardKind.NewWeapon, "tesla_coil", 1),
+            new LevelUpCard(LevelUpCardKind.NewWeapon, "singularity", 1),
+        };
+
+        // ⚠ `Present` seul NE SUFFIT PAS quand l'écran est déjà ouvert : il passe par
+        // `ModalQueue.Request`, qui ne rouvre pas une modale déjà en cours — donc `Show` n'est pas
+        // rappelé, `BuildCards` non plus, et l'écran garde la main précédente à l'affichage. La
+        // première version de cette capture a produit exactement cela : une image nommée
+        // « cartes-raretes » montrant les trois cartes de SURCHARGE du cliché d'avant, toutes de même
+        // rareté — c'est-à-dire l'image qu'on voulait justement remplacer. `Replace` reconstruit sur
+        // place ; l'appeler après `Present` couvre les deux cas.
+        levelUp.Present(hand);
+        yield return null;
+        levelUp.Replace(hand);
+
+        // Assez long pour que l'arrivée en cascade soit finie ET que la respiration des auras soit
+        // passée par un sommet : photographiée à 0,2 s, l'aura épique serait au creux de sa
+        // pulsation, c'est-à-dire à l'opacité qu'on a justement choisi de ne PAS montrer.
+        yield return new WaitForSecondsRealtime(1.2f);
+        yield return Shot("cartes-raretes", keepModal: true);
+
+        levelUp.Replace(new[] { new LevelUpCard(LevelUpCardKind.Fusion, "fusion_blade", 1) });
+
+        yield return new WaitForSecondsRealtime(1.2f);
+        yield return Shot("carte-fusion", keepModal: true);
+
+        levelUp.DismissForBench();
+        yield return new WaitForSecondsRealtime(0.3f);
+    }
+
+    /// <summary>
+    /// Photographie la <b>forge d'une fusion</b> : l'annonce et la fanfare, ensemble.
+    /// </summary>
+    /// <remarks>
+    /// <para>Les deux sont déclenchés <b>à la main</b> plutôt qu'en forgeant réellement une fusion :
+    /// <c>ApplyFusion</c> exige l'arme source au niveau requis et son passif, conditions qu'une
+    /// tournée de captures n'atteint jamais. On photographie ici l'apparence, pas la chaîne qui la
+    /// déclenche — c'est le même parti pris que pour le gel et la brûlure.</para>
+    ///
+    /// <para>⚠ La fanfare déclenche un <b>ralenti</b>. Les attentes sont donc en temps réel
+    /// (<c>WaitForSecondsRealtime</c>) : comptées en temps de jeu, elles dureraient cinq fois plus
+    /// longtemps et la capture arriverait bien après l'extinction des ondes.</para>
+    /// </remarks>
+    private IEnumerator ShootFusionForged()
+    {
+        var banner = FindFirstObjectByType<FusionBanner>();
+        var player = Player.Instance;
+
+        if (banner == null || player == null) yield break;
+
+        banner.Show("fusion_blade");
+        FusionFanfare.Play(player.transform.position, player);
+
+        // Au sommet de la première onde : l'éclat est parti, la deuxième onde n'est pas encore
+        // dissipée, et le panneau vient d'atteindre sa taille finale.
+        yield return new WaitForSecondsRealtime(0.35f);
+        yield return Shot("fusion-forgee", keepModal: true);
+    }
 
     /// <param name="keepModal">
     /// Vrai pour les rares clichés dont la modale EST le sujet (l'écran de montée de niveau).

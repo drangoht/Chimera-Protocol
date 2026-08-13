@@ -44,6 +44,21 @@ achetable à 770 Échos — porté avec `MagnetSchedule` / `MagnetPickup` / `Mag
 effet. (4) Le **menu de montée de niveau proposait 1 ou 2 cartes** en fin de run — un test
 verrouillait même ce comportement. **673 tests, banc 271/0.**
 
+**2026-08-13 — la rareté et la fusion se SENTENT enfin, non publié** (détail : `docs/GDD.md` §35).
+Demandé en jouant. Toute la hiérarchie du jeu reposait sur des signaux **immobiles** : un cadre et un
+mot, dans un écran qui met le jeu en pause au milieu d'une nuée. Ajouté : aura respirante par rareté
+(`UiRarityFlare`), arrivée en cascade avec dépassement pour l'épique, étiquette colorée — et pour la
+fusion, `FusionFanfare` (trois ondes + ralenti court), `FusionBanner` (titre/icône/nom, sans modale)
+et une ligne d'arsenal dorée. **La commune ne reçoit rien : c'est l'écart qui informe.**
+⚠ **Deux défauts trouvés à la CAPTURE, invisibles au code** : l'aura employait le dégradé *radial*
+des effets, dont il ne reste rien à 85 % du rayon — elle ne brillait que sous la carte qui la cache
+(→ halo 9-slice `UiPrimitives.GlowBox`) ; et la capture censée juger la hiérarchie photographiait la
+main *précédente*, `Present` ne rouvrant pas une modale déjà ouverte. **Un outil de contrôle qui se
+trompe de sujet valide ce qu'il n'a pas regardé.** **673 tests, banc 273/0.**
+⚠ Un run de banc a rendu **9 échecs sur 261, tous faux** : le joueur y est mort tôt et quatre blocs se
+sont sabordés en cascade. Le run suivant, **même binaire**, est passé à 273/0 — la survie du joueur au
+banc n'est pas déterministe. **Rejouer avant de conclure.**
+
 **Le dépôt est mono-moteur depuis le 2026-08-10.** Ce qui a changé :
 - `src/`, `scenes/`, `project.godot`, le `.csproj`/`.sln` Godot, `assets/`, `data/` et
   `localization/` racine ont été **supprimés** — tout vit sous `unity/Assets/`.

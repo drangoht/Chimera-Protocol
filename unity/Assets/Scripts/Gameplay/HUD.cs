@@ -179,8 +179,19 @@ public sealed class HUD : MonoBehaviour
         var inv = InventorySystem.Instance;
         if (inv == null) return;
 
-        foreach (var (id, level) in inv.WeaponLevels) AddArsenalRow(id, $"{UiNames.Of(id)}  {level}");
-        foreach (var (id, level) in inv.PassiveLevels) AddArsenalRow(id, $"· {UiNames.Of(id)}  {level}");
+        // ⚠ Une fusion se distingue du reste de l'arsenal, en doré et précédée d'un losange. Sans
+        // cela, la carte la plus difficile à obtenir du jeu produit une ligne strictement identique
+        // à celle d'une arme ramassée au deuxième niveau — et le joueur, qui ne connaît pas encore
+        // les noms de fusion, n'a aucun moyen de savoir laquelle de ses armes a évolué.
+        foreach (var (id, level) in inv.WeaponLevels)
+        {
+            bool fused = inv.IsFusion(id);
+            AddArsenalRow(id, fused ? $"◆ {UiNames.Of(id)}  {level}" : $"{UiNames.Of(id)}  {level}",
+                          fused ? Gold : OffWhite);
+        }
+
+        foreach (var (id, level) in inv.PassiveLevels)
+            AddArsenalRow(id, $"· {UiNames.Of(id)}  {level}", OffWhite);
     }
 
     /// <summary>
@@ -190,7 +201,7 @@ public sealed class HUD : MonoBehaviour
     /// plus une fois par montée de niveau, et un cache de lignes devrait suivre les <b>fusions</b>,
     /// qui retirent deux armes pour en ajouter une.</para>
     /// </summary>
-    private void AddArsenalRow(string id, string text)
+    private void AddArsenalRow(string id, string text, Color color)
     {
         if (_arsenalRows == null) return;
 
@@ -226,7 +237,7 @@ public sealed class HUD : MonoBehaviour
         var label = labelGo.GetComponent<Text>();
         label.font = UiFonts.Main;
         label.fontSize = ArsenalFontSize;
-        label.color = OffWhite;
+        label.color = color;
         label.alignment = TextAnchor.MiddleLeft;
         label.horizontalOverflow = HorizontalWrapMode.Overflow;
         label.text = text;

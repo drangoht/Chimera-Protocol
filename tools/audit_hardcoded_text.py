@@ -120,6 +120,10 @@ ALLOWED: dict[str, str] = {
     "{stats.Speed:F0} px/s": "unite de mesure, identique dans les trois langues",
     "VfxAdditive (runtime)": "nom d'un materiau cree a l'execution, jamais affiche",
     "Scroll": "nom par defaut du GameObject d'une liste defilante (UiStyle.VerticalList), jamais affiche",
+    "<color=#{hex}><b>[{tag}]</b></color>": (
+        "balisage rich text d'uGUI, pas du texte : {tag} EST la chaine traduite (RARITY_*), "
+        "et {hex} vient de UiPalette.ForRarity"
+    ),
 }
 
 # Noms d'objets de scene. Ils ont exactement la forme d'un libelle — un mot capitalise, sans espace —

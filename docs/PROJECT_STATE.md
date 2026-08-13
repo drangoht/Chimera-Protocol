@@ -6,6 +6,26 @@
 
 - Pile technique : **Unity 6.5 (C#, URP 2D)** depuis la 2.0.0. **Version en ligne : 2.0.1**
   (2026-08-11).
+- **Mise en scène de la rareté et de la fusion (2026-08-13, non publiée).** Demandé en jouant :
+  « les items Épiques et les évolutions d'armes devraient être plus juicy ». Toute la hiérarchie
+  reposait sur des signaux **immobiles** — un cadre et un mot — dans un écran qui met le jeu en pause
+  au milieu d'une nuée. Détail complet : **`docs/GDD.md` §35**.
+  - **Cartes** : aura respirante à la couleur de rareté (`UiRarityFlare`), arrivée en cascade avec
+    dépassement pour l'épique, étiquette colorée, second son quand la main contient un épique ou une
+    fusion. **La commune ne reçoit rien** — c'est l'écart qui porte l'information.
+  - **Fusion** : `FusionFanfare` (trois ondes, deux couronnes de rayons, ralenti court) +
+    `FusionBanner` (titre, icône, nom — sans modale ni pause) + ligne d'arsenal **dorée** au HUD.
+  - Une fusion monte à `legendary` **à l'affichage seulement** : la rareté que possède l'inventaire
+    décide aussi du poids de tirage, et `RarityWeights` ne connaît que trois crans.
+  - ⚠ **Deux défauts trouvés à la capture, invisibles au code** : l'aura employait le dégradé
+    *radial* des effets et n'existait qu'au centre, sous la carte qui la cache (corrigé par un halo
+    9-slice, `UiPrimitives.GlowBox`) ; et la capture censée juger la hiérarchie photographiait la main
+    *précédente*, `Present` ne rouvrant pas une modale déjà ouverte. **673 tests, banc 273/0** (+2 : la
+    fanfare émet réellement des effets, une fusion est reconnue comme telle), build sans erreur.
+  - ⚠ **Un run de banc a rendu 9 échecs sur 261 — aucun n'était réel.** Le joueur y est mort tôt, et
+    quatre blocs se sont sabordés en cascade (« pas de joueur vivant »), en emportant leurs
+    vérifications. Le run suivant, sur le *même* binaire, est passé à 273/0. La survie du joueur au
+    banc n'est pas déterministe : **rejouer avant de conclure**, ici comme le 2026-08-11.
 - **Quatre défauts signalés en jouant, corrigés le 2026-08-12 (non publiés).** Aucun n'a été trouvé
   par l'automatisation ; les quatre l'ont été manette en main.
   1. **La Lame Boomerang mettait six secondes à revenir.** Sa vitesse était posée à 420 px/s, aller

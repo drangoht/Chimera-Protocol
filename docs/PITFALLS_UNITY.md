@@ -1283,6 +1283,73 @@ enregistre l'arme de départ **après** que le HUD a lu l'inventaire — vide à
 laquelle le joueur commence sa run n'apparaissait donc nulle part de toute la partie, et le HUD ne se
 peuplait qu'à la première carte prise.
 
+### Une lueur posée sur un bouton se dessine SUR son contenu — donc elle vit chez le parent
+
+Un enfant d'uGUI est toujours rendu **après** le `Graphic` de son parent. Une aura ajoutée à une
+carte pour la « faire briller » se retrouve donc peinte par-dessus le fond de la carte, c'est-à-dire
+exactement sous l'icône et le texte qu'elle rend plus difficiles à lire — l'inverse du but poursuivi.
+`SetAsFirstSibling` n'y change rien : il ordonne les enfants entre eux, pas l'enfant vis-à-vis du
+parent.
+
+L'aura doit être **frère** de la carte, posée avant elle. Trois conséquences, toutes obligatoires :
+
+- `LayoutElement.ignoreLayout = true`, sinon le `HorizontalLayoutGroup` la compte comme une carte de
+  plus et trois cartes deviennent quatre colonnes, dont une vide ;
+- elle recopie le rectangle de la carte **à chaque image**, le layout ne résolvant les tailles qu'en
+  fin de frame ;
+- la recopie doit **compenser le pivot**. Un enfant de layout group ne reçoit pas un pivot centré :
+  agrandir `sizeDelta` seul fait grandir l'aura vers un coin. Le centre vaut
+  `anchoredPosition + (0,5 − pivot) × taille`, donc le conserver impose de retirer
+  `(0,5 − pivot) × 2 × marge` à la position.
+
+⚠ Et l'aura ne meurt pas avec ce qu'elle entoure : elle a son propre `GameObject`, chez un autre
+parent. Sans relais `OnDestroy` / `OnEnable` / `OnDisable`, masquer la carte laisse une tache de
+couleur seule à l'écran, figée sur sa dernière opacité.
+
+### Un dégradé RADIAL ne borde pas un rectangle — et il disparaît là où on le regarde
+
+L'aura de rareté employait `VfxPrimitives.Glow`, le dégradé radial des effets, étiré sur la carte
+avec 38 px de débordement. Elle était créée, colorée, animée — et **invisible**. La cause est
+géométrique : sur une carte de 420 × 540 px, le bord de la carte tombe à `420 / (420 + 76) ≈ 85 %` du
+rayon du dégradé, c'est-à-dire là où il ne reste presque rien. Le seul endroit où l'aura brillait
+était son centre… sous la carte qui la cache.
+
+Et **élargir la marge ne corrige pas la forme** : il faudrait ~140 px pour que le bord de la carte
+tombe à 60 % du rayon, et les auras des trois cartes se rejoindraient en une nappe.
+
+Un halo qui borde un rectangle se fait en **9-slice** : le dégradé vit dans la **bordure**, dont
+l'épaisseur reste en pixels quelle que soit la taille de l'élément, et `fillCenter = false` supprime
+la zone centrale — invisible de toute façon. C'est `UiPrimitives.GlowBox` (bordure 40 px). Corollaire
+utile : une marge **inférieure** à la bordure laisse une partie du dégradé sous le contenu, donc
+produit une aura plus fine — c'est ainsi que le rare se distingue de l'épique sans second sprite.
+Une marge **supérieure**, elle, ouvre un vide entre la lueur et le contenu.
+
+⚠ Le même défaut a frappé deux fois dans la même session : le halo du bandeau de fusion dessinait une
+**ellipse** dont le bord traversait le cadre du panneau en diagonale.
+
+### `Present` ne rouvre pas une modale déjà ouverte — la capture montre alors la scène d'avant
+
+`LevelUpScreen.Present` passe par `ModalQueue.Request`. Si la modale est **déjà** ouverte, la file
+n'a rien à faire : `Show` n'est pas rappelé, `BuildCards` non plus, et l'écran garde à l'affichage la
+main précédente — alors que `Cards` a bien changé. La mise en scène d'une capture censée juger la
+hiérarchie de rareté a donc photographié les trois cartes de **surcharge** du cliché d'avant, toutes
+de même rareté : exactement l'image qu'elle devait remplacer.
+
+`Replace` reconstruit sur place ; l'appeler **après** `Present` couvre le cas ouvert comme le cas
+fermé. **Un outil de contrôle qui se trompe de sujet valide ce qu'il n'a pas regardé** — et il le
+fait avec l'autorité d'une image.
+
+### Monter une carte d'un cran de rareté touche AUSSI sa fréquence d'apparition
+
+Une fusion méritait une couleur à elle (l'or) plutôt que le violet des épiques. La correction
+évidente — la déclarer `legendary` dans `InventorySystem.RarityOf` — aurait réglé, en passant, la
+**fréquence de tirage de la carte la plus rare du jeu** : cette même méthode alimente
+`RarityWeights`, qui ne connaît que trois crans (60 / 30 / 10). Un quatrième y serait tombé dans le
+cas par défaut.
+
+La rareté d'**affichage** et la rareté de **tirage** sont deux questions. `LevelUpScreen` porte donc
+un `DisplayRarityOf` local, et l'inventaire reste la source unique de ce qui décide du jeu.
+
 ---
 
 ## Effets visuels

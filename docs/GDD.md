@@ -3352,3 +3352,82 @@ téléporte l'horloge et sature l'arsenal d'un coup, si bien que le bot n'encha�
 niveau d'un vrai overtime. Le levier retiré ici est donc, par construction, **invisible pour la
 campagne** — c'est le pendant exact du cran III, que le §34.3 note déjà comme non mesurable. Seule une
 session jouée peut dire ce que valent ces 158 %.
+
+---
+
+## 35. La rareté et la fusion doivent se SENTIR (2026-08-13)
+
+Signalé en jouant : « les items Épiques et les évolutions d'armes devraient être plus juicy, avec des
+effets graphiques qui indiquent bien qu'on a débloqué ces fusions ». Le diagnostic tient en une
+phrase : **toute la hiérarchie du jeu était portée par des signaux immobiles**, dans un écran qui
+s'ouvre au pire moment.
+
+### 35.1 Ce que la rareté disait, et ce qu'elle ne disait pas
+
+Une carte annonçait sa rareté par deux choses : la **variante de son cadre** et le **mot** de son
+étiquette, écrit du même blanc cassé que le reste du texte. Les deux supposent qu'on regarde et qu'on
+lise — or l'écran met le jeu en pause au milieu d'une nuée et le joueur arbitre en quelques secondes.
+Trois pavés de texte rigoureusement identiques, dont seule la première ligne change de *mot*, ne se
+comparent pas : ils se balaient.
+
+Trois signaux s'ajoutent donc au cadre, tous choisis parce qu'ils se perçoivent **sans lecture** :
+
+| Signal | Commune | Rare | Épique | Fusion |
+|---|---|---|---|---|
+| Aura respirante | — | cyan, fine | violette, large | **dorée, large** |
+| Courbe d'arrivée | `Quad` | `Quad` | `Back` (dépassement) | `Back` |
+| Étiquette | blanc cassé | cyan | violet | **or** |
+| Son à l'ouverture | — | — | second son | second son |
+
+**La commune ne reçoit rien, et c'est le cœur du réglage.** Une aura sur les trois cartes n'établit
+aucune hiérarchie : elle ajoute du bruit. C'est l'**écart** entre les trois qui porte l'information.
+
+Les cartes arrivent décalées de 70 ms l'une sur l'autre. Ce n'est pas un ornement : trois cartes
+posées d'un bloc forment une image unique, une arrivée en cascade oriente le regard de gauche à
+droite — donc les fait comparer.
+
+**Une fusion monte d'un cran à l'affichage** (`legendary`, doré) sans que l'inventaire en sache rien.
+Cette distinction est purement visuelle : la rareté que possède l'inventaire décide aussi du **poids
+de tirage**, et `RarityWeights` ne connaît que trois crans. Y déclarer un quatrième aurait réglé, par
+accident, la fréquence d'apparition de la carte la plus rare du jeu.
+
+### 35.2 Forger une fusion était l'événement le plus discret du jeu
+
+`ApplyFusion` retirait une arme, en installait une autre, jouait `sfx_fusion_evolve` et écrivait une
+ligne de journal. À l'écran : la modale se referme, la run reprend, et une arme a changé de forme
+quelque part dans la mêlée. La carte la plus difficile à obtenir du jeu — elle exige une arme au
+niveau requis **et** son passif — s'appliquait plus discrètement qu'un ramassage d'orbe d'XP.
+
+Trois canaux, parce qu'ils ne s'adressent pas au même regard :
+
+1. **La fanfare** (`FusionFanfare`), dans l'arène, là où le joueur a les yeux : trois ondes qui se
+   succèdent sur 0,45 s, deux couronnes de rayons, une gerbe, et un **ralenti**. Ce qui distingue un
+   événement rare n'est pas son intensité — il y a toujours quelque chose qui explose — mais sa
+   **durée** et son **rythme**. Le ralenti dit que le jeu lui-même s'interrompt pour ça.
+2. **L'annonce** (`FusionBanner`) : titre, **icône** et nom. L'icône est l'information — une fusion
+   *remplace* une arme possédée, et son nom seul ne dit pas laquelle. Elle n'interrompt rien : ni
+   modale, ni pause, ni interception de clic. Une modale de félicitations au milieu d'une nuée serait
+   une punition déguisée en récompense.
+3. **La trace durable**, dans l'arsenal du HUD : une fusion s'y affiche en **doré**, précédée d'un
+   losange. Sans cela, la ligne est identique à celle d'une arme ramassée au deuxième niveau.
+
+⚠ **Le ralenti est court** (0,07 s de tenue, 0,28 s de remontée, 20 % de vitesse). Le joueur reste
+vulnérable pendant l'effet : un ralenti de récompense qui le fait toucher se retourne contre lui.
+
+### 35.3 Ce que la capture a corrigé, et que le code ne montrait pas
+
+La première version employait le dégradé **radial** des effets comme aura. Étiré sur une carte de
+420 × 540 px avec 38 px de débordement, le bord de la carte tombe à 85 % du rayon du dégradé —
+c'est-à-dire là où il ne reste presque plus rien. L'aura était créée, colorée, animée, et
+**parfaitement invisible** : le seul endroit où elle brillait était le centre, sous la carte qui la
+cache. Élargir la marge ne corrigeait pas la forme, elle fabriquait une nappe débordant sur les
+cartes voisines.
+
+Un halo qui borde un rectangle se fait en **9-slice** (`UiPrimitives.GlowBox`), avec le dégradé dans
+la bordure et `fillCenter = false`. Le même défaut affectait le halo du bandeau de fusion, où
+l'ellipse traversait le cadre en diagonale.
+
+⚠ Et la capture censée juger tout cela montrait la **main précédente** : `Present` passe par
+`ModalQueue.Request`, qui ne rouvre pas une modale déjà ouverte. L'image nommée « cartes-raretes »
+photographiait trois cartes de surcharge, toutes de même rareté — soit exactement l'image qu'on
+voulait remplacer. **Un outil de contrôle qui se trompe de sujet valide ce qu'il n'a pas regardé.**

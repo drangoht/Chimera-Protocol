@@ -443,6 +443,12 @@ public sealed class InventorySystem : MonoBehaviour
 
     // ─── Fusions ──────────────────────────────────────────────────────────────
 
+    /// <summary>
+    /// Cette arme portée est-elle une fusion déjà forgée ? Interrogé par le HUD, qui distingue les
+    /// fusions du reste de l'arsenal.
+    /// </summary>
+    public bool IsFusion(string weaponId) => _appliedFusions.Contains(weaponId);
+
     /// <summary>Cette fusion est-elle déblocable en l'état ?</summary>
     public bool CanFuse(string fusionId)
     {

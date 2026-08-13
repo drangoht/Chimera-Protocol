@@ -16,6 +16,7 @@ public sealed class RunHud : MonoBehaviour
     private LevelUpScreen? _levelUp;
     private RunEndScreen? _runEnd;
     private AssimilationScreen? _assimilation;
+    private FusionBanner? _fusionBanner;
 
     /// <summary>
     /// Une jauge d'Assimilation est pleine : proposer la greffe. L'écran passe par la file de
@@ -29,8 +30,16 @@ public sealed class RunHud : MonoBehaviour
         _levelUp = gameObject.AddComponent<LevelUpScreen>();
         _runEnd  = gameObject.AddComponent<RunEndScreen>();
         _assimilation = gameObject.AddComponent<AssimilationScreen>();
+        _fusionBanner = gameObject.AddComponent<FusionBanner>();
 
         Assimilation.GaugeFilled += OnGaugeFilled;
+
+        // ⚠ L'annonce et la fanfare sont branchées ICI, et non dans `InventorySystem.ApplyFusion`.
+        // L'inventaire appartient à `Gameplay`, qui ne référence pas `UI` : y appeler un écran serait
+        // une dépendance à contresens. Il émet donc l'événement, et c'est ce composant — dont le rôle
+        // est précisément de relier les écrans au jeu — qui décide de ce qu'on en montre.
+        var inventory = InventorySystem.Instance;
+        if (inventory != null) inventory.FusionApplied += OnFusionApplied;
 
         _pause.QuitRequested += () => SceneRoot.ChangeScene(GameScenes.MainMenu);
         _runEnd.Dismissed    += () => SceneRoot.ChangeScene(GameScenes.MainMenu);
@@ -51,6 +60,31 @@ public sealed class RunHud : MonoBehaviour
         if (GameManager.Instance != null) GameManager.Instance.RunFinished -= OnRunFinished;
         if (XpSystem.Instance != null)    XpSystem.Instance.LevelUp -= OnLevelUp;
         Assimilation.GaugeFilled -= OnGaugeFilled;
+
+        var inventory = InventorySystem.Instance;
+        if (inventory != null) inventory.FusionApplied -= OnFusionApplied;
+    }
+
+    /// <summary>
+    /// Une fusion vient d'être forgée : la faire <b>exister</b> à l'écran.
+    /// </summary>
+    /// <remarks>
+    /// <para>Jusqu'ici, forger une fusion produisait un son et une ligne de journal. Le reste était
+    /// muet : l'écran de montée de niveau se refermait, la run reprenait, et une arme avait changé de
+    /// forme quelque part dans la mêlée. C'est pourtant la carte la plus difficile à obtenir du jeu —
+    /// elle exige une arme au niveau requis <i>et</i> le passif associé — et le moment où le joueur
+    /// mérite de savoir qu'il a réussi quelque chose.</para>
+    ///
+    /// <para>Deux canaux, parce qu'ils ne s'adressent pas au même regard : la <b>fanfare</b> se joue
+    /// dans l'arène, là où le joueur a les yeux ; l'<b>annonce</b> nomme ce qu'il vient d'obtenir,
+    /// pour qu'il puisse le retrouver dans son arsenal.</para>
+    /// </remarks>
+    private void OnFusionApplied(string fusionId, int inheritedLevel)
+    {
+        _fusionBanner?.Show(fusionId);
+
+        var player = Player.Instance;
+        if (player != null) FusionFanfare.Play(player.transform.position, player);
     }
 
     private void Update()

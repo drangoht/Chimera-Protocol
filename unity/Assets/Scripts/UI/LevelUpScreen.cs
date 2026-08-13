@@ -92,7 +92,10 @@ public sealed class LevelUpScreen : MonoBehaviour
         _cards.Clear();
         _cards.AddRange(cards);
 
-        if (IsVisible) BuildCards();
+        if (!IsVisible) return;
+
+        BuildCards();
+        PlayRarityCue();
     }
 
     private void Show()
@@ -110,6 +113,7 @@ public sealed class LevelUpScreen : MonoBehaviour
 
         RefreshActions();
         BuildCards();
+        PlayRarityCue();
 
         // Focus initial : sans lui, l'écran est infranchissable à la manette et bloque la run.
         if (_firstButton != null && EventSystem.current != null)
@@ -327,14 +331,19 @@ public sealed class LevelUpScreen : MonoBehaviour
         foreach (Transform child in _cardRow) Destroy(child.gameObject);
         _firstButton = null;
 
+        int index = 0;
+
         foreach (var card in _cards)
         {
             var captured = card;
+            string rarity = DisplayRarityOf(card);
 
             // Le cadre porte la RARETÉ, comme sous Godot : c'est ce qui dit la valeur d'une carte
             // avant même qu'on l'ait lue, dans un écran qui met le jeu en pause au pire moment.
-            var button = UiStyle.CardButton(_cardRow, card.Id, RarityOf(card));
+            var button = UiStyle.CardButton(_cardRow, card.Id, rarity);
             button.onClick.AddListener(() => Choose(captured));
+
+            AnimateEntrance(button, index++, rarity);
 
             // L'icône EN PREMIER, et grande : c'est elle qu'on reconnaît sans lire. Le jeu est en
             // pause au milieu d'une nuée et le joueur arbitre entre trois cartes en quelques
@@ -376,6 +385,66 @@ public sealed class LevelUpScreen : MonoBehaviour
         }
 
         WireActionNavigation(buttons.Length > 0 ? buttons[0] : null);
+    }
+
+    /// <summary>
+    /// Entrée en scène d'une carte : elle <b>arrive</b> au lieu d'apparaître, et l'épique arrive plus
+    /// fort que les autres.
+    ///
+    /// <para>Les cartes sont décalées de 70 ms l'une sur l'autre. Ce n'est pas un ornement : trois
+    /// cartes posées d'un bloc se lisent comme une image unique qu'il faut balayer, alors qu'une
+    /// arrivée en cascade oriente le regard de gauche à droite — donc les fait comparer. L'épique
+    /// dépasse ensuite sa taille finale avant d'y retomber, et c'est ce <b>dépassement</b> qui la
+    /// distingue : une différence de vitesse se perçoit sans qu'on ait à comparer deux cartes.</para>
+    /// </summary>
+    /// <remarks>
+    /// ⚠ L'interpolation appartient à la <b>carte</b>, pas à l'écran : un renouvellement détruit les
+    /// cartes en vol, et un tween possédé par l'écran continuerait d'écrire dans un objet détruit.
+    /// ⚠ Et elle ignore l'échelle de temps, comme l'apparition du panneau : l'écran tourne à
+    /// <c>timeScale = 0</c>, où une animation asservie au temps de jeu ne joue jamais.
+    /// </remarks>
+    private static void AnimateEntrance(Button button, int index, string rarity)
+    {
+        bool epic = rarity is "epic" or "legendary";
+        float delay = index * 0.07f;
+
+        var group = button.gameObject.AddComponent<CanvasGroup>();
+        group.alpha = 0f;
+
+        var tr = button.transform;
+        tr.localScale = Vector3.one * (epic ? 0.86f : 0.93f);
+
+        void SetScale(float v) => tr.localScale = new Vector3(v, v, 1f);
+
+        GTween.Create(button, ignoreTimeScale: true)
+              .TweenFloat(v => group.alpha = v, 0f, 1f, 0.16f, TransType.Quad, EaseType.Out, delay);
+
+        var scale = GTween.Create(button, ignoreTimeScale: true);
+
+        // `Back` dépasse la valeur d'arrivée puis y revient — c'est la courbe qui produit le
+        // « punch ». Les autres cartes montent en `Quad`, sans dépassement : le contraste entre les
+        // deux courbes EST le signal, une seule d'entre elles ne dirait rien.
+        if (epic) scale.TweenFloat(SetScale, 0.86f, 1f, 0.30f, TransType.Back, EaseType.Out, delay);
+        else      scale.TweenFloat(SetScale, 0.93f, 1f, 0.18f, TransType.Quad, EaseType.Out, delay);
+    }
+
+    /// <summary>
+    /// Souligne une main qui contient une carte <b>épique ou une fusion</b>, par un second son posé
+    /// sur celui de la montée de niveau.
+    ///
+    /// <para>Le son de montée de niveau est le même depuis la première minute de jeu, et il tombe des
+    /// dizaines de fois par run : il ne peut plus rien signaler. Une main exceptionnelle a besoin de
+    /// s'annoncer <b>avant</b> que l'écran soit lu — c'est le seul canal qui atteigne le joueur pendant
+    /// qu'il regarde encore l'arène.</para>
+    /// </summary>
+    private void PlayRarityCue()
+    {
+        foreach (var card in _cards)
+            if (card.Kind == LevelUpCardKind.Fusion || RarityOf(card) is "epic" or "legendary")
+            {
+                AudioSystem.PlaySfx("sfx_ui_purchase");
+                return;
+            }
     }
 
     /// <summary>Premier bouton d'action réellement activable, ou <c>null</c> s'il n'y en a aucun.</summary>
@@ -443,13 +512,16 @@ public sealed class LevelUpScreen : MonoBehaviour
     /// </summary>
     private static string Describe(LevelUpCard card)
     {
+        string rarity = DisplayRarityOf(card);
+
         // L'étiquette porte la RARETÉ, comme le jeu publié — « [Rare] Lance Cryo ». C'est elle qui
         // hiérarchise trois cartes d'un coup d'œil ; le type de la carte, lui, se déduit du texte.
-        string tag = Loc.T(RarityOf(card) switch
+        string tag = Loc.T(rarity switch
         {
-            "epic" => "RARITY_EPIC",
-            "rare" => "RARITY_RARE",
-            _      => "RARITY_COMMON",
+            "legendary" => "RARITY_FUSION",
+            "epic"      => "RARITY_EPIC",
+            "rare"      => "RARITY_RARE",
+            _           => "RARITY_COMMON",
         });
 
         string slug = card.Id.ToUpperInvariant();
@@ -472,7 +544,16 @@ public sealed class LevelUpScreen : MonoBehaviour
         bool leveled = card.Kind is LevelUpCardKind.WeaponUpgrade or LevelUpCardKind.Passive;
         if (leveled) name += Loc.T("CARD_LEVEL", card.NextLevel);
 
-        return desc.Length > 0 ? $"[{tag}]\n{name}\n\n{desc}" : $"[{tag}]\n{name}";
+        // ⚠ La rareté était écrite du même blanc cassé que le reste — trois pavés de texte
+        // rigoureusement identiques, dont seule la première ligne changeait de MOT. Un mot ne se
+        // repère pas sans être lu, et l'écran laisse quelques secondes en pleine nuée : la teinte de
+        // rareté, elle, se voit sans lecture. Elle vient de `UiPalette.ForRarity`, la même source que
+        // le cadre — les voir diverger (cadre épique, étiquette cyan) saute aux yeux à l'écran.
+        string hex = ColorUtility.ToHtmlStringRGB(UiPalette.ForRarity(rarity));
+        string header = $"<color=#{hex}><b>[{tag}]</b></color>";
+        string title = $"<b>{name}</b>";
+
+        return desc.Length > 0 ? $"{header}\n{title}\n\n{desc}" : $"{header}\n{title}";
     }
 
     /// <summary>
@@ -487,6 +568,19 @@ public sealed class LevelUpScreen : MonoBehaviour
     /// </remarks>
     private static string RarityOf(LevelUpCard card)
         => InventorySystem.Instance?.RarityOf(card) ?? "common";
+
+    /// <summary>
+    /// Rareté telle qu'on l'<b>affiche</b> : identique à <see cref="RarityOf"/>, sauf pour une fusion,
+    /// qui monte d'un cran.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ La distinction est purement visuelle et ne remonte <b>pas</b> à l'inventaire. Là-bas, la
+    /// rareté d'une carte décide aussi de son <b>poids de tirage</b> (<see cref="RarityWeights"/>,
+    /// qui connaît trois crans) : y déclarer un quatrième rendrait le poids d'une fusion indéfini,
+    /// c'est-à-dire réglerait la fréquence d'apparition de la carte la plus rare du jeu par accident.
+    /// </remarks>
+    private static string DisplayRarityOf(LevelUpCard card)
+        => card.Kind == LevelUpCardKind.Fusion ? "legendary" : RarityOf(card);
 
     /// <summary>Première clé qui a une traduction, sinon le repli fourni en dernier argument.</summary>
     private static string FirstTranslated(params string[] keysThenFallback)

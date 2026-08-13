@@ -198,7 +198,46 @@ public static class UiStyle
             image.color = UiPalette.ForRarity(rarity);
         }
 
+        AttachRarityFlare(go.GetComponent<RectTransform>(), rarity);
+
         return button;
+    }
+
+    /// <summary>
+    /// Aura de rareté — voir <see cref="UiRarityFlare"/> pour l'anatomie.
+    ///
+    /// <para><b>Rien pour le commun</b>, et c'est le cœur du réglage : une aura sur les trois cartes
+    /// n'établit aucune hiérarchie, elle ajoute seulement du bruit. Le commun est la référence, le
+    /// rare respire, l'épique brille — l'écart entre les trois est l'information.</para>
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Les opacités ne sont pas timides. Un effet calibré « discret » sur un fond sombre chargé
+    /// devient un effet <b>absent</b> — le piège relevé sur les nuages d'aura, où 0,08 ne donnait
+    /// littéralement rien à l'image et où il a fallu monter à 0,22. Ici l'aura n'est pas cumulative
+    /// (une seule Image, pas de réémission) : c'est sa valeur écrite qui est celle qu'on voit.
+    /// </remarks>
+    private static void AttachRarityFlare(RectTransform card, string rarity)
+    {
+        switch (rarity)
+        {
+            // Les fusions partagent le CADRE de l'épique — il n'en existe pas d'autre — mais gardent
+            // leur propre aura, dorée : c'est la couleur que le jeu emploie partout pour « acquis,
+            // définitif ». Une fusion n'est pas une carte épique de plus, elle transforme l'arsenal.
+            // La marge se lit contre `UiPrimitives.GlowBoxBorder` (40 px), qui est le débordement
+            // maximal : en dessous, une part du dégradé reste sous la carte et la lueur paraît plus
+            // fine. C'est ainsi que le rare est discret sans qu'on ait besoin d'un second sprite.
+            case "legendary":
+                UiRarityFlare.Attach(card, UiPalette.Gold, 0.45f, 0.95f, 40f);
+                break;
+
+            case "epic":
+                UiRarityFlare.Attach(card, UiPalette.Violet, 0.40f, 0.85f, 36f);
+                break;
+
+            case "rare":
+                UiRarityFlare.Attach(card, UiPalette.Cyan, 0.22f, 0.45f, 20f);
+                break;
+        }
     }
 
     /// <summary>
