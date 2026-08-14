@@ -22,7 +22,8 @@ URP 2D). Le dépôt ne contient plus qu'un moteur : Godot a été retiré le **2
 
 ## Phase actuelle
 
-**2026-08-14 — TACTILE : la version web se joue au doigt.** Schéma retenu (décision de l'auteur) :
+**2026-08-14 — TACTILE : la version web se joue au doigt. PUBLIÉ en 2.3.0** (build itch #1883123,
+canal `html5` ; Windows reste en 2.2.0 — le tactile ne le concerne pas). Schéma retenu (décision de l'auteur) :
 **joystick flottant à gauche + visée automatique**, bouton d'esquive et bouton de pause à droite,
 **paysage forcé** (`OrientationGate`). Le tactile est le **troisième** fichier d'entrées
 (`Platform/TouchInput.cs`), à part parce qu'il a une **mémoire** — un stick flottant n'existe que par
