@@ -201,7 +201,12 @@ sortait **en français dans les trois langues**, le repli étant silencieux. Il 
 - **Captures** : `capture_store.py` (lance le binaire Unity), `window_capture.py`.
 - **Trailer** : `build_trailer.py` (montage) + `trailer_sheets.py` (planches-contact).
   ⚠ La **capture** des rushes n'existe plus : elle passait par le Movie Maker de Godot.
-- **Release** : **`release_unity.ps1`** — workflow complet via le skill **`/publier-itch`**.
+- **Release** : **`release_unity.ps1`** — workflow complet via le skill **`/publier-itch`**
+  (`-Target web` → canal `html5` ; une release web ne touche pas `version.json`, qui décrit la
+  version *téléchargeable*).
+- **Servir le build web en local** : **`serve_web.py`** (port 8080). ⚠ Ne PAS utiliser
+  `python -m http.server` : sans `Cache-Control`, le navigateur mélange deux builds et rend un crash
+  wasm illisible (→ `PITFALLS_UNITY.md` §Web).
 - Python : `C:\Users\drang\AppData\Local\Programs\Python\Python313\python.exe`
 
 ## §Docs — `docs/`
