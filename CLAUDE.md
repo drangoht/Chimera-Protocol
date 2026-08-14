@@ -115,7 +115,6 @@ injection de script n'aboutissant tant que le canevas tourne.
 **Migration Unity terminée. 2.1.0 publiée le 2026-08-13** (2.0.0 le 08-10, 2.0.1 et 2.0.2 le 08-11) —
 build itch **#1880415**. Le jeu est jouable de bout en bout, avec son, validé en jouant.
 **673 tests.** ▶ Toujours essayer `tools/release_unity.ps1 -DryRun` avant de publier pour de bon.
-▶ **Reste côté utilisateur : coller le devlog 2.1.0 sur itch** (`docs/DEVLOG.md`, EN puis FR).
 ⚠ **Publiée sans mesure au banc du renforcement de 4 armes** (§36) — décision de l'auteur. La zone du
 Champ de Surcharge et celle de la Singularité ne sont bornées par **aucun plafond** : premier endroit
 à regarder si la fin de partie paraît plus facile.
@@ -126,7 +125,6 @@ il venait des JSON, et `ui.csv` portait **109 clés traduites que rien ne lisait
 `Platform/ContentText.cs` + `tools/audit_loc_keys.py`. Trouvé **en regardant les rushes du
 trailer** — le pipeline vidéo a été reporté sous Unity dans la foulée (`Bench/TrailerRecorder.cs`,
 `tools/record_trailer.py`, chaque plan mis en scène, timecodes stables d'une recapture à l'autre).
-▶ **Reste à faire côté utilisateur : coller le devlog 2.0.1 sur itch** (`docs/DEVLOG.md`, EN puis FR).
 
 **2026-08-12 — quatre défauts signalés en jouant, corrigés — publiés en 2.1.0.** (1) La **Lame Boomerang**
 mettait 6 s à revenir face à un joueur rapide, et son arme cessait donc de tirer : la parade du
