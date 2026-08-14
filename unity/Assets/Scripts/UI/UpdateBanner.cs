@@ -99,7 +99,7 @@ public sealed class UpdateBanner : MonoBehaviour
         // ⚠ Dimensionné sur le libellé le PLUS LONG des trois langues, jamais sur le français seul :
         // « Récupérer sur itch.io » repassait à la ligne dans un bouton calé au plus juste, et un
         // texte qui se casse en deux se lit comme un défaut d'affichage.
-        rect.sizeDelta = new Vector2(780f, 60f);
+        rect.sizeDelta = UiCanvas.PanelSize(new Vector2(780f, 60f));
         rect.anchoredPosition = new Vector2(0f, -12f);
 
         var label = UiStyle.Label(row.transform, Loc.T("UPDATE_AVAILABLE", version), 20,

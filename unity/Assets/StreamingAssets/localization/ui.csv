@@ -525,3 +525,8 @@ HUD_FPS,{0} FPS,{0} IPS,{0} FPS
 PAUSE_LEVEL_SHORT,Lv. {0},Niv. {0},Niv. {0}
 HUB_PERK_HOWTO,Complete Challenges to unlock some,Accomplir des défis pour en débloquer,Completa Desafíos para desbloquear
 HUB_PERK_AVAILABLE,({0} available),({0} disponible(s)),({0} disponible(s))
+TOUCH_DASH,Dodge,Esquive,Esquiva
+ROTATE_TITLE,ROTATE YOUR DEVICE,TOURNEZ VOTRE APPAREIL,GIRA TU DISPOSITIVO
+ROTATE_BODY,Chimera Protocol is played in landscape.,Chimera Protocol se joue en paysage.,Chimera Protocol se juega en horizontal.
+PAUSE_RESUME_TOUCH,Resume,Reprendre,Reanudar
+INTRO_SKIP_TOUCH,Tap to skip,Touchez l'écran pour passer,Toca para saltar

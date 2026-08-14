@@ -135,6 +135,7 @@ public static class BuildBench
         if (summary.result != BuildResult.Succeeded) EditorApplication.Exit(1);
 
         WriteBuildStamp(outDir);
+        StampWebCacheBuster(outDir);
     }
 
     /// <summary>
@@ -175,15 +176,33 @@ public static class BuildBench
         // cela, une exception se manifeste par un jeu qui s'arrête — sans message. C'est le seul
         // moyen d'instruire un défaut qu'on ne reproduit pas hors du navigateur ; le coût en vitesse
         // se rediscutera une fois le portage mesuré.
+        // ⚠⚠ CE RÉGLAGE SUPPRIME LES VÉRIFICATIONS DE BORNES ET DE NULLITÉ. Il ne garde que les
+        // exceptions *explicitement levées* — un `array[trop_loin]` ou un déréférencement nul ne
+        // lèvent alors plus rien de lisible : ils tapent dans la mémoire linéaire et le navigateur
+        // rend « RuntimeError: memory access out of bounds » suivi de trois cents offsets wasm, sans
+        // un seul nom de méthode. Le réglage censé rendre les défauts instruisibles est donc celui
+        // qui rend le plus grave d'entre eux illisible.
+        //
+        // ▶ Pour instruire un crash au démarrage : passer temporairement à `FullWithStacktrace`,
+        //   rebuilder, lire le nom de la méthode, puis revenir ici.
         PlayerSettings.WebGL.exceptionSupport = WebGLExceptionSupport.ExplicitlyThrownExceptionsOnly;
 
+        // ─── Page hôte ───────────────────────────────────────────────────────
         // Le jeu tourne en plein écran logique : c'est un survivor, pas une vignette dans une page.
-        PlayerSettings.WebGL.template = "APPLICATION:Default";
+        //
+        // ⚠ Le gabarit par défaut d'Unity produit un jeu qui DÉMARRE sur téléphone et ne s'y joue
+        // pas : le double-appui zoome la page, le glissement la fait défiler, le geste depuis le bord
+        // revient en arrière, et la barre d'URL recouvre le bas de l'écran — donc le bouton
+        // d'esquive. Rien de tout cela n'est visible depuis Unity, et rien ne lève d'erreur : ces
+        // défauts vivent AVANT le moteur. Le gabarit du projet les désarme, et plafonne le rapport de
+        // pixels, qui est le réglage de performance le plus rentable du portage mobile.
+        PlayerSettings.WebGL.template = "PROJECT:ChimeraMobile";
         PlayerSettings.WebGL.powerPreference = WebGLPowerPreference.HighPerformance;
 
         Debug.Log($"[BUILD] reglages web : tas {PlayerSettings.WebGL.initialMemorySize} Mo, " +
                   $"{PlayerSettings.WebGL.compressionFormat} (repli " +
-                  $"{PlayerSettings.WebGL.decompressionFallback}), stripping Low.");
+                  $"{PlayerSettings.WebGL.decompressionFallback}), stripping Low, " +
+                  $"gabarit {PlayerSettings.WebGL.template}.");
     }
 
     /// <summary>Chemins des scènes du jeu, dans l'ordre — la première est celle qui se charge.</summary>
@@ -345,6 +364,55 @@ public static class BuildBench
 
         File.WriteAllText(Path.Combine(outDir, "build_stamp.json"), json);
         Debug.Log($"[BUILD] tampon : v{PlayerSettings.bundleVersion}-{shaText}");
+    }
+
+    /// <summary>
+    /// Remplace le jeton <c>__BUILD_ID__</c> de la page hôte par un identifiant <b>unique à ce
+    /// build</b>, qui devient un paramètre d'URL sur chaque fichier téléchargé.
+    /// </summary>
+    /// <remarks>
+    /// <para>⚠⚠ <b>Sans cela, le navigateur mélange deux builds — et le symptôme est un crash
+    /// illisible.</b> Les fichiers de sortie d'Unity portent toujours le même nom
+    /// (<c>web.wasm.unityweb</c>, <c>web.data.unityweb</c>) : rien dans l'URL ne distingue un build
+    /// du suivant. Le navigateur sert donc ce qu'il a en cache, et peut associer le <c>.data</c>
+    /// d'un build au <c>.wasm</c> d'un autre. Le jeu ne dit pas « version périmée » : il rend
+    /// <c>RuntimeError: memory access out of bounds</c> et trois cents offsets wasm, au démarrage,
+    /// sans un seul nom de méthode.</para>
+    ///
+    /// <para>C'est arrivé pendant le portage tactile, et il a fallu deux rebuilds pour comprendre :
+    /// le seul indice était que les offsets restaient <b>identiques</b> après une recompilation qui
+    /// avait pourtant changé la taille du binaire de 700 Ko. Un message d'erreur qui ne change pas
+    /// alors que le binaire a changé ne vient pas du binaire qu'on croit exécuter.</para>
+    ///
+    /// <para>L'horodatage s'ajoute au SHA parce qu'un build local n'a rien de commité : deux builds
+    /// d'affilée partagent le même SHA et doivent quand même se distinguer. Le paramètre invalide
+    /// aussi le cache <c>IndexedDB</c> d'Unity (<c>dataCaching</c>), qui indexe par URL.</para>
+    /// </remarks>
+    private static void StampWebCacheBuster(string outDir)
+    {
+        string indexPath = Path.Combine(outDir, "index.html");
+        if (!File.Exists(indexPath))
+        {
+            Debug.LogWarning("[BUILD] index.html introuvable : pas de garde-cache posee.");
+            return;
+        }
+
+        var sha = AssetDatabase.LoadAssetAtPath<TextAsset>("Assets/Resources/build_sha.txt");
+        string shaText = sha != null && sha.text.Trim().Length > 0 ? sha.text.Trim() : "dev";
+        string buildId = $"{shaText}-{DateTime.UtcNow:yyyyMMddHHmmss}";
+
+        string html = File.ReadAllText(indexPath);
+        if (!html.Contains("__BUILD_ID__"))
+        {
+            // Le gabarit a été modifié sans que ce jeton y survive : le dire fort, sans quoi le
+            // défaut ne se manifestera qu'au prochain rebuild, sous la forme d'un crash au démarrage.
+            Debug.LogWarning("[BUILD] __BUILD_ID__ absent du gabarit : le navigateur pourra melanger " +
+                             "deux builds (voir StampWebCacheBuster).");
+            return;
+        }
+
+        File.WriteAllText(indexPath, html.Replace("__BUILD_ID__", buildId));
+        Debug.Log($"[BUILD] garde-cache : {buildId}");
     }
 
     /// <summary>

@@ -831,6 +831,59 @@ Sinon Unity continue silencieusement d'utiliser le pipeline intégré, et les lu
 > build.** Ils produisent un jeu qui compile, démarre, et se comporte mal — ou pire, qui se comporte
 > bien pendant la session d'essai et perd la progression du joueur à la suivante.
 
+### ⚠⚠ Le navigateur mélange deux builds, et le symptôme est un crash **illisible**
+
+Les fichiers de sortie d'Unity portent **toujours le même nom** — `web.wasm.unityweb`,
+`web.data.unityweb` — d'un build à l'autre. Rien dans l'URL ne distingue un build du suivant. Le
+navigateur sert donc ce qu'il a en cache, et peut associer le `.data` d'un build au `.wasm` d'un
+autre.
+
+Ce que le joueur voit alors n'est pas « version périmée » :
+
+```
+Chargement impossible : RuntimeError: memory access out of bounds
+  at wasm://wasm/0b2ac7ce:wasm-function[97296]:0x1712ca9
+  … trois cents lignes d'offsets, pas un seul nom de méthode …
+```
+
+**Une heure perdue à chercher ça dans son propre code.** Vider le cache d'Unity (`IndexedDB`) ne
+suffit pas — le cache HTTP du navigateur est en amont. Le seul indice qui a fini par trancher : après
+une recompilation complète qui avait changé la taille du binaire de **700 Ko**, le message affichait
+**exactement les mêmes offsets**. ▶ **Un message d'erreur qui ne bouge pas alors que le binaire a
+changé ne vient pas du binaire qu'on croit exécuter.** Le test qui coûte trente secondes : **servir
+sur un autre port**, ce qui donne une origine neuve, donc un cache vierge.
+
+**Parade** : le gabarit porte un jeton `__BUILD_ID__` que le build remplace par le SHA **et
+l'horodatage** (`BuildBench.StampWebCacheBuster`), ajouté en paramètre d'URL sur le loader, le
+framework, le code et les données. L'horodatage n'est pas redondant : deux builds locaux d'affilée
+partagent le même SHA. Le paramètre invalide au passage le cache `IndexedDB` d'Unity
+(`dataCaching`), qui indexe par URL.
+
+⚠ Si quelqu'un réécrit le gabarit sans conserver le jeton, le build **le dit** dans son journal
+plutôt que de laisser le défaut réapparaître au rebuild suivant.
+
+⚠⚠ **Le garde-cache ne s'applique que si la PAGE HÔTE est fraîche** — et c'est le maillon qu'on
+oublie. `index.html` est la seule à porter l'identifiant qui invalide tout le reste ; gardée en
+cache, elle continue de désigner les fichiers de l'ancien build. Le garde-cache existe alors, il est
+correct, et il ne s'applique jamais. Constaté : après l'avoir ajouté, le jeu repartait sur un port
+neuf et **restait cassé sur l'ancien**. La page porte donc `Cache-Control: no-store` en balise
+`http-equiv` — elle pèse 8 Ko, la retélécharger à chaque lancement ne coûte rien.
+
+> La leçon générale : **un mécanisme d'invalidation transporté par une ressource cachable
+> s'auto-annule.** Il faut toujours une racine non cachable.
+
+### ⚠ `ExplicitlyThrownExceptionsOnly` supprime le filet qui rendrait les défauts lisibles
+
+Ce réglage est là pour garder les piles d'exceptions dans la console. Mais il **désactive aussi les
+vérifications de bornes de tableau et de nullité** : un accès hors bornes ou un déréférencement nul
+ne lève alors plus rien de nommé — il tape dans la mémoire linéaire, et le navigateur rend le même
+`memory access out of bounds` que ci-dessus. Le réglage censé rendre les défauts instruisibles est
+donc celui qui rend les plus graves illisibles.
+
+▶ **Pour instruire un crash au démarrage** : passer temporairement à `FullWithStacktrace`, rebuilder,
+lire le nom de la méthode, revenir. (Dans le cas ci-dessus, cela n'a rien changé — ce qui était
+justement l'information : le crash ne venait pas du code.)
+
 ### `streamingAssetsPath` est une **URL**, pas un dossier
 
 C'est le blocage structurant. Sur Windows, `File.ReadAllText(Path.Combine(streamingAssetsPath, …))`
@@ -1011,6 +1064,260 @@ un joueur servant déjà le build courant.
 
 ⚠ Le champ `Discord` **reste dans la sauvegarde** : elle est commune aux plateformes, et un joueur
 qui joue aux deux ne doit pas perdre son choix côté bureau.
+
+---
+
+## Tactile (mobile / web au doigt)
+
+> Portage tactile du **2026-08-14**, dans la foulée du portage web. Le jeu tournait déjà dans un
+> navigateur de téléphone ; il ne s'y **jouait** pas. Le trait commun des pièges ci-dessous : comme
+> pour le web, **aucun ne lève d'erreur** — et la moitié d'entre eux vivent *avant* Unity, dans la
+> page HTML qui l'héberge, là où aucun outil du projet ne regarde.
+
+### La moitié du portage tactile n'est pas dans Unity
+
+Le gabarit web par défaut produit un jeu qui **démarre** sur téléphone et ne s'y joue pas :
+
+| Geste du joueur | Ce que fait le navigateur | Ce que le joueur voit |
+|---|---|---|
+| Double appui pour esquiver | **zoome la page** | le jeu déraille |
+| Glissement du joystick | **fait défiler la page** | le jeu part en biais |
+| Glissement depuis le bord | **revient à la page précédente** | le jeu a planté |
+| Appui long | ouvre « copier l'image » | une fenêtre système en plein combat |
+| — | la barre d'URL recouvre le bas | **le bouton d'esquive est caché** |
+
+Aucun de ces défauts n'est visible depuis l'éditeur, aucun ne lève d'erreur, et aucun n'appartient au
+moteur. Ils se règlent tous dans `Assets/WebGLTemplates/ChimeraMobile/index.html` : `touch-action:
+none`, `overscroll-behavior: none`, `user-scalable=no`, trois `preventDefault`, et `100dvh` pour la
+barre d'URL. Le gabarit est **posé par le build**
+(`PlayerSettings.WebGL.template = "PROJECT:ChimeraMobile"`), jamais à la souris.
+
+⚠ **Le rapport de pixels est le réglage de performance le plus rentable du portage mobile.** Un
+téléphone récent annonce `devicePixelRatio = 3` : Unity rendrait **neuf fois** plus de pixels que la
+dalle logique n'en montre, sur un GPU qui vaut le dixième d'une carte de bureau.
+`config.devicePixelRatio = 1` sur mobile. Le jeu est en pixel art à 1 px = 1 unité — il n'a rien à y
+gagner.
+
+### Un écran tactile a une **mémoire**, un clavier n'en a pas
+
+C'est la raison pour laquelle le tactile n'a pas pu se glisser dans `InputRemap` ni `RawInput`. On
+demande à un clavier « cette touche est-elle enfoncée ? » et la réponse est complète. Un joystick
+flottant, lui, n'existe **que par la mémoire de l'endroit où le doigt s'est posé**, et cette mémoire
+doit survivre d'une image à l'autre. D'où un troisième fichier, `Platform/TouchInput.cs`, qui porte
+cette machine à états — et elle seule : la géométrie vit dans `Rules/VirtualStick` et
+`Rules/TouchZones`, purs et testés sans téléphone.
+
+⚠ **Le pompage ne doit dépendre d'aucune scène.** Installé en `BeforeSceneLoad` sur un objet
+`DontDestroyOnLoad`, comme le préchargement des textes — et pour la même raison, déjà payée une
+fois : un invariant porté par le cycle de vie d'un écran, **un tiers peut l'annuler**. Un stick qui
+cesse d'être lu au chargement d'une vague produit un joueur immobile et une console vide.
+
+### `Touchscreen.current != null` **ne dit pas** que le joueur se sert de ses doigts
+
+Un portable Windows à écran tactile en déclare une alors que son propriétaire joue au clavier. S'y
+fier afficherait un joystick au milieu de l'écran d'une machine de bureau et — plus grave —
+basculerait la visée en automatique, ce qui **désarmerait la Lance Vectorielle** sans qu'aucun
+réglage ne l'explique.
+
+**Parade** : `TouchInput.Active` est *latché au premier vrai contact* et relâché dès qu'une touche ou
+un clic arrive. Réversible dans les deux sens — sur une tablette avec clavier, le joueur passe de
+l'un à l'autre en cours de partie. Un simple mouvement de souris **ne compte pas** : une souris posée
+sur un bureau qui vibre ferait disparaître les contrôles en pleine nuée.
+
+### Le seuil de glissement d'uGUI est calibré pour une souris — au doigt, **les boutons ne marchent pas**
+
+`EventSystem.pixelDragThreshold` vaut 10 pixels par défaut : une souris ne bouge pas quand on clique.
+Un doigt roule de deux ou trois millimètres pendant l'appui ; sur une dalle où un pixel logique vaut
+0,2 mm, le seuil est franchi **presque à chaque fois**. uGUI requalifie alors l'appui en glissement,
+la liste défile de quelques pixels, et **le bouton ne reçoit jamais son clic**.
+
+Aucune erreur, aucun symptôme dans un journal : le menu paraît simplement mort — c'est le pire
+symptôme possible sur mobile, le joueur n'ayant alors aucun recours. Porté à **24 px** (~4 mm) au
+premier contact tactile, jamais sur une machine sans dalle.
+
+### Une interface irréprochable en 1080p est **intouchable** sur un téléphone
+
+Un téléphone en paysage fait environ 800 × 360 pixels logiques. Rapportée à une maquette de
+1920 × 1080, l'interface y tombe à une échelle de **0,37** : un bouton de menu de 60 unités mesure
+22 pixels, soit à peu près **4 mm**. Il est parfaitement dessiné, parfaitement centré, et le doigt en
+couvre trois. Rien ne le signale — sur un écran de bureau, la même interface est irréprochable.
+
+**Parade** : réduire la *maquette* (`UiCanvas.ReferenceFor`, calcul pur dans
+`TouchZones.UiEnlargement`) plutôt que grossir chaque élément — les onze écrans d'un coup, et rien ne
+change là où le problème n'existe pas (seuil : hauteur de fenêtre < 600 px, car `Screen.dpi` vaut
+**zéro** en WebGL et la question physique n'a donc pas de réponse directe).
+
+⚠ **Ce qui plafonnait ce grossissement à une valeur presque inutile** : les panneaux posés en unités
+absolues. L'écran de montée de niveau fait **1420 × 680** — à une maquette rétrécie de moitié, le
+joueur aurait vu la carte du milieu et deviné les deux autres. **Un panneau tronqué est un défaut
+pire que des boutons petits.** D'où `UiCanvas.PanelSize`, qui borne ces tailles au canevas courant :
+elle ne marche que parce que ces panneaux ont un contenu **élastique** (la rangée de cartes est un
+`HorizontalLayoutGroup`, les listes défilent) — réduire le cadre y réduit les cartes, il ne les coupe
+pas.
+
+⚠ Le canevas change de taille **tout seul** en web (barre d'URL qui se rétracte, rotation, clavier
+virtuel). Un `CanvasScaler` réglé une seule fois à la construction garderait la référence de départ :
+l'interface resterait minuscule après le tout premier geste, c'est-à-dire au moment exact où le
+joueur essaie de s'en servir. D'où le veilleur de taille posé par `UiCanvas.Configure`.
+
+### Le portrait n'est pas un problème de mise en page, c'est le **champ de vision**
+
+L'arène est en 16/9 et la caméra montre une hauteur de monde **fixe** (720 unités, cf. `RunCamera`) :
+en portrait, la largeur visible s'effondre. Les nuées arriveraient hors champ, et un survivor dont on
+ne voit pas venir la vague n'est pas difficile, il est injuste. `OrientationGate` refuse donc le
+portrait au lieu de s'y adapter.
+
+⚠ **La forme du canevas fait foi, pas `Screen.orientation`** : en WebGL, le navigateur rapporte
+l'orientation du *système*, qui ment dès que l'utilisateur a verrouillé la rotation.
+
+⚠ **Elle mémorise l'échelle de temps courante** au lieu de rendre 1 : un joueur qui tourne son
+téléphone alors que le jeu est déjà en pause verrait la partie **repartir sous l'écran de pause**.
+
+⚠ **Elle ne s'affiche pas tant que la table de traduction n'est pas chargée** — sinon elle écrirait
+`ROTATE_TITLE` en travers de l'écran, exactement le défaut du premier essai navigateur.
+
+### La visée automatique est une **exception qui n'en est pas une**
+
+`VectorLance` s'interdit `FindNearestEnemy` : viser tout seul transformerait la seule arme d'adresse
+du jeu en canon automatique. Sur un téléphone, la visée est pourtant prise sur l'ennemi le plus
+proche. Ce n'est pas une entorse : la règle porte sur le cas où le joueur **peut** pointer. Sans
+curseur ni stick droit, le choix n'est pas entre viser à la main et viser tout seul, mais entre viser
+tout seul et tirer dans une direction que personne ne contrôle. **C'est la visée du joueur qui change
+de source, pas l'arme qui change de nature** — `VectorLance` n'appelle toujours rien elle-même.
+
+### Tout rappel de touche devient un **mensonge** au doigt
+
+**Trois** endroits, trouvés à un quart d'heure d'écart : `HUD_DASH_HINT` (« MAJ — esquive »),
+`PAUSE_RESUME` (« Reprendre [Échap] ») et `INTRO_SKIP` (« Appuyez sur une touche pour passer »). Tous
+annoncent un clavier pour une action déclenchée au doigt — et le dernier est la **première phrase que
+lit un joueur**.
+
+La règle du projet — « une capacité qui ne s'annonce pas n'existe pas pour le joueur », payée d'une
+session entière — ne dit pas *annonce une touche*, elle dit **annonce comment on la déclenche**.
+Quand il n'y a pas de clavier, la réponse est le bouton lui-même : le rappel disparaît, et c'est le
+bouton qui porte l'information (libellé, et pour l'esquive sa recharge en remplissage radial).
+
+⚠ Le contrôle à faire après tout ajout tactile : `grep` dans `ui.csv` sur les libellés qui **citent
+une touche** — les crochets (`[Échap]`, `[Esc]`) mais aussi le **mot** « touche » / « key » / « tecla ».
+Ils ne se signalent pas autrement : la clé existe, elle est traduite en trois langues, et l'audit de
+localisation la déclare parfaite. C'est la même famille que « déclaré n'est pas consommé » — un texte
+peut être **correct et faux**.
+
+### Sur mobile, **Échap n'existe pas**
+
+Une run n'y serait ni interruptible ni abandonnable : la seule issue serait de fermer l'onglet, ce
+qui en web emporte aussi la sauvegarde tant qu'elle n'est pas écrite. D'où
+`RawInput.PauseRequestedThisFrame()` (Échap **ou** bouton tactile), que le `RunHud` appelle à la
+place d'`EscapePressedThisFrame()`. Les autres écrans gardent Échap : ils ont tous un bouton
+« Retour » qu'un doigt atteint, alors que le HUD d'une run n'en a aucun.
+
+### Trois détails de géométrie qui ne se voient qu'à l'usage
+
+- **Le stick doit être flottant**, pas posé : un cercle dessiné à une place fixe est *sous le pouce*,
+  donc invisible au moment de le viser. Le joueur le manque et le jeu paraît ne pas répondre.
+- **Le recentrage n'est pas un raffinement.** Sans lui, un pouce qui glisse au-delà du rayon sature :
+  il ne peut plus ralentir sans retraverser toute la course. En pratique, le joueur court vers la
+  droite avec le pouce collé au bord de l'écran.
+- ⚠ **Un vecteur de norme > 1 dépasse la vitesse maximale sans qu'aucun plafond ne le dise.** C'est
+  le premier défaut qu'a attrapé `VirtualStickTests` : après recentrage, l'écart doigt-origine doit
+  être **recalculé**, sinon l'intensité vaut `distance / rayon` et croît avec le glissement.
+
+### Le repère : **origine en bas à gauche**
+
+Celui de `Touchscreen`, de `Mouse.position` et des ancres uGUI. Le repère du DOM a son Y vers le
+bas ; s'il entrait dans le calcul, le joueur monterait en poussant vers le bas — injouable, et
+**aucune erreur**. Un test le verrouille.
+
+⚠ Corollaire : `TouchHud` est **le seul canevas du jeu à ne pas passer par `UiCanvas.Configure`**. Il
+est en `ConstantPixelSize` à l'échelle 1, parce que ces contrôles-ci se mesurent en *pouces* et non
+en pixels de maquette — un bouton à l'échelle de la maquette ferait 44 px sur un téléphone et 130 sur
+une tablette, alors que le pouce a la même taille sur les deux.
+
+### Ce que le grossissement d'interface a cassé — trouvé **sur image**, jamais au code
+
+Rétrécir la maquette est le bon levier, mais il déplace du travail. Quatre défauts, tous invisibles
+sur un écran de bureau, tous visibles en une capture à 800 × 360 :
+
+1. **Textes chevauchés** (choix du niveau). La disposition pose ses quatre lignes à des hauteurs
+   **fixes**, en documentant « la place de ses deux lignes possibles ». Sur un canevas deux fois plus
+   étroit, chaque texte prend deux fois plus de lignes. → hauteurs multipliées par
+   `UiCanvas.Narrowing()`. ⚠ Le premier correctif exemptait le titre — « un nom tient sur une
+   ligne » — en oubliant qu'il porte aussi le palier de menace : le « 0 » de « Menace 0 » tombait sur
+   la ligne suivante. **Une exception à une règle d'espacement se paie sur le cas qu'on n'avait pas
+   en tête.**
+2. **Deux boutons empilés** (Hub). « Réinitialiser » partait du bord gauche sur 460 unités, « Retour »
+   était centré : à 1920 unités ils ne se croisaient jamais, à 954 ils se **recouvraient sur 170**.
+   L'un des deux est destructeur. → les deux aux **coins opposés**, et le plus large cède de la
+   largeur. Une mise en page où rien ne dit qui est à gauche de qui ne survit pas au premier
+   changement de largeur.
+3. **Un cadrage calculé sur des constantes périmées** (menu). Le recouvrement de l'illustration se
+   calculait sur `1920f / 1080f` et `1080f` en dur : sur une maquette rétrécie, ces nombres
+   décrivaient un cadre qui n'existait plus et le débordement valait jusqu'au double — gros plan sur
+   le ventre de la Chimère. Et la colonne de menu, à 460 unités dans un canevas qui en fait 537,
+   **recouvrait le logo**, c'est-à-dire l'identité du jeu sur son premier écran.
+4. ⚠⚠ **Deux repères qui ne se voient pas** (HUD). Le bouton de pause vit dans un canevas mesuré en
+   **pixels écran** (il se dimensionne en pouces) ; le HUD, dans un canevas mesuré en **unités de
+   maquette**. Aucun des deux ne connaît l'autre : le bouton s'est posé exactement sur le compteur de
+   Noyaux d'Aether, et l'appui tombait sur celui des deux qui était au-dessus. → `UiCanvas.PixelsToCanvas`
+   et une place réservée, recalculée à chaque image. **C'est le mode d'échec de toute mise en page à
+   deux repères : il n'apparaît qu'à une taille d'écran, et jamais dans l'éditeur.**
+
+### Le HUD est le seul canevas à refuser le grossissement
+
+`UiCanvas.Configure(..., enlargeForTouch: false)`. Le grossissement paie des cibles tactiles avec de
+la **surface d'écran** : bon marché pour un menu, dont la surface ne sert qu'à lui. Le HUD n'a
+**aucune cible** et se superpose à l'arène — grossi, le panneau de vitalité mangeait un tiers de la
+largeur du champ de bataille, au moment précis où l'écran est le plus petit.
+
+### ⚠⚠ Deux façons d'avaler un appui, et aucune ne lève d'erreur
+
+Le bouton de pause était **parfaitement placé, sa zone parfaitement calculée** — et il ne répondait
+pas. Deux causes indépendantes, l'une et l'autre invisibles au code.
+
+**1. Filtrer sur `isPressed` avant `wasPressedThisFrame`.** Un appui posé et relevé entre deux images
+se présente avec `isPressed` déjà à `false` : un `if (!touch.press.isPressed) continue;` en tête de
+boucle **avale le tapotement**, qui est pourtant le geste le plus naturel sur un bouton. L'arrivée se
+teste donc en premier, le maintien ensuite. Le défaut ne se reproduit pas à tous les coups — il se
+signale « le bouton ne répond pas une fois sur dix », c'est-à-dire de la façon la plus coûteuse à
+instruire.
+
+**2. Publier un appui comme « cette image-ci ».** Le pompage tactile vit sur un objet créé en
+`BeforeSceneLoad` ; **l'ordre des `Update` entre objets n'est pas garanti par Unity**. Le `RunHud`
+qui interroge la pause s'exécute donc, une fois sur deux, *avant* le pompage : il lit une image trop
+tôt, et à l'image suivante `Time.frameCount == _pausePressedFrame` est déjà faux. L'appui
+disparaît.
+
+**Parade** : l'événement **survit** deux images et se **consomme** à la lecture. Chaque appui n'a
+qu'un lecteur (la pause pour le HUD de run, l'esquive pour le joueur) — un second lecteur dans la
+même image verrait `false`, ce qui est le comportement voulu pour une *action*, pas pour un *état*.
+
+> Le trait commun aux deux : **un événement d'entrée n'a pas la même nature qu'un état d'entrée.**
+> « Cette touche est-elle enfoncée ? » se répond à tout moment ; « vient-elle d'être pressée ? » ne
+> se répond qu'une fois, et seulement à qui écoute au bon moment.
+
+### Un écran de pause dont on ne peut pas sortir enferme le joueur
+
+Le panneau de pause fait **760 × 700** unités. Dans un canevas de téléphone qui en fait 954 × 537, il
+débordait en haut *et* en bas : titre coupé, et surtout **« Reprendre » et « Abandonner » hors de
+l'écran**. Sur mobile il ne restait alors qu'à fermer l'onglet — ce qui emporte la sauvegarde tant
+qu'elle n'est pas écrite. → `UiCanvas.PanelSize`, absorbé par la liste de statistiques qui défile.
+
+⚠ **La pause n'est PAS dans `ModalQueue`** — c'est un simple écran à bascule, et `ModalQueue.IsOpen`
+reste à `false` pendant qu'elle est ouverte. `TouchHud` s'en tenait à la file : les contrôles
+restaient actifs par-dessus la pause, et un pouce resté sur le joystick continuait de pousser. Le
+joueur repartait dans cette direction à la reprise, sans avoir rien touché. **Une condition « une
+modale est-elle ouverte ? » doit énumérer ce qui met le jeu en attente, pas ce qui est inscrit dans
+un registre.**
+
+### Celui qui montre est celui qui écoute
+
+`TouchHud` ne se contente pas de dessiner : c'est lui qui ouvre et referme la capture des doigts
+(`TouchInput.SetGameControls`). Les deux ne peuvent donc pas diverger — et la divergence est *le*
+défaut du tactile : un bouton qui se voit et ne répond pas, ou une zone invisible qui avale les
+appuis destinés à un menu. La porte est **fermée par défaut** et se referme dès qu'une modale
+s'ouvre, ce qui relâche aussi les doigts en cours : sans cela, un stick poussé au moment où le menu
+de montée de niveau s'ouvre resterait poussé, et le joueur repartirait dans cette direction à la
+reprise sans avoir rien touché.
 
 ---
 

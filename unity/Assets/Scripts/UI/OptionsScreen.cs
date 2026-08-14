@@ -216,7 +216,7 @@ public sealed class OptionsScreen : MonoBehaviour
         var panelRect = panel.GetComponent<RectTransform>();
         panelRect.anchorMin = panelRect.anchorMax = new Vector2(0.5f, 0.5f);
         panelRect.pivot = new Vector2(0.5f, 0.5f);
-        panelRect.sizeDelta = new Vector2(980f, 860f);
+        panelRect.sizeDelta = UiCanvas.PanelSize(new Vector2(980f, 860f));
         panelRect.anchoredPosition = Vector2.zero;
 
         float headerBottom = UiStyle.Header(panel.transform, Loc.T("OPTIONS_TITLE"));

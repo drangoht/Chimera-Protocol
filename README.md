@@ -8,6 +8,17 @@ Dans un monde ravagé par **la Rouille Vivante** (corruption mi-organique, mi-m�
 
 ## État du projet
 
+**Le jeu se joue au doigt** *(2026-08-14)* — la version navigateur est jouable sur téléphone. Un
+**joystick apparaît là où le pouce se pose** (pas à une place fixe : à une place fixe, il est sous le
+doigt au moment où on le cherche), l'esquive et la pause sont deux boutons à droite, et **la visée se
+fait toute seule** — sans souris ni stick droit, l'alternative n'était pas « viser à la main », c'était
+tirer dans une direction que personne ne contrôle. Le jeu **refuse le portrait** : l'arène est en 16/9,
+et en portrait les nuées arriveraient hors de l'écran. Deux surprises : la moitié du travail n'était
+pas dans le jeu mais dans **la page qui l'héberge** — le double-appui pour esquiver *zoomait la page*,
+le glissement la *faisait défiler*, la barre d'adresse *recouvrait le bouton d'esquive* — et les
+menus, irréprochables sur un écran d'ordinateur, avaient sur un téléphone des boutons de **quatre
+millimètres** que le doigt recouvre entièrement.
+
 **Le jeu tourne dans un navigateur** *(2026-08-13)* — portage **WebGL** : intro, menu, run, textes
 traduits, vérifié dans Chrome. Le build web pèse **35,4 Mo** et se publie sur itch.io comme jeu
 jouable en ligne (`tools/release_unity.ps1 -Target web`). Rien ne change pour la version Windows, qui

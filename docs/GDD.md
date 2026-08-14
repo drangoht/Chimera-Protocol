@@ -3512,3 +3512,90 @@ l'outil sort alors `overload_field : radius`.
 
 > **Un audit qui rate le défaut qu'il a été écrit pour attraper est plus dangereux qu'un audit
 > absent : il rend un verdict rassurant.** Tout durcissement se valide en réintroduisant le défaut.
+
+---
+
+## 37. Le jeu au doigt — un pouce, une visée qu'on ne donne pas (2026-08-14)
+
+> Le portage web du 2026-08-13 a rendu le jeu **accessible** depuis un téléphone. Il ne l'a pas rendu
+> **jouable** : il n'y avait ni déplacement, ni esquive, ni pause. Ce chapitre dit ce qui a été
+> décidé, et surtout ce qui a été **refusé**.
+
+### 37.1 Le choix : un seul stick, et la visée est donnée
+
+Trois schémas étaient sur la table.
+
+| Schéma | Ce qu'il coûte au joueur | Ce qu'il rapporte |
+|---|---|---|
+| **Stick gauche + visée automatique** | il ne choisit plus où pointe la Lance Vectorielle | un pouce libre, jouable d'une main |
+| Twin-stick | deux pouces occupés en permanence | la visée manuelle d'**une** arme sur seize |
+| Stick + visée au toucher | un mode d'entrée de plus à apprendre | les deux, mal |
+
+**Retenu : le premier.** L'argument n'est pas l'ergonomie, c'est l'arithmétique du jeu : la visée
+dirigée ne sert qu'à la **Lance Vectorielle et à sa fusion**. Occuper le pouce droit en permanence
+pour une arme que le joueur n'a pas la plupart du temps, dans un jeu où l'esquive est la seule action
+active, revient à faire payer seize armes pour une.
+
+⚠ **Ce que le joueur perd est réel et assumé.** La Lance Vectorielle est la seule arme d'adresse du
+jeu ; au doigt, elle devient un canon automatique. C'est exactement ce que son fichier
+s'interdit — et l'interdit tient toujours, parce qu'il porte sur le cas où le joueur **peut**
+pointer. Sans curseur ni stick droit, l'alternative n'est pas « viser à la main », c'est « tirer dans
+une direction que personne ne contrôle ». **C'est la visée du joueur qui change de source, pas l'arme
+qui change de nature.**
+
+### 37.2 Le stick flotte, et il se recentre
+
+Deux décisions de ressenti, invisibles au code et déterminantes à la main.
+
+**Flottant.** Un stick dessiné à une place fixe est, au moment où on le cherche, *sous le pouce* : on
+ne le voit pas, on le manque, et le jeu paraît ne pas répondre. Un stick qui naît là où le doigt se
+pose rend l'erreur de visée impossible par construction.
+
+**Recentré.** Sans recentrage, un pouce qui dépasse le rayon sature : la direction n'évolue plus, et
+il ne peut plus ralentir sans retraverser toute la course. En pratique, le joueur se retrouve à
+courir vers la droite avec le pouce collé au bord de l'écran. L'origine suit donc le doigt en restant
+à exactement un rayon derrière lui — un demi-centimètre de retour suffit toujours à ralentir.
+
+**Dosé, pas binaire.** À mi-course, le joueur avance à demi-vitesse. C'est le seul avantage réel du
+tactile sur le clavier, qui ne connaît que huit directions : longer une nuée sans la percuter.
+
+### 37.3 Le portrait est refusé, pas adapté
+
+L'arène est en 16/9 et la caméra montre une **hauteur de monde fixe** (720 unités) : en portrait, la
+largeur visible s'effondre. Les nuées arriveraient hors champ.
+
+Ce n'est pas un défaut d'interface qu'on corrige en réagençant des panneaux — **c'est le champ de
+vision, et le champ de vision est une règle de jeu**. Un survivor dont on ne voit pas venir la vague
+n'est pas difficile, il est injuste. D'où un panneau plein écran qui met tout en attente.
+
+### 37.4 L'esquive s'annonce par son bouton, pas par une touche
+
+Le HUD porte depuis longtemps un rappel — « MAJ — esquive » — né d'une session entière jouée sans
+savoir que la capacité existait. Au doigt, ce rappel deviendrait un **mensonge** : il annoncerait une
+touche de clavier pour une capacité déclenchée à l'écran. Le principe ne change pas (une capacité qui
+ne s'annonce pas n'existe pas pour le joueur) ; c'est le bouton qui l'annonce, libellé **et** recharge
+comprise — le remplissage radial du bouton porte la même information que la jauge du HUD, mais là où
+le pouce regarde.
+
+Le bouton **n'apparaît pas** tant qu'aucune greffe n'a accordé l'esquive. Montrer une cible morte
+pendant les dix premières minutes apprendrait au joueur à l'ignorer, et il l'ignorerait encore une
+fois obtenue.
+
+### 37.5 La leçon du chapitre : un appui n'est pas un état
+
+Le bouton de pause a été livré **parfaitement placé, sa zone parfaitement calculée**, et il ne
+répondait pas. Deux causes indépendantes, aucune visible au code, aucune détectable par un test :
+l'appui posé et relevé entre deux images était filtré avant d'être vu, et l'appui publié comme
+« cette image-ci » était lu une image trop tôt par un objet dont Unity ne garantit pas l'ordre.
+
+C'est la même famille que « déclaré n'est pas consommé », transposée au temps : une **entrée** se
+demande à tout moment (« cette touche est-elle enfoncée ? ») ; un **événement** ne se répond qu'une
+fois, et seulement à qui écoute au bon moment. Le portage tactile ajoute donc trois événements au
+jeu — esquive, pause, naissance du stick — là où il n'y avait que des états.
+
+### 37.6 Ce qui reste à juger en jouant
+
+- **La lisibilité des sprites.** La caméra montre 720 unités de haut sur une dalle de ~360 pixels
+  logiques : tout est rendu à la moitié de sa taille de bureau. Un ennemi de 32 px en fait 16.
+- **La densité des cartes de montée de niveau**, une fois le panneau borné à la largeur du canevas.
+- **Le confort du recentrage** — la seule valeur de ressenti de tout le chapitre.

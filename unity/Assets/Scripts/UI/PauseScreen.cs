@@ -188,7 +188,12 @@ public sealed class PauseScreen : MonoBehaviour
         var rect = panel.GetComponent<RectTransform>();
         rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0.5f);
         rect.pivot = new Vector2(0.5f, 0.5f);
-        rect.sizeDelta = new Vector2(760f, 700f);
+        // ⚠ Borné au canevas : à 700 unités de haut dans un canevas qui en fait 537 sur un
+        // téléphone, le panneau débordait des deux côtés — titre coupé en haut, et surtout
+        // **« Reprendre » et « Abandonner » hors de l'écran**. Un écran de pause dont on ne peut pas
+        // sortir enferme le joueur : il ne lui reste que fermer l'onglet, ce qui en web emporte sa
+        // sauvegarde. La liste de statistiques défile, elle absorbe donc la réduction.
+        rect.sizeDelta = UiCanvas.PanelSize(new Vector2(760f, 700f));
         rect.anchoredPosition = Vector2.zero;
 
         // ─── Titre : HORS zone de défilement ──────────────────────────────────
@@ -231,7 +236,13 @@ public sealed class PauseScreen : MonoBehaviour
         layout.childControlHeight = true;
 
         // Les libellés viennent de la table — ils annoncent aussi leur touche (« [Échap] »).
-        var resume = UiStyle.TextButton(buttonRow.transform, Loc.T("PAUSE_RESUME"), FrameAccent.Cyan);
+        //
+        // ⚠ Sauf au doigt : sur mobile, Échap n'existe pas, et le rappel deviendrait un **mensonge**
+        // — le troisième du portage tactile, après le rappel d'esquive du HUD. La règle « une
+        // capacité annonce sa touche » ne dit pas « annonce une touche », elle dit « annonce comment
+        // on la déclenche » ; quand il n'y a pas de clavier, la réponse est le bouton lui-même.
+        string resumeKey = TouchInput.Active ? "PAUSE_RESUME_TOUCH" : "PAUSE_RESUME";
+        var resume = UiStyle.TextButton(buttonRow.transform, Loc.T(resumeKey), FrameAccent.Cyan);
         resume.onClick.AddListener(Resume);
         _firstButton = resume;
 

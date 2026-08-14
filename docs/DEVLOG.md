@@ -4,6 +4,56 @@
 > `release-manager`). Entrées en ordre décroissant (la plus récente en haut). Ton orienté
 > joueur, EN puis FR (audience itch surtout anglophone).
 
+## v2.3.0 — Play it on your phone (2026-08-14)
+
+**New — the browser version plays with your thumbs**
+- Open the page on a phone and play. A **joystick appears wherever your thumb lands** — not at a
+  fixed spot, because a fixed spot is *under* your thumb at the exact moment you're looking for it.
+  Push it far and it follows you, so a half-centimetre back always slows you down.
+- **Dodge and pause are two buttons on the right.** The dodge button shows its own cooldown, and it
+  only appears once a graft has actually granted you the dodge.
+- **Aiming is done for you.** The Vector Lance and the Vector Beam are the only weapons you aim
+  yourself; with no cursor and no right stick, the choice isn't between aiming by hand and aiming
+  automatically — it's between aiming automatically and firing in a direction nobody controls.
+- **The game asks for landscape.** The arena is 16:9 and the camera shows a fixed slice of the
+  world: in portrait, swarms would arrive off-screen. That's not a layout problem, it's your field
+  of view — so the game waits rather than pretending.
+
+**Also better on a desktop**
+- Menus adapt to small windows. On a phone in landscape, buttons were about **four millimetres
+  across** — perfectly drawn, perfectly centred, and impossible to hit.
+- The pause screen fits on short screens. On a phone, **Resume** and **Abandon** were off the
+  bottom of the screen: you could pause and never leave.
+
+**Nothing changes for the Windows download.** It stays on 2.2.0 and plays exactly the same.
+
+---
+
+**Nouveau — la version navigateur se joue au doigt**
+- Ouvrez la page sur un téléphone et jouez. Un **joystick apparaît là où le pouce se pose** — pas à
+  une place fixe, parce qu'une place fixe est *sous* le pouce au moment précis où on la cherche.
+  Poussez-le loin et il vous suit : un demi-centimètre de retour suffit toujours à ralentir.
+- **L'esquive et la pause sont deux boutons à droite.** Le bouton d'esquive porte sa propre
+  recharge, et il n'apparaît qu'une fois qu'une greffe vous a réellement accordé l'esquive.
+- **La visée se fait toute seule.** La Lance Vectorielle et le Rayon Vectoriel sont les deux seules
+  armes que l'on vise soi-même ; sans curseur ni stick droit, le choix n'est pas entre viser à la
+  main et viser automatiquement — il est entre viser automatiquement et tirer dans une direction que
+  personne ne contrôle.
+- **Le jeu réclame le paysage.** L'arène est en 16/9 et la caméra montre une tranche de monde fixe :
+  en portrait, les nuées arriveraient hors de l'écran. Ce n'est pas un problème de mise en page,
+  c'est le champ de vision — alors le jeu attend au lieu de faire semblant.
+
+**Meilleur aussi sur un écran d'ordinateur**
+- Les menus s'adaptent aux petites fenêtres. Sur un téléphone en paysage, les boutons faisaient
+  environ **quatre millimètres** — parfaitement dessinés, parfaitement centrés, et impossibles à
+  toucher.
+- L'écran de pause tient sur les écrans bas. Sur un téléphone, **Reprendre** et **Abandonner**
+  sortaient par le bas : on pouvait mettre en pause sans pouvoir en sortir.
+
+**Rien ne change pour le téléchargement Windows.** Il reste en 2.2.0 et se joue exactement pareil.
+
+---
+
 ## v2.2.0 — Play it in your browser (2026-08-13)
 
 **New — the whole game, in a browser tab**

@@ -335,6 +335,15 @@ public sealed class Player : MonoBehaviour
             return;
         }
 
+        // Doigts : il n'y a ni curseur ni stick droit à lire. La visée se prend alors sur l'ennemi le
+        // plus proche — voir AutoAim().
+        if (TouchInput.Active)
+        {
+            AimAutomatically();
+            UpdateAimIndicator();
+            return;
+        }
+
         // ⚠ Ces deux lectures passaient par des axes de l'Input Manager — dont "RightStickX" et
         // "RightStickY" qui n'ont JAMAIS été déclarés dans InputManager.asset. Unity lève alors une
         // ArgumentException à chaque frame, ce qui interrompait cette méthode ici même : la branche
@@ -374,6 +383,40 @@ public sealed class Player : MonoBehaviour
         }
 
         UpdateAimIndicator();
+    }
+
+    /// <summary>Portée dans laquelle la visée automatique cherche une cible, en pixels.</summary>
+    /// <remarks>
+    /// Un peu plus que la demi-diagonale de l'écran de référence : la visée ne doit désigner que ce
+    /// que le joueur <b>voit</b>. Viser plus loin ferait pointer le réticule vers un vide apparent et
+    /// donnerait l'impression d'une arme cassée — exactement le symptôme que la visée dirigée existe
+    /// pour éviter.
+    /// </remarks>
+    private const float AutoAimRange = 1100f;
+
+    /// <summary>
+    /// Visée sans dispositif de pointage : la direction de l'ennemi le plus proche.
+    /// </summary>
+    /// <remarks>
+    /// <para>⚠ <b>Ceci est le comportement que <c>VectorLance</c> s'interdit</b>, et pour de bonnes
+    /// raisons : viser automatiquement transforme la seule arme d'adresse du jeu en canon
+    /// automatique. La différence tient entièrement à ce qui déclenche cette branche — <b>l'absence
+    /// de tout moyen de pointer</b>. Sur un téléphone, il n'y a ni curseur ni stick droit ; le choix
+    /// n'est pas entre viser à la main et viser tout seul, il est entre viser tout seul et une arme
+    /// qui tire dans une direction que le joueur ne contrôle pas du tout. La règle du fichier reste
+    /// donc intacte : tant qu'un moyen de pointer existe, la Lance ne cible jamais toute seule.</para>
+    ///
+    /// <para>Sans cible en vue, on <b>garde la dernière direction</b> plutôt que de repartir vers la
+    /// droite : un réticule qui se recale brutalement à chaque accalmie attire l'œil pour rien, au
+    /// milieu d'un écran déjà chargé.</para>
+    /// </remarks>
+    private void AimAutomatically()
+    {
+        var target = EnemyBase.Nearest(transform.position, AutoAimRange);
+        if (target == null) return;
+
+        Vector2 toTarget = (Vector2)target.transform.position - (Vector2)transform.position;
+        if (toTarget.sqrMagnitude > 1f) AimDirection = toTarget.normalized;
     }
 
     /// <summary>

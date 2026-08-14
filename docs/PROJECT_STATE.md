@@ -6,6 +6,60 @@
 
 - Pile technique : **Unity 6.5 (C#, URP 2D)** depuis la 2.0.0. **Version en ligne : 2.1.1** (2026-08-13,
   build itch #1880556).
+- **Le jeu se joue au DOIGT (2026-08-14).** Schéma retenu par l'auteur : **joystick flottant à
+  gauche + visée automatique**, esquive et pause en boutons à droite, **paysage forcé**. Détail des
+  pièges : **`docs/PITFALLS_UNITY.md` §Tactile**.
+  - **Trois fichiers** touchent maintenant un périphérique : `InputRemap`, `RawInput`, et
+    **`TouchInput`** — à part parce qu'un joystick flottant a une **mémoire** (l'endroit où le doigt
+    s'est posé) là où clavier et manette se lisent sans état. Sa géométrie est pure et testée :
+    `Rules/VirtualStick` (dosage, zone morte, **recentrage**) et `Rules/TouchZones` (zones, boutons,
+    portrait, grossissement d'interface). **772 tests** (684 → 772).
+  - **`UI/TouchHud`** dessine les contrôles *et* ouvre leur capture (`TouchInput.SetGameControls`) :
+    celui qui montre est celui qui écoute, ils ne peuvent pas diverger. Fermé par défaut, refermé dès
+    qu'une modale s'ouvre — sinon un stick poussé au moment du menu de niveau resterait poussé.
+  - **`UI/OrientationGate`** refuse le portrait : l'arène est en 16/9 et la caméra montre une hauteur
+    de monde fixe, donc en portrait les nuées arriveraient **hors champ**. Ce n'est pas un problème de
+    mise en page, c'est le champ de vision.
+  - **La moitié du travail est hors d'Unity** : `Assets/WebGLTemplates/ChimeraMobile/index.html`
+    désarme le zoom au double-appui, le défilement, le geste de retour, l'appui long, et plafonne
+    `devicePixelRatio` à 1 (un téléphone en annonce 3 → **neuf fois** trop de pixels rendus).
+  - ⚠ **`EventSystem.pixelDragThreshold` (10 px) est calibré pour une souris.** Au doigt, le seuil
+    est franchi presque à chaque appui : uGUI requalifie en glissement et **le bouton ne reçoit
+    jamais son clic**. Porté à 24 px au premier contact tactile. Aucune erreur, menu qui paraît mort.
+  - ⚠ **L'interface tombait à l'échelle 0,37 sur un téléphone** — des boutons de 4 mm. Corrigé en
+    rétrécissant la *maquette* (`UiCanvas.ReferenceFor`), ce qui n'était possible qu'après avoir borné
+    les panneaux posés en unités absolues (`UiCanvas.PanelSize` : l'écran de montée de niveau fait
+    1420 × 680). **Un panneau tronqué serait pire que des boutons petits.**
+  - ⚠ **Sur mobile, Échap n'existe pas** : une run n'était ni interruptible ni abandonnable.
+    `RawInput.PauseRequestedThisFrame()` réunit Échap et le bouton tactile.
+  - ▶ **`--touch` / `?touch`** force le mode tactile et **simule la souris en doigt** (via
+    `TouchSimulation` du paquet Input System, donc le vrai chemin de code). Sans lui, il n'y a rien à
+    regarder sur une machine de bureau. Ne couvre pas le **multi-touch**.
+  - ⚠⚠ **Le bouton de pause était parfaitement placé et ne répondait pas.** Deux façons d'avaler un
+    appui : filtrer sur `isPressed` avant `wasPressedThisFrame` (avale le tapotement), et publier un
+    appui comme « cette image-ci » (**l'ordre des `Update` entre objets n'est pas garanti**, le
+    lecteur passe avant le pompage une fois sur deux). L'événement survit 2 images et se consomme.
+  - ⚠⚠ **Le grossissement a cassé quatre choses, toutes trouvées SUR IMAGE** : textes **chevauchés**
+    au choix du niveau · deux boutons du Hub **empilés**, dont un destructeur · le cadrage du menu
+    calculé sur `1920/1080` en dur et sa colonne qui **recouvrait le logo** · le bouton de pause posé
+    **exactement sur** le compteur de Noyaux. Ce dernier est le cas général : **deux repères qui ne se
+    voient pas l'un l'autre** (pixels écran pour les contrôles tactiles, unités de maquette pour le
+    HUD). Le **HUD refuse désormais le grossissement** (`enlargeForTouch: false`) : il n'a aucune
+    cible tactile et se superpose à l'arène.
+  - ⚠⚠ **Le navigateur mélangeait deux builds** (mêmes noms de fichiers, cache HTTP) → crash wasm
+    illisible au démarrage. Corrigé par `BuildBench.StampWebCacheBuster` (jeton `__BUILD_ID__` =
+    SHA + horodatage, posé en paramètre d'URL sur loader/framework/code/données).
+  - ⚠ **Trois rappels de touche mensongers au doigt** : esquive (HUD), « Reprendre [Échap] »
+    (pause) et « Appuyez sur une touche pour passer » (intro). Contrôle : `grep` dans `ui.csv` sur les
+    crochets **et** sur le mot « touche » — un texte peut être **correct et faux**.
+  - ⚠ **L'écran de pause enfermait le joueur** : son panneau (760 × 700) débordait d'un canevas de
+    téléphone (954 × 537), « Reprendre » et « Abandonner » **hors de l'écran**. Et la pause n'étant
+    pas dans `ModalQueue`, les contrôles tactiles restaient actifs par-dessus — un pouce resté sur le
+    joystick poussait pendant la pause. Corrigés tous les deux.
+  - ▶ **Reste à juger en jouant sur un vrai téléphone** : la lisibilité des sprites (la caméra montre
+    720 unités de haut sur 360 px de dalle, donc tout est rendu à moitié taille), la densité des
+    cartes de montée de niveau une fois le panneau borné, et le confort du recentrage du stick.
+
 - **Entrées portées sur le paquet Input System — publié en 2.1.1** (2026-08-13, build itch #1880556). L'Input Manager est
   marqué pour dépréciation par Unity ; `com.unity.inputsystem` 1.20.0 installé,
   `activeInputHandler` passé à **1** (Input System seul), ce qui éteint l'avertissement. Détail des

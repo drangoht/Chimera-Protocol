@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en-us">
+<head>
+  <meta charset="utf-8">
+  <title>{{{ PRODUCT_NAME }}}</title>
+
+  <!--
+    ⚠ CE FICHIER EST LA MOITIÉ DU PORTAGE MOBILE.
+    Unity ne peut rien contre ce qui se passe AVANT lui : le zoom du navigateur, le défilement de la
+    page, le geste de rafraîchissement, la barre d'URL qui mange le bas de l'écran. Aucun de ces
+    défauts ne se voit dans l'éditeur, aucun ne lève d'erreur, et chacun rend le jeu injouable au
+    doigt. Ils se règlent tous ici, en CSS et en trois écouteurs.
+
+    `maximum-scale=1` + `user-scalable=no` : sans eux, un double-appui pour esquiver ZOOME la page.
+    `viewport-fit=cover` : le canevas passe sous l'encoche plutôt que de laisser deux bandes noires.
+  -->
+  <meta name="viewport"
+        content="width=device-width, height=device-height, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#1A1A2E">
+
+  <!--
+    ⚠⚠ CETTE PAGE NE DOIT JAMAIS ÊTRE MISE EN CACHE — et c'est le maillon dont dépendent tous les
+    autres. Elle est la seule à porter l'identifiant de build qui invalide le loader, le wasm et les
+    données. Gardée en cache, elle continue de désigner les fichiers de l'ancien build : le
+    garde-cache existe, il est correct, et il ne s'applique jamais. C'est exactement ce qui s'est
+    produit au premier essai — le jeu repartait sur un port neuf et restait cassé sur l'ancien.
+    Elle pèse huit kilo-octets : la retélécharger à chaque lancement ne coûte rien.
+  -->
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background: #1A1A2E;
+      overflow: hidden;
+
+      /* Le doigt ne fait JAMAIS défiler, zoomer ni rafraîchir : il joue. `touch-action: none`
+         supprime aussi le délai de 300 ms que certains navigateurs gardent pour distinguer un
+         appui d'un double-appui — délai qui, sur un survivor, se ressent comme une entrée molle. */
+      touch-action: none;
+      overscroll-behavior: none;
+
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;   /* appui long = menu « copier l'image » sur iOS, sinon */
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    #unity-container {
+      position: fixed;
+      inset: 0;
+      /* `dvh` suit la barre d'URL qui se rétracte ; `100%` reste le repli des navigateurs
+         qui ne la connaissent pas. Sans cela, le bas du jeu — donc le bouton d'esquive — se
+         retrouve caché derrière la barre du navigateur. */
+      height: 100%;
+      height: 100dvh;
+    }
+
+    #unity-canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      background: #1A1A2E;
+      touch-action: none;
+      outline: none;
+    }
+
+    /* ─── Chargement ─────────────────────────────────────────────────────── */
+
+    #unity-loading {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 18px;
+      color: #D9D9F2;
+      font-family: "Share Tech Mono", ui-monospace, "Consolas", monospace;
+      letter-spacing: 0.08em;
+      pointer-events: none;
+    }
+
+    #unity-loading-title { font-size: 18px; color: #44FFEE; }
+
+    #unity-loading-track {
+      width: min(60vw, 320px);
+      height: 6px;
+      background: #24243F;
+      border: 1px solid #3A3A5C;
+    }
+
+    #unity-loading-fill { width: 0; height: 100%; background: #44FFEE; }
+
+    #unity-warning {
+      position: absolute;
+      left: 50%;
+      top: 12px;
+      transform: translateX(-50%);
+      max-width: 90vw;
+      padding: 10px 14px;
+      background: #1A1A2E;
+      border: 1px solid #FFCC44;
+      color: #FFCC44;
+      font-family: ui-monospace, monospace;
+      font-size: 13px;
+      text-align: center;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="unity-container">
+    <canvas id="unity-canvas" tabindex="-1"></canvas>
+
+    <div id="unity-loading">
+      <div id="unity-loading-title">{{{ PRODUCT_NAME }}}</div>
+      <div id="unity-loading-track"><div id="unity-loading-fill"></div></div>
+    </div>
+
+    <div id="unity-warning"></div>
+  </div>
+
+  <script>
+    var canvas    = document.querySelector("#unity-canvas");
+    var loading   = document.querySelector("#unity-loading");
+    var fill      = document.querySelector("#unity-loading-fill");
+    var warningEl = document.querySelector("#unity-warning");
+
+    // Un navigateur mobile, ou une machine sans souris. `maxTouchPoints` est le seul test fiable :
+    // la chaîne d'agent utilisateur ment (mode bureau d'un téléphone, iPad qui se déclare Mac).
+    var isMobile = (navigator.maxTouchPoints || 0) > 1 ||
+                   /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+    function showWarning(message) {
+      warningEl.textContent = message;
+      warningEl.style.display = "block";
+    }
+
+    // ⚠⚠ IDENTIFIANT DE BUILD — À NE PAS RETIRER.
+    // Les fichiers de sortie d'Unity portent TOUJOURS le même nom (`web.wasm.unityweb`,
+    // `web.data.unityweb`) d'un build à l'autre. Sans distinction dans l'URL, le navigateur sert ce
+    // qu'il a en cache : il peut donc associer le .data d'un build au .wasm d'un autre. Le symptôme
+    // n'est pas « version périmée », c'est « RuntimeError: memory access out of bounds » suivi de
+    // trois cents offsets wasm — un crash au démarrage qu'on passe une heure à chercher dans son
+    // propre code. C'est arrivé, et la seule chose qui l'a démasqué est que les offsets étaient
+    // IDENTIQUES après une recompilation qui avait changé la taille du binaire.
+    //
+    // Le jeton ci-dessous est remplacé par le build (BuildBench.StampWebCacheBuster) par le SHA et
+    // l'heure. Il invalide aussi le cache IndexedDB d'Unity (`dataCaching`), qui indexe par URL.
+    var buildId = "__BUILD_ID__";
+
+    var config = {
+      dataUrl: "Build/{{{ DATA_FILENAME }}}?v=" + buildId,
+      frameworkUrl: "Build/{{{ FRAMEWORK_FILENAME }}}?v=" + buildId,
+      codeUrl: "Build/{{{ CODE_FILENAME }}}?v=" + buildId,
+#if MEMORY_FILENAME
+      memoryUrl: "Build/{{{ MEMORY_FILENAME }}}?v=" + buildId,
+#endif
+#if SYMBOLS_FILENAME
+      symbolsUrl: "Build/{{{ SYMBOLS_FILENAME }}}?v=" + buildId,
+#endif
+      streamingAssetsUrl: "StreamingAssets",
+      companyName: "{{{ COMPANY_NAME }}}",
+      productName: "{{{ PRODUCT_NAME }}}",
+      productVersion: "{{{ PRODUCT_VERSION }}}",
+      showBanner: function (msg) { showWarning(msg); }
+    };
+
+    // ⚠ LE RÉGLAGE DE PERFORMANCE LE PLUS RENTABLE DU PORTAGE MOBILE.
+    // Un téléphone récent annonce un rapport de pixels de 3 : Unity rendrait alors NEUF fois plus de
+    // pixels que la dalle logique n'en montre, sur un GPU qui vaut le dixième d'une carte de bureau.
+    // Le jeu est en pixel art à 1 px = 1 unité — il n'a rien à y gagner. À 1, la cadence tient les
+    // 60 images/s mesurées sur bureau ; au natif, elle s'effondre sans qu'aucune erreur ne le dise.
+    if (isMobile) config.devicePixelRatio = 1;
+
+    var script = document.createElement("script");
+    script.src = "Build/{{{ LOADER_FILENAME }}}?v=" + buildId;
+
+    script.onload = function () {
+      createUnityInstance(canvas, config, function (progress) {
+        fill.style.width = (100 * progress) + "%";
+      }).then(function (instance) {
+        loading.style.display = "none";
+        window.unityInstance = instance;
+        installMobileGestures(instance);
+      }).catch(function (error) {
+        showWarning("Chargement impossible : " + error);
+      });
+    };
+
+    document.body.appendChild(script);
+
+    /**
+     * Les trois gestes du navigateur qu'il faut désarmer, et le seul qu'il faut armer.
+     */
+    function installMobileGestures(instance) {
+      // 1. L'appui long ouvre le menu contextuel par-dessus le jeu. Il ne se supprime qu'ici :
+      //    `-webkit-touch-callout` ne couvre qu'iOS.
+      canvas.addEventListener("contextmenu", function (e) { e.preventDefault(); }, { passive: false });
+
+      // 2. Le double-appui zoome encore sur iOS malgré la balise viewport — c'est un geste séparé,
+      //    et il tombe exactement sur le rythme d'un joueur qui esquive deux fois de suite.
+      canvas.addEventListener("gesturestart", function (e) { e.preventDefault(); }, { passive: false });
+
+      // 3. Le glissement depuis le bord déclenche « page précédente » sur Android. `touchmove` non
+      //    passif est le seul moyen de le retenir.
+      canvas.addEventListener("touchmove", function (e) { e.preventDefault(); }, { passive: false });
+
+      if (!isMobile) return;
+
+      // 4. Le plein écran, lui, doit être ARMÉ — et il exige un geste de l'utilisateur : l'appeler au
+      //    chargement échoue silencieusement. Une seule fois, au premier contact ; ensuite le joueur
+      //    reste maître (le geste système de sortie continue de fonctionner).
+      //    Sur iPhone, l'API n'existe pas : le `try` évite qu'une exception n'arrête le script juste
+      //    avant les écouteurs restants d'une prochaine version de ce fichier.
+      var armed = true;
+      canvas.addEventListener("pointerdown", function () {
+        if (!armed) return;
+        armed = false;
+        try { instance.SetFullscreen(1); } catch (e) { /* iOS : pas de plein écran, on joue quand même */ }
+      }, { once: false });
+    }
+  </script>
+</body>
+</html>

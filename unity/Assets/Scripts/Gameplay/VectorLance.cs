@@ -9,6 +9,14 @@ using UnityEngine;
 /// <b>jamais</b> passer par <c>FindNearestEnemy</c> : le faire la transformerait silencieusement en
 /// canon automatique et supprimerait tout son intérêt.</para>
 ///
+/// <para><b>L'exception, et pourquoi elle n'en est pas une</b> : sur un écran tactile, la visée est
+/// prise sur l'ennemi le plus proche (<c>Player.AimAutomatically</c>). La règle ci-dessus n'est pas
+/// levée pour autant — elle porte sur le cas où le joueur <i>peut</i> pointer. Un téléphone n'a ni
+/// curseur ni stick droit : le choix n'y est pas entre viser à la main et viser tout seul, mais entre
+/// viser tout seul et tirer dans une direction que personne ne contrôle. Cette arme ne doit toujours
+/// jamais appeler <c>FindNearestEnemy</c> elle-même — c'est la <i>visée du joueur</i> qui change de
+/// source, pas l'arme qui change de nature.</para>
+///
 /// <para>⚠ <b>Elle était signalée « ne fonctionne pas », et c'était juste — sans qu'un seul tir ne
 /// manque.</b> Trois choses lui manquaient, chacune invisible au code : la visée du joueur suivait
 /// la direction de <i>déplacement</i> (voir <c>Player.UpdateAim</c>), le trait ne <b>perforait

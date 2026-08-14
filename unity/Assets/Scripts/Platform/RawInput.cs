@@ -18,12 +18,32 @@ using UnityEngine.InputSystem;
 /// touche sans passer par cette classe, c'est un candidat au défaut ci-dessus. C'est aussi la
 /// contrepartie de la leçon du portage — une entrée lue à dix endroits est une règle qu'on ne peut
 /// pas vérifier.</para>
+///
+/// <para><b>Le tactile n'est pas ici</b> : il vit dans <see cref="TouchInput"/>, parce qu'il a besoin
+/// d'une mémoire d'une image à l'autre (un joystick flottant n'existe que par l'endroit où le doigt
+/// s'est posé) là où clavier, souris et manette se lisent sans état. Seule
+/// <see cref="PauseRequestedThisFrame"/> réunit les deux, parce que la question posée est la même.</para>
 /// </summary>
 public static class RawInput
 {
     /// <summary>Échap vient-il d'être pressé ? Ferme un écran, annule un remappage.</summary>
     public static bool EscapePressedThisFrame()
         => Keyboard.current?.escapeKey.wasPressedThisFrame == true;
+
+    /// <summary>
+    /// Le joueur demande-t-il la <b>pause</b> — Échap, ou le bouton tactile en haut à droite ?
+    /// </summary>
+    /// <remarks>
+    /// <para>⚠ <b>Sur mobile, Échap n'existe pas.</b> Une run n'y serait donc ni interruptible ni
+    /// abandonnable : la seule issue serait de fermer l'onglet, ce qui en web emporte aussi la
+    /// sauvegarde tant qu'elle n'est pas écrite sur disque. C'est la raison d'être de cette méthode,
+    /// et pourquoi le <c>RunHud</c> l'appelle à la place d'<see cref="EscapePressedThisFrame"/>.</para>
+    ///
+    /// <para>Les <i>autres</i> écrans gardent Échap : ils ont tous un bouton « Retour » qu'un doigt
+    /// atteint, alors que le HUD d'une run n'en a aucun.</para>
+    /// </remarks>
+    public static bool PauseRequestedThisFrame()
+        => EscapePressedThisFrame() || TouchInput.PausePressedThisFrame();
 
     /// <summary>
     /// Une entrée « quelconque » vient-elle d'arriver — clavier, clic ou manette ?

@@ -150,7 +150,7 @@ public sealed class RunEndScreen : MonoBehaviour
         var rect = panel.GetComponent<RectTransform>();
         rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0.5f);
         rect.pivot = new Vector2(0.5f, 0.5f);
-        rect.sizeDelta = new Vector2(820f, 560f);
+        rect.sizeDelta = UiCanvas.PanelSize(new Vector2(820f, 560f));
         rect.anchoredPosition = Vector2.zero;
 
         var column = UiStyle.NewUiObject("Column", panel.transform);

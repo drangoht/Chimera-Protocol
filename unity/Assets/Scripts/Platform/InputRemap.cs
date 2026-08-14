@@ -74,17 +74,39 @@ public static class InputRemap
         return false;
     }
 
-    /// <summary>L'action vient-elle d'être déclenchée cette frame ?</summary>
+    /// <summary>
+    /// L'action vient-elle d'être déclenchée cette frame ? Clavier <b>ou</b> bouton tactile.
+    /// </summary>
     public static bool WasPressedThisFrame(GameAction action)
     {
+        if (action == GameAction.Dash && TouchInput.DashPressedThisFrame()) return true;
+
         foreach (var key in _bindings[action])
             if (Held(key)?.wasPressedThisFrame == true) return true;
         return false;
     }
 
-    /// <summary>Vecteur de déplacement normalisé, à partir des quatre actions directionnelles.</summary>
+    /// <summary>
+    /// Vecteur de déplacement, de norme ≤ 1 : les quatre actions directionnelles, ou le joystick
+    /// tactile s'il est tenu.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Pourquoi le tactile arrive ici et non chez l'appelant.</b> Ce vecteur est lu par
+    /// <c>Player</c> et par la sonde du banc. Y ajouter un « ou bien le doigt » côté appelant ferait
+    /// deux endroits à tenir d'accord, et le portage a déjà montré ce que cela donne — un chemin
+    /// d'entrée porté à un seul de ses sites d'appel est un chemin qui marche à la démonstration et
+    /// pas en jeu (les 14 armes muettes, la visée morte). Le point d'entrée reste unique ; seule sa
+    /// source s'élargit.</para>
+    ///
+    /// <para>Le joystick l'emporte tant qu'il est tenu, sans se mélanger au clavier : additionner les
+    /// deux permettrait de dépasser la norme 1, donc la vitesse maximale, sans qu'aucun plafond ne
+    /// le dise. Sur une tablette avec clavier, lâcher le doigt rend la main aux touches à l'image
+    /// suivante.</para>
+    /// </remarks>
     public static Vector2 MoveVector()
     {
+        if (TouchInput.StickHeld) return TouchInput.MoveVector();
+
         var v = new Vector2(
             (IsPressed(GameAction.MoveRight) ? 1f : 0f) - (IsPressed(GameAction.MoveLeft) ? 1f : 0f),
             (IsPressed(GameAction.MoveUp)    ? 1f : 0f) - (IsPressed(GameAction.MoveDown) ? 1f : 0f));

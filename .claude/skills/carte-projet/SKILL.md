@@ -32,6 +32,8 @@ unity/
     Scripts/Bench/              Banc headless : auto-play, smoke tests, tour de captures
     Editor/                     Scripts d'éditeur : build, SpriteFrames, import des assets
     Editor/spriteframes/        Manifestes JSON d'animation (écrits par tools/, lus par BuildSpriteFrames)
+    WebGLTemplates/ChimeraMobile/ Page hôte du build web — ⚠ la MOITIÉ du portage tactile vit ici
+                                (zoom, défilement, geste de retour, barre d'URL, devicePixelRatio)
     Art/sprites/                Sources importées par GUID (ennemis, joueur, armes, ramassages, décor)
     Art/branding/               icon.png — icône de l'exécutable (désignée par ProjectSettings)
     Resources/                  Chargé PAR CHEMIN à l'exécution : Ui, UiFrames, Vfx, Environment,
@@ -66,6 +68,9 @@ carte par carte) · `LocTable` · **`MagnetSchedule`** (fenêtres d'apparition d
 `AttractRadius` porte le rayon du Noyau, que `core_magnetism` élargit de 100 à 150 px) ·
 **`LaunchQuery`** (chaîne de requête d'URL → arguments de ligne de commande : `?biome=neon&invuln`
 vaut `--biome=neon --invuln`, ce qui rend **tous les drapeaux utilisables dans un navigateur**) ·
+**`TouchZones`** (decoupage de l'ecran tactile : zone du stick, boutons, portrait, et le
+grossissement d'interface `UiEnlargement`) · **`VirtualStick`** (geometrie du joystick
+flottant : origine posee au contact, dosage, **recentrage**) ·
 `PressureMeter` · `RarityWeights` ·
 `RegenReserve` · `SaturationTable` · `SaveData` / `SaveMigration` / `SettingsData` · `SpawnCurve` ·
 `StartingPerks` · `StatCaps` · `Titles` · `VersionCompare` · `WeaponFusion` · `WeaponLeveling` ·
@@ -83,12 +88,17 @@ l'URL** en web ; point d'accès unique, cf. `Rules/LaunchQuery`) ·
 `BuildInfo` (tampon `v<version>-<sha>`) · `DiscordPresence` · `DataFiles` · `Gd` (utilitaires
 transposés) · `SpriteFramesAsset`
 
-**Entrées — les DEUX seuls fichiers qui touchent aux périphériques** (paquet Input System depuis le
-2026-08-13) : `InputRemap` (actions de jeu remappables — déplacement, dash) et `RawInput` (Échap,
-« n'importe quelle touche », clic, curseur, stick droit). Tout le reste passe par eux ; un écran qui
-lit une touche directement est un défaut — `Keyboard.current` peut être **nul**, et l'exception
-qui s'ensuit saute la fin de la méthode appelante sans rien signaler
-(→ `docs/PITFALLS_UNITY.md` §Entrées).
+**Entrées — les TROIS seuls fichiers qui touchent aux périphériques** (paquet Input System depuis
+le 2026-08-13) : `InputRemap` (actions de jeu remappables — déplacement, dash), `RawInput` (Échap,
+« n'importe quelle touche », clic, curseur, stick droit, **demande de pause**) et **`TouchInput`**
+(dalle tactile, depuis le 2026-08-14). Tout le reste passe par eux ; un écran qui lit une touche
+directement est un défaut — `Keyboard.current` peut être **nul**, et l'exception qui s'ensuit saute
+la fin de la méthode appelante sans rien signaler (→ `docs/PITFALLS_UNITY.md` §Entrées).
+⚠ **Le tactile est à part parce qu'il a une MÉMOIRE** : un joystick flottant n'existe que par
+l'endroit où le doigt s'est posé, là où clavier et manette se lisent sans état. `TouchInput` porte
+cette machine à états et rien d'autre — la géométrie vit dans `Rules/VirtualStick` et
+`Rules/TouchZones`. Son pompage est installé en `BeforeSceneLoad` sur un objet `DontDestroyOnLoad` :
+un invariant porté par un écran, un tiers peut l'annuler (→ §Tactile).
 
 ## §Gameplay — `unity/Assets/Scripts/Gameplay/`
 - **Joueur** : `Player`, `PlayerStats`, `ChimeraBody`, `RunCamera`, `Assimilation`, `GraftManager`
@@ -123,6 +133,10 @@ quoi que ce soit puisse les lire — indispensable en web, où `StreamingAssets`
 `CodexScreen` · `ChallengeScreen` · `AssimilationScreen` · `LevelUpScreen` · `PauseScreen` ·
 `RunEndScreen` · `OptionsScreen` · `RunHud` (+ `HUD` côté Gameplay) · `UpdateBanner` ·
 `GameScenes` · `ModalQueue` · `UiFocusGuard` / `UiFocusPulse` / **`UiRarityFlare`** / `UiVignette` ·
+**`TouchHud`** (joystick flottant, bouton d'esquive, bouton de pause — **celui qui montre est
+celui qui écoute** : c'est lui qui ouvre `TouchInput.SetGameControls`. Seul canevas du jeu en
+`ConstantPixelSize` : ces contrôles se mesurent en pouces, pas en pixels de maquette) ·
+**`OrientationGate`** (refus du portrait, hors scènes, `DontDestroyOnLoad`) ·
 **`FusionBanner`** (annonce d'une fusion forgée — ordre 90 : au-dessus du HUD, sous les modales ;
 aucun `GraphicRaycaster`, il n'intercepte rien) ·
 ⚠ **Aucun écran de sélection de personnage n'existe côté Unity** — il n'a pas été porté.
@@ -221,17 +235,26 @@ pages store itch · `archive-godot/` (ère Godot).
   rien ne la lisait. Vérifier au banc, pas sur la table.
 
 ## Commandes utiles
-- **Tests** : `dotnet test tests/ChimeraProtocol.Tests.csproj` (673 tests, aucun moteur requis)
+- **Tests** : `dotnet test tests/ChimeraProtocol.Tests.csproj` (772 tests, aucun moteur requis)
 - **Build du jeu** :
   `Unity.exe -batchmode -quit -projectPath unity -executeMethod BuildBench.Windows64Game`
   (autres cibles : `Windows64PlatformSmoke`, `Windows64RunSmoke`, `Windows64Il2cpp`)
 - **Build web** : `… -buildTarget WebGL -executeMethod BuildBench.WebGame` → `unity/Build/web/`.
   ⚠ Le **premier** build d'une plateforme réimporte tous les assets (~20 min, l'audio surtout).
   Réglages posés par le script, pas à la main (mémoire, Brotli + repli, stripping `Low`).
+- ⚠⚠ **Un crash `memory access out of bounds` au démarrage en web ?** Avant de chercher dans le code :
+  **servir sur un autre port**. Les fichiers de sortie portent toujours le même nom, et le cache HTTP
+  du navigateur peut associer le `.data` d'un build au `.wasm` d'un autre (→ `PITFALLS_UNITY.md` §Web).
+  Un jeton `__BUILD_ID__` posé par le build l'évite désormais ; s'il disparaît du gabarit, le build
+  l'annonce dans son journal.
+- **Regarder l'interface à la taille d'un téléphone** : servir `unity/Build/web/` en local
+  (`python -m http.server`) et l'ouvrir dans un **iframe de 800 × 360** avec `?touch` — redimensionner
+  la fenêtre du navigateur ne change pas ce que le jeu voit. ⚠ **Six défauts de mise en page sur six
+  ont été trouvés là, aucun au code ni par un test.**
 - **Publier** : `tools/release_unity.ps1 -Version X.Y.Z -DryRun` puis sans `-DryRun`
   (web : `-Target web`, qui pousse sur le canal **`html5`** — ⚠ c'est le NOM du canal qui décide,
   côté itch.io, si le jeu se lance dans le navigateur ou se télécharge)
-- **Flags du jeu** (`DebugHooks`) : `--auto-play` · `--power-curve` · `--biome=<id>` ·
+- **Flags du jeu** (`DebugHooks`) : `--auto-play` · `--power-curve` · `--touch` · `--biome=<id>` ·
   `--timescale=<x>` (≤ 4) · `--run-limit=<s>` · `--seed=<n>` · `--start-at=<min>` ·
   `--saturate-arsenal` · `--saturation=<n>` · `--force-elites` · `--invuln` · `--lang=<en|fr|es>`
   ⚠ **Non portés depuis Godot** : `--debug-boss`, `--debug-enemy`, `--force-graft`,

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -262,8 +263,60 @@ public sealed class HUD : MonoBehaviour
     /// </summary>
     private static string Pretty(string id) => id.Replace('_', ' ').ToUpperInvariant();
 
+    // ─── Place réservée aux contrôles tactiles ────────────────────────────────
+
+    /// <summary>Éléments du coin haut-droit, avec leur abscisse de repos.</summary>
+    /// <remarks>
+    /// ⚠ Le bouton de pause tactile vit dans un canevas mesuré en <b>pixels écran</b>, ce HUD dans un
+    /// canevas mesuré en unités de maquette. Les deux repères ne se voient pas l'un l'autre : le
+    /// bouton s'est donc posé exactement sur le compteur de Noyaux, et l'appui tombait sur celui des
+    /// deux qui était au-dessus. C'est le mode d'échec de toute mise en page à deux repères — il
+    /// n'apparaît qu'à une taille d'écran, et jamais dans l'éditeur.
+    /// </remarks>
+    private readonly List<(RectTransform Rect, float RestX)> _topRight = new();
+
+    /// <summary>Décalage horizontal appliqué au coin haut-droit à la frame précédente.</summary>
+    private float _topRightShift = -1f;
+
+    private void TrackTopRight(Component element)
+    {
+        var rect = element.GetComponent<RectTransform>();
+        if (rect != null) _topRight.Add((rect, rect.anchoredPosition.x));
+    }
+
+    /// <summary>
+    /// Écarte le coin haut-droit du HUD quand le bouton de pause tactile l'occupe.
+    /// </summary>
+    /// <remarks>
+    /// Vers la <b>gauche</b> et non vers le bas : le bouton fait 44 pixels de rayon, soit près de
+    /// 320 unités de maquette sur un téléphone — descendre d'autant poserait les compteurs au tiers
+    /// de la hauteur de l'écran, là où se déroule le combat.
+    /// </remarks>
+    private void UpdateTouchReserve()
+    {
+        float shift = 0f;
+
+        if (TouchInput.Active)
+        {
+            float diameter = 2f * TouchZones.PauseRadius(Screen.height);
+            float margin = TouchZones.EdgeMarginFraction * Screen.height;
+            shift = UiCanvas.PixelsToCanvas(diameter + margin + 12f, UiCanvas.Reference);
+        }
+
+        if (Mathf.Approximately(shift, _topRightShift)) return;
+        _topRightShift = shift;
+
+        foreach (var (rect, restX) in _topRight)
+        {
+            if (rect == null) continue;
+            rect.anchoredPosition = new Vector2(restX - shift, rect.anchoredPosition.y);
+        }
+    }
+
     private void Update()
     {
+        UpdateTouchReserve();
+
         var xp = XpSystem.Instance;
         if (xp != null)
         {
@@ -456,7 +509,13 @@ public sealed class HUD : MonoBehaviour
         // ⚠ Le libellé passait en couleur de FOND pendant la recharge — c'est-à-dire qu'il
         // DISPARAISSAIT au moment précis où il a quelque chose à dire. Il reste donc toujours
         // lisible ; c'est la jauge, et non le texte, qui porte l'état.
-        _dashLabel.text = Loc.T("HUD_DASH_HINT", InputRemap.DisplayName(GameAction.Dash));
+        // ⚠ Au doigt, ce rappel deviendrait un mensonge : il annoncerait une touche de clavier pour
+        // une capacité déclenchée par un bouton à l'écran, lequel porte déjà son propre libellé et sa
+        // recharge. Le principe reste celui du paragraphe ci-dessus — la capacité s'annonce — mais
+        // c'est le bouton qui l'annonce.
+        _dashLabel.text = TouchInput.Active
+            ? ""
+            : Loc.T("HUD_DASH_HINT", InputRemap.DisplayName(GameAction.Dash));
         _dashLabel.color = ready ? Cyan : DimCyan;
 
         if (_dashGauge != null) _dashGauge.SetActive(true);
@@ -595,7 +654,11 @@ public sealed class HUD : MonoBehaviour
         var canvasGo = new GameObject("HUDCanvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
         canvasGo.transform.SetParent(transform, false);
 
-        UiCanvas.Configure(canvasGo);
+        // ⚠ `enlargeForTouch: false` — le seul canevas du jeu à le refuser. Le grossissement paie des
+        // cibles tactiles avec de la surface d'écran ; le HUD n'a aucune cible et se superpose à
+        // l'arène. Grossi, le panneau de vitalité mangeait un tiers de la largeur du champ de
+        // bataille sur un téléphone, c'est-à-dire là où l'on a le moins de place à donner.
+        UiCanvas.Configure(canvasGo, enlargeForTouch: false);
 
         BuildVitals(canvasGo.transform);
         BuildTimer(canvasGo.transform);
@@ -646,6 +709,7 @@ public sealed class HUD : MonoBehaviour
         _fpsLabel = BuildLabel(canvasGo.transform, "Fps", new Vector2(1f, 1f),
                                new Vector2(-140f, -24f), new Vector2(120f, 26f), OffWhite, TextAnchor.UpperRight);
         _fpsLabel.fontSize = 16;
+        TrackTopRight(_fpsLabel);
 
         BuildBossPanel(canvasGo.transform);
 
@@ -811,11 +875,13 @@ public sealed class HUD : MonoBehaviour
         coreImage.preserveAspect = true;
         coreImage.raycastTarget = false;
         coreImage.color = Violet;
+        TrackTopRight(coreImage);
 
         _coreLabel = BuildLabel(parent, "Cores", new Vector2(1f, 1f),
                                 new Vector2(-56f, -18f), new Vector2(48f, 30f), Violet,
                                 TextAnchor.UpperLeft);
         _coreLabel.fontSize = 24;
+        TrackTopRight(_coreLabel);
 
         // Éliminations juste en dessous : elles étaient collées au chrono, où elles brouillaient la
         // seule information qu'on y cherche.
@@ -824,6 +890,7 @@ public sealed class HUD : MonoBehaviour
                                  TextAnchor.UpperRight);
         _killsLabel.fontSize = 20;
         _killsLabel.GetComponent<RectTransform>().pivot = new Vector2(1f, 1f);
+        TrackTopRight(_killsLabel);
     }
 
     /// <summary>

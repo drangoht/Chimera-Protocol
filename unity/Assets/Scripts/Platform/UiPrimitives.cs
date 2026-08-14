@@ -11,6 +11,68 @@ public static class UiPrimitives
 {
     private static Sprite? _white;
     private static Sprite? _glowBox;
+    private static Sprite? _ring;
+    private static Sprite? _disc;
+
+    /// <summary>Côté, en pixels, des primitives circulaires.</summary>
+    /// <remarks>
+    /// 128 px pour un élément dessiné jusqu'à ~160 px de large sur une tablette : au-dessous, le bord
+    /// du cercle se crènele visiblement en s'agrandissant, et un contrôle tactile crénelé se lit
+    /// comme un placeholder oublié.
+    /// </remarks>
+    private const int CircleSize = 128;
+
+    /// <summary>
+    /// Anneau doux, centré, pour la base du joystick tactile et le contour des boutons.
+    /// </summary>
+    /// <remarks>
+    /// <para>Un contrôle tactile doit se lire <b>par-dessus une nuée</b> : un simple aplat se confond
+    /// avec les effets, alors qu'un anneau garde sa forme reconnaissable quel que soit ce qui passe
+    /// dessous, et laisse voir le champ de bataille en son centre — ce qui compte, puisqu'il est posé
+    /// là où le pouce regarde le moins.</para>
+    ///
+    /// <para>Les deux bords sont adoucis sur un pixel et demi : un anneau à bord franc, dessiné à une
+    /// taille qui n'est jamais celle de sa texture, produit un liseré en marches d'escalier.</para>
+    /// </remarks>
+    public static Sprite Ring => _ring ??= BuildCircle(annulus: true);
+
+    /// <summary>Disque plein aux bords adoucis — le pommeau du joystick, le fond des boutons.</summary>
+    public static Sprite Disc => _disc ??= BuildCircle(annulus: false);
+
+    private static Sprite BuildCircle(bool annulus)
+    {
+        const float Outer = CircleSize * 0.5f - 1f;
+        const float Thickness = CircleSize * 0.085f;   // ~11 px : visible sans peser
+        const float Feather = 1.5f;
+
+        var tex = new Texture2D(CircleSize, CircleSize, TextureFormat.RGBA32, false)
+        {
+            filterMode = FilterMode.Bilinear,
+            wrapMode = TextureWrapMode.Clamp,
+        };
+
+        var px = new Color[CircleSize * CircleSize];
+        float center = CircleSize * 0.5f - 0.5f;
+
+        for (int y = 0; y < CircleSize; y++)
+        for (int x = 0; x < CircleSize; x++)
+        {
+            float dx = x - center;
+            float dy = y - center;
+            float d = Mathf.Sqrt(dx * dx + dy * dy);
+
+            float alpha = Mathf.Clamp01((Outer - d) / Feather);
+            if (annulus)
+                alpha = Mathf.Min(alpha, Mathf.Clamp01((d - (Outer - Thickness)) / Feather));
+
+            px[y * CircleSize + x] = new Color(1f, 1f, 1f, alpha);
+        }
+
+        tex.SetPixels(px);
+        tex.Apply();
+
+        return Sprite.Create(tex, new Rect(0, 0, CircleSize, CircleSize), new Vector2(0.5f, 0.5f), 100f);
+    }
 
     /// <summary>
     /// Épaisseur du dégradé de <see cref="GlowBox"/>, en pixels — sa bordure 9-slice, et donc le

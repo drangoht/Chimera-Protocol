@@ -56,6 +56,28 @@ public static class DebugHooks
     private static bool? _showFps;
 
     /// <summary>
+    /// <c>--touch</c> : force le mode tactile — contrôles à l'écran, visée automatique — même sans
+    /// dalle.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Sans lui, le portage tactile n'est pas vérifiable.</b> Les contrôles ne s'affichent
+    /// qu'après un vrai contact (<see cref="TouchInput.Active"/>, et c'est délibéré : un portable
+    /// Windows à écran tactile ne doit pas se retrouver avec un joystick au milieu de l'écran). Mais
+    /// cela veut dire qu'à la souris, sur la machine où l'on développe, <b>il n'y a rien à
+    /// regarder</b> : ni joystick, ni bouton d'esquive, ni bouton de pause, et la visée reste celle
+    /// du curseur. Une interface qu'on ne peut pas afficher est une interface qu'on juge sur son
+    /// code — ce que ce projet a déjà payé assez cher.</para>
+    ///
+    /// <para>Il pose l'état, il ne simule pas de doigts : la <i>disposition</i> se vérifie
+    /// (placement, taille, lisibilité par-dessus une nuée, visée automatique), la <i>manipulation</i>
+    /// demande toujours un écran tactile ou l'émulation du navigateur.</para>
+    ///
+    /// <para>⚠ Comme tous les drapeaux, il n'écrit rien dans les réglages.</para>
+    /// </remarks>
+    public static bool ForceTouch => _forceTouch ??= HasFlag("--touch");
+    private static bool? _forceTouch;
+
+    /// <summary>
     /// <c>--seed=&lt;n&gt;</c> : graine du générateur global. Rend une run <b>reproductible</b> —
     /// mêmes vagues, mêmes tirages de cartes, mêmes affixes.
     /// </summary>
@@ -237,7 +259,7 @@ public static class DebugHooks
     public static void Reset()
     {
         _powerCurve = _autoPlay = _invulnerable = _saturateArsenal = _forceElites = _trailerMode = null;
-        _showFps = null;
+        _showFps = _forceTouch = null;
         _seedRead = _timeScaleRead = _startAtRead = _runLimitRead = _saturationRead = false;
         _languageRead = false;
     }

@@ -601,30 +601,35 @@ public sealed class IntroScreen : MonoBehaviour
         var lineRect = _line.GetComponent<RectTransform>();
         lineRect.anchorMin = lineRect.anchorMax = new Vector2(0.5f, 0f);
         lineRect.pivot = new Vector2(0.5f, 0f);
-        lineRect.sizeDelta = new Vector2(1400f, 120f);
+        lineRect.sizeDelta = UiCanvas.PanelSize(new Vector2(1400f, 120f), 16f);
         lineRect.anchoredPosition = new Vector2(0f, 150f);
         _line.color = new Color(0.90f, 0.92f, 1f, 0f);
 
         _title = UiStyle.Label(canvasGo.transform, Loc.T("INTRO_TITLE"), 76,
                                UiPalette.Violet, TextAnchor.MiddleCenter);
-        Center(_title, new Vector2(1400f, 110f), 40f);
+        Center(_title, UiCanvas.PanelSize(new Vector2(1400f, 110f), 16f), 40f);
         _title.gameObject.SetActive(false);
 
         _tagline = UiStyle.Label(canvasGo.transform, Loc.T("INTRO_TAGLINE"), 28,
                                  UiPalette.Cyan, TextAnchor.MiddleCenter);
-        Center(_tagline, new Vector2(1400f, 60f), -60f);
+        Center(_tagline, UiCanvas.PanelSize(new Vector2(1400f, 60f), 16f), -60f);
         _tagline.gameObject.SetActive(false);
 
         // ⚠ Affiché en PERMANENCE : une intro qu'on ne sait pas passer se subit. Sauf en capture
         // vidéo, où personne ne peut appuyer sur quoi que ce soit et où l'invite ne fait que salir
         // le plan.
+        // ⚠ « Appuyez sur une touche » n'a pas de sens sur un téléphone — troisième rappel de touche
+        // devenu mensonger au doigt, après celui de l'esquive et celui de la reprise. L'invite dit
+        // donc comment on passe, pas avec quoi.
+        string skipKey = TouchInput.Active ? "INTRO_SKIP_TOUCH" : "INTRO_SKIP";
+
         _skipHint = UiStyle.Label(canvasGo.transform,
-                                  DebugHooks.TrailerMode ? "" : "— " + Loc.T("INTRO_SKIP") + " —", 18,
+                                  DebugHooks.TrailerMode ? "" : "— " + Loc.T(skipKey) + " —", 18,
                                   UiPalette.Dim, TextAnchor.LowerCenter);
         var hintRect = _skipHint.GetComponent<RectTransform>();
         hintRect.anchorMin = hintRect.anchorMax = new Vector2(0.5f, 0f);
         hintRect.pivot = new Vector2(0.5f, 0f);
-        hintRect.sizeDelta = new Vector2(900f, 30f);
+        hintRect.sizeDelta = UiCanvas.PanelSize(new Vector2(900f, 30f), 16f);
         hintRect.anchoredPosition = new Vector2(0f, 40f);
 
         // Flash puis voile : le premier sert au titre, le second à l'ouverture et à la fermeture.

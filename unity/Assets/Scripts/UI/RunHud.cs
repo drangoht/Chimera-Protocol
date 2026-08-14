@@ -32,6 +32,12 @@ public sealed class RunHud : MonoBehaviour
         _assimilation = gameObject.AddComponent<AssimilationScreen>();
         _fusionBanner = gameObject.AddComponent<FusionBanner>();
 
+        // Les contrôles tactiles. Ajoutés ici plutôt que posés dans la scène par l'éditeur : la
+        // scène de jeu est écrite par un script d'éditeur, et un composant qui n'y vit que par une
+        // reconstruction manquerait à tout build dont on a oublié de la relancer. Il ne se montre
+        // que si un doigt touche la dalle — sur Windows, il ne coûte qu'un objet vide.
+        gameObject.AddComponent<TouchHud>();
+
         Assimilation.GaugeFilled += OnGaugeFilled;
 
         // ⚠ L'annonce et la fanfare sont branchées ICI, et non dans `InventorySystem.ApplyFusion`.
@@ -89,9 +95,10 @@ public sealed class RunHud : MonoBehaviour
 
     private void Update()
     {
-        // Échap ouvre la pause — sauf si une modale est déjà ouverte : deux pauses imbriquées se
-        // disputeraient la reprise, et l'une d'elles laisserait le jeu figé.
-        if (RawInput.EscapePressedThisFrame() && !ModalQueue.IsOpen)
+        // Échap — ou le bouton tactile, seule pause possible sur mobile — ouvre la pause, sauf si une
+        // modale est déjà ouverte : deux pauses imbriquées se disputeraient la reprise, et l'une
+        // d'elles laisserait le jeu figé.
+        if (RawInput.PauseRequestedThisFrame() && !ModalQueue.IsOpen)
             _pause?.Toggle();
     }
 
