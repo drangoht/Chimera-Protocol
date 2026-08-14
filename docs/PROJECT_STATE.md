@@ -5,7 +5,7 @@
 > `CLAUDE.md` ; le design complet dans `docs/GDD.md` ; la carte du code dans `/carte-projet`.
 
 - Pile technique : **Unity 6.5 (C#, URP 2D)** depuis la 2.0.0. **Versions en ligne :
-  web 2.3.0** (2026-08-14, build itch #1883123, canal `html5`) et **Windows 2.2.0** (build #1881127).
+  web 2.3.1** (2026-08-14, build itch #1883172, canal `html5`) et **Windows 2.2.0** (build #1881127).
   ⚠ Les deux canaux divergent volontairement : le portage tactile ne concerne que le web, et le
   manifeste `version.json` — que lit le bandeau de nouvelle version — décrit la version
   **téléchargeable**. Une release web ne le touche pas, sinon elle annoncerait aux joueurs Windows
