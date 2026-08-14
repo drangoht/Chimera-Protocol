@@ -28,7 +28,7 @@ canal `html5` ; Windows reste en 2.2.0 — le tactile ne le concerne pas). Sché
 **paysage forcé** (`OrientationGate`). Le tactile est le **troisième** fichier d'entrées
 (`Platform/TouchInput.cs`), à part parce qu'il a une **mémoire** — un stick flottant n'existe que par
 l'endroit où le doigt s'est posé, là où clavier et manette se lisent sans état. Géométrie pure et
-testée : `Rules/VirtualStick` + `Rules/TouchZones`. **772 tests.** Détail →
+testée : `Rules/VirtualStick` + `Rules/TouchZones`. **759 tests.** Détail →
 `docs/PITFALLS_UNITY.md` §Tactile.
 ⚠ **La moitié du portage tactile n'est PAS dans Unity.** Le gabarit web par défaut donne un jeu qui
 démarre sur téléphone et ne s'y joue pas : le double-appui **zoome**, le glissement **fait défiler**,
@@ -38,12 +38,51 @@ le geste depuis le bord **revient en arrière**, l'appui long ouvre un menu syst
 ⚠ **Quatre défauts qui ne se voient pas au code** : `Touchscreen.current != null` **ne dit pas** que
 le joueur se sert de ses doigts (un portable tactile désarmerait la Lance Vectorielle) ·
 `EventSystem.pixelDragThreshold` vaut 10 px, calibré pour une souris — au doigt **les boutons ne
-reçoivent jamais leur clic**, le menu paraît mort · une interface irréprochable en 1080p tombe à
-l'échelle **0,37** sur un téléphone, soit des boutons de **4 mm** · et sur mobile **Échap n'existe
-pas**, donc une run n'était ni interruptible ni abandonnable.
-⚠ **Le grossissement d'interface était plafonné par les panneaux posés en unités absolues** (l'écran
-de montée de niveau fait 1420 × 680) : `UiCanvas.PanelSize` les borne au canevas, ce qui ne marche
-que parce que leur contenu est élastique. **Un panneau tronqué serait pire que des boutons petits.**
+reçoivent jamais leur clic**, le menu paraît mort · **Échap n'existe pas** sur mobile, donc une run
+n'était ni interruptible ni abandonnable · et l'**intro n'était pas passable au doigt** alors que son
+invite disait « Touchez l'écran pour passer » (signalé en jouant — *un texte changé n'est pas une
+action câblée*, la leçon du chantier reproduite dans le chantier lui-même).
+▶ **`--touch` (`?touch` en web) force le mode tactile et simule la souris en doigt** — sans lui, il
+n'y a rien à regarder sur la machine où l'on développe, et une interface qu'on ne peut pas afficher
+est une interface qu'on juge sur son code.
+⚠⚠ **Le navigateur MÉLANGE deux builds, et le symptôme est un crash illisible.** Les fichiers de
+sortie portent toujours le même nom : le cache HTTP peut associer le `.data` d'un build au `.wasm`
+d'un autre → `RuntimeError: memory access out of bounds` + 300 offsets wasm, **au démarrage**, sans un
+nom de méthode. Une heure perdue à le chercher dans le code. ▶ **Un message d'erreur qui ne bouge pas
+alors que le binaire a changé ne vient pas du binaire qu'on croit exécuter** ; le test qui tranche en
+30 s est de **servir sur un autre port** (origine neuve = cache vierge). Corrigé par un jeton
+`__BUILD_ID__` que le build remplace (SHA **+ horodatage**) et pose en paramètre d'URL — **plus**
+`Cache-Control: no-store` sur la page hôte, sans quoi le garde-cache s'auto-annule : *un mécanisme
+d'invalidation transporté par une ressource cachable ne s'applique jamais.*
+⚠ Et `ExplicitlyThrownExceptionsOnly` **désactive les vérifications de bornes et de nullité** : le
+réglage censé rendre les défauts instruisibles rend les plus graves illisibles. Pour instruire :
+passer à `FullWithStacktrace`, rebuilder, revenir.
+⚠ **Trois rappels de touche devenus des mensonges au doigt** : « MAJ — esquive » (HUD),
+« Reprendre **[Échap]** » (pause) et « **Appuyez sur une touche** pour passer » (intro — la première
+phrase que lit un joueur). La règle « une capacité annonce sa touche » dit en fait **annonce comment
+on la déclenche** ; sans clavier, la réponse est le bouton. ▶ Contrôle : `grep` dans `ui.csv` sur les
+crochets **et** sur le mot « touche ». Un texte peut être **correct et faux** — l'audit de
+localisation le déclare parfait.
+⚠ **Puis l'écran de pause enfermait le joueur** : son panneau débordait, « Reprendre » et
+« Abandonner » **hors de l'écran** — et la pause n'étant pas dans `ModalQueue`, le joystick restait
+actif par-dessus. **Une condition « une modale est-elle ouverte ? » doit énumérer ce qui met le jeu
+en attente, pas ce qui est inscrit dans un registre.**
+⚠⚠ **Le bouton de pause était parfaitement placé et ne répondait pas** — deux façons d'avaler un
+appui, indépendantes : filtrer sur `isPressed` **avant** `wasPressedThisFrame` avale le tapotement
+(down et up dans la même image) ; et publier un appui comme « cette image-ci » le perd, **l'ordre des
+`Update` entre objets n'étant pas garanti** — le `RunHud` lisait une image trop tôt. Un événement
+d'entrée n'a pas la nature d'un état : il **survit** deux images et se **consomme** à la lecture.
+⚠⚠ **Grossir l'interface sur petite dalle : l'idée paraissait juste et ne l'était pas.** Un bouton
+de menu ne fait que 22 pixels **logiques** sur un téléphone en paysage — j'en ai conclu « 4 mm » et
+rétréci la maquette. **Essayé sur un Pixel 9 : textes hors de leurs cadres, menu énorme.** Mécanisme
+**retiré** le 2026-08-14 sur décision de l'auteur ; la maquette reste 1920 × 1080 partout.
+**Un pixel logique de téléphone n'est pas un pixel d'écran de bureau** — le calcul était cohérent,
+l'unité ne l'était pas, et aucun test ne pouvait le dire puisque le nombre était juste. ▶ Une
+conclusion tirée d'un calcul d'unités se vérifie **sur l'appareil visé**.
+⚠ Le détour a exhumé **quatre défauts de mise en page bien réels** (textes chevauchés, deux boutons
+du Hub empilés dont un destructeur, colonne du menu sur le logo, « Reprendre » hors écran). Ils ne se
+déclenchent plus, mais **ils sont toujours là** : toute mise en page à dimensions absolues les
+rejouera au prochain canevas étroit.
 ▶ **`--touch` (`?touch` en web) force le mode tactile et simule la souris en doigt** — sans lui, il
 n'y a rien à regarder sur la machine où l'on développe, et une interface qu'on ne peut pas afficher
 est une interface qu'on juge sur son code.
@@ -80,8 +119,7 @@ boutons du Hub **empilés**, dont un destructeur · le cadrage du menu calculé 
 dur**, et sa colonne qui **recouvrait le logo** · et le bouton de pause posé **exactement sur** le
 compteur de Noyaux, parce qu'il se mesure en pixels écran là où le HUD se mesure en unités de
 maquette. **Deux repères qui ne se voient pas l'un l'autre : c'est le mode d'échec de toute mise en
-page mixte, et il n'apparaît qu'à une taille d'écran.** Le HUD est depuis **le seul canevas à refuser
-le grossissement** — il n'a aucune cible tactile et se superpose à l'arène.
+page mixte, et il n'apparaît qu'à une taille d'écran.**
 
 **2026-08-13 (4) — PORTAGE WEB (WebGL) : le jeu tourne dans un navigateur.** Build
 `BuildBench.WebGame` → `unity/Build/web/` (**35,4 Mo** : 26,9 de données + 8,2 de wasm) ; publication
@@ -238,7 +276,7 @@ quand une phase se termine, relire les agents qu'elle concerne (dernière passe 
 - **Logique pure testable** : `unity/Assets/Scripts/Shared/Rules/` — classes statiques **sans
   dépendance moteur** (`XpCurve`, `EnemyScaling`, `SaturationTable`…). Les `MonoBehaviour` y délèguent.
   `Shared/PlatformCore/` porte le socle déterministe (`Pcg32`, `TimerWheel`, `Easing`).
-- **Tests unitaires** : xUnit, `dotnet test tests/ChimeraProtocol.Tests.csproj` — **772 tests**.
+- **Tests unitaires** : xUnit, `dotnet test tests/ChimeraProtocol.Tests.csproj` — **759 tests**.
   Ils compilent `Shared/` **par chemin** : aucun moteur, aucun build requis.
 - ⚠ **`Art/` ≠ `Resources/`** : `Art/` est consommé par **GUID** (planches d'animation), `Resources/`
   **par chemin** (`Resources.Load`) et embarqué en entier dans le binaire. Se tromper de dossier ne

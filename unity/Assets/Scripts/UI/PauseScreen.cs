@@ -188,12 +188,7 @@ public sealed class PauseScreen : MonoBehaviour
         var rect = panel.GetComponent<RectTransform>();
         rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0.5f);
         rect.pivot = new Vector2(0.5f, 0.5f);
-        // ⚠ Borné au canevas : à 700 unités de haut dans un canevas qui en fait 537 sur un
-        // téléphone, le panneau débordait des deux côtés — titre coupé en haut, et surtout
-        // **« Reprendre » et « Abandonner » hors de l'écran**. Un écran de pause dont on ne peut pas
-        // sortir enferme le joueur : il ne lui reste que fermer l'onglet, ce qui en web emporte sa
-        // sauvegarde. La liste de statistiques défile, elle absorbe donc la réduction.
-        rect.sizeDelta = UiCanvas.PanelSize(new Vector2(760f, 700f));
+        rect.sizeDelta = new Vector2(760f, 700f);
         rect.anchoredPosition = Vector2.zero;
 
         // ─── Titre : HORS zone de défilement ──────────────────────────────────

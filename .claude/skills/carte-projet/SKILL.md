@@ -69,7 +69,7 @@ carte par carte) · `LocTable` · **`MagnetSchedule`** (fenêtres d'apparition d
 **`LaunchQuery`** (chaîne de requête d'URL → arguments de ligne de commande : `?biome=neon&invuln`
 vaut `--biome=neon --invuln`, ce qui rend **tous les drapeaux utilisables dans un navigateur**) ·
 **`TouchZones`** (decoupage de l'ecran tactile : zone du stick, boutons, portrait, et le
-grossissement d'interface `UiEnlargement`) · **`VirtualStick`** (geometrie du joystick
+portrait) · **`VirtualStick`** (geometrie du joystick
 flottant : origine posee au contact, dosage, **recentrage**) ·
 `PressureMeter` · `RarityWeights` ·
 `RegenReserve` · `SaturationTable` · `SaveData` / `SaveMigration` / `SettingsData` · `SpawnCurve` ·
@@ -240,7 +240,7 @@ pages store itch · `archive-godot/` (ère Godot).
   rien ne la lisait. Vérifier au banc, pas sur la table.
 
 ## Commandes utiles
-- **Tests** : `dotnet test tests/ChimeraProtocol.Tests.csproj` (772 tests, aucun moteur requis)
+- **Tests** : `dotnet test tests/ChimeraProtocol.Tests.csproj` (759 tests, aucun moteur requis)
 - **Build du jeu** :
   `Unity.exe -batchmode -quit -projectPath unity -executeMethod BuildBench.Windows64Game`
   (autres cibles : `Windows64PlatformSmoke`, `Windows64RunSmoke`, `Windows64Il2cpp`)

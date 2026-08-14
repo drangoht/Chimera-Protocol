@@ -654,11 +654,7 @@ public sealed class HUD : MonoBehaviour
         var canvasGo = new GameObject("HUDCanvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
         canvasGo.transform.SetParent(transform, false);
 
-        // ⚠ `enlargeForTouch: false` — le seul canevas du jeu à le refuser. Le grossissement paie des
-        // cibles tactiles avec de la surface d'écran ; le HUD n'a aucune cible et se superpose à
-        // l'arène. Grossi, le panneau de vitalité mangeait un tiers de la largeur du champ de
-        // bataille sur un téléphone, c'est-à-dire là où l'on a le moins de place à donner.
-        UiCanvas.Configure(canvasGo, enlargeForTouch: false);
+        UiCanvas.Configure(canvasGo);
 
         BuildVitals(canvasGo.transform);
         BuildTimer(canvasGo.transform);

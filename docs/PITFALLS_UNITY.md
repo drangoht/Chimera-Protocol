@@ -1135,30 +1135,32 @@ Aucune erreur, aucun symptôme dans un journal : le menu paraît simplement mort
 symptôme possible sur mobile, le joueur n'ayant alors aucun recours. Porté à **24 px** (~4 mm) au
 premier contact tactile, jamais sur une machine sans dalle.
 
-### Une interface irréprochable en 1080p est **intouchable** sur un téléphone
+### ⚠⚠ Grossir l'interface sur petite dalle : l'idée qui paraissait juste et qui ne l'était pas
 
-Un téléphone en paysage fait environ 800 × 360 pixels logiques. Rapportée à une maquette de
-1920 × 1080, l'interface y tombe à une échelle de **0,37** : un bouton de menu de 60 unités mesure
-22 pixels, soit à peu près **4 mm**. Il est parfaitement dessiné, parfaitement centré, et le doigt en
-couvre trois. Rien ne le signale — sur un écran de bureau, la même interface est irréprochable.
+Le raisonnement de départ : un téléphone en paysage fait environ 800 × 360 pixels **logiques** ;
+rapportée à une maquette de 1920 × 1080, l'interface y tombe à une échelle de 0,37, et un bouton de
+menu de 60 unités n'y mesure plus que 22 pixels. Conclusion tirée depuis un poste de bureau : c'est
+4 mm, le doigt en couvre trois, il faut donc rétrécir la maquette pour tout grossir.
 
-**Parade** : réduire la *maquette* (`UiCanvas.ReferenceFor`, calcul pur dans
-`TouchZones.UiEnlargement`) plutôt que grossir chaque élément — les onze écrans d'un coup, et rien ne
-change là où le problème n'existe pas (seuil : hauteur de fenêtre < 600 px, car `Screen.dpi` vaut
-**zéro** en WebGL et la question physique n'a donc pas de réponse directe).
+**Essayé sur un Pixel 9 : c'était faux, et spectaculairement.** Les textes **sortaient de leurs
+cadres**, le menu principal devenait énorme, et l'ensemble était moins utilisable qu'avant.
+Le mécanisme entier a été retiré le 2026-08-14, à la demande de l'auteur — la maquette reste
+1920 × 1080 partout.
 
-⚠ **Ce qui plafonnait ce grossissement à une valeur presque inutile** : les panneaux posés en unités
-absolues. L'écran de montée de niveau fait **1420 × 680** — à une maquette rétrécie de moitié, le
-joueur aurait vu la carte du milieu et deviné les deux autres. **Un panneau tronqué est un défaut
-pire que des boutons petits.** D'où `UiCanvas.PanelSize`, qui borne ces tailles au canevas courant :
-elle ne marche que parce que ces panneaux ont un contenu **élastique** (la rangée de cartes est un
-`HorizontalLayoutGroup`, les listes défilent) — réduire le cadre y réduit les cartes, il ne les coupe
-pas.
+> **Un pixel logique de téléphone n'est pas un pixel d'écran de bureau.** Convertir « 22 pixels » en
+> millimètres suppose une densité qu'on n'a pas mesurée. Le calcul était cohérent, l'unité ne l'était
+> pas — et aucun test ne pouvait le dire, puisque le nombre était juste.
 
-⚠ Le canevas change de taille **tout seul** en web (barre d'URL qui se rétracte, rotation, clavier
-virtuel). Un `CanvasScaler` réglé une seule fois à la construction garderait la référence de départ :
-l'interface resterait minuscule après le tout premier geste, c'est-à-dire au moment exact où le
-joueur essaie de s'en servir. D'où le veilleur de taille posé par `UiCanvas.Configure`.
+**Ce que le détour a laissé derrière lui**, et qu'il fallait de toute façon corriger : grossir
+l'interface avait fait apparaître quatre défauts de mise en page bien réels, tous invisibles en
+1080p — textes chevauchés au choix du niveau (hauteurs de ligne fixes), deux boutons du Hub empilés
+dont un destructeur, colonne du menu recouvrant le logo, panneau de pause dont « Reprendre » sortait
+de l'écran. Ils ne se déclenchent plus, mais **ils sont toujours là** : toute mise en page à
+dimensions absolues les rejouera au prochain canevas étroit.
+
+⚠ **La leçon de méthode** : une conclusion tirée d'un calcul d'unités se vérifie **sur l'appareil
+visé**, pas sur une capture redimensionnée. Le projet a la règle pour l'image (« une UI ne se juge
+pas au code ») ; elle vaut aussi pour la *taille physique*, que même une capture ne montre pas.
 
 ### Le portrait n'est pas un problème de mise en page, c'est le **champ de vision**
 
@@ -1233,67 +1235,31 @@ est en `ConstantPixelSize` à l'échelle 1, parce que ces contrôles-ci se mesur
 en pixels de maquette — un bouton à l'échelle de la maquette ferait 44 px sur un téléphone et 130 sur
 une tablette, alors que le pouce a la même taille sur les deux.
 
-### Ce que le grossissement d'interface a cassé — trouvé **sur image**, jamais au code
+### Quatre défauts de mise en page qui ne se voient qu'à l'étroit
 
-Rétrécir la maquette est le bon levier, mais il déplace du travail. Quatre défauts, tous invisibles
-sur un écran de bureau, tous visibles en une capture à 800 × 360 :
+Ils ont été découverts en rétrécissant la maquette (mécanisme depuis retiré, voir plus haut), mais
+**ils n'ont pas disparu avec lui** : toute mise en page à dimensions absolues les rejouera au premier
+canevas étroit. Tous invisibles en 1080p, tous visibles en une capture à 800 × 360 :
 
-1. **Textes chevauchés** (choix du niveau). La disposition pose ses quatre lignes à des hauteurs
-   **fixes**, en documentant « la place de ses deux lignes possibles ». Sur un canevas deux fois plus
-   étroit, chaque texte prend deux fois plus de lignes. → hauteurs multipliées par
-   `UiCanvas.Narrowing()`. ⚠ Le premier correctif exemptait le titre — « un nom tient sur une
-   ligne » — en oubliant qu'il porte aussi le palier de menace : le « 0 » de « Menace 0 » tombait sur
-   la ligne suivante. **Une exception à une règle d'espacement se paie sur le cas qu'on n'avait pas
-   en tête.**
+1. **Textes chevauchés** (choix du niveau). Quatre lignes posées à des hauteurs **fixes**, en
+   documentant « la place de ses deux lignes possibles ». Sur un canevas deux fois plus étroit,
+   chaque texte prend deux fois plus de lignes. ⚠ Le premier correctif exemptait le titre — « un nom
+   tient sur une ligne » — en oubliant qu'il porte aussi le palier de menace : le « 0 » de
+   « Menace 0 » tombait sur la ligne suivante. **Une exception à une règle d'espacement se paie sur
+   le cas qu'on n'avait pas en tête.**
 2. **Deux boutons empilés** (Hub). « Réinitialiser » partait du bord gauche sur 460 unités, « Retour »
-   était centré : à 1920 unités ils ne se croisaient jamais, à 954 ils se **recouvraient sur 170**.
-   L'un des deux est destructeur. → les deux aux **coins opposés**, et le plus large cède de la
-   largeur. Une mise en page où rien ne dit qui est à gauche de qui ne survit pas au premier
-   changement de largeur.
+   était centré : à 1920 ils ne se croisaient jamais, à 954 ils se **recouvraient sur 170**. L'un des
+   deux est destructeur. → les deux aux **coins opposés** ; une mise en page où rien ne dit qui est à
+   gauche de qui ne survit pas au premier changement de largeur.
 3. **Un cadrage calculé sur des constantes périmées** (menu). Le recouvrement de l'illustration se
-   calculait sur `1920f / 1080f` et `1080f` en dur : sur une maquette rétrécie, ces nombres
-   décrivaient un cadre qui n'existait plus et le débordement valait jusqu'au double — gros plan sur
-   le ventre de la Chimère. Et la colonne de menu, à 460 unités dans un canevas qui en fait 537,
-   **recouvrait le logo**, c'est-à-dire l'identité du jeu sur son premier écran.
+   calculait sur `1920f / 1080f` et `1080f` en dur, au lieu de la taille réelle du canevas.
 4. ⚠⚠ **Deux repères qui ne se voient pas** (HUD). Le bouton de pause vit dans un canevas mesuré en
    **pixels écran** (il se dimensionne en pouces) ; le HUD, dans un canevas mesuré en **unités de
    maquette**. Aucun des deux ne connaît l'autre : le bouton s'est posé exactement sur le compteur de
    Noyaux d'Aether, et l'appui tombait sur celui des deux qui était au-dessus. → `UiCanvas.PixelsToCanvas`
    et une place réservée, recalculée à chaque image. **C'est le mode d'échec de toute mise en page à
-   deux repères : il n'apparaît qu'à une taille d'écran, et jamais dans l'éditeur.**
-
-### Le HUD est le seul canevas à refuser le grossissement
-
-`UiCanvas.Configure(..., enlargeForTouch: false)`. Le grossissement paie des cibles tactiles avec de
-la **surface d'écran** : bon marché pour un menu, dont la surface ne sert qu'à lui. Le HUD n'a
-**aucune cible** et se superpose à l'arène — grossi, le panneau de vitalité mangeait un tiers de la
-largeur du champ de bataille, au moment précis où l'écran est le plus petit.
-
-### ⚠⚠ Deux façons d'avaler un appui, et aucune ne lève d'erreur
-
-Le bouton de pause était **parfaitement placé, sa zone parfaitement calculée** — et il ne répondait
-pas. Deux causes indépendantes, l'une et l'autre invisibles au code.
-
-**1. Filtrer sur `isPressed` avant `wasPressedThisFrame`.** Un appui posé et relevé entre deux images
-se présente avec `isPressed` déjà à `false` : un `if (!touch.press.isPressed) continue;` en tête de
-boucle **avale le tapotement**, qui est pourtant le geste le plus naturel sur un bouton. L'arrivée se
-teste donc en premier, le maintien ensuite. Le défaut ne se reproduit pas à tous les coups — il se
-signale « le bouton ne répond pas une fois sur dix », c'est-à-dire de la façon la plus coûteuse à
-instruire.
-
-**2. Publier un appui comme « cette image-ci ».** Le pompage tactile vit sur un objet créé en
-`BeforeSceneLoad` ; **l'ordre des `Update` entre objets n'est pas garanti par Unity**. Le `RunHud`
-qui interroge la pause s'exécute donc, une fois sur deux, *avant* le pompage : il lit une image trop
-tôt, et à l'image suivante `Time.frameCount == _pausePressedFrame` est déjà faux. L'appui
-disparaît.
-
-**Parade** : l'événement **survit** deux images et se **consomme** à la lecture. Chaque appui n'a
-qu'un lecteur (la pause pour le HUD de run, l'esquive pour le joueur) — un second lecteur dans la
-même image verrait `false`, ce qui est le comportement voulu pour une *action*, pas pour un *état*.
-
-> Le trait commun aux deux : **un événement d'entrée n'a pas la même nature qu'un état d'entrée.**
-> « Cette touche est-elle enfoncée ? » se répond à tout moment ; « vient-elle d'être pressée ? » ne
-> se répond qu'une fois, et seulement à qui écoute au bon moment.
+   deux repères : il n'apparaît qu'à une taille d'écran, et jamais dans l'éditeur.** Celui-ci est
+   toujours actif — le bouton tactile n'a pas changé d'unité.
 
 ### Un écran de pause dont on ne peut pas sortir enferme le joueur
 

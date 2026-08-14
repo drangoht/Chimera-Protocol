@@ -216,15 +216,10 @@ public sealed class LevelSelectScreen : MonoBehaviour
         var card = new Card { BiomeId = biomeId };
         var accent = AccentOf(biomeId);
 
-        // ⚠ Sur une petite dalle, la maquette est rétrécie pour que l'interface reste touchable au
-        // doigt : le canevas y fait jusqu'à deux fois moins d'unités de large, donc chaque texte
-        // prend jusqu'à deux fois plus de lignes. Les hauteurs ci-dessous suivent ce facteur, faute
-        // de quoi les deux derniers textes se chevauchent — ce qui est arrivé du premier coup.
-        float wrap = UiCanvas.Narrowing();
-
         var frame = UiStyle.Card(_list, biomeId, accent);
         var element = frame.AddComponent<LayoutElement>();
-        element.minHeight = element.preferredHeight = CardHeight + TextBlockHeight * (wrap - 1f);
+        element.minHeight = CardHeight;
+        element.preferredHeight = CardHeight;
 
         BuildThumbnail(frame.transform, biomeId, accent);
 
@@ -238,15 +233,10 @@ public sealed class LevelSelectScreen : MonoBehaviour
         // ⚠ Les quatre lignes sont posées à des hauteurs FIXES, donc chacune doit avoir la place de
         // ses deux lignes possibles : la description du Secteur Néon et la règle d'un cran passent
         // toutes deux à la ligne, et les serrer faisait se chevaucher les deux derniers textes.
-        // ⚠ Les QUATRE lignes suivent `wrap`, y compris le titre. Le premier essai l'en exemptait —
-        // « un nom tient toujours sur une ligne » — en oubliant que le titre porte aussi le palier de
-        // menace : « Sanctuaire Rouillé   Menace 0 » passe à la ligne dès que le canevas se rétrécit,
-        // et le « 0 » tombait alors sur « Terrain neutre ». Une exception à une règle d'espacement se
-        // paie toujours sur le cas qu'on n'avait pas en tête.
-        card.Title = Line(text, 26, UiStyle.ColorOf(accent), 0f, 34f * wrap);
-        card.Effect = Line(text, 20, UiPalette.Gold, 36f * wrap, 26f * wrap);
-        card.Description = Line(text, 19, UiPalette.OffWhite, 64f * wrap, 52f * wrap);
-        card.Saturation = Line(text, 17, UiPalette.Dim, 118f * wrap, 52f * wrap);
+        card.Title = Line(text, 26, UiStyle.ColorOf(accent), 0f, 34f);
+        card.Effect = Line(text, 20, UiPalette.Gold, 36f, 26f);
+        card.Description = Line(text, 19, UiPalette.OffWhite, 64f, 52f);
+        card.Saturation = Line(text, 17, UiPalette.Dim, 118f, 52f);
 
         // Colonne de droite : lancer en haut, réglage du cran dessous. Les deux appartiennent à la
         // même décision — où jouer, et à quelle dureté — donc au même endroit de la carte.
@@ -348,12 +338,6 @@ public sealed class LevelSelectScreen : MonoBehaviour
     };
 
     private const float CardHeight = 196f;
-
-    /// <summary>
-    /// Part de <see cref="CardHeight"/> occupée par le bloc de texte — celle qui grandit quand le
-    /// canevas se rétrécit. Les 26 px restants sont les marges haute et basse de la carte.
-    /// </summary>
-    private const float TextBlockHeight = 170f;
     private const float ThumbnailSize = 136f;
     private const float LaunchWidth = 220f;
     private const float RankWidth = 72f;

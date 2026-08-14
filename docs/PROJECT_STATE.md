@@ -30,10 +30,12 @@
   - ⚠ **`EventSystem.pixelDragThreshold` (10 px) est calibré pour une souris.** Au doigt, le seuil
     est franchi presque à chaque appui : uGUI requalifie en glissement et **le bouton ne reçoit
     jamais son clic**. Porté à 24 px au premier contact tactile. Aucune erreur, menu qui paraît mort.
-  - ⚠ **L'interface tombait à l'échelle 0,37 sur un téléphone** — des boutons de 4 mm. Corrigé en
-    rétrécissant la *maquette* (`UiCanvas.ReferenceFor`), ce qui n'était possible qu'après avoir borné
-    les panneaux posés en unités absolues (`UiCanvas.PanelSize` : l'écran de montée de niveau fait
-    1420 × 680). **Un panneau tronqué serait pire que des boutons petits.**
+  - ⚠⚠ **Le grossissement d'interface a été essayé puis RETIRÉ** (2026-08-14, décision de l'auteur
+    après essai sur Pixel 9) : rétrécir la maquette pour agrandir les cibles faisait **sortir les
+    textes de leurs cadres** et rendait le menu principal énorme. Le raisonnement partait de « 22
+    pixels logiques = 4 mm » — mais **un pixel logique de téléphone n'est pas un pixel d'écran de
+    bureau**. Le calcul était cohérent, l'unité ne l'était pas, et aucun test ne pouvait le dire
+    puisque le nombre était juste. La maquette reste 1920 × 1080 partout.
   - ⚠ **Sur mobile, Échap n'existe pas** : une run n'était ni interruptible ni abandonnable.
     `RawInput.PauseRequestedThisFrame()` réunit Échap et le bouton tactile.
   - ▶ **`--touch` / `?touch`** force le mode tactile et **simule la souris en doigt** (via

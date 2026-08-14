@@ -4,7 +4,7 @@
 > `release-manager`). Entrées en ordre décroissant (la plus récente en haut). Ton orienté
 > joueur, EN puis FR (audience itch surtout anglophone).
 
-## v2.3.0 — Play it on your phone (2026-08-14)
+## v2.3.1 — Play it on your phone (2026-08-14)
 
 **New — the browser version plays with your thumbs**
 - Open the page on a phone and play. A **joystick appears wherever your thumb lands** — not at a
@@ -18,12 +18,8 @@
 - **The game asks for landscape.** The arena is 16:9 and the camera shows a fixed slice of the
   world: in portrait, swarms would arrive off-screen. That's not a layout problem, it's your field
   of view — so the game waits rather than pretending.
-
-**Also better on a desktop**
-- Menus adapt to small windows. On a phone in landscape, buttons were about **four millimetres
-  across** — perfectly drawn, perfectly centred, and impossible to hit.
-- The pause screen fits on short screens. On a phone, **Resume** and **Abandon** were off the
-  bottom of the screen: you could pause and never leave.
+- The pause screen is reachable from a phone at all, which it wasn't: there is no Escape key on a
+  touchscreen, so a run could be started and never left.
 
 **Nothing changes for the Windows download.** It stays on 2.2.0 and plays exactly the same.
 
@@ -42,13 +38,8 @@
 - **Le jeu réclame le paysage.** L'arène est en 16/9 et la caméra montre une tranche de monde fixe :
   en portrait, les nuées arriveraient hors de l'écran. Ce n'est pas un problème de mise en page,
   c'est le champ de vision — alors le jeu attend au lieu de faire semblant.
-
-**Meilleur aussi sur un écran d'ordinateur**
-- Les menus s'adaptent aux petites fenêtres. Sur un téléphone en paysage, les boutons faisaient
-  environ **quatre millimètres** — parfaitement dessinés, parfaitement centrés, et impossibles à
-  toucher.
-- L'écran de pause tient sur les écrans bas. Sur un téléphone, **Reprendre** et **Abandonner**
-  sortaient par le bas : on pouvait mettre en pause sans pouvoir en sortir.
+- L'écran de pause devient simplement atteignable depuis un téléphone, ce qu'il n'était pas : il n'y
+  a pas de touche Échap sur une dalle tactile, et une run pouvait être lancée sans pouvoir en sortir.
 
 **Rien ne change pour le téléchargement Windows.** Il reste en 2.2.0 et se joue exactement pareil.
 

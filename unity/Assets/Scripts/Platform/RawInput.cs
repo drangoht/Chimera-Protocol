@@ -46,22 +46,50 @@ public static class RawInput
         => EscapePressedThisFrame() || TouchInput.PausePressedThisFrame();
 
     /// <summary>
-    /// Une entrée « quelconque » vient-elle d'arriver — clavier, clic ou manette ?
+    /// Une entrée « quelconque » vient-elle d'arriver — clavier, clic, manette ou <b>doigt</b> ?
     ///
     /// <para>Sert à passer la cinématique : un joueur qui veut sauter ne doit pas chercher LA
-    /// touche. Les trois périphériques sont couverts parce que l'ancien <c>Input.anyKeyDown</c> les
-    /// couvrait tous les trois ; n'en garder qu'un rendrait l'intro impassable à la manette sans
+    /// touche. <b>Tous</b> les périphériques sont couverts parce que l'ancien <c>Input.anyKeyDown</c>
+    /// les couvrait tous ; n'en garder qu'un rendrait l'intro impassable sur ce périphérique-là sans
     /// qu'aucune erreur ne le signale.</para>
+    ///
+    /// <para>⚠ <b>Le doigt manquait, et l'intro était donc impassable sur téléphone</b> — signalé en
+    /// jouant, le jour même du portage tactile. Pire : l'invite avait été traduite en « Touchez
+    /// l'écran pour passer » <i>sans</i> que ce geste soit branché. Un texte changé n'est pas une
+    /// action câblée, et c'est exactement la leçon « déclaré n'est pas consommé » — reproduite dans
+    /// le chantier qui venait de la documenter.</para>
+    ///
+    /// <para>La dalle est lue <b>directement</b> ici, et non via <see cref="TouchInput"/> : celui-ci
+    /// filtre par zones et ne capte rien tant qu'une run n'est pas en cours (sa porte est fermée par
+    /// défaut). La question posée ici n'est pas « où » mais « quelque chose a-t-il été touché ».</para>
     /// </summary>
     public static bool AnyInputThisFrame()
     {
         if (Keyboard.current?.anyKey.wasPressedThisFrame == true) return true;
         if (PrimaryClickThisFrame()) return true;
+        if (AnyTouchThisFrame()) return true;
 
         var pad = Gamepad.current;
         return pad != null && (pad.buttonSouth.wasPressedThisFrame ||
                                pad.buttonEast.wasPressedThisFrame ||
                                pad.startButton.wasPressedThisFrame);
+    }
+
+    /// <summary>Un doigt vient-il de se poser, n'importe où ?</summary>
+    /// <remarks>
+    /// Balaye <b>tous</b> les contacts et pas seulement <c>primaryTouch</c> : après un premier doigt
+    /// resté posé, un second appui n'est pas le contact « primaire », et l'écran paraîtrait ne plus
+    /// répondre à qui tapote à deux doigts.
+    /// </remarks>
+    public static bool AnyTouchThisFrame()
+    {
+        var screen = Touchscreen.current;
+        if (screen == null) return false;
+
+        foreach (var touch in screen.touches)
+            if (touch.press.wasPressedThisFrame) return true;
+
+        return false;
     }
 
     /// <summary>Le bouton gauche de la souris vient-il d'être pressé ?</summary>

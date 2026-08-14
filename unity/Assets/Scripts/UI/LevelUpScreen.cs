@@ -161,7 +161,7 @@ public sealed class LevelUpScreen : MonoBehaviour
         // Proportions du jeu publié (docs/ui_v1160_levelup.png) : les cartes y occupent près de la
         // moitié de la hauteur. Le portage les tenait dans 520 px, et la description de
         // l'Auto-réparation — la plus longue du jeu — débordait par le bas une fois l'icône posée.
-        panelRect.sizeDelta = UiCanvas.PanelSize(new Vector2(1420f, 680f));
+        panelRect.sizeDelta = new Vector2(1420f, 680f);
         panelRect.anchoredPosition = Vector2.zero;
 
         // ⚠ `LEVELUP_TITLE` porte le numéro de niveau (« Level {0}! ») : la clé existait, traduite en

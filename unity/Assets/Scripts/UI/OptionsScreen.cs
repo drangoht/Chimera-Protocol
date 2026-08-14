@@ -216,7 +216,7 @@ public sealed class OptionsScreen : MonoBehaviour
         var panelRect = panel.GetComponent<RectTransform>();
         panelRect.anchorMin = panelRect.anchorMax = new Vector2(0.5f, 0.5f);
         panelRect.pivot = new Vector2(0.5f, 0.5f);
-        panelRect.sizeDelta = UiCanvas.PanelSize(new Vector2(980f, 860f));
+        panelRect.sizeDelta = new Vector2(980f, 860f);
         panelRect.anchoredPosition = Vector2.zero;
 
         float headerBottom = UiStyle.Header(panel.transform, Loc.T("OPTIONS_TITLE"));
@@ -444,7 +444,11 @@ public sealed class OptionsScreen : MonoBehaviour
     {
         if (_awaiting == null) return;
 
-        if (RawInput.EscapePressedThisFrame())
+        // ⚠ Un doigt annule aussi. Sans cela, un joueur mobile qui touche une ligne de remappage
+        // entre en attente d'une touche qu'il n'a **aucun moyen de presser** — pas de clavier, et
+        // Échap n'existe pas : l'écran des Options devient un piège dont on ne sort plus. Le
+        // remappage n'a pas de sens au doigt, mais il doit au moins être réversible.
+        if (RawInput.EscapePressedThisFrame() || RawInput.AnyTouchThisFrame())
         {
             _awaiting = null;
             Refresh();

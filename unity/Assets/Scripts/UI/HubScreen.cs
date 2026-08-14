@@ -170,22 +170,16 @@ public sealed class HubScreen : MonoBehaviour
         // Réinitialisation : elle REMBOURSE les Échos dépensés. C'est ce qui rend un arbre
         // d'améliorations réversible, donc explorable — sans elle, un achat regretté est définitif
         // et le joueur n'ose plus rien acheter.
-        // ⚠ Les deux boutons du bas sont posés aux DEUX COINS, et la réinitialisation cède de la
-        // largeur si le canevas est étroit. Auparavant, « Retour » était centré et la
-        // réinitialisation partait du bord gauche sur 460 unités : sur un canevas de bureau
-        // (1920 unités) ils ne se croisaient jamais, sur un canevas de téléphone (954) ils se
-        // **recouvraient** sur 170 unités — deux boutons empilés, dont un destructeur, et l'appui
-        // tombait sur celui du dessus. Une mise en page où rien ne dit qui est à gauche de qui ne
-        // survit pas au premier changement de largeur.
-        float panelWidth = UiCanvas.ReferenceFor(Screen.width, Screen.height).x;
-        float resetWidth = Mathf.Max(240f, Mathf.Min(460f, panelWidth - 320f - 100f));
-
+        // ⚠ Les deux boutons du bas sont posés aux DEUX COINS. « Retour » était centré et la
+        // réinitialisation partait du bord gauche : rien dans cette mise en page ne disait qui était
+        // à gauche de qui, et elle ne survivait donc pas au premier changement de largeur — les deux
+        // se sont recouverts sur un canevas étroit, dont un bouton destructeur.
         _reset = UiStyle.TextButton(panel, Loc.T("HUB_RESET"), FrameAccent.Danger);
         var resetRect = _reset.GetComponent<RectTransform>();
         resetRect.anchorMin = new Vector2(0f, 0f);
         resetRect.anchorMax = new Vector2(0f, 0f);
         resetRect.pivot = new Vector2(0f, 0f);
-        resetRect.sizeDelta = new Vector2(resetWidth, 60f);
+        resetRect.sizeDelta = new Vector2(460f, 60f);
         resetRect.anchoredPosition = new Vector2(28f, 16f);
         _reset.onClick.AddListener(ResetUpgrades);
 

@@ -71,11 +71,7 @@ public sealed class MainMenuScreen : MonoBehaviour
         var colRect = column.GetComponent<RectTransform>();
         colRect.anchorMin = colRect.anchorMax = new Vector2(0.5f, 0.5f);
         colRect.pivot = new Vector2(0.5f, 0.5f);
-        // ⚠ La hauteur cède sur une petite dalle. À 460 unités dans un canevas qui en fait 537, la
-        // colonne recouvre le logo — c'est-à-dire l'identité du jeu sur son premier écran. Les cinq
-        // entrées gardent largement la taille d'une cible tactile en cédant ces 80 unités.
-        float canvasHeight = UiCanvas.ReferenceFor(Screen.width, Screen.height).y;
-        colRect.sizeDelta = new Vector2(460f, Mathf.Min(460f, canvasHeight - 170f));
+        colRect.sizeDelta = new Vector2(460f, 460f);
         colRect.anchoredPosition = new Vector2(0f, -20f);
 
         var layout = column.AddComponent<VerticalLayoutGroup>();
@@ -167,12 +163,8 @@ public sealed class MainMenuScreen : MonoBehaviour
 
         // preserveAspect d'uGUI fait TENIR l'image dans le cadre (contain), là où il faut la faire
         // le RECOUVRIR (cover). D'où le calcul : on agrandit le rectangle du facteur qui manque.
-        // ⚠ Le format et la hauteur viennent du CANEVAS COURANT, pas de 1920 × 1080 en dur. Sur une
-        // petite dalle, la maquette est rétrécie (UiCanvas.ReferenceFor) : les deux constantes y
-        // décrivaient un cadre qui n'existe plus, et le débordement calculé valait jusqu'au double de
-        // ce qu'il fallait — l'illustration partait en gros plan, cadrée sur le ventre de la Chimère.
         var rect = go.GetComponent<RectTransform>();
-        Vector2 canvas = UiCanvas.ReferenceFor(Screen.width, Screen.height);
+        Vector2 canvas = UiCanvas.Reference;
         float artRatio = sprite.rect.width / sprite.rect.height;
         float screenRatio = canvas.x / canvas.y;
 
@@ -211,7 +203,7 @@ public sealed class MainMenuScreen : MonoBehaviour
         rect.anchorMin = new Vector2(0.5f, 1f);
         rect.anchorMax = new Vector2(0.5f, 1f);
         rect.pivot = new Vector2(0.5f, 1f);
-        rect.sizeDelta = UiCanvas.PanelSize(new Vector2(800f, 34f));
+        rect.sizeDelta = new Vector2(800f, 34f);
         rect.anchoredPosition = new Vector2(0f, -272f);
     }
 

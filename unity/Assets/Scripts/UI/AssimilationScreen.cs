@@ -148,7 +148,7 @@ public sealed class AssimilationScreen : MonoBehaviour
         var panelRect = panel.GetComponent<RectTransform>();
         panelRect.anchorMin = panelRect.anchorMax = new Vector2(0.5f, 0.5f);
         panelRect.pivot = new Vector2(0.5f, 0.5f);
-        panelRect.sizeDelta = UiCanvas.PanelSize(new Vector2(920f, 460f));
+        panelRect.sizeDelta = new Vector2(920f, 460f);
         panelRect.anchoredPosition = Vector2.zero;
 
         var heading = UiStyle.Label(panel.transform, Loc.T("ASSIM_TITLE"), 30,
