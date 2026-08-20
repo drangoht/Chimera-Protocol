@@ -25,7 +25,7 @@ URP 2D). Le dépôt ne contient plus qu'un moteur : Godot a été retiré le **2
 **2026-08-20 — LA MARÉE DE ROUILLE : l'overtime a une fin.** Demandé en jouant (« trop facile,
 l'overtime ne doit pas durer indéfiniment, le joueur doit mourir à tous les coups ; le challenge c'est
 de tenir le plus longtemps possible »). L'arène **se referme** en overtime : plus aucun terrain sûr à
-**11 min** (`Rules/RustTide` + `Gameplay/RustTideZone`). **776 tests.** Design → `docs/GDD.md` §38 ;
+**11 min** (`Rules/RustTide` + `Gameplay/RustTideZone`). **776 tests, banc 276/276.** Design → `docs/GDD.md` §38 ;
 pièges → `docs/PITFALLS_UNITY.md` §Fin de partie. **Non joué, non mesuré — voir §38.6.**
 ⚠ **Le diagnostic n'était pas « la pente est trop douce ».** Les i-frames (0,45 s) bornent les dégâts
 entrants à **2,2 coups/s, que 5 ennemis touchent le joueur ou 300** : la densité étant saturée dès la
