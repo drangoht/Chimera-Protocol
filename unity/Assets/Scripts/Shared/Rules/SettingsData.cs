@@ -50,6 +50,30 @@ public sealed class SettingsData
     public Dictionary<string, int> Completions { get; set; } = new(StringComparer.Ordinal);
     public Dictionary<string, int> HighScores  { get; set; } = new(StringComparer.Ordinal);
 
+    /// <summary>
+    /// Meilleure <b>durée de survie</b>, par biome <i>et par cran de saturation</i> — clé
+    /// <see cref="SurvivalKey"/>.
+    ///
+    /// <para><b>Pourquoi une seconde table plutôt qu'une clé enrichie dans <see cref="HighScores"/>.</b>
+    /// Celle-ci porte les records déjà gagnés par les joueurs, sous une clé qui est le seul identifiant
+    /// de biome ; en changer la forme les effacerait tous au premier lancement. Les deux coexistent
+    /// donc : <see cref="HighScores"/> reste le meilleur temps du biome, tous crans confondus — c'est
+    /// ce qu'affiche la carte du niveau — et celle-ci ajoute le détail.</para>
+    ///
+    /// <para><b>Pourquoi le détail est nécessaire.</b> Depuis que la run se juge sur le temps tenu
+    /// (GDD §38), un record qui mélange les crans est trompeur : tenir quinze minutes au cran 0 et les
+    /// tenir au cran V ne sont pas la même performance, et le premier rendrait le second invisible à
+    /// jamais. Un record qu'on ne peut plus battre cesse d'être un objectif.</para>
+    /// </summary>
+    public Dictionary<string, int> SurvivalRecords { get; set; } = new(StringComparer.Ordinal);
+
+    /// <summary>
+    /// Clé d'un record de survie. Le séparateur <c>#</c> n'apparaît dans aucun identifiant de biome :
+    /// deux niveaux ne peuvent pas se retrouver sur la même ligne par accident.
+    /// </summary>
+    public static string SurvivalKey(string biomeId, int saturation)
+        => $"{biomeId}#{saturation}";
+
     public List<string> DiscoveredWeapons { get; set; } = new();
     public List<string> DiscoveredGrafts  { get; set; } = new();
 
@@ -78,6 +102,7 @@ public sealed class SettingsData
     {
         Completions.Clear();
         HighScores.Clear();
+        SurvivalRecords.Clear();
         DiscoveredWeapons.Clear();
         DiscoveredGrafts.Clear();
         SaturationByLevel.Clear();

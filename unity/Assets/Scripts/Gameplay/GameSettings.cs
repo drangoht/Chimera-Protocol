@@ -166,6 +166,14 @@ public static class GameSettings
         => Current.HighScores.TryGetValue(biomeId, out int v) ? v : 0;
 
     /// <summary>
+    /// Meilleure durée de survie sur ce biome <b>à ce cran de saturation</b>, en secondes (0 si
+    /// aucune). C'est le record que l'écran de fin oppose à la run qui vient de s'achever — le
+    /// meilleur temps tous crans confondus rendrait tout cran élevé impossible à « battre ».
+    /// </summary>
+    public static int SurvivalRecordFor(string biomeId, int saturation)
+        => Current.SurvivalRecords.TryGetValue(SettingsData.SurvivalKey(biomeId, saturation), out int v) ? v : 0;
+
+    /// <summary>
     /// Enregistre un résultat de run. Ne redescend jamais un record — un mauvais essai ne doit pas
     /// effacer une meilleure performance.
     /// </summary>
@@ -174,6 +182,11 @@ public static class GameSettings
         var s = Current;
 
         if (seconds > HighScoreFor(biomeId)) s.HighScores[biomeId] = seconds;
+
+        // Le même temps, rangé aussi par cran : les deux tables disent des choses différentes et
+        // l'écran de fin a besoin de la seconde (cf. SettingsData.SurvivalRecords).
+        string survivalKey = SettingsData.SurvivalKey(biomeId, saturation);
+        if (seconds > SurvivalRecordFor(biomeId, saturation)) s.SurvivalRecords[survivalKey] = seconds;
 
         if (bossDefeated)
         {

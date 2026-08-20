@@ -97,5 +97,7 @@ trailer/
 tools/__pycache__/
 tools/_tmp_*.py
 unity_build.log
+build_*.log
+smoke_run.log
 .DS_Store
 Thumbs.db

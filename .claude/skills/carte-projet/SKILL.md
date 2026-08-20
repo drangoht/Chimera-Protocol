@@ -72,7 +72,12 @@ vaut `--biome=neon --invuln`, ce qui rend **tous les drapeaux utilisables dans u
 portrait) · **`VirtualStick`** (geometrie du joystick
 flottant : origine posee au contact, dosage, **recentrage**) ·
 `PressureMeter` · `RarityWeights` ·
-`RegenReserve` · `SaturationTable` · `SaveData` / `SaveMigration` / `SettingsData` · `SpawnCurve` ·
+`RegenReserve` · **`RustTide`** (la Marée de Rouille : l'arène se referme en overtime — fraction sûre,
+profondeur d'enfoncement, taux de rongement en **fraction des PV max**, et la *submersion* qui garantit
+qu'aucun point ne reste sûr passé `CloseMinutes` = 11 min ; rendu et application →
+`Gameplay/RustTideZone`) · `SaturationTable` · `SaveData` / `SaveMigration` / `SettingsData`
+(⚠ **deux** tables de records : `HighScores` par biome — historique, intacte — et `SurvivalRecords`
+par biome **et cran**) · `SpawnCurve` ·
 `StartingPerks` · `StatCaps` · `Titles` · `VersionCompare` · `WeaponFusion` · `WeaponLeveling` ·
 `WeaponSfx` · `WeaponTable` · `WeightedPicker` · `XpCurve`
 
@@ -116,7 +121,9 @@ un invariant porté par un écran, un tiers peut l'annuler (→ §Tactile).
   **`MagnetPickup` / `MagnetSpawner` / `MagnetSprite`** — l'Aimant, porté le 2026-08-12 : il
   n'existait pas sous Unity alors que `bonus_magnet` restait achetable au Hub à 770 Échos. Silhouette
   dessinée à l'exécution, **aucun prefab**. Seul ramassage du jeu qui ne s'aimante pas.
-- **Arène** : `ArenaRenderer`, `ArenaObstacles`, `FloorFeatures`, `BiomeAtmosphere`
+- **Arène** : `ArenaRenderer`, `ArenaObstacles`, `FloorFeatures`, `BiomeAtmosphere`, **`RustTideZone`**
+  (la marée d'overtime — ⚠ elle n'est **pas** posée dans `Game.unity` : `ArenaRenderer.Build` l'ajoute,
+  comme `BiomeAtmosphere`, ce qui la fait exister dans toute run — jeu, banc, capture)
 - **Mesure** : `PowerTelemetry`, `BossTelemetry`, `BenchAutoPilot`
 - **VFX** : `Gameplay/Vfx/` (16 fichiers : `Vfx`, `VfxPrimitives`, `ChampionOverlay`, `ScreenShake`…),
   dont **`FusionFanfare`** — les trois ondes + le ralenti de la forge d'une fusion, déclenchés par

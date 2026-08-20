@@ -117,15 +117,25 @@ public class MetaUpgradeTableTests
     //
     // Les tests d'`EchoFormula`, eux, passaient déjà 780 et étaient verts. **Une règle testée ne dit
     // rien de la façon dont on l'appelle** : c'est ce qui manquait, et c'est ce que ceci verrouille.
+    //
+    // ⚠ Montants REVUS le 2026-08-20 (Marée de Rouille, GDD §38) : l'amortissement passe de 0,15 à
+    // 0,50 et le plafond de 100 à 600 Échos. Le réglage serré existait parce que l'overtime était
+    // SANS FIN ; la marée le borne désormais à 11 minutes, donc le revenu de surcharge est borné par
+    // construction et le jeu n'a plus de raison de payer le joueur pour s'arrêter.
+    //
+    // ⚠ Les deux derniers scénarios (40 et 60 minutes) ne décrivent plus une partie possible — la
+    // marée ferme toute la surface bien avant. Ils restent ici parce qu'ils verrouillent la FORMULE
+    // et son plafond, et parce qu'un test qui n'a plus d'équivalent en jeu reste le seul endroit où
+    // la borne se vérifie sans jouer trois quarts d'heure.
 
     [Theory]
     [InlineData(30, 0, 0, 11)]           // mort précoce
     [InlineData(180, 120, 4, 51)]        // run standard courte
     [InlineData(300, 250, 8, 90)]        // run standard
     [InlineData(780, 520, 22, 211)]      // boss vaincu, pile aux plafonds, sans overtime
-    [InlineData(1080, 920, 29, 224)]     // overtime modeste : +5 min après le boss
-    [InlineData(2400, 3000, 60, 288)]    // overtime excellente : 40 min
-    [InlineData(3600, 8000, 100, 311)]   // overtime extrême : 60 min, plafond atteint
+    [InlineData(1080, 920, 29, 255)]     // overtime modeste : +5 min après le boss
+    [InlineData(2400, 3000, 60, 470)]    // overtime excellente : 40 min — PLUS ATTEIGNABLE, cf. ci-dessous
+    [InlineData(3600, 8000, 100, 811)]   // overtime extrême : 60 min — PLUS ATTEIGNABLE, plafond atteint
     public void LesEchosSuiventLaCalibrationDuFichier(int seconds, int kills, int cores, int attendu)
         => Assert.Equal(attendu, Real().Echoes.Total(seconds, kills, cores));
 

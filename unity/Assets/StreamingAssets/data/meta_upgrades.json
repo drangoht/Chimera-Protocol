@@ -18,19 +18,19 @@
     "capCores": 22,
     "_comment_capCores": "Noyaux atteignables dans une run standard de 13 min (spawn périodique 45s + drops Colosse, cf. §18.3, proportionné à 780s).",
 
-    "overtimeDampening": 0.15,
-    "overtimeBonusCap": 100,
-    "_comment_overtime": "Au-delà des caps standard (typiquement : boss vaincu puis survie en overtime), chaque unité de temps/kills/noyaux supplémentaire ne rapporte plus que 15% de sa valeur normale (overtimeDampening), et la SOMME de ce bonus est elle-même plafonnée à 100 Échos (overtimeBonusCap) quelle que soit la durée de survie ensuite. Une run de 15 min et une run de 60 min avec boss vaincu rapportent donc à peu près pareil au-delà du plafond — l'overtime reste gratifiant à courte échéance (quelques minutes de plus) mais n'explose jamais.",
+    "overtimeDampening": 0.50,
+    "overtimeBonusCap": 600,
+    "_comment_overtime": "REVU LE 2026-08-20 (Maree de Rouille, GDD section 38) : amortissement 0,15 -> 0,50 et plafond 100 -> 600 Echos. Le reglage d'origine existait parce que l'overtime etait SANS FIN (une run de 60 min ne devait pas vider le Hub). La maree borne desormais la duree : plus aucun terrain sur a RustTide.CloseMinutes (11 min d'overtime), donc le revenu de surcharge est borne PAR CONSTRUCTION et n'a plus besoin de l'etre par un plafond serre. A 0,15 le plafond de 100 n'etait meme pas atteint (~50 Echos pour 11 min de survie) : ce qui bridait la recompense etait l'amortissement, pas le plafond, et le jeu payait donc le joueur pour ARRETER alors que le defi est de tenir. Le plafond a 600 reste un garde-fou, pas une cible. ATTENTION : les 0,50 sont estimes sur un compte de kills d'overtime NON MESURE - a relever au banc et en jouant avant publication.",
 
     "_calibration": {
       "run_30s_0kills_0cores__mort_precoce": 11,
       "run_3min_120kills_4cores__standard": 51,
       "run_5min_250kills_8cores__standard": 90,
       "run_complete_780s_520kills_22cores__boss_vaincu_sans_overtime": 211,
-      "run_overtime_modeste_18min_920kills_29cores__+5min_apres_boss": 224,
-      "run_overtime_excellente_40min_3000kills_60cores": 288,
-      "run_overtime_extreme_60min_8000kills_100cores__plafond_atteint": 311,
-      "_comment": "Comparaison : l'ancienne formule sans plafond aurait donné 1490 Échos pour le scénario 'extrême' (60min/8000kills/100cores) — soit presque le coût total de l'arbre en UNE run. Le nouveau plafond limite l'écart maximal entre une bonne run et une run exceptionnelle à ~100 Échos."
+      "run_overtime_modeste_18min_920kills_29cores__+5min_apres_boss": 255,
+      "run_overtime_excellente_40min_3000kills_60cores": 470,
+      "run_overtime_extreme_60min_8000kills_100cores__plafond_atteint": 811,
+      "_comment": "Montants REVUS le 2026-08-20 avec overtimeDampening 0,50 / overtimeBonusCap 600 (cf. _comment_overtime). ATTENTION en lisant cette table : les deux derniers scenarios ne sont plus ATTEIGNABLES depuis la Maree de Rouille. Elle ferme toute la surface jouable a 11 min d'overtime (RustTide.CloseMinutes), ce qui borne une run a ~24 min au total : 40 min et 60 min de jeu decrivent un monde ou l'overtime etait sans fin. Ils sont conserves parce qu'ils verrouillent la FORMULE et son plafond, pas parce qu'ils decrivent une partie possible. Le scenario realiste de fin de partie est desormais celui a 18 min."
     }
   },
 

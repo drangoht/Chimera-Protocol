@@ -2586,6 +2586,68 @@ qui ne coule pas, et une durée qui file en négatif — que ce même HUD affich
 **Un état nommé par une règle pure se lit *uniquement* par cette règle.** Le jour où le seuil bouge,
 la copie ne bouge pas, et l'écart ne se voit qu'à l'écran, une fraction de seconde.
 
+## Fin de partie (Marée de Rouille)
+
+### Un rectangle qui se ferme dégénère en un POINT — et ce point reste sûr
+
+La Marée de Rouille referme l'arène en overtime, et sa garantie de fin repose sur une phrase simple :
+« à `CloseMinutes`, il ne reste plus aucun terrain sûr ». Le premier jet la calculait entièrement par
+la géométrie — la zone sûre est un rectangle homothétique dont la fraction tombe à 0 — ce qui paraît
+suffire et ne suffit pas : **un rectangle de demi-dimensions nulles n'est pas vide, c'est un point**.
+Le centre exact restait à profondeur 0, donc à zéro dégât, indéfiniment. La garantie tombait
+précisément à l'instant où elle devait se refermer, et un joueur immobile au centre survivait à ce qui
+était censé tuer tout le monde.
+
+▶ **Le test qui l'attrape balaie la surface** (`Passee_La_Fermeture_Aucun_Point_De_L_Arene_N_Est_Sur`),
+il ne vérifie pas une valeur : un test écrit sur la formule serait passé, puisque la formule était
+juste partout sauf en un point qu'on n'aurait pas pensé à échantillonner.
+
+▶ **La leçon générale** : une élégance qu'on s'impose — ici « une seule variable, le temps n'entre que
+par la géométrie » — peut créer exactement le cas que la règle existe pour couvrir. Corrigé par une
+seconde phase *nommée* (la submersion, `RustTide.FloorFractionPerSecond`) plutôt qu'en tordant la
+géométrie pour lui faire dire ce qu'elle ne dit pas.
+
+### Les protections du joueur sont écrites pour un COUP, pas pour un débit
+
+`Player.TakeDamage` applique, dans l'ordre : i-frames, `--invuln`, Plaque Adaptative, réduction de
+dégâts, réserve de régénération, épines, son de coup. **Aucune de ces sept étapes ne veut dire la même
+chose face à des dégâts continus**, et les brancher par un simple drapeau `ignoreIFrames` aurait
+produit des défauts muets :
+
+- les **i-frames** (0,45 s) plafonnent les dégâts entrants à 2,2 coups/s — les garder aurait reproduit
+  exactement le plafond que la marée existe pour contourner ;
+- la **Plaque Adaptative** promet d'absorber les premiers *coups* : appelée à chaque frame, elle
+  viderait ses trois charges en trois frames (le même défaut avait déjà été corrigé pour les nuées) ;
+- la **réserve de régénération** est un tampon anti-*pic* : un débit la viderait en continu, ce qui la
+  supprimerait dans son unique fonction ;
+- la **réduction de dégâts** rendrait la marée sensible au build, alors qu'elle se compte en fraction
+  des PV max précisément pour ne pas l'être ;
+- les **épines** renverraient un coup que personne n'a porté ;
+- le **son de coup** deviendrait un bourdonnement continu.
+
+▶ D'où un point d'entrée séparé, `Player.TakeContinuousDamage`, et non un paramètre de plus. **Un
+débit et un coup ne sont pas deux réglages d'une même chose.**
+
+### Un écran qui relit une donnée que la fin de run vient d'écrire se compare à lui-même
+
+`RunHud` appelle `RunEndScreen.Show(...)` **puis** `GameSettings.ReportRun(...)`, qui met le record de
+survie à jour. Si l'écran de fin lisait le record lui-même — ce qui est tentant, `GameSettings` étant
+statique et accessible — l'ordre le sauverait aujourd'hui et une réorganisation le casserait demain,
+sans qu'aucune erreur ne le signale : « NOUVEAU RECORD ! » ne s'afficherait simplement plus jamais.
+
+▶ Le record est donc **passé en paramètre** (`previousRecord`). Quand une valeur doit être lue *avant*
+un effet de bord situé ailleurs, la dépendance temporelle doit devenir une dépendance de signature —
+c'est la seule forme qu'un futur réordonnancement ne peut pas rompre en silence.
+
+### Une table de records à clé « biome » ne peut pas accueillir un second axe
+
+Ajouter le cran de saturation à la clé de `SettingsData.HighScores` (`neon` → `neon#3`) aurait effacé
+tous les records déjà gagnés par les joueurs au premier lancement : rien ne lève d'erreur, les
+anciennes entrées deviennent simplement introuvables. La table historique est donc **laissée
+intacte** et une seconde (`SurvivalRecords`) porte le détail. ⚠ Ne pas oublier de vider la nouvelle
+dans `SettingsData.ResetProgress` — une progression qui survit à une remise à zéro est le défaut
+symétrique.
+
 ## Méthode
 
 ### Extraire du moteur, puis confronter — plutôt que lire les sources

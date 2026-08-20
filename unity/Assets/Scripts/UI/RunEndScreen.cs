@@ -58,8 +58,17 @@ public sealed class RunEndScreen : MonoBehaviour
     /// à connaître celle de la run jouée : le cran « Compte à rebours » la ramène de 780 s à 484 s, et
     /// c'est à partir de là que le temps doit être amorti.</para>
     /// </remarks>
+    /// <param name="previousRecord">
+    /// Meilleure survie <b>avant</b> cette run, sur ce biome et à ce cran (0 si aucune).
+    ///
+    /// <para>Il est <b>passé</b> et non lu ici, alors que <c>GameSettings</c> est accessible : la run
+    /// qui vient de finir met le record à jour, et un écran qui le relirait lui-même afficherait donc
+    /// son propre temps. « Record battu » ne se déclencherait jamais, sans qu'aucune erreur ne le
+    /// signale — le genre de défaut qui ne se voit qu'en jouant, et qu'une dépendance explicite rend
+    /// impossible.</para>
+    /// </param>
     public void Show(bool victory, int runSeconds, int kills, int cores, double tierMult = 1.0,
-                     MetaUpgradeTable.EchoParams? settings = null)
+                     MetaUpgradeTable.EchoParams? settings = null, int previousRecord = 0)
     {
         // Source UNIQUE du total : l'animation ci-dessous ne fera que le parcourir.
         var (total, overtimeBonus) = (settings ?? MetaProgression.Catalog.Echoes)
@@ -85,9 +94,17 @@ public sealed class RunEndScreen : MonoBehaviour
                 ? $"\n{Loc.T("RUNEND_OVERTIME_BONUS")} : +{overtimeBonus}"
                 : "";
 
+            // Le record, ou son dépassement. C'est ce qui fait de « tenir » un objectif : sans lui,
+            // la durée de survie n'était comparée à rien et le joueur n'avait aucune raison de
+            // pousser. ⚠ `RUNEND_BEST` attendait dans `ui.csv`, traduite dans les trois langues,
+            // sans un seul appelant.
+            string record = runSeconds > previousRecord
+                ? $"\n<color=#{ColorUtility.ToHtmlStringRGB(UiPalette.Gold)}>{Loc.T("RUNEND_NEW_RECORD")}</color>"
+                : $"\n{Loc.T("RUNEND_BEST")} : {previousRecord / 60:00}:{previousRecord % 60:00}";
+
             _stats.text = $"{Loc.T("RUNEND_TIME")} : {runSeconds / 60:00}:{runSeconds % 60:00}\n" +
                           $"{Loc.T("RUNEND_KILLS")} : {kills}\n" +
-                          $"{Loc.T("RUNEND_CORES")} : {cores}{bonus}";
+                          $"{Loc.T("RUNEND_CORES")} : {cores}{bonus}{record}";
         }
 
         if (_root != null) _root.SetActive(true);

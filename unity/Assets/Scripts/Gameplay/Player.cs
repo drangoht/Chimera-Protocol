@@ -19,6 +19,17 @@ public sealed class Player : MonoBehaviour
     /// <summary>Fenêtre d'invulnérabilité après un coup. Constante de gameplay, pas un réglage.</summary>
     public const float InvulnWindow = 0.45f;
 
+    /// <summary>
+    /// Secondes pendant lesquelles la <b>Marée de Rouille</b> ne ronge plus, après qu'un Noyau de
+    /// Secours a annulé une mort.
+    ///
+    /// <para>Sans elle, un joueur ressuscité à une fraction de ses PV <i>dans</i> la marée y remeurt
+    /// en une seconde : la ressource achetée serait consommée sans rien offrir. C'est le défaut que
+    /// le projet a déjà rencontré deux fois — une amélioration du Hub qui se paie sur du vide. La
+    /// fenêtre vaut le temps d'en sortir, pas davantage.</para>
+    /// </summary>
+    public const float TideGraceAfterRescue = 1.5f;
+
     /// <summary>Rayon du corps, utilisé pour repousser les ennemis qui le chevauchent.</summary>
     private const float PlayerBodyRadius = 13f;
 
@@ -62,6 +73,7 @@ public sealed class Player : MonoBehaviour
     public event Action? Died;
 
     private float _invulnTimer;
+    private float _tideGraceLeft;
     private bool  _dead;
 
     private FrameAnimator? _animator;
@@ -182,6 +194,7 @@ public sealed class Player : MonoBehaviour
 
         float dt = Time.deltaTime;
         if (_invulnTimer > 0f) _invulnTimer -= dt;
+        if (_tideGraceLeft > 0f) _tideGraceLeft -= dt;
 
         UpdateChill(dt);
         UpdateMovement(dt);
@@ -703,6 +716,55 @@ public sealed class Player : MonoBehaviour
     }
 
     /// <summary>
+    /// Encaisse des dégâts <b>continus</b> — un débit, exprimé en PV pour cette frame, et non un coup.
+    /// Aujourd'hui la <see cref="RustTide"/> ; demain toute zone qui ronge au lieu de frapper.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Pourquoi ce n'est pas <see cref="TakeDamage"/> avec un drapeau.</b> Presque toutes les
+    /// protections du joueur sont écrites pour un <i>coup</i>, et aucune ne veut dire la même chose
+    /// face à un débit :</para>
+    /// <list type="bullet">
+    /// <item>Les <b>i-frames</b> sont écartées, et c'est tout l'objet. La fenêtre de 0,45 s borne les
+    /// dégâts entrants à 2,2 coups par seconde quel que soit le nombre d'ennemis — c'est le plafond
+    /// structurel qui rendait la fin de partie inoffensive. Un débit passe à côté de ce plafond.</item>
+    /// <item>La <b>Plaque Adaptative</b> ne s'applique pas : sa carte promet d'absorber les premiers
+    /// <i>coups</i> reçus, et une charge par frame viderait les trois en trois frames.</item>
+    /// <item>La <b>réduction de dégâts</b> ne s'applique pas non plus. La marée se compte en fraction
+    /// des PV max précisément pour rester insensible au build ; la rendre sensible à la seule stat
+    /// défensive plafonnée serait cohérent à moitié, et à moitié seulement.</item>
+    /// <item>La <b>réserve de régénération</b> est épargnée : elle existe comme tampon anti-<i>pic</i>
+    /// (cf. <see cref="RegenReserve"/>), et un débit la viderait en continu, ce qui la supprimerait
+    /// dans son unique fonction.</item>
+    /// <item>Les <b>épines</b> ne renvoient rien : personne n'a porté le coup.</item>
+    /// </list>
+    /// <para>En revanche la régénération est <b>suspendue</b>, comme après n'importe quel coup. C'est
+    /// ce qui referme le seuil d'immortalité — un débit de soin sans plafond face à des dégâts
+    /// entrants plafonnés — <b>sans</b> dévaluer la carte de surcharge : en terrain sûr, elle garde
+    /// exactement la valeur qu'elle avait.</para>
+    /// <para>Aucun son ici : appelé à chaque frame, <c>sfx_player_hit</c> deviendrait un bourdonnement.
+    /// Le retour de la marée est porté par elle, pas par le porteur.</para>
+    /// </remarks>
+    public void TakeContinuousDamage(float amount)
+    {
+        if (_dead || amount <= 0f) return;
+
+        // Même sortie que TakeDamage, et pour la même raison : sous ce drapeau la colonne des dégâts
+        // subis doit rester vide plutôt que fausse.
+        if (DebugHooks.Invulnerable) return;
+
+        // Grâce laissée par un Noyau de Secours : le temps de sortir de la marée.
+        if (_tideGraceLeft > 0f) return;
+
+        PowerTelemetry.NotifyDamageTaken(amount);
+        Stats.RegenSuppressLeft = RegenReserve.Suppress();
+
+        Stats.CurrentHp = Mathf.Max(0f, Stats.CurrentHp - amount);
+        HealthChanged?.Invoke(Stats.CurrentHp, Stats.MaxHp);
+
+        if (Stats.CurrentHp <= 0f) HandleDeath();
+    }
+
+    /// <summary>
     /// Le joueur vient de tomber à zéro. Un <b>Noyau de Secours</b> (achat méta <c>extra_life</c>)
     /// peut encore annuler cette mort.
     /// </summary>
@@ -722,6 +784,9 @@ public sealed class Player : MonoBehaviour
             _extraLivesLeft--;
             Stats.CurrentHp = Stats.MaxHp * ExtraLifeHpFraction;
             _invulnTimer = InvulnWindow;
+            // La marée ignore les i-frames : sans sa propre grâce, une mort annulée dans la rouille
+            // serait suivie d'une seconde mort avant que le joueur ait pu bouger.
+            _tideGraceLeft = TideGraceAfterRescue;
             HealthChanged?.Invoke(Stats.CurrentHp, Stats.MaxHp);
 
             AudioSystem.PlaySfx("sfx_ui_death");

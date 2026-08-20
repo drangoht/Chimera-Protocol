@@ -53,6 +53,12 @@ public sealed class ArenaRenderer : MonoBehaviour
                       ?? gameObject.AddComponent<BiomeAtmosphere>();
 
         atmosphere.Configure(biomeId, windows);
+
+        // La Marée de Rouille s'installe ici, par le même motif que l'atmosphère : elle appartient au
+        // décor de l'arène, et l'accrocher au composant qui construit ce décor garantit qu'elle existe
+        // dans TOUTE run — jeu, banc, capture — sans qu'un objet de plus soit à poser dans la scène.
+        // Elle reste invisible et inerte tant que l'overtime n'a pas commencé.
+        if (gameObject.GetComponent<RustTideZone>() == null) gameObject.AddComponent<RustTideZone>();
     }
 
     /// <summary>

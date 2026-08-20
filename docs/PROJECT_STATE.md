@@ -4,6 +4,19 @@
 > implémenté — la mettre à jour à chaque ajout/refonte majeur. Le résumé de phase reste dans
 > `CLAUDE.md` ; le design complet dans `docs/GDD.md` ; la carte du code dans `/carte-projet`.
 
+- **L'OVERTIME A UNE FIN (2026-08-20)** — la **Marée de Rouille** referme l'arène : plus aucun terrain
+  sûr à 11 min d'overtime. Design : **`docs/GDD.md` §38** ; pièges : **`docs/PITFALLS_UNITY.md`
+  §Fin de partie**. **776 tests** (759 → 776). ⚠ **Écrit et compilé, jamais joué ni mesuré.**
+  - `Rules/RustTide` (fraction sûre, profondeur, taux en **fraction des PV max**, submersion) et
+    `Gameplay/RustTideZone` (nappes + liseré pulsant + application). La zone s'installe depuis
+    `ArenaRenderer.Build`, comme `BiomeAtmosphere` — elle n'est **pas** posée dans `Game.unity`.
+  - `Player.TakeContinuousDamage` : point d'entrée des **débits**, distinct de `TakeDamage`, qui
+    écarte les i-frames — le plafond des 2,2 coups/s est ce qui rendait la foule inoffensive.
+  - Récompense : `overtimeDampening` 0,15 → **0,50**, `overtimeBonusCap` 100 → **600**, record de
+    survie **affiché** à l'écran de fin et rangé par biome **et cran** (`SettingsData.SurvivalRecords`,
+    `HighScores` laissée intacte).
+  - **Reste à faire** : aucun **son** pour la marée · le 0,50 repose sur un compte de kills d'overtime
+    **non mesuré** · l'interaction avec le cran III (overtime dès la 8ᵉ min) jamais jouée.
 - Pile technique : **Unity 6.5 (C#, URP 2D)** depuis la 2.0.0. **Versions en ligne :
   web 2.3.1** (2026-08-14, build itch #1883172, canal `html5`) et **Windows 2.2.0** (build #1881127).
   ⚠ Les deux canaux divergent volontairement : le portage tactile ne concerne que le web, et le

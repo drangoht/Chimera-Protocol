@@ -8,6 +8,17 @@ Dans un monde ravagé par **la Rouille Vivante** (corruption mi-organique, mi-m�
 
 ## État du projet
 
+**L'overtime a une fin — la Marée de Rouille** *(2026-08-20)* — la fin de partie ne se terminait
+jamais, et ce n'était pas un problème de dosage : la fenêtre d'invulnérabilité du joueur (0,45 s)
+**plafonne les dégâts entrants à 2,2 coups par seconde**, que cinq ennemis le touchent ou trois cents.
+La densité étant saturée dès la 8ᵉ minute, la menace n'avait plus qu'**une seule variable** — la valeur
+d'un coup — face à trois progressions du joueur **sans plafond**. Ajouter des ennemis n'ajoutait pas de
+danger. L'arène **se referme** donc : une bordure de rouille avance depuis les bords, qu'on peut
+traverser mais qui **ronge en continu**, et il ne reste plus aucun terrain sûr après onze minutes. Une
+fin garantie se construit par une **soustraction**, jamais par une course entre deux courbes — celle-ci
+avait déjà été réglée trois fois sans tenir. Tenir devient enfin le but : le **record de survie**
+s'affiche à la mort, par niveau *et* par cran de difficulté.
+
 **Le jeu se joue au doigt** *(2026-08-14)* — la version navigateur est jouable sur téléphone. Un
 **joystick apparaît là où le pouce se pose** (pas à une place fixe : à une place fixe, il est sous le
 doigt au moment où on le cherche), l'esquive et la pause sont deux boutons à droite, et **la visée se

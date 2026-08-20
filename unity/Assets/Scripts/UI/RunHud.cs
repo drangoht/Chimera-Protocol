@@ -221,9 +221,15 @@ public sealed class RunHud : MonoBehaviour
         // ⚠ `cores` valait ZÉRO en dur : l'écran affichait « Noyaux d'Aether : 0 » quoi qu'il arrive,
         // et la part des Noyaux dans les Échos gagnés — jusqu'à 22 selon `EchoParams` — était
         // silencieusement perdue.
+        // ⚠ Le record est lu AVANT ReportRun, qui va l'écraser avec le temps de cette run : le lire
+        // après ferait comparer la run à elle-même, et « record battu » ne s'afficherait jamais.
+        string biome = GameManager.Instance?.CurrentBiomeId ?? RunConfig.BiomeId;
+        int previousRecord = GameSettings.SurvivalRecordFor(biome, RunConfig.Saturation);
+
         _runEnd?.Show(victory, runSeconds: seconds, kills: kills,
                       cores: GameManager.Instance?.CoresCollected ?? 0,
-                      tierMult: RunConfig.EchoMult);
+                      tierMult: RunConfig.EchoMult,
+                      previousRecord: previousRecord);
 
         // ⚠ Le montant crédité est celui que l'écran AFFICHE, pas un second calcul : deux formules
         // pour un même total finissent toujours par diverger, et le joueur voit alors une somme qu'il
@@ -232,7 +238,6 @@ public sealed class RunHud : MonoBehaviour
 
         MetaProgression.RegisterRun(kills);
 
-        string biome = GameManager.Instance?.CurrentBiomeId ?? RunConfig.BiomeId;
         GameSettings.ReportRun(biome, seconds, victory, RunConfig.Saturation);
 
         // ⚠ Après RegisterRun et ReportRun : les défis cumulés (« 100 runs », « N biomes terminés »)

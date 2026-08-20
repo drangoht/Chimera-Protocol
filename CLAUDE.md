@@ -22,6 +22,41 @@ URP 2D). Le dépôt ne contient plus qu'un moteur : Godot a été retiré le **2
 
 ## Phase actuelle
 
+**2026-08-20 — LA MARÉE DE ROUILLE : l'overtime a une fin.** Demandé en jouant (« trop facile,
+l'overtime ne doit pas durer indéfiniment, le joueur doit mourir à tous les coups ; le challenge c'est
+de tenir le plus longtemps possible »). L'arène **se referme** en overtime : plus aucun terrain sûr à
+**11 min** (`Rules/RustTide` + `Gameplay/RustTideZone`). **776 tests.** Design → `docs/GDD.md` §38 ;
+pièges → `docs/PITFALLS_UNITY.md` §Fin de partie. **Non joué, non mesuré — voir §38.6.**
+⚠ **Le diagnostic n'était pas « la pente est trop douce ».** Les i-frames (0,45 s) bornent les dégâts
+entrants à **2,2 coups/s, que 5 ennemis touchent le joueur ou 300** : la densité étant saturée dès la
+8ᵉ minute, l'overtime n'avait plus qu'**une seule variable**, la valeur d'un coup — face à **trois**
+croissances joueur sans plafond. **Ajouter des ennemis n'ajoutait pas de danger**, et le §31 a réglé
+la pente **trois fois** (1,5 → 3 → 2,25) sans jamais toucher ce fond.
+▶ **Une fin garantie se construit par une SOUSTRACTION, pas par une course.** Tant que la fin dépend
+d'une croissance qui en dépasse une autre, elle dépend d'un réglage que le prochain build déplacera.
+L'espace, lui, est fini. Trois propriétés portent tout : la marée **n'est pas un mur** (on la
+traverse, sinon chaque coin devient un piège) · elle ronge **en continu donc hors i-frames** (c'est
+ce qui contourne le plafond des 2,2 coups/s → `Player.TakeContinuousDamage`, **pas** un drapeau sur
+`TakeDamage`) · elle se compte en **fraction des PV max**, donc le Blindage ne peut pas la distancer.
+⚠⚠ **Le premier jet ne garantissait rien : un rectangle qui se ferme dégénère en un POINT**, et ce
+point — le centre exact — restait sûr indéfiniment. La garantie tombait à l'instant même où elle
+devait se refermer. **Une élégance qu'on s'impose (« une seule variable ») peut créer le seul cas que
+la règle existe pour couvrir.** Le test qui l'attrape **balaie l'arène** au lieu de vérifier une
+valeur — un test écrit sur la formule serait passé.
+⚠ **Tenir n'était le but de personne** : `overtimeBonusCap` payait le joueur pour **arrêter** (et à
+0,15 d'amortissement il n'était même pas atteint — ~50 Échos pour 11 min de survie), et
+**`RUNEND_BEST` attendait dans `ui.csv`, traduite en trois langues, sans un seul appelant** — onzième
+« déclaré non consommé ». Corrigé : amortissement 0,15 → **0,50**, plafond 100 → **600** (sûr, la
+durée étant désormais bornée), record affiché à l'écran de fin, et rangé **par biome ET par cran**
+(`SettingsData.SurvivalRecords` ; `HighScores` laissée **intacte**, en changer la clé aurait effacé
+les records des joueurs).
+⚠ **Le record se lit AVANT `ReportRun`**, qui l'écrase avec le temps de la run — il est donc **passé
+en paramètre** à `RunEndScreen.Show`. Un écran qui le relirait comparerait la run à elle-même et
+« record battu » ne s'afficherait **jamais**, sans qu'aucune erreur ne le dise.
+⚠ **Reste à faire** : la marée **n'a pas de son** (aucun SFX existant ne dit « une menace lente
+arrive » sans mentir), l'amortissement à 0,50 repose sur un compte de kills d'overtime **non mesuré**,
+et l'interaction avec le cran III (overtime dès la 8ᵉ min) n'a jamais été jouée.
+
 **2026-08-14 — TACTILE : la version web se joue au doigt. PUBLIÉ en 2.3.1** (build itch #1883172,
 canal `html5`, devlog collé ; Windows reste en 2.2.0 — le tactile ne le concerne pas). Schéma retenu (décision de l'auteur) :
 **joystick flottant à gauche + visée automatique**, bouton d'esquive et bouton de pause à droite,
@@ -83,43 +118,6 @@ conclusion tirée d'un calcul d'unités se vérifie **sur l'appareil visé**.
 du Hub empilés dont un destructeur, colonne du menu sur le logo, « Reprendre » hors écran). Ils ne se
 déclenchent plus, mais **ils sont toujours là** : toute mise en page à dimensions absolues les
 rejouera au prochain canevas étroit.
-▶ **`--touch` (`?touch` en web) force le mode tactile et simule la souris en doigt** — sans lui, il
-n'y a rien à regarder sur la machine où l'on développe, et une interface qu'on ne peut pas afficher
-est une interface qu'on juge sur son code.
-⚠⚠ **Le navigateur MÉLANGE deux builds, et le symptôme est un crash illisible.** Les fichiers de
-sortie portent toujours le même nom : le cache HTTP peut associer le `.data` d'un build au `.wasm`
-d'un autre → `RuntimeError: memory access out of bounds` + 300 offsets wasm, **au démarrage**, sans un
-nom de méthode. Une heure perdue à le chercher dans le code. ▶ **Un message d'erreur qui ne bouge pas
-alors que le binaire a changé ne vient pas du binaire qu'on croit exécuter** ; le test qui tranche en
-30 s est de **servir sur un autre port** (origine neuve = cache vierge). Corrigé par un jeton
-`__BUILD_ID__` que le build remplace (SHA **+ horodatage**) et pose en paramètre d'URL — **plus**
-`Cache-Control: no-store` sur la page hôte, sans quoi le garde-cache s'auto-annule : *un mécanisme
-d'invalidation transporté par une ressource cachable ne s'applique jamais.*
-⚠ Et `ExplicitlyThrownExceptionsOnly` **désactive les vérifications de bornes et de nullité** : le
-réglage censé rendre les défauts instruisibles rend les plus graves illisibles. Pour instruire :
-passer à `FullWithStacktrace`, rebuilder, revenir.
-⚠ **Trois rappels de touche devenus des mensonges au doigt** : « MAJ — esquive » (HUD),
-« Reprendre **[Échap]** » (pause) et « **Appuyez sur une touche** pour passer » (intro — la première
-phrase que lit un joueur). La règle « une capacité annonce sa touche » dit en fait **annonce comment
-on la déclenche** ; sans clavier, la réponse est le bouton. ▶ Contrôle : `grep` dans `ui.csv` sur les
-crochets **et** sur le mot « touche ». Un texte peut être **correct et faux** — l'audit de
-localisation le déclare parfait.
-⚠ **Puis l'écran de pause enfermait le joueur** : son panneau débordait, « Reprendre » et
-« Abandonner » **hors de l'écran** — et la pause n'étant pas dans `ModalQueue`, le joystick restait
-actif par-dessus. **Une condition « une modale est-elle ouverte ? » doit énumérer ce qui met le jeu
-en attente, pas ce qui est inscrit dans un registre.**
-⚠⚠ **Le bouton de pause était parfaitement placé et ne répondait pas** — deux façons d'avaler un
-appui, indépendantes : filtrer sur `isPressed` **avant** `wasPressedThisFrame` avale le tapotement
-(down et up dans la même image) ; et publier un appui comme « cette image-ci » le perd, **l'ordre des
-`Update` entre objets n'étant pas garanti** — le `RunHud` lisait une image trop tôt. Un événement
-d'entrée n'a pas la nature d'un état : il **survit** deux images et se **consomme** à la lecture.
-⚠⚠ **Le grossissement a cassé quatre choses, toutes trouvées SUR IMAGE, aucune au code** : textes
-**chevauchés** au choix du niveau (hauteurs de ligne fixes, canevas deux fois plus étroit) · deux
-boutons du Hub **empilés**, dont un destructeur · le cadrage du menu calculé sur `1920/1080` **en
-dur**, et sa colonne qui **recouvrait le logo** · et le bouton de pause posé **exactement sur** le
-compteur de Noyaux, parce qu'il se mesure en pixels écran là où le HUD se mesure en unités de
-maquette. **Deux repères qui ne se voient pas l'un l'autre : c'est le mode d'échec de toute mise en
-page mixte, et il n'apparaît qu'à une taille d'écran.**
 
 **2026-08-13 (4) — PORTAGE WEB (WebGL) : le jeu tourne dans un navigateur.** Build
 `BuildBench.WebGame` → `unity/Build/web/` (**35,4 Mo** : 26,9 de données + 8,2 de wasm) ; publication
@@ -276,7 +274,7 @@ quand une phase se termine, relire les agents qu'elle concerne (dernière passe 
 - **Logique pure testable** : `unity/Assets/Scripts/Shared/Rules/` — classes statiques **sans
   dépendance moteur** (`XpCurve`, `EnemyScaling`, `SaturationTable`…). Les `MonoBehaviour` y délèguent.
   `Shared/PlatformCore/` porte le socle déterministe (`Pcg32`, `TimerWheel`, `Easing`).
-- **Tests unitaires** : xUnit, `dotnet test tests/ChimeraProtocol.Tests.csproj` — **759 tests**.
+- **Tests unitaires** : xUnit, `dotnet test tests/ChimeraProtocol.Tests.csproj` — **776 tests**.
   Ils compilent `Shared/` **par chemin** : aucun moteur, aucun build requis.
 - ⚠ **`Art/` ≠ `Resources/`** : `Art/` est consommé par **GUID** (planches d'animation), `Resources/`
   **par chemin** (`Resources.Load`) et embarqué en entier dans le binaire. Se tromper de dossier ne

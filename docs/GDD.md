@@ -3599,3 +3599,143 @@ jeu — esquive, pause, naissance du stick — là où il n'y avait que des éta
   logiques : tout est rendu à la moitié de sa taille de bureau. Un ennemi de 32 px en fait 16.
 - **La densité des cartes de montée de niveau**, une fois le panneau borné à la largeur du canevas.
 - **Le confort du recentrage** — la seule valeur de ressenti de tout le chapitre.
+
+---
+
+## 38. La Marée de Rouille — l'overtime devait finir (2026-08-20)
+
+Demandé en jouant : « le jeu est vraiment trop facile, l'overtime ne doit pas durer indéfiniment, le
+joueur doit sentir une grosse pression et mourir à tous les coups ; le challenge, c'est de tenir le
+plus longtemps possible ». Règle pure : `RustTide`. Rendu et application : `RustTideZone`.
+
+### 38.1 Le diagnostic — un plafond structurel, pas un réglage trop doux
+
+Trois faits, tous vérifiables dans le code d'avant ce chantier.
+
+**La densité ne comptait plus.** À l'entrée en overtime, tous les leviers de foule sont saturés depuis
+longtemps : `SpawnCurve.MaxAlive` (300) est atteint dès la 8ᵉ minute, `SpawnInterval` est à son
+plancher dès la 11ᵉ, `BatchCount` est clampé dès la 4ᵉ. `OvertimeEscalation.DensityAcceleration = 4`
+ne produisait donc **rien** — son propre commentaire le disait déjà.
+
+**Les i-frames bornent la menace.** `Player.InvulnWindow` vaut 0,45 s : le joueur encaisse **au plus
+2,2 coups par seconde**, que cinq ennemis le touchent ou trois cents. Le DPS entrant maximum vaut
+`dégâts_d_un_contact / 0,45`, et rien d'autre. **Ajouter des ennemis n'ajoutait pas de danger.**
+Passé le temps imparti, la menace n'avait donc plus qu'**une seule variable** : la valeur d'un coup.
+
+**En face, trois croissances sans plafond.** Les cartes de surcharge (§33) donnent +45 PV, +0,6 PV/s
+et +5 % de dégâts par prise, sans plafond et sans amortissement, à ~13 niveaux par minute. Et la
+régénération est un **débit sans plafond opposé à un débit plafonné** : dès que
+`régén ≥ dégâts_d_un_coup / 0,45`, le joueur est *strictement* immortel. C'est le mode d'échec que le
+projet avait déjà nommé pour la régénération de base ; les cartes de surcharge l'ont réintroduit par
+construction.
+
+**Enfin, le jeu payait le joueur pour arrêter.** `overtimeBonusCap` plafonnait le gain d'overtime à
+100 Échos, et aucun record de survie n'était affiché nulle part. Tenir plus longtemps ne rapportait
+rien et ne se voyait pas.
+
+### 38.2 Le parti pris — une fin garantie se construit par une SOUSTRACTION
+
+Le §31 a réglé la pente d'escalade **trois fois** (1,5 → 3 → 2,25) sans jamais tenir. Ce n'était pas
+une erreur de dosage : tant que la fin d'une run dépend d'une croissance qui en dépasse une autre,
+elle dépend d'un réglage de pente, que le prochain build du joueur déplacera. **L'espace, lui, est
+fini.** Il s'épuise quel que soit le build, et à une date connue.
+
+D'où la **Marée de Rouille** : passé une minute de grâce, l'arène se referme, et il ne reste plus
+aucun terrain sûr à **11 minutes d'overtime** (`RustTide.CloseMinutes`).
+
+Trois propriétés portent tout le design, et aucune n'est un détail :
+
+1. **Ce n'est pas un mur — le joueur la traverse.** Un bord dur ferait de chaque coin un piège mortel
+   dès qu'une poussée l'y colle, alors que le jeu demande de circuler entre les masses en permanence
+   (c'est déjà pourquoi les obstacles *écartent* au lieu d'arrêter net). Traverser la rouille est un
+   choix coûteux, jamais une condamnation : on peut y couper pour fuir un encerclement.
+2. **Elle ronge en continu, donc hors i-frames.** C'est tout l'intérêt : un **débit** ignore le
+   plafond des 2,2 coups/s, qui est ce qui rendait la foule inoffensive. Un dégât de contact de plus
+   n'aurait rien changé. D'où `Player.TakeContinuousDamage`, distinct de `TakeDamage`.
+3. **Elle se compte en fraction des PV max, jamais en points.** Un montant absolu serait distancé par
+   le Blindage en quelques minutes — c'est précisément la course qu'on refuse de courir. Un
+   pourcentage est **insensible au build** : la marée est un *chronomètre*, pas un ennemi de plus. Un
+   test le verrouille (doubler les PV double les dégâts, le temps de survie est invariant).
+
+**Et l'espace s'effondre plus vite qu'il ne rétrécit.** La fraction sûre décroît linéairement, donc
+l'**aire** décroît en carré : à moitié de fraction il reste le quart du terrain. La foule se
+concentre d'elle-même, puisque les ennemis naissent toujours en bordure et convergent. Aucune courbe
+n'a eu à être écrite.
+
+### 38.3 Le trou du premier jet — un rectangle qui se ferme dégénère en un POINT
+
+Le premier jet faisait dépendre les dégâts de la seule géométrie : élégant, une variable, un réglage.
+Il ne garantissait rien. À fermeture totale, le rectangle sûr se réduit à un **point** — et ce point,
+le centre exact, restait indéfiniment à zéro dégât. **La garantie de fin tombait précisément à
+l'instant où elle devait se refermer.**
+
+Corrigé par une seconde phase nommée, la **submersion** (`FloorFractionPerSecond`) : passé
+`CloseMinutes`, un taux plancher s'applique *partout*, centre compris, et monte au maximum en 30 s.
+C'est la seule chose que le temps pilote directement, et elle n'existe que pour fermer ce trou.
+
+▶ La leçon se range à côté des autres : **une élégance qu'on s'impose (« une seule variable ») peut
+créer le seul cas que la règle existe pour couvrir.** Le test qui l'attrape balaie toute l'arène au
+lieu de vérifier une valeur — un test écrit sur la formule serait passé.
+
+### 38.4 Les réglages
+
+| Constante | Valeur | Pourquoi |
+|---|---|---|
+| `GraceMinutes` | 1 min | Le build de fin de partie a besoin d'une fenêtre, et l'annonce d'être lue. |
+| `CloseMinutes` | 11 min | La garantie de fin. Calée sur la fenêtre visée de 5-10 min (§9.2) : c'est le **plafond** de la distribution, pas sa moyenne. |
+| `EdgeFractionPerSecond` | 2 %/s | Le bord doit être traversable, sinon c'est un mur. |
+| `DepthFractionPerSecond` | 6 %/s par 200 px | S'y enfoncer doit coûter beaucoup plus que l'effleurer. |
+| `MaxFractionPerSecond` | 25 %/s | Une barre pleine en 4 s : la fin est rapide, sans qu'un nombre parte à l'infini. |
+| `SubmersionRampMinutes` | 0,5 min | L'arène fermée, il n'y a plus de décision à prendre : étirer l'agonie n'ajoute pas de jeu. |
+
+**Ce que la marée touche et ne touche pas.** Elle ignore la réduction de dégâts, la Plaque Adaptative
+(qui promet d'absorber des *coups*), la réserve de régénération (tampon anti-*pic*, qu'un débit
+viderait en continu) et les épines. Elle **suspend** en revanche la régénération, comme n'importe
+quel coup : c'est ce qui referme le seuil d'immortalité **sans** dévaluer la carte de surcharge — en
+terrain sûr, elle garde exactement la valeur qu'elle avait. Un Noyau de Secours ouvre une grâce de
+1,5 s (`Player.TideGraceAfterRescue`) : sans elle, une mort annulée dans la rouille serait suivie
+d'une seconde mort avant que le joueur ait pu bouger, et la ressource achetée n'aurait rien offert.
+
+### 38.5 Tenir devient le but — récompense et record
+
+Deux corrections, sans lesquelles « tenir le plus longtemps » n'est le but de personne :
+
+- **Le gain d'overtime est relevé** : `overtimeDampening` 0,15 → **0,50**, `overtimeBonusCap`
+  100 → **600**. Le réglage serré existait parce que l'overtime était *sans fin* ; la marée le borne,
+  donc le revenu est borné **par construction**. À 0,15, le plafond de 100 n'était même pas atteint
+  (~50 Échos pour 11 minutes de survie) : ce qui bridait la récompense était l'amortissement, pas le
+  plafond.
+- **Le record de survie s'affiche à l'écran de fin**, avec « NOUVEAU RECORD ! » quand il tombe. Il est
+  désormais rangé **par biome ET par cran de saturation** (`SettingsData.SurvivalRecords`) : tenir
+  quinze minutes au cran 0 et les tenir au cran V ne sont pas la même performance, et le premier
+  rendait le second invisible à jamais. La table historique `HighScores` est **conservée intacte** —
+  en changer la forme aurait effacé les records déjà gagnés au premier lancement.
+
+⚠ `RUNEND_BEST` et `RUNEND_SURVIVED` **attendaient dans `ui.csv`, traduites dans les trois langues,
+sans un seul appelant** : le record existait, était écrit à chaque run depuis des versions, et n'était
+montré au joueur qu'à un endroit — la carte du biome. La onzième occurrence de *déclaré n'est pas
+consommé*, cette fois sur le chemin le plus court qui soit entre une donnée et le joueur.
+
+⚠ Le record est lu **avant** `ReportRun`, qui l'écrase avec le temps de la run. Il est donc **passé en
+paramètre** à `RunEndScreen.Show` plutôt que relu par l'écran : un écran qui le relirait comparerait
+la run à elle-même et « record battu » ne s'afficherait jamais, sans qu'aucune erreur ne le signale.
+
+### 38.6 Ce qui reste à mesurer et à juger en jouant
+
+Aucun de ces points n'est vérifiable au banc — le bot d'`--auto-play` ne se déplace pas, donc il ne
+sait ni fuir la marée ni s'y laisser prendre.
+
+- **La date de fermeture (11 min) est un pari.** C'est la seule constante qui décide de la durée
+  ressentie d'une fin de partie. À juger sur une session jouée, pas sur un relevé.
+- **L'amortissement à 0,50 est estimé sur un compte de kills d'overtime NON MESURÉ.** À relever au
+  banc avant publication : si le compte réel est très supérieur, l'overtime devient la seule source
+  d'Échos qui compte.
+- **La marée n'a pas de son.** Aucun SFX du projet ne dit « une menace lente arrive » sans mentir sur
+  autre chose (`sfx_ui_death` signifie déjà « mort évitée »). À produire — c'est un événement qui
+  mérite d'être entendu avant d'être vu.
+- **La lisibilité du bord** quand la caméra suit le joueur et ne montre jamais toute l'arène. Le
+  liseré pulsant est la seule information qui compte ; s'il ne suffit pas, l'indicateur manquant est
+  une flèche vers le centre, pas une carte.
+- **L'interaction avec le cran III « Compte à rebours »** (overtime dès la 8ᵉ minute) : la marée s'y
+  déclenche cinq minutes plus tôt, sur un build cinq minutes moins avancé. C'est le cas le plus dur
+  du jeu, et il n'a jamais été joué.

@@ -394,6 +394,7 @@ public sealed class RunSmokeTest : MonoBehaviour
         ClearArena();
         yield return RunPortedRulesChecks(enemyPrefab);
         yield return RunSafetyNetChecks();
+        yield return RunRustTideChecks();
         yield return RunPurgeChecks(spawner.MiniBossPrefab);
         spawner.enabled = true;
 
@@ -2736,6 +2737,74 @@ public sealed class RunSmokeTest : MonoBehaviour
     /// <para>Les niveaux sont imposés <b>en mémoire</b> (<c>OverrideUpgradeLevel</c>) : un banc
     /// n'écrit jamais dans la sauvegarde du joueur.</para>
     /// </remarks>
+    /// <summary>
+    /// Marée de Rouille : la <b>chaîne de câblage</b>, du composant installé au PV réellement retiré.
+    ///
+    /// <para>La géométrie et les taux ont dix-sept tests xUnit et n'ont rien à faire ici : ce que le
+    /// banc doit prouver, c'est que le système <b>existe dans une vraie run</b> et que ses dégâts
+    /// <b>arrivent jusqu'au joueur</b>. C'est la parade du défaut favori du projet — une règle pure
+    /// bien écrite, testée, complète, et que rien n'appelle. Le cas est ici particulièrement propice :
+    /// <c>RustTideZone</c> n'est posé dans aucune scène, il s'installe depuis
+    /// <c>ArenaRenderer.Build</c>. Si ce point d'accroche disparaît, tout le chantier devient un
+    /// fichier mort <b>sans qu'une seule erreur ne se lève</b>.</para>
+    ///
+    /// <para>Ce qui ne peut pas être vérifié ici : la fermeture de l'arène demande onze minutes
+    /// d'overtime, que le banc ne joue pas. Elle est verrouillée par les tests unitaires — et son
+    /// <i>ressenti</i> ne se juge qu'en jouant (GDD §38.6).</para>
+    /// </summary>
+    private IEnumerator RunRustTideChecks()
+    {
+        var player = Player.Instance;
+        if (player == null || player.IsDead)
+        {
+            Check("maree : joueur vivant disponible pour la mesure", false,
+                  player == null ? "pas de joueur" : "joueur mort");
+            yield break;
+        }
+
+        // 1. Le composant existe-t-il ? C'est LA vérification : il n'est posé dans aucune scène.
+        var tide = Object.FindFirstObjectByType<RustTideZone>();
+        Check("maree : la zone est installee dans la run", tide != null,
+              tide != null ? "RustTideZone present" : "ABSENT — ArenaRenderer ne l'accroche plus");
+
+        // 2. Hors overtime, elle n'existe pas : ni terrain rongé, ni joueur dans la rouille.
+        var gm = GameManager.Instance;
+        bool overtime = gm?.Overtime ?? false;
+        if (tide != null && !overtime)
+        {
+            Check("maree : inerte tant que l'overtime n'a pas commence",
+                  Mathf.Approximately(tide.SafeFraction, 1f) && !tide.PlayerInTide,
+                  $"fraction sure {tide.SafeFraction:0.00}, joueur dans la rouille : {tide.PlayerInTide}");
+        }
+
+        // 3. Les dégâts continus traversent-ils les i-frames ? Tout le chantier repose là-dessus : la
+        //    fenêtre de 0,45 s plafonne les dégâts entrants à 2,2 coups/s, et c'est ce plafond qui
+        //    rendait une nuée de 300 ennemis aussi inoffensive qu'une nuée de 5.
+        ClearArena();
+        player.HealFlat(player.Stats.MaxHp);
+        yield return null;
+
+        player.TakeDamage(1f);            // pose la fenêtre d'invulnérabilité
+        float avant = player.Stats.CurrentHp;
+
+        player.TakeContinuousDamage(40f); // doit passer MALGRÉ les i-frames
+        float retire = avant - player.Stats.CurrentHp;
+
+        Check("maree : les degats continus ignorent les i-frames",
+              Mathf.Abs(retire - 40f) < 0.01f,
+              $"{retire:0.0} PV retires sur 40 attendus");
+
+        // 4. Et ils suspendent la régénération — c'est ce qui referme le seuil d'immortalité (un débit
+        //    de soin sans plafond face à des dégâts entrants plafonnés) sans dévaluer la carte de
+        //    surcharge en terrain sûr.
+        Check("maree : un degat continu suspend la regeneration",
+              player.Stats.RegenSuppressLeft > 0f,
+              $"suppression restante {player.Stats.RegenSuppressLeft:0.00} s");
+
+        player.HealFlat(player.Stats.MaxHp);
+        yield return null;
+    }
+
     private IEnumerator RunSafetyNetChecks()
     {
         var player = Player.Instance;
