@@ -2786,10 +2786,22 @@ public sealed class RunSmokeTest : MonoBehaviour
         Object.Destroy(host);
         yield return null;
 
+        ClearArena();
+        player.HealFlat(player.Stats.MaxHp);
+        yield return null;
+
+        // ⚠ Laisser expirer la grâce ouverte par un Noyau de Secours AVANT de mesurer quoi que ce
+        //    soit. Ce n'est pas une précaution théorique : `RunSafetyNetChecks`, juste au-dessus,
+        //    vient de consommer une résurrection pour la tester, donc `Player.TideGraceAfterRescue`
+        //    court à cet instant précis. Le premier jet de ce bloc mesurait dedans et rendait
+        //    « 0,0 PV retires sur 40 attendus » — un échec qui accusait la chaîne de dégâts alors
+        //    qu'elle fonctionnait. **Deux systèmes ajoutés le même jour, dont l'un masque l'autre à
+        //    la frame près, et le banc désigne le mauvais.**
+        yield return new WaitForSeconds(Player.TideGraceAfterRescue + 0.1f);
+
         // 2. Les dégâts continus traversent-ils les i-frames ? Tout le chantier repose là-dessus : la
         //    fenêtre de 0,45 s plafonne les dégâts entrants à 2,2 coups/s, et c'est ce plafond qui
         //    rendait une nuée de 300 ennemis aussi inoffensive qu'une nuée de 5.
-        ClearArena();
         player.HealFlat(player.Stats.MaxHp);
         yield return null;
 
