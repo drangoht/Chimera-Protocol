@@ -3722,8 +3722,22 @@ la run à elle-même et « record battu » ne s'afficherait jamais, sans qu'aucu
 
 ### 38.6 Ce qui reste à mesurer et à juger en jouant
 
-Aucun de ces points n'est vérifiable au banc — le bot d'`--auto-play` ne se déplace pas, donc il ne
-sait ni fuir la marée ni s'y laisser prendre.
+⚠⚠ **Le banc d'équilibrage rend désormais des chiffres FAUX sur l'overtime, et il ne le dira pas.**
+`--auto-play` joue de vraies runs d'overtime — c'est l'instrument de toutes les mesures de fin de
+partie (pression ressentie, temps soutenable, courbe de puissance) — et `BenchAutoPilot` ne sait
+qu'esquiver la foule. Il **ignore la marée** : il ne revient pas au centre, il ne sait même pas que le
+terrain se referme. Ses runs d'overtime vont donc raccourcir brutalement, **pour une raison qui n'est
+pas celle qu'on mesure**. Toute lecture de banc portant sur l'overtime est à considérer comme non
+valide tant que `AutoPilotPolicy` n'aura pas appris à rejoindre le terrain sûr. C'est le mode d'échec
+déjà rencontré deux fois : *une mesure insensible à ce qu'elle prétend mesurer*.
+
+⚠ Et le banc de **câblage** (`RunSmokeTest`) ne couvre pas l'**accroche** : il assemble sa scène par
+code et n'instancie jamais d'`ArenaRenderer`, donc il pose la marée à la main pour la vérifier. Si le
+point d'accroche disparaissait, tout ce chapitre deviendrait un fichier mort et **le banc resterait
+vert**. Le seul contrôle est de lancer le jeu et de regarder l'arène se refermer.
+
+Aucun des points ci-dessous n'est vérifiable au banc — le pilote ne sait ni fuir la marée ni
+l'exploiter.
 
 - **La date de fermeture (11 min) est un pari.** C'est la seule constante qui décide de la durée
   ressentie d'une fin de partie. À juger sur une session jouée, pas sur un relevé.

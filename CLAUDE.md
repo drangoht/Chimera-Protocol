@@ -53,6 +53,14 @@ les records des joueurs).
 ⚠ **Le record se lit AVANT `ReportRun`**, qui l'écrase avec le temps de la run — il est donc **passé
 en paramètre** à `RunEndScreen.Show`. Un écran qui le relirait comparerait la run à elle-même et
 « record battu » ne s'afficherait **jamais**, sans qu'aucune erreur ne le dise.
+⚠⚠ **Le banc d'équilibrage rend maintenant des chiffres FAUX sur l'overtime, sans le dire.**
+`BenchAutoPilot` ne sait qu'esquiver la foule : il **ignore la marée**, ne revient pas au centre, et
+ses runs d'overtime raccourcissent donc **pour une raison qui n'est pas celle qu'on mesure**. Toute
+lecture de banc portant sur l'overtime est **non valide** tant que `AutoPilotPolicy` n'aura pas appris
+à rejoindre le terrain sûr. ⚠ Et le banc de câblage `RunSmokeTest` **n'assemble
+aucun décor** : il n'instancie jamais d'`ArenaRenderer`, donc l'**accroche** de la zone n'y est pas
+couverte — il pose la marée à la main. Si le point d'accroche disparaissait, le chantier deviendrait
+un fichier mort et **le banc resterait vert**. Le seul contrôle est de lancer le jeu.
 ⚠ **Reste à faire** : la marée **n'a pas de son** (aucun SFX existant ne dit « une menace lente
 arrive » sans mentir), l'amortissement à 0,50 repose sur un compte de kills d'overtime **non mesuré**,
 et l'interaction avec le cran III (overtime dès la 8ᵉ min) n'a jamais été jouée.

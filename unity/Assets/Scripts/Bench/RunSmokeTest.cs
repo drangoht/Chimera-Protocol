@@ -2738,46 +2738,55 @@ public sealed class RunSmokeTest : MonoBehaviour
     /// n'écrit jamais dans la sauvegarde du joueur.</para>
     /// </remarks>
     /// <summary>
-    /// Marée de Rouille : la <b>chaîne de câblage</b>, du composant installé au PV réellement retiré.
+    /// Marée de Rouille : la <b>chaîne d'application</b>, de l'horloge de la run au PV réellement
+    /// retiré.
     ///
-    /// <para>La géométrie et les taux ont dix-sept tests xUnit et n'ont rien à faire ici : ce que le
-    /// banc doit prouver, c'est que le système <b>existe dans une vraie run</b> et que ses dégâts
-    /// <b>arrivent jusqu'au joueur</b>. C'est la parade du défaut favori du projet — une règle pure
-    /// bien écrite, testée, complète, et que rien n'appelle. Le cas est ici particulièrement propice :
-    /// <c>RustTideZone</c> n'est posé dans aucune scène, il s'installe depuis
-    /// <c>ArenaRenderer.Build</c>. Si ce point d'accroche disparaît, tout le chantier devient un
-    /// fichier mort <b>sans qu'une seule erreur ne se lève</b>.</para>
+    /// <para>La géométrie et les taux ont dix-sept tests xUnit et n'ont rien à faire ici. Ce que le
+    /// banc ajoute, c'est le trajet <i>en conditions réelles</i> : une zone vivante lit l'horloge et
+    /// ses dégâts arrivent jusqu'au joueur, i-frames comprises.</para>
     ///
-    /// <para>Ce qui ne peut pas être vérifié ici : la fermeture de l'arène demande onze minutes
-    /// d'overtime, que le banc ne joue pas. Elle est verrouillée par les tests unitaires — et son
-    /// <i>ressenti</i> ne se juge qu'en jouant (GDD §38.6).</para>
+    /// <para>⚠ <b>Ce que ce bloc ne couvre PAS, et il faut le savoir :</b> l'accrochage de
+    /// <c>RustTideZone</c> par <c>ArenaRenderer.Build</c>. Ce banc <b>n'assemble aucun décor</b> — il
+    /// construit sa scène par code et n'instancie jamais d'<c>ArenaRenderer</c> — donc chercher la
+    /// zone dans la scène ne prouverait rien et échouerait toujours. La zone est ici <b>posée à la
+    /// main</b> sur un objet jetable. Si le point d'accroche disparaissait, tout le chantier
+    /// deviendrait un fichier mort et <i>ce bloc resterait vert</i> : le seul contrôle de cette
+    /// accroche est de lancer le jeu et de regarder l'arène se refermer.</para>
     /// </summary>
     private IEnumerator RunRustTideChecks()
     {
         var player = Player.Instance;
-        if (player == null || player.IsDead)
+        var gm = GameManager.Instance;
+        if (player == null || player.IsDead || gm == null)
         {
             Check("maree : joueur vivant disponible pour la mesure", false,
-                  player == null ? "pas de joueur" : "joueur mort");
+                  player == null ? "pas de joueur" : gm == null ? "pas de GameManager" : "joueur mort");
             yield break;
         }
 
-        // 1. Le composant existe-t-il ? C'est LA vérification : il n'est posé dans aucune scène.
-        var tide = Object.FindFirstObjectByType<RustTideZone>();
-        Check("maree : la zone est installee dans la run", tide != null,
-              tide != null ? "RustTideZone present" : "ABSENT — ArenaRenderer ne l'accroche plus");
+        // 1. Une zone vivante lit-elle l'horloge de la run ? Le banc tourne en overtime permanent
+        //    depuis RunBossSpawnChecks (`OverrideRunDuration(1)`, jamais défait), donc la marée y est
+        //    en pleine avancée : on compare ce que la zone calcule à ce que la règle pure annonce
+        //    pour le même instant. C'est le câblage horloge → géométrie, sans jouer onze minutes.
+        var host = new GameObject("MareeTest");
+        var tide = host.AddComponent<RustTideZone>();
+        yield return null;
 
-        // 2. Hors overtime, elle n'existe pas : ni terrain rongé, ni joueur dans la rouille.
-        var gm = GameManager.Instance;
-        bool overtime = gm?.Overtime ?? false;
-        if (tide != null && !overtime)
+        if (gm.Overtime)
         {
-            Check("maree : inerte tant que l'overtime n'a pas commence",
-                  Mathf.Approximately(tide.SafeFraction, 1f) && !tide.PlayerInTide,
-                  $"fraction sure {tide.SafeFraction:0.00}, joueur dans la rouille : {tide.PlayerInTide}");
+            float attendu = RustTide.SafeFraction(gm.OvertimeSeconds / 60f);
+            Check("maree : la zone suit l'horloge de la run",
+                  Mathf.Abs(tide.SafeFraction - attendu) < 0.02f,
+                  $"zone {tide.SafeFraction:0.000} contre regle {attendu:0.000} "
+                  + $"({gm.OvertimeSeconds:0} s d'overtime)");
         }
 
-        // 3. Les dégâts continus traversent-ils les i-frames ? Tout le chantier repose là-dessus : la
+        // Détruite tout de suite : les blocs suivants mesurent encore ce joueur, et une marée laissée
+        // en fond le rongerait pendant qu'ils comptent autre chose.
+        Object.Destroy(host);
+        yield return null;
+
+        // 2. Les dégâts continus traversent-ils les i-frames ? Tout le chantier repose là-dessus : la
         //    fenêtre de 0,45 s plafonne les dégâts entrants à 2,2 coups/s, et c'est ce plafond qui
         //    rendait une nuée de 300 ennemis aussi inoffensive qu'une nuée de 5.
         ClearArena();
@@ -2794,7 +2803,7 @@ public sealed class RunSmokeTest : MonoBehaviour
               Mathf.Abs(retire - 40f) < 0.01f,
               $"{retire:0.0} PV retires sur 40 attendus");
 
-        // 4. Et ils suspendent la régénération — c'est ce qui referme le seuil d'immortalité (un débit
+        // 3. Et ils suspendent la régénération — c'est ce qui referme le seuil d'immortalité (un débit
         //    de soin sans plafond face à des dégâts entrants plafonnés) sans dévaluer la carte de
         //    surcharge en terrain sûr.
         Check("maree : un degat continu suspend la regeneration",
