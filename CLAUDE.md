@@ -23,7 +23,7 @@ URP 2D). Le dépôt ne contient plus qu'un moteur : Godot a été retiré le **2
 ## Phase actuelle
 
 **2026-08-22 — LA MARÉE DE ROUILLE, PUBLIÉE en 2.4.0 sur LES DEUX canaux** (web #1905527 et
-Windows #1905534, devlog à coller). Windows était resté en 2.2.0 pendant les publications navigateur —
+Windows #1905534, devlog **publié**). Windows était resté en 2.2.0 pendant les publications navigateur —
 le tactile ne le concernait pas — et récupère donc la Marée d'un seul coup. Le rendu de la marée a été refait le jour même sur
 retour de jeu — « trop carrée, dans la vraie vie la rouille n'est pas nette comme ça » — et **validé
 en jouant** (« c'est bien mieux »). Tout le rendu tient désormais dans **un shader**
@@ -291,7 +291,7 @@ l'agent compétent — **qui fait quoi et dans quel ordre : `GUIDE-CLAUDE-CODE.m
 quand une phase se termine, relire les agents qu'elle concerne (dernière passe : 2026-08-10).
 
 - **`game-tester`** : construit et lance le binaire Unity, joue le jeu, documente les bugs dans `docs/TEST_REPORT.md`. À invoquer après chaque implémentation majeure.
-- **`release-manager`** : publie la release binaire de bout en bout (semver, release notes, `tools/release_unity.ps1`, MAJ doc) puis **rédige le devlog** — l'utilisateur le publie lui-même sur itch (l'agent ne pilote pas le navigateur). Source des notes : `docs/DEVLOG.md`.
+- **`release-manager`** : publie la release binaire de bout en bout (semver, release notes, `tools/release_unity.ps1`, MAJ doc) puis **rédige le devlog** dans `docs/DEVLOG.md`. ⚠ Cet agent ne pilote pas le navigateur, mais **la session principale le peut** : le devlog 2.4.0 a été posé sur itch le 2026-08-22 via Chrome (skill `claude-in-chrome`) — nouveau devlog depuis le tableau de bord du jeu, éditeur en **mode source** (`<>`) pour garder gras et listes, et ⚠ **cocher « Published »**, sans quoi le billet reste en brouillon sans rien dire.
 
 ## Maintenance de la doc
 
