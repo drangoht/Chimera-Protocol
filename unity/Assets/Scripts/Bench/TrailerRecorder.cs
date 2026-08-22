@@ -122,6 +122,7 @@ public sealed class TrailerRecorder : MonoBehaviour
         "intro" => TakeIntro(),
         "menu" => TakeMenu(),
         "meta" => TakeMeta(),
+        "charsel" => TakeCharacterSelect(),
         "levelup" => TakeLevelUp(),
         "chimera" => TakeChimera(),
         "tide" => TakeTide(),
@@ -174,6 +175,32 @@ public sealed class TrailerRecorder : MonoBehaviour
         // 6 écrans × 3 s, plus une seconde de marge : la prise ne doit pas se terminer AVANT sa mise
         // en scène, sinon le dernier écran manque et la coupe se voit.
         yield return Record(19f);
+        Destroy(host);
+    }
+
+    /// <summary>
+    /// L'écran de choix de personnage — <b>le seul moyen de le REGARDER</b>.
+    /// </summary>
+    /// <remarks>
+    /// Il est sur le chemin de « Jouer », donc atteignable à la main ; mais un écran jugé en le
+    /// traversant est un écran jugé de mémoire. Ce projet a déjà payé cette leçon plusieurs fois —
+    /// sept défauts visuels simultanés qu'aucun test ne voyait, une aura qui ne brillait que sous la
+    /// carte qui la cache, quatre textes qui se chevauchaient. Une prise dédiée rend une image
+    /// qu'on peut ouvrir.
+    /// </remarks>
+    private IEnumerator TakeCharacterSelect()
+    {
+        SceneRoot.ChangeScene(GameScenes.MainMenu);
+        yield return Wait(1.5f);
+
+        Showcase();
+
+        var host = new GameObject("[TrailerStage]");
+        var screen = host.AddComponent<CharacterSelectScreen>();
+        yield return null;
+        screen.Show();
+
+        yield return Record(5f);
         Destroy(host);
     }
 

@@ -2721,6 +2721,47 @@ d'écran**. Avant de déplacer une règle dans un shader, se demander ce qui la 
 garder en C# tout ce qui peut y rester (ici la *phase*, qui doit s'accumuler d'une image à l'autre là
 où un shader n'a pas d'état).
 
+## Personnages jouables
+
+### Un composant peut être posé sur le joueur LUI-MÊME — détruire son `gameObject` détruit le joueur
+
+L'arme de départ n'est pas portée par un enfant dédié : elle est posée sur le `GameObject` du joueur
+dans `Game.unity`. `Destroy(weapon.gameObject)` pour la remplacer par celle d'un autre personnage
+**détruisait donc le joueur**. La run démarrait sans personnage, et rien ne le signalait — pas
+d'exception, pas d'écran d'erreur.
+
+▶ **Pour retirer un composant, détruire LE COMPOSANT** (`Destroy(weapon)`), jamais son `gameObject`,
+sauf à avoir vérifié que cet objet n'existe que pour lui.
+
+⚠ Le défaut a été trouvé par une ligne de journal qui **comptait** les armes portées, pas par celle
+qui citait l'arme demandée. *Une ligne qui répète la demande confirme la demande ; une ligne qui
+compte constate le résultat.* Écrire la seconde quand la première suffirait « logiquement ».
+
+### `GetComponentsInChildren` ne filtre pas les composants désactivés — et `Destroy` est différé
+
+Le compteur ci-dessus a d'abord rendu un **faux positif permanent** : « 2 armes » pour tout
+personnage non-Chimère. `GetComponentsInChildren<T>()` n'écarte que les *GameObjects* inactifs ; un
+composant sur lequel on vient d'appeler `Destroy` y figure pendant toute l'image en cours, la
+destruction n'ayant lieu qu'à sa fin.
+
+▶ Compter ce qui **agit** : `if (c != null && c.enabled)`. Une alerte qui se déclenche toujours est
+une alerte qu'on apprend à ignorer — elle est pire qu'absente.
+
+### Une run coupée par `--run-limit` écrivait un record dans la sauvegarde du JOUEUR
+
+Une session de contrôle a laissé `survivalRecords["neon#0"] = 25` dans la sauvegarde de l'auteur :
+exactement la valeur de son `--run-limit=25`. La run se terminait par `EndRun("bench_limit")`, et
+`ReportRun` enregistrait sa durée comme n'importe quelle partie.
+
+⚠ C'est le piège « un outil ne laisse pas sa mise en scène dans la sauvegarde », **rejoué par
+l'autre bout** : pas la mise en scène, le *résultat*. `GameManager.Outcome` est désormais public et
+`RunHud` n'enregistre plus rien pour `bench_limit`.
+
+⚠ Corollaire d'ergonomie, appris le même jour : **lancer le binaire en boucle pour se vérifier ouvre
+des fenêtres de jeu sur le bureau de l'utilisateur**, qui les prend pour son jeu. Un écran de fin
+apparu « tout le temps au bout de 25 secondes » a été signalé comme un bug ; c'étaient les fenêtres
+de contrôle. Le dire avant de lancer.
+
 ## Méthode
 
 ### Extraire du moteur, puis confronter — plutôt que lire les sources

@@ -41,6 +41,57 @@ public static class RunConfig
         return null;
     }
 
+    /// <summary>
+    /// Personnage joué. Décide des PV et de la vitesse de départ, de la silhouette et de l'arme
+    /// portée dès la première image.
+    /// </summary>
+    /// <remarks>
+    /// Lu à l'initialisation du champ, comme le biome et pour la même raison : <c>Player.Awake</c>
+    /// l'interroge, et un choix appliqué trop tard donnerait un personnage sur deux.
+    /// </remarks>
+    public static string CharacterId { get; private set; }
+        = CharacterFromCommandLine() ?? GameSettings.Current.CharacterId;
+
+    /// <summary>Le profil complet du personnage joué — jamais nul.</summary>
+    public static CharacterDef Character => Characters.Get(CharacterId);
+
+    /// <summary>
+    /// Personnage imposé par <c>--character=&lt;id&gt;</c>. <b>Non persisté</b> : un drapeau de banc
+    /// ou de capture n'écrit jamais dans la sauvegarde du joueur.
+    /// </summary>
+    private static string? CharacterFromCommandLine()
+    {
+        foreach (string arg in LaunchArgs.All)
+        {
+            if (!arg.StartsWith("--character=", System.StringComparison.Ordinal)) continue;
+
+            string id = arg.Substring("--character=".Length);
+            if (Characters.IsKnown(id)) return id;
+
+            Debug.LogError($"[RunConfig] personnage inconnu : '{id}' — ignore.");
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Fixe le personnage pour les runs à venir et le mémorise.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Le drapeau de ligne de commande <b>garde la main</b> : sans cela, une tournée de captures
+    /// ou une campagne de banc qui traverse l'écran de sélection écraserait le personnage imposé, et
+    /// mesurerait un profil qui n'est pas celui qu'on croit.
+    /// </remarks>
+    public static void ChooseCharacter(string id)
+    {
+        if (CharacterFromCommandLine() != null) return;
+        if (!Characters.IsKnown(id)) return;
+
+        CharacterId = id;
+        GameSettings.Current.CharacterId = id;
+        GameSettings.Save();
+    }
+
     /// <summary>Cran de l'échelle de saturation choisi pour cette run.</summary>
     public static int Saturation { get; private set; } = DebugHooks.Saturation ?? 0;
 

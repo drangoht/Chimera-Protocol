@@ -238,7 +238,11 @@ public sealed class RunHud : MonoBehaviour
 
         MetaProgression.RegisterRun(kills);
 
-        GameSettings.ReportRun(biome, seconds, victory, RunConfig.Saturation);
+        // ⚠ Une run coupée par --run-limit n'est PAS une partie : sa durée est celle du chronomètre
+        // de l'outil. L'enregistrer pose un record que le joueur n'a pas joué, dans sa sauvegarde à
+        // lui — arrivé le 2026-08-22, sur cette machine, pendant une session de contrôle.
+        if (GameManager.Instance?.Outcome != "bench_limit")
+            GameSettings.ReportRun(biome, seconds, victory, RunConfig.Saturation);
 
         // ⚠ Après RegisterRun et ReportRun : les défis cumulés (« 100 runs », « N biomes terminés »)
         // doivent voir la run qui vient de finir, sinon ils se déclenchent une partie trop tard.

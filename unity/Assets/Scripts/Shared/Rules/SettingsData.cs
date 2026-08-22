@@ -74,6 +74,18 @@ public sealed class SettingsData
     public static string SurvivalKey(string biomeId, int saturation)
         => $"{biomeId}#{saturation}";
 
+    /// <summary>
+    /// Personnage choisi pour la prochaine run.
+    /// </summary>
+    /// <remarks>
+    /// <para>⚠ La valeur par défaut n'est pas <c>""</c> mais l'identifiant de la Chimère, et ce n'est
+    /// pas cosmétique : une sauvegarde écrite avant l'existence de ce champ le relit vide, et
+    /// <c>Characters.Get</c> replierait alors sur le défaut de toute façon — mais l'écran de
+    /// sélection, lui, afficherait « aucun personnage » et le joueur croirait avoir perdu son choix.
+    /// Le défaut se déclare ici, une fois, plutôt que d'être deviné à chaque lecture.</para>
+    /// </remarks>
+    public string CharacterId { get; set; } = Characters.DefaultId;
+
     public List<string> DiscoveredWeapons { get; set; } = new();
     public List<string> DiscoveredGrafts  { get; set; } = new();
 

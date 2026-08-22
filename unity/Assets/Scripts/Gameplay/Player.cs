@@ -103,8 +103,21 @@ public sealed class Player : MonoBehaviour
         _animator = GetComponentInChildren<FrameAnimator>();
         if (_animator != null)
         {
-            var frames = SpriteFramesLibrary.Get("player");
+            // La silhouette du personnage choisi. Les quatre jeux d'animations sont générés et
+            // importés depuis l'ère Godot (Resources/SpriteFrames/{player,titan,vagabond,vecteur}) ;
+            // seul le choix manquait.
+            //
+            // ⚠ Le repli sur "player" n'est pas décoratif : une planche absente rendrait le joueur
+            // INVISIBLE, sans lever d'erreur — le sprite reste nul et l'entité continue de se
+            // déplacer, de tirer et de mourir. C'est exactement ce qui est arrivé à la nuée de la
+            // tournée de captures.
+            var character = RunConfig.Character;
+            var frames = SpriteFramesLibrary.Get(character.FramesId)
+                      ?? SpriteFramesLibrary.Get("player");
+
             if (frames != null) _animator.SetSpriteFrames(frames);
+            else Debug.LogError($"[Player] aucune planche pour '{character.FramesId}' — joueur invisible.");
+
             _animator.Play("idle");
         }
     }

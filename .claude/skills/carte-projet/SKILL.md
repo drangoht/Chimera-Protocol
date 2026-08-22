@@ -57,7 +57,8 @@ La table de destination fait autorité : **`tools/unity_paths.py`**.
 `ArenaLayout` · `AutoPilotPolicy` · `BiomeUnlock` · **`BoomerangReturn`** (retour du glaive : sa
 vitesse se calcule *contre* celle du lanceur, jumelle de `PickupMagnet`) · `BossIncarnations` ·
 `BossPhases` ·
-`CardRarityTable` · `ChallengeTable` · `CrowdControlCaps` · `DifficultyTuning` · `EchoFormula` ·
+`CardRarityTable` · `ChallengeTable` · **`Characters`** (les 4 profils jouables : PV, vitesse,
+arme de signature, planche d'animations) · `CrowdControlCaps` · `DifficultyTuning` · `EchoFormula` ·
 `EliteAffixTable` · `EnemyScaling` · `EnemyTable` · `FloorFeatureLayout` · `GodotConfig` (migration
 des `settings.cfg` de joueurs venus de la 1.26.0) · `GraftTable` · `LevelThreat` · `LevelUpCharges` ·
 `LevelUpPool` (⚠ une main est **toujours pleine** : le manque est comblé par les cartes de surcharge,
@@ -146,7 +147,7 @@ celui qui écoute** : c'est lui qui ouvre `TouchInput.SetGameControls`. Seul can
 **`OrientationGate`** (refus du portrait, hors scènes, `DontDestroyOnLoad`) ·
 **`FusionBanner`** (annonce d'une fusion forgée — ordre 90 : au-dessus du HUD, sous les modales ;
 aucun `GraphicRaycaster`, il n'intercepte rien) ·
-⚠ **Aucun écran de sélection de personnage n'existe côté Unity** — il n'a pas été porté.
+**`CharacterSelectScreen`** (choix du personnage, porté le 2026-08-22 — il manquait depuis Godot alors que **tout le reste existait** : douze clés `CHAR_*` traduites en trois langues, quatre jeux d'animations générés, et `GameSettings.SignatureWeapons`. Sur le chemin de « Jouer », avant le choix du niveau)
 ⚠ **La rareté d'une carte se joue sur trois signaux, pas un cadre** : cadre (`UiStyle.CardButton`),
 aura respirante (`UiRarityFlare`, posée chez le PARENT pour passer sous la carte) et courbe d'arrivée
 (`Back` pour l'épique, `Quad` pour le reste). Une **fusion** monte à `legendary` **à l'affichage
@@ -268,7 +269,8 @@ pages store itch · `archive-godot/` (ère Godot).
   côté itch.io, si le jeu se lance dans le navigateur ou se télécharge)
 - **Flags du jeu** (`DebugHooks`) : `--auto-play` · `--power-curve` · `--touch` · `--biome=<id>` ·
   `--timescale=<x>` (≤ 4) · `--run-limit=<s>` · `--seed=<n>` · `--start-at=<min>` ·
-  `--saturate-arsenal` · `--saturation=<n>` · `--force-elites` · `--invuln` · `--lang=<en|fr|es>`
+  `--saturate-arsenal` · `--saturation=<n>` · `--force-elites` · `--invuln` · `--lang=<en|fr|es>` ·
+  **`--character=<chimera|titan|vagabond|vecteur>`**
   ⚠ **Non portés depuis Godot** : `--debug-boss`, `--debug-enemy`, `--force-graft`,
   `--force-fusion`, `--trailer`. Les documents d'archive les mentionnent encore.
 - **Trancher un RÉGLAGE** : `py tools/power_curve_multi.py --runs 5 --overtime --out avant.json`,

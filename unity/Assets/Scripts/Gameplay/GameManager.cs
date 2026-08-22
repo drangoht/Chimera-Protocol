@@ -27,6 +27,20 @@ public sealed class GameManager : MonoBehaviour
     /// <summary>La run est-elle terminée (mort du joueur ou limite atteinte) ?</summary>
     public bool RunEnded { get; private set; }
 
+    /// <summary>
+    /// Comment la run s'est terminée : <c>"mort"</c>, <c>"fin"</c>, ou <c>"bench_limit"</c>.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ Exposée pour que la <b>persistance</b> puisse l'écarter, et pas seulement le dépouillement.
+    /// Une run coupée par <c>--run-limit</c> n'est pas une partie : son temps est celui du
+    /// chronomètre de l'outil, pas celui du joueur. Elle écrivait pourtant un record dans la
+    /// sauvegarde — un <c>survivalRecords</c> de 25 s est apparu dans la sauvegarde de l'auteur le
+    /// 2026-08-22, produit par une session de contrôle. C'est le piège « un outil ne laisse pas sa
+    /// mise en scène dans la sauvegarde du joueur », rejoué depuis l'autre bout : pas la mise en
+    /// scène, le <i>résultat</i>.
+    /// </remarks>
+    public string Outcome { get; private set; } = "";
+
     /// <summary>Multiplicateur d'XP du biome courant.</summary>
     public float BiomeXpMult { get; set; } = 1f;
 
@@ -182,6 +196,7 @@ public sealed class GameManager : MonoBehaviour
     {
         if (RunEnded) return;
         RunEnded = true;
+        Outcome = outcome;
 
         PowerTelemetry.End(outcome);
 

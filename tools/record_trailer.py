@@ -74,6 +74,10 @@ TAKES: dict[str, tuple[list[str], float]] = {
     "menu": ([], 6.0),
     "meta": ([], 19.0),
 
+    # -- L'ecran de choix de personnage. Prise de CONTROLE : elle n'est pas montee dans le trailer,
+    #    elle existe pour qu'on puisse REGARDER l'ecran plutot que le relire.
+    "charsel": ([], 5.0),
+
     # -- Gameplay, un biome par prise. Chacun a son angle : le Sanctuaire ouvre (faune claire,
     #    arene lisible), les autres montent en densite et en saturation d'effets.
     "gp_sanctuaire": (["--biome=sanctuaire", "--start-at=4", "--auto-play", "--invuln"], 22.0),

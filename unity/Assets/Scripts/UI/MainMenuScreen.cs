@@ -93,7 +93,7 @@ public sealed class MainMenuScreen : MonoBehaviour
         play.onClick.AddListener(() =>
         {
             PlayRequested?.Invoke();
-            OpenLevelSelect();
+            OpenCharacterSelect();
         });
         _firstButton = play;
 
@@ -303,6 +303,32 @@ public sealed class MainMenuScreen : MonoBehaviour
 
     private HubScreen? _hub;
     private LevelSelectScreen? _levelSelect;
+    private CharacterSelectScreen? _characterSelect;
+
+    /// <summary>
+    /// Ouvre le choix du <b>personnage</b>, première étape de « Jouer ».
+    /// </summary>
+    /// <remarks>
+    /// <para>L'ordre est celui du GDD §5.1 — personnage, puis niveau : le personnage est une
+    /// identité, le niveau une destination. Il est aussi le seul ordre qui rende l'écran
+    /// découvrable ; rangé derrière une entrée de menu à part, un joueur pourrait finir le jeu sans
+    /// jamais savoir qu'il existe trois autres profils, et le différenciateur ne différencierait
+    /// rien.</para>
+    /// <para>Le péage que cela ajoute est réel, et c'est pourquoi l'écran s'ouvre sur le personnage
+    /// de la run précédente avec le curseur déjà posé dessus : rejouer le même profil coûte une
+    /// touche.</para>
+    /// </remarks>
+    private void OpenCharacterSelect()
+    {
+        if (_characterSelect == null)
+        {
+            _characterSelect = gameObject.AddComponent<CharacterSelectScreen>();
+            _characterSelect.Closed += RestoreFocus;
+            _characterSelect.Confirmed += _ => OpenLevelSelect();
+        }
+
+        _characterSelect.Show();
+    }
 
     /// <summary>
     /// Ouvre le choix du niveau. « Jouer » ne lance plus directement : le biome décide du palier de

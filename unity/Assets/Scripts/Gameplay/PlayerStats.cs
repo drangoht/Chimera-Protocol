@@ -41,12 +41,24 @@ public sealed class PlayerStats
     /// <summary>Vitesse de base, conservée pour recalculer les modificateurs de vitesse.</summary>
     public float BaseSpeed { get; set; } = 200f;
 
-    /// <summary>Remet les statistiques à leur état de début de run.</summary>
-    public void ResetForRun()
+    /// <summary>
+    /// Remet les statistiques à leur état de début de run, <b>selon le personnage choisi</b>.
+    /// </summary>
+    /// <remarks>
+    /// <para>Les 100 PV et 200 de vitesse qui figuraient ici en dur sont désormais ceux de la
+    /// Chimère (<see cref="Characters.DefaultId"/>) : un joueur qui n'a jamais ouvert l'écran de
+    /// sélection retrouve exactement les valeurs d'avant, et un test le verrouille.</para>
+    /// <para>⚠ Ce sont les statistiques <b>de base</b>. Les achats du Hub s'appliquent après, par
+    /// <c>MetaProgression</c> : les poser ici les ferait cumuler à chaque reprise de run.</para>
+    /// </remarks>
+    public void ResetForRun() => ResetForRun(RunConfig.Character);
+
+    /// <summary>Même chose, pour un profil explicite — le banc s'en sert pour comparer deux personnages.</summary>
+    public void ResetForRun(CharacterDef character)
     {
-        MaxHp = 100f;
+        MaxHp = character.MaxHp;
         CurrentHp = MaxHp;
-        Speed = BaseSpeed = 200f;
+        Speed = BaseSpeed = character.MoveSpeed;
         Damage = 10f;
         DamageMultiplier = 1f;
         DamageReduction = 0f;

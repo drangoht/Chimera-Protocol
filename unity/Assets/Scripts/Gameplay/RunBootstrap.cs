@@ -312,6 +312,26 @@ public sealed class RunBootstrap : MonoBehaviour
     }
 
     /// <summary>
+    /// Compte les armes qui <b>tirent</b> sur le joueur.
+    /// </summary>
+    /// <remarks>
+    /// ⚠ On compte les composants <c>enabled</c>, et non les objets rendus par
+    /// <c>GetComponentsInChildren</c>. Ce dernier ne filtre que les <i>GameObjects</i> inactifs :
+    /// une arme dont on vient d'appeler <c>Destroy</c> y figure encore pendant toute l'image en
+    /// cours, puisque la destruction est différée à sa fin. La première version de cette ligne
+    /// annonçait donc « 2 armes » pour tout personnage non-Chimère — un faux positif permanent, du
+    /// genre qui finit par apprendre à ignorer sa propre alerte.
+    /// </remarks>
+    private static int CountFiring(Player player)
+    {
+        int firing = 0;
+        foreach (var weapon in player.GetComponentsInChildren<WeaponBase>())
+            if (weapon != null && weapon.enabled) firing++;
+
+        return firing;
+    }
+
+    /// <summary>
     /// Relie l'inventaire au porteur, et lui <b>déclare l'arme de départ</b>.
     ///
     /// <para>Sans cette déclaration, l'arme posée dans la scène existe et tire, mais l'inventaire
@@ -327,11 +347,52 @@ public sealed class RunBootstrap : MonoBehaviour
 
         inv.Mount = player.transform;
 
-        var starting = player.GetComponentInChildren<WeaponBase>();
-        if (starting != null && StartingWeaponId.Length > 0)
+        var character = RunConfig.Character;
+        var scene = player.GetComponentInChildren<WeaponBase>();
+
+        // La scène porte le Canon à Impulsions — l'arme de la Chimère, seul personnage jouable
+        // jusqu'ici. Pour tout autre profil il faut la RETIRER avant d'instancier la sienne.
+        //
+        // ⚠ Sans ce retrait, le joueur partirait avec DEUX armes : celle de la scène, qui tire sans
+        // que l'inventaire la connaisse, et celle du personnage. Le DPS de départ serait doublé
+        // pendant toute la run, l'écran de choix reproposerait le Canon comme « nouvelle arme », et
+        // rien n'afficherait quoi que ce soit d'anormal — c'est la variante exacte du défaut que le
+        // commentaire ci-dessus décrit, retournée : là il manquait une déclaration, ici il manque
+        // une suppression.
+        if (scene != null && !string.Equals(character.WeaponId, StartingWeaponId, System.StringComparison.Ordinal))
         {
-            WeaponRegistry.InjectProjectilePrefabs(starting);
-            inv.Register(StartingWeaponId, starting);
+            // ⚠⚠ On détruit LE COMPOSANT, jamais son GameObject. L'arme de départ n'est pas portée
+            // par un enfant dédié : elle est posée **sur le joueur lui-même** dans `Game.unity`.
+            // `Destroy(scene.gameObject)` détruisait donc le joueur — la run démarrait sans
+            // personnage, et le jeu n'en disait pas un mot. Trouvé parce que la ligne de contrôle
+            // ci-dessous COMPTE ce qui est porté au lieu de citer ce qui a été demandé : elle
+            // annonçait « 1 arme portée, 2 dans la scène », puis « Player (inactive) ».
+            //
+            // `enabled = false` d'abord : Destroy est différé à la fin de l'image, et une arme
+            // détruite mais encore active tire une dernière salve que l'inventaire ne connaît pas.
+            scene.enabled = false;
+            Destroy(scene);
+            scene = null;
         }
+
+        if (scene != null && StartingWeaponId.Length > 0)
+        {
+            WeaponRegistry.InjectProjectilePrefabs(scene);
+            inv.Register(StartingWeaponId, scene);
+        }
+        else if (inv.AcquireOrLevelUp(character.WeaponId, player.transform) == 0)
+        {
+            Debug.LogError($"[RunBootstrap] arme de signature '{character.WeaponId}' refusee "
+                         + $"pour le personnage '{character.Id}' — run demarree SANS arme.");
+        }
+
+        // ⚠ Le COMPTE est ce qui vaut ici, pas les valeurs : elles se relisent dans la table, alors
+        // qu'une arme de scène oubliée ne se voit nulle part — deux canons superposés se distinguent
+        // à peine, et le seul symptôme serait un DPS de départ doublé pendant toute la run. Une
+        // ligne qui cite ce qu'on a demandé confirme la demande ; une ligne qui compte ce qui est
+        // porté constate le résultat.
+        Debug.Log($"[RunBootstrap] personnage : {character.Id} "
+                + $"({character.MaxHp:F0} PV, vitesse {character.MoveSpeed:F0}, {character.WeaponId}) "
+                + $"— {inv.WeaponCount} arme(s) portee(s), {CountFiring(player)} qui tire(nt).");
     }
 }

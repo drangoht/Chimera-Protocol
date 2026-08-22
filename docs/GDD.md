@@ -3878,3 +3878,80 @@ le bord érodé et positive juste au-delà : c'est la seule chose qui relie les 
 pixels, en opacité ténue et sans couleur vive. C'est assumé : une nappe qui s'arrête pile sur sa
 limite **est** une arête, quelle que soit la façon dont on la dessine. Le liseré reste la seule marque
 nette du rendu, et il reste exactement là où l'on commence à brûler.
+
+## 39. Le choix du personnage — le contenu était fini, le choix manquait (2026-08-22)
+
+Les quatre personnages jouables existent depuis l'ère Godot. Le portage Unity a repris **tout ce qui
+les compose** et **rien qui permette de les choisir** :
+
+| Ce qui était déjà là | Où |
+|---|---|
+| 12 clés `CHAR_*` — nom, archétype, description — **traduites en EN/FR/ES** | `localization/ui.csv` |
+| 3 clés `CHARSEL_*`, dont `CHARSEL_STATS` **paramétrée pour PV/vitesse/arme** | `localization/ui.csv` |
+| 4 jeux d'animations générés, importés, avec leurs `.meta` | `Resources/SpriteFrames/` |
+| Les sprites sources et leur générateur (palettes `T_*`, `VG_*`, `VC_*`) | `Art/sprites/player/`, `tools/generate_character_sprites.py` |
+| `SignatureWeapons` — les 4 armes de départ, marquées « découvertes » au Codex | `GameSettings` |
+
+▶ **Douzième « déclaré non consommé » du projet, et le plus complet.** Les onze précédents portaient
+sur une donnée, une règle ou un système ; celui-ci portait sur du **contenu fini**, payé, relu,
+traduit en trois langues — et inatteignable. La description YouTube du jeu annonçait « 4 playable
+characters » pendant ce temps (cf. la refonte du trailer, même jour).
+
+### 39.1 Les profils
+
+| Personnage | PV | Vitesse | Arme de signature |
+|---|---|---|---|
+| **Chimera** — cyborg, équilibré | 100 | 200 | Canon à Impulsions |
+| **Titan-Gardien** — robot lourd, tank | 140 | 170 | Essaim de Drones |
+| **Vagabond** — humain, mobilité | 80 | 240 | Lame Plasma |
+| **Vecteur** — cyborg, précision | 90 | 210 | Lance Vectorielle |
+
+⚠ **Trois de ces huit nombres sont des décisions, pas des retrouvailles.** Le code Godot a été
+supprimé le 2026-08-10 ; seul le Vecteur avait ses valeurs consignées ici (§26 : 90 PV, 210 de
+vitesse, « profil médian-fragile, **entre Chimera et Vagabond** »). Les trois autres profils ont été
+reconstruits à partir de leurs *descriptions* — qui existaient déjà, en trois langues — et de cette
+phrase, qui borne le Vagabond des deux côtés. **Ils n'ont jamais été joués sous cette forme.**
+
+▶ **Pourquoi ces écarts et pas d'autres.** Les i-frames (0,45 s) plafonnent les dégâts entrants à
+2,2 coups/s *quelle que soit la vitesse* : être lent ne fait donc pas encaisser plus de coups au
+contact, cela empêche de **rompre**. Un écart de PV se paie plus cher qu'un écart de vitesse ne
+rapporte — d'où un Titan à ×1,4 PV pour ×0,85 de vitesse, et non ×1,5 pour ×0,8, qui en ferait
+simplement le meilleur. La Marée de Rouille (§38) rongeant en *fraction* des PV max, aucun profil n'y
+gagne ni n'y perd.
+
+La Chimère reprend **exactement** les valeurs qui étaient codées en dur (`PlayerStats.ResetForRun`,
+`RunBootstrap.StartingWeaponId`) : un joueur qui reprend sa sauvegarde ne doit rien sentir changer
+tant qu'il n'a pas choisi autre chose. Un test le verrouille.
+
+### 39.2 Où le choix se fait
+
+« Jouer » → **personnage** → niveau → run. C'est l'ordre du §5.1, et le seul qui rende l'écran
+découvrable : rangé derrière une entrée de menu à part, un joueur pourrait finir le jeu sans savoir
+qu'il existe trois autres profils. Le péage que cela ajoute est réel — l'écran s'ouvre donc sur le
+personnage de la run précédente, curseur déjà posé dessus. `--character=<id>` court-circuite tout et
+**garde la main** sur l'écran, sans jamais rien persister.
+
+### 39.3 Ce que le chantier a appris
+
+⚠⚠ **L'arme de départ est posée sur le GameObject du joueur, pas sur un enfant.** `Destroy` de son
+`gameObject` pour la remplacer **détruisait le joueur** : la run démarrait sans personnage, et rien
+ne le disait. Il faut détruire **le composant**. Trouvé parce que la ligne de contrôle *comptait* les
+armes portées au lieu de citer celle qu'on avait demandée — une ligne qui répète la demande confirme
+la demande ; une ligne qui compte constate le résultat.
+
+⚠ **Et ce compte-là mesurait trop tôt.** `GetComponentsInChildren` ne filtre que les *GameObjects*
+inactifs : une arme dont on vient d'appeler `Destroy` y figure toute l'image en cours, la destruction
+étant différée à sa fin. Le compteur annonçait « 2 armes » pour tout personnage non-Chimère — un faux
+positif permanent, du genre qui apprend à ignorer sa propre alerte. Compter les composants `enabled`,
+c'est-à-dire **ce qui tire**.
+
+⚠ **Trois défauts de mise en page qui ne se voient qu'à l'image** : la ligne de statistiques se
+dessinait **sous le liseré** (quatre lignes réclamant 128 px dans une carte qui en offrait 100 — le
+piège consigné depuis Godot, revenu sur le même genre d'écran), « Titan-Gardien » était **illisible**
+(`FrameAccent.Steel` est un gris de liseré, pas une couleur de texte), et la description du Vecteur
+chevauchait ses statistiques. Aucun test ne pouvait les dire : chaque ligne était exactement là où on
+l'avait mise.
+
+⚠ **Chercher avant d'ajouter vaut aussi pour les chaînes.** Le premier jet de l'écran inventait
+`CHARSEL_HP`, `CHARSEL_SPEED` et `CHARSEL_WEAPON` — trois clés neuves à faire traduire, alors que
+`CHARSEL_STATS` existait déjà, paramétrée pour ces trois valeurs exactement.
