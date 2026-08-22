@@ -22,6 +22,39 @@ URP 2D). Le dépôt ne contient plus qu'un moteur : Godot a été retiré le **2
 
 ## Phase actuelle
 
+**2026-08-22 (2) — LES 4 PERSONNAGES JOUABLES, PUBLIÉS en 2.5.0 sur les deux canaux**
+(web #1905933, Windows #1905937, devlog **publié**). **Joués et validés par l'auteur avant
+publication.** Chimera (100 PV / 200) · Titan-Gardien (140 / 170) · Vagabond (80 / 240) ·
+Vecteur (90 / 210), chacun avec son arme de signature, sa silhouette et son écran de choix
+(`Rules/Characters` + `UI/CharacterSelectScreen`, sur le chemin de « Jouer »). **810 tests.**
+Design → `docs/GDD.md` §39 ; pièges → `docs/PITFALLS_UNITY.md` §Personnages jouables.
+⚠⚠ **DOUZIÈME « déclaré non consommé », et le plus complet** : l'écran n'avait jamais été porté,
+mais **tout le reste l'avait été** — 12 clés `CHAR_*` traduites en trois langues, 3 clés
+`CHARSEL_*` (dont `CHARSEL_STATS` déjà paramétrée pour PV/vitesse/arme), 4 jeux d'animations
+générés et importés, et `GameSettings.SignatureWeapons`. Du contenu fini, payé, traduit jusqu'en
+espagnol, **inatteignable**. ▶ *Chercher avant d'ajouter vaut aussi pour les chaînes* : le premier
+jet inventait trois clés qui existaient déjà.
+⚠ **Les chiffres de 3 profils sur 4 sont des DÉCISIONS, pas des retrouvailles** — le code Godot a
+été supprimé, seul le Vecteur avait ses valeurs consignées (§26). Les autres sont reconstruits
+depuis leurs *descriptions*. La Chimère reprend **exactement** les valeurs codées en dur avant
+elle : une sauvegarde existante ne sent rien changer, et un test le verrouille.
+⚠⚠ **L'arme de départ est posée sur le GameObject DU JOUEUR, pas sur un enfant** :
+`Destroy(scene.gameObject)` **détruisait le joueur** — run sans personnage, aucun message. Détruire
+**le composant**. Trouvé par une ligne de journal qui **compte** les armes portées au lieu de citer
+celle qu'on a demandée. ⚠ Et ce compte mesurait trop tôt : `GetComponentsInChildren` ne filtre que
+les *GameObjects* inactifs et `Destroy` est différé — compter les composants `enabled`.
+⚠ **Trois défauts de mise en page vus seulement À L'IMAGE** : stats sous le liseré,
+« Titan-Gardien » illisible (`Steel` est un gris de liseré, pas une couleur de texte), description
+du Vecteur chevauchée.
+⚠ **Mes propres runs de contrôle touchent l'environnement du joueur** — voir la mémoire dédiée :
+elles ouvrent des fenêtres sur son bureau (un écran de fin a été signalé comme un bug du jeu) et
+**écrivaient un record dans sa sauvegarde**. Corrigé : `GameManager.Outcome` exposé, `RunHud`
+n'enregistre plus rien pour `bench_limit`.
+▶ **Page store itch corrigée le même jour** : elle promettait un end-game *sans fin* (faux depuis
+la 2.4.0), une « aura » de personnage inexistante, un « Wanderer » qui s'appelle **Vagabond**, et
+ne mentionnait **nulle part** le navigateur ni le tactile. ⚠ `docs/ITCH_STORE_PAGE_EN.md` porte
+**deux versions du même texte** (markdown ET html) : n'en corriger qu'une laisse l'autre mentir.
+
 **2026-08-22 — LA MARÉE DE ROUILLE, PUBLIÉE en 2.4.0 sur LES DEUX canaux** (web #1905527 et
 Windows #1905534, devlog **publié**). Windows était resté en 2.2.0 pendant les publications navigateur —
 le tactile ne le concernait pas — et récupère donc la Marée d'un seul coup. Le rendu de la marée a été refait le jour même sur
@@ -314,7 +347,7 @@ quand une phase se termine, relire les agents qu'elle concerne (dernière passe 
 - **Logique pure testable** : `unity/Assets/Scripts/Shared/Rules/` — classes statiques **sans
   dépendance moteur** (`XpCurve`, `EnemyScaling`, `SaturationTable`…). Les `MonoBehaviour` y délèguent.
   `Shared/PlatformCore/` porte le socle déterministe (`Pcg32`, `TimerWheel`, `Easing`).
-- **Tests unitaires** : xUnit, `dotnet test tests/ChimeraProtocol.Tests.csproj` — **776 tests**.
+- **Tests unitaires** : xUnit, `dotnet test tests/ChimeraProtocol.Tests.csproj` — **810 tests**.
   Ils compilent `Shared/` **par chemin** : aucun moteur, aucun build requis.
 - ⚠ **`Art/` ≠ `Resources/`** : `Art/` est consommé par **GUID** (planches d'animation), `Resources/`
   **par chemin** (`Resources.Load`) et embarqué en entier dans le binaire. Se tromper de dossier ne
