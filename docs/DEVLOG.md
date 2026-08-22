@@ -4,6 +4,58 @@
 > `release-manager`). Entrées en ordre décroissant (la plus récente en haut). Ton orienté
 > joueur, EN puis FR (audience itch surtout anglophone).
 
+## v2.4.0 — The arena closes in (2026-08-22)
+
+**New — runs now end. Every one of them.**
+- Past the time limit, the **Rust Tide** starts eating the arena. The safe ground shrinks from
+  every side, and **eleven minutes into overtime there is none left**. However good your build is,
+  the run has a finish line — the challenge is how long you hold, not whether you survive.
+- **It is not a wall.** You can walk straight through it, and sometimes you should: cutting across
+  the rust to escape a swarm is a real option. It just costs you.
+- **It eats through your invincibility frames.** Rust doesn't hit you, it corrodes you — being
+  briefly untouchable after a hit doesn't help in there.
+- **It scales with you.** The damage is a share of your maximum health, so stacking Plating buys
+  you exactly nothing against it. The tide is a clock, not another enemy.
+- **Holding out finally pays.** Surviving overtime is worth far more Echoes than it used to be, and
+  your **best survival time is now shown on the end screen** — kept per biome and per Rust
+  Saturation rank, so it's a record you can actually chase.
+
+**The tide looks like rust now**
+- The front is **gnawed, not straight**: notches carve themselves in and fill back over time, the
+  way corrosion actually spreads. **What you see is what burns you** — the ragged edge is the real
+  damage boundary, not decoration painted over a rectangle.
+- Smoke drifts off the surface, waves run inward across it, and the searing line marking the edge
+  of safe ground still pulses so you can find it in the middle of a swarm.
+
+**This is a browser release.** The Windows download stays on 2.2.0 for now.
+
+---
+
+**Nouveau — les runs se terminent. Toutes.**
+- Passé le temps imparti, la **Marée de Rouille** se met à manger l'arène. Le terrain sûr rétrécit
+  de tous les côtés, et **onze minutes après le début de l'overtime, il n'en reste plus**. Aussi bon
+  soit votre build, la run a une ligne d'arrivée — l'enjeu est de tenir longtemps, plus de survivre.
+- **Ce n'est pas un mur.** On la traverse, et parfois il le faut : couper à travers la rouille pour
+  échapper à un encerclement est un vrai choix. Il se paie, simplement.
+- **Elle passe à travers les i-frames.** La rouille ne vous frappe pas, elle vous ronge — être
+  brièvement intouchable après un coup n'aide en rien là-dedans.
+- **Elle grandit avec vous.** Les dégâts se comptent en fraction de vos PV max : empiler du Blindage
+  ne vous achète rigoureusement rien contre elle. La marée est un chronomètre, pas un ennemi de plus.
+- **Tenir rapporte enfin.** Survivre en overtime vaut bien plus d'Échos qu'avant, et votre
+  **meilleur temps de survie s'affiche sur l'écran de fin** — gardé par biome et par cran de
+  Saturation de Rouille, pour en faire un record que l'on peut viser.
+
+**La marée ressemble enfin à de la rouille**
+- Le front est **rongé, pas droit** : des échancrures se creusent et se comblent au fil du temps,
+  comme la corrosion progresse vraiment. **Ce que vous voyez est ce qui vous brûle** — le bord
+  déchiqueté est la vraie limite des dégâts, pas un décor peint par-dessus un rectangle.
+- De la fumée s'en échappe, des vagues la traversent vers l'intérieur, et la ligne incandescente qui
+  marque la limite du terrain sûr pulse toujours, pour se retrouver au milieu d'une nuée.
+
+**C'est une publication navigateur.** Le téléchargement Windows reste en 2.2.0 pour l'instant.
+
+---
+
 ## v2.3.1 — Play it on your phone (2026-08-14)
 
 **New — the browser version plays with your thumbs**
