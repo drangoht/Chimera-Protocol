@@ -4,6 +4,50 @@
 > `release-manager`). Entrées en ordre décroissant (la plus récente en haut). Ton orienté
 > joueur, EN puis FR (audience itch surtout anglophone).
 
+## v2.5.0 — Four ways to walk in (2026-08-22)
+
+**New — choose who you play**
+- Four characters, each with **its own body, its own stats and its own signature weapon**. The
+  choice comes up when you hit Play, before you pick the level, and it remembers what you took last
+  time — so replaying the same one costs a single keypress.
+- **Chimera** — cyborg, balanced. 100 HP, speed 200, Impulse Cannon. Exactly what you have been
+  playing until now: if you never open the screen, nothing about your runs changes.
+- **Titan-Guardian** — heavy robot, tank. 140 HP, speed 170, Drone Swarm. Takes far more punishment,
+  but being slow is not free: the tide and the swarm both punish anyone who cannot break away.
+- **Vagabond** — human, mobility. 80 HP, speed 240, Plasma Blade. Fragile and very fast, built for
+  aggressive kiting.
+- **Vector** — cyborg, precision. 90 HP, speed 210, Vector Lance. The only character whose starting
+  weapon you **aim yourself**, toward the cursor or the right stick.
+
+**Worth knowing**
+- Each character carries its own animated sprite, so you can see who you picked while you play — the
+  selection screen shows the actual in-game silhouette, not a portrait drawn beside it.
+- The three new profiles are **new numbers**. They have been played, not tuned: if one of them feels
+  clearly stronger or flatly unplayable, that is worth telling me.
+
+---
+
+**Nouveau — choisissez qui vous jouez**
+- Quatre personnages, chacun avec **son corps, ses statistiques et son arme de signature**. Le choix
+  arrive quand vous lancez une partie, avant celui du niveau, et il retient le dernier pris — rejouer
+  le même coûte une touche.
+- **Chimera** — cyborg, équilibré. 100 PV, vitesse 200, Canon à Impulsions. Exactement ce que vous
+  jouiez jusqu'ici : si vous n'ouvrez jamais l'écran, rien ne change à vos runs.
+- **Titan-Gardien** — robot lourd, tank. 140 PV, vitesse 170, Essaim de Drones. Encaisse beaucoup
+  plus, mais la lenteur se paie : la marée comme la nuée punissent qui ne peut pas rompre.
+- **Vagabond** — humain, mobilité. 80 PV, vitesse 240, Lame Plasma. Fragile et très rapide, fait
+  pour le kite agressif.
+- **Vecteur** — cyborg, précision. 90 PV, vitesse 210, Lance Vectorielle. Le seul dont l'arme de
+  départ se **vise à la main**, vers le curseur ou le stick droit.
+
+**Bon à savoir**
+- Chaque personnage porte son propre sprite animé : on voit qui l'on a choisi en jouant, et l'écran
+  de sélection montre la silhouette réelle du jeu, pas un portrait dessiné à côté.
+- Les trois nouveaux profils sont des **chiffres neufs**. Ils ont été joués, pas équilibrés : si l'un
+  d'eux paraît nettement plus fort, ou franchement injouable, ça vaut la peine de me le dire.
+
+---
+
 ## v2.4.0 — The arena closes in (2026-08-22)
 
 **New — runs now end. Every one of them.**
