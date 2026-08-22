@@ -27,7 +27,9 @@
 - Smoke drifts off the surface, waves run inward across it, and the searing line marking the edge
   of safe ground still pulses so you can find it in the middle of a swarm.
 
-**This is a browser release.** The Windows download stays on 2.2.0 for now.
+**Both versions move to 2.4.0.** The Windows download had been sitting on 2.2.0 through the
+browser-only releases — touch controls were never its business — so it picks up the Rust Tide
+in one step.
 
 ---
 
@@ -52,7 +54,9 @@
 - De la fumée s'en échappe, des vagues la traversent vers l'intérieur, et la ligne incandescente qui
   marque la limite du terrain sûr pulse toujours, pour se retrouver au milieu d'une nuée.
 
-**C'est une publication navigateur.** Le téléchargement Windows reste en 2.2.0 pour l'instant.
+**Les deux versions passent en 2.4.0.** Le téléchargement Windows était resté en 2.2.0 pendant
+les publications navigateur — le tactile ne le concernait pas — et récupère donc la Marée de
+Rouille d'un seul coup.
 
 ---
 
