@@ -60,11 +60,16 @@ WHITE = "0xD9D9F2"
 #   Registre voulu : imperatif, court, meme voix que la tagline officielle du jeu
 #   ("Don't kill the monsters. Become them." / INTRO_TAGLINE de localization/ui.csv).
 #
-# ⚠ CONTENT annoncait « 4 CHARACTERS » : c'est FAUX depuis le portage. L'ecran de choix de
-#   personnage n'a jamais ete porte sous Unity, et rien dans le code n'en parle plus (verifie :
-#   aucune occurrence de `CharacterSelect` dans unity/Assets/Scripts). Les trois chiffres annonces
-#   sont desormais comptes dans les donnees : 5 biomes (LevelThreat.Order), 12 armes et 9 fusions
-#   (weapons.json). Un trailer qui promet un contenu absent se paie en remboursements.
+# ⚠ CONTENT annoncait « 4 CHARACTERS » ; ce chiffre a ete RETIRE le 2026-08-22 a 12:56 parce que
+#   l'ecran de choix n'avait jamais ete porte sous Unity — et les personnages ont ete portes le
+#   MEME JOUR a 14:17, publies en 2.5.0. Le carton actuel n'est donc pas faux, il est INCOMPLET :
+#   ses trois chiffres restent comptes dans les donnees (5 biomes via LevelThreat.Order, 12 armes
+#   et 9 fusions via weapons.json, les 4 armes de signature etant DEJA dans les 12).
+#   ▶ Si le trailer est remonte, remettre « 4 CHARACTERS · » en tete du carton ET ajouter un plan
+#   de la prise `charsel` (elle existe deja dans record_trailer.py, 5 s, non montee) — sinon le
+#   trailer laisse hors champ un contenu fini, traduit en trois langues et jouable.
+#   Un trailer qui promet un contenu absent se paie en remboursements ; un trailer qui en cache un
+#   se paie en clics jamais faits.
 # ---------------------------------------------------------------------------
 TEXTS = {
     "en": {

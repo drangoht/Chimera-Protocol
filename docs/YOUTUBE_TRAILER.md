@@ -2,7 +2,7 @@
 
 > Copie prête à coller pour la mise en ligne du trailer anglais
 > (`trailer/ChimeraProtocol_trailer_EN_1440p.mp4`, 2560×1440 @60 fps, ~55 s).
-> **Strictement factuel : tout ce qui est annoncé existe et a été compté dans le build 2.4.0.**
+> **Strictement factuel : tout ce qui est annoncé existe et a été compté dans le build 2.5.0.**
 > Version française de la page store : `docs/ITCH_STORE_PAGE.md` — anglaise : `docs/ITCH_STORE_PAGE_EN.md`.
 
 ---
@@ -14,7 +14,7 @@ devenues fausses** — dont une qui l'était déjà à l'écriture :
 
 | Annoncé avant | Réalité vérifiée dans les données | Où |
 |---|---|---|
-| « 4 playable characters » | ❌ **N'existe pas.** L'écran de choix de personnage n'a jamais été porté sous Unity (aucune occurrence de `CharacterSelect`). | — |
+| « 4 playable characters » | ⚠ **Faux à l'écriture, redevenu VRAI cinq heures plus tard** — voir l'encadré 2.5.0 ci-dessous. | `Rules/Characters` |
 | « 28 base enemies … 3 mini-bosses » | **24 ennemis de base, 6 mini-boss, 1 boss final** (31 entrées distinctes ; les 20 de `enemies_biome_expansion.json` sont **déjà** dans `enemies.json`, chevauchement total) | `data/enemies.json` |
 | « Made solo with Godot 4.7 .NET » | **Unity 6.5** — le dépôt est mono-moteur depuis le 2026-08-10 | `CLAUDE.md` |
 | « ENDLESS ESCALATION … your survival time is the score » | À moitié faux depuis la 2.4.0 : la run **a une fin garantie**. Le temps de survie reste le score, mais il est désormais **borné**. | GDD §38 |
@@ -22,6 +22,25 @@ devenues fausses** — dont une qui l'était déjà à l'écriture :
 ▶ **Un trailer qui promet un contenu absent se paie en remboursements**, et une description se
 périme sans que rien ne le signale. Tout chiffre ci-dessous est compté dans les fichiers de données,
 pas recopié de la version précédente.
+
+---
+
+## ⚠ Puis la 2.5.0 a inversé la première ligne du tableau (2026-08-22, 14:17)
+
+La refonte ci-dessus a **retiré** « 4 playable characters » à 12:56 parce que l'écran n'existait pas.
+Il a été porté **le même jour**, cinq heures plus tard, et publié en 2.5.0 sur les deux canaux.
+La description est donc désormais fausse **par défaut** : elle sous-annonce un contenu réel.
+
+| Élément | État | Conséquence |
+|---|---|---|
+| **Les 4 profils jouables** | ✅ Existent (`Rules/Characters`, `UI/CharacterSelectScreen`, sur le chemin de « Jouer ») | Ligne à **remettre** dans FEATURES (faite ci-dessous) |
+| Rushes de gameplay | ✅ Toujours valides | Le personnage par défaut est la Chimère, dont les valeurs sont **exactement** celles codées en dur avant elle — aucune image ne change |
+| **La vidéo montée** (`ChimeraProtocol_trailer_EN_1440p.mp4`, 12:56) | ⚠ **Antérieure aux personnages** | Aucun plan de l'écran de choix ; le carton `CONTENT` dit « 5 BIOMES · 12 WEAPONS · 9 FUSIONS » — **vrai mais incomplet** |
+| Prise `charsel` | ✅ Existe déjà (`record_trailer.py`, 5 s) | Elle est déclarée **prise de contrôle**, non montée : une seule prise à recapturer suffit pour l'ajouter au montage |
+| Les 12 armes | ✅ Inchangé | Les 4 armes de signature (`impulse_cannon`, `drone_swarm`, `plasma_blade`, `vector_lance`) **font partie** des 12 — le chiffre reste juste |
+
+▶ **Le piège n'est pas symétrique** : une description qui promet trop se paie en remboursements,
+une description qui promet trop peu se paie en clics jamais faits. Les deux se périment en silence.
 
 ---
 
@@ -58,6 +77,7 @@ WHAT MAKES IT DIFFERENT
 ━━━━━━━━━━━━━━━━━━━━━━
 FEATURES
 
+• 4 playable characters, each with its own health, speed and signature weapon — Chimera (balanced cyborg), Titan-Guardian (heavy robot), Vagabond (fast, fragile human), Vector (precision cyborg)
 • 5 biomes that change the rules — bonus XP, faster or slower enemies, risk/reward
 • 24 base enemies with per-biome fauna, 5 elite affixes, 6 mini-bosses, 1 final boss
 • 13 challenges unlocking Echoes, starting perks and cosmetic titles
@@ -119,6 +139,24 @@ py tools/record_trailer.py --all      # ~22 min, la fenêtre du jeu doit rester 
 py tools/build_trailer.py             # montage EN
 py tools/build_trailer.py --lang=fr   # montage FR (rushes FR requis)
 ```
+
+**Ajouter les personnages au montage sans tout recapturer** (situation du 2026-08-22) : les rushes de
+gameplay restent valides — le personnage par défaut est la Chimère, aux valeurs inchangées — donc une
+**seule** prise manque.
+
+```bash
+py tools/record_trailer.py charsel    # ~1 min, une seule ouverture du jeu
+py tools/build_trailer.py             # remontage complet (quelques minutes, rushes réutilisés)
+```
+
+Puis dans `build_trailer.py` : carton `CONTENT` → `4 CHARACTERS · 5 BIOMES · 12 WEAPONS · 9 FUSIONS`
+(⚠ vérifier sur planche qu'il ne déborde pas du cadre à 1440p), et **un** plan de `charsel` en
+section F. ▶ Préférer un **échange** à un ajout : la section F compte déjà trois écrans de menu après
+le boss et la Marée, ce que le commentaire de l'EDL décrit comme « la limite ». Quatre silhouettes à
+choisir se lit mieux qu'une carte des niveaux.
+
+⚠ **La vidéo actuelle (12:56) est antérieure au portage des personnages (14:17)** : la republier
+telle quelle ne ment sur rien, mais laisse hors champ un contenu fini et traduit en trois langues.
 
 ⚠ **Recapturer après tout changement visuel du jeu.** Les rushes du 2026-08-11 montraient une marée
 qui n'existait pas encore ; ceux d'avant le 2026-08-22 montraient une marée **rectangulaire**. Un
