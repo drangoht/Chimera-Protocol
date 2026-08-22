@@ -22,11 +22,42 @@ URP 2D). Le dépôt ne contient plus qu'un moteur : Godot a été retiré le **2
 
 ## Phase actuelle
 
+**2026-08-22 — LA MARÉE DE ROUILLE, PUBLIÉE en 2.4.0** (build itch #1905527, canal `html5`,
+devlog à coller ; **Windows reste en 2.2.0**). Le rendu de la marée a été refait le jour même sur
+retour de jeu — « trop carrée, dans la vraie vie la rouille n'est pas nette comme ça » — et **validé
+en jouant** (« c'est bien mieux »). Tout le rendu tient désormais dans **un shader**
+(`Resources/Shaders/RustTide.shader`, un seul quad : nappe, front, liseré, vagues, fumée).
+**797 tests.** Design → `docs/GDD.md` §38.8 ; pièges → `docs/PITFALLS_UNITY.md` §Fin de partie.
+⚠ **Une arête de sprite est droite par construction** : ce n'était pas un défaut de réglage. Le rendu
+tenait dans ~20 `SpriteRenderer` et aucune couleur, opacité ou ordre de tri ne pouvait le ronger. La
+découpe en segments ne fait que déplacer le problème — **on compte alors les segments**, comme on
+compte les taches d'une brume faite de sprites doux. Même arbitrage que `AtmosphereFog`, même endroit
+du moteur. ▶ Un **champ de distance évalué par pixel** n'a ni segment ni tache.
+⚠⚠ **Le contour rongé appartient à la RÈGLE, pas au rendu** (`Rules/RustErosion`). Le dessiner
+par-dessus une géométrie restée rectangulaire aurait été dix fois plus simple et aurait **menti au
+joueur de 70 px** sur la seule information que la marée donne. Le shader en est une transcription
+littérale → **toute retouche se fait DANS LES DEUX fichiers**. Corollaire contraignant : la formule
+doit être reproductible CPU/GPU, donc **trois sinus** et non `frac(sin(dot(…)))` ; le fbm ne sert que
+là où il n'engage rien (largeur du fondu, matière, fumée), **jamais la position du bord**.
+⚠ **Une borne peut être ce qui fait EXISTER un effet** : l'amplitude est plafonnée par
+`arenaHalf - safeHalf` (ce que la marée a déjà mangé). Sans elle, le bord était mordu de 72 px **dès
+la première seconde d'overtime**, en pleine minute de grâce, et la règle rendait des dégâts **hors
+overtime**. Attrapé par un test **déjà écrit** (`Hors_Overtime_La_Maree_Ne_Ronge_Rien`).
+⚠⚠ **Descendre de la logique dans un shader COÛTE de la couverture, et rien ne le signale** : les
+13 tests des vagues sont partis avec leur code, et **aucun test ne peut suivre du HLSL** — alors que
+le sens de déplacement des vagues est **invisible à la capture d'écran**. Ce qui pouvait rester en C#
+y est resté (la **phase**, qui doit s'accumuler là où un shader n'a pas d'état).
+⚠ **Reste à faire** : la marée **n'a pas de son**, l'amortissement à 0,50 repose sur un compte de
+kills d'overtime **non mesuré**, l'interaction avec le cran III (overtime dès la 8ᵉ min) n'a jamais
+été jouée — et **le banc rend des chiffres FAUX sur l'overtime sans le dire** (`BenchAutoPilot` ignore
+la marée : toute lecture de banc portant sur l'overtime est non valide tant qu'`AutoPilotPolicy`
+n'aura pas appris à rejoindre le terrain sûr).
+
 **2026-08-20 — LA MARÉE DE ROUILLE : l'overtime a une fin.** Demandé en jouant (« trop facile,
 l'overtime ne doit pas durer indéfiniment, le joueur doit mourir à tous les coups ; le challenge c'est
 de tenir le plus longtemps possible »). L'arène **se referme** en overtime : plus aucun terrain sûr à
 **11 min** (`Rules/RustTide` + `Gameplay/RustTideZone`). **776 tests, banc 276/276.** Design → `docs/GDD.md` §38 ;
-pièges → `docs/PITFALLS_UNITY.md` §Fin de partie. **Non joué, non mesuré — voir §38.6.**
+pièges → `docs/PITFALLS_UNITY.md` §Fin de partie. **Joué et validé le 2026-08-22 ; l'ÉQUILIBRAGE, lui, reste non mesuré — voir §38.6.**
 ⚠ **Le diagnostic n'était pas « la pente est trop douce ».** Les i-frames (0,45 s) bornent les dégâts
 entrants à **2,2 coups/s, que 5 ennemis touchent le joueur ou 300** : la densité étant saturée dès la
 8ᵉ minute, l'overtime n'avait plus qu'**une seule variable**, la valeur d'un coup — face à **trois**
