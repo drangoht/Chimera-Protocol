@@ -22,8 +22,9 @@ URP 2D). Le dépôt ne contient plus qu'un moteur : Godot a été retiré le **2
 
 ## Phase actuelle
 
-**2026-08-22 — LA MARÉE DE ROUILLE, PUBLIÉE en 2.4.0** (build itch #1905527, canal `html5`,
-devlog à coller ; **Windows reste en 2.2.0**). Le rendu de la marée a été refait le jour même sur
+**2026-08-22 — LA MARÉE DE ROUILLE, PUBLIÉE en 2.4.0 sur LES DEUX canaux** (web #1905527 et
+Windows #1905534, devlog à coller). Windows était resté en 2.2.0 pendant les publications navigateur —
+le tactile ne le concernait pas — et récupère donc la Marée d'un seul coup. Le rendu de la marée a été refait le jour même sur
 retour de jeu — « trop carrée, dans la vraie vie la rouille n'est pas nette comme ça » — et **validé
 en jouant** (« c'est bien mieux »). Tout le rendu tient désormais dans **un shader**
 (`Resources/Shaders/RustTide.shader`, un seul quad : nappe, front, liseré, vagues, fumée).
@@ -97,7 +98,7 @@ arrive » sans mentir), l'amortissement à 0,50 repose sur un compte de kills d'
 et l'interaction avec le cran III (overtime dès la 8ᵉ min) n'a jamais été jouée.
 
 **2026-08-14 — TACTILE : la version web se joue au doigt. PUBLIÉ en 2.3.1** (build itch #1883172,
-canal `html5`, devlog collé ; Windows reste en 2.2.0 — le tactile ne le concerne pas). Schéma retenu (décision de l'auteur) :
+canal `html5`, devlog collé ; Windows restait ALORS en 2.2.0 — le tactile ne le concernait pas). Schéma retenu (décision de l'auteur) :
 **joystick flottant à gauche + visée automatique**, bouton d'esquive et bouton de pause à droite,
 **paysage forcé** (`OrientationGate`). Le tactile est le **troisième** fichier d'entrées
 (`Platform/TouchInput.cs`), à part parce qu'il a une **mémoire** — un stick flottant n'existe que par
