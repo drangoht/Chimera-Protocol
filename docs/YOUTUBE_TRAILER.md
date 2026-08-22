@@ -35,8 +35,8 @@ La description est donc désormais fausse **par défaut** : elle sous-annonce un
 |---|---|---|
 | **Les 4 profils jouables** | ✅ Existent (`Rules/Characters`, `UI/CharacterSelectScreen`, sur le chemin de « Jouer ») | Ligne à **remettre** dans FEATURES (faite ci-dessous) |
 | Rushes de gameplay | ✅ Toujours valides | Le personnage par défaut est la Chimère, dont les valeurs sont **exactement** celles codées en dur avant elle — aucune image ne change |
-| **La vidéo montée** (`ChimeraProtocol_trailer_EN_1440p.mp4`, 12:56) | ⚠ **Antérieure aux personnages** | Aucun plan de l'écran de choix ; le carton `CONTENT` dit « 5 BIOMES · 12 WEAPONS · 9 FUSIONS » — **vrai mais incomplet** |
-| Prise `charsel` | ✅ Existe déjà (`record_trailer.py`, 5 s) | Elle est déclarée **prise de contrôle**, non montée : une seule prise à recapturer suffit pour l'ajouter au montage |
+| **La vidéo montée** (`ChimeraProtocol_trailer_EN_1440p.mp4`) | ✅ **Remontée** — 21 plans, 55,4 s | L'écran de choix entre au montage (plan 16), et le carton `CONTENT` redevient « 4 CHARACTERS · 5 BIOMES · 12 WEAPONS · 9 FUSIONS » |
+| Prise `charsel` | ✅ Existait déjà, **rien à recapturer** | Enregistrée le 2026-08-22 à 14:15, soit **après** la correction des trois défauts de mise en page de cet écran |
 | Les 12 armes | ✅ Inchangé | Les 4 armes de signature (`impulse_cannon`, `drone_swarm`, `plasma_blade`, `vector_lance`) **font partie** des 12 — le chiffre reste juste |
 
 ▶ **Le piège n'est pas symétrique** : une description qui promet trop se paie en remboursements,
@@ -140,23 +140,21 @@ py tools/build_trailer.py             # montage EN
 py tools/build_trailer.py --lang=fr   # montage FR (rushes FR requis)
 ```
 
-**Ajouter les personnages au montage sans tout recapturer** (situation du 2026-08-22) : les rushes de
-gameplay restent valides — le personnage par défaut est la Chimère, aux valeurs inchangées — donc une
-**seule** prise manque.
+▶ **Ajouter du contenu au montage ne veut pas dire tout recapturer.** L'ajout des personnages
+(2026-08-22) n'a coûté **aucune capture** : les rushes de gameplay restaient valides — le personnage
+par défaut est la Chimère, aux valeurs inchangées, donc aucune image ne changeait — et la prise
+`charsel` existait déjà comme prise de contrôle. Un simple `py tools/build_trailer.py` a suffi.
 
-```bash
-py tools/record_trailer.py charsel    # ~1 min, une seule ouverture du jeu
-py tools/build_trailer.py             # remontage complet (quelques minutes, rushes réutilisés)
-```
+Ce qui a été fait, et qui vaut comme méthode :
 
-Puis dans `build_trailer.py` : carton `CONTENT` → `4 CHARACTERS · 5 BIOMES · 12 WEAPONS · 9 FUSIONS`
-(⚠ vérifier sur planche qu'il ne déborde pas du cadre à 1440p), et **un** plan de `charsel` en
-section F. ▶ Préférer un **échange** à un ajout : la section F compte déjà trois écrans de menu après
-le boss et la Marée, ce que le commentaire de l'EDL décrit comme « la limite ». Quatre silhouettes à
-choisir se lit mieux qu'une carte des niveaux.
-
-⚠ **La vidéo actuelle (12:56) est antérieure au portage des personnages (14:17)** : la republier
-telle quelle ne ment sur rien, mais laisse hors champ un contenu fini et traduit en trois langues.
+- **Un échange, pas un ajout** — la carte des niveaux cède sa place à l'écran de choix. La section F
+  était déjà à sa limite de trois écrans de menu après le boss et la Marée ; et sur une image fixe de
+  moins de 2 s, quatre silhouettes à choisir se lisent, une carte de biomes non.
+- **Le carton chiffré est posé sur le plan qui l'atteste** — `CONTENT` (« 4 CHARACTERS · … ») tombe
+  sur l'écran qui montre les quatre personnages, seul endroit du montage où l'annonce et sa preuve
+  sont dans le même plan.
+- **La position du carton est vérifiée sur image, pas déduite** — h-260 tombe dans la bande vide
+  entre la dernière carte et le bouton « Back ».
 
 ⚠ **Recapturer après tout changement visuel du jeu.** Les rushes du 2026-08-11 montraient une marée
 qui n'existait pas encore ; ceux d'avant le 2026-08-22 montraient une marée **rectangulaire**. Un

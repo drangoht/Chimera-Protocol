@@ -60,14 +60,14 @@ WHITE = "0xD9D9F2"
 #   Registre voulu : imperatif, court, meme voix que la tagline officielle du jeu
 #   ("Don't kill the monsters. Become them." / INTRO_TAGLINE de localization/ui.csv).
 #
-# ⚠ CONTENT annoncait « 4 CHARACTERS » ; ce chiffre a ete RETIRE le 2026-08-22 a 12:56 parce que
-#   l'ecran de choix n'avait jamais ete porte sous Unity — et les personnages ont ete portes le
-#   MEME JOUR a 14:17, publies en 2.5.0. Le carton actuel n'est donc pas faux, il est INCOMPLET :
-#   ses trois chiffres restent comptes dans les donnees (5 biomes via LevelThreat.Order, 12 armes
-#   et 9 fusions via weapons.json, les 4 armes de signature etant DEJA dans les 12).
-#   ▶ Si le trailer est remonte, remettre « 4 CHARACTERS · » en tete du carton ET ajouter un plan
-#   de la prise `charsel` (elle existe deja dans record_trailer.py, 5 s, non montee) — sinon le
-#   trailer laisse hors champ un contenu fini, traduit en trois langues et jouable.
+# ⚠ CONTENT a annonce « 4 CHARACTERS » alors que c'etait faux (l'ecran de choix n'avait jamais ete
+#   porte sous Unity), le chiffre a ete RETIRE le 2026-08-22 a 12:56 — et les personnages ont ete
+#   portes le MEME JOUR a 14:17, publies en 2.5.0. Le carton a donc menti, puis cache, en cinq
+#   heures. Il est retabli, et cette fois le montage MONTRE l'ecran (plan `charsel`, section F) :
+#   un chiffre dans un carton n'est une preuve de rien, c'est le plan qui l'atteste.
+#   Les quatre chiffres sont comptes dans les donnees : 4 profils (Rules/Characters), 5 biomes
+#   (LevelThreat.Order), 12 armes et 9 fusions (weapons.json) — les 4 armes de signature etant
+#   DEJA dans les 12, le chiffre des armes ne bouge pas.
 #   Un trailer qui promet un contenu absent se paie en remboursements ; un trailer qui en cache un
 #   se paie en clics jamais faits.
 # ---------------------------------------------------------------------------
@@ -79,7 +79,7 @@ TEXTS = {
         "BOSS":    "FACE THE LIVING RUST",
         "TIDE":    "THE ARENA CLOSES IN",
         "ENDS":    "EVERY RUN ENDS|how long you hold is the score",
-        "CONTENT": "5 BIOMES · 12 WEAPONS · 9 FUSIONS",
+        "CONTENT": "4 CHARACTERS · 5 BIOMES · 12 WEAPONS · 9 FUSIONS",
         "STORE":   "PLAY FREE IN YOUR BROWSER|drangoht.itch.io/chimera-protocol",
     },
     "fr": {
@@ -89,7 +89,7 @@ TEXTS = {
         "BOSS":    "AFFRONTEZ LA ROUILLE VIVANTE",
         "TIDE":    "L'ARÈNE SE REFERME",
         "ENDS":    "TOUTE RUN A UNE FIN|le score, c'est le temps que vous tenez",
-        "CONTENT": "5 BIOMES · 12 ARMES · 9 FUSIONS",
+        "CONTENT": "4 PERSONNAGES · 5 BIOMES · 12 ARMES · 9 FUSIONS",
         "STORE":   "JOUEZ DANS VOTRE NAVIGATEUR|drangoht.itch.io/chimera-protocol",
     },
 }
@@ -186,8 +186,19 @@ EDL = [
     #    Elles se distinguent en jouant, pas a 1,8 s sur une planche-contact — trois ecrans de menu
     #    apres le boss ET la maree, c'est deja la limite. Le temps rendu va aux deux plans qui
     #    portent le trailer : la maree serree et le carton final.
-    ("meta",           0.8, 1.8, "CONTENT", CYAN),
-    ("meta",           3.4, 1.8, None, None),
+    #
+    #    2026-08-22 (2.5.0) — L'ecran de CHOIX DE PERSONNAGE prend la place de la carte des niveaux,
+    #    par ECHANGE et non par ajout : la limite ci-dessus tient toujours, et sur une image fixe de
+    #    1,8 s quatre silhouettes a choisir se lisent, une carte de biomes non. Il est place EN TETE
+    #    de la section parce qu'il porte le carton CONTENT : le seul endroit du montage ou le chiffre
+    #    annonce et l'image qui l'atteste sont dans le meme plan. Le carton tombe a h-260, dans la
+    #    bande vide entre la derniere carte (y=540 en source) et le bouton « Back » (y=650) — verifie
+    #    sur planche, pas deduit.
+    #    ⚠ Le rush `charsel` est fixe des sa 6e image (aucun fondu d'ouverture) : n'importe quel
+    #    instant convient, 1.2 est arbitraire. Et il date du 2026-08-22 14:15, soit APRES la
+    #    correction des trois defauts de mise en page de cet ecran — ils ne sont pas dans l'image.
+    ("charsel",        1.2, 2.0, "CONTENT", CYAN),
+    ("meta",           0.8, 1.8, None, None),
     ("meta",          12.0, 1.8, None, None),
 
     # -- F. Final (~8 s)
