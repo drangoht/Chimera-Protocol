@@ -328,3 +328,18 @@ dotnet test tests/ChimeraProtocol.Tests.csproj
 ## Design document
 
 Le GDD complet (pitch, univers, valeurs de tuning, direction artistique, décisions techniques) est dans [`docs/GDD.md`](docs/GDD.md).
+
+---
+
+## Licence et assets tiers
+
+Ce dépôt est public mais **n'est pas sous licence open source** : sans fichier `LICENSE`, le code et
+le contenu original restent **tous droits réservés**.
+
+⚠ **Ne pas y ajouter une licence permissive (MIT, Apache, BSD) en l'état** : le dépôt contient
+14 pistes musicales générées sur Suno sous plan gratuit, réservées à un usage **non commercial** et
+dont la propriété reste à Suno. Une licence posée à la racine les offrirait à des tiers pour un usage
+commercial, ce que l'auteur n'a pas le droit d'accorder.
+
+Le statut complet de chaque famille d'assets — musiques Suno, SFX Kenney (CC0), polices (SIL OFL 1.1)
+— et ce qu'il faudrait faire si le jeu devenait payant : [`NOTICE.md`](NOTICE.md).
