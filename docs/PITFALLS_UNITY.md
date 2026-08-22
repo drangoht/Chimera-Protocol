@@ -2648,6 +2648,79 @@ intacte** et une seconde (`SurvivalRecords`) porte le détail. ⚠ Ne pas oublie
 dans `SettingsData.ResetProgress` — une progression qui survit à une remise à zéro est le défaut
 symétrique.
 
+### Un mouvement continu mais SOUS-PERCEPTIBLE se lit exactement comme un mouvement discret
+
+Signalé en jouant (2026-08-21) : « on voit l'arène se refermer par à-coups, il faudrait que ça avance
+progressivement ». Le premier réflexe est de chercher une discontinuité dans le code — un palier, un
+arrondi, une mise à jour périodique. **Il n'y en avait aucune** : `RustTide.SafeFraction` est une
+fonction continue du temps, `RustTideZone.Update` la relit à chaque image, et pas une position n'est
+arrondie. Le code était exactement ce qu'il devait être.
+
+Le défaut était dans un **nombre**, pas dans une structure. Le bord recule de `HalfWidth / 600 s`,
+soit **1,6 unité par seconde** sur les côtés et **1,0 sur le haut et le bas**. À l'échelle de la
+caméra (720 unités de hauteur visible), cela fait **un pixel toutes les 0,7 à 0,9 seconde**. Aucun œil
+ne perçoit un mouvement de deux pixels par seconde, surtout occupé à esquiver : on ne voit jamais le
+bord bouger, on constate entre deux regards qu'il a bougé — et la rastérisation, qui fait sauter une
+arête franche d'un pixel d'un seul coup, achève de transformer le constat en à-coup.
+
+▶ **Une vitesse peut être trop lente pour être vue tout en étant trop rapide pour être ignorée.**
+C'est la zone où vit toute menace lente : un compte à rebours spatial doit être *perçu* en continu
+alors qu'il *avance* imperceptiblement. Aucun test ne peut le dire — la géométrie est juste, la
+continuité est démontrable, et une vérification de banc sur `SafeFraction` passe au vert.
+
+▶ **La correction n'est jamais d'accélérer la chose.** Ici la date de fermeture *est* la garantie de
+fin de partie (GDD §38) : y toucher pour un motif de lisibilité aurait rejoué le défaut d'origine,
+celui d'une fin qui dépend d'un réglage. Il faut **découpler le signal visuel de la vitesse réelle** —
+la nappe pousse des vagues vers l'intérieur à ~110 u/s, près de cent fois le recul du bord, et le
+front reçoit un halo diffus qui n'a plus d'arête à faire sauter. C'est le principe d'une rivière : on
+voit l'eau courir bien plus vite que la berge ne s'érode, et personne ne s'en plaint.
+
+⚠ **Le piège dans le piège** : une phase d'animation de la forme `temps * vitesse / profondeur` est
+discontinue dès que `profondeur` varie, puisqu'elle multiplie un temps qui grandit sans cesse. À la
+dixième minute, un centième d'unité de profondeur en plus déplace la phase d'un demi-cycle. On
+corrigerait un à-coup en en fabriquant un autre, bien pire. **Une phase s'accumule (`phase += dt * k`),
+elle ne se recalcule pas depuis l'horloge.**
+
+### Une arête de sprite est droite par construction — aucun réglage ne la rend organique
+
+Deuxième retour de jeu sur la marée (2026-08-22) : « trop carrée, la rouille n'est pas nette comme
+ça ». Le rendu tenait dans une vingtaine de `SpriteRenderer` (quatre nappes, quatre halos, quatre
+liserés, douze vagues). **Il n'existe aucun réglage de couleur, d'opacité ou de tri qui rende un bord
+de sprite rongé** : le quad a quatre côtés droits, un point c'est tout. On peut le découper en
+segments — et alors **on compte les segments**, exactement comme on compte les taches d'une brume
+faite de sprites doux (§ Effets visuels, même arbitrage, même endroit du moteur).
+
+▶ **Un champ de distance évalué par pixel n'a ni segment ni tache.** Tout le rendu de la marée tient
+maintenant dans `Resources/Shaders/RustTide.shader`, sur un seul quad : nappe, front, liseré, vagues
+et fumée. Un draw call au lieu de vingt objets repositionnés chaque image.
+
+⚠⚠ **Si le bord dessiné décide de quelque chose, il doit être LA règle — pas un habillage.** Dessiner
+une dentelure par-dessus une géométrie restée rectangulaire aurait été dix fois plus simple et aurait
+menti au joueur de 70 px sur la seule information que la marée donne. Le contour est donc calculé par
+`Rules/RustErosion`, et le shader en est une **transcription littérale** — d'où des constantes écrites
+en clair des deux côtés plutôt que passées en uniformes : elles doivent se relire ligne à ligne.
+
+⚠ **Corollaire contraignant : la formule doit être reproductible CPU/GPU.** L'idiome habituel des
+shaders, `frac(sin(dot(…)))`, n'offre aucune garantie entre un `float` HLSL et un `float` C#, et
+l'écart tomberait précisément là où il se voit. D'où une somme de trois sinusoïdes, qui se recale au
+millième près. Le fbm reste, **mais seulement là où il n'engage rien** : largeur du fondu, matière de
+la nappe, fumée — jamais la position du bord.
+
+⚠ **Une borne peut être ce qui fait EXISTER un effet, pas ce qui le protège.** L'amplitude de la
+dentelure est plafonnée par `arenaHalf - safeHalf`, c'est-à-dire par ce que la marée a déjà mangé.
+Sans elle, le bord était mordu de 72 px **dès la première seconde d'overtime**, en pleine minute de
+grâce — et la règle pure rendait des dégâts non nuls pour une run *hors overtime*. Le test qui l'a
+attrapé était un test **déjà écrit** (`Hors_Overtime_La_Maree_Ne_Ronge_Rien`) : il vérifiait la règle
+au bord exact de l'arène, l'endroit précis où une dentelure prématurée se voit.
+
+⚠⚠ **Descendre de la logique dans un shader COÛTE de la couverture, et personne ne le signale.**
+13 tests portaient sur les vagues (sens de déplacement, non-franchissement du liseré, opacité) ;
+ils sont partis avec le code qu'ils couvraient. **Aucun test unitaire ne peut suivre du HLSL.** Et le
+§ précédent avait justement établi que le sens de déplacement des vagues est **invisible à la capture
+d'écran**. Avant de déplacer une règle dans un shader, se demander ce qui la vérifiera après — et
+garder en C# tout ce qui peut y rester (ici la *phase*, qui doit s'accumuler d'une image à l'autre là
+où un shader n'a pas d'état).
+
 ## Méthode
 
 ### Extraire du moteur, puis confronter — plutôt que lire les sources

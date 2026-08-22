@@ -179,8 +179,32 @@ public static class RustTide
     {
         if (maxHp <= 0f || deltaSeconds <= 0f) return 0f;
 
-        float fraction = SafeFraction(overtimeMinutes);
-        float depth = Depth(x, y, arenaHalfWidth * fraction, arenaHalfHeight * fraction);
+        float depth = DepthAt(x, y, overtimeMinutes, arenaHalfWidth, arenaHalfHeight);
         return maxHp * FractionPerSecond(depth, overtimeMinutes) * deltaSeconds;
+    }
+
+    /// <summary>
+    /// Enfoncement d'un point dans la marée à un instant donné, <b>morsures comprises</b>.
+    ///
+    /// <para>Séparée de <see cref="DamageOverTime"/> parce que le rendu en a besoin sans vouloir de
+    /// dégâts : c'est le seul moyen que le contour dessiné et le contour qui ronge restent le même —
+    /// voir <see cref="RustErosion"/>, et la raison pour laquelle la dentelure n'est pas un habillage.</para>
+    ///
+    /// <para>Le bord n'est plus droit : chaque axe est mordu indépendamment, et de part et d'autre
+    /// par une phase différente (<c>Left</c> ≠ <c>Right</c>), sans quoi l'arène serait son propre
+    /// miroir.</para>
+    /// </summary>
+    public static float DepthAt(float x, float y, float overtimeMinutes,
+                                float arenaHalfWidth, float arenaHalfHeight)
+    {
+        float fraction = SafeFraction(overtimeMinutes);
+        float t = overtimeMinutes * 60f;
+
+        float edgeX = RustErosion.EdgeAt(x >= 0f ? RustErosion.Right : RustErosion.Left,
+                                         y, arenaHalfWidth * fraction, arenaHalfWidth, t);
+        float edgeY = RustErosion.EdgeAt(y >= 0f ? RustErosion.Top : RustErosion.Bottom,
+                                         x, arenaHalfHeight * fraction, arenaHalfHeight, t);
+
+        return Depth(x, y, edgeX, edgeY);
     }
 }

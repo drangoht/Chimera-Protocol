@@ -3747,9 +3747,134 @@ l'exploiter.
 - **La marée n'a pas de son.** Aucun SFX du projet ne dit « une menace lente arrive » sans mentir sur
   autre chose (`sfx_ui_death` signifie déjà « mort évitée »). À produire — c'est un événement qui
   mérite d'être entendu avant d'être vu.
-- **La lisibilité du bord** quand la caméra suit le joueur et ne montre jamais toute l'arène. Le
-  liseré pulsant est la seule information qui compte ; s'il ne suffit pas, l'indicateur manquant est
-  une flèche vers le centre, pas une carte.
+- ~~**La lisibilité du bord**~~ — **jugée en jouant le 2026-08-21, et le verdict a été « elle avance
+  par à-coups ».** Voir §38.7 : le liseré pulsant ne suffisait pas, mais l'indicateur manquant n'était
+  pas une flèche vers le centre. S'il fallait encore quelque chose, ce serait maintenant un **son**.
 - **L'interaction avec le cran III « Compte à rebours »** (overtime dès la 8ᵉ minute) : la marée s'y
   déclenche cinq minutes plus tôt, sur un build cinq minutes moins avancé. C'est le cas le plus dur
   du jeu, et il n'a jamais été joué.
+
+### 38.7 « Elle avance par à-coups » — quand le défaut est dans un nombre, pas dans une structure
+
+Premier retour de jeu sur la marée (2026-08-21) : *« il devrait y avoir une animation de l'arène qui
+se referme, qu'on la voit avancer progressivement et pas par à-coups »*.
+
+Le réflexe est de chercher une discontinuité dans le code — un palier, un arrondi, une mise à jour
+périodique. **Il n'y en avait aucune.** `RustTide.SafeFraction` est continue, `RustTideZone` la relit
+à chaque image, aucune position n'est arrondie et la caméra ne colle rien à une grille. Le code était
+exactement ce qu'il devait être.
+
+Le défaut était dans une **vitesse**. Le bord avale 960 px de large et 608 px de haut en dix minutes,
+soit **1,6 unité par seconde** sur les côtés et **1,0** sur le haut et le bas. Rapporté à l'écran
+(720 unités de hauteur visible), cela fait **un pixel toutes les 0,7 à 0,9 seconde**. Personne ne
+perçoit un mouvement de deux pixels par seconde, et surtout pas quelqu'un occupé à esquiver : on ne
+voit jamais le bord bouger, on constate entre deux regards qu'il a bougé. La rastérisation achève le
+travail, une arête franche sautant son pixel d'un seul coup.
+
+▶ **Un mouvement continu mais sous-perceptible se lit exactement comme un mouvement discret.** C'est
+la zone où vit toute menace lente : un compte à rebours *spatial* doit être perçu en continu alors
+qu'il avance imperceptiblement.
+
+▶ **La correction ne pouvait pas être d'accélérer la marée.** `CloseMinutes` *est* la garantie de fin
+de partie : la régler pour un motif de lisibilité aurait rejoué exactement le défaut que tout le §38
+existe pour supprimer — une fin qui dépend d'un réglage. Il fallait **découpler le signal visuel de la
+vitesse réelle** :
+
+- **des vagues** traversent la nappe vers l'intérieur à ~110 u/s, près de **cent fois** le recul du
+  bord (`Rules/TideWaves`, 13 tests). Elles naissent au fond de la nappe, meurent **sur** le liseré
+  sans jamais le franchir — une vague sur le terrain sûr annoncerait un danger qui n'y est pas — et
+  naissent comme elles meurent, transparentes ;
+- **un halo de front** épais et diffus derrière le liseré, qui respire en opposition avec lui. Une
+  arête franche de sept pixels a un pixel à faire sauter ; un front diffus n'en a pas.
+
+C'est le principe d'une rivière : on voit l'eau courir bien plus vite que la berge ne s'érode, et
+personne n'y voit une contradiction. **Rien de tout cela ne touche à la géométrie ni aux dégâts** — la
+limite qui fait mal reste le liseré, au pixel près.
+
+⚠ **Le sens de déplacement des vagues est invisible à la capture d'écran** : trois vagues se relaient
+en boucle, deux images espacées de quelques secondes sont compatibles avec les deux sens. C'est
+pourquoi la géométrie a été sortie en règle pure et **démontrée par un test** plutôt que jugée à
+l'œil. Une vague qui partirait vers l'extérieur dirait que la marée *se retire*.
+
+⚠ **Le piège dans le piège** : une phase d'animation de la forme `temps × vitesse ÷ profondeur` est
+discontinue dès que la profondeur varie — et elle varie, puisque la nappe s'épaissit à mesure que
+l'arène se referme. À la dixième minute, un centième d'unité de profondeur en plus déplace la phase
+d'un demi-cycle : on aurait corrigé un à-coup en en fabriquant un autre, bien pire. **Une phase
+s'accumule, elle ne se recalcule pas depuis l'horloge** — et un test le verrouille, pour que personne
+ne « simplifie » cela un jour de refactoring.
+
+▶ **Pour regarder la marée sans jouer onze minutes** : `--start-at=<minutes>` avance l'horloge de la
+run (l'overtime commence à 13 min, la marée bouge à partir de 14). En web, cela s'écrit dans l'URL —
+`?auto-play&start-at=20&invuln` place directement au cœur de la fermeture. ⚠ `--start-at` démarre avec
+un **personnage nu** : la scène est juste, le rapport de force ne l'est pas.
+
+### 38.8 « Trop carrée » — une arête de sprite est droite par construction (2026-08-22)
+
+Deuxième retour de jeu sur la marée : *« elle est un peu trop carrée, il faut lui ajouter un effet
+fumée et qu'elle progresse avec un grignotement vraiment comme de la rouille — dans la vraie vie la
+rouille n'est pas nette comme ça »*.
+
+Le §38.7 avait corrigé la **vitesse perçue** ; il restait la **forme**. Et là encore, ce n'était pas
+un défaut de réglage : le rendu était fait d'une vingtaine de `SpriteRenderer` — quatre nappes,
+quatre halos, quatre liserés, douze vagues — et **une arête de sprite est droite par construction**.
+Aucune couleur, aucune opacité, aucun ordre de tri ne pouvait la rendre rongée. On peut découper
+chaque côté en segments, mais alors **on compte les segments**, exactement comme on compte les taches
+d'une brume faite de sprites doux : ce projet avait déjà tranché ce même arbitrage, au même endroit
+du moteur, en écrivant `AtmosphereFog.shader`.
+
+▶ **Tout le rendu tient désormais dans un champ de distance évalué par pixel**
+(`Resources/Shaders/RustTide.shader`, un seul quad). Un champ de distance n'a ni segment ni tache, et
+son bord peut être aussi mangé qu'on veut sans qu'aucun objet ne bouge.
+
+**Le contour rongé appartient à la RÈGLE, pas au rendu.** C'est la décision structurelle du chantier.
+Il aurait été bien plus simple de dessiner un bord irrégulier par-dessus une géométrie restée
+rectangulaire — et c'était précisément la classe de défaut que ce projet documente sans relâche : deux
+systèmes qui disent deux choses, dont le plus visible est le faux. Un joueur qui voit une échancrure
+mordre vers lui doit prendre des dégâts **à l'endroit qu'il voit**, sinon la seule information que la
+marée donne — « à partir d'ici ça fait mal » — devient un mensonge de 70 pixels. Le contour dessiné
+et le contour qui ronge sont donc **la même fonction** (`Rules/RustErosion`), évaluée des deux côtés.
+
+Trois propriétés portent la dentelure, et aucune n'est décorative :
+
+1. **Elle ne mord que vers l'intérieur** (`Offset` toujours ≤ 0). Le rectangle érodé est un
+   sous-ensemble du rectangle nominal, donc il n'y a **rien à re-démontrer sur la garantie de fin** :
+   à `CloseMinutes` le nominal est nul, l'érodé aussi, et aucune bosse de bruit ne peut fabriquer la
+   poche sûre que le §38.3 existe pour interdire.
+2. **Elle ne peut pas être plus profonde que ce que la marée a déjà mangé** (`arenaHalf − safeHalf`).
+   Cette borne n'est pas un garde-fou : **c'est ce qui fait naître la dentelure**. Sans elle, le bord
+   de l'arène était mordu de 72 px dès la première seconde d'overtime — en pleine minute de grâce, qui
+   existe pour que rien ne bouge pendant qu'on lit l'annonce — et la règle pure rendait des dégâts non
+   nuls pour une run **hors overtime**. Avec elle, la dentelure naît de l'avancée et grandit avec.
+3. **Elle se referme avec l'arène** (plafond à la moitié du demi-axe). Sinon la dernière minute
+   donnerait une zone sûre de 40 px traversée de part en part par une dentelure de 72 : elle
+   clignoterait entre « il reste un abri » et « il n'en reste pas », au pire moment possible.
+
+⚠ **Trois sinus, pas un bruit — et c'est un choix contraint.** La formule est évaluée sur le
+processeur (les dégâts) *et* sur la carte graphique (le rendu), et les deux doivent tomber sur le même
+contour. L'idiome habituel des shaders, `frac(sin(dot(…)))`, n'a aucune garantie de reproductibilité
+entre un `float` HLSL et un `float` C#, et l'écart arriverait exactement là où il se voit : sur le
+liseré. Une somme de trois sinusoïdes de longueurs d'onde étrangères entre elles se recale au
+millième près des deux côtés. Le bruit fbm, lui, reste — mais **seulement là où il n'engage rien** :
+il module la largeur du fondu (donc l'aspect déchiqueté), la matière de la nappe et la fumée, jamais
+la position du bord.
+
+⚠ **Les deux ondes vont en sens contraire.** Toutes dans le même sens, la dentelure *glisserait* le
+long du bord, ce qu'aucune corrosion ne fait. En sens opposés, elles interfèrent sur place : une
+échancrure se creuse ici pendant qu'une autre se comble là — le **grignotement** demandé.
+
+⚠⚠ **Ce chantier a coûté de la couverture de test, et il faut le savoir.** Le placement, l'opacité et
+le sens de déplacement des vagues se calculaient en C# et étaient démontrés par 13 tests ; ils se
+calculent maintenant par pixel, pour épouser le front rongé. **Aucun test unitaire ne peut suivre du
+HLSL.** Les garanties correspondantes — une vague ne franchit pas le liseré, elle naît et meurt
+transparente, elle va vers l'intérieur — tiennent désormais à la relecture du shader et à l'œil, alors
+même que le §38.7 avait relevé que **le sens de déplacement est invisible à la capture d'écran**.
+C'est le prix d'un bord qui ne soit pas droit. Ce qui ne pouvait pas descendre dans le shader est
+resté en C# et reste testé : la **phase** des vagues, qui doit s'accumuler d'une image à l'autre là où
+un shader n'a pas d'état. Et la partie qui engage le gameplay — le contour — est, elle, couverte par
+16 tests neufs (`RustErosionTests`), dont un qui vérifie que la profondeur de dégâts est nulle **sur**
+le bord érodé et positive juste au-delà : c'est la seule chose qui relie les deux fichiers.
+
+⚠ **La fumée est le seul élément du rendu qui déborde sur le terrain sûr**, de quelques dizaines de
+pixels, en opacité ténue et sans couleur vive. C'est assumé : une nappe qui s'arrête pile sur sa
+limite **est** une arête, quelle que soit la façon dont on la dessine. Le liseré reste la seule marque
+nette du rendu, et il reste exactement là où l'on commence à brûler.
