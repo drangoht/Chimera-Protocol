@@ -46,11 +46,15 @@ une description qui promet trop peu se paie en clics jamais faits. Les deux se p
 
 ## 1. Titre de la vidéo
 
-**Recommandé (≤ 60 caractères, mot-clé en tête) :**
+**Retenu pour la mise en ligne du 2026-08-22 (78 caractères) :**
 
 ```
-Chimera Protocol — Survivor Roguelite Where Every Run Ends
+Chimera Protocol — Survivor Roguelite Where Every Run Ends | New Trailer 2.5.0
 ```
+
+Le mot-clé de recherche et l'accroche sont **en tête**, la version **en queue** : les 60 premiers
+caractères sont les seuls visibles sur mobile, et « 2.5.0 » n'y a rien à faire — il informe le
+spectateur qui lit la fiche entière, pas celui qui décide de cliquer.
 
 Variantes selon l'angle voulu :
 - `Chimera Protocol — Don't Kill the Monsters. Become Them.` (accroche d'origine, moins « searchable »)
@@ -66,6 +70,8 @@ Don't kill the monsters. Become them.
 Chimera Protocol is a top-down survivor roguelite set in a cyberpunk-fantasy world eaten by the Living Rust. Kite endless swarms, level up every few seconds, and turn the creatures hunting you into parts of your own body — until the arena itself closes in and ends the run.
 
 ▶ Play free in your browser, no download: https://drangoht.itch.io/chimera-protocol
+
+New trailer, captured in build 2.5.0 — the four playable characters and the Rust Tide endgame are in the game right now.
 
 ━━━━━━━━━━━━━━━━━━━━━━
 WHAT MAKES IT DIFFERENT
@@ -114,7 +120,7 @@ Made solo with Unity 6.5. Sound effects by Kenney (CC0). Soundtrack generated wi
 ## 3. Tags (champ « Tags » de YouTube, ≤ 500 caractères)
 
 ```
-chimera protocol, survivor roguelite, bullet heaven, vampire survivors like, indie game trailer, pixel art game, cyberpunk roguelite, top down shooter, free browser game, free pc game, unity engine, roguelite 2026, horde survival, indie dev, bullet hell, itch io game
+chimera protocol, chimera protocol trailer, survivor roguelite, bullet heaven, vampire survivors like, survivors like, indie game trailer, new trailer 2026, pixel art game, cyberpunk roguelite, top down shooter, horde survival, free browser game, free pc game, unity engine, roguelite 2026, bullet hell, indie dev, itch io game, playable characters
 ```
 
 ---
