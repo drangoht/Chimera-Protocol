@@ -72,16 +72,20 @@ TEXTS = {
         "ORGANS":  "TEAR OUT THEIR ORGANS",
         "CHIMERA": "BECOME THE CHIMERA",
         "BOSS":    "FACE THE LIVING RUST",
+        "TIDE":    "THE ARENA CLOSES IN",
+        "ENDS":    "EVERY RUN ENDS|how long you hold is the score",
         "CONTENT": "5 BIOMES · 12 WEAPONS · 9 FUSIONS",
-        "STORE":   "AVAILABLE ON ITCH.IO|drangoht.itch.io/chimera-protocol",
+        "STORE":   "PLAY FREE IN YOUR BROWSER|drangoht.itch.io/chimera-protocol",
     },
     "fr": {
         "SWARM":   "SURVIVEZ À LA NUÉE",
         "ORGANS":  "ARRACHEZ LEURS ORGANES",
         "CHIMERA": "DEVENEZ LA CHIMÈRE",
         "BOSS":    "AFFRONTEZ LA ROUILLE VIVANTE",
+        "TIDE":    "L'ARÈNE SE REFERME",
+        "ENDS":    "TOUTE RUN A UNE FIN|le score, c'est le temps que vous tenez",
         "CONTENT": "5 BIOMES · 12 ARMES · 9 FUSIONS",
-        "STORE":   "DISPONIBLE SUR ITCH.IO|drangoht.itch.io/chimera-protocol",
+        "STORE":   "JOUEZ DANS VOTRE NAVIGATEUR|drangoht.itch.io/chimera-protocol",
     },
 }
 
@@ -109,51 +113,77 @@ EDL = [
     ("intro",         10.2, 3.0, None, None),
     ("intro",         22.2, 3.4, None, None),
 
-    # -- B. Le jeu : les cinq biomes (~13 s)
+    # -- B. Le jeu : les cinq biomes (~11 s)
     #    Un plan par biome, dans l'ordre de menace croissante du jeu. Chaque prise est deja calee sur
     #    sa minute de run (`--start-at`), donc n'importe quel instant du rush est « en pleine action »
     #    : les bornes ne servent qu'a varier les compositions.
+    #    Raccourcis de 2.6 a 2.2 a la refonte du 2026-08-22 : cinq plans d'arene qui se ressemblent
+    #    sont la partie du trailer qui ressemble le plus a tous les autres survivors. Le temps gagne
+    #    va a la Maree (section E), qui est ce que ce jeu a et que les autres n'ont pas.
     #    ⚠ Sanctuaire s'arrete a 5.4 : une modale d'Assimilation s'ouvre vers 10 s dans ce rush.
     #    `KeepClear` la referme en une image, mais une image de modale plein ecran au milieu d'un
     #    plan se voit — c'est un flash blanc.
-    ("gp_sanctuaire",  2.6, 2.8, "SWARM", CYAN),
-    ("gp_aether",      8.4, 2.6, None, None),
-    ("gp_givre",      11.4, 2.6, None, None),
-    ("gp_neon",       14.2, 2.6, None, None),
-    ("gp_fournaise",  11.4, 2.6, None, None),
+    ("gp_sanctuaire",  2.6, 2.2, "SWARM", CYAN),
+    ("gp_aether",      8.4, 2.2, None, None),
+    ("gp_givre",      11.4, 2.2, None, None),
+    ("gp_neon",       14.2, 2.2, None, None),
+    ("gp_fournaise",  11.4, 2.2, None, None),
 
-    # -- C. Progression : la decision, puis le corps qui mute (~8 s)
+    # -- C. Progression : la decision, puis le corps qui mute (~7 s)
     #    L'ecran de montee de niveau est presente des la premiere image de sa prise. Le gros plan de
     #    chimere enchaine trois jeux de greffes de 3 s : corps nu+oeil (0-3), onde/servos/symbiote
     #    (3-6), les deux fusions (6-9). Le dernier porte le plus d'appendices — d'ou le carton
     #    « BECOME THE CHIMERA » dessus, et non sur le premier.
-    ("levelup",        0.4, 2.6, None, None),
-    ("chimera",        3.4, 2.4, "ORGANS", GOLD),
-    ("chimera",        6.2, 2.6, "CHIMERA", GOLD),
+    ("levelup",        0.4, 2.4, None, None),
+    ("chimera",        3.4, 2.2, "ORGANS", GOLD),
+    ("chimera",        6.2, 2.4, "CHIMERA", GOLD),
 
-    # -- D. Escalade : fin de partie + boss (~10 s)
-    #    Le Noyau Rouille est invoque des la 2e seconde de sa prise, mais il reste LOIN du joueur la
-    #    plupart du temps : a 20 s ils sont enfin dans le meme cadre — c'est la, et seulement la,
-    #    que le carton du boss est lisible.
-    ("gp_fournaise",  17.4, 2.2, None, None),
-    ("gp_neon",        5.4, 2.2, None, None),
-    ("boss",           7.4, 2.4, None, None),
-    ("boss",          20.4, 3.0, "BOSS", CYAN),
+    # -- D. Le boss (~5 s)
+    #    ⚠ Ces timecodes ont ete refaits le 2026-08-22, et l'ancien commentaire disait pourquoi il
+    #    fallait s'en mefier : « il reste LOIN du joueur la plupart du temps, a 20 s ils sont enfin
+    #    dans le meme cadre ». C'etait de la CHANCE, et elle n'a pas survecu a la recapture — le boss
+    #    n'apparaissait sur aucune des 26 secondes, alors que le journal confirmait son invocation a
+    #    t=784 s. `TrailerRecorder.TakeBoss` le ramene desormais dans le cadre : il y est en
+    #    permanence, et n'importe quel instant du rush le montre.
+    #    Instants choisis pour l'action, pas pour sa presence : 11.0 (boss + nuee), 17.4 (explosion).
+    #    ⚠ Eviter 6.0 et 14.0 : un bandeau de fusion violet y occupe le haut du cadre.
+    #    ⚠ Les deux plans d'action qui precedaient le boss (gp_fournaise 17.4, gp_neon 5.4) ont ete
+    #    RETIRES a la refonte : a ce point du montage le spectateur a deja vu trente secondes
+    #    d'arene, et ces plans ne faisaient que retarder le seul argument neuf du trailer.
+    ("boss",          11.0, 2.0, None, None),
+    ("boss",          17.4, 2.8, "BOSS", CYAN),
 
-    # -- E. Meta / menus (~11 s)
+    # -- E. LA MAREE DE ROUILLE (~8 s) — l'argument que le jeu n'avait pas
+    #    Place APRES le boss, parce que c'est ce qui vient apres lui dans le jeu : on le bat, la run
+    #    continue, et l'arene se referme quand meme. Le mettre plus tot dirait le contraire.
+    #
+    #    ⚠ Les deux premiers plans sont DEZOOMES (cf. `TrailerRecorder.TakeTide`) : au cadrage de
+    #    jeu, la maree n'est qu'un bord orange qui entre par un cote, et « l'arene se referme » ne se
+    #    lit pas. Les deux plans larges sont espaces (3.6 et 8.6) parce que la geometrie, elle, ne
+    #    bouge quasiment pas en cinq secondes — la fraction sure perd 1 % : ce qui les distingue est
+    #    l'ACTION, pas la fermeture. Deux plans larges colles se liraient comme un seul plan fixe.
+    #    Le troisieme revient au cadrage de jeu et entre a 18.0 : la nuee y est massee SUR l'ilot de
+    #    terrain sur, ce qui dit « il n'y a plus ou aller » mieux qu'aucun carton. Pas avant 13.0, la
+    #    camera mettant environ une demi-seconde a glisser du centre vers le joueur apres la bascule.
+    ("tide",           3.6, 2.8, "TIDE", GOLD),
+    ("tide",           8.6, 2.4, None, None),
+    ("tide",          18.0, 3.8, "ENDS", GOLD),
+
+    # -- F. Meta / menus (~7 s)
     #    Ordre de la prise `meta`, releve sur planche : hub 0-2.8, carte des niveaux 2.8-5.2, puis
     #    les trois onglets du Codex (bestiaire 5.2-8.2, arsenal 8.2-11.2, chimere 11.2-14.2) et les
     #    defis 14.2-17.2. Les bornes sont prises au MILIEU de chaque fenetre : la mise en scene monte
     #    l'ecran suivant sur une frame, et une coupe posee sur la bascule attraperait le precedent.
-    #    Le bestiaire (5.2-8.2) est le seul onglet ECARTE : il montre ce qu'on affronte, quand
-    #    l'arsenal et la chimere montrent ce qu'on devient — et le trailer vient de passer trente
-    #    secondes a montrer des ennemis. Cinq ecrans de liste d'affilee suffisent deja a plomber le
-    #    rythme juste apres le boss.
-    ("meta",           0.8, 2.0, "CONTENT", CYAN),
+    #    Le bestiaire (5.2-8.2) est ECARTE : il montre ce qu'on affronte, quand l'arsenal et la
+    #    chimere montrent ce qu'on devient. Les defis (15.0) le sont aussi depuis la refonte.
+    #    ⚠ Et l'onglet arsenal (9.0) a saute au CONTROLE SUR PLANCHE du montage final : cote a cote,
+    #    les deux onglets du Codex rendent deux images de liste sombres et pratiquement identiques.
+    #    Elles se distinguent en jouant, pas a 1,8 s sur une planche-contact — trois ecrans de menu
+    #    apres le boss ET la maree, c'est deja la limite. Le temps rendu va aux deux plans qui
+    #    portent le trailer : la maree serree et le carton final.
+    ("meta",           0.8, 1.8, "CONTENT", CYAN),
     ("meta",           3.4, 1.8, None, None),
-    ("meta",           9.0, 1.8, None, None),
     ("meta",          12.0, 1.8, None, None),
-    ("meta",          15.0, 1.8, None, None),
 
     # -- F. Final (~8 s)
     #    27.0 et pas 26.2 : le beat 6 tient l'ecran jusqu'a 26.0 et le flash blanc part a 26.5. Une
@@ -162,7 +192,7 @@ EDL = [
     #    Deux plans plutot qu'un seul long : le carton itch.io tombe ainsi sur le menu, et pas
     #    par-dessus la tagline du jeu qu'affiche l'ecran-titre.
     ("intro",         27.0, 3.6, None, None),
-    ("menu",           0.6, 4.4, "STORE", GOLD),
+    ("menu",           0.6, 5.0, "STORE", GOLD),
 ]
 
 TOTAL = sum(e[2] for e in EDL)
@@ -173,7 +203,7 @@ TOTAL = sum(e[2] for e in EDL)
 #   fondu croise de XFADE. Les bornes sont calees sur la structure du montage :
 #     0.0   theme principal      — narration de la cinematique
 #     9.4   run neon (refrain)   — premiere image de gameplay, 160 BPM
-#    34.6   theme de boss        — premier plan de boss, tenu jusqu'au carton final
+#    27.4   theme de boss        — premier plan de boss, tenu par-dessus la Maree jusqu'au final
 #
 #   Choix des pistes : PAS `music_intro.ogg`, alors que c'est la musique qui joue sur les plans de
 #   cinematique -- depuis que les rushes sont muets, elle ne s'entend plus dans le rush, mais la
@@ -185,7 +215,7 @@ TOTAL = sum(e[2] for e in EDL)
 MUSIC_EDL = [
     ("unity/Assets/Resources/Audio/music/music_menu.ogg",             0.0),
     ("unity/Assets/Resources/Audio/music/music_run_neon_combat.ogg",  9.4),
-    ("unity/Assets/Resources/Audio/music/music_run_boss.ogg",        34.6),
+    ("unity/Assets/Resources/Audio/music/music_run_boss.ogg",        27.4),
 ]
 
 XFADE = 1.6

@@ -95,6 +95,16 @@ TAKES: dict[str, tuple[list[str], float]] = {
     "levelup": (["--biome=neon", "--start-at=6", "--invuln"], 5.0),
     "chimera": (["--biome=aether", "--start-at=2", "--invuln"], 9.0),
 
+    # -- La Maree de Rouille : l'arene se referme, et la run a une fin. `--start-at=21` place la run
+    #    a HUIT minutes d'overtime (l'overtime demarre a 13 min, la maree bouge a partir de 14) :
+    #    la zone sure n'y fait plus que 30 % de ses demi-dimensions, et la perte d'espace se voit
+    #    d'un coup d'oeil. A 17 on ne filmerait qu'un lisere a peine entame.
+    #    ⚠ `--invuln` est ICI une necessite de mise en scene et non une precaution : le rongement
+    #    est continu et traverse les i-frames, donc un plan de 25 s dans la rouille se termine sur
+    #    l'ecran de fin de run.
+    "tide": (["--biome=neon", "--start-at=21", "--saturate-arsenal",
+              "--auto-play", "--invuln"], 25.0),
+
     # -- Le boss. `--start-at=13` place la run AU-DELA du temps imparti (780 s) : l'overtime demarre
     #    a la premiere image et le Noyau Rouille est invoque dans la foulee. C'est le remplacant du
     #    `--debug-boss` de Godot, qui n'a pas ete porte.

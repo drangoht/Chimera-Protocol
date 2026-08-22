@@ -124,7 +124,8 @@ public sealed class TrailerRecorder : MonoBehaviour
         "meta" => TakeMeta(),
         "levelup" => TakeLevelUp(),
         "chimera" => TakeChimera(),
-        "boss" => TakeGameplay(26f),
+        "tide" => TakeTide(),
+        "boss" => TakeBoss(),
         _ => TakeGameplay(22f),          // gp_<biome> : le biome vient de --biome=
     };
 
@@ -237,6 +238,112 @@ public sealed class TrailerRecorder : MonoBehaviour
         StartCoroutine(KeepClear());
 
         yield return Record(seconds);
+    }
+
+    /// <summary>
+    /// Le Noyau Rouillé — le boss de fin de niveau, <b>amené dans le cadre</b>.
+    /// </summary>
+    /// <remarks>
+    /// <para>⚠ <b>C'était le dernier plan du trailer qui reposait sur la chance, et elle a fini par
+    /// tourner.</b> La prise se contentait de filmer une run d'overtime en espérant que le boss passe
+    /// devant l'objectif ; l'ancien montage l'admettait à demi-mot (« à 20 s ils sont enfin dans le
+    /// même cadre »). À la recapture du 2026-08-22, le boss n'apparaît sur <i>aucune</i> vignette des
+    /// 26 secondes — le journal confirme pourtant qu'il est invoqué à t=784 s et qu'il ne meurt
+    /// jamais. Il était simplement ailleurs.</para>
+    /// <para>La cause est structurelle : le pilote automatique <b>fuit</b> la menace, et le boss se
+    /// déplace lentement. Rien ne les rapproche, et une prise dont le sujet dépend de la trajectoire
+    /// d'un bot n'est pas une mise en scène — c'est un tirage. D'où ce rappel, qui ramène le Noyau
+    /// dès qu'il sort du cadre <b>en conservant sa direction d'approche</b> : le replacer à chaque
+    /// image le figerait, et un boss immobile ne se lit pas comme une menace.</para>
+    /// <para>Il n'est <b>pas</b> soigné : à arsenal saturé il peut tomber avant la fin du plan, et sa
+    /// mort est un meilleur plan que sa survie. Ce qu'on refuse ici, c'est son absence.</para>
+    /// </remarks>
+    private IEnumerator TakeBoss()
+    {
+        SceneRoot.ChangeScene(GameScenes.Game);
+        yield return Wait(2.5f);
+
+        SpawnSwarmAroundPlayer(22);
+        StartCoroutine(KeepClear());
+        StartCoroutine(BossStage());
+
+        yield return Record(26f);
+    }
+
+    private IEnumerator BossStage()
+    {
+        // Le spawner l'invoque à l'entrée en overtime, mais pas dans la même image que la scène :
+        // le chercher une fois rendrait null et la mise en scène ne ferait rien, sans rien dire.
+        RustedCore boss = null;
+        for (float t = 0f; t < 8f && boss == null; t += Time.unscaledDeltaTime)
+        {
+            boss = FindFirstObjectByType<RustedCore>();
+            yield return null;
+        }
+
+        if (boss == null)
+        {
+            Debug.LogWarning("[TrailerRecorder] boss introuvable — le plan filmera une arène sans lui.");
+            yield break;
+        }
+
+        Debug.Log("[TrailerRecorder] boss cadré.");
+
+        const float leash = 340f;
+        while (boss != null)
+        {
+            var player = Player.Instance;
+            if (player == null) yield break;
+
+            Vector2 p = player.transform.position;
+            Vector2 b = boss.transform.position;
+            Vector2 away = b - p;
+
+            if (away.magnitude > leash)
+                boss.transform.position = p + away.normalized * (leash * 0.85f);
+
+            yield return null;
+        }
+    }
+
+    /// <summary>
+    /// La Marée de Rouille — l'arène qui se referme, en deux cadrages.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>⚠ Le cadrage de jeu ne montre pas cette mécanique.</b> La caméra suit le joueur et
+    /// cadre 720 unités de haut sur une arène qui en fait 1216 : à cette échelle, la marée n'est
+    /// qu'un bord orange qui entre par un côté, et « l'arène se referme » ne se lit pas — c'est
+    /// exactement pourquoi le liseré pulse en jeu. Un trailer doit montrer la <i>règle</i>, pas la
+    /// vue du joueur.</para>
+    /// <para>D'où le premier temps, dézoomé au-delà des dimensions de l'arène. Ce n'est pas qu'un
+    /// changement d'échelle : passé ce seuil, <c>RunCamera</c> borne son suivi à zéro
+    /// (<c>limitX = max(0, HalfWidth - halfView)</c>) et <b>cesse de suivre le joueur</b> pour se
+    /// caler au centre. Le cadre devient donc fixe, et c'est la zone sûre qui bouge dedans.</para>
+    /// <para>Le second temps revient au cadrage de jeu : le liseré, la nuée qui n'a plus où se
+    /// disperser, et ce que le joueur voit réellement. ⚠ La caméra étant lissée, elle <b>glisse</b>
+    /// du centre vers le joueur pendant environ une demi-seconde après la bascule : le montage doit
+    /// entrer après, ou assumer le mouvement.</para>
+    /// <para>⚠ <c>--start-at</c> place la run <b>en minutes de run</b>, pas d'overtime : l'overtime
+    /// commence à 13 min et la marée ne bouge qu'à partir de 14 (minute de grâce). Filmer à 17 ne
+    /// montrerait qu'un liseré à peine entamé — la mise en scène vise la seconde moitié de la
+    /// fermeture, là où la perte d'espace est spectaculaire.</para>
+    /// </remarks>
+    private IEnumerator TakeTide()
+    {
+        SceneRoot.ChangeScene(GameScenes.Game);
+        yield return Wait(2.5f);
+
+        SpawnSwarmAroundPlayer(34);
+        StartCoroutine(KeepClear());
+
+        var camera = Camera.main;
+        float restSize = camera != null ? camera.orthographicSize : 0f;
+
+        if (camera != null) camera.orthographicSize = restSize * 1.95f;
+        yield return Record(12f);
+
+        if (camera != null) camera.orthographicSize = restSize;
+        yield return Record(13f);
     }
 
     /// <summary>L'écran de montée de niveau — la décision qui rythme un survivor.</summary>
